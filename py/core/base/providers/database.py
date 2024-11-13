@@ -15,9 +15,11 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from core.base import (
+from core.base.abstractions import (
     Community,
+    CommunityInfo, 
     Entity,
+    Graph,
     KGExtraction,
     Message,
     Relationship,
@@ -593,283 +595,408 @@ class VectorHandler(Handler):
         pass
 
 
-class KGHandler(Handler):
-    """Base handler for Knowledge Graph operations."""
+# class GraphHandler(Handler):
+#     """Base handler for Knowledge Graph operations."""
 
+#     @abstractmethod
+#     async def create_tables(self) -> None:
+#         """Create required database tables."""
+#         pass
+
+#     ### ENTITIES CRUD OPS ###
+#     @abstractmethod
+#     async def create_entities(
+#         self,
+#         entities: list[Entity],
+#         table_name: str,
+#         conflict_columns: list[str] = [],
+#     ) -> Any:
+#         """Add entities to storage."""
+#         pass
+
+#     @abstractmethod
+#     async def get_entities(
+#         self,
+#         level: EntityLevel,
+#         entity_names: Optional[list[str]] = None,
+#         attributes: Optional[list[str]] = None,
+#         offset: int = 0,
+#         limit: int = -1,
+#     ) -> dict:
+#         """Get entities from storage."""
+#         pass
+
+#     @abstractmethod
+#     async def update_entity(
+#         self,
+#         entity: Entity,
+#         table_name: str,
+#         conflict_columns: list[str] = [],
+#     ) -> Any:
+#         """Update an entity in storage."""
+#         pass
+        
+#     @abstractmethod
+#     async def delete_entity(
+#         self,
+#         id: UUID,
+#         chunk_id: Optional[UUID] = None,
+#         document_id: Optional[UUID] = None,
+#         collection_id: Optional[UUID] = None,
+#         graph_id: Optional[UUID] = None,
+#     ) -> None:
+#         """Delete an entity from storage."""
+#         pass
+
+#     ### RELATIONSHIPS CRUD OPS ###
+#     @abstractmethod
+#     async def add_relationships(
+#         self,
+#         relationships: list[Relationship],
+#         table_name: str = "chunk_relationship",
+#     ) -> None:
+#         """Add relationships to storage."""
+#         pass
+
+#     @abstractmethod
+#     async def get_entity_map(
+#         self, offset: int, limit: int, document_id: UUID
+#     ) -> dict[str, dict[str, list[dict[str, Any]]]]:
+#         """Get entity map for a document."""
+#         pass
+
+#     @abstractmethod
+#     async def graph_search(
+#         self, query: str, **kwargs: Any
+#     ) -> AsyncGenerator[Any, None]:
+#         """Perform vector similarity search."""
+#         pass
+
+#     # Community management
+#     @abstractmethod
+#     async def add_community_info(self, communities: list[Any]) -> None:
+#         """Add communities to storage."""
+#         pass
+
+#     @abstractmethod
+#     async def get_communities(
+#         self,
+#         offset: int,
+#         limit: int,
+#         collection_id: Optional[UUID] = None,
+#         levels: Optional[list[int]] = None,
+#         community_numbers: Optional[list[int]] = None,
+#     ) -> dict:
+#         """Get communities for a collection."""
+#         pass
+
+#     @abstractmethod
+#     async def add_community(
+#         self, community: Community
+#     ) -> None:
+#         """Add a community report."""
+#         pass
+
+#     @abstractmethod
+#     async def get_community_details(
+#         self, community_number: int, collection_id: UUID
+#     ) -> Tuple[int, list[Entity], list[Relationship]]:
+#         """Get detailed information about a community."""
+#         pass
+
+#     @abstractmethod
+#     async def get_community(
+#         self, collection_id: UUID
+#     ) -> list[Community]:
+#         """Get community reports for a collection."""
+#         pass
+
+#     @abstractmethod
+#     async def check_community_exists(
+#         self, collection_id: UUID, offset: int, limit: int
+#     ) -> list[int]:
+#         """Check which community reports exist."""
+#         pass
+
+#     @abstractmethod
+#     async def perform_graph_clustering(
+#         self,
+#         collection_id: UUID,
+#         leiden_params: dict[str, Any],
+#     ) -> int:
+#         """Perform graph clustering."""
+#         pass
+
+#     # Graph operations
+#     @abstractmethod
+#     async def delete_graph_for_collection(
+#         self, collection_id: UUID, cascade: bool = False
+#     ) -> None:
+#         """Delete graph data for a collection."""
+#         pass
+
+#     @abstractmethod
+#     async def delete_node_via_document_id(
+#         self, document_id: UUID, collection_id: UUID
+#     ) -> None:
+#         """Delete a node using document ID."""
+#         pass
+
+#     # Entity and Relationship management
+#     @abstractmethod
+#     async def get_entities(
+#         self,
+#         offset: int,
+#         limit: int,
+#         collection_id: Optional[UUID] = None,
+#         entity_ids: Optional[list[str]] = None,
+#         entity_names: Optional[list[str]] = None,
+#         entity_table_name: str = "document_entity",
+#         extra_columns: Optional[list[str]] = None,
+#     ) -> dict:
+#         """Get entities from storage."""
+#         pass
+
+#     @abstractmethod
+#     async def create_entities_v3(self, entities: list[Entity]) -> None:
+#         """Create entities in storage."""
+#         pass
+
+
+#     @abstractmethod
+#     async def get_relationships(
+#         self,
+#         offset: int,
+#         limit: int,
+#         collection_id: Optional[UUID] = None,
+#         entity_names: Optional[list[str]] = None,
+#         relationship_ids: Optional[list[str]] = None,
+#     ) -> dict:
+#         """Get relationships from storage."""
+#         pass
+
+#     @abstractmethod
+#     async def get_entity_count(
+#         self,
+#         collection_id: Optional[UUID] = None,
+#         document_id: Optional[UUID] = None,
+#         distinct: bool = False,
+#         entity_table_name: str = "document_entity",
+#     ) -> int:
+#         """Get entity count."""
+#         pass
+
+#     @abstractmethod
+#     async def get_relationship_count(
+#         self,
+#         collection_id: Optional[UUID] = None,
+#         document_id: Optional[UUID] = None,
+#     ) -> int:
+#         """Get relationship count."""
+#         pass
+
+#     # Cost estimation methods
+#     @abstractmethod
+#     async def get_creation_estimate(
+#         self, collection_id: UUID, kg_creation_settings: KGCreationSettings
+#     ):
+#         """Get creation cost estimate."""
+#         pass
+
+#     @abstractmethod
+#     async def get_enrichment_estimate(
+#         self, collection_id: UUID, kg_enrichment_settings: KGEnrichmentSettings
+#     ):
+#         """Get enrichment cost estimate."""
+#         pass
+
+#     @abstractmethod
+#     async def get_deduplication_estimate(
+#         self,
+#         collection_id: UUID,
+#         kg_deduplication_settings: KGEntityDeduplicationSettings,
+#     ):
+#         """Get deduplication cost estimate."""
+#         pass
+
+#     # Other operations
+#     @abstractmethod
+#     async def create_vector_index(self) -> None:
+#         """Create vector index."""
+#         raise NotImplementedError
+
+#     @abstractmethod
+#     async def delete_relationships(self, relationship_ids: list[int]) -> None:
+#         """Delete relationships."""
+#         raise NotImplementedError
+
+#     @abstractmethod
+#     async def get_schema(self) -> Any:
+#         """Get schema."""
+#         raise NotImplementedError
+
+#     @abstractmethod
+#     async def structured_query(self) -> Any:
+#         """Perform structured query."""
+#         raise NotImplementedError
+
+#     @abstractmethod
+#     async def update_extraction_prompt(self) -> None:
+#         """Update extraction prompt."""
+#         raise NotImplementedError
+
+#     @abstractmethod
+#     async def update_kg_search_prompt(self) -> None:
+#         """Update KG search prompt."""
+#         raise NotImplementedError
+
+#     @abstractmethod
+#     async def upsert_relationships(self) -> None:
+#         """Upsert relationships."""
+#         raise NotImplementedError
+
+#     @abstractmethod
+#     async def get_existing_entity_extraction_ids(
+#         self, document_id: UUID
+#     ) -> list[str]:
+#         """Get existing entity extraction IDs."""
+#         raise NotImplementedError
+
+#     @abstractmethod
+#     async def get_all_relationships(
+#         self, collection_id: UUID
+#     ) -> list[Relationship]:
+#         raise NotImplementedError
+
+#     @abstractmethod
+#     async def update_entity_descriptions(self, entities: list[Entity]):
+#         raise NotImplementedError
+
+
+
+class EntityHandler(Handler):
+    
     @abstractmethod
-    async def create_tables(self) -> None:
-        """Create required database tables."""
+    async def create(self, *args: Any, **kwargs: Any) -> None:
+        """Create entities in storage."""
         pass
 
-    ### ENTITIES CRUD OPS ###
     @abstractmethod
-    async def create_entities(
-        self,
-        entities: list[Entity],
-        table_name: str,
-        conflict_columns: list[str] = [],
-    ) -> Any:
-        """Add entities to storage."""
-        pass
-
-    @abstractmethod
-    async def get_entities(
-        self,
-        level: EntityLevel,
-        entity_names: Optional[list[str]] = None,
-        attributes: Optional[list[str]] = None,
-        offset: int = 0,
-        limit: int = -1,
-    ) -> dict:
+    async def get(self, *args: Any, **kwargs: Any) -> list[Entity]:
         """Get entities from storage."""
         pass
 
     @abstractmethod
-    async def update_entity(
-        self,
-        entity: Entity,
-        table_name: str,
-        conflict_columns: list[str] = [],
-    ) -> Any:
-        """Update an entity in storage."""
-        pass
-        
-    @abstractmethod
-    async def delete_entity(
-        self,
-        id: UUID,
-        chunk_id: Optional[UUID] = None,
-        document_id: Optional[UUID] = None,
-        collection_id: Optional[UUID] = None,
-        graph_id: Optional[UUID] = None,
-    ) -> None:
-        """Delete an entity from storage."""
+    async def update(self, *args: Any, **kwargs: Any) -> None:
+        """Update entities in storage."""
         pass
 
-    ### RELATIONSHIPS CRUD OPS ###
     @abstractmethod
-    async def add_relationships(
-        self,
-        relationships: list[Relationship],
-        table_name: str = "chunk_relationship",
-    ) -> None:
+    async def delete(self, *args: Any, **kwargs: Any) -> None:
+        """Delete entities from storage."""
+        pass
+
+
+class RelationshipHandler(Handler):
+    @abstractmethod
+    async def create(self, *args: Any, **kwargs: Any) -> None:
         """Add relationships to storage."""
         pass
 
     @abstractmethod
-    async def get_entity_map(
-        self, offset: int, limit: int, document_id: UUID
-    ) -> dict[str, dict[str, list[dict[str, Any]]]]:
-        """Get entity map for a document."""
-        pass
-
-    @abstractmethod
-    async def graph_search(
-        self, query: str, **kwargs: Any
-    ) -> AsyncGenerator[Any, None]:
-        """Perform vector similarity search."""
-        pass
-
-    # Community management
-    @abstractmethod
-    async def add_community_info(self, communities: list[Any]) -> None:
-        """Add communities to storage."""
-        pass
-
-    @abstractmethod
-    async def get_communities(
-        self,
-        offset: int,
-        limit: int,
-        collection_id: Optional[UUID] = None,
-        levels: Optional[list[int]] = None,
-        community_numbers: Optional[list[int]] = None,
-    ) -> dict:
-        """Get communities for a collection."""
-        pass
-
-    @abstractmethod
-    async def add_community(
-        self, community: Community
-    ) -> None:
-        """Add a community report."""
-        pass
-
-    @abstractmethod
-    async def get_community_details(
-        self, community_number: int, collection_id: UUID
-    ) -> Tuple[int, list[Entity], list[Relationship]]:
-        """Get detailed information about a community."""
-        pass
-
-    @abstractmethod
-    async def get_community(
-        self, collection_id: UUID
-    ) -> list[Community]:
-        """Get community reports for a collection."""
-        pass
-
-    @abstractmethod
-    async def check_community_exists(
-        self, collection_id: UUID, offset: int, limit: int
-    ) -> list[int]:
-        """Check which community reports exist."""
-        pass
-
-    @abstractmethod
-    async def perform_graph_clustering(
-        self,
-        collection_id: UUID,
-        leiden_params: dict[str, Any],
-    ) -> int:
-        """Perform graph clustering."""
-        pass
-
-    # Graph operations
-    @abstractmethod
-    async def delete_graph_for_collection(
-        self, collection_id: UUID, cascade: bool = False
-    ) -> None:
-        """Delete graph data for a collection."""
-        pass
-
-    @abstractmethod
-    async def delete_node_via_document_id(
-        self, document_id: UUID, collection_id: UUID
-    ) -> None:
-        """Delete a node using document ID."""
-        pass
-
-    # Entity and Relationship management
-    @abstractmethod
-    async def get_entities(
-        self,
-        offset: int,
-        limit: int,
-        collection_id: Optional[UUID] = None,
-        entity_ids: Optional[list[str]] = None,
-        entity_names: Optional[list[str]] = None,
-        entity_table_name: str = "document_entity",
-        extra_columns: Optional[list[str]] = None,
-    ) -> dict:
-        """Get entities from storage."""
-        pass
-
-    @abstractmethod
-    async def create_entities_v3(self, entities: list[Entity]) -> None:
-        """Create entities in storage."""
-        pass
-
-
-    @abstractmethod
-    async def get_relationships(
-        self,
-        offset: int,
-        limit: int,
-        collection_id: Optional[UUID] = None,
-        entity_names: Optional[list[str]] = None,
-        relationship_ids: Optional[list[str]] = None,
-    ) -> dict:
+    async def get(self, *args: Any, **kwargs: Any) -> list[Relationship]:
         """Get relationships from storage."""
         pass
 
     @abstractmethod
-    async def get_entity_count(
-        self,
-        collection_id: Optional[UUID] = None,
-        document_id: Optional[UUID] = None,
-        distinct: bool = False,
-        entity_table_name: str = "document_entity",
-    ) -> int:
-        """Get entity count."""
+    async def update(self, *args: Any, **kwargs: Any) -> None:
+        """Update relationships in storage."""
         pass
 
     @abstractmethod
-    async def get_relationship_count(
-        self,
-        collection_id: Optional[UUID] = None,
-        document_id: Optional[UUID] = None,
-    ) -> int:
-        """Get relationship count."""
+    async def delete(self, *args: Any, **kwargs: Any) -> None:
+        """Delete relationships from storage."""
         pass
 
-    # Cost estimation methods
+class CommunityHandler(Handler):
     @abstractmethod
-    async def get_creation_estimate(
-        self, collection_id: UUID, kg_creation_settings: KGCreationSettings
-    ):
-        """Get creation cost estimate."""
+    async def create(self, *args: Any, **kwargs: Any) -> None:
+        """Create communities in storage."""
         pass
 
     @abstractmethod
-    async def get_enrichment_estimate(
-        self, collection_id: UUID, kg_enrichment_settings: KGEnrichmentSettings
-    ):
-        """Get enrichment cost estimate."""
+    async def get(self, *args: Any, **kwargs: Any) -> list[Community]:
+        """Get communities from storage."""
         pass
 
     @abstractmethod
-    async def get_deduplication_estimate(
-        self,
-        collection_id: UUID,
-        kg_deduplication_settings: KGEntityDeduplicationSettings,
-    ):
-        """Get deduplication cost estimate."""
+    async def update(self, *args: Any, **kwargs: Any) -> None:
+        """Update communities in storage."""
         pass
 
-    # Other operations
     @abstractmethod
-    async def create_vector_index(self) -> None:
-        """Create vector index."""
-        raise NotImplementedError
+    async def delete(self, *args: Any, **kwargs: Any) -> None:
+        """Delete communities from storage."""
+        pass
+
+class CommunityInfoHandler(Handler):
+    @abstractmethod
+    async def create(self, *args: Any, **kwargs: Any) -> None:
+        """Create community info in storage."""
+        pass
 
     @abstractmethod
-    async def delete_relationships(self, relationship_ids: list[int]) -> None:
-        """Delete relationships."""
-        raise NotImplementedError
+    async def get(self, *args: Any, **kwargs: Any) -> list[CommunityInfo]:
+        """Get community info from storage."""
+        pass    
 
     @abstractmethod
-    async def get_schema(self) -> Any:
-        """Get schema."""
-        raise NotImplementedError
+    async def update(self, *args: Any, **kwargs: Any) -> None:
+        """Update community info in storage."""
+        pass
 
     @abstractmethod
-    async def structured_query(self) -> Any:
-        """Perform structured query."""
-        raise NotImplementedError
+    async def delete(self, *args: Any, **kwargs: Any) -> None:
+        """Delete community info from storage."""
+        pass
 
-    @abstractmethod
-    async def update_extraction_prompt(self) -> None:
-        """Update extraction prompt."""
-        raise NotImplementedError
-
-    @abstractmethod
-    async def update_kg_search_prompt(self) -> None:
-        """Update KG search prompt."""
-        raise NotImplementedError
-
-    @abstractmethod
-    async def upsert_relationships(self) -> None:
-        """Upsert relationships."""
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_existing_entity_extraction_ids(
-        self, document_id: UUID
-    ) -> list[str]:
-        """Get existing entity extraction IDs."""
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_all_relationships(
-        self, collection_id: UUID
-    ) -> list[Relationship]:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def update_entity_descriptions(self, entities: list[Entity]):
-        raise NotImplementedError
+class GraphHandler(Handler):
     
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+    @abstractmethod
+    async def create(self, *args: Any, **kwargs: Any) -> None:
+        """Create graph in storage."""
+        pass
+
+    @abstractmethod
+    async def get(self, *args: Any, **kwargs: Any) -> list[Graph]:
+        """Get graph from storage."""
+        pass
+
+    @abstractmethod
+    async def update(self, *args: Any, **kwargs: Any) -> None:
+        """Update graph in storage."""
+        pass
+
+    @abstractmethod
+    async def delete(self, *args: Any, **kwargs: Any) -> None:
+        """Delete graph from storage."""
+        pass
+
+    # add documents to the graph
+    @abstractmethod
+    async def add_document(self, *args: Any, **kwargs: Any) -> None:
+        """Add document to graph."""
+        pass
+
+    @abstractmethod
+    async def remove_document(self, *args: Any, **kwargs: Any) -> None:
+        """Delete document from graph."""
+        pass
+
+
 
 class PromptHandler(Handler):
     """Abstract base class for prompt handling operations."""
@@ -1102,7 +1229,7 @@ class DatabaseProvider(Provider):
     token_handler: TokenHandler
     user_handler: UserHandler
     vector_handler: VectorHandler
-    kg_handler: KGHandler
+    graph_handler: GraphHandler
     prompt_handler: PromptHandler
     file_handler: FileHandler
     logging_handler: LoggingHandler
@@ -1527,7 +1654,7 @@ class DatabaseProvider(Provider):
         conflict_columns: list[str] = [],
     ) -> Any:
         """Forward to KG handler add_entities method."""
-        return await self.kg_handler.add_entities(
+        return await self.graph_handler.add_entities(
             entities, table_name, conflict_columns
         )
 
@@ -1537,7 +1664,7 @@ class DatabaseProvider(Provider):
         table_name: str = "chunk_relationship",
     ) -> None:
         """Forward to KG handler add_relationships method."""
-        return await self.kg_handler.add_relationships(
+        return await self.graph_handler.add_relationships(
             relationships, table_name
         )
 
@@ -1545,12 +1672,12 @@ class DatabaseProvider(Provider):
         self, offset: int, limit: int, document_id: UUID
     ) -> dict[str, dict[str, list[dict[str, Any]]]]:
         """Forward to KG handler get_entity_map method."""
-        return await self.kg_handler.get_entity_map(offset, limit, document_id)
+        return await self.graph_handler.get_entity_map(offset, limit, document_id)
 
     # Community methods
     async def add_community_info(self, communities: list[Any]) -> None:
         """Forward to KG handler add_communities method."""
-        return await self.kg_handler.add_community_info(communities)
+        return await self.graph_handler.add_community_info(communities)
 
     async def get_communities(
         self,
@@ -1561,7 +1688,7 @@ class DatabaseProvider(Provider):
         community_numbers: Optional[list[int]] = None,
     ) -> dict:
         """Forward to KG handler get_communities method."""
-        return await self.kg_handler.get_communities(
+        return await self.graph_handler.get_communities(
             offset=offset,
             limit=limit,
             collection_id=collection_id,
@@ -1573,13 +1700,13 @@ class DatabaseProvider(Provider):
         self, community: Community
     ) -> None:
         """Forward to KG handler add_community method."""
-        return await self.kg_handler.add_community(community)
+        return await self.graph_handler.add_community(community)
 
     async def get_community_details(
         self, community_number: int, collection_id: UUID
     ) -> Tuple[int, list[Entity], list[Relationship]]:
         """Forward to KG handler get_community_details method."""
-        return await self.kg_handler.get_community_details(
+        return await self.graph_handler.get_community_details(
             community_number, collection_id
         )
 
@@ -1587,13 +1714,13 @@ class DatabaseProvider(Provider):
         self, collection_id: UUID
     ) -> list[Community]:
         """Forward to KG handler get_community method."""
-        return await self.kg_handler.get_community(collection_id)
+        return await self.graph_handler.get_community(collection_id)
 
     async def check_community_exists(
         self, collection_id: UUID, offset: int, limit: int
     ) -> list[int]:
         """Forward to KG handler check_community_exists method."""
-        return await self.kg_handler.check_community_exists(
+        return await self.graph_handler.check_community_exists(
             collection_id, offset, limit
         )
 
@@ -1603,7 +1730,7 @@ class DatabaseProvider(Provider):
         leiden_params: dict[str, Any],
     ) -> int:
         """Forward to KG handler perform_graph_clustering method."""
-        return await self.kg_handler.perform_graph_clustering(
+        return await self.graph_handler.perform_graph_clustering(
             collection_id, leiden_params
         )
 
@@ -1612,7 +1739,7 @@ class DatabaseProvider(Provider):
         self, collection_id: UUID, cascade: bool = False
     ) -> None:
         """Forward to KG handler delete_graph_for_collection method."""
-        return await self.kg_handler.delete_graph_for_collection(
+        return await self.graph_handler.delete_graph_for_collection(
             collection_id, cascade
         )
 
@@ -1620,7 +1747,7 @@ class DatabaseProvider(Provider):
         self, document_id: UUID, collection_id: UUID
     ) -> None:
         """Forward to KG handler delete_node_via_document_id method."""
-        return await self.kg_handler.delete_node_via_document_id(
+        return await self.graph_handler.delete_node_via_document_id(
             document_id, collection_id
         )
 
@@ -1636,7 +1763,7 @@ class DatabaseProvider(Provider):
         extra_columns: Optional[list[str]] = None,
     ) -> dict:
         """Forward to KG handler get_entities method."""
-        return await self.kg_handler.get_entities(
+        return await self.graph_handler.get_entities(
             offset=offset,
             limit=limit,
             collection_id=collection_id,
@@ -1645,8 +1772,6 @@ class DatabaseProvider(Provider):
             entity_table_name=entity_table_name,
             extra_columns=extra_columns,
         )
-    
-    async 
 
     async def get_relationships(
         self,
@@ -1657,7 +1782,7 @@ class DatabaseProvider(Provider):
         relationship_ids: Optional[list[str]] = None,
     ) -> dict:
         """Forward to KG handler get_relationships method."""
-        return await self.kg_handler.get_relationships(
+        return await self.graph_handler.get_relationships(
             offset=offset,
             limit=limit,
             collection_id=collection_id,
@@ -1673,7 +1798,7 @@ class DatabaseProvider(Provider):
         entity_table_name: str = "document_entity",
     ) -> int:
         """Forward to KG handler get_entity_count method."""
-        return await self.kg_handler.get_entity_count(
+        return await self.graph_handler.get_entity_count(
             collection_id, document_id, distinct, entity_table_name
         )
 
@@ -1683,7 +1808,7 @@ class DatabaseProvider(Provider):
         document_id: Optional[UUID] = None,
     ) -> int:
         """Forward to KG handler get_relationship_count method."""
-        return await self.kg_handler.get_relationship_count(
+        return await self.graph_handler.get_relationship_count(
             collection_id, document_id
         )
 
@@ -1692,7 +1817,7 @@ class DatabaseProvider(Provider):
         self, collection_id: UUID, kg_creation_settings: KGCreationSettings
     ):
         """Forward to KG handler get_creation_estimate method."""
-        return await self.kg_handler.get_creation_estimate(
+        return await self.graph_handler.get_creation_estimate(
             collection_id, kg_creation_settings
         )
 
@@ -1700,7 +1825,7 @@ class DatabaseProvider(Provider):
         self, collection_id: UUID, kg_enrichment_settings: KGEnrichmentSettings
     ):
         """Forward to KG handler get_enrichment_estimate method."""
-        return await self.kg_handler.get_enrichment_estimate(
+        return await self.graph_handler.get_enrichment_estimate(
             collection_id, kg_enrichment_settings
         )
 
@@ -1710,48 +1835,48 @@ class DatabaseProvider(Provider):
         kg_deduplication_settings: KGEntityDeduplicationSettings,
     ):
         """Forward to KG handler get_deduplication_estimate method."""
-        return await self.kg_handler.get_deduplication_estimate(
+        return await self.graph_handler.get_deduplication_estimate(
             collection_id, kg_deduplication_settings
         )
 
     async def get_all_relationships(
         self, collection_id: UUID
     ) -> list[Relationship]:
-        return await self.kg_handler.get_all_relationships(collection_id)
+        return await self.graph_handler.get_all_relationships(collection_id)
 
     async def update_entity_descriptions(self, entities: list[Entity]):
-        return await self.kg_handler.update_entity_descriptions(entities)
+        return await self.graph_handler.update_entity_descriptions(entities)
 
     async def graph_search(
         self, query: str, **kwargs: Any
     ) -> AsyncGenerator[Any, None]:
-        return self.kg_handler.graph_search(query, **kwargs)  # type: ignore
+        return self.graph_handler.graph_search(query, **kwargs)  # type: ignore
 
     async def create_vector_index(self) -> None:
-        return await self.kg_handler.create_vector_index()
+        return await self.graph_handler.create_vector_index()
 
     async def delete_relationships(self, relationship_ids: list[int]) -> None:
-        return await self.kg_handler.delete_relationships(relationship_ids)
+        return await self.graph_handler.delete_relationships(relationship_ids)
 
     async def get_schema(self) -> Any:
-        return await self.kg_handler.get_schema()
+        return await self.graph_handler.get_schema()
 
     async def structured_query(self) -> Any:
-        return await self.kg_handler.structured_query()
+        return await self.graph_handler.structured_query()
 
     async def update_extraction_prompt(self) -> None:
-        return await self.kg_handler.update_extraction_prompt()
+        return await self.graph_handler.update_extraction_prompt()
 
     async def update_kg_search_prompt(self) -> None:
-        return await self.kg_handler.update_kg_search_prompt()
+        return await self.graph_handler.update_kg_search_prompt()
 
     async def upsert_relationships(self) -> None:
-        return await self.kg_handler.upsert_relationships()
+        return await self.graph_handler.upsert_relationships()
 
     async def get_existing_entity_extraction_ids(
         self, document_id: UUID
     ) -> list[str]:
-        return await self.kg_handler.get_existing_entity_extraction_ids(
+        return await self.graph_handler.get_existing_entity_extraction_ids(
             document_id
         )
 

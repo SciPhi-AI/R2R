@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional, Union
 from uuid import UUID
+from datetime import datetime
 
 from pydantic import BaseModel
 
@@ -57,7 +58,7 @@ class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
     name: str
-    id: Optional[int] = None
+    id: Optional[Union[int, UUID]] = None
     level: Optional[EntityLevel] = None
     category: Optional[str] = None
     description: Optional[str] = None
@@ -92,7 +93,7 @@ class Entity(R2RSerializable):
 class Relationship(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
-    id: Optional[int] = None
+    id: Optional[Union[int, UUID]] = None
 
     subject: str
     """The source entity name."""
@@ -189,6 +190,9 @@ class CommunityInfo(BaseModel):
 
 @dataclass
 class Community(BaseModel):
+
+    id: Optional[Union[int, UUID]] = None
+
     """Defines an LLM-generated summary report of a community."""
 
     community_number: int
@@ -256,6 +260,34 @@ class Community(BaseModel):
         )
 
 
+class Graph(BaseModel):
+    """A graph in the system."""
+
+    id: uuid.UUID
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    document_ids: list[uuid.UUID] = []
+    collection_ids: list[uuid.UUID] = []
+    attributes: dict[str, Any] = {}
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if isinstance(self.attributes, str):
+            self.attributes = json.loads(self.attributes)
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "Graph":
+        return Graph(
+            id=d["id"],
+            status=d["status"],
+            created_at=d["created_at"],
+            updated_at=d["updated_at"],
+            document_ids=d["document_ids"],
+            collection_ids=d["collection_ids"],
+            attributes=d["attributes"],
+        )
+
 class KGExtraction(R2RSerializable):
     """An extraction from a document that is part of a knowledge graph."""
 
@@ -263,3 +295,6 @@ class KGExtraction(R2RSerializable):
     document_id: uuid.UUID
     entities: list[Entity]
     relationships: list[Relationship]
+
+
+

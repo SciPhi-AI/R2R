@@ -54,7 +54,7 @@ class KGStoragePipe(AsyncPipe):
         """
         try:
             # clean up and remove this method. 
-            # make add_kg_extractions a method in the KGHandler
+            # make add_kg_extractions a method in the GraphHandler
             
             total_entities, total_relationships = 0, 0
 

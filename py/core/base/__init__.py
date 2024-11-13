@@ -33,6 +33,11 @@ __all__ = [
     "Entity",
     "KGExtraction",
     "Relationship",
+    "Community",
+    "CommunityInfo",
+    "KGCreationSettings",
+    "KGEnrichmentSettings",
+    "KGRunType",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",
@@ -48,10 +53,6 @@ __all__ = [
     "VectorSearchSettings",
     "DocumentSearchSettings",
     "HybridSearchSettings",
-    # KG abstractions
-    "KGCreationSettings",
-    "KGEnrichmentSettings",
-    "KGRunType",
     # User abstractions
     "Token",
     "TokenData",
