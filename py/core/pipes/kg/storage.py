@@ -53,8 +53,49 @@ class KGStoragePipe(AsyncPipe):
         Stores a batch of knowledge graph extractions in the graph database.
         """
         try:
-            await self.database_provider.add_kg_extractions(kg_extractions)
-            return
+            # clean up and remove this method. 
+            # make add_kg_extractions a method in the KGHandler
+            
+            total_entities, total_relationships = 0, 0
+
+            for extraction in kg_extractions:
+
+                total_entities, total_relationships = (
+                    total_entities + len(extraction.entities),
+                    total_relationships + len(extraction.relationships),
+                )
+
+                if extraction.entities:
+                    if not extraction.entities[0].extraction_ids:
+                        for i in range(len(extraction.entities)):
+                            extraction.entities[i].extraction_ids = (
+                                extraction.extraction_ids
+                            )
+                            extraction.entities[i].document_id = (
+                                extraction.document_id
+                            )
+
+                    await self.database_provider.add_entities(
+                        extraction.entities, table_name=f"chunk_entity"
+                    )
+
+                if extraction.relationships:
+                    if not extraction.relationships[0].extraction_ids:
+                        for i in range(len(extraction.relationships)):
+                            extraction.relationships[i].extraction_ids = (
+                                extraction.extraction_ids
+                            )
+                        extraction.relationships[i].document_id = (
+                            extraction.document_id
+                        )
+
+                    await self.database_provider.add_relationships(
+                        extraction.relationships,
+                        table_name=f"chunk_relationship",
+                    )
+
+                return (total_entities, total_relationships)
+            
         except Exception as e:
             error_message = f"Failed to store knowledge graph extractions in the database: {e}"
             logger.error(error_message)

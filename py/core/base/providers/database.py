@@ -16,12 +16,13 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from core.base import (
-    CommunityReport,
+    Community,
     Entity,
     KGExtraction,
     Message,
     Relationship,
     VectorEntry,
+    EntityLevel,
 )
 from core.base.abstractions import (
     DocumentResponse,
@@ -57,7 +58,7 @@ from typing import Any, Optional, Tuple
 from uuid import UUID
 
 from ..abstractions import (
-    CommunityReport,
+    Community,
     Entity,
     KGCreationSettings,
     KGEnrichmentSettings,
@@ -600,17 +601,9 @@ class KGHandler(Handler):
         """Create required database tables."""
         pass
 
+    ### ENTITIES CRUD OPS ###
     @abstractmethod
-    async def add_kg_extractions(
-        self,
-        kg_extractions: list[KGExtraction],
-        table_prefix: str = "chunk_",
-    ) -> Tuple[int, int]:
-        """Add KG extractions to storage."""
-        pass
-
-    @abstractmethod
-    async def add_entities(
+    async def create_entities(
         self,
         entities: list[Entity],
         table_name: str,
@@ -619,6 +612,41 @@ class KGHandler(Handler):
         """Add entities to storage."""
         pass
 
+    @abstractmethod
+    async def get_entities(
+        self,
+        level: EntityLevel,
+        entity_names: Optional[list[str]] = None,
+        attributes: Optional[list[str]] = None,
+        offset: int = 0,
+        limit: int = -1,
+    ) -> dict:
+        """Get entities from storage."""
+        pass
+
+    @abstractmethod
+    async def update_entity(
+        self,
+        entity: Entity,
+        table_name: str,
+        conflict_columns: list[str] = [],
+    ) -> Any:
+        """Update an entity in storage."""
+        pass
+        
+    @abstractmethod
+    async def delete_entity(
+        self,
+        id: UUID,
+        chunk_id: Optional[UUID] = None,
+        document_id: Optional[UUID] = None,
+        collection_id: Optional[UUID] = None,
+        graph_id: Optional[UUID] = None,
+    ) -> None:
+        """Delete an entity from storage."""
+        pass
+
+    ### RELATIONSHIPS CRUD OPS ###
     @abstractmethod
     async def add_relationships(
         self,
@@ -636,16 +664,7 @@ class KGHandler(Handler):
         pass
 
     @abstractmethod
-    async def upsert_embeddings(
-        self,
-        data: list[Tuple[Any]],
-        table_name: str,
-    ) -> None:
-        """Upsert embeddings into storage."""
-        pass
-
-    @abstractmethod
-    async def vector_query(
+    async def graph_search(
         self, query: str, **kwargs: Any
     ) -> AsyncGenerator[Any, None]:
         """Perform vector similarity search."""
@@ -670,8 +689,8 @@ class KGHandler(Handler):
         pass
 
     @abstractmethod
-    async def add_community_report(
-        self, community_report: CommunityReport
+    async def add_community(
+        self, community: Community
     ) -> None:
         """Add a community report."""
         pass
@@ -684,14 +703,14 @@ class KGHandler(Handler):
         pass
 
     @abstractmethod
-    async def get_community_reports(
+    async def get_community(
         self, collection_id: UUID
-    ) -> list[CommunityReport]:
+    ) -> list[Community]:
         """Get community reports for a collection."""
         pass
 
     @abstractmethod
-    async def check_community_reports_exist(
+    async def check_community_exists(
         self, collection_id: UUID, offset: int, limit: int
     ) -> list[int]:
         """Check which community reports exist."""
@@ -735,6 +754,12 @@ class KGHandler(Handler):
     ) -> dict:
         """Get entities from storage."""
         pass
+
+    @abstractmethod
+    async def create_entities_v3(self, entities: list[Entity]) -> None:
+        """Create entities in storage."""
+        pass
+
 
     @abstractmethod
     async def get_relationships(
@@ -844,7 +869,7 @@ class KGHandler(Handler):
     @abstractmethod
     async def update_entity_descriptions(self, entities: list[Entity]):
         raise NotImplementedError
-
+    
 
 class PromptHandler(Handler):
     """Abstract base class for prompt handling operations."""
@@ -1495,16 +1520,6 @@ class DatabaseProvider(Provider):
             similarity_threshold=similarity_threshold,
         )
 
-    async def add_kg_extractions(
-        self,
-        kg_extractions: list[KGExtraction],
-        table_prefix: str = "chunk_",
-    ) -> Tuple[int, int]:
-        """Forward to KG handler add_kg_extractions method."""
-        return await self.kg_handler.add_kg_extractions(
-            kg_extractions, table_prefix
-        )
-
     async def add_entities(
         self,
         entities: list[Entity],
@@ -1532,14 +1547,6 @@ class DatabaseProvider(Provider):
         """Forward to KG handler get_entity_map method."""
         return await self.kg_handler.get_entity_map(offset, limit, document_id)
 
-    async def upsert_embeddings(
-        self,
-        data: list[Tuple[Any]],
-        table_name: str,
-    ) -> None:
-        """Forward to KG handler upsert_embeddings method."""
-        return await self.kg_handler.upsert_embeddings(data, table_name)
-
     # Community methods
     async def add_community_info(self, communities: list[Any]) -> None:
         """Forward to KG handler add_communities method."""
@@ -1562,11 +1569,11 @@ class DatabaseProvider(Provider):
             community_numbers=community_numbers,
         )
 
-    async def add_community_report(
-        self, community_report: CommunityReport
+    async def add_community(
+        self, community: Community
     ) -> None:
-        """Forward to KG handler add_community_report method."""
-        return await self.kg_handler.add_community_report(community_report)
+        """Forward to KG handler add_community method."""
+        return await self.kg_handler.add_community(community)
 
     async def get_community_details(
         self, community_number: int, collection_id: UUID
@@ -1576,17 +1583,17 @@ class DatabaseProvider(Provider):
             community_number, collection_id
         )
 
-    async def get_community_reports(
+    async def get_community(
         self, collection_id: UUID
-    ) -> list[CommunityReport]:
-        """Forward to KG handler get_community_reports method."""
-        return await self.kg_handler.get_community_reports(collection_id)
+    ) -> list[Community]:
+        """Forward to KG handler get_community method."""
+        return await self.kg_handler.get_community(collection_id)
 
-    async def check_community_reports_exist(
+    async def check_community_exists(
         self, collection_id: UUID, offset: int, limit: int
     ) -> list[int]:
-        """Forward to KG handler check_community_reports_exist method."""
-        return await self.kg_handler.check_community_reports_exist(
+        """Forward to KG handler check_community_exists method."""
+        return await self.kg_handler.check_community_exists(
             collection_id, offset, limit
         )
 
@@ -1638,6 +1645,8 @@ class DatabaseProvider(Provider):
             entity_table_name=entity_table_name,
             extra_columns=extra_columns,
         )
+    
+    async 
 
     async def get_relationships(
         self,
@@ -1713,10 +1722,10 @@ class DatabaseProvider(Provider):
     async def update_entity_descriptions(self, entities: list[Entity]):
         return await self.kg_handler.update_entity_descriptions(entities)
 
-    async def vector_query(
+    async def graph_search(
         self, query: str, **kwargs: Any
     ) -> AsyncGenerator[Any, None]:
-        return self.kg_handler.vector_query(query, **kwargs)  # type: ignore
+        return self.kg_handler.graph_search(query, **kwargs)  # type: ignore
 
     async def create_vector_index(self) -> None:
         return await self.kg_handler.create_vector_index()
@@ -1945,3 +1954,4 @@ class DatabaseProvider(Provider):
         return await self.vector_handler.list_chunks(
             offset, limit, filters, include_vectors
         )
+

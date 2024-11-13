@@ -6,7 +6,7 @@ import pytest
 from core.base import (
     AsyncPipe,
     Community,
-    CommunityReport,
+    Community,
     Entity,
     KGExtraction,
     Relationship,

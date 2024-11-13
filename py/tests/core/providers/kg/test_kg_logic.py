@@ -6,7 +6,7 @@ import pytest
 
 from core.base import (
     Community,
-    CommunityReport,
+    Community,
     Entity,
     KGExtraction,
     Relationship,
@@ -161,9 +161,9 @@ def kg_extractions(
 
 
 @pytest.fixture(scope="function")
-def community_report_list(embedding_vectors, collection_id):
+def community_list(embedding_vectors, collection_id):
     return [
-        CommunityReport(
+        Community(
             community_number=1,
             level=0,
             collection_id=collection_id,
@@ -174,7 +174,7 @@ def community_report_list(embedding_vectors, collection_id):
             findings=["Findings of the community report"],
             embedding=embedding_vectors[0],
         ),
-        CommunityReport(
+        Community(
             community_number=2,
             level=0,
             collection_id=collection_id,
@@ -254,32 +254,6 @@ async def test_add_relationships(
     assert len(relationships["relationships"]) == 2
     assert relationships["total_entries"] == 2
 
-
-@pytest.mark.asyncio
-async def test_add_kg_extractions(
-    postgres_db_provider, kg_extractions, collection_id
-):
-    added_extractions = await postgres_db_provider.add_kg_extractions(
-        kg_extractions, table_prefix="chunk_"
-    )
-
-    assert added_extractions == (2, 2)
-
-    entities = await postgres_db_provider.get_entities(
-        collection_id, entity_table_name="chunk_entity"
-    )
-    assert entities["entities"][0].name == "Entity1"
-    assert entities["entities"][1].name == "Entity2"
-    assert len(entities["entities"]) == 2
-    assert entities["total_entries"] == 2
-
-    relationships = await postgres_db_provider.get_relationships(collection_id)
-    assert relationships["relationships"][0].subject == "Entity1"
-    assert relationships["relationships"][1].subject == "Entity2"
-    assert len(relationships["relationships"]) == 2
-    assert relationships["total_entries"] == 2
-
-
 @pytest.mark.asyncio
 async def test_get_entity_map(
     postgres_db_provider,
@@ -320,7 +294,7 @@ async def test_upsert_embeddings(
         for entity in entities_list
     ]
 
-    await postgres_db_provider.upsert_embeddings(
+    await postgres_db_provider.add_entities(
         entities_list_to_upsert, table_name
     )
 
@@ -344,10 +318,10 @@ async def test_get_all_relationships(
 
 @pytest.mark.asyncio
 async def test_get_communities(
-    postgres_db_provider, collection_id, community_report_list
+    postgres_db_provider, collection_id, community_list
 ):
-    await postgres_db_provider.add_community_report(community_report_list[0])
-    await postgres_db_provider.add_community_report(community_report_list[1])
+    await postgres_db_provider.add_community(community_list[0])
+    await postgres_db_provider.add_community(community_list[1])
     communities = await postgres_db_provider.get_communities(collection_id)
     assert communities["communities"][0].name == "Community Report 1"
     assert len(communities["communities"]) == 2
@@ -392,7 +366,7 @@ async def test_get_community_details(
     entities_list,
     relationships_raw_list,
     collection_id,
-    community_report_list,
+    community_list,
     community_table_info,
 ):
 
@@ -403,7 +377,7 @@ async def test_get_community_details(
         relationships_raw_list, table_name="chunk_relationship"
     )
     await postgres_db_provider.add_community_info(community_table_info)
-    await postgres_db_provider.add_community_report(community_report_list[0])
+    await postgres_db_provider.add_community(community_list[0])
 
     community_level, entities, relationships = (
         await postgres_db_provider.get_community_details(

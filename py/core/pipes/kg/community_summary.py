@@ -9,7 +9,7 @@ from uuid import UUID
 from core.base import (
     AsyncPipe,
     AsyncState,
-    CommunityReport,
+    Community,
     CompletionProvider,
     DatabaseProvider,
     EmbeddingProvider,
@@ -161,7 +161,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
                 (
                     await self.llm_provider.aget_completion(
                         messages=await self.database_provider.prompt_handler.get_message_payload(
-                            task_prompt_name=self.database_provider.config.kg_enrichment_settings.graphrag_community_reports,
+                            task_prompt_name=self.database_provider.config.kg_enrichment_settings.graphrag_communities,
                             task_inputs={
                                 "input_text": (
                                     await self.community_summary_prompt(
@@ -206,7 +206,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
                         "error": str(e),
                     }
 
-        community_report = CommunityReport(
+        community = Community(
             community_number=community_number,
             collection_id=collection_id,
             level=community_level,
@@ -223,11 +223,11 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
-        await self.database_provider.add_community_report(community_report)
+        await self.database_provider.add_community(community)
 
         return {
-            "community_number": community_report.community_number,
-            "name": community_report.name,
+            "community_number": community.community_number,
+            "name": community.name,
         }
 
     async def _run_logic(  # type: ignore
@@ -257,7 +257,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             f"KGCommunitySummaryPipe: Checking if community summaries exist for communities {offset} to {offset + limit}"
         )
         community_numbers_exist = (
-            await self.database_provider.check_community_reports_exist(
+            await self.database_provider.check_communities_exist(
                 collection_id=collection_id, offset=offset, limit=limit
             )
         )

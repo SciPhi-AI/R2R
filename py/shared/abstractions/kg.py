@@ -110,10 +110,10 @@ class KGEnrichmentSettings(R2RSerializable):
         description="Force run the enrichment step even if graph creation is still in progress for some documents.",
     )
 
-    graphrag_community_reports: str = Field(
-        default="graphrag_community_reports",
+    graphrag_communities: str = Field(
+        default="graphrag_communities",
         description="The prompt to use for knowledge graph enrichment.",
-        alias="graphrag_community_reports",  # TODO - mark deprecated & remove
+        alias="graphrag_communities",  # TODO - mark deprecated & remove
     )
 
     max_summary_input_length: int = Field(

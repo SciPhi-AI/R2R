@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from shared.abstractions.base import R2RSerializable
-from shared.abstractions.graph import CommunityReport, Entity, Relationship
+from shared.abstractions.graph import Community, Entity, Relationship
 from shared.api.models.base import ResultsWrapper, PaginatedResultsWrapper
 
 
@@ -229,6 +229,28 @@ class KGEntityDeduplicationResponse(BaseModel):
         }
 
 
+class KGDeletionResponse(BaseModel):
+    """Response for knowledge graph deletion."""
+
+    message: str = Field(
+        ...,
+        description="The message to display to the user.",
+    )
+    id: UUID = Field(
+        ...,
+        description="The ID of the deleted graph.",
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message": "Entity deleted successfully.",
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+            }
+        }
+
+
+
 class KGTunePromptResponse(R2RSerializable):
     """Response containing just the tuned prompt string."""
 
@@ -244,7 +266,7 @@ class KGTunePromptResponse(R2RSerializable):
 # GET
 WrappedKGEntitiesResponse = PaginatedResultsWrapper[list[Entity]]
 WrappedKGRelationshipsResponse = PaginatedResultsWrapper[list[Relationship]]
-WrappedKGCommunitiesResponse = PaginatedResultsWrapper[list[CommunityReport]]
+WrappedKGCommunitiesResponse = PaginatedResultsWrapper[list[Community]]
 
 
 # CREATE
@@ -256,3 +278,4 @@ WrappedKGTunePromptResponse = ResultsWrapper[KGTunePromptResponse]
 WrappedKGEntityDeduplicationResponse = ResultsWrapper[
     KGEntityDeduplicationResponse
 ]
+WrappedKGDeletionResponse = ResultsWrapper[KGDeletionResponse]

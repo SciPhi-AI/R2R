@@ -534,7 +534,7 @@ class GraphsSDK:
         Args:
             collection_id (Union[str, UUID]): Collection ID to tune prompt for
             prompt_name (str): Name of prompt to tune (graphrag_relationships_extraction_few_shot,
-                             graphrag_entity_description, or graphrag_community_reports)
+                             graphrag_entity_description, or graphrag_communities)
             documents_offset (int): Document pagination offset
             documents_limit (int): Maximum number of documents to use
             chunks_offset (int): Chunk pagination offset

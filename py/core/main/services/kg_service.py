@@ -118,15 +118,15 @@ class KgService(Service):
 
         return await _collect_results(result_gen)
 
-    @telemetry_event("create_entities")
-    async def create_entities(
+    @telemetry_event("create_entities_v3")
+    async def create_entities_v3(
         self,
         level: EntityLevel,
         id: UUID,
         entities: list[Entity],
         **kwargs,
     ):
-        return await self.providers.database.create_entities(
+        return await self.providers.database.create_entities_v3(
             level, id, entities, **kwargs
         )
 

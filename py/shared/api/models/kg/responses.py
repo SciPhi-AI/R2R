@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from shared.abstractions.base import R2RSerializable
-from shared.abstractions.graph import CommunityReport, Entity, Relationship
+from shared.abstractions.graph import Community, Entity, Relationship
 from shared.api.models.base import ResultsWrapper, PaginatedResultsWrapper
 
 
@@ -239,7 +239,7 @@ class KGRelationshipsResponse(R2RSerializable):
 class KGCommunitiesResponse(R2RSerializable):
     """Response for knowledge graph communities."""
 
-    communities: list[CommunityReport] = Field(
+    communities: list[Community] = Field(
         ...,
         description="The list of communities in the graph for the collection.",
     )

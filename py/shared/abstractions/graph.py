@@ -159,75 +159,6 @@ class Relationship(R2RSerializable):
             attributes=d.get(attributes_key, {}),
         )
 
-
-@dataclass
-class Community(BaseModel):
-    """A protocol for a community in the system."""
-
-    id: int | None = None
-    """The ID of the community."""
-
-    community_number: int | None = None
-    """The community number."""
-
-    collection_id: uuid.UUID | None = None
-    """The ID of the collection this community is associated with."""
-
-    level: int | None = None
-    """Community level."""
-
-    name: str = ""
-    """The name of the community."""
-
-    summary: str = ""
-    """Summary of the report."""
-
-    findings: list[str] = []
-    """Findings of the report."""
-
-    rating: float | None = None
-    """Rating of the report."""
-
-    rating_explanation: str | None = None
-    """Explanation of the rating."""
-
-    embedding: list[float] | None = None
-    """Embedding of summary and findings."""
-
-    attributes: dict[str, Any] | None = None
-    """A dictionary of additional attributes associated with the community (optional). To be included in the search prompt."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        if isinstance(self.attributes, str):
-            self.attributes = json.loads(self.attributes)
-
-    @classmethod
-    def from_dict(
-        cls,
-        d: dict[str, Any],
-        id_key: str = "id",
-        title_key: str = "title",
-        short_id_key: str = "short_id",
-        level_key: str = "level",
-        entities_key: str = "entity_ids",
-        relationships_key: str = "relationship_ids",
-        covariates_key: str = "covariate_ids",
-        attributes_key: str = "attributes",
-    ) -> "Community":
-        """Create a new community from the dict data."""
-        return Community(
-            id=d[id_key],
-            title=d[title_key],
-            short_id=d.get(short_id_key),
-            level=d[level_key],
-            entity_ids=d.get(entities_key),
-            relationship_ids=d.get(relationships_key),
-            covariate_ids=d.get(covariates_key),
-            attributes=d.get(attributes_key),
-        )
-
-
 @dataclass
 class CommunityInfo(BaseModel):
     """A protocol for a community in the system."""
@@ -257,7 +188,7 @@ class CommunityInfo(BaseModel):
 
 
 @dataclass
-class CommunityReport(BaseModel):
+class Community(BaseModel):
     """Defines an LLM-generated summary report of a community."""
 
     community_number: int
@@ -309,9 +240,9 @@ class CommunityReport(BaseModel):
         summary_embedding_key: str = "summary_embedding",
         embedding_key: str = "embedding",
         attributes_key: str = "attributes",
-    ) -> "CommunityReport":
+    ) -> "Community":
         """Create a new community report from the dict data."""
-        return CommunityReport(
+        return Community(
             id=d[id_key],
             title=d[title_key],
             community_number=d[community_number_key],

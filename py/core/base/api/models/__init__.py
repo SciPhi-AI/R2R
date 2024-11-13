@@ -40,10 +40,12 @@ from shared.api.models.kg.responses_v3 import (
     WrappedKGEnrichmentResponse as WrappedKGEnrichmentResponseV3,
     WrappedKGTunePromptResponse as WrappedKGTunePromptResponseV3,
     WrappedKGEntityDeduplicationResponse as WrappedKGEntityDeduplicationResponseV3,
+    WrappedKGDeletionResponse as WrappedKGDeletionResponseV3,
     KGCreationResponse as KGCreationResponseV3,
     KGEnrichmentResponse as KGEnrichmentResponseV3,
     KGEntityDeduplicationResponse as KGEntityDeduplicationResponseV3,
     KGTunePromptResponse as KGTunePromptResponseV3,
+    KGDeletionResponse as KGDeletionResponseV3,
 )
 
 
@@ -132,6 +134,8 @@ __all__ = [
     "KGEnrichmentResponseV3",
     "KGEntityDeduplicationResponseV3",
     "KGTunePromptResponseV3",
+    "WrappedKGDeletionResponseV3",
+    "KGDeletionResponseV3",
     # Management Responses
     "PromptResponse",
     "ServerStats",

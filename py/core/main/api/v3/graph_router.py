@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from core.base import R2RException, RunType
 from core.base.abstractions import EntityLevel, KGRunType
+from core.base.abstractions import Community, Entity, Relationship
 
 from core.base.api.models import (
     WrappedKGCreationResponseV3 as WrappedKGCreationResponse,
@@ -20,7 +21,14 @@ from core.base.api.models import (
     KGEnrichmentResponseV3 as KGEnrichmentResponse,
     KGEntityDeduplicationResponseV3 as KGEntityDeduplicationResponse,
     KGTunePromptResponseV3 as KGTunePromptResponse,
+    WrappedKGEntitiesResponseV3 as WrappedKGEntitiesResponse,
+    WrappedKGRelationshipsResponseV3 as WrappedKGRelationshipsResponse,
+    WrappedKGCommunitiesResponseV3 as WrappedKGCommunitiesResponse,
+    WrappedKGDeletionResponseV3 as WrappedKGDeletionResponse,
 )
+
+
+
 
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -33,6 +41,8 @@ from core.utils import (
 
 from core.base.api.models import PaginatedResultsWrapper, ResultsWrapper
 
+from core.base.abstractions import Entity, KGCreationSettings, Relationship
+
 from .base_router import BaseRouterV3
 
 from fastapi import Request
@@ -40,40 +50,40 @@ from fastapi import Request
 logger = logging.getLogger()
 
 
-class Entity(BaseModel):
-    """Model representing a graph entity."""
+# class Entity(BaseModel):
+#     """Model representing a graph entity."""
 
-    id: UUID
-    name: str
-    type: str
-    metadata: dict = Field(default_factory=dict)
-    level: EntityLevel
-    collection_ids: list[UUID]
-    embedding: Optional[list[float]] = None
+#     id: UUID
+#     name: str
+#     type: str
+#     metadata: dict = Field(default_factory=dict)
+#     level: EntityLevel
+#     collection_ids: list[UUID]
+#     embedding: Optional[list[float]] = None
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                "name": "John Smith",
-                "type": "PERSON",
-                "metadata": {"confidence": 0.95},
-                "level": "DOCUMENT",
-                "collection_ids": ["d09dedb1-b2ab-48a5-b950-6e1f464d83e7"],
-                "embedding": [0.1, 0.2, 0.3],
-            }
-        }
+#     class Config:
+#         json_schema_extra = {
+#             "example": {
+#                 "id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+#                 "name": "John Smith",
+#                 "type": "PERSON",
+#                 "metadata": {"confidence": 0.95},
+#                 "level": "DOCUMENT",
+#                 "collection_ids": ["d09dedb1-b2ab-48a5-b950-6e1f464d83e7"],
+#                 "embedding": [0.1, 0.2, 0.3],
+#             }
+#         }
 
 
-class Relationship(BaseModel):
-    """Model representing a graph relationship."""
+# class Relationship(BaseModel):
+#     """Model representing a graph relationship."""
 
-    id: UUID
-    subject_id: UUID
-    object_id: UUID
-    subject_name: str
-    object_name: str
-    predicate: str
+#     id: UUID
+#     subject_id: UUID
+#     object_id: UUID
+#     subject_name: str
+#     object_name: str
+#     predicate: str
 
 
 class GraphRouter(BaseRouterV3):
@@ -230,7 +240,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.chunks.create_entities(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
+                            result = client.chunks.create_entities_v3(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
                             """
                         ),
                     },
@@ -251,7 +261,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.create_entities(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
+                            result = client.documents.create_entities_v3(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
                             """
                         ),
                     },
@@ -272,7 +282,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.collections.create_entities(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
+                            result = client.collections.create_entities_v3(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
                             """
                         ),
                     },
@@ -280,12 +290,12 @@ class GraphRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def create_entities(
+        async def create_entities_v3(
             request: Request,
             id: UUID = Path(
                 ..., description="The ID of the chunk to create entities for."
             ),
-            entities: list[Union[Entity, dict]] = Body(
+            entities: list[Entity] = Body(
                 ..., description="The entities to create."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
@@ -295,10 +305,6 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can access this endpoint.", 403
                 )
 
-            entities = [
-                Entity(**entity) if isinstance(entity, dict) else entity
-                for entity in entities
-            ]
             # for each entity, set the level to CHUNK
             for entity in entities:
                 if entity.level is None:
@@ -766,7 +772,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.create_entities(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
+                            result = client.documents.create_entities_v3(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
                             """
                         ),
                     },
@@ -774,7 +780,7 @@ class GraphRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def create_entities(
+        async def create_entities_v3(
             id: UUID = Path(
                 ..., description="The ID of the chunk to create entities for."
             ),
@@ -1536,9 +1542,7 @@ class GraphRouter(BaseRouterV3):
             limit: int = Query(100, ge=1, le=1000),
             include_embeddings: bool = Query(False),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> (
-            WrappedKGEntitiesResponse
-        ):  # PaginatedResultsWrapper[list[Entity]]:
+        ) -> WrappedKGEntitiesResponse:
             """Lists entities in the graph with filtering and pagination support.
 
             Entities represent the nodes in the knowledge graph, extracted from documents.
@@ -2388,7 +2392,7 @@ class GraphRouter(BaseRouterV3):
             collection_id: UUID = Path(...),
             community_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedBooleanResponse:
+        ) -> WrappedKGDeletionResponse:
             """
             Deletes a specific community by ID.
             This operation will not affect other communities or the underlying entities.
@@ -2455,7 +2459,7 @@ class GraphRouter(BaseRouterV3):
             collection_id: UUID = Path(...),
             prompt_name: str = Body(
                 ...,
-                description="The prompt to tune. Valid options: graphrag_relationships_extraction_few_shot, graphrag_entity_description, graphrag_community_reports",
+                description="The prompt to tune. Valid options: graphrag_relationships_extraction_few_shot, graphrag_entity_description, graphrag_communities",
             ),
             documents_offset: int = Body(0, ge=0),
             documents_limit: int = Body(100, ge=1),

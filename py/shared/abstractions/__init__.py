@@ -14,7 +14,7 @@ from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import R2RDocumentProcessingError, R2RException
 from .graph import (
     Community,
-    CommunityReport,
+    Community,
     Entity,
     EntityType,
     KGExtraction,
@@ -93,7 +93,7 @@ __all__ = [
     "EntityType",
     "RelationshipType",
     "Community",
-    "CommunityReport",
+    "Community",
     "KGExtraction",
     "Relationship",
     # LLM abstractions

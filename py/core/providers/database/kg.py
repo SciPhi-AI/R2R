@@ -9,7 +9,7 @@ import asyncpg
 from asyncpg.exceptions import PostgresError, UndefinedTableError
 
 from core.base import (
-    CommunityReport,
+    Community,
     Entity,
     KGExtraction,
     KGExtractionStatus,
@@ -152,7 +152,7 @@ class PostgresKGHandler(KGHandler):
 
         # communities_report table
         query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("community_report")} (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("community")} (
             id SERIAL PRIMARY KEY,
             community_number INT NOT NULL,
             collection_id UUID NOT NULL,
@@ -284,7 +284,7 @@ class PostgresKGHandler(KGHandler):
         )
 
         community_count = await self.connection_manager.fetch_query(
-            f"SELECT COUNT(*) FROM {self._get_table_name('community_report')} WHERE collection_id = $1",
+            f"SELECT COUNT(*) FROM {self._get_table_name('community')} WHERE collection_id = $1",
             [collection_id],
         )
 
@@ -368,64 +368,6 @@ class PostgresKGHandler(KGHandler):
         return results
 
     ### Relationships END ####
-
-    async def add_kg_extractions(
-        self,
-        kg_extractions: list[KGExtraction],
-        table_prefix: str = "chunk_",
-    ) -> Tuple[int, int]:
-        """
-        Upsert entities and relationships into the database. These are raw entities and relationships extracted from the document fragments.
-
-        Args:
-            kg_extractions: list[KGExtraction]: list of KG extractions to upsert
-            table_prefix: str: prefix to add to the table names
-
-        Returns:
-            total_entities: int: total number of entities upserted
-            total_relationships: int: total number of relationships upserted
-        """
-
-        total_entities, total_relationships = 0, 0
-
-        for extraction in kg_extractions:
-
-            total_entities, total_relationships = (
-                total_entities + len(extraction.entities),
-                total_relationships + len(extraction.relationships),
-            )
-
-            if extraction.entities:
-                if not extraction.entities[0].extraction_ids:
-                    for i in range(len(extraction.entities)):
-                        extraction.entities[i].extraction_ids = (
-                            extraction.extraction_ids
-                        )
-                        extraction.entities[i].document_id = (
-                            extraction.document_id
-                        )
-
-                await self.add_entities(
-                    extraction.entities, table_name=f"{table_prefix}entity"
-                )
-
-            if extraction.relationships:
-                if not extraction.relationships[0].extraction_ids:
-                    for i in range(len(extraction.relationships)):
-                        extraction.relationships[i].extraction_ids = (
-                            extraction.extraction_ids
-                        )
-                    extraction.relationships[i].document_id = (
-                        extraction.document_id
-                    )
-
-                await self.add_relationships(
-                    extraction.relationships,
-                    table_name=f"{table_prefix}relationship",
-                )
-
-        return (total_entities, total_relationships)
-
     async def get_entity_map(
         self, offset: int, limit: int, document_id: UUID
     ) -> dict[str, dict[str, list[dict[str, Any]]]]:
@@ -511,33 +453,7 @@ class PostgresKGHandler(KGHandler):
 
         return entity_map
 
-    async def upsert_embeddings(
-        self,
-        data: list[Tuple[Any]],
-        table_name: str,
-    ) -> None:
-        QUERY = f"""
-            INSERT INTO {self._get_table_name(table_name)} (name, description, description_embedding, extraction_ids, document_id)
-            VALUES ($1, $2, $3, $4, $5)
-            ON CONFLICT (name, document_id) DO UPDATE SET
-                description = EXCLUDED.description,
-                description_embedding = EXCLUDED.description_embedding,
-                extraction_ids = EXCLUDED.extraction_ids,
-                document_id = EXCLUDED.document_id
-            """
-        return await self.connection_manager.execute_many(QUERY, data)
-
-    async def upsert_entities(self, entities: list[Entity]) -> None:
-        QUERY = """
-            INSERT INTO $1.$2 (category, name, description, description_embedding, extraction_ids, document_id, attributes)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            """
-
-        table_name = self._get_table_name("entities")
-        query = QUERY.format(table_name)
-        await self.connection_manager.execute_query(query, entities)
-
-    async def vector_query(  # type: ignore
+    async def graph_search(  # type: ignore
         self, query: str, **kwargs: Any
     ) -> AsyncGenerator[Any, None]:
 
@@ -559,7 +475,7 @@ class PostgresKGHandler(KGHandler):
         elif search_type == "__Relationship__":
             table_name = "chunk_relationship"
         elif search_type == "__Community__":
-            table_name = "community_report"
+            table_name = "community"
         else:
             raise ValueError(f"Invalid search type: {search_type}")
 
@@ -694,7 +610,7 @@ class PostgresKGHandler(KGHandler):
 
         query = f"""
             SELECT id, community_number, collection_id, level, name, summary, findings, rating, rating_explanation, COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name('community_report')}
+            FROM {self._get_table_name('community')}
             WHERE collection_id = $1
             {" AND " + " AND ".join(conditions) if conditions else ""}
             ORDER BY community_number
@@ -703,23 +619,23 @@ class PostgresKGHandler(KGHandler):
 
         results = await self.connection_manager.fetch_query(query, params)
         total_entries = results[0]["total_entries"] if results else 0
-        communities = [CommunityReport(**community) for community in results]
+        communities = [Community(**community) for community in results]
 
         return {
             "communities": communities,
             "total_entries": total_entries,
         }
 
-    async def add_community_report(
-        self, community_report: CommunityReport
+    async def add_community(
+        self, community: Community
     ) -> None:
 
         # TODO: Fix in the short term.
         # we need to do this because postgres insert needs to be a string
-        community_report.embedding = str(community_report.embedding)  # type: ignore[assignment]
+        community.embedding = str(community.embedding)  # type: ignore[assignment]
 
         non_null_attrs = {
-            k: v for k, v in community_report.__dict__.items() if v is not None
+            k: v for k, v in community.__dict__.items() if v is not None
         }
         columns = ", ".join(non_null_attrs.keys())
         placeholders = ", ".join(f"${i+1}" for i in range(len(non_null_attrs)))
@@ -729,7 +645,7 @@ class PostgresKGHandler(KGHandler):
         )
 
         QUERY = f"""
-            INSERT INTO {self._get_table_name("community_report")} ({columns})
+            INSERT INTO {self._get_table_name("community")} ({columns})
             VALUES ({placeholders})
             ON CONFLICT (community_number, level, collection_id) DO UPDATE SET
                 {conflict_columns}
@@ -773,7 +689,7 @@ class PostgresKGHandler(KGHandler):
         await self.connection_manager.execute_query(QUERY, [collection_id])
 
         QUERY = f"""
-            DELETE FROM {self._get_table_name("community_report")} WHERE collection_id = $1
+            DELETE FROM {self._get_table_name("community")} WHERE collection_id = $1
         """
         await self.connection_manager.execute_query(QUERY, [collection_id])
 
@@ -947,7 +863,7 @@ class PostgresKGHandler(KGHandler):
 
         # delete the communities information for the updated communities
         QUERY = f"""
-            DELETE FROM {self._get_table_name("community_report")} WHERE collection_id = $1 AND community_number = ANY($2)
+            DELETE FROM {self._get_table_name("community")} WHERE collection_id = $1 AND community_number = ANY($2)
         """
         await self.connection_manager.execute_query(
             QUERY, [collection_id, updated_communities]
@@ -1127,7 +1043,7 @@ class PostgresKGHandler(KGHandler):
     ########## Entity CRUD Operations ##########################
     ############################################################
 
-    async def create_entities(
+    async def create_entities_v3(
         self, level: EntityLevel, id: UUID, entities: list[Entity]
     ) -> None:
 
@@ -1218,21 +1134,21 @@ class PostgresKGHandler(KGHandler):
     ########## Community CRUD Operations #######################
     ############################################################
 
-    async def get_community_reports(
+    async def get_communities(
         self, collection_id: UUID
-    ) -> list[CommunityReport]:
+    ) -> list[Community]:
         QUERY = f"""
-            SELECT *c FROM {self._get_table_name("community_report")} WHERE collection_id = $1
+            SELECT *c FROM {self._get_table_name("community")} WHERE collection_id = $1
         """
         return await self.connection_manager.fetch_query(
             QUERY, [collection_id]
         )
 
-    async def check_community_reports_exist(
+    async def check_communities_exist(
         self, collection_id: UUID, offset: int, limit: int
     ) -> list[int]:
         QUERY = f"""
-            SELECT distinct community_number FROM {self._get_table_name("community_report")} WHERE collection_id = $1 AND community_number >= $2 AND community_number < $3
+            SELECT distinct community_number FROM {self._get_table_name("community")} WHERE collection_id = $1 AND community_number >= $2 AND community_number < $3
         """
         community_numbers = await self.connection_manager.fetch_query(
             QUERY, [collection_id, offset, offset + limit]
@@ -1256,7 +1172,7 @@ class PostgresKGHandler(KGHandler):
         # remove all relationships for these documents.
         DELETE_QUERIES = [
             f"DELETE FROM {self._get_table_name('community_info')} WHERE collection_id = $1;",
-            f"DELETE FROM {self._get_table_name('community_report')} WHERE collection_id = $1;",
+            f"DELETE FROM {self._get_table_name('community')} WHERE collection_id = $1;",
         ]
 
         # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
@@ -1342,7 +1258,7 @@ class PostgresKGHandler(KGHandler):
             # If it's the last document, delete collection-related data
             collection_queries = [
                 f"DELETE FROM {self._get_table_name('community_info')} WHERE collection_id = $1",
-                f"DELETE FROM {self._get_table_name('community_report')} WHERE collection_id = $1",
+                f"DELETE FROM {self._get_table_name('community')} WHERE collection_id = $1",
             ]
             for query in collection_queries:
                 await self.connection_manager.execute_query(
@@ -1440,33 +1356,33 @@ class PostgresKGHandler(KGHandler):
             total_in_out_tokens[1] * 10 / 60,
         )  # 10 minutes per million tokens
 
-        return KGCreationEstimationResponse(
-            message='Ran Graph Creation Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_type="run"` in the client.',
-            document_count=len(document_ids),
-            number_of_jobs_created=len(document_ids) + 1,
-            total_chunks=total_chunks,
-            estimated_entities=self._get_str_estimation_output(
+        return {
+            "message": 'Ran Graph Creation Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_type="run"` in the client.',
+            "document_count": len(document_ids),
+            "number_of_jobs_created": len(document_ids) + 1,
+            "total_chunks": total_chunks,
+            "estimated_entities": self._get_str_estimation_output(
                 estimated_entities
             ),
-            estimated_relationships=self._get_str_estimation_output(
+            "estimated_relationships": self._get_str_estimation_output(
                 estimated_relationships
             ),
-            estimated_llm_calls=self._get_str_estimation_output(
+            "estimated_llm_calls": self._get_str_estimation_output(
                 estimated_llm_calls
             ),
-            estimated_total_in_out_tokens_in_millions=self._get_str_estimation_output(
+            "estimated_total_in_out_tokens_in_millions": self._get_str_estimation_output(
                 total_in_out_tokens
             ),
-            estimated_cost_in_usd=self._get_str_estimation_output(
+            "estimated_cost_in_usd": self._get_str_estimation_output(
                 estimated_cost
             ),
-            estimated_total_time_in_minutes="Depends on your API key tier. Accurate estimate coming soon. Rough estimate: "
+            "estimated_total_time_in_minutes": "Depends on your API key tier. Accurate estimate coming soon. Rough estimate: "
             + self._get_str_estimation_output(total_time_in_minutes),
-        )
+        }
 
     async def get_enrichment_estimate(
         self, collection_id: UUID, kg_enrichment_settings: KGEnrichmentSettings
-    ) -> KGEnrichmentEstimationResponse:
+    ):
 
         document_ids = [
             doc.id
@@ -1514,22 +1430,22 @@ class PostgresKGHandler(KGHandler):
             estimated_total_in_out_tokens_in_millions[1] * 10 / 60,
         )
 
-        return KGEnrichmentEstimationResponse(
-            message='Ran Graph Enrichment Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG enrichment process, run `enrich-graph` with `--run` in the cli, or `run_type="run"` in the client.',
-            total_entities=entity_count,
-            total_relationships=relationship_count,
-            estimated_llm_calls=self._get_str_estimation_output(
+        return {
+            "message": 'Ran Graph Enrichment Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG enrichment process, run `enrich-graph` with `--run` in the cli, or `run_type="run"` in the client.',
+            "total_entities": entity_count,
+            "total_relationships": relationship_count,
+            "estimated_llm_calls": self._get_str_estimation_output(
                 estimated_llm_calls
             ),
-            estimated_total_in_out_tokens_in_millions=self._get_str_estimation_output(
+            "estimated_total_in_out_tokens_in_millions": self._get_str_estimation_output(
                 estimated_total_in_out_tokens_in_millions
             ),
-            estimated_cost_in_usd=self._get_str_estimation_output(
+            "estimated_cost_in_usd": self._get_str_estimation_output(
                 estimated_cost
             ),
-            estimated_total_time_in_minutes="Depends on your API key tier. Accurate estimate coming soon. Rough estimate: "
+            "estimated_total_time_in_minutes": "Depends on your API key tier. Accurate estimate coming soon. Rough estimate: "
             + self._get_str_estimation_output(estimated_total_time),
-        )
+        }
 
     async def create_vector_index(self):
         # need to implement this. Just call vector db provider's create_vector_index method.
