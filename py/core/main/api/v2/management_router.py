@@ -21,7 +21,6 @@ from core.base.api.models import (
     WrappedCollectionsResponse,
     WrappedConversationResponse,
     WrappedConversationsResponse,
-    WrappedDeleteResponse,
     WrappedDocumentsResponse,
     WrappedGenericMessageResponse,
     WrappedLogResponse,
@@ -158,7 +157,7 @@ class ManagementRouter(BaseRouter):
         async def delete_prompt_app(
             prompt_name: str = Path(..., description="Prompt name"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDeleteResponse:
+        ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `delete_prompt` endpoint.",
@@ -607,7 +606,7 @@ class ManagementRouter(BaseRouter):
         async def delete_collection_app(
             collection_id: str = Path(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDeleteResponse:
+        ):
             collection_uuid = UUID(collection_id)
             if (
                 not auth_user.is_superuser
@@ -753,7 +752,7 @@ class ManagementRouter(BaseRouter):
             document_id: str = Body(..., description="Document ID"),
             collection_id: str = Body(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDeleteResponse:
+        ):
             collection_uuid = UUID(collection_id)
             document_uuid = UUID(document_id)
             if (
@@ -1026,6 +1025,6 @@ class ManagementRouter(BaseRouter):
         async def delete_conversation(
             conversation_id: str = Path(..., description="Conversation ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDeleteResponse:
+        ):
             await self.service.delete_conversation(conversation_id)
             return None  # type: ignore

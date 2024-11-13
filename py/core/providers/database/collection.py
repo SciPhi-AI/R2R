@@ -98,7 +98,7 @@ class PostgresCollectionHandler(CollectionHandler):
                 )
 
             return CollectionResponse(
-                collection_id=result["collection_id"],
+                id=result["collection_id"],
                 user_id=result["user_id"],
                 name=result["name"],
                 description=result["description"],
@@ -163,7 +163,7 @@ class PostgresCollectionHandler(CollectionHandler):
             raise R2RException(status_code=404, message="Collection not found")
 
         return CollectionResponse(
-            collection_id=result["collection_id"],
+            id=result["collection_id"],
             user_id=result["user_id"],
             name=result["name"],
             description=result["description"],
@@ -346,7 +346,7 @@ class PostgresCollectionHandler(CollectionHandler):
 
             collections = [
                 CollectionResponse(
-                    collection_id=row["collection_id"],
+                    id=row["collection_id"],
                     user_id=row["user_id"],
                     name=row["name"],
                     description=row["description"],

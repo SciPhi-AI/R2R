@@ -83,7 +83,7 @@ class ChunkResponse(BaseModel):
 
 
 class CollectionResponse(BaseModel):
-    collection_id: UUID
+    id: UUID
     user_id: Optional[UUID]
     name: str
     description: Optional[str]
@@ -162,5 +162,4 @@ WrappedLogResponse = ResultsWrapper[list[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
 WrappedAppSettingsResponse = ResultsWrapper[AppSettingsResponse]
 
-WrappedDeleteResponse = ResultsWrapper[None]
 WrappedVerificationResult = ResultsWrapper[VerificationResult]
