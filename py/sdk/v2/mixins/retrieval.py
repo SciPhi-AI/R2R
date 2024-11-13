@@ -1,3 +1,5 @@
+from __future__ import annotations  # for Python 3.10+
+from typing_extensions import deprecated
 import logging
 from typing import AsyncGenerator, Optional
 
@@ -38,6 +40,7 @@ class RetrievalMixins:
         }
         return await self._make_request("POST", "search_documents", json=data)  # type: ignore
 
+    @deprecated("Use client.retrieval.search() instead")
     async def search(
         self,
         query: str,
@@ -69,6 +72,7 @@ class RetrievalMixins:
         }
         return await self._make_request("POST", "search", json=data)  # type: ignore
 
+    @deprecated("Use client.retrieval.completion() instead")
     async def completion(
         self,
         messages: list[dict | Message],
@@ -89,6 +93,7 @@ class RetrievalMixins:
 
         return await self._make_request("POST", "completion", json=data)  # type: ignore
 
+    @deprecated("Use client.retrieval.rag() instead")
     async def rag(
         self,
         query: str,
@@ -139,6 +144,7 @@ class RetrievalMixins:
         else:
             return await self._make_request("POST", "rag", json=data)  # type: ignore
 
+    @deprecated("Use client.retrieval.agent() instead")
     async def agent(
         self,
         message: Optional[dict | Message] = None,

@@ -1,15 +1,8 @@
-from inspect import isasyncgenfunction, iscoroutinefunction
 from typing import Optional
 from uuid import UUID
 
-from ..base.base_client import sync_generator_wrapper, sync_wrapper
-
 
 class ConversationsSDK:
-    """
-    SDK for interacting with conversations in the v3 API.
-    """
-
     def __init__(self, client):
         self.client = client
 
@@ -20,7 +13,11 @@ class ConversationsSDK:
         Returns:
             dict: Created conversation information
         """
-        return await self.client._make_request("POST", "conversations")
+        return await self.client._make_request(
+            "POST",
+            "conversations",
+            version="v3",
+        )
 
     async def list(
         self,
@@ -47,7 +44,10 @@ class ConversationsSDK:
             params["ids"] = ids
 
         return await self.client._make_request(
-            "GET", "conversations", params=params
+            "GET",
+            "conversations",
+            params=params,
+            version="v3",
         )
 
     async def retrieve(
@@ -70,7 +70,10 @@ class ConversationsSDK:
             params["branch_id"] = branch_id
 
         return await self.client._make_request(
-            "GET", f"conversations/{str(id)}", params=params
+            "GET",
+            f"conversations/{str(id)}",
+            params=params,
+            version="v3",
         )
 
     async def delete(
@@ -86,10 +89,11 @@ class ConversationsSDK:
         Returns:
             bool: True if deletion was successful
         """
-        result = await self.client._make_request(
-            "DELETE", f"conversations/{str(id)}"
+        return await self.client._make_request(
+            "DELETE",
+            f"conversations/{str(id)}",
+            version="v3",
         )
-        return result.get("results", True)
 
     async def add_message(
         self,
@@ -122,7 +126,10 @@ class ConversationsSDK:
             data["metadata"] = metadata
 
         return await self.client._make_request(
-            "POST", f"conversations/{str(id)}/messages", data=data
+            "POST",
+            f"conversations/{str(id)}/messages",
+            data=data,
+            version="v3",
         )
 
     async def update_message(
@@ -147,6 +154,7 @@ class ConversationsSDK:
             "PUT",
             f"conversations/{str(id)}/messages/{message_id}",
             json=content,
+            version="v3",
         )
 
     async def list_branches(
@@ -163,7 +171,9 @@ class ConversationsSDK:
             dict: List of branches in the conversation
         """
         return await self.client._make_request(
-            "GET", f"conversations/{str(id)}/branches"
+            "GET",
+            f"conversations/{str(id)}/branches",
+            version="v3",
         )
 
     # Commented methods to be added after more testing
@@ -202,23 +212,3 @@ class ConversationsSDK:
     #     return await self.client._make_request(
     #         "POST", f"conversations/{str(id)}/messages/{message_id}/branch"
     #     )
-
-
-class SyncConversationSDK:
-    """Synchronous wrapper for CollectionsSDK"""
-
-    def __init__(self, async_sdk: ConversationsSDK):
-        self._async_sdk = async_sdk
-
-        # Get all attributes from the instance
-        for name in dir(async_sdk):
-            if not name.startswith("_"):  # Skip private methods
-                attr = getattr(async_sdk, name)
-                # Check if it's a method and if it's async
-                if callable(attr) and (
-                    iscoroutinefunction(attr) or isasyncgenfunction(attr)
-                ):
-                    if isasyncgenfunction(attr):
-                        setattr(self, name, sync_generator_wrapper(attr))
-                    else:
-                        setattr(self, name, sync_wrapper(attr))

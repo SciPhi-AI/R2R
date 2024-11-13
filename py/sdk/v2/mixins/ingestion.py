@@ -1,3 +1,5 @@
+from __future__ import annotations  # for Python 3.10+
+from typing_extensions import deprecated
 import json
 import os
 from contextlib import ExitStack
@@ -8,6 +10,7 @@ from shared.abstractions import IndexMeasure, IndexMethod, VectorTableName
 
 
 class IngestionMixins:
+    @deprecated("Use client.documents.create() instead")
     async def ingest_files(
         self,
         file_paths: list[str],
@@ -93,6 +96,7 @@ class IngestionMixins:
                     "POST", "ingest_files", data=data, files=files_tuples
                 )
 
+    @deprecated("Use client.documents.update() instead")
     async def update_files(
         self,
         file_paths: list[str],
@@ -163,6 +167,7 @@ class IngestionMixins:
                 "POST", "update_files", data=data, files=files
             )
 
+    @deprecated("Use client.chunks.create() instead")
     async def ingest_chunks(
         self,
         chunks: list[dict],
@@ -204,6 +209,7 @@ class IngestionMixins:
 
         return await self._make_request("POST", "ingest_chunks", json=data)  # type: ignore
 
+    @deprecated("Use client.chunks.update() instead")
     async def update_chunks(
         self,
         document_id: UUID,
@@ -237,6 +243,7 @@ class IngestionMixins:
 
         return await self._make_request("PUT", f"update_chunk/{document_id}/{chunk_id}", json=data)  # type: ignore
 
+    @deprecated("Use client.indices.create() instead")
     async def create_vector_index(
         self,
         table_name: VectorTableName = VectorTableName.VECTORS,
@@ -274,6 +281,7 @@ class IngestionMixins:
             "POST", "create_vector_index", json=data
         )
 
+    @deprecated("Use client.indices.list() instead")
     async def list_vector_indices(
         self,
         table_name: VectorTableName = VectorTableName.VECTORS,
@@ -292,6 +300,7 @@ class IngestionMixins:
             "GET", "list_vector_indices", params=params
         )
 
+    @deprecated("Use client.indices.delete() instead")
     async def delete_vector_index(
         self,
         index_name: str,
@@ -318,6 +327,7 @@ class IngestionMixins:
             "DELETE", "delete_vector_index", json=data
         )
 
+    @deprecated("Use client.documents.update() instead")
     async def update_document_metadata(
         self,
         document_id: Union[str, UUID],

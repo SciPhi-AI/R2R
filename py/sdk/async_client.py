@@ -14,18 +14,21 @@ from .v2.mixins import (
     RetrievalMixins,
     ServerMixins,
 )
-from .v3.chunks import ChunksSDK
-from .v3.collections import CollectionsSDK
-from .v3.conversations import ConversationsSDK
-from .v3.documents import DocumentsSDK
-from .v3.graphs import GraphsSDK
-from .v3.indices import IndicesSDK
-from .v3.prompts import PromptsSDK
-from .v3.retrieval import RetrievalSDK
-from .v3.users import UsersSDK
+
+from .v3 import (
+    ChunksSDK,
+    CollectionsSDK,
+    ConversationsSDK,
+    DocumentsSDK,
+    GraphsSDK,
+    IndicesSDK,
+    PromptsSDK,
+    RetrievalSDK,
+    UsersSDK,
+)
 
 
-class R2RAsyncClient(
+class R2RAsyncClient(  # type: ignore
     BaseClient,
     AuthMixins,
     IngestionMixins,
@@ -33,6 +36,16 @@ class R2RAsyncClient(
     ManagementMixins,
     RetrievalMixins,
     ServerMixins,
+    # V3 SDK Modules
+    ChunksSDK,
+    CollectionsSDK,
+    ConversationsSDK,
+    DocumentsSDK,
+    GraphsSDK,
+    IndicesSDK,
+    PromptsSDK,
+    RetrievalSDK,
+    UsersSDK,
 ):
     """
     Asynchronous client for interacting with the R2R API.
@@ -47,24 +60,25 @@ class R2RAsyncClient(
     def __init__(
         self,
         base_url: str = "http://localhost:7272",
-        prefix: str = "/v2",
         custom_client=None,
         timeout: float = 300.0,
     ):
-        super().__init__(base_url, prefix, timeout)
+        super().__init__(base_url, timeout=timeout)
         self.client = custom_client or httpx.AsyncClient(timeout=timeout)
-        self.documents = DocumentsSDK(self)
         self.chunks = ChunksSDK(self)
-        self.retrieval = RetrievalSDK(self)
-        self.indices = IndicesSDK(self)
-        self.users = UsersSDK(self)
         self.collections = CollectionsSDK(self)
         self.conversations = ConversationsSDK(self)
-        self.prompts = PromptsSDK(self)
+        self.documents = DocumentsSDK(self)
         self.graphs = GraphsSDK(self)
+        self.indices = IndicesSDK(self)
+        self.prompts = PromptsSDK(self)
+        self.retrieval = RetrievalSDK(self)
+        self.users = UsersSDK(self)
 
-    async def _make_request(self, method: str, endpoint: str, **kwargs):
-        url = self._get_full_url(endpoint)
+    async def _make_request(
+        self, method: str, endpoint: str, version: str = "v2", **kwargs
+    ):
+        url = self._get_full_url(endpoint, version)
         request_args = self._prepare_request_args(endpoint, **kwargs)
 
         try:
@@ -79,9 +93,9 @@ class R2RAsyncClient(
             ) from e
 
     async def _make_streaming_request(
-        self, method: str, endpoint: str, **kwargs
+        self, method: str, endpoint: str, version: str = "v2", **kwargs
     ) -> AsyncGenerator[Any, None]:
-        url = self._get_full_url(endpoint)
+        url = self._get_full_url(endpoint, version)
         request_args = self._prepare_request_args(endpoint, **kwargs)
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:

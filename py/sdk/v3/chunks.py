@@ -1,9 +1,6 @@
 import json
-from inspect import isasyncgenfunction, iscoroutinefunction
-from typing import Any, Optional
+from typing import Optional
 from uuid import UUID
-
-from ..base.base_client import sync_generator_wrapper, sync_wrapper
 
 
 class ChunksSDK:
@@ -16,7 +13,7 @@ class ChunksSDK:
 
     async def create(
         self,
-        chunks: list[dict[str, Any]],
+        chunks: list[dict],
         run_with_orchestration: Optional[bool] = True,
     ) -> list[dict]:
         """
@@ -38,7 +35,12 @@ class ChunksSDK:
             "chunks": [chunk.dict() for chunk in chunks],
             "run_with_orchestration": run_with_orchestration,
         }
-        return await self.client._make_request("POST", "chunks", json=data)
+        return await self.client._make_request(
+            "POST",
+            "chunks",
+            json=data,
+            version="v3",
+        )
 
     async def update(
         self,
@@ -58,6 +60,7 @@ class ChunksSDK:
             "POST",
             f"chunks/{str(chunk['id'])}",
             json=chunk,
+            version="v3",
         )
 
     async def retrieve(
@@ -77,12 +80,14 @@ class ChunksSDK:
         return await self.client._make_request(
             "GET",
             f"chunks/{id}",
+            version="v3",
         )
 
+    # FIXME: Is this the most appropriate name for this method?
     async def list_by_document(
         self,
         document_id: str | UUID,
-        metadata_filter: Optional[dict[str, Any]] = None,
+        metadata_filter: Optional[dict] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> dict:
@@ -91,7 +96,7 @@ class ChunksSDK:
 
         Args:
             document_id (str | UUID): Document ID to get chunks for
-            metadata_filter (Optional[dict[str, Any]]): Filter chunks by metadata
+            metadata_filter (Optional[dict]): Filter chunks by metadata
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
@@ -106,7 +111,10 @@ class ChunksSDK:
             params["metadata_filter"] = json.dumps(metadata_filter)
 
         return await self.client._make_request(
-            "GET", f"documents/{str(document_id)}/chunks", params=params
+            "GET",
+            f"documents/{str(document_id)}/chunks",
+            params=params,
+            version="v3",
         )
 
     async def delete(
@@ -119,12 +127,16 @@ class ChunksSDK:
         Args:
             id (Union[str, UUID]): ID of chunk to delete
         """
-        await self.client._make_request("DELETE", f"chunks/{str(id)}")
+        await self.client._make_request(
+            "DELETE",
+            f"chunks/{str(id)}",
+            version="v3",
+        )
 
     async def list(
         self,
         include_vectors: bool = False,
-        metadata_filter: Optional[dict[str, Any]] = None,
+        metadata_filter: Optional[dict] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> dict:
@@ -133,7 +145,7 @@ class ChunksSDK:
 
         Args:
             include_vectors (bool, optional): Include vector data in response. Defaults to False.
-            metadata_filter (Optional[dict[str, Any]], optional): Filter by metadata. Defaults to None.
+            metadata_filter (Optional[dict], optional): Filter by metadata. Defaults to None.
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
@@ -151,24 +163,9 @@ class ChunksSDK:
         if metadata_filter:
             params["metadata_filter"] = json.dumps(metadata_filter)
 
-        return await self.client._make_request("GET", "chunks", params=params)
-
-
-class SyncChunkSDK:
-    """Synchronous wrapper for ChunksSDK"""
-
-    def __init__(self, async_sdk: ChunksSDK):
-        self._async_sdk = async_sdk
-
-        # Get all attributes from the instance
-        for name in dir(async_sdk):
-            if not name.startswith("_"):  # Skip private methods
-                attr = getattr(async_sdk, name)
-                # Check if it's a method and if it's async
-                if callable(attr) and (
-                    iscoroutinefunction(attr) or isasyncgenfunction(attr)
-                ):
-                    if isasyncgenfunction(attr):
-                        setattr(self, name, sync_generator_wrapper(attr))
-                    else:
-                        setattr(self, name, sync_wrapper(attr))
+        return await self.client._make_request(
+            "GET",
+            "chunks",
+            params=params,
+            version="v3",
+        )
