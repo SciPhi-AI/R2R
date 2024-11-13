@@ -16,10 +16,9 @@ __all__ = [
     # Completion abstractions
     "MessageType",
     # Document abstractions
-    "DataType",
     "Document",
     "DocumentChunk",
-    "DocumentInfo",
+    "DocumentResponse",
     "IngestionStatus",
     "KGExtractionStatus",
     "KGEnrichmentStatus",
@@ -47,6 +46,7 @@ __all__ = [
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
+    "DocumentSearchSettings",
     "HybridSearchSettings",
     # KG abstractions
     "KGCreationSettings",
@@ -61,6 +61,7 @@ __all__ = [
     "VectorEntry",
     "VectorType",
     "StorageResult",
+    "IndexConfig",
     ## AGENT
     # Agent abstractions
     "Agent",
@@ -71,7 +72,6 @@ __all__ = [
     "ToolResult",
     ## API
     # Auth Responses
-    "GenericMessageResponse",
     "TokenResponse",
     "UserResponse",
     ## LOGGING
@@ -136,7 +136,6 @@ __all__ = [
     "generate_document_id",
     "generate_extraction_id",
     "generate_default_user_collection_id",
-    "generate_id_from_label",
     "generate_user_id",
     "increment_version",
     "EntityType",

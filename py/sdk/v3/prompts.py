@@ -57,7 +57,7 @@ class PromptsSDK:
         if prompt_override:
             params["prompt_override"] = prompt_override
         return await self.client._make_request(
-            "GET", f"prompts/{name}", params=params
+            "POST", f"prompts/{name}", params=params
         )
 
     async def update(

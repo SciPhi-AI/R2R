@@ -1,13 +1,16 @@
-from typing import Optional, Union
+import textwrap
+from typing import Optional
 
 from fastapi import Body, Depends, Path, Query
-from pydantic import BaseModel, Field, Json
 
 from core.base import R2RException, RunType
 from core.base.api.models import (
-    ResultsWrapper,
-    WrappedGetPromptsResponse,
-    WrappedPromptMessageResponse,
+    GenericBooleanResponse,
+    GenericMessageResponse,
+    WrappedBooleanResponse,
+    WrappedGenericMessageResponse,
+    WrappedPromptResponse,
+    WrappedPromptsResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -17,25 +20,14 @@ from core.providers import (
 from .base_router import BaseRouterV3
 
 
-class PromptConfig(BaseModel):
-    name: str = Field(..., description="The name of the prompt")
-    template: str = Field(
-        ..., description="The template string for the prompt"
-    )
-    input_types: dict[str, str] = Field(
-        default={},
-        description="A dictionary mapping input names to their types",
-    )
-
-
 class PromptsRouter(BaseRouterV3):
     def __init__(
         self,
         providers,
         services,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.MANAGEMENT,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
@@ -48,38 +40,67 @@ class PromptsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.prompts.create(
-    name="greeting_prompt",
-    template="Hello, {name}!",
-    input_types={"name": "string"}
-)
-""",
+                            result = client.prompts.create(
+                                name="greeting_prompt",
+                                template="Hello, {name}!",
+                                input_types={"name": "string"}
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.prompts.create({
+                                    name: "greeting_prompt",
+                                    template: "Hello, {name}!",
+                                    input_types: { name: "string" },
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X POST "https://api.example.com/v3/prompts" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -H "Content-Type: application/json" \\
-     -d '{"name": "greeting_prompt", "template": "Hello, {name}!", "input_types": {"name": "string"}}'
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/prompts" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -H "Content-Type: application/json" \\
+                                -d '{"name": "greeting_prompt", "template": "Hello, {name}!", "input_types": {"name": "string"}}'
+                            """
+                        ),
                     },
                 ]
             },
         )
         @self.base_endpoint
         async def create_prompt(
-            config: PromptConfig = Body(
-                ..., description="The configuration for the new prompt"
+            name: str = Body(..., description="The name of the prompt"),
+            template: str = Body(
+                ..., description="The template string for the prompt"
+            ),
+            input_types: dict[str, str] = Body(
+                default={},
+                description="A dictionary mapping input names to their types",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedPromptMessageResponse:
+        ) -> WrappedGenericMessageResponse:
             """
             Create a new prompt with the given configuration.
 
@@ -91,9 +112,9 @@ curl -X POST "https://api.example.com/v3/prompts" \\
                     403,
                 )
             result = await self.services["management"].add_prompt(
-                config.name, config.template, config.input_types
+                name, template, input_types
             )
-            return result
+            return GenericMessageResponse(message=result)
 
         @self.router.get(
             "/prompts",
@@ -102,29 +123,49 @@ curl -X POST "https://api.example.com/v3/prompts" \\
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.prompts.list()
-""",
+                            result = client.prompts.list()
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.prompts.list();
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X GET "https://api.example.com/v3/prompts" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                                curl -X GET "https://api.example.com/v3/prompts" \\
+                                    -H "Authorization: Bearer YOUR_API_KEY"
+                                """
+                        ),
                     },
                 ]
             },
         )
         @self.base_endpoint
-        async def list_prompts(
+        async def get_prompts(
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedGetPromptsResponse:
+        ) -> WrappedPromptsResponse:
             """
             List all available prompts.
 
@@ -135,35 +176,67 @@ curl -X GET "https://api.example.com/v3/prompts" \\
                     "Only a superuser can list prompts.",
                     403,
                 )
-            result = await self.services["management"].get_all_prompts()
-            return {"prompts": result}  # type: ignore
+            get_prompts_response = await self.services[
+                "management"
+            ].get_all_prompts()
 
-        @self.router.get(
+            return (
+                get_prompts_response["results"],
+                {
+                    "total_entries": get_prompts_response["total_entries"],
+                },
+            )
+
+        @self.router.post(
             "/prompts/{name}",
             summary="Get a specific prompt",
             openapi_extra={
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.prompts.get(
-    "greeting_prompt",
-    inputs={"name": "John"},
-    prompt_override="Hi, {name}!"
-)
-""",
+                            result = client.prompts.get(
+                                "greeting_prompt",
+                                inputs={"name": "John"},
+                                prompt_override="Hi, {name}!"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.prompts.retrieve({
+                                    name: "greeting_prompt",
+                                    inputs: { name: "John" },
+                                    prompt_override: "Hi, {name}!",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X GET "https://api.example.com/v3/prompts/greeting_prompt?inputs=%7B%22name%22%3A%22John%22%7D&prompt_override=Hi%2C%20%7Bname%7D!" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/prompts/greeting_prompt?inputs=%7B%22name%22%3A%22John%22%7D&prompt_override=Hi%2C%20%7Bname%7D!" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -171,14 +244,14 @@ curl -X GET "https://api.example.com/v3/prompts/greeting_prompt?inputs=%7B%22nam
         @self.base_endpoint
         async def get_prompt(
             name: str = Path(..., description="Prompt name"),
-            inputs: Optional[Json[dict]] = Query(
-                None, description="JSON-encoded prompt inputs"
+            inputs: Optional[dict[str, str]] = Body(
+                None, description="Prompt inputs"
             ),
             prompt_override: Optional[str] = Query(
                 None, description="Prompt override"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedPromptMessageResponse:
+        ) -> WrappedPromptResponse:
             """
             Get a specific prompt by name, optionally with inputs and override.
 
@@ -202,27 +275,51 @@ curl -X GET "https://api.example.com/v3/prompts/greeting_prompt?inputs=%7B%22nam
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.prompts.update(
-    "greeting_prompt",
-    template="Greetings, {name}!",
-    input_types={"name": "string", "age": "integer"}
-)
-""",
+                            result = client.prompts.update(
+                                "greeting_prompt",
+                                template="Greetings, {name}!",
+                                input_types={"name": "string", "age": "integer"}
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.prompts.update({
+                                    name: "greeting_prompt",
+                                    template: "Greetings, {name}!",
+                                    input_types: { name: "string", age: "integer" },
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X PUT "https://api.example.com/v3/prompts/greeting_prompt" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -H "Content-Type: application/json" \\
-     -d '{"template": "Greetings, {name}!", "input_types": {"name": "string", "age": "integer"}}'
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X PUT "https://api.example.com/v3/prompts/greeting_prompt" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -H "Content-Type: application/json" \\
+                                -d '{"template": "Greetings, {name}!", "input_types": {"name": "string", "age": "integer"}}'
+                            """
+                        ),
                     },
                 ]
             },
@@ -233,11 +330,12 @@ curl -X PUT "https://api.example.com/v3/prompts/greeting_prompt" \\
             template: Optional[str] = Body(
                 None, description="Updated prompt template"
             ),
-            input_types: Optional[Json[dict[str, str]]] = Body(
-                {}, description="Updated input types"
+            input_types: dict[str, str] = Body(
+                default={},
+                description="A dictionary mapping input names to their types",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedPromptMessageResponse:
+        ) -> WrappedGenericMessageResponse:
             """
             Update an existing prompt's template and/or input types.
 
@@ -251,7 +349,7 @@ curl -X PUT "https://api.example.com/v3/prompts/greeting_prompt" \\
             result = await self.services["management"].update_prompt(
                 name, template, input_types
             )
-            return result  # type: ignore
+            return GenericMessageResponse(message=result)
 
         @self.router.delete(
             "/prompts/{name}",
@@ -260,21 +358,43 @@ curl -X PUT "https://api.example.com/v3/prompts/greeting_prompt" \\
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.prompts.delete("greeting_prompt")
-""",
+                            result = client.prompts.delete("greeting_prompt")
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.prompts.delete({
+                                    name: "greeting_prompt",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X DELETE "https://api.example.com/v3/prompts/greeting_prompt" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X DELETE "https://api.example.com/v3/prompts/greeting_prompt" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -283,7 +403,7 @@ curl -X DELETE "https://api.example.com/v3/prompts/greeting_prompt" \\
         async def delete_prompt(
             name: str = Path(..., description="Prompt name"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             """
             Delete a prompt by name.
 
@@ -295,4 +415,4 @@ curl -X DELETE "https://api.example.com/v3/prompts/greeting_prompt" \\
                     403,
                 )
             await self.services["management"].delete_prompt(name)
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)

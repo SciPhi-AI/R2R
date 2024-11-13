@@ -1,7 +1,7 @@
 import functools
 import logging
 from abc import abstractmethod
-from typing import Callable, Union
+from typing import Callable
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -22,9 +22,9 @@ class BaseRouter:
     def __init__(
         self,
         service: "Service",
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.UNSPECIFIED,
     ):
         self.service = service

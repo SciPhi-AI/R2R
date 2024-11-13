@@ -74,7 +74,8 @@ class R2RAsyncClient(
                 return response.json() if response.content else None
         except httpx.RequestError as e:
             raise R2RException(
-                status_code=500, message=f"Request failed: {str(e)}"
+                status_code=500,
+                message=f"Request failed: {str(e)}",
             ) from e
 
     async def _make_streaming_request(

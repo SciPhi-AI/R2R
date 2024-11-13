@@ -1,16 +1,19 @@
 import logging
-from typing import List, Optional, Union
+import textwrap
+
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
-from pydantic import BaseModel, Field, Json
 
-from core.base import Message, R2RException, RunType
+from core.base import Message, RunType
 from core.base.api.models import (
-    ResultsWrapper,
+    GenericBooleanResponse,
+    WrappedBooleanResponse,
+    WrappedBranchesResponse,
     WrappedConversationResponse,
-    WrappedConversationsOverviewResponse,
-    WrappedDeleteResponse,
+    WrappedConversationsResponse,
+    WrappedMessageResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -22,28 +25,14 @@ from .base_router import BaseRouterV3
 logger = logging.getLogger()
 
 
-class MessageContent(BaseModel):
-    content: str = Field(..., description="The content of the message")
-    parent_id: Optional[str] = Field(
-        None, description="The ID of the parent message, if any"
-    )
-    metadata: Optional[dict] = Field(
-        None, description="Additional metadata for the message"
-    )
-
-
-class CreateConversationResponse(BaseModel):
-    conversation_id: UUID
-
-
 class ConversationsRouter(BaseRouterV3):
     def __init__(
         self,
         providers,
         services,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.MANAGEMENT,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
@@ -56,21 +45,41 @@ class ConversationsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.conversations.create()
-""",
+                            result = client.conversations.create()
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.conversations.create();
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X POST "https://api.example.com/v3/conversations" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/conversations" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -78,15 +87,13 @@ curl -X POST "https://api.example.com/v3/conversations" \\
         @self.base_endpoint
         async def create_conversation(
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[CreateConversationResponse]:
+        ) -> WrappedConversationResponse:
             """
             Create a new conversation.
 
             This endpoint initializes a new conversation for the authenticated user.
             """
-            result = await self.services["management"].create_conversation()
-
-            return {"conversation_id": result}  # type: ignore
+            return await self.services["management"].create_conversation()
 
         @self.router.get(
             "/conversations",
@@ -95,63 +102,84 @@ curl -X POST "https://api.example.com/v3/conversations" \\
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.conversations.list(
-    offset=0,
-    limit=10,
-    sort_by="created_at",
-    sort_order="desc"
-)
-""",
+                            result = client.conversations.list(
+                                offset=0,
+                                limit=10,
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.conversations.list();
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X GET "https://api.example.com/v3/conversations?offset=0&limit=10&sort_by=created_at&sort_order=desc" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/v3/conversations?offset=0&limit=10" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
         )
         @self.base_endpoint
         async def list_conversations(
+            ids: list[str] = Query(
+                [],
+                description="A list of conversation IDs to retrieve. If not provided, all conversations will be returned.",
+            ),
             offset: int = Query(
-                0, ge=0, description="The number of conversations to skip"
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="The maximum number of conversations to return",
-            ),
-            sort_by: Optional[str] = Query(
-                None, description="The field to sort the conversations by"
-            ),
-            sort_order: Optional[str] = Query(
-                "desc",
-                description="The order to sort the conversations ('asc' or 'desc')",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedConversationsOverviewResponse:
+        ) -> WrappedConversationsResponse:
             """
             List conversations with pagination and sorting options.
 
             This endpoint returns a paginated list of conversations for the authenticated user.
             """
+            conversation_uuids = [
+                UUID(conversation_id) for conversation_id in ids
+            ]
+
             conversations_response = await self.services[
                 "management"
             ].conversations_overview(
-                conversation_ids=[],  # Empty list to get all conversations
+                conversation_ids=conversation_uuids,
                 offset=offset,
                 limit=limit,
             )
-            return conversations_response["results"], {  # type: ignore
+            return conversations_response["results"], {
                 "total_entries": conversations_response["total_entries"]
             }
 
@@ -162,24 +190,47 @@ curl -X GET "https://api.example.com/v3/conversations?offset=0&limit=10&sort_by=
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.conversations.get(
-    "123e4567-e89b-12d3-a456-426614174000",
-    branch_id="branch_1"
-)
-""",
+                            result = client.conversations.get(
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                branch_id="branch_1"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.conversations.retrieve({
+                                    id: "123e4567-e89b-12d3-a456-426614174000",
+                                    branch_id: "branch_1"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000?branch_id=branch_1" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000?branch_id=branch_1" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -199,7 +250,7 @@ curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-42
 
             This endpoint retrieves detailed information about a single conversation identified by its UUID.
             """
-            return await self.services["management"].get_conversation(  # type: ignore
+            return await self.services["management"].get_conversation(
                 str(id),
                 branch_id,
             )
@@ -211,21 +262,43 @@ curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-42
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.conversations.delete("123e4567-e89b-12d3-a456-426614174000")
-""",
+                            result = client.conversations.delete("123e4567-e89b-12d3-a456-426614174000")
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.conversations.delete({
+                                    id: "123e4567-e89b-12d3-a456-426614174000",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X DELETE "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X DELETE "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -237,14 +310,14 @@ curl -X DELETE "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456
                 description="The unique identifier of the conversation to delete",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             """
             Delete an existing conversation.
 
             This endpoint deletes a conversation identified by its UUID.
             """
             await self.services["management"].delete_conversation(str(id))
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)
 
         @self.router.post(
             "/conversations/{id}/messages",
@@ -253,28 +326,54 @@ curl -X DELETE "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.conversations.add_message(
-    "123e4567-e89b-12d3-a456-426614174000",
-    content="Hello, world!",
-    parent_id="parent_message_id",
-    metadata={"key": "value"}
-)
-""",
+                            result = client.conversations.add_message(
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                content="Hello, world!",
+                                role="user",
+                                parent_id="parent_message_id",
+                                metadata={"key": "value"}
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.conversations.addMessage({
+                                    id: "123e4567-e89b-12d3-a456-426614174000",
+                                    content: "Hello, world!",
+                                    role: "user",
+                                    parent_id: "parent_message_id",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/messages" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -H "Content-Type: application/json" \\
-     -d '{"content": "Hello, world!", "parent_id": "parent_message_id", "metadata": {"key": "value"}}'
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/messages" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -H "Content-Type: application/json" \\
+                                -d '{"content": "Hello, world!", "parent_id": "parent_message_id", "metadata": {"key": "value"}}'
+                            """
+                        ),
                     },
                 ]
             },
@@ -293,53 +392,76 @@ curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-4
             parent_id: Optional[str] = Body(
                 None, description="The ID of the parent message, if any"
             ),
-            metadata: Optional[Json[dict]] = Body(
+            metadata: Optional[dict[str, str]] = Body(
                 None, description="Additional metadata for the message"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> dict:
+        ) -> WrappedMessageResponse:
             """
             Add a new message to a conversation.
 
             This endpoint adds a new message to an existing conversation.
             """
             message = Message(role=role, content=content)
-            message_id = await self.services["management"].add_message(
+            return await self.services["management"].add_message(
                 str(id),
                 message,
                 parent_id,
                 metadata,
             )
-            return {"message_id": message_id}  # type: ignore
 
-        @self.router.put(
+        @self.router.post(
             "/conversations/{id}/messages/{message_id}",
             summary="Update message in conversation",
             openapi_extra={
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.conversations.update_message(
-    "123e4567-e89b-12d3-a456-426614174000",
-    "message_id_to_update",
-    content="Updated content"
-)
-""",
+                            result = client.conversations.update_message(
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                "message_id_to_update",
+                                content="Updated content"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.conversations.updateMessage({
+                                    id: "123e4567-e89b-12d3-a456-426614174000",
+                                    message_id: "message_id_to_update",
+                                    content: "Updated content",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X PUT "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/messages/message_id_to_update" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -H "Content-Type: application/json" \\
-     -d '{"content": "Updated content"}'
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/messages/message_id_to_update" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -H "Content-Type: application/json" \\
+                                -d '{"content": "Updated content"}'
+                            """
+                        ),
                     },
                 ]
             },
@@ -377,21 +499,43 @@ curl -X PUT "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-42
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.conversations.list_branches("123e4567-e89b-12d3-a456-426614174000")
-""",
+                            result = client.conversations.list_branches("123e4567-e89b-12d3-a456-426614174000")
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.conversations.listBranches({
+                                    id: "123e4567-e89b-12d3-a456-426614174000",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/branches" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/branches" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -401,17 +545,35 @@ curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-42
             id: UUID = Path(
                 ..., description="The unique identifier of the conversation"
             ),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> dict:
+        ) -> WrappedBranchesResponse:
             """
             List all branches in a conversation.
 
             This endpoint retrieves all branches associated with a specific conversation.
             """
-            branches = await self.services["management"].branches_overview(
-                str(id)
+            branches_response = await self.services[
+                "management"
+            ].branches_overview(
+                offset=offset,
+                limit=limit,
+                conversation_id=str(id),
             )
-            return {"branches": branches}  # type: ignore
+
+            return branches_response["results"], {
+                "total_entries": branches_response["total_entries"]
+            }
 
         # Commented endpoints to be published after more testing
         # @self.router.get("/conversations/{id}/branches/{branch_id}/next")

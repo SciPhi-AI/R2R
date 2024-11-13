@@ -1,38 +1,27 @@
 import logging
 import textwrap
-from typing import List, Optional, Union
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
-from pydantic import BaseModel, Field
 
 from core.base import R2RException, RunType
 from core.base.api.models import (
-    ResultsWrapper,
-    WrappedAddUserResponse,
-    WrappedCollectionListResponse,
+    GenericBooleanResponse,
+    WrappedBooleanResponse,
     WrappedCollectionResponse,
-    WrappedDeleteResponse,
-    WrappedDocumentOverviewResponse,
-    WrappedMessageResponse,
-    WrappedUsersInCollectionResponse,
+    WrappedCollectionsResponse,
+    WrappedDocumentsResponse,
+    WrappedUsersResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
-from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
-
-
-class CollectionConfig(BaseModel):
-    name: str = Field(..., description="The name of the collection")
-    description: Optional[str] = Field(
-        None, description="An optional description of the collection"
-    )
 
 
 class CollectionsRouter(BaseRouterV3):
@@ -40,9 +29,9 @@ class CollectionsRouter(BaseRouterV3):
         self,
         providers,
         services,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.MANAGEMENT,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
@@ -70,6 +59,25 @@ class CollectionsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.create({
+                                    name: "My New Collection",
+                                    description: "This is a sample collection"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -85,8 +93,9 @@ class CollectionsRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_collection(
-            config: CollectionConfig = Body(
-                ..., description="The configuration for the new collection"
+            name: str = Body(..., description="The name of the collection"),
+            description: Optional[str] = Body(
+                None, description="An optional description of the collection"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedCollectionResponse:
@@ -97,7 +106,9 @@ class CollectionsRouter(BaseRouterV3):
             and optional description. The user creating the collection is automatically added as a member.
             """
             collection = await self.services["management"].create_collection(
-                name=config.name, description=config.description
+                user_id=auth_user.id,
+                name=name,
+                description=description,
             )
             # Add the creating user to the collection
             await self.services["management"].add_user_to_collection(
@@ -122,18 +133,31 @@ class CollectionsRouter(BaseRouterV3):
                             result = client.collections.list(
                                 offset=0,
                                 limit=10,
-                                name="Sample",
-                                sort_by="created_at",
-                                sort_order="desc"
                             )
                         """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.list();
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/collections?offset=0&limit=10&name=Sample&sort_by=created_at&sort_order=desc" \\
+                            curl -X GET "https://api.example.com/v3/collections?offset=0&limit=10&name=Sample" \\
                                  -H "Authorization: Bearer YOUR_API_KEY"
                         """
                         ),
@@ -143,44 +167,54 @@ class CollectionsRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def list_collections(
+            ids: list[str] = Query(
+                [],
+                description="A list of collection IDs to retrieve. If not provided, all collections will be returned.",
+            ),
             offset: int = Query(
                 0,
                 ge=0,
-                description="The number of collections to skip (for pagination)",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="The maximum number of collections to return (1-1000)",
-            ),
-            name: Optional[str] = Query(
-                None,
-                description="Filter collections by name (case-insensitive partial match)",
-            ),
-            sort_by: Optional[str] = Query(
-                None, description="The field to sort the results by"
-            ),
-            sort_order: Optional[str] = Query(
-                "desc",
-                description="The order to sort the results ('asc' or 'desc')",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionListResponse:
+        ) -> WrappedCollectionsResponse:
             """
-            List collections the user has access to with pagination and filtering options.
+            Returns a paginated list of collections the authenticated user has access to.
 
-            This endpoint returns a paginated list of collections that the authenticated user has access to.
-            It supports filtering by collection name and sorting options.
+            Results can be filtered by providing specific collection IDs. Regular users will only see
+            collections they own or have access to. Superusers can see all documents.
+
+            The collections are returned in order of last modification, with most recent first.
             """
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
 
-            list_collections_response = await self.services[
+            collection_uuids = [UUID(collection_id) for collection_id in ids]
+
+            collections_overview_response = await self.services[
                 "management"
-            ].list_collections(offset=offset, limit=min(max(limit, 1), 1000))
+            ].collections_overview(
+                user_ids=requesting_user_id,
+                collection_ids=collection_uuids,
+                offset=offset,
+                limit=limit,
+            )
 
-            return list_collections_response["results"], {  # type: ignore
-                "total_entries": list_collections_response["total_entries"]
-            }
+            return (
+                collections_overview_response["results"],
+                {
+                    "total_entries": collections_overview_response[
+                        "total_entries"
+                    ]
+                },
+            )
 
         @self.router.get(
             "/collections/{id}",
@@ -196,8 +230,24 @@ class CollectionsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.collections.get("123e4567-e89b-12d3-a456-426614174000")
+                            result = client.collections.retrieve("123e4567-e89b-12d3-a456-426614174000")
                         """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.retrieve({id: "123e4567-e89b-12d3-a456-426614174000"});
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -234,8 +284,15 @@ class CollectionsRouter(BaseRouterV3):
                     403,
                 )
 
-            result = await self.services["management"].get_collection(id)
-            return result  # type: ignore
+            collections_overview_response = await self.services[
+                "management"
+            ].collections_overview(
+                user_ids=None,
+                collection_ids=[id],
+                offset=0,
+                limit=1,
+            )
+            return collections_overview_response["results"][0]
 
         @self.router.post(
             "/collections/{id}",
@@ -260,6 +317,26 @@ class CollectionsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.update({
+                                    id: "123e4567-e89b-12d3-a456-426614174000",
+                                    name: "Updated Collection Name",
+                                    description: "Updated description"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -279,8 +356,9 @@ class CollectionsRouter(BaseRouterV3):
                 ...,
                 description="The unique identifier of the collection to update",
             ),
-            config: CollectionConfig = Body(
-                ..., description="The new configuration for the collection"
+            name: str = Body(..., description="The name of the collection"),
+            description: Optional[str] = Body(
+                None, description="An optional description of the collection"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedCollectionResponse:
@@ -300,7 +378,9 @@ class CollectionsRouter(BaseRouterV3):
                 )
 
             return await self.services["management"].update_collection(  # type: ignore
-                id, name=config.name, description=config.description
+                id,
+                name=name,
+                description=description,
             )
 
         @self.router.delete(
@@ -322,6 +402,22 @@ class CollectionsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.delete({id: "123e4567-e89b-12d3-a456-426614174000"});
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -340,7 +436,7 @@ class CollectionsRouter(BaseRouterV3):
                 description="The unique identifier of the collection to delete",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             """
             Delete an existing collection.
 
@@ -358,7 +454,7 @@ class CollectionsRouter(BaseRouterV3):
                 )
 
             await self.services["management"].delete_collection(id)
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)
 
         @self.router.post(
             "/collections/{id}/documents/{document_id}",
@@ -382,6 +478,25 @@ class CollectionsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.addDocument({
+                                    id: "123e4567-e89b-12d3-a456-426614174000"
+                                    documentId: "456e789a-b12c-34d5-e678-901234567890"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -398,7 +513,7 @@ class CollectionsRouter(BaseRouterV3):
             id: UUID = Path(...),
             document_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedMessageResponse:
+        ) -> dict:  # We should make this a generic response or something
             """
             Add a document to a collection.
             """
@@ -434,17 +549,31 @@ class CollectionsRouter(BaseRouterV3):
                                 "123e4567-e89b-12d3-a456-426614174000",
                                 offset=0,
                                 limit=10,
-                                sort_by="created_at",
-                                sort_order="desc"
                             )
                         """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.listDocuments({id: "123e4567-e89b-12d3-a456-426614174000"});
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000/documents?offset=0&limit=10&sort_by=created_at&sort_order=desc" \\
+                            curl -X GET "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000/documents?offset=0&limit=10" \\
                                  -H "Authorization: Bearer YOUR_API_KEY"
                         """
                         ),
@@ -460,23 +589,16 @@ class CollectionsRouter(BaseRouterV3):
             offset: int = Query(
                 0,
                 ge=0,
-                description="The number of documents to skip (for pagination)",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="The maximum number of documents to return (1-1000)",
-            ),
-            sort_by: Optional[str] = Query(
-                None, description="The field to sort the documents by"
-            ),
-            sort_order: Optional[str] = Query(
-                "desc",
-                description="The order to sort the documents ('asc' or 'desc')",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentOverviewResponse:
+        ) -> WrappedDocumentsResponse:
             """
             Get all documents in a collection with pagination and sorting options.
 
@@ -524,6 +646,25 @@ class CollectionsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.removeDocument({
+                                    id: "123e4567-e89b-12d3-a456-426614174000"
+                                    documentId: "456e789a-b12c-34d5-e678-901234567890"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -545,7 +686,7 @@ class CollectionsRouter(BaseRouterV3):
                 description="The unique identifier of the document to remove",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             """
             Remove a document from a collection.
 
@@ -564,7 +705,7 @@ class CollectionsRouter(BaseRouterV3):
             await self.services["management"].remove_document_from_collection(
                 document_id, id
             )
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)
 
         @self.router.get(
             "/collections/{id}/users",
@@ -584,17 +725,33 @@ class CollectionsRouter(BaseRouterV3):
                                 "123e4567-e89b-12d3-a456-426614174000",
                                 offset=0,
                                 limit=10,
-                                sort_by="username",
-                                sort_order="asc"
                             )
                         """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.listUsers({
+                                    id: "123e4567-e89b-12d3-a456-426614174000"
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000/users?offset=0&limit=10&sort_by=username&sort_order=asc" \\
+                            curl -X GET "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000/users?offset=0&limit=10" \\
                                  -H "Authorization: Bearer YOUR_API_KEY"
                         """
                         ),
@@ -610,23 +767,16 @@ class CollectionsRouter(BaseRouterV3):
             offset: int = Query(
                 0,
                 ge=0,
-                description="The number of users to skip (for pagination)",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="The maximum number of users to return (1-1000)",
-            ),
-            sort_by: Optional[str] = Query(
-                None, description="The field to sort the users by"
-            ),
-            sort_order: Optional[str] = Query(
-                "desc",
-                description="The order to sort the users ('asc' or 'desc')",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedUsersInCollectionResponse:
+        ) -> WrappedUsersResponse:
             """
             Get all users in a collection with pagination and sorting options.
 
@@ -676,6 +826,25 @@ class CollectionsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.addUser({
+                                    id: "123e4567-e89b-12d3-a456-426614174000"
+                                    userId: "789a012b-c34d-5e6f-g789-012345678901"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -696,7 +865,7 @@ class CollectionsRouter(BaseRouterV3):
                 ..., description="The unique identifier of the user to add"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedAddUserResponse:
+        ) -> WrappedBooleanResponse:
             """
             Add a user to a collection.
 
@@ -715,7 +884,7 @@ class CollectionsRouter(BaseRouterV3):
             result = await self.services["management"].add_user_to_collection(
                 user_id, id
             )
-            return result  # type: ignore
+            return GenericBooleanResponse(success=result)
 
         @self.router.delete(
             "/collections/{id}/users/{user_id}",
@@ -739,6 +908,25 @@ class CollectionsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.collections.removeUser({
+                                    id: "123e4567-e89b-12d3-a456-426614174000"
+                                    userId: "789a012b-c34d-5e6f-g789-012345678901"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -759,7 +947,7 @@ class CollectionsRouter(BaseRouterV3):
                 ..., description="The unique identifier of the user to remove"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             """
             Remove a user from a collection.
 
@@ -778,4 +966,4 @@ class CollectionsRouter(BaseRouterV3):
             await self.services["management"].remove_user_from_collection(
                 user_id, id
             )
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)

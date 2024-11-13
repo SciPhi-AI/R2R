@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Dict
+from fastapi import HTTPException
 
 import jwt
 from fastapi import Depends
@@ -16,6 +16,7 @@ from core.base import (
     R2RException,
     Token,
     TokenData,
+    CollectionResponse,
 )
 from core.base.api.models import UserResponse
 
@@ -137,9 +138,9 @@ class R2RAuthProvider(AuthProvider):
     async def register(self, email: str, password: str) -> UserResponse:
         # Create new user and give them a default collection
         new_user = await self.database_provider.create_user(email, password)
-        default_collection = (
-            await self.database_provider.create_default_collection(
-                new_user.id,
+        default_collection: CollectionResponse = (
+            await self.database_provider.create_collection(
+                user_id=new_user.id,
             )
         )
 
@@ -192,7 +193,7 @@ class R2RAuthProvider(AuthProvider):
         )
         return {"message": "Email verified successfully"}
 
-    async def login(self, email: str, password: str) -> Dict[str, Token]:
+    async def login(self, email: str, password: str) -> dict[str, Token]:
         logger = logging.getLogger()
         logger.debug(f"Attempting login for email: {email}")
 
@@ -209,8 +210,9 @@ class R2RAuthProvider(AuthProvider):
             logger.error(
                 f"Invalid hashed_password type: {type(user.hashed_password)}"
             )
-            raise R2RException(
-                status_code=500, message="Invalid password hash in database"
+            raise HTTPException(
+                status_code=500,
+                detail="Invalid password hash in database",
             )
 
         try:
@@ -219,8 +221,9 @@ class R2RAuthProvider(AuthProvider):
             )
         except Exception as e:
             logger.error(f"Error during password verification: {str(e)}")
-            raise R2RException(
-                status_code=500, message="Error during password verification"
+            raise HTTPException(
+                status_code=500,
+                detail="Error during password verification",
             ) from e
 
         if not password_verified:
@@ -229,7 +232,7 @@ class R2RAuthProvider(AuthProvider):
                 status_code=401, message="Incorrect email or password"
             )
 
-        if not user.is_verified:
+        if not user.is_verified and self.config.require_email_verification:
             logger.warning(f"Unverified user attempted login: {email}")
             raise R2RException(status_code=401, message="Email not verified")
 
@@ -242,7 +245,7 @@ class R2RAuthProvider(AuthProvider):
 
     async def refresh_access_token(
         self, refresh_token: str
-    ) -> Dict[str, Token]:
+    ) -> dict[str, Token]:
         token_data = await self.decode_token(refresh_token)
         if token_data.token_type != "refresh":
             raise R2RException(
@@ -267,13 +270,14 @@ class R2RAuthProvider(AuthProvider):
 
     async def change_password(
         self, user: UserResponse, current_password: str, new_password: str
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         if not isinstance(user.hashed_password, str):
             logger.error(
                 f"Invalid hashed_password type: {type(user.hashed_password)}"
             )
-            raise R2RException(
-                status_code=500, message="Invalid password hash in database"
+            raise HTTPException(
+                status_code=500,
+                detail="Invalid password hash in database",
             )
 
         if not self.crypto_provider.verify_password(
@@ -291,7 +295,7 @@ class R2RAuthProvider(AuthProvider):
         )
         return {"message": "Password changed successfully"}
 
-    async def request_password_reset(self, email: str) -> Dict[str, str]:
+    async def request_password_reset(self, email: str) -> dict[str, str]:
         user = await self.database_provider.get_user_by_email(email)
         if not user:
             # To prevent email enumeration, always return a success message
@@ -312,7 +316,7 @@ class R2RAuthProvider(AuthProvider):
 
     async def confirm_password_reset(
         self, reset_token: str, new_password: str
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         user_id = await self.database_provider.get_user_id_by_reset_token(
             reset_token
         )
@@ -330,10 +334,50 @@ class R2RAuthProvider(AuthProvider):
         await self.database_provider.remove_reset_token(user_id)
         return {"message": "Password reset successfully"}
 
-    async def logout(self, token: str) -> Dict[str, str]:
+    async def logout(self, token: str) -> dict[str, str]:
         # Add the token to a blacklist
         await self.database_provider.blacklist_token(token)
         return {"message": "Logged out successfully"}
 
     async def clean_expired_blacklisted_tokens(self):
         await self.database_provider.clean_expired_blacklisted_tokens()
+
+    async def send_reset_email(self, email: str) -> dict:
+        """
+        Generate a new verification code and send a reset email to the user.
+        Returns the verification code for testing/sandbox environments.
+
+        Args:
+            email (str): The email address of the user
+
+        Returns:
+            dict: Contains verification_code and message
+
+        Raises:
+            R2RException: If user is not found
+        """
+        user = await self.database_provider.get_user_by_email(email)
+        if not user:
+            raise R2RException(status_code=404, message="User not found")
+
+        # Generate new verification code
+        verification_code = self.crypto_provider.generate_verification_code()
+        expiry = datetime.now(timezone.utc) + timedelta(hours=24)
+
+        # Store the verification code
+        await self.database_provider.store_verification_code(
+            user.id,
+            verification_code,
+            expiry,
+        )
+
+        # Send verification email
+        await self.email_provider.send_verification_email(
+            email, verification_code
+        )
+
+        return {
+            "verification_code": verification_code,
+            "expiry": expiry,
+            "message": f"Verification email sent successfully to {email}",
+        }

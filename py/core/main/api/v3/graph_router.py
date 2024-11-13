@@ -1,20 +1,18 @@
 import logging
 import textwrap
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
-from pydantic import BaseModel, Field, Json
+from pydantic import BaseModel, Field
 
-from core.base import R2RException, RunType, KGCreationSettings
-from core.base.abstractions import EntityLevel, KGRunType, Entity, Relationship, Community
+from core.base import R2RException, RunType
+from core.base.abstractions import EntityLevel, KGRunType
 from core.base.api.models import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
     WrappedKGEntityDeduplicationResponse,
     WrappedKGTunePromptResponse,
-    WrappedKGEntitiesResponse,
-    WrappedKGCommunitiesResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -32,12 +30,35 @@ from fastapi import Request
 
 logger = logging.getLogger()
 
-class EntityResponse(BaseModel):
+
+class Entity(BaseModel):
+    """Model representing a graph entity."""
+
     id: UUID
     name: str
-    category: str
+    type: str
+    metadata: dict = Field(default_factory=dict)
+    level: EntityLevel
+    collection_ids: list[UUID]
+    embedding: Optional[list[float]] = None
 
-class RelationshipResponse(BaseModel):
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                "name": "John Smith",
+                "type": "PERSON",
+                "metadata": {"confidence": 0.95},
+                "level": "DOCUMENT",
+                "collection_ids": ["d09dedb1-b2ab-48a5-b950-6e1f464d83e7"],
+                "embedding": [0.1, 0.2, 0.3],
+            }
+        }
+
+
+class Relationship(BaseModel):
+    """Model representing a graph relationship."""
+
     id: UUID
     subject_id: UUID
     object_id: UUID
@@ -50,9 +71,9 @@ class GraphRouter(BaseRouterV3):
         self,
         providers,
         services,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.KG,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
@@ -1030,10 +1051,13 @@ class GraphRouter(BaseRouterV3):
             - Community statistics
             - Current settings
             """
-            # check if user has access the collection_id
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only superusers can view graph status", 403
+                )
 
-            status = await self.services["kg"].get_graph_status(collection_id)
-            return status  # type: ignore
+            # status = await self.services["kg"].get_graph_status(collection_id)
+            # return status  # type: ignore
 
         # @self.router.post(
         #     "/graphs/{collection_id}/enrich",
@@ -1212,55 +1236,13 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[Entity]:
             """Creates a new entity in the graph."""
-            # entity validation.
-            entity = Entity(**entity)
-            level = entity.level
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can create entities", 403)
 
-            if level is None:
-                raise R2RException(
-                    "Entity level must be provided. Value is one of: collection, document, chunk",
-                    400,
-                )
-
-            if level == EntityLevel.DOCUMENT and not entity.document_id:
-                raise R2RException(
-                    "document_id must be provided for all entities if level is DOCUMENT",
-                    400,
-                )
-
-            if (
-                level == EntityLevel.COLLECTION
-                and not entity.collection_id
-                and not entity.document_ids
-            ):
-                raise R2RException(
-                    "collection_id or document_ids must be provided for all entities if level is COLLECTION",
-                    400,
-                )
-
-            if level == EntityLevel.CHUNK and not entity.document_id:
-                raise R2RException(
-                    "document_id must be provided for all entities if level is CHUNK",
-                    400,
-                )
-
-            # check if entity level is not chunk, then description embedding must be provided
-            if level != EntityLevel.CHUNK and entity.description_embedding:
-                raise R2RException(
-                    "Please do not provide a description_embedding. R2R will automatically generate embeddings",
-                    400,
-                )
-
-            # check that ID is not provided for any entity
-            if entity.id:
-                raise R2RException(
-                    "ID is not allowed to be provided for any entity. It is automatically generated when the entity is added to the graph.",
-                    400,
-                )
-
-            return await self.services["kg"].create_entity(
+            new_entity = await self.services["kg"].create_entity(
                 collection_id, entity
             )
+            return new_entity  # type: ignore
 
         @self.router.delete(
             "/graphs/{collection_id}/entities/{entity_id}",
@@ -1305,26 +1287,13 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[dict]:
             """Deletes an entity and optionally its relationships."""
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can delete entities", 403)
 
-            # implement permission check.
-            if cascade == True:
-                # we don't currently have entity IDs in the triples table, so we can't cascade delete.
-                # we will be able to delete by name.
-                raise NotImplementedError(
-                    "Cascade deletion is not implemented", 501
-                )
-
-            if type(entity_id) == UUID:
-                # FIXME: currently entity ID is an integer in the graph. we need to change it to UUID
-                raise ValueError(
-                    "Currently Entity ID is an integer in the graph. we need to change it to UUID for this endpoint to work",
-                    400,
-                )
-
-            await self.services["kg"].delete_entity(
-                collection_id, entity_id, cascade
-            )
-            return {"message": "Entity deleted successfully"}  # type: ignore
+            # await self.services["kg"].delete_entity(
+            #     collection_id, entity_id, cascade
+            # )
+            # return {"message": "Entity deleted successfully"}  # type: ignore
 
         @self.router.get(
             "/graphs/{collection_id}/entities",
@@ -1367,7 +1336,7 @@ class GraphRouter(BaseRouterV3):
             level: EntityLevel = Query(EntityLevel.DOCUMENT),
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
-            # include_embeddings: bool = Query(False),
+            include_embeddings: bool = Query(False),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> (
             WrappedKGEntitiesResponse
@@ -1383,15 +1352,10 @@ class GraphRouter(BaseRouterV3):
             - Community memberships
             - Optional vector embedding
             """
-
-            entity_table_name = level.value + "_entity"
-            return await self.services["kg"].list_entities(
-                collection_id=collection_id,
-                entity_ids=[],
-                entity_table_name=entity_table_name,
-                offset=offset,
-                limit=limit,
+            entities = await self.services["kg"].list_entities(
+                collection_id, level, offset, limit, include_embeddings
             )
+            return entities  # type: ignore
 
         @self.router.get(
             "/graphs/{collection_id}/entities/{entity_id}",
@@ -1406,14 +1370,12 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[Entity]:
             """Retrieves details of a specific entity."""
-
-            entity_table_name = level.value + "_entity"
-            result = await self.services["kg"].list_entities(
-                collection_id=collection_id,
-                entity_ids=[entity_id],
-                entity_table_name=entity_table_name,  # , offset=offset, limit=limit
+            entity = await self.services["kg"].get_entity(
+                collection_id, entity_id, include_embeddings
             )
-            return result["entities"][0]  # type: ignore
+            if not entity:
+                raise R2RException("Entity not found", 404)
+            return entity
 
         @self.router.post(
             "/graphs/{collection_id}/entities/{entity_id}",
@@ -1469,14 +1431,13 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[Entity]:
             """Updates an existing entity."""
-
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can update entities", 403)
 
-            updated_entity = await self.services["kg"].update_entity(
-                collection_id, entity_id, entity_update
-            )
-            return updated_entity  # type: ignore
+            # updated_entity = await self.services["kg"].update_entity(
+            #     collection_id, entity_id, entity_update
+            # )
+            # return updated_entity  # type: ignore
 
         @self.router.post(
             "/graphs/{collection_id}/entities/deduplicate",
@@ -1661,19 +1622,13 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[Relationship]:
             """Creates a new relationship between entities."""
-
-            # we define relationships only at a document level
-            # when a user creates a graph on two collections with a document in common, the the work is not duplicated
-
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can create relationships", 403
                 )
-            
-            # validate if document_id is valid
 
             new_relationship = await self.services["kg"].create_relationship(
-                document_id, relationship
+                collection_id, relationship
             )
             return new_relationship  # type: ignore
 
@@ -1720,8 +1675,17 @@ class GraphRouter(BaseRouterV3):
             source_id: Optional[UUID] = Query(None),
             target_id: Optional[UUID] = Query(None),
             relationship_type: Optional[str] = Query(None),
-            offset: int = Query(0, ge=0),
-            limit: int = Query(100, ge=1, le=1000),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[list[Relationship]]:
             """Lists relationships (edges) between entities in the knowledge graph.
@@ -1816,15 +1780,16 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[Relationship]:
             """Updates an existing relationship."""
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can update relationships", 403
-                )
+            raise NotImplementedError("Not implemented")
+            # if not auth_user.is_superuser:
+            #     raise R2RException(
+            #         "Only superusers can update relationships", 403
+            #     )
 
             updated_relationship = await self.services[
                 "kg"
             ].update_relationship(
-                relationship_id, relationship_update
+                collection_id, relationship_id, relationship_update
             )
             return updated_relationship  # type: ignore
 
@@ -1866,15 +1831,16 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> ResultsWrapper[dict]:
             """Deletes a relationship."""
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can delete relationships", 403
-                )
+            raise NotImplementedError("Not implemented")
+            # if not auth_user.is_superuser:
+            #     raise R2RException(
+            #         "Only superusers can delete relationships", 403
+            #     )
 
-            await self.services["kg"].delete_relationship(
-                collection_id, relationship_id
-            )
-            return {"message": "Relationship deleted successfully"}  # type: ignore
+            # await self.services["kg"].delete_relationship(
+            #     collection_id, relationship_id
+            # )
+            # return {"message": "Relationship deleted successfully"}  # type: ignore
 
         # Community operations
         @self.router.post(
@@ -2079,12 +2045,7 @@ class GraphRouter(BaseRouterV3):
         @self.base_endpoint
         async def list_communities(
             collection_id: UUID = Path(...),
-            community_numbers: Optional[list[int]] = Query(
-                None, description="Community numbers to filter by."
-            ),
-            levels: Optional[list[int]] = Query(
-                None, description="Levels to filter by."
-            ),
+            level: Optional[int] = Query(None),
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.providers.auth.auth_wrapper),
@@ -2229,7 +2190,7 @@ class GraphRouter(BaseRouterV3):
             collection_id: UUID = Path(...),
             community_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             """
             Deletes a specific community by ID.
             This operation will not affect other communities or the underlying entities.
@@ -2247,10 +2208,10 @@ class GraphRouter(BaseRouterV3):
             # if not community:
             #     raise R2RException("Community not found", 404)
 
-            # await self.services["kg"].delete_community(
-            #     collection_id, community_id
-            # )
-            # return True  # type: ignore
+            await self.services["kg"].delete_community(
+                collection_id, community_id
+            )
+            return True  # type: ignore
 
         @self.router.post(
             "/graphs/{collection_id}/tune-prompt",

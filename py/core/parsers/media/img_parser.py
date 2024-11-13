@@ -2,7 +2,7 @@ import base64
 import logging
 from typing import AsyncGenerator
 
-from core.base.abstractions import DataType, GenerationConfig
+from core.base.abstractions import GenerationConfig
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -13,7 +13,7 @@ from core.base.providers import (
 logger = logging.getLogger()
 
 
-class ImageParser(AsyncParser[DataType]):
+class ImageParser(AsyncParser[str | bytes]):
     """A parser for image data using vision models."""
 
     def __init__(
@@ -38,7 +38,7 @@ class ImageParser(AsyncParser[DataType]):
             )
 
     async def ingest(  # type: ignore
-        self, data: DataType, **kwargs
+        self, data: str | bytes, **kwargs
     ) -> AsyncGenerator[str, None]:
         """
         Ingest image data and yield a description using vision model.
@@ -52,7 +52,7 @@ class ImageParser(AsyncParser[DataType]):
             Chunks of image description text
         """
         if not self.vision_prompt_text:
-            self.vision_prompt_text = await self.database_provider.get_prompt(  # type: ignore
+            self.vision_prompt_text = await self.database_provider.get_cached_prompt(  # type: ignore
                 prompt_name=self.config.vision_img_prompt_name
             )
         try:

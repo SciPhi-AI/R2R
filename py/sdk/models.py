@@ -1,4 +1,5 @@
 from shared.abstractions import (
+    DocumentSearchSettings,
     GenerationConfig,
     HybridSearchSettings,
     KGCommunityResult,
@@ -51,6 +52,7 @@ __all__ = [
     "Token",
     "VectorSearchResult",
     "VectorSearchSettings",
+    "DocumentSearchSettings",
     "KGEntityDeduplicationSettings",
     "KGEntityDeduplicationResponse",
     "KGCreationResponse",

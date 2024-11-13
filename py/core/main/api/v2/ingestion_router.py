@@ -1,13 +1,21 @@
-# TOD
 import base64
 import logging
 from io import BytesIO
 from pathlib import Path as pathlib_Path
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 import yaml
-from fastapi import Body, Depends, File, Form, Path, Query, UploadFile
+from fastapi import (
+    Body,
+    Depends,
+    File,
+    Form,
+    Path,
+    Query,
+    UploadFile,
+    HTTPException,
+)
 from pydantic import Json
 
 from core.base import R2RException, RawChunk, Workflow, generate_document_id
@@ -19,10 +27,9 @@ from core.base.abstractions import (
     VectorTableName,
 )
 from core.base.api.models import (
-    WrappedCreateVectorIndexResponse,
-    WrappedDeleteVectorIndexResponse,
-    WrappedIngestionResponse,
-    WrappedListVectorIndicesResponse,
+    GenericMessageResponse,
+    WrappedGenericMessageResponse,
+    WrappedMetadataUpdateResponse,
     WrappedUpdateResponse,
 )
 from core.providers import (
@@ -41,9 +48,9 @@ class IngestionRouter(BaseRouter):
     def __init__(
         self,
         service: IngestionService,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.INGESTION,
     ):
         super().__init__(service, orchestration_provider, run_type)
@@ -73,6 +80,11 @@ class IngestionRouter(BaseRouter):
                     "Update chunk task queued successfully."
                     if self.orchestration_provider.config.provider != "simple"
                     else "Chunk update completed successfully."
+                ),
+                "update-document-metadata": (
+                    "Update document metadata task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Document metadata update completed successfully."
                 ),
                 "create-vector-index": (
                     "Vector index creation task queued successfully."
@@ -123,6 +135,10 @@ class IngestionRouter(BaseRouter):
                 None,
                 description=ingest_files_descriptions.get("document_ids"),
             ),
+            collection_ids: Optional[Json[list[list[UUID]]]] = Form(
+                None,
+                description="Optional collection IDs for the documents, if provided the document will be assigned to them at ingestion.",
+            ),
             metadatas: Optional[Json[list[dict]]] = Form(
                 None, description=ingest_files_descriptions.get("metadatas")
             ),
@@ -137,7 +153,7 @@ class IngestionRouter(BaseRouter):
                 ),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedIngestionResponse:  # type: ignore
+        ):
             """
             Ingests files into R2R, resulting in stored `Document` objects. Each document has corresponding `Chunk` objects which are used in vector indexing and search.
 
@@ -161,7 +177,7 @@ class IngestionRouter(BaseRouter):
 
             file_datas = await self._process_files(files)
 
-            messages: list[dict[str, Union[str, None]]] = []
+            messages: list[dict[str, str | None]] = []
             for it, file_data in enumerate(file_datas):
                 content_length = len(file_data["content"])
                 file_content = BytesIO(base64.b64decode(file_data["content"]))
@@ -182,6 +198,9 @@ class IngestionRouter(BaseRouter):
                     "ingestion_config": ingestion_config,
                     "user": auth_user.model_dump_json(),
                     "size_in_bytes": content_length,
+                    "collection_ids": (
+                        collection_ids[it] if collection_ids else None
+                    ),
                     "is_update": False,
                 }
 
@@ -193,7 +212,7 @@ class IngestionRouter(BaseRouter):
                     file_data["content_type"],
                 )
                 if run_with_orchestration:
-                    raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
+                    raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
                         "ingest-files",
                         {"request": workflow_input},
                         options={
@@ -241,6 +260,10 @@ class IngestionRouter(BaseRouter):
             ),
             document_ids: Optional[Json[list[UUID]]] = Form(
                 None, description=ingest_files_descriptions.get("document_ids")
+            ),
+            collection_ids: Optional[Json[list[list[UUID]]]] = Form(
+                None,
+                description="Optional collection IDs for the documents, if provided the document will be assigned to them at ingestion.",
             ),
             metadatas: Optional[Json[list[dict]]] = Form(
                 None, description=ingest_files_descriptions.get("metadatas")
@@ -315,10 +338,11 @@ class IngestionRouter(BaseRouter):
                 "ingestion_config": ingestion_config,
                 "user": auth_user.model_dump_json(),
                 "is_update": True,
+                "collection_ids": collection_ids,
             }
 
             if run_with_orchestration:
-                raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
+                raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
                     "update-files", {"request": workflow_input}, {}
                 )
                 raw_message["message"] = "Update task queued successfully."
@@ -358,6 +382,10 @@ class IngestionRouter(BaseRouter):
             metadata: Optional[dict] = Body(
                 None, description=ingest_files_descriptions.get("metadata")
             ),
+            collection_ids: Optional[Json[list[list[UUID]]]] = Body(
+                None,
+                description="Optional collection IDs for the documents, if provided the document will be assigned to them at ingestion.",
+            ),
             run_with_orchestration: Optional[bool] = Body(
                 True,
                 description=ingest_files_descriptions.get(
@@ -365,7 +393,7 @@ class IngestionRouter(BaseRouter):
                 ),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedIngestionResponse:
+        ):
             """
             Ingests `Chunk` objects into the system as raw text and associated metadata.
 
@@ -389,6 +417,7 @@ class IngestionRouter(BaseRouter):
                 "chunks": [chunk.model_dump() for chunk in chunks],
                 "metadata": metadata or {},
                 "user": auth_user.model_dump_json(),
+                "collection_ids": collection_ids,
             }
             if run_with_orchestration:
                 raw_message = await self.orchestration_provider.run_workflow(
@@ -417,6 +446,62 @@ class IngestionRouter(BaseRouter):
                         "task_id": None,
                     }
                 ]
+
+        @self.router.post(
+            "/update_document_metadata/{document_id}",
+        )
+        @self.base_endpoint
+        async def update_document_metadata_app(
+            document_id: UUID = Path(
+                ..., description="The document ID of the document to update"
+            ),
+            metadata: dict = Body(
+                ...,
+                description="The new metadata to merge with existing metadata",
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedMetadataUpdateResponse:
+            """
+            Updates the metadata of a previously ingested document and its associated chunks.
+
+            A valid user authentication token is required to access this endpoint, as regular users can only update their own documents.
+            """
+
+            try:
+                workflow_input = {
+                    "document_id": str(document_id),
+                    "metadata": metadata,
+                    "user": auth_user.model_dump_json(),
+                }
+
+                logger.info(
+                    "Running document metadata update without orchestration."
+                )
+                from core.main.orchestration import simple_ingestion_factory
+
+                simple_ingestor = simple_ingestion_factory(self.service)
+                await simple_ingestor["update-document-metadata"](
+                    workflow_input
+                )
+
+                return {  # type: ignore
+                    "message": "Update metadata task completed successfully.",
+                    "document_id": str(document_id),
+                    "task_id": None,
+                }
+                return [
+                    {  # type: ignore
+                        "message": "Ingestion task completed successfully.",
+                        "document_id": str(document_uuid),
+                        "task_id": None,
+                    }
+                ]
+
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Error updating document metadata: {str(e)}",
+                )
 
         @self.router.put(
             "/update_chunk/{document_id}/{chunk_id}",
@@ -477,8 +562,8 @@ class IngestionRouter(BaseRouter):
                     }
 
             except Exception as e:
-                raise R2RException(
-                    status_code=500, message=f"Error updating chunk: {str(e)}"
+                raise HTTPException(
+                    status_code=500, detail=f"Error updating chunk: {str(e)}"
                 )
 
         create_vector_index_extras = self.openapi_extras.get(
@@ -506,9 +591,7 @@ class IngestionRouter(BaseRouter):
                 default=IndexMeasure.cosine_distance,
                 description=create_vector_descriptions.get("index_measure"),
             ),
-            index_arguments: Optional[
-                Union[IndexArgsIVFFlat, IndexArgsHNSW]
-            ] = Body(
+            index_arguments: Optional[IndexArgsIVFFlat | IndexArgsHNSW] = Body(
                 None,
                 description=create_vector_descriptions.get("index_arguments"),
             ),
@@ -525,7 +608,7 @@ class IngestionRouter(BaseRouter):
                 description=create_vector_descriptions.get("concurrently"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCreateVectorIndexResponse:
+        ) -> WrappedGenericMessageResponse:
             """
             Create a vector index for a given table.
 
@@ -553,7 +636,7 @@ class IngestionRouter(BaseRouter):
                 },
             )
 
-            return raw_message  # type: ignore
+            return GenericMessageResponse(message=raw_message)
 
         list_vector_indices_extras = self.openapi_extras.get(
             "create_vector_index", {}
@@ -572,13 +655,26 @@ class IngestionRouter(BaseRouter):
                 default=VectorTableName.VECTORS,
                 description=list_vector_indices_descriptions.get("table_name"),
             ),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+            ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
 
             filters = {"table_name": table_name} if table_name else {}
             indices = await self.service.providers.database.list_indices(
+                offset=offset,
+                limit=limit,
                 # table_name=table_name
-                filters=filters
+                filters=filters,
             )
             return {"indices": indices}  # type: ignore
 
@@ -610,7 +706,7 @@ class IngestionRouter(BaseRouter):
                 ),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDeleteVectorIndexResponse:
+        ) -> WrappedGenericMessageResponse:
             logger.info(
                 f"Deleting vector index {index_name} from table {table_name}"
             )
@@ -629,7 +725,7 @@ class IngestionRouter(BaseRouter):
                 },
             )
 
-            return raw_message  # type: ignore
+            return GenericMessageResponse(message=raw_message)
 
     @staticmethod
     async def _process_files(files):

@@ -31,6 +31,7 @@ add_command_with_telemetry(management.app_settings)
 add_command_with_telemetry(management.users_overview)
 add_command_with_telemetry(management.documents_overview)
 add_command_with_telemetry(management.list_document_chunks)
+add_command_with_telemetry(management.document_chunks)
 
 # Knowledge Graph
 add_command_with_telemetry(kg.create_graph)

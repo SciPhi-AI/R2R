@@ -1,9 +1,8 @@
 from .base import AsyncSyncMeta, R2RSerializable, syncable
 from .document import (
-    DataType,
     Document,
     DocumentChunk,
-    DocumentInfo,
+    DocumentResponse,
     DocumentType,
     IngestionStatus,
     KGEnrichmentStatus,
@@ -39,6 +38,7 @@ from .llm import (
 from .prompt import Prompt
 from .search import (
     AggregateSearchResult,
+    DocumentSearchSettings,
     HybridSearchSettings,
     KGCommunityResult,
     KGEntityResult,
@@ -73,10 +73,9 @@ __all__ = [
     # Completion abstractions
     "MessageType",
     # Document abstractions
-    "DataType",
     "Document",
     "DocumentChunk",
-    "DocumentInfo",
+    "DocumentResponse",
     "IngestionStatus",
     "KGExtractionStatus",
     "KGEnrichmentStatus",
@@ -117,6 +116,7 @@ __all__ = [
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
+    "DocumentSearchSettings",
     "HybridSearchSettings",
     # KG abstractions
     "KGCreationSettings",

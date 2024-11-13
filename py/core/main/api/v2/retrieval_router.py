@@ -1,6 +1,6 @@
 import asyncio
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from uuid import UUID
 
 import yaml
@@ -8,6 +8,7 @@ from fastapi import Body, Depends
 from fastapi.responses import StreamingResponse
 
 from core.base import (
+    DocumentSearchSettings,
     GenerationConfig,
     KGSearchSettings,
     Message,
@@ -16,6 +17,7 @@ from core.base import (
 )
 from core.base.api.models import (
     WrappedCompletionResponse,
+    WrappedDocumentSearchResponse,
     WrappedRAGAgentResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
@@ -34,9 +36,9 @@ class RetrievalRouter(BaseRouter):
     def __init__(
         self,
         service: RetrievalService,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.RETRIEVAL,
     ):
         super().__init__(service, orchestration_provider, run_type)
@@ -56,7 +58,7 @@ class RetrievalRouter(BaseRouter):
     def _select_filters(
         self,
         auth_user: Any,
-        search_settings: Union[VectorSearchSettings, KGSearchSettings],
+        search_settings: VectorSearchSettings | KGSearchSettings,
     ) -> dict[str, Any]:
         selected_collections = {
             str(cid) for cid in set(search_settings.selected_collection_ids)
@@ -99,6 +101,37 @@ class RetrievalRouter(BaseRouter):
     def _setup_routes(self):
         search_extras = self.openapi_extras.get("search", {})
         search_descriptions = search_extras.get("input_descriptions", {})
+
+        @self.router.post(
+            "/search_documents",
+            openapi_extra=search_extras.get("openapi_extra"),
+        )
+        @self.base_endpoint
+        async def search_documents(
+            query: str = Body(
+                ..., description=search_descriptions.get("query")
+            ),
+            settings: DocumentSearchSettings = Body(
+                default_factory=DocumentSearchSettings,
+                description="Settings for document search",
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedDocumentSearchResponse:  # type: ignore
+            """
+            Perform a search query on the vector database and knowledge graph.
+
+            This endpoint allows for complex filtering of search results using PostgreSQL-based queries.
+            Filters can be applied to various fields such as document_id, and internal metadata values.
+
+
+            Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+            """
+
+            results = await self.service.search_documents(
+                query=query,
+                settings=settings,
+            )
+            return results
 
         @self.router.post(
             "/search",

@@ -10,7 +10,6 @@ from .base_utils import (
     generate_document_id,
     generate_extraction_id,
     generate_id,
-    generate_id_from_label,
     generate_user_id,
     increment_version,
     llm_cost_per_million_tokens,
@@ -31,7 +30,6 @@ __all__ = [
     "generate_extraction_id",
     "generate_default_user_collection_id",
     "generate_user_id",
-    "generate_id_from_label",
     "generate_default_prompt_id",
     # Other
     "increment_version",

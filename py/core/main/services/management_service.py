@@ -1,14 +1,16 @@
 import logging
+import os
 from collections import defaultdict
-from typing import Any, BinaryIO, Dict, Optional, Tuple, Union
+from typing import Any, BinaryIO, Optional, Tuple, Union
 from uuid import UUID
 
 import toml
+from fastapi.responses import StreamingResponse
 
 from core.base import (
     AnalysisTypes,
     CollectionResponse,
-    DocumentInfo,
+    DocumentResponse,
     LogFilterCriteria,
     LogProcessor,
     Message,
@@ -53,8 +55,8 @@ class ManagementService(Service):
     @telemetry_event("Logs")
     async def logs(
         self,
-        offset: int = 0,
-        limit: int = 100,
+        offset: int,
+        limit: int,
         run_type_filter: Optional[RunType] = None,
     ):
         if self.logging_connection is None:
@@ -196,21 +198,23 @@ class ManagementService(Service):
         return {
             "config": config_dict,
             "prompts": prompts,
+            "r2r_project_name": os.environ["R2R_PROJECT_NAME"],
+            # "r2r_version": get_version("r2r"),
         }
 
     @telemetry_event("UsersOverview")
     async def users_overview(
         self,
+        offset: int,
+        limit: int,
         user_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = 100,
         *args,
         **kwargs,
     ):
         return await self.providers.database.get_users_overview(
-            user_ids,
             offset=offset,
             limit=limit,
+            user_ids=user_ids,
         )
 
     @telemetry_event("Delete")
@@ -229,7 +233,6 @@ class ManagementService(Service):
         NOTE: This method assumes that filters delete entire contents of any touched documents.
         """
         ### TODO - FIX THIS, ENSURE THAT DOCUMENTS OVERVIEW IS CLEARED
-        ### TODO - FIX THIS, ENSURE THAT DOCUMENTS OVERVIEW IS CLEARED
 
         def validate_filters(filters: dict[str, Any]) -> None:
             ALLOWED_FILTERS = {
@@ -237,7 +240,6 @@ class ManagementService(Service):
                 "user_id",
                 "collection_ids",
                 "chunk_id",
-                # TODO - Modify these checks such that they can be used PROPERLY for nested filters
                 # TODO - Modify these checks such that they can be used PROPERLY for nested filters
                 "$and",
                 "$or",
@@ -296,23 +298,44 @@ class ManagementService(Service):
                 if result.get("document_id")
             )
 
-        relational_filters = {}
-        if "document_id" in filters:
-            relational_filters["filter_document_ids"] = [
-                filters["document_id"]["$eq"]
-            ]
-        if "user_id" in filters:
-            relational_filters["filter_user_ids"] = [filters["user_id"]["$eq"]]
-        if "collection_ids" in filters:
-            relational_filters["filter_collection_ids"] = list(
-                filters["collection_ids"]["$in"]
-            )
+        # TODO: This might be appropriate to move elsewhere and revisit filter logic in other methods
+        def extract_filters(filters: dict[str, Any]) -> dict[str, list[str]]:
+            relational_filters = {}
 
+            def process_filter(filter_dict: dict[str, Any]):
+                if "document_id" in filter_dict:
+                    relational_filters.setdefault(
+                        "filter_document_ids", []
+                    ).append(filter_dict["document_id"]["$eq"])
+                if "user_id" in filter_dict:
+                    relational_filters.setdefault(
+                        "filter_user_ids", []
+                    ).append(filter_dict["user_id"]["$eq"])
+                if "collection_ids" in filter_dict:
+                    relational_filters.setdefault(
+                        "filter_collection_ids", []
+                    ).extend(filter_dict["collection_ids"]["$in"])
+
+            # Handle nested conditions
+            if "$and" in filters:
+                for condition in filters["$and"]:
+                    process_filter(condition)
+            elif "$or" in filters:
+                for condition in filters["$or"]:
+                    process_filter(condition)
+            else:
+                process_filter(filters)
+
+            return relational_filters
+
+        relational_filters = extract_filters(filters)
         if relational_filters:
             try:
                 documents_overview = (
-                    await self.providers.database.get_documents_overview(
-                        **relational_filters  # type: ignore
+                    await self.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                        offset=0,
+                        limit=1000,
+                        **relational_filters,  # type: ignore
                     )
                 )["results"]
             except Exception as e:
@@ -332,10 +355,10 @@ class ManagementService(Service):
                 )
 
             for document_id in document_ids_to_purge:
-                remaining_chunks = (
-                    await self.providers.database.list_document_chunks(
-                        document_id
-                    )
+                remaining_chunks = await self.providers.database.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                    document_id=document_id,
+                    offset=0,
+                    limit=1000,
                 )
                 if remaining_chunks["total_entries"] == 0:
                     try:
@@ -363,34 +386,34 @@ class ManagementService(Service):
     @telemetry_event("DocumentsOverview")
     async def documents_overview(
         self,
+        offset: int,
+        limit: int,
         user_ids: Optional[list[UUID]] = None,
         collection_ids: Optional[list[UUID]] = None,
         document_ids: Optional[list[UUID]] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
         *args: Any,
         **kwargs: Any,
     ):
         return await self.providers.database.get_documents_overview(
+            offset=offset,
+            limit=limit,
             filter_document_ids=document_ids,
             filter_user_ids=user_ids,
             filter_collection_ids=collection_ids,
-            offset=offset or 0,
-            limit=limit or -1,
         )
 
     @telemetry_event("DocumentChunks")
     async def list_document_chunks(
         self,
         document_id: UUID,
-        offset: int = 0,
-        limit: int = 100,
+        offset: int,
+        limit: int,
         include_vectors: bool = False,
         *args,
         **kwargs,
     ):
         return await self.providers.database.list_document_chunks(
-            document_id,
+            document_id=document_id,
             offset=offset,
             limit=limit,
             include_vectors=include_vectors,
@@ -423,19 +446,11 @@ class ManagementService(Service):
         )
         return None
 
-    @telemetry_event("DocumentCollections")
-    async def document_collections(
-        self, document_id: UUID, offset: int = 0, limit: int = 100
-    ):
-        return await self.providers.database.document_collections(
-            document_id, offset=offset, limit=limit
-        )
-
     def _process_relationships(
         self, relationships: list[Tuple[str, str, str]]
-    ) -> Tuple[Dict[str, list[str]], Dict[str, Dict[str, list[str]]]]:
+    ) -> Tuple[dict[str, list[str]], dict[str, dict[str, list[str]]]]:
         graph = defaultdict(list)
-        grouped: Dict[str, Dict[str, list[str]]] = defaultdict(
+        grouped: dict[str, dict[str, list[str]]] = defaultdict(
             lambda: defaultdict(list)
         )
         for subject, relation, obj in relationships:
@@ -447,9 +462,9 @@ class ManagementService(Service):
 
     def generate_output(
         self,
-        grouped_relationships: Dict[str, Dict[str, list[str]]],
-        graph: Dict[str, list[str]],
-        descriptions_dict: Dict[str, str],
+        grouped_relationships: dict[str, dict[str, list[str]]],
+        graph: dict[str, list[str]],
+        descriptions_dict: dict[str, str],
         print_descriptions: bool = True,
     ) -> list[str]:
         output = []
@@ -491,7 +506,7 @@ class ManagementService(Service):
 
         return output
 
-    def _count_connected_components(self, graph: Dict[str, list[str]]) -> int:
+    def _count_connected_components(self, graph: dict[str, list[str]]) -> int:
         visited = set()
         components = 0
 
@@ -509,7 +524,7 @@ class ManagementService(Service):
         return components
 
     def _get_central_nodes(
-        self, graph: Dict[str, list[str]]
+        self, graph: dict[str, list[str]]
     ) -> list[Tuple[str, float]]:
         degree = {node: len(neighbors) for node, neighbors in graph.items()}
         total_nodes = len(graph)
@@ -520,15 +535,16 @@ class ManagementService(Service):
 
     @telemetry_event("CreateCollection")
     async def create_collection(
-        self, name: str, description: str = ""
+        self,
+        user_id: UUID,
+        name: Optional[str] = None,
+        description: str = "",
     ) -> CollectionResponse:
         return await self.providers.database.create_collection(
-            name, description
+            user_id=user_id,
+            name=name,
+            description=description,
         )
-
-    @telemetry_event("GetCollection")
-    async def get_collection(self, collection_id: UUID) -> CollectionResponse:
-        return await self.providers.database.get_collection(collection_id)
 
     @telemetry_event("UpdateCollection")
     async def update_collection(
@@ -538,7 +554,7 @@ class ManagementService(Service):
         description: Optional[str] = None,
     ) -> CollectionResponse:
         return await self.providers.database.update_collection(
-            collection_id, name, description
+            collection_id=collection_id, name=name, description=description
         )
 
     @telemetry_event("DeleteCollection")
@@ -550,11 +566,20 @@ class ManagementService(Service):
         return True
 
     @telemetry_event("ListCollections")
-    async def list_collections(
-        self, offset: int = 0, limit: int = 100
+    async def collections_overview(
+        self,
+        offset: int,
+        limit: int,
+        user_ids: Optional[list[UUID]] = None,
+        document_ids: Optional[list[UUID]] = None,
+        collection_ids: Optional[list[UUID]] = None,
     ) -> dict[str, list[CollectionResponse] | int]:
-        return await self.providers.database.list_collections(
-            offset=offset, limit=limit
+        return await self.providers.database.get_collections_overview(
+            offset=offset,
+            limit=limit,
+            filter_user_ids=user_ids,
+            filter_document_ids=document_ids,
+            filter_collection_ids=collection_ids,
         )
 
     @telemetry_event("AddUserToCollection")
@@ -581,33 +606,10 @@ class ManagementService(Service):
             collection_id, offset=offset, limit=limit
         )
 
-    @telemetry_event("GetCollectionsForUser")
-    async def get_collections_for_user(
-        self, user_id: UUID, offset: int = 0, limit: int = 100
-    ) -> dict[str, list[CollectionResponse] | int]:
-        return await self.providers.database.get_collections_for_user(
-            user_id, offset, limit
-        )
-
-    @telemetry_event("CollectionsOverview")
-    async def collections_overview(
-        self,
-        collection_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = 100,
-        *args,
-        **kwargs,
-    ):
-        return await self.providers.database.get_collections_overview(
-            collection_ids,
-            offset=offset,
-            limit=limit,
-        )
-
     @telemetry_event("GetDocumentsInCollection")
     async def documents_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
-    ) -> dict[str, Union[list[DocumentInfo], int]]:
+    ) -> dict[str, Union[list[DocumentResponse], int]]:
         return await self.providers.database.documents_in_collection(
             collection_id, offset=offset, limit=limit
         )
@@ -620,9 +622,27 @@ class ManagementService(Service):
             await self.providers.database.add_prompt(
                 name, template, input_types
             )
-            return {"message": f"Prompt '{name}' added successfully."}
+            return f"Prompt '{name}' added successfully."
         except ValueError as e:
             raise R2RException(status_code=400, message=str(e))
+
+    @telemetry_event("GetPrompt")
+    async def get_cached_prompt(
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        prompt_override: Optional[str] = None,
+    ) -> dict:
+        try:
+            return {
+                "message": (
+                    await self.providers.database.get_cached_prompt(
+                        prompt_name, inputs, prompt_override
+                    )
+                )
+            }
+        except ValueError as e:
+            raise R2RException(status_code=404, message=str(e))
 
     @telemetry_event("GetPrompt")
     async def get_prompt(
@@ -632,13 +652,9 @@ class ManagementService(Service):
         prompt_override: Optional[str] = None,
     ) -> dict:
         try:
-            return {
-                "message": (
-                    await self.providers.database.get_prompt(
-                        prompt_name, inputs, prompt_override
-                    )
-                )
-            }
+            return await self.providers.database.get_prompt(
+                prompt_name, inputs, prompt_override
+            )
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))
 
@@ -657,7 +673,7 @@ class ManagementService(Service):
             await self.providers.database.update_prompt(
                 name, template, input_types
             )
-            return {"message": f"Prompt '{name}' updated successfully."}
+            return f"Prompt '{name}' updated successfully."
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))
 
@@ -675,27 +691,40 @@ class ManagementService(Service):
         conversation_id: str,
         branch_id: Optional[str] = None,
         auth_user=None,
-    ) -> Tuple[str, list[Message]]:
+    ) -> dict:
         return await self.logging_connection.get_conversation(
             conversation_id, branch_id
         )
 
+    async def verify_conversation_access(
+        self, conversation_id: str, user_id: UUID
+    ) -> bool:
+        return await self.logging_connection.verify_conversation_access(
+            conversation_id, user_id
+        )
+
     @telemetry_event("CreateConversation")
-    async def create_conversation(self, auth_user=None) -> str:
-        return await self.logging_connection.create_conversation()
+    async def create_conversation(
+        self, user_id: Optional[UUID] = None, auth_user=None
+    ) -> dict:
+        return await self.logging_connection.create_conversation(
+            user_id=user_id
+        )
 
     @telemetry_event("ConversationsOverview")
     async def conversations_overview(
         self,
+        offset: int,
+        limit: int,
         conversation_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = 100,
+        user_ids: Optional[UUID | list[UUID]] = None,
         auth_user=None,
     ) -> dict[str, Union[list[dict], int]]:
         return await self.logging_connection.get_conversations_overview(
-            conversation_ids=conversation_ids,
             offset=offset,
             limit=limit,
+            user_ids=user_ids,
+            conversation_ids=conversation_ids,
         )
 
     @telemetry_event("AddMessage")
@@ -719,12 +748,34 @@ class ManagementService(Service):
             message_id, new_content
         )
 
+    @telemetry_event("updateMessageMetadata")
+    async def update_message_metadata(
+        self, message_id: str, metadata: dict, auth_user=None
+    ):
+        await self.logging_connection.update_message_metadata(
+            message_id, metadata
+        )
+
+    @telemetry_event("exportMessagesToCSV")
+    async def export_messages_to_csv(
+        self, chunk_size: int = 1000, return_type: str = "stream"
+    ) -> Union[StreamingResponse, str]:
+        return await self.logging_connection.export_messages_to_csv(
+            chunk_size, return_type
+        )
+
     @telemetry_event("BranchesOverview")
     async def branches_overview(
-        self, conversation_id: str, auth_user=None
-    ) -> list[Dict]:
-        return await self.logging_connection.get_branches_overview(
-            conversation_id
+        self,
+        offset: int,
+        limit: int,
+        conversation_id: str,
+        auth_user=None,
+    ) -> list[dict]:
+        return await self.logging_connection.get_branches(
+            offset=offset,
+            limit=limit,
+            conversation_id=conversation_id,
         )
 
     @telemetry_event("GetNextBranch")

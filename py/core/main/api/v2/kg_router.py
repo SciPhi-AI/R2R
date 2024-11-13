@@ -282,11 +282,11 @@ class KGRouter(BaseRouter):
                 entity_table_name = "collection_entity"
 
             return await self.service.get_entities(
-                collection_id,
-                entity_ids,
-                entity_table_name,
-                offset,
-                limit,
+                collection_id=collection_id,
+                entity_ids=entity_ids,
+                entity_table_name=entity_table_name,
+                offset=offset,
+                limit=limit,
             )
 
         @self.router.get("/triples")
@@ -321,11 +321,11 @@ class KGRouter(BaseRouter):
                 )
 
             return await self.service.get_triples(
-                collection_id,
-                entity_names,
-                triple_ids,
-                offset,
-                limit,
+                offset=offset,
+                limit=limit,
+                collection_id=collection_id,
+                entity_names=entity_names,
+                triple_ids=triple_ids,
             )
 
         @self.router.get("/communities")
@@ -360,11 +360,11 @@ class KGRouter(BaseRouter):
                 )
 
             return await self.service.get_communities(
-                collection_id,
-                levels,
-                community_numbers,
-                offset,
-                limit,
+                offset=offset,
+                limit=limit,
+                collection_id=collection_id,
+                levels=levels,
+                community_numbers=community_numbers,
             )
 
         @self.router.post("/deduplicate_entities")

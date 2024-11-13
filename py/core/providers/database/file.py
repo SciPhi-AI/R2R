@@ -2,6 +2,7 @@ import io
 import logging
 from typing import BinaryIO, Optional, Union
 from uuid import UUID
+from fastapi import HTTPException
 
 import asyncpg
 
@@ -109,9 +110,9 @@ class PostgresFileHandler(FileHandler):
 
         except Exception as e:
             await conn.execute("SELECT lo_unlink($1)", oid)
-            raise R2RException(
+            raise HTTPException(
                 status_code=500,
-                message=f"Failed to write to large object: {e}",
+                detail=f"Failed to write to large object: {e}",
             )
 
     async def retrieve_file(
@@ -219,10 +220,10 @@ class PostgresFileHandler(FileHandler):
 
     async def get_files_overview(
         self,
+        offset: int,
+        limit: int,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_file_names: Optional[list[str]] = None,
-        offset: int = 0,
-        limit: int = 100,
     ) -> list[dict]:
         """Get an overview of stored files."""
         conditions = []

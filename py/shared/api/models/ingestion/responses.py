@@ -56,30 +56,15 @@ class UpdateResponse(BaseModel):
         }
 
 
-class CreateVectorIndexResponse(BaseModel):
-    message: str = Field(
-        ...,
-        description="Vector index creation queued successfully.",
-    )
-
-
+# TODO: This can probably be cleaner
 class ListVectorIndicesResponse(BaseModel):
     indices: list[dict[str, Any]]
 
 
-class DeleteVectorIndexResponse(BaseModel):
-    message: str
-
-
-class SelectVectorIndexResponse(BaseModel):
-    status: str
-
-
-WrappedIngestionResponse = ResultsWrapper[list[IngestionResponse]]
+WrappedIngestionResponse = ResultsWrapper[IngestionResponse]
+WrappedMetadataUpdateResponse = ResultsWrapper[IngestionResponse]
 WrappedUpdateResponse = ResultsWrapper[UpdateResponse]
-WrappedCreateVectorIndexResponse = ResultsWrapper[CreateVectorIndexResponse]
+
 WrappedListVectorIndicesResponse = PaginatedResultsWrapper[
     ListVectorIndicesResponse
 ]
-WrappedDeleteVectorIndexResponse = ResultsWrapper[DeleteVectorIndexResponse]
-WrappedSelectVectorIndexResponse = ResultsWrapper[SelectVectorIndexResponse]

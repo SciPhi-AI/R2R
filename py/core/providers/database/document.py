@@ -1,14 +1,15 @@
 import asyncio
 import json
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from uuid import UUID
+from fastapi import HTTPException
 
 import asyncpg
 
 from core.base import (
     DocumentHandler,
-    DocumentInfo,
+    DocumentResponse,
     DocumentType,
     IngestionStatus,
     KGEnrichmentStatus,
@@ -55,9 +56,9 @@ class PostgresDocumentHandler(DocumentHandler):
         await self.connection_manager.execute_query(query)
 
     async def upsert_documents_overview(
-        self, documents_overview: Union[DocumentInfo, list[DocumentInfo]]
+        self, documents_overview: DocumentResponse | list[DocumentResponse]
     ) -> None:
-        if isinstance(documents_overview, DocumentInfo):
+        if isinstance(documents_overview, DocumentResponse):
             documents_overview = [documents_overview]
 
         # TODO: make this an arg
@@ -181,7 +182,11 @@ class PostgresDocumentHandler(DocumentHandler):
         await self.connection_manager.execute_query(query, params)
 
     async def _get_status_from_table(
-        self, ids: list[UUID], table_name: str, status_type: str
+        self,
+        ids: list[UUID],
+        table_name: str,
+        status_type: str,
+        column_name: str,
     ):
         """
         Get the workflow status for a given document or list of documents.
@@ -196,9 +201,12 @@ class PostgresDocumentHandler(DocumentHandler):
         """
         query = f"""
             SELECT {status_type} FROM {self._get_table_name(table_name)}
-            WHERE document_id = ANY($1)
+            WHERE {column_name} = ANY($1)
         """
-        return await self.connection_manager.fetch_query(query, [ids])
+        return [
+            row[status_type]
+            for row in await self.connection_manager.fetch_query(query, [ids])
+        ]
 
     async def _get_ids_from_table(
         self,
@@ -222,11 +230,15 @@ class PostgresDocumentHandler(DocumentHandler):
         records = await self.connection_manager.fetch_query(
             query, [status, collection_id]
         )
-        document_ids = [record["document_id"] for record in records]
-        return document_ids
+        return [record["document_id"] for record in records]
 
     async def _set_status_in_table(
-        self, ids: list[UUID], status: str, table_name: str, status_type: str
+        self,
+        ids: list[UUID],
+        status: str,
+        table_name: str,
+        status_type: str,
+        column_name: str,
     ):
         """
         Set the workflow status for a given document or list of documents.
@@ -236,37 +248,38 @@ class PostgresDocumentHandler(DocumentHandler):
             status (str): The status to set.
             table_name (str): The table name.
             status_type (str): The type of status to set.
+            column_name (str): The column name in the table to update.
         """
         query = f"""
             UPDATE {self._get_table_name(table_name)}
             SET {status_type} = $1
-            WHERE document_id = Any($2)
+            WHERE {column_name} = Any($2)
         """
         await self.connection_manager.execute_query(query, [status, ids])
 
-    def _get_status_model_and_table_name(self, status_type: str):
+    def _get_status_model(self, status_type: str):
         """
-        Get the status model and table name for a given status type.
+        Get the status model for a given status type.
 
         Args:
             status_type (str): The type of status to retrieve.
 
         Returns:
-            The status model and table name for the given status type.
+            The status model for the given status type.
         """
         if status_type == "ingestion":
-            return IngestionStatus, "document_info"
+            return IngestionStatus
         elif status_type == "kg_extraction_status":
-            return KGExtractionStatus, "document_info"
+            return KGExtractionStatus
         elif status_type == "kg_enrichment_status":
-            return KGEnrichmentStatus, "collection_info"
+            return KGEnrichmentStatus
         else:
             raise R2RException(
                 status_code=400, message=f"Invalid status type: {status_type}"
             )
 
     async def get_workflow_status(
-        self, id: Union[UUID, list[UUID]], status_type: str
+        self, id: UUID | list[UUID], status_type: str
     ):
         """
         Get the workflow status for a given document or list of documents.
@@ -278,24 +291,21 @@ class PostgresDocumentHandler(DocumentHandler):
         Returns:
             The workflow status for the given document or list of documents.
         """
+
         ids = [id] if isinstance(id, UUID) else id
-        out_model, table_name = self._get_status_model_and_table_name(
-            status_type
+        out_model = self._get_status_model(status_type)
+        result = await self._get_status_from_table(
+            ids,
+            out_model.table_name(),
+            status_type,
+            out_model.id_column(),
         )
-        result = list(
-            map(
-                (
-                    await self._get_status_from_table(
-                        ids, table_name, status_type
-                    )
-                ),
-                out_model,
-            )
-        )
+
+        result = [out_model[status.upper()] for status in result]
         return result[0] if isinstance(id, UUID) else result
 
     async def set_workflow_status(
-        self, id: Union[UUID, list[UUID]], status_type: str, status: str
+        self, id: UUID | list[UUID], status_type: str, status: str
     ):
         """
         Set the workflow status for a given document or list of documents.
@@ -306,17 +316,20 @@ class PostgresDocumentHandler(DocumentHandler):
             status (str): The status to set.
         """
         ids = [id] if isinstance(id, UUID) else id
-        out_model, table_name = self._get_status_model_and_table_name(
-            status_type
-        )
+        out_model = self._get_status_model(status_type)
+
         return await self._set_status_in_table(
-            ids, status, table_name, status_type
+            ids,
+            status,
+            out_model.table_name(),
+            status_type,
+            out_model.id_column(),
         )
 
     async def get_document_ids_by_status(
         self,
         status_type: str,
-        status: Union[str, list[str]],
+        status: str | list[str],
         collection_id: Optional[UUID] = None,
     ):
         """
@@ -331,21 +344,18 @@ class PostgresDocumentHandler(DocumentHandler):
         if isinstance(status, str):
             status = [status]
 
-        out_model, table_name = self._get_status_model_and_table_name(
-            status_type
+        out_model = self._get_status_model(status_type)
+        return await self._get_ids_from_table(
+            status, out_model.table_name(), status_type, collection_id
         )
-        result = await self._get_ids_from_table(
-            status, table_name, status_type, collection_id
-        )
-        return result
 
     async def get_documents_overview(
         self,
+        offset: int,
+        limit: int,
         filter_user_ids: Optional[list[UUID]] = None,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict[str, Any]:
         conditions = []
         params: list[Any] = []
@@ -394,7 +404,7 @@ class PostgresDocumentHandler(DocumentHandler):
             total_entries = results[0]["total_entries"] if results else 0
 
             documents = [
-                DocumentInfo(
+                DocumentResponse(
                     id=row["document_id"],
                     collection_ids=row["collection_ids"],
                     user_id=row["user_id"],
@@ -416,6 +426,7 @@ class PostgresDocumentHandler(DocumentHandler):
             return {"results": documents, "total_entries": total_entries}
         except Exception as e:
             logger.error(f"Error in get_documents_overview: {str(e)}")
-            raise R2RException(
-                status_code=500, message="Database query failed"
+            raise HTTPException(
+                status_code=500,
+                detail="Database query failed",
             )

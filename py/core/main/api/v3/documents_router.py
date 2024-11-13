@@ -3,101 +3,32 @@ import json
 import logging
 import mimetypes
 import textwrap
-from datetime import datetime
 from io import BytesIO
-from typing import Any, Optional, TypeVar, Union
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Depends, File, Form, Path, Query, UploadFile
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field, Json
+
+from core.base.api.models import (
+    GenericBooleanResponse,
+    WrappedCollectionsResponse,
+    WrappedDocumentResponse,
+    WrappedDocumentsResponse,
+    WrappedIngestionResponse,
+    WrappedBooleanResponse,
+    WrappedChunksResponse,
+)
+
+from pydantic import Json
 
 from core.base import R2RException, RunType, generate_document_id
 from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
-from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 from .base_router import BaseRouterV3
-from .chunks_router import ChunkResponse
-
-T = TypeVar("T")
-
-
-class DocumentIngestionResponse(BaseModel):
-    message: str = Field(
-        ...,
-        description="A message describing the result of the ingestion request.",
-    )
-    task_id: Optional[UUID] = Field(
-        None,
-        description="The task ID of the ingestion request.",
-    )
-    document_id: UUID = Field(
-        ...,
-        description="The ID of the document that was ingested.",
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "message": "Ingestion task queued successfully.",
-                "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
-                "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-            }
-        }
-
-
-class DocumentResponse(BaseModel):
-    id: UUID
-    title: str
-    user_id: UUID
-    document_type: str
-    created_at: datetime
-    updated_at: datetime
-    ingestion_status: str
-    kg_extraction_status: str
-    version: str
-    collection_ids: list[UUID]
-    metadata: dict[str, Any]
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                "title": "My Document",
-                "user_id": "3c10c8ff-4deb-43d8-a322-e92551ae1c96",
-                "document_type": "text",
-                "created_at": "2021-09-01T12:00:00Z",
-                "updated_at": "2021-09-01T12:00:00Z",
-                "ingestion_status": "success",
-                "kg_extraction_status": "success",
-                "version": "1",
-                "collection_ids": ["d09dedb1-b2ab-48a5-b950-6e1f464d83e7"],
-                "metadata": {"key": "value"},
-            }
-        }
-
-
-class CollectionResponse(BaseModel):
-    collection_id: UUID
-    name: str
-    description: Optional[str]
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "collection_id": "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                "name": "My Collection",
-                "description": "A collection of documents.",
-                "created_at": "2021-09-01T12:00:00Z",
-                "updated_at": "2021-09-01T12:00:00Z",
-            }
-        }
-
 
 logger = logging.getLogger()
 
@@ -107,9 +38,9 @@ class DocumentsRouter(BaseRouterV3):
         self,
         providers,
         services,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.INGESTION,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
@@ -125,28 +56,49 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                  from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                  client = R2RClient("http://localhost:7272")
-                                                  # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                  result = client.documents.create(
-                                                    file_path="pg_essay_1.html",
-                                                    metadata={"metadata_1":"some random metadata"},
-                                                    id=None
-                                                  )"""
+                            result = client.documents.create(
+                            file_path="pg_essay_1.html",
+                            metadata={"metadata_1":"some random metadata"},
+                            id=None
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.create({
+                                    file: { path: "examples/data/marmeladov.txt", name: "marmeladov.txt" },
+                                    metadata: { title: "marmeladov.txt" },
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                  curl -X POST "https://api.example.com/v3/documents" \\
-                                                    -H "Content-Type: multipart/form-data" \\
-                                                    -H "Authorization: Bearer YOUR_API_KEY" \\
-                                                    -F "file=@pg_essay_1.html;type=text/html" \\
-                                                    -F 'metadata={}' \\
-                                                    -F 'id=null' """
+                            curl -X POST "https://api.example.com/v3/documents" \\
+                            -H "Content-Type: multipart/form-data" \\
+                            -H "Authorization: Bearer YOUR_API_KEY" \\
+                            -F "file=@pg_essay_1.html;type=text/html" \\
+                            -F 'metadata={}' \\
+                            -F 'id=null'
+                            """
                         ),
                     },
                 ]
@@ -162,7 +114,7 @@ class DocumentsRouter(BaseRouterV3):
                 None,
                 description="The text content to ingest. Either a file or content must be provided, but not both.",
             ),
-            id: Optional[Json[UUID]] = Form(
+            id: Optional[UUID] = Form(
                 None,
                 description="The ID of the document. If not provided, a new ID will be generated.",
             ),
@@ -179,7 +131,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[DocumentIngestionResponse]:
+        ) -> WrappedIngestionResponse:
             """
             Creates a new Document object from an input file or text content. The document will be processed
             to create chunks for vector indexing and search.
@@ -255,7 +207,7 @@ class DocumentsRouter(BaseRouterV3):
                 file_data["content_type"],
             )
             if run_with_orchestration:
-                raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
+                raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
                     "ingest-files",
                     {"request": workflow_input},
                     options={
@@ -292,25 +244,45 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                              from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                              client = R2RClient("http://localhost:7272")
-                                                              # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                              result = client.documents.update(
-                                                                file_path="pg_essay_1.html",
-                                                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
-                                                              )"""
+                            result = client.documents.update(
+                            file_path="pg_essay_1.html",
+                            id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.update({
+                                    file: { path: "pg_essay_1.html", name: "pg_essay_1.html" },
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                              curl -X POST "https://api.example.com/document/9fbe403b-c11c-5aae-8ade-ef22980c3ad1"  \\
-                                                                -H "Content-Type: multipart/form-data"  \\
-                                                                -H "Authorization: Bearer YOUR_API_KEY"  \\
-                                                                -F "file=@pg_essay_1.html;type=text/plain" """
+                            curl -X POST "https://api.example.com/document/9fbe403b-c11c-5aae-8ade-ef22980c3ad1"  \\
+                            -H "Content-Type: multipart/form-data"  \\
+                            -H "Authorization: Bearer YOUR_API_KEY"  \\
+                            -F "file=@pg_essay_1.html;type=text/plain"
+                            """
                         ),
                     },
                 ]
@@ -330,7 +302,7 @@ class DocumentsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document. If not provided, a new ID will be generated.",
             ),
-            metadata: Optional[Json[dict]] = Form(
+            metadata: Optional[list[dict]] = Form(
                 None,
                 description="Metadata to associate with the document, such as title, description, or custom fields.",
             ),
@@ -343,7 +315,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[DocumentIngestionResponse]:
+        ) -> WrappedIngestionResponse:
             """
             Updates an existing document with new content and/or metadata. This will trigger
             reprocessing of the document's chunks and knowledge graph data.
@@ -441,7 +413,7 @@ class DocumentsRouter(BaseRouterV3):
                 }
 
                 if run_with_orchestration:
-                    raw_message: dict[str, Union[str, None]] = await self.orchestration_provider.run_workflow(  # type: ignore
+                    raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
                         "update-files", {"request": workflow_input}, {}
                     )
                     raw_message["message"] = "Update task queued successfully."
@@ -476,23 +448,44 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                              from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                              client = R2RClient("http://localhost:7272")
-                                                              # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                              result = client.documents.list(
-                                                                limit=10,
-                                                                offset=0
-                                                              )"""
+                            result = client.documents.list(
+                            limit=10,
+                            offset=0
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.list({
+                                    limit: 10,
+                                    offset: 0,
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                              curl -X GET "https://api.example.com/v3/documents"  \\
-                                                                -H "Authorization: Bearer YOUR_API_KEY" """
+                            curl -X GET "https://api.example.com/v3/documents"  \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
+                            """
                         ),
                     },
                 ]
@@ -507,16 +500,16 @@ class DocumentsRouter(BaseRouterV3):
             offset: int = Query(
                 0,
                 ge=0,
-                description="The offset of the first document to retrieve.",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
-                ge=-1,
+                ge=1,
                 le=1000,
-                description="The maximum number of documents to retrieve. If set to -1, all documents will be returned, otherwise up to 1,000 documents will be returned.",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[DocumentResponse]]:
+        ) -> WrappedDocumentsResponse:
             """
             Returns a paginated list of documents the authenticated user has access to.
 
@@ -525,7 +518,7 @@ class DocumentsRouter(BaseRouterV3):
 
             The documents are returned in order of last modification, with most recent first.
             """
-            request_user_ids = (
+            requesting_user_id = (
                 None if auth_user.is_superuser else [auth_user.id]
             )
             filter_collection_ids = (
@@ -536,7 +529,7 @@ class DocumentsRouter(BaseRouterV3):
             documents_overview_response = await self.services[
                 "management"
             ].documents_overview(
-                user_ids=request_user_ids,
+                user_ids=requesting_user_id,
                 collection_ids=filter_collection_ids,
                 document_ids=document_uuids,
                 offset=offset,
@@ -561,22 +554,42 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                              from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                              client = R2RClient("http://localhost:7272")
-                                                              # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                              result = client.documents.retrieve(
-                                                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
-                                                              )"""
+                            result = client.documents.retrieve(
+                            id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.retrieve({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                              curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1"  \\
-                                                                -H "Authorization: Bearer YOUR_API_KEY" """
+                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1"  \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
+                            """
                         ),
                     },
                 ]
@@ -589,7 +602,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="The ID of the document to retrieve.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[DocumentResponse]:
+        ) -> WrappedDocumentResponse:
             """
             Retrieves detailed information about a specific document by its ID.
 
@@ -608,10 +621,12 @@ class DocumentsRouter(BaseRouterV3):
 
             documents_overview_response = await self.services[
                 "management"
-            ].documents_overview(
+            ].documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                 user_ids=request_user_ids,
                 collection_ids=filter_collection_ids,
                 document_ids=[id],
+                offset=0,
+                limit=100,
             )
             results = documents_overview_response["results"]
             if len(results) == 0:
@@ -628,22 +643,42 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                                from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                                client = R2RClient("http://localhost:7272")
-                                                                # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                                result = client.documents.list_chunks(
-                                                                  id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
-                                                                )"""
+                            result = client.documents.list_chunks(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.listChunks({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                                curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/chunks"  \\
-                                                                    -H "Authorization: Bearer YOUR_API_KEY" """
+                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/chunks"  \\
+                            -H "Authorization: Bearer YOUR_API_KEY"\
+                            """
                         ),
                     },
                 ]
@@ -671,7 +706,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Whether to include vector embeddings in the response.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[ChunkResponse]]:
+        ) -> WrappedChunksResponse:
             """
             Retrieves the text chunks that were generated from a document during ingestion.
             Chunks represent semantic sections of the document and are used for retrieval
@@ -697,7 +732,9 @@ class DocumentsRouter(BaseRouterV3):
             ) == str(auth_user.id)
             document_collections = await self.services[
                 "management"
-            ].document_collections(id, 0, -1)
+            ].get_collections_overview(
+                offset=0, limit=-1, filter_document_ids=[id]
+            )
 
             user_has_access = (
                 is_owner
@@ -715,7 +752,7 @@ class DocumentsRouter(BaseRouterV3):
                     "Not authorized to access this document's chunks.", 403
                 )
 
-            return (  # type: ignore
+            return (
                 list_document_chunks["results"],
                 {"total_entries": list_document_chunks["total_entries"]},
             )
@@ -730,22 +767,42 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                            from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                            client = R2RClient("http://localhost:7272")
-                                                            # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                            result = client.documents.download(
-                                                              id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
-                                                            )"""
+                            result = client.documents.download(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.download({
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                            curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/download"  \\
-                                                                -H "Authorization: Bearer YOUR_API_KEY" """
+                            curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/download"  \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
+                            """
                         ),
                     },
                 ]
@@ -811,22 +868,42 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                            from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                            client = R2RClient("http://localhost:7272")
-                                                            # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                            result = client.documents.delete(
-                                                              id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
-                                                            )"""
+                            result = client.documents.delete(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.delete({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                            curl -X DELETE "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa" \\
-                                                                -H "Authorization: Bearer YOUR_API_KEY" """
+                            curl -X DELETE "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa" \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
+                            """
                         ),
                     },
                 ]
@@ -836,7 +913,7 @@ class DocumentsRouter(BaseRouterV3):
         async def delete_document_by_id(
             id: UUID = Path(..., description="Document ID"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[Optional[bool]]:
+        ) -> WrappedBooleanResponse:
             """
             Delete a specific document. All chunks corresponding to the document are deleted, and all other references to the document are removed.
 
@@ -849,7 +926,7 @@ class DocumentsRouter(BaseRouterV3):
                 ]
             }
             await self.services["management"].delete(filters=filters)
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)
 
         @self.router.delete(
             "/documents/by-filter",
@@ -885,7 +962,7 @@ class DocumentsRouter(BaseRouterV3):
         async def delete_document_by_filter(
             filters: str = Query(..., description="JSON-encoded filters"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[Optional[bool]]:
+        ) -> WrappedBooleanResponse:
             """
             Delete documents based on provided filters. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`. Deletion requests are limited to a user's own documents.
             """
@@ -911,9 +988,11 @@ class DocumentsRouter(BaseRouterV3):
                         message=f"Invalid filter format for key: {key}",
                     )
 
-            return await self.services["management"].delete(
+            delete_bool = await self.services["management"].delete(
                 filters=filters_dict
             )
+
+            return GenericBooleanResponse(success=delete_bool)
 
         @self.router.get(
             "/documents/{id}/collections",
@@ -924,22 +1003,42 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                                                            from r2r import R2RClient
+                            from r2r import R2RClient
 
-                                                            client = R2RClient("http://localhost:7272")
-                                                            # when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-                                                            result = client.documents.list_collections(
-                                                              id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=10
-                                                            )"""
+                            result = client.documents.list_collections(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=10
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.listCollections({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                                                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/collections"  \\
-                                                                -H "Authorization: Bearer YOUR_API_KEY" """
+                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/collections"  \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
+                            """
                         ),
                     },
                 ]
@@ -951,16 +1050,16 @@ class DocumentsRouter(BaseRouterV3):
             offset: int = Query(
                 0,
                 ge=0,
-                description="The offset of the first collection to retrieve.",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="The maximum number of collections to retrieve, up to 1,000.",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[CollectionResponse]]:
+        ) -> WrappedCollectionsResponse:
             """
             Retrieves all collections that contain the specified document. This endpoint is restricted
             to superusers only and provides a system-wide view of document organization.
@@ -978,12 +1077,17 @@ class DocumentsRouter(BaseRouterV3):
                     "Only a superuser can get the collections belonging to a document.",
                     403,
                 )
-            document_collections_response = await self.services[
-                "management"
-            ].document_collections(id, offset, limit)
 
-            return document_collections_response["results"], {  # type: ignore
-                "total_entries": document_collections_response["total_entries"]
+            collections_response = await self.services[
+                "management"
+            ].get_collections_overview(
+                offset=offset,
+                limit=limit,
+                filter_document_ids=[UUID(id)],  # Convert string ID to UUID
+            )
+
+            return collections_response["results"], {  # type: ignore
+                "total_entries": collections_response["total_entries"]
             }
 
     @staticmethod

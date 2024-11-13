@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional, Union
 from uuid import UUID
+from fastapi import HTTPException
 
 from core.base import CryptoProvider, UserHandler
 from core.base.abstractions import R2RException, UserStats
@@ -152,8 +153,9 @@ class PostgresUserHandler(UserHandler):
         )
 
         if not result:
-            raise R2RException(
-                status_code=500, message="Failed to create user"
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create user",
             )
 
         return UserResponse(
@@ -192,8 +194,9 @@ class PostgresUserHandler(UserHandler):
         )
 
         if not result:
-            raise R2RException(
-                status_code=500, message="Failed to update user"
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to update user",
             )
 
         return UserResponse(
@@ -408,7 +411,7 @@ class PostgresUserHandler(UserHandler):
         return True
 
     async def get_users_in_collection(
-        self, collection_id: UUID, offset: int = 0, limit: int = -1
+        self, collection_id: UUID, offset: int, limit: int
     ) -> dict[str, Union[list[UserResponse], int]]:
         """
         Get all users in a specific collection with pagination.
@@ -503,9 +506,9 @@ class PostgresUserHandler(UserHandler):
 
     async def get_users_overview(
         self,
+        offset: int,
+        limit: int,
         user_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = -1,
     ) -> dict[str, Union[list[UserStats], int]]:
         query = f"""
             WITH user_docs AS (
@@ -546,7 +549,7 @@ class PostgresUserHandler(UserHandler):
 
         users = [
             UserStats(
-                user_id=row[0],
+                id=row[0],
                 email=row[1],
                 is_superuser=row[2],
                 is_active=row[3],
@@ -560,6 +563,9 @@ class PostgresUserHandler(UserHandler):
             )
             for row in results
         ]
+
+        if not users:
+            raise R2RException(status_code=404, message="No users found")
 
         total_entries = results[0]["total_entries"]
 
@@ -575,3 +581,41 @@ class PostgresUserHandler(UserHandler):
             query, [collection_id]
         )
         return result is not None
+
+    async def get_user_verification_data(
+        self, user_id: UUID, *args, **kwargs
+    ) -> dict:
+        """
+        Get verification data for a specific user.
+        This method should be called after superuser authorization has been verified.
+        """
+        query = f"""
+            SELECT
+                verification_code,
+                verification_code_expiry,
+                reset_token,
+                reset_token_expiry
+            FROM {self._get_table_name("users")}
+            WHERE user_id = $1
+        """
+        result = await self.connection_manager.fetchrow_query(query, [user_id])
+
+        if not result:
+            raise R2RException(status_code=404, message="User not found")
+
+        return {
+            "verification_data": {
+                "verification_code": result["verification_code"],
+                "verification_code_expiry": (
+                    result["verification_code_expiry"].isoformat()
+                    if result["verification_code_expiry"]
+                    else None
+                ),
+                "reset_token": result["reset_token"],
+                "reset_token_expiry": (
+                    result["reset_token_expiry"].isoformat()
+                    if result["reset_token_expiry"]
+                    else None
+                ),
+            }
+        }

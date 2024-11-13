@@ -2,7 +2,7 @@
 import json
 import mimetypes
 from datetime import datetime, timezone
-from typing import Any, Optional, Set, Union
+from typing import Optional, Set
 from uuid import UUID
 
 import psutil
@@ -12,25 +12,23 @@ from pydantic import Json
 
 from core.base import Message, R2RException
 from core.base.api.models import (
-    WrappedAddUserResponse,
+    GenericMessageResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
-    WrappedCollectionListResponse,
-    WrappedCollectionOverviewResponse,
+    WrappedBooleanResponse,
     WrappedCollectionResponse,
+    WrappedCollectionsResponse,
     WrappedConversationResponse,
-    WrappedConversationsOverviewResponse,
+    WrappedConversationsResponse,
     WrappedDeleteResponse,
-    WrappedDocumentChunkResponse,
-    WrappedDocumentOverviewResponse,
-    WrappedGetPromptsResponse,
+    WrappedChunksResponse,
+    WrappedGenericMessageResponse,
+    WrappedBooleanResponse,
+    WrappedDocumentsResponse,
+    WrappedPromptsResponse,
     WrappedLogResponse,
-    WrappedMessageResponse,
-    WrappedPromptMessageResponse,
     WrappedServerStatsResponse,
-    WrappedUserCollectionResponse,
-    WrappedUserOverviewResponse,
-    WrappedUsersInCollectionResponse,
+    WrappedUsersResponse,
 )
 from core.base.logger import AnalysisTypes, LogFilterCriteria
 from core.providers import (
@@ -47,9 +45,9 @@ class ManagementRouter(BaseRouter):
     def __init__(
         self,
         service: ManagementService,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.MANAGEMENT,
     ):
         super().__init__(service, orchestration_provider, run_type)
@@ -93,7 +91,7 @@ class ManagementRouter(BaseRouter):
                 {}, description="Input types"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedPromptMessageResponse:
+        ) -> WrappedGenericMessageResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `update_prompt` endpoint.",
@@ -103,7 +101,7 @@ class ManagementRouter(BaseRouter):
             result = await self.service.update_prompt(
                 name, template, input_types
             )
-            return result  # type: ignore
+            return GenericMessageResponse(message=result)
 
         @self.router.post("/add_prompt")
         @self.base_endpoint
@@ -112,14 +110,14 @@ class ManagementRouter(BaseRouter):
             template: str = Body(..., description="Prompt template"),
             input_types: dict[str, str] = Body({}, description="Input types"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedPromptMessageResponse:
+        ) -> WrappedGenericMessageResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `add_prompt` endpoint.",
                     403,
                 )
             result = await self.service.add_prompt(name, template, input_types)
-            return result  # type: ignore
+            return GenericMessageResponse(message=result)
 
         @self.router.get("/get_prompt/{prompt_name}")
         @self.base_endpoint
@@ -132,22 +130,22 @@ class ManagementRouter(BaseRouter):
                 None, description="Prompt override"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedPromptMessageResponse:
+        ) -> WrappedGenericMessageResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `get_prompt` endpoint.",
                     403,
                 )
-            result = await self.service.get_prompt(
+            result = await self.service.get_cached_prompt(
                 prompt_name, inputs, prompt_override
             )
-            return result  # type: ignore
+            return GenericMessageResponse(message=result)
 
         @self.router.get("/get_all_prompts")
         @self.base_endpoint
         async def get_all_prompts_app(
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedGetPromptsResponse:
+        ) -> WrappedPromptsResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `get_all_prompts` endpoint.",
@@ -238,7 +236,7 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedUserOverviewResponse:
+        ) -> WrappedUsersResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `users_overview` endpoint.",
@@ -342,7 +340,7 @@ class ManagementRouter(BaseRouter):
                 description="Number of items to return. Use -1 to return all items.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentOverviewResponse:
+        ) -> WrappedDocumentsResponse:
             request_user_ids = (
                 None if auth_user.is_superuser else [auth_user.id]
             )
@@ -367,6 +365,64 @@ class ManagementRouter(BaseRouter):
                 "total_entries": documents_overview_response["total_entries"]
             }
 
+        @self.router.get("/document_chunks/{document_id}")
+        @self.base_endpoint
+        async def document_chunks_app(
+            document_id: str = Path(...),
+            offset: Optional[int] = Query(0, ge=0),
+            limit: Optional[int] = Query(100, ge=0),
+            include_vectors: Optional[bool] = Query(False),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedChunksResponse:
+            document_uuid = UUID(document_id)
+
+            document_chunks = await self.service.list_document_chunks(
+                document_id=document_uuid,
+                offset=offset,
+                limit=limit,
+                include_vectors=include_vectors,
+            )
+
+            document_chunks_result = document_chunks["results"]
+
+            if not document_chunks_result:
+                raise R2RException(
+                    "No chunks found for the given document ID.",
+                    404,
+                )
+
+            is_owner = str(document_chunks_result[0].get("user_id")) == str(
+                auth_user.id
+            )
+            document_collections = await self.service.collections_overview(
+                offset=0,
+                limit=-1,
+                document_ids=[document_uuid],
+            )
+
+            user_has_access = (
+                is_owner
+                or set(auth_user.collection_ids).intersection(
+                    set(
+                        [
+                            ele.collection_id
+                            for ele in document_collections["results"]
+                        ]
+                    )
+                )
+                != set()
+            )
+
+            if not user_has_access and not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can arbitrarily call document_chunks.",
+                    403,
+                )
+
+            return document_chunks_result, {  # type: ignore
+                "total_entries": document_chunks["total_entries"]
+            }
+
         @self.router.get("/list_document_chunks/{document_id}")
         @self.base_endpoint
         async def document_chunks_app(
@@ -375,11 +431,14 @@ class ManagementRouter(BaseRouter):
             limit: Optional[int] = Query(100, ge=0),
             include_vectors: Optional[bool] = Query(False),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentChunkResponse:
+        ) -> WrappedChunksResponse:
             document_uuid = UUID(document_id)
 
             list_document_chunks = await self.service.list_document_chunks(
-                document_uuid, offset, limit, include_vectors
+                document_id=document_uuid,
+                offset=offset,
+                limit=limit,
+                include_vectors=include_vectors,
             )
 
             document_chunks_result = list_document_chunks["results"]
@@ -393,8 +452,10 @@ class ManagementRouter(BaseRouter):
             is_owner = str(document_chunks_result[0].get("user_id")) == str(
                 auth_user.id
             )
-            document_collections = await self.service.document_collections(
-                document_uuid, 0, -1
+            document_collections = await self.service.collections_overview(
+                offset=0,
+                limit=-1,
+                document_ids=[document_uuid],
             )
 
             user_has_access = (
@@ -420,6 +481,7 @@ class ManagementRouter(BaseRouter):
                 "total_entries": list_document_chunks["total_entries"]
             }
 
+        @self.router.get("/list_collections")
         @self.router.get("/collections_overview")
         @self.base_endpoint
         async def collections_overview_app(
@@ -427,7 +489,7 @@ class ManagementRouter(BaseRouter):
             offset: Optional[int] = Query(0, ge=0),
             limit: Optional[int] = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionOverviewResponse:
+        ) -> WrappedCollectionsResponse:
             user_collections: Optional[Set[UUID]] = (
                 None
                 if auth_user.is_superuser
@@ -459,30 +521,13 @@ class ManagementRouter(BaseRouter):
                 )
             )
 
-            return collections_overview_response["results"], {  # type: ignore
+            return collections_overview_response["results"], {
                 "total_entries": collections_overview_response["total_entries"]
             }
 
-        @self.router.post("/create_collection")
-        @self.base_endpoint
-        async def create_collection_app(
-            name: str = Body(..., description="Collection name"),
-            description: Optional[str] = Body(
-                "", description="Collection description"
-            ),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionResponse:
-            collection_id = await self.service.create_collection(
-                name, description
-            )
-            await self.service.add_user_to_collection(  # type: ignore
-                auth_user.id, collection_id.collection_id
-            )
-            return collection_id
-
         @self.router.get("/get_collection/{collection_id}")
         @self.base_endpoint
-        async def get_collection_app(
+        async def get_single_collection_app(
             collection_id: str = Path(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedCollectionResponse:
@@ -496,8 +541,39 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
 
-            result = await self.service.get_collection(collection_uuid)
-            return result  # type: ignore
+            collections_overview_response = (
+                await self.service.collections_overview(
+                    collection_ids=[collection_id],
+                    offset=0,
+                    limit=1,
+                )
+            )
+
+            if not collections_overview_response["results"]:
+                raise R2RException(
+                    status_code=404,
+                    message="Collection not found",
+                )
+
+            return collections_overview_response["results"][0]
+
+        @self.router.post("/create_collection")
+        @self.base_endpoint
+        async def create_collection_app(
+            name: str = Body(..., description="Collection name"),
+            description: Optional[str] = Body(
+                "", description="Collection description"
+            ),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedCollectionResponse:
+            collection_id = await self.service.create_collection(
+                auth_user.id, name, description
+            )
+            await self.service.add_user_to_collection(  # type: ignore
+                auth_user.id,
+                collection_id.collection_id,
+            )
+            return collection_id
 
         @self.router.put("/update_collection")
         @self.base_endpoint
@@ -522,7 +598,9 @@ class ManagementRouter(BaseRouter):
                 )
 
             return await self.service.update_collection(  # type: ignore
-                collection_uuid, name, description
+                collection_id=collection_uuid,
+                name=name,
+                description=description,
             )
 
         @self.router.delete("/delete_collection/{collection_id}")
@@ -543,33 +621,13 @@ class ManagementRouter(BaseRouter):
             await self.service.delete_collection(collection_uuid)
             return None  # type: ignore
 
-        @self.router.get("/list_collections")
-        @self.base_endpoint
-        async def list_collections_app(
-            offset: int = Query(0, ge=0),
-            limit: int = Query(100, ge=1, le=1000),
-            auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionListResponse:
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only a superuser can call the list collections endpoint.",
-                    403,
-                )
-            list_collections_response = await self.service.list_collections(
-                offset=offset, limit=min(max(limit, 1), 1000)
-            )
-
-            return list_collections_response["results"], {  # type: ignore
-                "total_entries": list_collections_response["total_entries"]
-            }
-
         @self.router.post("/add_user_to_collection")
         @self.base_endpoint
         async def add_user_to_collection_app(
             user_id: str = Body(..., description="User ID"),
             collection_id: str = Body(..., description="Collection ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedAddUserResponse:
+        ) -> WrappedBooleanResponse:
             collection_uuid = UUID(collection_id)
             user_uuid = UUID(user_id)
             if (
@@ -584,7 +642,7 @@ class ManagementRouter(BaseRouter):
             result = await self.service.add_user_to_collection(
                 user_uuid, collection_uuid
             )
-            return result  # type: ignore
+            return WrappedBooleanResponse(result=result)
 
         @self.router.post("/remove_user_from_collection")
         @self.base_endpoint
@@ -619,7 +677,7 @@ class ManagementRouter(BaseRouter):
                 100, ge=1, le=1000, description="Pagination limit"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedUsersInCollectionResponse:
+        ) -> WrappedUsersResponse:
             collection_uuid = UUID(collection_id)
             if (
                 not auth_user.is_superuser
@@ -651,17 +709,17 @@ class ManagementRouter(BaseRouter):
                 100, ge=1, le=1000, description="Pagination limit"
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedUserCollectionResponse:
+        ) -> WrappedCollectionsResponse:
             if str(auth_user.id) != user_id and not auth_user.is_superuser:
                 raise R2RException(
                     "The currently authenticated user does not have access to the specified collection.",
                     403,
                 )
             user_uuid = UUID(user_id)
-            user_collection_response = (
-                await self.service.get_collections_for_user(
-                    user_uuid, offset, limit
-                )
+            user_collection_response = await self.service.collections_overview(
+                offset=offset,
+                limit=limit,
+                user_ids=[user_uuid],
             )
 
             return user_collection_response["results"], {  # type: ignore
@@ -719,15 +777,17 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedCollectionListResponse:
+        ) -> WrappedCollectionsResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can get the collections belonging to a document.",
                     403,
                 )
             document_collections_response = (
-                await self.service.document_collections(
-                    document_id, offset, limit
+                await self.service.collections_overview(
+                    offset=offset,
+                    limit=limit,
+                    document_ids=[document_id],
                 )
             )
 
@@ -742,7 +802,7 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentOverviewResponse:
+        ) -> WrappedDocumentsResponse:
             collection_uuid = UUID(collection_id)
             if (
                 not auth_user.is_superuser
@@ -769,15 +829,28 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def conversations_overview_app(
             conversation_ids: list[str] = Query([]),
+            user_ids: Optional[list[str]] = Query(None),
             offset: int = Query(0, ge=0),
-            limit: int = Query(100, ge=1, le=1000),
+            limit: int = Query(100, ge=-1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedConversationsOverviewResponse:
+        ) -> WrappedConversationsResponse:
             conversation_uuids = [
                 UUID(conversation_id) for conversation_id in conversation_ids
             ]
+
+            if auth_user.is_superuser:
+                user_ids = [UUID(uid) for uid in user_ids] if user_ids else None  # type: ignore
+            else:
+                if user_ids:
+                    raise R2RException(
+                        message="Non-superusers cannot query other users' conversations",
+                        status_code=403,
+                    )
+                user_ids = [auth_user.id]
+
             conversations_overview_response = (
                 await self.service.conversations_overview(
+                    user_ids=user_ids,
                     conversation_ids=conversation_uuids,
                     offset=offset,
                     limit=limit,
@@ -797,6 +870,17 @@ class ManagementRouter(BaseRouter):
             branch_id: str = Query(None, description="Branch ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedConversationResponse:
+
+            if not auth_user.is_superuser:
+                has_access = await self.service.verify_conversation_access(
+                    conversation_id, auth_user.id
+                )
+                if not has_access:
+                    raise R2RException(
+                        message="You do not have access to this conversation",
+                        status_code=403,
+                    )
+
             result = await self.service.get_conversation(
                 conversation_id,
                 branch_id,
@@ -808,7 +892,9 @@ class ManagementRouter(BaseRouter):
         async def create_conversation(
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> dict:
-            return await self.service.create_conversation()
+            return await self.service.create_conversation(
+                user_id=auth_user.id if auth_user else None
+            )
 
         @self.router.post("/add_message/{conversation_id}")
         @self.base_endpoint
@@ -821,6 +907,16 @@ class ManagementRouter(BaseRouter):
             metadata: Optional[dict] = Body(None, description="Metadata"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> dict:
+            if not auth_user.is_superuser:
+                has_access = await self.service.verify_conversation_access(
+                    conversation_id, auth_user.id
+                )
+                if not has_access:
+                    raise R2RException(
+                        message="You do not have access to this conversation",
+                        status_code=403,
+                    )
+
             message_id = await self.service.add_message(
                 conversation_id, message, parent_id, metadata
             )
@@ -833,6 +929,8 @@ class ManagementRouter(BaseRouter):
             message: str = Body(..., description="New content"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> dict:
+            # TODO: Add a check to see if the user has access to the message
+
             new_message_id, new_branch_id = await self.service.edit_message(
                 message_id, message
             )
@@ -841,13 +939,57 @@ class ManagementRouter(BaseRouter):
                 "new_branch_id": new_branch_id,
             }
 
+        @self.router.patch("/messages/{message_id}/metadata")
+        @self.base_endpoint
+        async def update_message_metadata(
+            message_id: str = Path(..., description="Message ID"),
+            metadata: dict = Body(..., description="Metadata to update"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            """Update metadata for a specific message.
+
+            The provided metadata will be merged with existing metadata.
+            New keys will be added, existing keys will be updated.
+            """
+            await self.service.update_message_metadata(message_id, metadata)
+            return "ok"
+
+        @self.router.get("/export/messages")
+        @self.base_endpoint
+        async def export_messages(
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only an authorized user can call the `export/messages` endpoint.",
+                    403,
+                )
+            return await self.service.export_messages_to_csv(
+                return_type="stream"
+            )
+
         @self.router.get("/branches_overview/{conversation_id}")
         @self.base_endpoint
         async def branches_overview(
             conversation_id: str = Path(..., description="Conversation ID"),
+            offset: int = Query(0, ge=0),
+            limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> dict:
-            branches = await self.service.branches_overview(conversation_id)
+            if not auth_user.is_superuser:
+                has_access = await self.service.verify_conversation_access(
+                    conversation_id, auth_user.id
+                )
+                if not has_access:
+                    raise R2RException(
+                        message="You do not have access to this conversation's branches",
+                        status_code=403,
+                    )
+            branches = await self.service.branches_overview(
+                offset=offset,
+                limit=limit,
+                conversation_id=conversation_id,
+            )
             return {"branches": branches}
 
         # TODO: Publish this endpoint once more testing is done

@@ -1,6 +1,6 @@
 import json
 from inspect import getmembers, isasyncgenfunction, iscoroutinefunction
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from ..base.base_client import sync_generator_wrapper, sync_wrapper
@@ -38,7 +38,7 @@ class GraphsSDK:
 
         Args:
             collection_id (Union[str, UUID]): Collection ID to create graph for
-            settings (Optional[Dict[str, Any]]): Graph creation settings
+            settings (Optional[dict[str, Any]]): Graph creation settings
             run_with_orchestration (Optional[bool]): Whether to run with task orchestration
 
         Returns:
@@ -90,14 +90,14 @@ class GraphsSDK:
 
     # Entity operations
     async def create_entity(
-        self, collection_id: Union[str, UUID], entity: Dict[str, Any]
+        self, collection_id: Union[str, UUID], entity: dict[str, Any]
     ) -> dict:
         """
         Create a new entity in the graph.
 
         Args:
             collection_id (Union[str, UUID]): Collection ID to create entity in
-            entity (Dict[str, Any]): Entity data including name, type, and metadata
+            entity (dict[str, Any]): Entity data including name, type, and metadata
 
         Returns:
             dict: Created entity information
@@ -134,7 +134,7 @@ class GraphsSDK:
         self,
         collection_id: Union[str, UUID],
         entity_id: Union[str, UUID],
-        entity_update: Dict[str, Any],
+        entity_update: dict[str, Any],
     ) -> dict:
         """
         Update an existing entity.
@@ -142,7 +142,7 @@ class GraphsSDK:
         Args:
             collection_id (Union[str, UUID]): Collection ID containing the entity
             entity_id (Union[str, UUID]): Entity ID to update
-            entity_update (Dict[str, Any]): Updated entity data
+            entity_update (dict[str, Any]): Updated entity data
 
         Returns:
             dict: Updated entity information
@@ -184,6 +184,8 @@ class GraphsSDK:
         offset: int = 0,
         limit: int = 100,
         include_embeddings: bool = False,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
     ) -> dict:
         """
         List entities in the graph.
@@ -191,9 +193,9 @@ class GraphsSDK:
         Args:
             collection_id (Union[str, UUID]): Collection ID to list entities from
             level (EntityLevel): Entity level filter
-            offset (int): Pagination offset
-            limit (int): Maximum number of entities to return
             include_embeddings (bool): Whether to include vector embeddings
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of entities and pagination information
@@ -211,7 +213,7 @@ class GraphsSDK:
     async def deduplicate_entities(
         self,
         collection_id: Union[str, UUID],
-        settings: Optional[Dict[str, Any]] = None,
+        settings: Optional[dict[str, Any]] = None,
         run_type: str = "ESTIMATE",
         run_with_orchestration: bool = True,
     ):  # -> WrappedKGEntityDeduplicationResponse:
@@ -220,7 +222,7 @@ class GraphsSDK:
 
         Args:
             collection_id (Union[str, UUID]): Collection ID to deduplicate entities in
-            settings (Optional[Dict[str, Any]]): Deduplication settings
+            settings (Optional[dict[str, Any]]): Deduplication settings
             run_type (str): Whether to estimate cost or run deduplication
             run_with_orchestration (bool): Whether to run with task orchestration
 
@@ -244,14 +246,14 @@ class GraphsSDK:
 
     # Relationship operations
     async def create_relationship(
-        self, collection_id: Union[str, UUID], relationship: Dict[str, Any]
+        self, collection_id: Union[str, UUID], relationship: dict[str, Any]
     ) -> dict:
         """
         Create a new relationship between entities.
 
         Args:
             collection_id (Union[str, UUID]): Collection ID to create relationship in
-            relationship (Dict[str, Any]): Relationship data including source, target, and type
+            relationship (dict[str, Any]): Relationship data including source, target, and type
 
         Returns:
             dict: Created relationship information
@@ -286,7 +288,7 @@ class GraphsSDK:
         self,
         collection_id: Union[str, UUID],
         relationship_id: Union[str, UUID],
-        relationship_update: Dict[str, Any],
+        relationship_update: dict[str, Any],
     ) -> dict:
         """
         Update an existing relationship.
@@ -294,7 +296,7 @@ class GraphsSDK:
         Args:
             collection_id (Union[str, UUID]): Collection ID containing the relationship
             relationship_id (Union[str, UUID]): Relationship ID to update
-            relationship_update (Dict[str, Any]): Updated relationship data
+            relationship_update (dict[str, Any]): Updated relationship data
 
         Returns:
             dict: Updated relationship information
@@ -331,8 +333,8 @@ class GraphsSDK:
         source_id: Optional[Union[str, UUID]] = None,
         target_id: Optional[Union[str, UUID]] = None,
         relationship_type: Optional[str] = None,
-        offset: int = 0,
-        limit: int = 100,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
     ) -> dict:
         """
         List relationships in the graph.
@@ -342,8 +344,8 @@ class GraphsSDK:
             source_id (Optional[Union[str, UUID]]): Filter by source entity
             target_id (Optional[Union[str, UUID]]): Filter by target entity
             relationship_type (Optional[str]): Filter by relationship type
-            offset (int): Pagination offset
-            limit (int): Maximum number of relationships to return
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of relationships and pagination information
@@ -378,7 +380,7 @@ class GraphsSDK:
 
         Args:
             collection_id (Union[str, UUID]): Collection ID to create communities in
-            settings (Optional[Dict[str, Any]]): Community detection settings
+            settings (Optional[dict[str, Any]]): Community detection settings
             run_with_orchestration (bool): Whether to run with task orchestration
 
         Returns:
@@ -423,7 +425,7 @@ class GraphsSDK:
         self,
         collection_id: Union[str, UUID],
         community_id: Union[str, UUID],
-        community_update: Dict[str, Any],
+        community_update: dict[str, Any],
     ) -> dict:
         """
         Update a community.
@@ -431,7 +433,7 @@ class GraphsSDK:
         Args:
             collection_id (Union[str, UUID]): Collection ID containing the community
             community_id (Union[str, UUID]): Community ID to update
-            community_update (Dict[str, Any]): Updated community data
+            community_update (dict[str, Any]): Updated community data
 
         Returns:
             dict: Updated community information
@@ -446,8 +448,8 @@ class GraphsSDK:
         self,
         collection_id: Union[str, UUID],
         level: Optional[int] = None,
-        offset: int = 0,
-        limit: int = 100,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
     ) -> dict:
         """
         List communities in the graph.
@@ -455,8 +457,8 @@ class GraphsSDK:
         Args:
             collection_id (Union[str, UUID]): Collection ID to list communities from
             level (Optional[int]): Filter by community level
-            offset (int): Pagination offset
-            limit (int): Maximum number of communities to return
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of communities and pagination information
@@ -523,10 +525,10 @@ class GraphsSDK:
         self,
         collection_id: Union[str, UUID],
         prompt_name: str,
-        documents_offset: int = 0,
-        documents_limit: int = 100,
-        chunks_offset: int = 0,
-        chunks_limit: int = 100,
+        documents_offset: Optional[int] = 0,
+        documents_limit: Optional[int] = 100,
+        chunks_offset: Optional[int] = 0,
+        chunks_limit: Optional[int] = 100,
     ):  # -> WrappedKGTunePromptResponse:
         """
         Tune a graph-related prompt using collection data.

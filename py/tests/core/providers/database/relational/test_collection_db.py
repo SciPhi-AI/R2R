@@ -2,7 +2,7 @@ from uuid import UUID
 
 import pytest
 
-from core.base import DocumentInfo, DocumentType, R2RException
+from core.base import DocumentResponse, DocumentType, R2RException
 from core.base.api.models import CollectionResponse
 
 
@@ -109,7 +109,7 @@ async def test_assign_and_remove_document_from_collection(
     )
     document_id = UUID("00000000-0000-0000-0000-000000000001")
     await temporary_postgres_db_provider.upsert_documents_overview(
-        DocumentInfo(
+        DocumentResponse(
             id=document_id,
             collection_ids=[],
             user_id=UUID("00000000-0000-0000-0000-000000000002"),

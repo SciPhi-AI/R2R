@@ -1,9 +1,8 @@
 import asyncio
-from pathlib import Path
-from typing import Any, Optional, Union
+import textwrap
+from typing import Any, Optional
 from uuid import UUID
 
-import yaml
 from fastapi import Body, Depends
 from fastapi.responses import StreamingResponse
 
@@ -26,7 +25,6 @@ from core.providers import (
     SimpleOrchestrationProvider,
 )
 
-from ...services.retrieval_service import RetrievalService
 from .base_router import BaseRouterV3
 
 
@@ -35,9 +33,9 @@ class RetrievalRouterV3(BaseRouterV3):
         self,
         providers,
         services,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.RETRIEVAL,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
@@ -48,7 +46,7 @@ class RetrievalRouterV3(BaseRouterV3):
     def _select_filters(
         self,
         auth_user: Any,
-        search_settings: Union[VectorSearchSettings, KGSearchSettings],
+        search_settings: VectorSearchSettings | KGSearchSettings,
     ) -> dict[str, Any]:
         selected_collections = {
             str(cid) for cid in set(search_settings.selected_collection_ids)
@@ -97,69 +95,75 @@ class RetrievalRouterV3(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.search(
-    query="Who is Aristotle?",
-    vector_search_settings={
-        "use_vector_search": True,
-        "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-        "search_limit": 20,
-        "use_hybrid_search": True
-    },
-    kg_search_settings={
-        "use_kg_search": True,
-        "kg_search_type": "local",
-        "kg_search_level": "0",
-        "generation_config": {
-            "model": "gpt-4o-mini",
-            "temperature": 0.7,
-        },
-        "local_search_limits": {
-            "__Entity__": 20,
-            "__Relationship__": 20,
-            "__Community__": 20,
-        },
-        "max_community_description_length": 65536,
-        "max_llm_queries_for_global_search": 250
-    }
-)""",
+                            result = client.search(
+                                query="Who is Aristotle?",
+                                vector_search_settings={
+                                    "use_vector_search": True,
+                                    "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                    "search_limit": 20,
+                                    "use_hybrid_search": True
+                                },
+                                kg_search_settings={
+                                    "use_kg_search": True,
+                                    "kg_search_type": "local",
+                                    "kg_search_level": "0",
+                                    "generation_config": {
+                                        "model": "gpt-4o-mini",
+                                        "temperature": 0.7,
+                                    },
+                                    "local_search_limits": {
+                                        "__Entity__": 20,
+                                        "__Relationship__": 20,
+                                        "__Community__": 20,
+                                    },
+                                    "max_community_description_length": 65536,
+                                    "max_llm_queries_for_global_search": 250
+                                }
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X POST "https://api.example.com/retrieval/search" \\
-     -H "Content-Type: application/json" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -d '{
-       "query": "Who is Aristotle?",
-       "vector_search_settings": {
-         "use_vector_search": true,
-         "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-         "search_limit": 20,
-         "use_hybrid_search": true
-       },
-       "kg_search_settings": {
-         "use_kg_search": true,
-         "kg_search_type": "local",
-         "kg_search_level": "0",
-         "generation_config": {
-             "model": "gpt-4o-mini",
-             "temperature": 0.7
-         },
-         "local_search_limits": {
-             "__Entity__": 20,
-             "__Relationship__": 20,
-             "__Community__": 20
-         },
-         "max_community_description_length": 65536,
-         "max_llm_queries_for_global_search": 250
-       }
-     }'""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/retrieval/search" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "query": "Who is Aristotle?",
+                                "vector_search_settings": {
+                                    "use_vector_search": true,
+                                    "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                    "search_limit": 20,
+                                    "use_hybrid_search": true
+                                },
+                                "kg_search_settings": {
+                                    "use_kg_search": true,
+                                    "kg_search_type": "local",
+                                    "kg_search_level": "0",
+                                    "generation_config": {
+                                        "model": "gpt-4o-mini",
+                                        "temperature": 0.7
+                                    },
+                                    "local_search_limits": {
+                                        "__Entity__": 20,
+                                        "__Relationship__": 20,
+                                        "__Community__": 20
+                                    },
+                                    "max_community_description_length": 65536,
+                                    "max_llm_queries_for_global_search": 250
+                                }
+                            }'
+                            """
+                        ),
                     },
                 ]
             },
@@ -211,65 +215,71 @@ curl -X POST "https://api.example.com/retrieval/search" \\
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.rag(
-    query="Who is Aristotle?",
-    vector_search_settings={
-        "use_vector_search": True,
-        "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-        "search_limit": 20,
-        "use_hybrid_search": True
-    },
-    kg_search_settings={
-        "use_kg_search": True,
-        "kg_search_type": "local",
-        "kg_search_level": "0",
-        "generation_config": {
-            "model": "gpt-4o-mini",
-            "temperature": 0.7,
-        }
-    },
-    rag_generation_config={
-        "stream": False,
-        "temperature": 0.7,
-        "max_tokens": 150
-    }
-)""",
+                            result = client.rag(
+                                query="Who is Aristotle?",
+                                vector_search_settings={
+                                    "use_vector_search": True,
+                                    "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                    "search_limit": 20,
+                                    "use_hybrid_search": True
+                                },
+                                kg_search_settings={
+                                    "use_kg_search": True,
+                                    "kg_search_type": "local",
+                                    "kg_search_level": "0",
+                                    "generation_config": {
+                                        "model": "gpt-4o-mini",
+                                        "temperature": 0.7,
+                                    }
+                                },
+                                rag_generation_config={
+                                    "stream": False,
+                                    "temperature": 0.7,
+                                    "max_tokens": 150
+                                }
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X POST "https://api.example.com/retrieval/rag" \\
-     -H "Content-Type: application/json" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -d '{
-       "query": "Who is Aristotle?",
-       "vector_search_settings": {
-         "use_vector_search": true,
-         "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-         "search_limit": 20,
-         "use_hybrid_search": true
-       },
-       "kg_search_settings": {
-         "use_kg_search": true,
-         "kg_search_type": "local",
-         "kg_search_level": "0",
-         "generation_config": {
-             "model": "gpt-4o-mini",
-             "temperature": 0.7
-         }
-       },
-       "rag_generation_config": {
-         "stream": false,
-         "temperature": 0.7,
-         "max_tokens": 150
-       }
-     }'""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/retrieval/rag" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "query": "Who is Aristotle?",
+                                "vector_search_settings": {
+                                    "use_vector_search": true,
+                                    "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                    "search_limit": 20,
+                                    "use_hybrid_search": true
+                                },
+                                "kg_search_settings": {
+                                    "use_kg_search": true,
+                                    "kg_search_type": "local",
+                                    "kg_search_level": "0",
+                                    "generation_config": {
+                                        "model": "gpt-4o-mini",
+                                        "temperature": 0.7
+                                    }
+                                },
+                                "rag_generation_config": {
+                                    "stream": false,
+                                    "temperature": 0.7,
+                                    "max_tokens": 150
+                                }
+                            }'
+                            """
+                        ),
                     },
                 ]
             },
@@ -342,67 +352,73 @@ curl -X POST "https://api.example.com/retrieval/rag" \\
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-        from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                        from r2r import R2RClient
 
-        client = R2RClient("http://localhost:7272")
-        # when using auth, do client.login(...)
+                        client = R2RClient("http://localhost:7272")
+                        # when using auth, do client.login(...)
 
-        result = client.agent(
-            message={
-                "role": "user",
-                "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
-            },
-            vector_search_settings={
-                "use_vector_search": True,
-                "filters": {"collection_ids": ["5e157b3a-8469-51db-90d9-52e7d896b49b"]},
-                "search_limit": 20,
-                "use_hybrid_search": True
-            },
-            kg_search_settings={
-                "use_kg_search": True,
-                "kg_search_type": "local",
-                "kg_search_level": "1"
-            },
-            rag_generation_config={
-                "stream": False,
-                "temperature": 0.7,
-                "max_tokens": 1000
-            },
-            include_title_if_available=True,
-            conversation_id="550e8400-e29b-41d4-a716-446655440000"  # Optional for conversation continuity
-        )""",
+                        result = client.agent(
+                            message={
+                                "role": "user",
+                                "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
+                            },
+                            vector_search_settings={
+                                "use_vector_search": True,
+                                "filters": {"collection_ids": ["5e157b3a-8469-51db-90d9-52e7d896b49b"]},
+                                "search_limit": 20,
+                                "use_hybrid_search": True
+                            },
+                            kg_search_settings={
+                                "use_kg_search": True,
+                                "kg_search_type": "local",
+                                "kg_search_level": "1"
+                            },
+                            rag_generation_config={
+                                "stream": False,
+                                "temperature": 0.7,
+                                "max_tokens": 1000
+                            },
+                            include_title_if_available=True,
+                            conversation_id="550e8400-e29b-41d4-a716-446655440000"  # Optional for conversation continuity
+                        )
+                        """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-        curl -X POST "https://api.example.com/retrieval/agent" \\
-            -H "Content-Type: application/json" \\
-            -H "Authorization: Bearer YOUR_API_KEY" \\
-            -d '{
-            "message": {
-                "role": "user",
-                "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
-            },
-            "vector_search_settings": {
-                "use_vector_search": true,
-                "filters": {"collection_ids": ["5e157b3a-8469-51db-90d9-52e7d896b49b"]},
-                "search_limit": 20,
-                "use_hybrid_search": true
-            },
-            "kg_search_settings": {
-                "use_kg_search": true,
-                "kg_search_type": "local",
-                "kg_search_level": "1"
-            },
-            "rag_generation_config": {
-                "stream": false,
-                "temperature": 0.7,
-                "max_tokens": 1000
-            },
-            "include_title_if_available": true,
-            "conversation_id": "550e8400-e29b-41d4-a716-446655440000"
-            }'""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/retrieval/agent" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "message": {
+                                    "role": "user",
+                                    "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
+                                },
+                                "vector_search_settings": {
+                                    "use_vector_search": true,
+                                    "filters": {"collection_ids": ["5e157b3a-8469-51db-90d9-52e7d896b49b"]},
+                                    "search_limit": 20,
+                                    "use_hybrid_search": true
+                                },
+                                "kg_search_settings": {
+                                    "use_kg_search": true,
+                                    "kg_search_type": "local",
+                                    "kg_search_level": "1"
+                                },
+                                "rag_generation_config": {
+                                    "stream": false,
+                                    "temperature": 0.7,
+                                    "max_tokens": 1000
+                                },
+                                "include_title_if_available": true,
+                                "conversation_id": "550e8400-e29b-41d4-a716-446655440000"
+                                }'
+                            """
+                        ),
                     },
                 ]
             },
@@ -524,47 +540,53 @@ curl -X POST "https://api.example.com/retrieval/rag" \\
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# when using auth, do client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-result = client.completion(
-    messages=[
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": "What is the capital of France?"},
-        {"role": "assistant", "content": "The capital of France is Paris."},
-        {"role": "user", "content": "What about Italy?"}
-    ],
-    generation_config={
-        "model": "gpt-4o-mini",
-        "temperature": 0.7,
-        "max_tokens": 150,
-        "stream": False
-    }
-)""",
+                            result = client.completion(
+                                messages=[
+                                    {"role": "system", "content": "You are a helpful assistant."},
+                                    {"role": "user", "content": "What is the capital of France?"},
+                                    {"role": "assistant", "content": "The capital of France is Paris."},
+                                    {"role": "user", "content": "What about Italy?"}
+                                ],
+                                generation_config={
+                                    "model": "gpt-4o-mini",
+                                    "temperature": 0.7,
+                                    "max_tokens": 150,
+                                    "stream": False
+                                }
+                            )
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X POST "https://api.example.com/retrieval/completion" \\
-     -H "Content-Type: application/json" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -d '{
-       "messages": [
-         {"role": "system", "content": "You are a helpful assistant."},
-         {"role": "user", "content": "What is the capital of France?"},
-         {"role": "assistant", "content": "The capital of France is Paris."},
-         {"role": "user", "content": "What about Italy?"}
-       ],
-       "generation_config": {
-         "model": "gpt-4o-mini",
-         "temperature": 0.7,
-         "max_tokens": 150,
-         "stream": false
-       }
-     }'""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/retrieval/completion" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "messages": [
+                                    {"role": "system", "content": "You are a helpful assistant."},
+                                    {"role": "user", "content": "What is the capital of France?"},
+                                    {"role": "assistant", "content": "The capital of France is Paris."},
+                                    {"role": "user", "content": "What about Italy?"}
+                                ],
+                                "generation_config": {
+                                    "model": "gpt-4o-mini",
+                                    "temperature": 0.7,
+                                    "max_tokens": 150,
+                                    "stream": false
+                                }
+                                }'
+                            """
+                        ),
                     },
                 ]
             },

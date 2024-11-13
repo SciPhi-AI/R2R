@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path
@@ -11,6 +11,7 @@ from core.base.api.models import (
     WrappedGenericMessageResponse,
     WrappedTokenResponse,
     WrappedUserResponse,
+    WrappedVerificationResult,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -28,9 +29,9 @@ class AuthRouter(BaseRouter):
     def __init__(
         self,
         service: AuthService,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         run_type: RunType = RunType.UNSPECIFIED,
     ):
         super().__init__(service, orchestration_provider, run_type)
@@ -256,3 +257,46 @@ class AuthRouter(BaseRouter):
                 user_uuid, password, delete_vector_data
             )
             return GenericMessageResponse(message=result["message"])
+
+        @self.router.get("/user/{user_id}/verification_data")
+        @self.base_endpoint
+        async def get_user_verification_code(
+            user_id: str = Path(..., description="User ID"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedVerificationResult:
+            """
+            Get only the verification code for a specific user.
+            Only accessible by superusers.
+            """
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    status_code=403,
+                    message="Only superusers can access verification codes",
+                )
+
+            try:
+                user_uuid = UUID(user_id)
+            except ValueError:
+                raise R2RException(
+                    status_code=400, message="Invalid user ID format"
+                )
+            result = await self.service.get_user_verification_data(user_uuid)
+            return result
+
+        # Add to AuthRouter class (auth_router.py)
+        @self.router.post(
+            "/send_reset_email", response_model=WrappedVerificationResult
+        )
+        @self.base_endpoint
+        async def send_reset_email_app(
+            email: EmailStr = Body(..., description="User's email address"),
+        ):
+            """
+            Generate a new verification code and send a reset email to the user.
+            Returns the verification code and success message.
+
+            This endpoint is particularly useful for sandbox/testing environments
+            where direct access to verification codes is needed.
+            """
+            result = await self.service.send_reset_email(email)
+            return result

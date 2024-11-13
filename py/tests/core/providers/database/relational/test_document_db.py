@@ -4,7 +4,7 @@ from uuid import UUID
 import pytest
 
 from core.base import (
-    DocumentInfo,
+    DocumentResponse,
     DocumentType,
     IngestionStatus,
     KGEnrichmentStatus,
@@ -20,7 +20,7 @@ from core.base import (
 
 @pytest.mark.asyncio
 async def test_upsert_documents_overview(temporary_postgres_db_provider):
-    document_info = DocumentInfo(
+    document_info = DocumentResponse(
         id=UUID("00000000-0000-0000-0000-000000000001"),
         collection_ids=[UUID("00000000-0000-0000-0000-000000000002")],
         user_id=UUID("00000000-0000-0000-0000-000000000003"),
@@ -74,7 +74,7 @@ async def test_upsert_documents_overview(temporary_postgres_db_provider):
 
 @pytest.mark.asyncio
 async def test_delete_from_documents_overview(temporary_postgres_db_provider):
-    document_info = DocumentInfo(
+    document_info = DocumentResponse(
         id=UUID("00000000-0000-0000-0000-000000000001"),
         collection_ids=[UUID("00000000-0000-0000-0000-000000000002")],
         user_id=UUID("00000000-0000-0000-0000-000000000003"),
@@ -103,7 +103,7 @@ async def test_delete_from_documents_overview(temporary_postgres_db_provider):
 
 @pytest.mark.asyncio
 async def test_get_documents_overview(temporary_postgres_db_provider):
-    document_info1 = DocumentInfo(
+    document_info1 = DocumentResponse(
         id=UUID("00000000-0000-0000-0000-000000000001"),
         collection_ids=[UUID("00000000-0000-0000-0000-000000000002")],
         user_id=UUID("00000000-0000-0000-0000-000000000003"),
@@ -115,7 +115,7 @@ async def test_get_documents_overview(temporary_postgres_db_provider):
         ingestion_status=IngestionStatus.PENDING,
         kg_extraction_status=KGExtractionStatus.PENDING,
     )
-    document_info2 = DocumentInfo(
+    document_info2 = DocumentResponse(
         id=UUID("00000000-0000-0000-0000-000000000004"),
         collection_ids=[UUID("00000000-0000-0000-0000-000000000002")],
         user_id=UUID("00000000-0000-0000-0000-000000000003"),

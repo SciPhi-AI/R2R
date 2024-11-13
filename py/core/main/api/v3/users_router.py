@@ -1,138 +1,25 @@
-import datetime
 import logging
 import textwrap
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel, EmailStr, Field, Json
+from pydantic import EmailStr
 
 from core.base import R2RException
 from core.base.api.models import (
-    CollectionResponse,
     GenericMessageResponse,
-    PaginatedResultsWrapper,
-    ResultsWrapper,
-    UserOverviewResponse,
-    WrappedCollectionResponse,
+    GenericBooleanResponse,
     WrappedGenericMessageResponse,
     WrappedTokenResponse,
-    WrappedUserOverviewResponse,
+    WrappedUsersResponse,
     WrappedUserResponse,
+    WrappedBooleanResponse,
+    WrappedCollectionsResponse,
 )
 
 from .base_router import BaseRouterV3
-
-
-class UserResponse(BaseModel):
-    """Detailed user information response"""
-
-    id: UUID = Field(
-        ...,
-        description="Unique identifier for the user",
-    )
-    username: str = Field(
-        ...,
-        description="User's login username",
-    )
-    email: str = Field(
-        ...,
-        description="User's email address",
-    )
-    is_active: bool = Field(
-        ...,
-        description="Whether the user account is currently active",
-    )
-    is_superuser: bool = Field(
-        ...,
-        description="Whether the user has superuser privileges",
-    )
-    created_at: str = Field(
-        ...,
-        description="ISO formatted timestamp of when the user was created",
-    )
-    updated_at: str = Field(
-        ...,
-        description="ISO formatted timestamp of when the user was last updated",
-    )
-    last_login: Optional[str] = Field(
-        None,
-        description="ISO formatted timestamp of user's last login",
-    )
-    collection_ids: List[UUID] = Field(
-        ...,
-        description="List of collection IDs the user has access to",
-    )
-    metadata: Optional[dict] = Field(
-        None,
-        description="Additional user metadata stored as key-value pairs",
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id": "550e8400-e29b-41d4-a716-446655440000",
-                "username": "john.doe",
-                "email": "john.doe@example.com",
-                "is_active": True,
-                "is_superuser": False,
-                "created_at": "2024-03-15T14:30:00Z",
-                "updated_at": "2024-03-20T09:15:00Z",
-                "last_login": "2024-03-22T16:45:00Z",
-                "collection_ids": [
-                    "750e8400-e29b-41d4-a716-446655440000",
-                    "850e8400-e29b-41d4-a716-446655440000",
-                ],
-                "metadata": {
-                    "department": "Engineering",
-                    "title": "Senior Developer",
-                    "location": "New York",
-                },
-            }
-        }
-
-
-class UserActivityResponse(BaseModel):
-    """User activity statistics"""
-
-    total_documents: int = Field(
-        ...,
-        description="Total number of documents owned by the user",
-    )
-    total_collections: int = Field(
-        ...,
-        description="Total number of collections the user has access to",
-    )
-    last_activity: Optional[str] = Field(
-        None,
-        description="ISO formatted timestamp of the user's last activity",
-    )
-    recent_collections: List[UUID] = Field(
-        ...,
-        description="List of recently accessed collection IDs",
-    )
-    recent_documents: List[UUID] = Field(
-        ...,
-        description="List of recently accessed document IDs",
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "total_documents": 156,
-                "total_collections": 8,
-                "last_activity": "2024-03-22T16:45:00Z",
-                "recent_collections": [
-                    "750e8400-e29b-41d4-a716-446655440000",
-                    "850e8400-e29b-41d4-a716-446655440000",
-                ],
-                "recent_documents": [
-                    "950e8400-e29b-41d4-a716-446655440000",
-                    "a50e8400-e29b-41d4-a716-446655440000",
-                ],
-            }
-        }
 
 
 logger = logging.getLogger()
@@ -164,6 +51,25 @@ class UsersRouter(BaseRouterV3):
                                 email="jane.doe@example.com",
                                 password="secure_password123"
                             )"""
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.register({
+                                    email: "jane.doe@example.com",
+                                    password: "secure_password123"
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -208,6 +114,25 @@ class UsersRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.verifyEmail({
+                                    email: jane.doe@example.com",
+                                    verificationCode: "1lklwal!awdclm"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -248,7 +173,27 @@ class UsersRouter(BaseRouterV3):
                             tokens = client.users.login(
                                 email="jane.doe@example.com",
                                 password="secure_password123"
-                            )"""
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.login({
+                                    email: jane.doe@example.com",
+                                    password: "secure_password123"
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -284,7 +229,24 @@ class UsersRouter(BaseRouterV3):
 
                             client = R2RClient("http://localhost:7272")
                             # client.login(...)
-                            result = client.users.logout()"""
+                            result = client.users.logout()
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.logout();
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -323,6 +285,22 @@ class UsersRouter(BaseRouterV3):
 
                             new_tokens = client.users.refresh_token()
                             # New tokens are automatically stored in the client"""
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.refreshAccessToken();
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -367,6 +345,25 @@ class UsersRouter(BaseRouterV3):
                                 current_password="old_password123",
                                 new_password="new_secure_password456"
                             )"""
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.changePassword({
+                                    current_password: "old_password123",
+                                    new_password: "new_secure_password456"
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                     {
@@ -415,6 +412,24 @@ class UsersRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.requestPasswordReset({
+                                    email: jane.doe@example.com",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -455,6 +470,25 @@ class UsersRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.resetPassword({
+                                    reset_token: "reset_token_received_via_email",
+                                    new_password: "new_secure_password789"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -483,29 +517,49 @@ class UsersRouter(BaseRouterV3):
         @self.router.get(
             "/users",
             summary="List Users",
-            response_model=WrappedUserOverviewResponse,
             openapi_extra={
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
 
-# List users with filters
-users = client.users.list(
-    offset=0,
-    limit=100,
-)""",
+                            # List users with filters
+                            users = client.users.list(
+                                offset=0,
+                                limit=100,
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.list();
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X GET "https://api.example.com/users?offset=0&limit=100&username=john&email=john@example.com&is_active=true&is_superuser=false&sort_by=created_at&sort_order=desc" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/users?offset=0&limit=100&username=john&email=john@example.com&is_active=true&is_superuser=false" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -513,37 +567,29 @@ curl -X GET "https://api.example.com/users?offset=0&limit=100&username=john&emai
         @self.base_endpoint
         async def list_users(
             # TODO - Implement the following parameters
-            # TODO - Implement the following parameters
             #     offset: int = Query(0, ge=0, example=0),
             #     limit: int = Query(100, ge=1, le=1000, example=100),
             #     username: Optional[str] = Query(None, example="john"),
             #     email: Optional[str] = Query(None, example="john@example.com"),
             #     is_active: Optional[bool] = Query(None, example=True),
             #     is_superuser: Optional[bool] = Query(None, example=False),
-            #     sort_by: Optional[str] = Query(
-            #         None,
-            #         example="created_at",
-            #         description="Field to sort by (created_at, username, email)",
-            #     ),
-            #     sort_order: Optional[str] = Query(
-            #         "desc",
-            #         example="desc",
-            #         description="Sort order (asc or desc)",
-            #     ),
             #     auth_user=Depends(self.providers.auth.auth_wrapper),
-            # ) -> PaginatedResultsWrapper[List[UserOverviewResponse]]:
             user_ids: Optional[list[UUID]] = Query(
                 None, description="List of user IDs to filter by"
             ),
-            offset: int = Query(0, ge=0, description="Offset for pagination"),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="Limit for pagination, max 1000",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):  #  -> WrappedUserOverviewResponse:
+        ) -> WrappedUsersResponse:
             """
             List all users with pagination and filtering options.
             Only accessible by superusers.
@@ -565,29 +611,50 @@ curl -X GET "https://api.example.com/users?offset=0&limit=100&username=john&emai
         @self.router.get(
             "/users/{id}",
             summary="Get User Details",
-            # response_model=ResultsWrapper[UserOverviewResponse],
             openapi_extra={
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
 
-# Get user details
-users = client.users.retrieve(
-    id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
-)
-""",
+                            # Get user details
+                            users = client.users.retrieve(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.retrieve({
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -598,25 +665,26 @@ curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000"
                 ..., example="550e8400-e29b-41d4-a716-446655440000"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[UserOverviewResponse]:
+        ) -> WrappedUserResponse:
             """
             Get detailed information about a specific user.
             Users can only access their own information unless they are superusers.
             """
-            if not auth_user.is_superuser and not auth_user.id == id:
+            if not auth_user.is_superuser and auth_user.id != id:
                 raise R2RException(
                     "Only a superuser can call the get `user` endpoint for other users.",
                     403,
                 )
 
-            user_overview_response = await self.services[
+            users_overview_response = await self.services[
                 "management"
-            ].users_overview([id])
-            if len(user_overview_response["results"]) == 0:
-                raise R2RException("User not found.", 404)
-            return user_overview_response["results"][0].dict(), {  # type: ignore
-                "total_entries": user_overview_response["total_entries"]
-            }
+            ].users_overview(
+                offset=0,
+                limit=1,
+                user_ids=[id],
+            )
+
+            return users_overview_response["results"][0]
 
         @self.router.get(
             "/users/{id}/collections",
@@ -625,26 +693,50 @@ curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000"
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
 
-# Get user collections
-collections = client.get_user_collections(
-    "550e8400-e29b-41d4-a716-446655440000",
-    offset=0,
-    limit=100
-)
-""",
+                            # Get user collections
+                            collections = client.user.list_collections(
+                                "550e8400-e29b-41d4-a716-446655440000",
+                                offset=0,
+                                limit=100
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.listCollections({
+                                    id: "550e8400-e29b-41d4-a716-446655440000",
+                                    offset: 0,
+                                    limit: 100
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/collections?offset=0&limit=100" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/collections?offset=0&limit=100" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -654,10 +746,19 @@ curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/
             id: UUID = Path(
                 ..., example="550e8400-e29b-41d4-a716-446655440000"
             ),
-            offset: int = Query(0, ge=0, example=0),
-            limit: int = Query(100, ge=1, le=1000, example=100),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[List[CollectionResponse]]:
+        ) -> WrappedCollectionsResponse:
             """
             Get all collections associated with a specific user.
             Users can only access their own collections unless they are superusers.
@@ -669,7 +770,11 @@ curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/
                 )
             user_collection_response = await self.services[
                 "management"
-            ].get_collections_for_user(id, offset, limit)
+            ].collections_overview(
+                offset=offset,
+                limit=limit,
+                user_ids=[id],
+            )
             return user_collection_response["results"], {  # type: ignore
                 "total_entries": user_collection_response["total_entries"]
             }
@@ -677,30 +782,53 @@ curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/
         @self.router.post(
             "/users/{id}/collections/{collection_id}",
             summary="Add User to Collection",
-            response_model=ResultsWrapper[bool],
+            response_model=WrappedBooleanResponse,
             openapi_extra={
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
 
-# Add user to collection
-client.users.add_user_to_collection(
-    id="550e8400-e29b-41d4-a716-446655440000",
-    collection_id="750e8400-e29b-41d4-a716-446655440000"
-)
-""",
+                            # Add user to collection
+                            client.users.add_to_collection(
+                                id="550e8400-e29b-41d4-a716-446655440000",
+                                collection_id="750e8400-e29b-41d4-a716-446655440000"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.addToCollection({
+                                    id: "550e8400-e29b-41d4-a716-446655440000",
+                                    collection_id: "750e8400-e29b-41d4-a716-446655440000"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/collections/750e8400-e29b-41d4-a716-446655440000" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/collections/750e8400-e29b-41d4-a716-446655440000" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -714,7 +842,7 @@ curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000
                 ..., example="750e8400-e29b-41d4-a716-446655440000"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             if auth_user.id != id and not auth_user.is_superuser:
                 raise R2RException(
                     "The currently authenticated user does not have access to the specified collection.",
@@ -722,39 +850,60 @@ curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000
                 )
 
             # TODO - Do we need a check on user access to the collection?
-            # TODO - Do we need a check on user access to the collection?
             await self.services["management"].add_user_to_collection(  # type: ignore
                 id, collection_id
             )
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)
 
-        @self.router.post(
+        @self.router.delete(
             "/users/{id}/collections/{collection_id}",
             summary="Remove User from Collection",
-            response_model=ResultsWrapper[None],
             openapi_extra={
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
 
-# Remove user from collection
-client.remove_user_from_collection(
-    id="550e8400-e29b-41d4-a716-446655440000",
-    collection_id="750e8400-e29b-41d4-a716-446655440000"
-)
-""",
+                            # Remove user from collection
+                            client.users.remove_from_collection(
+                                id="550e8400-e29b-41d4-a716-446655440000",
+                                collection_id="750e8400-e29b-41d4-a716-446655440000"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.removeFromCollection({
+                                    id: "550e8400-e29b-41d4-a716-446655440000",
+                                    collection_id: "750e8400-e29b-41d4-a716-446655440000"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X DELETE "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/collections/750e8400-e29b-41d4-a716-446655440000" \\
-     -H "Authorization: Bearer YOUR_API_KEY"
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X DELETE "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/collections/750e8400-e29b-41d4-a716-446655440000" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
                     },
                 ]
             },
@@ -768,7 +917,7 @@ curl -X DELETE "https://api.example.com/users/550e8400-e29b-41d4-a716-4466554400
                 ..., example="750e8400-e29b-41d4-a716-446655440000"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[bool]:
+        ) -> WrappedBooleanResponse:
             """
             Remove a user from a collection.
             Requires either superuser status or access to the collection.
@@ -780,49 +929,69 @@ curl -X DELETE "https://api.example.com/users/550e8400-e29b-41d4-a716-4466554400
                 )
 
             # TODO - Do we need a check on user access to the collection?
-            # TODO - Do we need a check on user access to the collection?
             await self.services["management"].remove_user_from_collection(  # type: ignore
                 id, collection_id
             )
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)
 
         @self.router.post(
             "/users/{id}",
             summary="Update User",
-            # response_model=ResultsWrapper[UserResponse],
             openapi_extra={
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
-# client.login(...)
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
 
-# Update user
-updated_user = client.update_user(
-    "550e8400-e29b-41d4-a716-446655440000",
-    name="John Doe"
-)
-""",
+                            # Update user
+                            updated_user = client.update_user(
+                                "550e8400-e29b-41d4-a716-446655440000",
+                                name="John Doe"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.update({
+                                    id: "550e8400-e29b-41d4-a716-446655440000",
+                                    name: "John Doe"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
                     },
                     {
                         "lang": "Shell",
-                        "source": """
-curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000" \\
-     -H "Authorization: Bearer YOUR_API_KEY" \\
-     -H "Content-Type: application/json" \\
-     -d '{
-         "id": "550e8400-e29b-41d4-a716-446655440000",
-         "name": "John Doe",
-     }'
-""",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -H "Content-Type: application/json" \\
+                                -d '{
+                                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                                    "name": "John Doe",
+                                }'
+                            """
+                        ),
                     },
                 ]
             },
         )
-        # TODO - Modify update user to have synced params with user object
         # TODO - Modify update user to have synced params with user object
         @self.base_endpoint
         async def update_user(
@@ -851,12 +1020,11 @@ curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000
                     "Only superusers can update the superuser status of a user",
                     403,
                 )
-            if not auth_user.is_superuser:
-                if not auth_user.id == id:
-                    raise R2RException(
-                        "Only superusers can update other users' information",
-                        403,
-                    )
+            if not auth_user.is_superuser and auth_user.id != id:
+                raise R2RException(
+                    "Only superusers can update other users' information",
+                    403,
+                )
 
             return await self.services["auth"].update_user(
                 user_id=id,

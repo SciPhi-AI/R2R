@@ -3,9 +3,12 @@ import logging
 import time
 from typing import Optional
 from uuid import UUID
+from fastapi import HTTPException
 
 from core import R2RStreamingRAGAgent
 from core.base import (
+    DocumentSearchSettings,
+    EmbeddingPurpose,
     GenerationConfig,
     KGSearchSettings,
     Message,
@@ -118,6 +121,18 @@ class RetrievalService(Service):
 
             return results.as_dict()
 
+    @telemetry_event("SearchDocuments")
+    async def search_documents(
+        self,
+        query: str,
+        settings: DocumentSearchSettings,
+    ) -> list[dict]:
+
+        return await self.providers.database.search_documents(
+            query_text=query,
+            settings=settings,
+        )
+
     @telemetry_event("Completion")
     async def completion(
         self,
@@ -193,12 +208,12 @@ class RetrievalService(Service):
             except Exception as e:
                 logger.error(f"Pipeline error: {str(e)}")
                 if "NoneType" in str(e):
-                    raise R2RException(
+                    raise HTTPException(
                         status_code=502,
-                        message="Remote server not reachable or returned an invalid response",
+                        detail="Remote server not reachable or returned an invalid response",
                     ) from e
-                raise R2RException(
-                    status_code=500, message="Internal Server Error"
+                raise HTTPException(
+                    status_code=500, detail="Internal Server Error"
                 ) from e
 
     async def stream_rag_response(
@@ -296,33 +311,29 @@ class RetrievalService(Service):
                         ]
                         ids = [conv[0] for conv in conversation]
                     else:
-                        conversation_id = (
+                        conversation = (
                             await self.logging_connection.create_conversation()
                         )
-                        messages = [message]  # type: ignore
-                else:
-                    if not conversation_id:
-                        conversation_id = (
-                            await self.logging_connection.create_conversation()
-                        )
+                        conversation_id = conversation["id"]
 
                         parent_id = None
                         for inner_message in messages[:-1]:
-
-                            parent_id = (
-                                await self.logging_connection.add_message(
-                                    conversation_id, inner_message, parent_id
-                                )
+                            parent_id = await self.logging_connection.add_message(
+                                conversation_id,  # Use the stored conversation_id
+                                inner_message,
+                                parent_id,
                             )
+                    messages = messages or []
 
                 current_message = messages[-1]  # type: ignore
 
                 # Save the new message to the conversation
-                message_id = await self.logging_connection.add_message(
+                message = await self.logging_connection.add_message(
                     conversation_id,  # type: ignore
                     current_message,  # type: ignore
                     parent_id=str(ids[-2]) if (ids and len(ids) > 1) else None,  # type: ignore
                 )
+                message_id = message["id"]
 
                 if rag_generation_config.stream:
                     t1 = time.time()
@@ -382,18 +393,21 @@ class RetrievalService(Service):
                 )
                 return {
                     "messages": results,
-                    "conversation_id": conversation_id,
+                    "conversation_id": str(
+                        conversation_id
+                    ),  # Ensure it's a string
                 }
 
             except Exception as e:
                 logger.error(f"Pipeline error: {str(e)}")
                 if "NoneType" in str(e):
-                    raise R2RException(
+                    raise HTTPException(
                         status_code=502,
-                        message="Server not reachable or returned an invalid response",
+                        detail="Server not reachable or returned an invalid response",
                     )
-                raise R2RException(
-                    status_code=500, message="Internal Server Error"
+                raise HTTPException(
+                    status_code=500,
+                    detail="Internal Server Error",
                 )
 
 

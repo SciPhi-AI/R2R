@@ -251,8 +251,10 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                 metadata=extraction["metadata"],
             )
             for extraction in (
-                await self.database_provider.list_document_chunks(
-                    document_id=document_id
+                await self.database_provider.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                    document_id=document_id,
+                    offset=0,
+                    limit=100,
                 )
             )["results"]
         ]

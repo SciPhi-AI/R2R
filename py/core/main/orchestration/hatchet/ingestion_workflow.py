@@ -3,6 +3,7 @@ import logging
 import uuid
 from typing import TYPE_CHECKING
 from uuid import UUID
+from fastapi import HTTPException
 
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
 from litellm import AuthenticationError
@@ -14,8 +15,11 @@ from core.base import (
     generate_extraction_id,
     increment_version,
 )
-from core.base.abstractions import DocumentInfo, R2RException
-from core.utils import generate_default_user_collection_id
+from core.base.abstractions import DocumentResponse, R2RException
+from core.utils import (
+    generate_default_user_collection_id,
+    update_settings_from_dict,
+)
 
 from ...services import IngestionService, IngestionServiceAdapter
 
@@ -97,7 +101,7 @@ def hatchet_ingestion_factory(
                 # @orchestration_provider.step(parents=["parse"], timeout="60m")
                 # async def embed(self, context: Context) -> dict:
                 #     document_info_dict = context.step_output("parse")["document_info"]
-                #     document_info = DocumentInfo(**document_info_dict)
+                #     document_info = DocumentResponse(**document_info_dict)
 
                 await self.ingestion_service.update_document_status(
                     document_info,
@@ -136,7 +140,7 @@ def hatchet_ingestion_factory(
                 # async def finalize(self, context: Context) -> dict:
                 #     document_info_dict = context.step_output("embed")["document_info"]
                 #     print("Calling finalize for document_info_dict = ", document_info_dict)
-                #     document_info = DocumentInfo(**document_info_dict)
+                #     document_info = DocumentResponse(**document_info_dict)
 
                 is_update = context.workflow_input()["request"].get(
                     "is_update"
@@ -151,27 +155,59 @@ def hatchet_ingestion_factory(
                     status=IngestionStatus.SUCCESS,
                 )
 
-                # TODO: Move logic onto the `management service`
-                collection_id = generate_default_user_collection_id(
-                    document_info.user_id
+                collection_ids = context.workflow_input()["request"].get(
+                    "collection_ids"
                 )
-                await service.providers.database.assign_document_to_collection_relational(
-                    document_id=document_info.id,
-                    collection_id=collection_id,
-                )
-                await service.providers.database.assign_document_to_collection_vector(
-                    document_id=document_info.id, collection_id=collection_id
-                )
+                if not collection_ids:
+                    # TODO: Move logic onto the `management service`
+                    collection_id = generate_default_user_collection_id(
+                        document_info.user_id
+                    )
+                    await service.providers.database.assign_document_to_collection_relational(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                    await service.providers.database.assign_document_to_collection_vector(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                else:
+                    for collection_id in collection_ids:
+                        try:
+                            await service.providers.database.create_collection(
+                                name=document_info.title,
+                                collection_id=collection_id,
+                                description="",
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Warning, could not create collection with error: {str(e)}"
+                            )
 
-                chunk_enrichment_settings = getattr(
+                        await service.providers.database.assign_document_to_collection_relational(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
+                        await service.providers.database.assign_document_to_collection_vector(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
+
+                # get server chunk enrichment settings and override parts of it if provided in the ingestion config
+                server_chunk_enrichment_settings = getattr(
                     service.providers.ingestion.config,
                     "chunk_enrichment_settings",
                     None,
                 )
 
-                if chunk_enrichment_settings and getattr(
-                    chunk_enrichment_settings, "enable_chunk_enrichment", False
-                ):
+                if server_chunk_enrichment_settings:
+                    chunk_enrichment_settings = update_settings_from_dict(
+                        server_chunk_enrichment_settings,
+                        ingestion_config.get("chunk_enrichment_settings", {})
+                        or {},
+                    )
+
+                if chunk_enrichment_settings.enable_chunk_enrichment:
 
                     logger.info("Enriching document with contextual chunks")
 
@@ -179,7 +215,9 @@ def hatchet_ingestion_factory(
                     # we don't update the document_info when we assign document_to_collection_relational and document_to_collection_vector
                     # hack: get document_info again from DB
                     document_info = (
-                        await self.ingestion_service.providers.database.get_documents_overview(
+                        await self.ingestion_service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                            offset=0,
+                            limit=100,
                             filter_user_ids=[document_info.user_id],
                             filter_document_ids=[document_info.id],
                         )
@@ -192,6 +230,7 @@ def hatchet_ingestion_factory(
 
                     await self.ingestion_service.chunk_enrichment(
                         document_id=document_info.id,
+                        chunk_enrichment_settings=chunk_enrichment_settings,
                     )
 
                     await self.ingestion_service.update_document_status(
@@ -210,9 +249,9 @@ def hatchet_ingestion_factory(
                     message="Authentication error: Invalid API key or credentials.",
                 )
             except Exception as e:
-                raise R2RException(
+                raise HTTPException(
                     status_code=500,
-                    message=f"Error during ingestion: {str(e)}",
+                    detail=f"Error during ingestion: {str(e)}",
                 )
 
         @orchestration_provider.failure()
@@ -228,8 +267,10 @@ def hatchet_ingestion_factory(
 
             try:
                 documents_overview = (
-                    await self.ingestion_service.providers.database.get_documents_overview(
-                        filter_document_ids=[document_id]
+                    await self.ingestion_service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                        offset=0,
+                        limit=100,
+                        filter_document_ids=[document_id],
                     )
                 )["results"]
 
@@ -242,10 +283,10 @@ def hatchet_ingestion_factory(
                 document_info = documents_overview[0]
 
                 # Update the document status to FAILED
-                if (
-                    not document_info.ingestion_status
-                    == IngestionStatus.SUCCESS
-                ):
+                if document_info.ingestion_status not in [
+                    IngestionStatus.SUCCESS,
+                    IngestionStatus.ENRICHED,
+                ]:
                     await self.ingestion_service.update_document_status(
                         document_info,
                         status=IngestionStatus.FAILED,
@@ -287,7 +328,9 @@ def hatchet_ingestion_factory(
                 )
 
             documents_overview = (
-                await self.ingestion_service.providers.database.get_documents_overview(
+                await self.ingestion_service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                    offset=0,
+                    limit=100,
                     filter_document_ids=document_ids,
                     filter_user_ids=None if user.is_superuser else [user.id],
                 )
@@ -398,7 +441,7 @@ def hatchet_ingestion_factory(
         @orchestration_provider.step(parents=["ingest"], timeout="60m")
         async def embed(self, context: Context) -> dict:
             document_info_dict = context.step_output("ingest")["document_info"]
-            document_info = DocumentInfo(**document_info_dict)
+            document_info = DocumentResponse(**document_info_dict)
 
             extractions = context.step_output("ingest")["extractions"]
 
@@ -428,7 +471,7 @@ def hatchet_ingestion_factory(
         @orchestration_provider.step(parents=["embed"], timeout="60m")
         async def finalize(self, context: Context) -> dict:
             document_info_dict = context.step_output("embed")["document_info"]
-            document_info = DocumentInfo(**document_info_dict)
+            document_info = DocumentResponse(**document_info_dict)
 
             await self.ingestion_service.finalize_ingestion(
                 document_info, is_update=False
@@ -440,16 +483,43 @@ def hatchet_ingestion_factory(
 
             try:
                 # TODO - Move logic onto the `management service`
-                collection_id = generate_default_user_collection_id(
-                    document_info.user_id
+                collection_ids = context.workflow_input()["request"].get(
+                    "collection_ids"
                 )
-                await self.ingestion_service.providers.database.assign_document_to_collection_relational(
-                    document_id=document_info.id,
-                    collection_id=collection_id,
-                )
-                await self.ingestion_service.providers.database.assign_document_to_collection_vector(
-                    document_id=document_info.id, collection_id=collection_id
-                )
+                if not collection_ids:
+                    # TODO: Move logic onto the `management service`
+                    collection_id = generate_default_user_collection_id(
+                        document_info.user_id
+                    )
+                    await service.providers.database.assign_document_to_collection_relational(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                    await service.providers.database.assign_document_to_collection_vector(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                else:
+                    for collection_id in collection_ids:
+                        try:
+                            await service.providers.database.create_collection(
+                                name=document_info.title or "N/A",
+                                collection_id=collection_id,
+                                description="",
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Warning, could not create collection with error: {str(e)}"
+                            )
+
+                        await service.providers.database.assign_document_to_collection_relational(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
+                        await service.providers.database.assign_document_to_collection_vector(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
             except Exception as e:
                 logger.error(
                     f"Error during assigning document to collection: {str(e)}"
@@ -473,8 +543,10 @@ def hatchet_ingestion_factory(
 
             try:
                 documents_overview = (
-                    await self.ingestion_service.providers.database.get_documents_overview(
-                        filter_document_ids=[document_id]
+                    await self.ingestion_service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                        offset=0,
+                        limit=100,
+                        filter_document_ids=[document_id],
                     )
                 )["results"]
 
@@ -542,9 +614,9 @@ def hatchet_ingestion_factory(
                 }
 
             except Exception as e:
-                raise R2RException(
+                raise HTTPException(
                     status_code=500,
-                    message=f"Error during chunk update: {str(e)}",
+                    detail=f"Error during chunk update: {str(e)}",
                 )
 
         @orchestration_provider.failure()
@@ -596,10 +668,57 @@ def hatchet_ingestion_factory(
 
             return {"status": "Vector index deleted successfully."}
 
+    @orchestration_provider.workflow(
+        name="update-document-metadata",
+        timeout="30m",
+    )
+    class HatchetUpdateDocumentMetadataWorkflow:
+        def __init__(self, ingestion_service: IngestionService):
+            self.ingestion_service = ingestion_service
+
+        @orchestration_provider.step(timeout="30m")
+        async def update_document_metadata(self, context: Context) -> dict:
+            try:
+                input_data = context.workflow_input()["request"]
+                parsed_data = IngestionServiceAdapter.parse_update_document_metadata_input(
+                    input_data
+                )
+
+                document_id = UUID(parsed_data["document_id"])
+                metadata = parsed_data["metadata"]
+                user = parsed_data["user"]
+
+                await self.ingestion_service.update_document_metadata(
+                    document_id=document_id,
+                    metadata=metadata,
+                    user=user,
+                )
+
+                return {
+                    "message": "Document metadata update completed successfully.",
+                    "document_id": str(document_id),
+                    "task_id": context.workflow_run_id(),
+                }
+
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Error during document metadata update: {str(e)}",
+                )
+
+        @orchestration_provider.failure()
+        async def on_failure(self, context: Context) -> None:
+            # Handle failure case if necessary
+            pass
+
+    # Add this to the workflows dictionary in hatchet_ingestion_factory
     ingest_files_workflow = HatchetIngestFilesWorkflow(service)
     update_files_workflow = HatchetUpdateFilesWorkflow(service)
     ingest_chunks_workflow = HatchetIngestChunksWorkflow(service)
     update_chunks_workflow = HatchetUpdateChunkWorkflow(service)
+    update_document_metadata_workflow = HatchetUpdateDocumentMetadataWorkflow(
+        service
+    )
     create_vector_index_workflow = HatchetCreateVectorIndexWorkflow(service)
     delete_vector_index_workflow = HatchetDeleteVectorIndexWorkflow(service)
 
@@ -608,6 +727,7 @@ def hatchet_ingestion_factory(
         "update_files": update_files_workflow,
         "ingest_chunks": ingest_chunks_workflow,
         "update_chunk": update_chunks_workflow,
+        "update_document_metadata": update_document_metadata_workflow,
         "create_vector_index": create_vector_index_workflow,
         "delete_vector_index": delete_vector_index_workflow,
     }

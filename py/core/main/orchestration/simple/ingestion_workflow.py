@@ -4,6 +4,8 @@ from uuid import UUID
 
 from litellm import AuthenticationError
 
+from fastapi import HTTPException
+from core.base import R2RException, increment_version
 from core.base import DocumentChunk, R2RException, increment_version
 from core.utils import (
     generate_default_user_collection_id,
@@ -67,18 +69,43 @@ def simple_ingestion_factory(service: IngestionService):
                 document_info, status=IngestionStatus.SUCCESS
             )
 
+            collection_ids = parsed_data.get("collection_ids")
+
             try:
-                # TODO - Move logic onto management service
-                collection_id = generate_default_user_collection_id(
-                    str(document_info.user_id)
-                )
-                await service.providers.database.assign_document_to_collection_relational(
-                    document_id=document_info.id,
-                    collection_id=collection_id,
-                )
-                await service.providers.database.assign_document_to_collection_vector(
-                    document_info.id, collection_id
-                )
+                if not collection_ids:
+                    # TODO: Move logic onto the `management service`
+                    collection_id = generate_default_user_collection_id(
+                        document_info.user_id
+                    )
+                    await service.providers.database.assign_document_to_collection_relational(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                    await service.providers.database.assign_document_to_collection_vector(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                else:
+                    for collection_id in collection_ids:
+                        try:
+                            await service.providers.database.create_collection(
+                                name=document_info.title,
+                                collection_id=collection_id,
+                                description="",
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Warning, could not create collection with error: {str(e)}"
+                            )
+
+                        await service.providers.database.assign_document_to_collection_relational(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
+                        await service.providers.database.assign_document_to_collection_vector(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
             except Exception as e:
                 logger.error(
                     f"Error during assigning document to collection: {str(e)}"
@@ -98,8 +125,8 @@ def simple_ingestion_factory(service: IngestionService):
                 await service.update_document_status(
                     document_info, status=IngestionStatus.FAILED
                 )
-            raise R2RException(
-                status_code=500, message=f"Error during ingestion: {str(e)}"
+            raise HTTPException(
+                status_code=500, detail=f"Error during ingestion: {str(e)}"
             )
 
     async def update_files(input_data):
@@ -128,9 +155,11 @@ def simple_ingestion_factory(service: IngestionService):
             )
 
         documents_overview = (
-            await service.providers.database.get_documents_overview(
-                filter_document_ids=document_ids,
+            await service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                offset=0,
+                limit=100,
                 filter_user_ids=None if user.is_superuser else [user.id],
+                filter_document_ids=document_ids,
             )
         )["results"]
 
@@ -187,12 +216,10 @@ def simple_ingestion_factory(service: IngestionService):
             from core.base import IngestionStatus
             from core.main import IngestionServiceAdapter
 
-            print("input_data = ", input_data)
             parsed_data = IngestionServiceAdapter.parse_ingest_chunks_input(
                 input_data
             )
 
-            print("parsed_data = ", parsed_data)
             document_info = await service.ingest_chunks_ingress(**parsed_data)
 
             await service.update_document_status(
@@ -235,18 +262,44 @@ def simple_ingestion_factory(service: IngestionService):
                 document_info, status=IngestionStatus.SUCCESS
             )
 
+            collection_ids = parsed_data.get("collection_ids")
+
             try:
                 # TODO - Move logic onto management service
-                collection_id = generate_default_user_collection_id(
-                    str(document_info.user_id)
-                )
-                await service.providers.database.assign_document_to_collection_relational(
-                    document_id=document_info.id,
-                    collection_id=collection_id,
-                )
-                await service.providers.database.assign_document_to_collection_vector(
-                    document_id=document_info.id, collection_id=collection_id
-                )
+                if not collection_ids:
+                    # TODO: Move logic onto the `management service`
+                    collection_id = generate_default_user_collection_id(
+                        document_info.user_id
+                    )
+                    await service.providers.database.assign_document_to_collection_relational(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                    await service.providers.database.assign_document_to_collection_vector(
+                        document_id=document_info.id,
+                        collection_id=collection_id,
+                    )
+                else:
+                    for collection_id in collection_ids:
+                        try:
+                            await service.providers.database.create_collection(
+                                name=document_info.title,
+                                collection_id=collection_id,
+                                description="",
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Warning, could not create collection with error: {str(e)}"
+                            )
+
+                        await service.providers.database.assign_document_to_collection_relational(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
+                        await service.providers.database.assign_document_to_collection_vector(
+                            document_id=document_info.id,
+                            collection_id=collection_id,
+                        )
             except Exception as e:
                 logger.error(
                     f"Error during assigning document to collection: {str(e)}"
@@ -257,9 +310,9 @@ def simple_ingestion_factory(service: IngestionService):
                 await service.update_document_status(
                     document_info, status=IngestionStatus.FAILED
                 )
-            raise R2RException(
+            raise HTTPException(
                 status_code=500,
-                message=f"Error during chunk ingestion: {str(e)}",
+                detail=f"Error during chunk ingestion: {str(e)}",
             )
 
     async def update_chunk(input_data):
@@ -290,9 +343,9 @@ def simple_ingestion_factory(service: IngestionService):
             )
 
         except Exception as e:
-            raise R2RException(
+            raise HTTPException(
                 status_code=500,
-                message=f"Error during chunk update: {str(e)}",
+                detail=f"Error during chunk update: {str(e)}",
             )
 
     async def create_vector_index(input_data):
@@ -309,9 +362,9 @@ def simple_ingestion_factory(service: IngestionService):
             await service.providers.database.create_index(**parsed_data)
 
         except Exception as e:
-            raise R2RException(
+            raise HTTPException(
                 status_code=500,
-                message=f"Error during vector index creation: {str(e)}",
+                detail=f"Error during vector index creation: {str(e)}",
             )
 
     async def delete_vector_index(input_data):
@@ -329,9 +382,41 @@ def simple_ingestion_factory(service: IngestionService):
             return {"status": "Vector index deleted successfully."}
 
         except Exception as e:
-            raise R2RException(
+            raise HTTPException(
                 status_code=500,
-                message=f"Error during vector index deletion: {str(e)}",
+                detail=f"Error during vector index deletion: {str(e)}",
+            )
+
+    async def update_document_metadata(input_data):
+        try:
+            from core.main import IngestionServiceAdapter
+
+            parsed_data = (
+                IngestionServiceAdapter.parse_update_document_metadata_input(
+                    input_data
+                )
+            )
+
+            document_id = parsed_data["document_id"]
+            metadata = parsed_data["metadata"]
+            user = parsed_data["user"]
+
+            await service.update_document_metadata(
+                document_id=document_id,
+                metadata=metadata,
+                user=user,
+            )
+
+            return {
+                "message": "Document metadata update completed successfully.",
+                "document_id": str(document_id),
+                "task_id": None,
+            }
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error during document metadata update: {str(e)}",
             )
 
     return {
@@ -339,6 +424,7 @@ def simple_ingestion_factory(service: IngestionService):
         "update-files": update_files,
         "ingest-chunks": ingest_chunks,
         "update-chunk": update_chunk,
+        "update-document-metadata": update_document_metadata,
         "create-vector-index": create_vector_index,
         "delete-vector-index": delete_vector_index,
     }

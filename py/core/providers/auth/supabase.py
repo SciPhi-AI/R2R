@@ -1,7 +1,7 @@
 import logging
 import os
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from supabase import Client, create_client
 
@@ -42,9 +42,9 @@ class SupabaseAuthProvider(AuthProvider):
             "supabase_key", None
         ) or os.getenv("SUPABASE_KEY")
         if not self.supabase_url or not self.supabase_key:
-            raise R2RException(
+            raise HTTPException(
                 status_code=500,
-                message="Supabase URL and key must be provided",
+                detail="Supabase URL and key must be provided",
             )
         self.supabase: Client = create_client(
             self.supabase_url, self.supabase_key
@@ -222,3 +222,6 @@ class SupabaseAuthProvider(AuthProvider):
     async def clean_expired_blacklisted_tokens(self):
         # Not applicable for Supabase, tokens are managed by Supabase
         pass
+
+    async def send_reset_email(self, email: str) -> dict[str, str]:
+        raise NotImplementedError("send_reset_email is not used with Supabase")

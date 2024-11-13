@@ -80,9 +80,24 @@ def compare_document_fields(documents, expected_doc):
 def test_document_overview_sample_file_cli():
     print("Testing: Document overview contains 'aristotle.txt'")
     output = run_command("poetry run r2r documents-overview")
-    output = output.replace("'", '"')
-    output_lines = output.strip().split("\n")[1:]
-    documents = [json.loads(ele) for ele in output_lines]
+
+    # Skip non-JSON lines and find the JSON content
+    output_lines = output.strip().split("\n")
+    json_lines = [
+        line for line in output_lines if line.strip().startswith("{")
+    ]
+
+    documents = []
+    for line in json_lines:
+        try:
+            # Replace Python None with JSON null and single quotes with double quotes
+            json_str = line.replace("'", '"').replace(": None", ": null")
+            doc = json.loads(json_str)
+            documents.append(doc)
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON: {e}")
+            print(f"Problem line: {line}")
+            continue
 
     aristotle_document = {
         "title": "aristotle.txt",
@@ -99,15 +114,6 @@ def test_document_overview_sample_file_cli():
         print("All documents:", documents)
         sys.exit(1)
 
-    # # Check if any document in the overview matches the Aristotle document
-    # if not any(
-    #     all(doc.get(k) == v for k, v in aristotle_document.items())
-    #     for doc in documents
-    # ):
-    #     print("Document overview test failed")
-    #     print("Aristotle document not found in the overview")
-    #     print("Documents:", documents)
-    #     sys.exit(1)
     print("Document overview test passed")
     print("~" * 100)
 
@@ -285,8 +291,7 @@ def test_kg_create_graph_sample_file_cli():
     print("Calling `poetry run r2r create-graph --run`")
     output = run_command("poetry run r2r create-graph --run")
 
-    if "queued" in output:
-        time.sleep(60)
+    time.sleep(60)
 
     response = requests.get(
         "http://localhost:7272/v2/entities/",

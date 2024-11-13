@@ -48,10 +48,9 @@ __all__ = [
     # Completion abstractions
     "MessageType",
     # Document abstractions
-    "DataType",
     "Document",
     "DocumentChunk",
-    "DocumentInfo",
+    "DocumentResponse",
     "IngestionStatus",
     "KGExtractionStatus",
     "KGEnrichmentStatus",
@@ -79,6 +78,7 @@ __all__ = [
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
+    "DocumentSearchSettings",
     "HybridSearchSettings",
     # User abstractions
     "Token",
@@ -88,6 +88,7 @@ __all__ = [
     "Vector",
     "VectorEntry",
     "VectorType",
+    "IndexConfig",
     ## AGENT
     # Agent abstractions
     "Agent",
@@ -98,7 +99,6 @@ __all__ = [
     "ToolResult",
     ## API
     # Auth Responses
-    "GenericMessageResponse",
     "TokenResponse",
     "UserResponse",
     ## LOGGING

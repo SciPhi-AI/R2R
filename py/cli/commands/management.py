@@ -1,9 +1,9 @@
-from typing import Any, Dict
+from typing import Any
 
 import asyncclick as click
 from asyncclick import pass_context
 
-from cli.command_group import cli
+from cli.command_group import cli, deprecated_command
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
 
@@ -13,7 +13,7 @@ from cli.utils.timer import timer
 @click.option("--analysis-types", type=JSON, help="Analysis types as JSON")
 @pass_context
 async def analytics(
-    ctx, filters: Dict[str, Any], analysis_types: Dict[str, Any]
+    ctx, filters: dict[str, Any], analysis_types: dict[str, Any]
 ):
     client = ctx.obj
     """Retrieve analytics data."""
@@ -160,7 +160,58 @@ async def list_document_chunks(
     for index, chunk in enumerate(chunks, 1):
         click.echo(f"\nChunk {index}:")
         if isinstance(chunk, dict):
-            click.echo(f"Extraction ID: {chunk.get('chunk_id', 'N/A')}")
+            click.echo(f"Extraction ID: {chunk.get('extraction_id', 'N/A')}")
+            click.echo(f"Text: {chunk.get('text', '')[:100]}...")
+            click.echo(f"Metadata: {chunk.get('metadata', {})}")
+            if include_vectors:
+                click.echo(f"Vector: {chunk.get('vector', 'N/A')}")
+        else:
+            click.echo(f"Unexpected chunk format: {chunk}")
+
+
+@cli.command()
+@click.option("--document-id", help="Document ID to retrieve chunks for")
+@click.option(
+    "--offset",
+    default=None,
+    help="The offset to start from. Defaults to 0.",
+)
+@click.option(
+    "--limit",
+    default=None,
+    help="The maximum number of nodes to return. Defaults to 100.",
+)
+@click.option(
+    "--include-vectors",
+    is_flag=True,
+    default=False,
+    help="Should the vector be included in the response chunks",
+)
+@pass_context
+@deprecated_command("document_chunks")
+async def document_chunks(ctx, document_id, offset, limit, include_vectors):
+    """Get chunks of a specific document."""
+    client = ctx.obj
+    if not document_id:
+        click.echo("Error: Document ID is required.")
+        return
+
+    with timer():
+        chunks_data = await client.list_document_chunks(
+            document_id, offset, limit, include_vectors
+        )
+
+    chunks = chunks_data["results"]
+    if not chunks:
+        click.echo("No chunks found for the given document ID.")
+        return
+
+    click.echo(f"\nNumber of chunks: {len(chunks)}")
+
+    for index, chunk in enumerate(chunks, 1):
+        click.echo(f"\nChunk {index}:")
+        if isinstance(chunk, dict):
+            click.echo(f"Extraction ID: {chunk.get('extraction_id', 'N/A')}")
             click.echo(f"Text: {chunk.get('text', '')[:100]}...")
             click.echo(f"Metadata: {chunk.get('metadata', {})}")
             if include_vectors:

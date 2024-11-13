@@ -8,13 +8,13 @@ All public classes, enums, and functions are re-exported by `vecs.adapters` modu
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, Generator, Iterable, Optional, Tuple, Union
+from typing import Any, Generator, Iterable, Optional, Tuple, Union
 from uuid import UUID
 
 from vecs.exc import ArgError
 
 MetadataValues = Union[str, int, float, bool, list[str]]
-Metadata = Dict[str, MetadataValues]
+Metadata = dict[str, MetadataValues]
 Numeric = Union[int, float, complex]
 
 Record = Tuple[
@@ -65,9 +65,9 @@ class AdapterStep(ABC):
     @abstractmethod
     def __call__(
         self,
-        records: Iterable[Tuple[str, Any, Optional[Dict]]],
+        records: Iterable[Tuple[str, Any, Optional[dict]]],
         adapter_context: AdapterContext,
-    ) -> Generator[Tuple[str, Any, Dict], None, None]:
+    ) -> Generator[Tuple[str, Any, dict], None, None]:
         """
         Abstract method that should be overridden by subclasses to handle each record.
         """
@@ -106,9 +106,9 @@ class Adapter:
 
     def __call__(
         self,
-        records: Iterable[Tuple[str, Any, Optional[Dict]]],
+        records: Iterable[Tuple[str, Any, Optional[dict]]],
         adapter_context: AdapterContext,
-    ) -> Generator[Tuple[str, Any, Dict], None, None]:
+    ) -> Generator[Tuple[str, Any, dict], None, None]:
         """
         Invokes the adapter pipeline on an iterable of records.
 

@@ -1,9 +1,7 @@
-import asyncio
 import json
-import os
-from inspect import getmembers, isasyncgenfunction, iscoroutinefunction
+from inspect import isasyncgenfunction, iscoroutinefunction
 from io import BytesIO
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from ..base.base_client import sync_generator_wrapper, sync_wrapper
@@ -150,7 +148,7 @@ class DocumentsSDK:
 
     async def list(
         self,
-        ids: Optional[List[Union[str, UUID]]] = None,
+        ids: Optional[list[Union[str, UUID]]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> dict:
@@ -158,9 +156,9 @@ class DocumentsSDK:
         List documents with pagination.
 
         Args:
-            ids (Optional[List[Union[str, UUID]]]): Optional list of document IDs to filter by
-            offset (Optional[int]): Pagination offset
-            limit (Optional[int]): Maximum number of documents to return
+            ids (Optional[list[Union[str, UUID]]]): Optional list of document IDs to filter by
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of documents and pagination information
@@ -210,18 +208,18 @@ class DocumentsSDK:
     async def list_chunks(
         self,
         id: Union[str, UUID],
+        include_vectors: Optional[bool] = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-        include_vectors: Optional[bool] = False,
     ) -> dict:
         """
         Get chunks for a specific document.
 
         Args:
             id (Union[str, UUID]): ID of document to retrieve chunks for
-            offset (Optional[int]): Pagination offset
-            limit (Optional[int]): Maximum number of chunks to return
             include_vectors (Optional[bool]): Whether to include vector embeddings in the response
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of document chunks and pagination information
@@ -239,18 +237,17 @@ class DocumentsSDK:
     async def list_collections(
         self,
         id: Union[str, UUID],
+        include_vectors: Optional[bool] = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-        include_vectors: Optional[bool] = False,
     ) -> dict:
         """
-        Get chunks for a specific document.
+        List collections for a specific document.
 
         Args:
-            id (Union[str, UUID]): ID of document to retrieve chunks for
-            offset (Optional[int]): Pagination offset
-            limit (Optional[int]): Maximum number of chunks to return
-            include_vectors (Optional[bool]): Whether to include vector embeddings in the response
+            id (Union[str, UUID]): ID of document to retrieve collections for
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of document chunks and pagination information
@@ -258,7 +255,6 @@ class DocumentsSDK:
         params = {
             "offset": offset,
             "limit": limit,
-            "include_vectors": include_vectors,
         }
 
         return await self.client._make_request(
@@ -267,13 +263,13 @@ class DocumentsSDK:
 
     async def delete_by_filter(
         self,
-        filters: Dict[str, Any],
+        filters: dict[str, Any],
     ) -> None:
         """
         Delete documents based on filters.
 
         Args:
-            filters (Dict[str, Any]): Filters to apply when selecting documents to delete
+            filters (dict[str, Any]): Filters to apply when selecting documents to delete
         """
         filters_json = json.dumps(filters)
         return await self.client._make_request(

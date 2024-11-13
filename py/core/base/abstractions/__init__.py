@@ -1,9 +1,8 @@
 from shared.abstractions.base import AsyncSyncMeta, R2RSerializable, syncable
 from shared.abstractions.document import (
-    DataType,
     Document,
     DocumentChunk,
-    DocumentInfo,
+    DocumentResponse,
     DocumentType,
     IngestionStatus,
     KGEnrichmentStatus,
@@ -22,6 +21,7 @@ from shared.abstractions.exception import (
 )
 from shared.abstractions.graph import (
     Community,
+    CommunityInfo,
     CommunityReport,
     Entity,
     EntityLevel,
@@ -52,6 +52,7 @@ from shared.abstractions.llm import (
 from shared.abstractions.prompt import Prompt
 from shared.abstractions.search import (
     AggregateSearchResult,
+    DocumentSearchSettings,
     HybridSearchSettings,
     KGCommunityResult,
     KGEntityResult,
@@ -68,6 +69,7 @@ from shared.abstractions.user import Token, TokenData, UserStats
 from shared.abstractions.vector import (
     IndexArgsHNSW,
     IndexArgsIVFFlat,
+    IndexConfig,
     IndexMeasure,
     IndexMethod,
     StorageResult,
@@ -87,10 +89,9 @@ __all__ = [
     # Completion abstractions
     "MessageType",
     # Document abstractions
-    "DataType",
     "Document",
     "DocumentChunk",
-    "DocumentInfo",
+    "DocumentResponse",
     "DocumentType",
     "IngestionStatus",
     "KGExtractionStatus",
@@ -113,6 +114,8 @@ __all__ = [
     "KGExtraction",
     "Relationship",
     "EntityLevel",
+    # Index abstractions
+    "IndexConfig",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",
@@ -133,6 +136,7 @@ __all__ = [
     "KGSearchSettings",
     "VectorSearchResult",
     "VectorSearchSettings",
+    "DocumentSearchSettings",
     "HybridSearchSettings",
     # KG abstractions
     "KGCreationSettings",

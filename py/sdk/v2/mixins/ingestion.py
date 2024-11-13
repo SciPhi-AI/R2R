@@ -14,6 +14,7 @@ class IngestionMixins:
         document_ids: Optional[list[Union[str, UUID]]] = None,
         metadatas: Optional[list[dict]] = None,
         ingestion_config: Optional[dict] = None,
+        collection_ids: Optional[list[list[Union[str, UUID]]]] = None,
         run_with_orchestration: Optional[bool] = None,
     ) -> dict:
         """
@@ -74,6 +75,17 @@ class IngestionMixins:
             if run_with_orchestration is not None:
                 data["run_with_orchestration"] = str(run_with_orchestration)
 
+            if collection_ids:
+                data["collection_ids"] = json.dumps(
+                    [
+                        [
+                            str(collection_id)
+                            for collection_id in doc_collection_ids
+                        ]
+                        for doc_collection_ids in collection_ids
+                    ]
+                )
+
             return await self._make_request(  # type: ignore
                 "POST", "ingest_files", data=data, files=files_tuples
             )
@@ -84,6 +96,7 @@ class IngestionMixins:
         document_ids: Optional[list[Union[str, UUID]]] = None,
         metadatas: Optional[list[dict]] = None,
         ingestion_config: Optional[dict] = None,
+        collection_ids: Optional[list[list[Union[str, UUID]]]] = None,
         run_with_orchestration: Optional[bool] = None,
     ) -> dict:
         """
@@ -133,6 +146,16 @@ class IngestionMixins:
             if run_with_orchestration is not None:
                 data["run_with_orchestration"] = str(run_with_orchestration)
 
+            if collection_ids:
+                data["collection_ids"] = json.dumps(
+                    [
+                        [
+                            str(collection_id)
+                            for collection_id in doc_collection_ids
+                        ]
+                        for doc_collection_ids in collection_ids
+                    ]
+                )
             return await self._make_request(  # type: ignore
                 "POST", "update_files", data=data, files=files
             )
@@ -142,6 +165,7 @@ class IngestionMixins:
         chunks: list[dict],
         document_id: Optional[UUID] = None,
         metadata: Optional[dict] = None,
+        collection_ids: Optional[list[list[Union[str, UUID]]]] = None,
         run_with_orchestration: Optional[bool] = None,
     ) -> dict:
         """
@@ -163,6 +187,18 @@ class IngestionMixins:
         }
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)  # type: ignore
+
+        if collection_ids:
+            data["collection_ids"] = json.dumps(  # type: ignore
+                [
+                    [
+                        str(collection_id)
+                        for collection_id in doc_collection_ids
+                    ]
+                    for doc_collection_ids in collection_ids
+                ]
+            )
+
         return await self._make_request("POST", "ingest_chunks", json=data)  # type: ignore
 
     async def update_chunks(
@@ -277,4 +313,31 @@ class IngestionMixins:
         }
         return await self._make_request(  # type: ignore
             "DELETE", "delete_vector_index", json=data
+        )
+
+    async def update_document_metadata(
+        self,
+        document_id: Union[str, UUID],
+        metadata: dict,
+    ) -> dict:
+        """
+        Update the metadata of an existing document.
+
+        Args:
+            document_id (Union[str, UUID]): The ID of the document to update.
+            metadata (dict): The new metadata to merge with existing metadata.
+            run_with_orchestration (Optional[bool]): Whether to run the update through orchestration.
+
+        Returns:
+            dict: Update results containing the status of the metadata update.
+        """
+        data = {
+            "metadata": metadata,
+        }
+
+        # Remove None values from payload
+        data = {k: v for k, v in data.items() if v is not None}
+
+        return await self._make_request(  # type: ignore
+            "POST", f"update_document_metadata/{document_id}", json=metadata
         )

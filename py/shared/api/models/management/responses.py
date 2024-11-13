@@ -1,20 +1,15 @@
 from datetime import datetime
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
+from shared.abstractions.document import DocumentResponse
 
-from ....abstractions.llm import Message
+from shared.abstractions.llm import Message
 
-
-class MessageResponse(BaseModel):
-    message: str
-
-
-class UpdatePromptResponse(BaseModel):
-    message: str
+from shared.abstractions import R2RSerializable
 
 
 class PromptResponse(BaseModel):
@@ -24,10 +19,6 @@ class PromptResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     input_types: dict[str, str]
-
-
-class AllPromptsResponse(BaseModel):
-    prompts: dict[str, PromptResponse]
 
 
 class LogEntry(BaseModel):
@@ -59,20 +50,11 @@ class AnalyticsResponse(BaseModel):
 class AppSettingsResponse(BaseModel):
     config: dict[str, Any]
     prompts: dict[str, Any]
+    r2r_project_name: str
+    # r2r_version: str
 
 
-class ScoreCompletionResponse(BaseModel):
-    message: str
-
-
-class UserOverviewResponse(BaseModel):
-    user_id: UUID
-    num_files: int
-    total_size_in_bytes: int
-    document_ids: list[UUID]
-
-
-class UserResponse(BaseModel):
+class UserResponse(R2RSerializable):
     id: UUID
     email: str
     is_active: bool = True
@@ -90,22 +72,8 @@ class UserResponse(BaseModel):
     profile_picture: Optional[str] = None
 
 
-class DocumentOverviewResponse(BaseModel):
+class ChunkResponse(BaseModel):
     id: UUID
-    title: str
-    user_id: UUID
-    document_type: str
-    created_at: datetime
-    updated_at: datetime
-    ingestion_status: str
-    kg_extraction_status: str
-    version: str
-    collection_ids: list[UUID]
-    metadata: dict[str, Any]
-
-
-class DocumentChunkResponse(BaseModel):
-    chunk_id: UUID
     document_id: UUID
     user_id: UUID
     collection_ids: list[UUID]
@@ -116,60 +84,83 @@ class DocumentChunkResponse(BaseModel):
 
 class CollectionResponse(BaseModel):
     collection_id: UUID
+    user_id: Optional[UUID]
     name: str
     description: Optional[str]
-    created_at: datetime
-    updated_at: datetime
-
-
-class CollectionOverviewResponse(BaseModel):
-    collection_id: UUID
-    name: str
-    description: Optional[str]
+    kg_enrichment_status: str
     created_at: datetime
     updated_at: datetime
     user_count: int
     document_count: int
 
 
-class ConversationOverviewResponse(BaseModel):
-    conversation_id: UUID
+class ConversationResponse(BaseModel):
+    id: UUID
     created_at: datetime
+    user_id: Optional[UUID] = None
+    name: Optional[str] = None
+
+
+class VerificationResult(BaseModel):
+    verification_code: str
+    expiry: datetime
+    message: Optional[str] = None
+
+
+class MessageResponse(BaseModel):
+    id: UUID
+    message: Message
+
+
+class BranchResponse(BaseModel):
+    branch_id: UUID
+    branch_point_id: Optional[UUID]
+    content: Optional[str]
+    created_at: datetime
+    user_id: Optional[UUID] = None
+    name: Optional[str] = None
 
 
 class AddUserResponse(BaseModel):
     result: bool
 
 
-# Create wrapped versions of each response
-WrappedPromptMessageResponse = ResultsWrapper[UpdatePromptResponse]
-WrappedGetPromptsResponse = ResultsWrapper[AllPromptsResponse]
+# Chunk Responses
+WrappedChunkResponse = ResultsWrapper[ChunkResponse]
+WrappedChunksResponse = PaginatedResultsWrapper[list[ChunkResponse]]
+
+# Collection Responses
+WrappedCollectionResponse = ResultsWrapper[CollectionResponse]
+WrappedCollectionsResponse = PaginatedResultsWrapper[list[CollectionResponse]]
+
+
+# Conversation Responses
+WrappedConversationResponse = ResultsWrapper[ConversationResponse]
+WrappedConversationsResponse = PaginatedResultsWrapper[
+    list[ConversationResponse]
+]
+WrappedMessageResponse = ResultsWrapper[MessageResponse]
+WrappedMessagesResponse = PaginatedResultsWrapper[list[MessageResponse]]
+WrappedBranchResponse = ResultsWrapper[BranchResponse]
+WrappedBranchesResponse = PaginatedResultsWrapper[list[BranchResponse]]
+
+# Document Responses
+WrappedDocumentResponse = ResultsWrapper[DocumentResponse]
+WrappedDocumentsResponse = PaginatedResultsWrapper[list[DocumentResponse]]
+
+# Prompt Responses
+WrappedPromptResponse = ResultsWrapper[PromptResponse]
+WrappedPromptsResponse = PaginatedResultsWrapper[list[PromptResponse]]
+
+# User Responses
+WrappedUserResponse = ResultsWrapper[UserResponse]
+WrappedUsersResponse = PaginatedResultsWrapper[list[UserResponse]]
+
+# TODO: anything below this hasn't been reviewed
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
 WrappedLogResponse = ResultsWrapper[list[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
 WrappedAppSettingsResponse = ResultsWrapper[AppSettingsResponse]
-WrappedUserOverviewResponse = PaginatedResultsWrapper[
-    list[UserOverviewResponse]
-]
-WrappedConversationResponse = ResultsWrapper[list[Tuple[str, Message]]]
-WrappedDocumentOverviewResponse = PaginatedResultsWrapper[
-    list[DocumentOverviewResponse]
-]
-WrappedCollectionResponse = ResultsWrapper[CollectionResponse]
-WrappedCollectionListResponse = ResultsWrapper[list[CollectionResponse]]
-WrappedCollectionOverviewResponse = ResultsWrapper[
-    list[CollectionOverviewResponse]
-]
-WrappedAddUserResponse = ResultsWrapper[None]
-WrappedUsersInCollectionResponse = PaginatedResultsWrapper[list[UserResponse]]
-WrappedUserCollectionResponse = PaginatedResultsWrapper[
-    list[CollectionResponse]
-]
-WrappedDocumentChunkResponse = PaginatedResultsWrapper[
-    list[DocumentChunkResponse]
-]
+
 WrappedDeleteResponse = ResultsWrapper[None]
-WrappedConversationsOverviewResponse = PaginatedResultsWrapper[
-    list[ConversationOverviewResponse]
-]
-WrappedMessageResponse = ResultsWrapper[MessageResponse]
+WrappedVerificationResult = ResultsWrapper[VerificationResult]

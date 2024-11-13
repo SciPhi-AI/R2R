@@ -1,7 +1,6 @@
 # type: ignore
 from typing import IO, AsyncGenerator, Optional, Union
 
-from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -10,7 +9,7 @@ from core.base.providers import (
 )
 
 
-class CSVParser(AsyncParser[DataType]):
+class CSVParser(AsyncParser[str | bytes]):
     """A parser for CSV data."""
 
     def __init__(
@@ -40,7 +39,7 @@ class CSVParser(AsyncParser[DataType]):
             yield ", ".join(row)
 
 
-class CSVParserAdvanced(AsyncParser[DataType]):
+class CSVParserAdvanced(AsyncParser[str | bytes]):
     """A parser for CSV data."""
 
     def __init__(

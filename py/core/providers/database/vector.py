@@ -3,12 +3,13 @@ import json
 import logging
 import time
 import uuid
-from typing import Any, Optional, Tuple, TypedDict, Union
+from typing import Any, Optional, TypedDict, Union
 from uuid import UUID
 
 import numpy as np
 
 from core.base import (
+    DocumentSearchSettings,
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
@@ -19,7 +20,7 @@ from core.base import (
     VectorSearchResult,
     VectorSearchSettings,
     VectorTableName,
-    generate_id_from_label,
+    R2RException,
 )
 
 from .base import PostgresConnectionManager
@@ -27,6 +28,15 @@ from .vecs.exc import ArgError, FilterError
 
 logger = logging.getLogger()
 from core.base.utils import _decorate_vector_type
+
+
+def psql_quote_literal(value: str) -> str:
+    """
+    Safely quote a string literal for PostgreSQL to prevent SQL injection.
+    This is a simple implementation - in production, you should use proper parameterization
+    or your database driver's quoting functions.
+    """
+    return "'" + value.replace("'", "''") + "'"
 
 
 def index_measure_to_ops(
@@ -657,8 +667,8 @@ class PostgresVectorHandler(VectorHandler):
     async def list_document_chunks(
         self,
         document_id: UUID,
-        offset: int = 0,
-        limit: int = -1,
+        offset: int,
+        limit: int,
         include_vectors: bool = False,
     ) -> dict[str, Any]:
         vector_select = ", vec" if include_vectors else ""
@@ -718,7 +728,9 @@ class PostgresVectorHandler(VectorHandler):
                 "text": result["text"],
                 "metadata": json.loads(result["metadata"]),
             }
-        raise ValueError(f"Chunk with ID {chunk_id} not found")
+        raise R2RException(
+            message=f"Chunk with ID {chunk_id} not found", status_code=404
+        )
 
     async def create_index(
         self,
@@ -997,8 +1009,8 @@ class PostgresVectorHandler(VectorHandler):
 
     async def list_indices(
         self,
-        offset: int = 0,
-        limit: int = 10,
+        offset: int,
+        limit: int,
         filters: Optional[dict[str, Any]] = None,
     ) -> dict:
         where_clauses = []
@@ -1184,9 +1196,10 @@ class PostgresVectorHandler(VectorHandler):
 
     async def get_semantic_neighbors(
         self,
+        offset: int,
+        limit: int,
         document_id: UUID,
         chunk_id: UUID,
-        limit: int = 10,
         similarity_threshold: float = 0.5,
     ) -> list[dict[str, Any]]:
 
@@ -1222,11 +1235,9 @@ class PostgresVectorHandler(VectorHandler):
 
     async def list_chunks(
         self,
-        offset: int = 0,
-        limit: int = 10,
+        offset: int,
+        limit: int,
         filters: Optional[dict[str, Any]] = None,
-        sort_by: str = "created_at",
-        sort_order: str = "DESC",
         include_vectors: bool = False,
     ) -> dict[str, Any]:
         """
@@ -1236,8 +1247,6 @@ class PostgresVectorHandler(VectorHandler):
             offset (int, optional): Number of records to skip. Defaults to 0.
             limit (int, optional): Maximum number of records to return. Defaults to 10.
             filters (dict, optional): Dictionary of filters to apply. Defaults to None.
-            sort_by (str, optional): Column to sort by. Defaults to 'created_at'.
-            sort_order (str, optional): Sort order ('ASC' or 'DESC'). Defaults to 'DESC'.
             include_vectors (bool, optional): Whether to include vector data. Defaults to False.
 
         Returns:
@@ -1254,14 +1263,6 @@ class PostgresVectorHandler(VectorHandler):
             "text": "text",
         }
 
-        if sort_by not in valid_sort_columns:
-            raise ValueError(
-                f"Invalid sort_by parameter. Must be one of {list(valid_sort_columns.keys())}"
-            )
-
-        if sort_order.upper() not in ["ASC", "DESC"]:
-            raise ValueError("Sort order must be either 'ASC' or 'DESC'")
-
         # Build the select clause
         vector_select = ", vec" if include_vectors else ""
         select_clause = f"""
@@ -1276,15 +1277,11 @@ class PostgresVectorHandler(VectorHandler):
             where_clause = self._build_filters(filters, params)
             where_clause = f"WHERE {where_clause}"
 
-        # Build the ORDER BY clause
-        order_clause = f"ORDER BY {valid_sort_columns[sort_by]} {sort_order}"
-
         # Construct the final query
         query = f"""
         SELECT {select_clause}
         FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
         {where_clause}
-        {order_clause}
         LIMIT $%s
         OFFSET $%s
         """
@@ -1336,6 +1333,140 @@ class PostgresVectorHandler(VectorHandler):
         }
 
         return {"results": chunks, "page_info": page_info}
+
+    async def search_documents(
+        self,
+        query_text: str,
+        settings: DocumentSearchSettings,
+    ) -> list[dict[str, Any]]:
+        """
+        Search for documents based on their metadata fields and/or body text.
+        Joins with document_info table to get complete document metadata.
+
+        Args:
+            query_text (str): The search query text
+            settings (DocumentSearchSettings): Search settings including search preferences and filters
+
+        Returns:
+            list[dict[str, Any]]: List of documents with their search scores and complete metadata
+        """
+        where_clauses = []
+        params: list[Union[str, int, bytes]] = [query_text]
+
+        # Build the dynamic metadata field search expression
+        metadata_fields_expr = " || ' ' || ".join(
+            [
+                f"COALESCE(v.metadata->>{psql_quote_literal(key)}, '')"
+                for key in settings.metadata_keys
+            ]
+        )
+
+        query = f"""
+            WITH
+            -- Metadata search scores
+            metadata_scores AS (
+                SELECT DISTINCT ON (v.document_id)
+                    v.document_id,
+                    d.metadata as doc_metadata,
+                    CASE WHEN $1 = '' THEN 0.0
+                    ELSE
+                        ts_rank_cd(
+                            setweight(to_tsvector('english', {metadata_fields_expr}), 'A'),
+                            websearch_to_tsquery('english', $1),
+                            32
+                        )
+                    END as metadata_rank
+                FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} v
+                LEFT JOIN {self._get_table_name('document_info')} d ON v.document_id = d.document_id
+                WHERE v.metadata IS NOT NULL
+            ),
+            -- Body search scores
+            body_scores AS (
+                SELECT
+                    document_id,
+                    AVG(
+                        ts_rank_cd(
+                            setweight(to_tsvector('english', COALESCE(text, '')), 'B'),
+                            websearch_to_tsquery('english', $1),
+                            32
+                        )
+                    ) as body_rank
+                FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+                WHERE $1 != ''
+                {f"AND to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)" if settings.search_over_body else ""}
+                GROUP BY document_id
+            ),
+            -- Combined scores with document metadata
+            combined_scores AS (
+                SELECT
+                    COALESCE(m.document_id, b.document_id) as document_id,
+                    m.doc_metadata as metadata,
+                    COALESCE(m.metadata_rank, 0) as debug_metadata_rank,
+                    COALESCE(b.body_rank, 0) as debug_body_rank,
+                    CASE
+                        WHEN {str(settings.search_over_metadata).lower()} AND {str(settings.search_over_body).lower()} THEN
+                            COALESCE(m.metadata_rank, 0) * {settings.metadata_weight} + COALESCE(b.body_rank, 0) * {settings.title_weight}
+                        WHEN {str(settings.search_over_metadata).lower()} THEN
+                            COALESCE(m.metadata_rank, 0)
+                        WHEN {str(settings.search_over_body).lower()} THEN
+                            COALESCE(b.body_rank, 0)
+                        ELSE 0
+                    END as rank
+                FROM metadata_scores m
+                FULL OUTER JOIN body_scores b ON m.document_id = b.document_id
+                WHERE (
+                    ($1 = '') OR
+                    ({str(settings.search_over_metadata).lower()} AND m.metadata_rank > 0) OR
+                    ({str(settings.search_over_body).lower()} AND b.body_rank > 0)
+                )
+        """
+
+        # Add any additional filters
+        if settings.filters:
+            filter_clause = self._build_filters(settings.filters, params)
+            where_clauses.append(filter_clause)
+
+        if where_clauses:
+            query += f" AND {' AND '.join(where_clauses)}"
+
+        query += """
+            )
+            SELECT
+                document_id,
+                metadata,
+                rank as score,
+                debug_metadata_rank,
+                debug_body_rank
+            FROM combined_scores
+            WHERE rank > 0
+            ORDER BY rank DESC
+            OFFSET ${offset_param} LIMIT ${limit_param}
+        """.format(
+            offset_param=len(params) + 1,
+            limit_param=len(params) + 2,
+        )
+
+        # Add offset and limit to params
+        params.extend([settings.offset, settings.limit])
+
+        # Execute query
+        results = await self.connection_manager.fetch_query(query, params)
+
+        # Format results with complete document metadata
+        return [
+            {
+                "document_id": str(r["document_id"]),
+                "metadata": (
+                    json.loads(r["metadata"])
+                    if isinstance(r["metadata"], str)
+                    else r["metadata"]
+                ),
+                "score": float(r["score"]),
+                "debug_metadata_rank": float(r["debug_metadata_rank"]),
+                "debug_body_rank": float(r["debug_body_rank"]),
+            }
+            for r in results
+        ]
 
     def _get_index_options(
         self,

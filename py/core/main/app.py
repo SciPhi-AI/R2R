@@ -1,11 +1,9 @@
-from typing import Union
-
+from core.base import R2RException
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import JSONResponse
 
-from core.base import R2RException
 from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
@@ -32,9 +30,9 @@ class R2RApp:
     def __init__(
         self,
         config: R2RConfig,
-        orchestration_provider: Union[
-            HatchetOrchestrationProvider, SimpleOrchestrationProvider
-        ],
+        orchestration_provider: (
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
+        ),
         auth_router: AuthRouter,
         ingestion_router: IngestionRouter,
         management_router: ManagementRouter,
@@ -83,11 +81,11 @@ class R2RApp:
 
     def _setup_routes(self):
         # Include routers in the app
-        # self.app.include_router(self.ingestion_router, prefix="/v2")
-        # self.app.include_router(self.management_router, prefix="/v2")
-        # self.app.include_router(self.retrieval_router, prefix="/v2")
-        # self.app.include_router(self.auth_router, prefix="/v2")
-        # self.app.include_router(self.kg_router, prefix="/v2")
+        self.app.include_router(self.ingestion_router, prefix="/v2")
+        self.app.include_router(self.management_router, prefix="/v2")
+        self.app.include_router(self.retrieval_router, prefix="/v2")
+        self.app.include_router(self.auth_router, prefix="/v2")
+        self.app.include_router(self.kg_router, prefix="/v2")
 
         self.app.include_router(self.documents_router, prefix="/v3")
         self.app.include_router(self.chunks_router, prefix="/v3")
