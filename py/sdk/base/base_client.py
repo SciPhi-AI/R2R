@@ -57,8 +57,8 @@ class BaseClient:
                 message="Not authenticated. Please login first.",
             )
 
-    def _get_full_url(self, endpoint: str) -> str:
-        return f"{self.base_url}{self.prefix}/{endpoint}"
+    def _get_full_url(self, endpoint: str, version: str = "v2") -> str:
+        return f"{self.base_url}{version}/{endpoint}"
 
     def _prepare_request_args(self, endpoint: str, **kwargs) -> dict:
         headers = kwargs.pop("headers", {})

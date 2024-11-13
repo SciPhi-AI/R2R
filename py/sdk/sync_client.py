@@ -2,15 +2,6 @@ import asyncio
 
 from .async_client import R2RAsyncClient
 from .utils import SyncClientMetaclass
-from .v3.chunks import SyncChunkSDK
-from .v3.collections import SyncCollectionsSDK
-from .v3.conversations import SyncConversationSDK
-from .v3.documents import SyncDocumentSDK
-from .v3.graphs import SyncGraphsSDK
-from .v3.indices import SyncIndexSDK
-from .v3.prompts import SyncPromptsSDK
-from .v3.retrieval import SyncRetrievalSDK
-from .v3.users import SyncUsersSDK
 
 
 class R2RClient(R2RAsyncClient, metaclass=SyncClientMetaclass):
@@ -26,21 +17,13 @@ class R2RClient(R2RAsyncClient, metaclass=SyncClientMetaclass):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.documents = SyncDocumentSDK(self.documents)
-        self.chunks = SyncChunkSDK(self.chunks)
-        self.retrieval = SyncRetrievalSDK(self.retrieval)
-        self.indices = SyncIndexSDK(self.indices)
-        self.users = SyncUsersSDK(self.users)
-        self.prompts = SyncPromptsSDK(self.prompts)
-        self.collections = SyncCollectionsSDK(self.collections)
-        self.conversations = SyncConversationSDK(self.conversations)
-        self.graphs = SyncGraphsSDK(self.graphs)
 
     def _make_streaming_request(self, method: str, endpoint: str, **kwargs):
         async_gen = super()._make_streaming_request(method, endpoint, **kwargs)
         return self._sync_generator(async_gen)
 
     def _sync_generator(self, async_gen):
+        # FIXME: This isn't compatible with some environments, like Jupyter notebooks
         loop = asyncio.get_event_loop()
         try:
             while True:
