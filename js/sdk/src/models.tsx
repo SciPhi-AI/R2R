@@ -74,13 +74,13 @@ export enum KGRunType {
 }
 
 export interface KGCreationSettings {
-  kg_triples_extraction_prompt?: string;
+  kg_relationships_extraction_prompt?: string;
   kg_entity_description_prompt?: string;
   force_kg_creation?: boolean;
   entity_types?: string[];
   relation_types?: string[];
   extractions_merge_count?: number;
-  max_knowledge_triples?: number;
+  max_knowledge_relationships?: number;
   max_description_input_length?: number;
   generation_config?: GenerationConfig;
 }

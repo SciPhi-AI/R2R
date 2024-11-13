@@ -32,7 +32,7 @@ class ClientError(Exception):
     pass
 
 
-class KGTriplesExtractionPipe(AsyncPipe[dict]):
+class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
     """
     Extracts knowledge graph information from document extractions.
     """
@@ -56,7 +56,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         super().__init__(
             logging_provider=logging_provider,
             config=config
-            or AsyncPipe.PipeConfig(name="default_kg_triples_extraction_pipe"),
+            or AsyncPipe.PipeConfig(name="default_kg_relationships_extraction_pipe"),
         )
         self.database_provider = database_provider
         self.llm_provider = llm_provider
@@ -69,7 +69,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         self,
         extractions: list[DocumentChunk],
         generation_config: GenerationConfig,
-        max_knowledge_triples: int,
+        max_knowledge_relationships: int,
         entity_types: list[str],
         relation_types: list[str],
         retries: int = 5,
@@ -78,17 +78,17 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         total_tasks: Optional[int] = None,
     ) -> KGExtraction:
         """
-        Extracts NER triples from a extraction with retries.
+        Extracts NER relationships from a extraction with retries.
         """
 
         # combine all extractions into a single string
         combined_extraction: str = " ".join([extraction.data for extraction in extractions])  # type: ignore
 
         messages = await self.database_provider.prompt_handler.get_message_payload(
-            task_prompt_name=self.database_provider.config.kg_creation_settings.graphrag_triples_extraction_few_shot,
+            task_prompt_name=self.database_provider.config.kg_creation_settings.graphrag_relationships_extraction_few_shot,
             task_inputs={
                 "input": combined_extraction,
-                "max_knowledge_triples": max_knowledge_triples,
+                "max_knowledge_relationships": max_knowledge_relationships,
                 "entity_types": "\n".join(entity_types),
                 "relation_types": "\n".join(relation_types),
             },
@@ -175,14 +175,14 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
 
                     return entities_arr, relations_arr
 
-                entities, triples = parse_fn(kg_extraction)
+                entities, relationships = parse_fn(kg_extraction)
                 return KGExtraction(
                     extraction_ids=[
                         extraction.id for extraction in extractions
                     ],
                     document_id=extractions[0].document_id,
                     entities=entities,
-                    triples=triples,
+                    relationships=relationships,
                 )
 
             except (
@@ -199,7 +199,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                         f"Failed after retries with for extraction {extractions[0].id} of document {extractions[0].document_id}: {e}"
                     )
                     # raise e # you should raise an error.
-        # add metadata to entities and triples
+        # add metadata to entities and relationships
 
         logger.info(
             f"KGExtractionPipe: Completed task number {task_id} of {total_tasks} for document {extractions[0].document_id}",
@@ -209,7 +209,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
             extraction_ids=[extraction.id for extraction in extractions],
             document_id=extractions[0].document_id,
             entities=[],
-            triples=[],
+            relationships=[],
         )
 
     async def _run_logic(  # type: ignore
@@ -226,7 +226,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         document_id = input.message["document_id"]
         generation_config = input.message["generation_config"]
         extraction_merge_count = input.message["extraction_merge_count"]
-        max_knowledge_triples = input.message["max_knowledge_triples"]
+        max_knowledge_relationships = input.message["max_knowledge_relationships"]
         entity_types = input.message["entity_types"]
         relation_types = input.message["relation_types"]
 
@@ -237,7 +237,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         logger = input.message.get("logger", logging.getLogger())
 
         logger.info(
-            f"KGTriplesExtractionPipe: Processing document {document_id} for KG extraction",
+            f"KGRelationshipsExtractionPipe: Processing document {document_id} for KG extraction",
         )
 
         # Then create the extractions from the results
@@ -281,7 +281,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                 return
 
         logger.info(
-            f"KGTriplesExtractionPipe: Obtained {len(extractions)} extractions to process, time from start: {time.time() - start_time:.2f} seconds",
+            f"KGRelationshipsExtractionPipe: Obtained {len(extractions)} extractions to process, time from start: {time.time() - start_time:.2f} seconds",
         )
 
         # sort the extractions accroding to chunk_order field in metadata in ascending order
@@ -296,7 +296,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         ]
 
         logger.info(
-            f"KGTriplesExtractionPipe: Extracting KG Triples for document and created {len(extractions_groups)} tasks, time from start: {time.time() - start_time:.2f} seconds",
+            f"KGRelationshipsExtractionPipe: Extracting KG Relationships for document and created {len(extractions_groups)} tasks, time from start: {time.time() - start_time:.2f} seconds",
         )
 
         tasks = [
@@ -304,7 +304,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                 self.extract_kg(
                     extractions=extractions_group,
                     generation_config=generation_config,
-                    max_knowledge_triples=max_knowledge_triples,
+                    max_knowledge_relationships=max_knowledge_relationships,
                     entity_types=entity_types,
                     relation_types=relation_types,
                     task_id=task_id,
@@ -318,7 +318,7 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
         total_tasks = len(tasks)
 
         logger.info(
-            f"KGTriplesExtractionPipe: Waiting for {total_tasks} KG extraction tasks to complete",
+            f"KGRelationshipsExtractionPipe: Waiting for {total_tasks} KG extraction tasks to complete",
         )
 
         for completed_task in asyncio.as_completed(tasks):
@@ -327,15 +327,15 @@ class KGTriplesExtractionPipe(AsyncPipe[dict]):
                 completed_tasks += 1
                 if completed_tasks % 100 == 0:
                     logger.info(
-                        f"KGTriplesExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks",
+                        f"KGRelationshipsExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks",
                     )
             except Exception as e:
-                logger.error(f"Error in Extracting KG Triples: {e}")
+                logger.error(f"Error in Extracting KG Relationships: {e}")
                 yield R2RDocumentProcessingError(
                     document_id=document_id,
                     error_message=str(e),
                 )
 
         logger.info(
-            f"KGTriplesExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks, time from start: {time.time() - start_time:.2f} seconds",
+            f"KGRelationshipsExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks, time from start: {time.time() - start_time:.2f} seconds",
         )

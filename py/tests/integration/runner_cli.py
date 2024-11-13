@@ -466,11 +466,11 @@ def test_kg_delete_graph_with_cascading_sample_file_cli():
     assert response.json()["results"]["entities"] == []
 
     response = requests.get(
-        "http://localhost:7272/v2/triples",
+        "http://localhost:7272/v2/relationships",
         params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
     )
 
-    assert response.json()["results"]["triples"] == []
+    assert response.json()["results"]["relationships"] == []
 
     print("KG delete graph with cascading test passed")
     print("~" * 100)

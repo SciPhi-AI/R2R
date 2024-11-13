@@ -16,7 +16,7 @@ logger = logging.getLogger()
 
 class KGClusteringPipe(AsyncPipe):
     """
-    Clusters entities and triples into communities within the knowledge graph using hierarchical Leiden algorithm.
+    Clusters entities and relationships into communities within the knowledge graph using hierarchical Leiden algorithm.
     """
 
     def __init__(
@@ -46,7 +46,7 @@ class KGClusteringPipe(AsyncPipe):
         leiden_params: dict,
     ):
         """
-        Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses graspologic library.
+        Clusters the knowledge graph relationships into communities using hierarchical Leiden algorithm. Uses graspologic library.
         """
 
         num_communities = (
@@ -73,7 +73,7 @@ class KGClusteringPipe(AsyncPipe):
         **kwargs: Any,
     ) -> AsyncGenerator[dict, None]:
         """
-        Executes the KG clustering pipe: clustering entities and triples into communities.
+        Executes the KG clustering pipe: clustering entities and relationships into communities.
         """
 
         collection_id = input.message["collection_id"]

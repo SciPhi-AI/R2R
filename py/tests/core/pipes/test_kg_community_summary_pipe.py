@@ -123,7 +123,7 @@ def entities_list(extraction_ids, document_id, embedding_vectors):
 
 
 @pytest.fixture(scope="function")
-def triples_raw_list(embedding_vectors, extraction_ids, document_id):
+def relationships_raw_list(embedding_vectors, extraction_ids, document_id):
     return [
         Relationship(
             id=1,
@@ -156,24 +156,24 @@ def triples_raw_list(embedding_vectors, extraction_ids, document_id):
 async def test_community_summary_prompt(
     kg_community_summary_pipe,
     entities_list,
-    triples_raw_list,
+    relationships_raw_list,
     max_summary_input_length,
 ):
     summary = await kg_community_summary_pipe.community_summary_prompt(
-        entities_list, triples_raw_list, max_summary_input_length
+        entities_list, relationships_raw_list, max_summary_input_length
     )
     expected_summary = """
             Entity: Entity1
             Descriptions:
                 1,Description1
-            Triples:
+            Relationships:
                 1,Entity1,object1,predicate1,description1
 
             Entity: Entity2
             Descriptions:
                 2,Description2
-            Triples:
+            Relationships:
                 2,Entity2,object2,predicate2,description2
     """
-    # "\n            Entity: Entity1\n            Descriptions: \n                1,Description1\n            Triples: \n                1,Entity1,object1,predicate1,description1\n            \n            Entity: Entity2\n            Descriptions: \n                2,Description2\n            Triples: \n                2,Entity2,object2,predicate2,description2\n            "
+    # "\n            Entity: Entity1\n            Descriptions: \n                1,Description1\n            Relationships: \n                1,Entity1,object1,predicate1,description1\n            \n            Entity: Entity2\n            Descriptions: \n                2,Description2\n            Relationships: \n                2,Entity2,object2,predicate2,description2\n            "
     assert summary.strip() == expected_summary.strip()

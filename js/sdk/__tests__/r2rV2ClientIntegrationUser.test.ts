@@ -77,7 +77,7 @@ const baseUrl = "http://localhost:7272";
  *     X createGraph
  *     X enrichGraph
  *     X getEntities
- *     X getTriples
+ *     X getRelationships
  *     X getCommunities
  *     X getTunedPrompt
  *     X deduplicateEntities

@@ -93,7 +93,7 @@ def entities_list(extraction_ids, document_id, embedding_vectors):
 
 
 @pytest.fixture(scope="function")
-def triples_raw_list(embedding_vectors, extraction_ids, document_id):
+def relationships_raw_list(embedding_vectors, extraction_ids, document_id):
     return [
         Relationship(
             subject="Entity1",
@@ -121,19 +121,19 @@ def triples_raw_list(embedding_vectors, extraction_ids, document_id):
 
 
 @pytest.fixture(scope="function")
-def communities_list(entities_list, triples_raw_list):
+def communities_list(entities_list, relationships_raw_list):
     return [
         Community(
             name="Community1",
             description="Description1",
             entities=[entities_list[0]],
-            triples=[triples_raw_list[0]],
+            relationships=[relationships_raw_list[0]],
         ),
         Community(
             name="Community2",
             description="Description2",
             entities=[entities_list[1]],
-            triples=[triples_raw_list[1]],
+            relationships=[relationships_raw_list[1]],
         ),
     ]
 
@@ -148,13 +148,13 @@ def community_table_info(collection_id):
 
 @pytest.fixture(scope="function")
 def kg_extractions(
-    extraction_ids, entities_raw_list, triples_raw_list, document_id
+    extraction_ids, entities_raw_list, relationships_raw_list, document_id
 ):
     return [
         KGExtraction(
             extraction_ids=extraction_ids,
             entities=entities_raw_list,
-            triples=triples_raw_list,
+            relationships=relationships_raw_list,
             document_id=document_id,
         )
     ]
@@ -199,8 +199,8 @@ async def test_create_tables(
         "entities": [],
         "total_entries": 0,
     }
-    assert await postgres_db_provider.get_triples(collection_id) == {
-        "triples": [],
+    assert await postgres_db_provider.get_relationships(collection_id) == {
+        "relationships": [],
         "total_entries": 0,
     }
     assert await postgres_db_provider.get_communities(collection_id) == {
@@ -242,17 +242,17 @@ async def test_add_entities(
 
 
 @pytest.mark.asyncio
-async def test_add_triples(
-    postgres_db_provider, triples_raw_list, collection_id
+async def test_add_relationships(
+    postgres_db_provider, relationships_raw_list, collection_id
 ):
-    await postgres_db_provider.add_triples(
-        triples_raw_list, table_name="chunk_triple"
+    await postgres_db_provider.add_relationships(
+        relationships_raw_list, table_name="chunk_relationship"
     )
-    triples = await postgres_db_provider.get_triples(collection_id)
-    assert triples["triples"][0].subject == "Entity1"
-    assert triples["triples"][1].subject == "Entity2"
-    assert len(triples["triples"]) == 2
-    assert triples["total_entries"] == 2
+    relationships = await postgres_db_provider.get_relationships(collection_id)
+    assert relationships["relationships"][0].subject == "Entity1"
+    assert relationships["relationships"][1].subject == "Entity2"
+    assert len(relationships["relationships"]) == 2
+    assert relationships["total_entries"] == 2
 
 
 @pytest.mark.asyncio
@@ -273,16 +273,16 @@ async def test_add_kg_extractions(
     assert len(entities["entities"]) == 2
     assert entities["total_entries"] == 2
 
-    triples = await postgres_db_provider.get_triples(collection_id)
-    assert triples["triples"][0].subject == "Entity1"
-    assert triples["triples"][1].subject == "Entity2"
-    assert len(triples["triples"]) == 2
-    assert triples["total_entries"] == 2
+    relationships = await postgres_db_provider.get_relationships(collection_id)
+    assert relationships["relationships"][0].subject == "Entity1"
+    assert relationships["relationships"][1].subject == "Entity2"
+    assert len(relationships["relationships"]) == 2
+    assert relationships["total_entries"] == 2
 
 
 @pytest.mark.asyncio
 async def test_get_entity_map(
-    postgres_db_provider, entities_raw_list, triples_raw_list, document_id
+    postgres_db_provider, entities_raw_list, relationships_raw_list, document_id
 ):
     await postgres_db_provider.add_entities(
         entities_raw_list, table_name="chunk_entity"
@@ -291,13 +291,13 @@ async def test_get_entity_map(
     assert entity_map["Entity1"]["entities"][0].name == "Entity1"
     assert entity_map["Entity2"]["entities"][0].name == "Entity2"
 
-    await postgres_db_provider.add_triples(triples_raw_list)
+    await postgres_db_provider.add_relationships(relationships_raw_list)
     entity_map = await postgres_db_provider.get_entity_map(0, 2, document_id)
     assert entity_map["Entity1"]["entities"][0].name == "Entity1"
     assert entity_map["Entity2"]["entities"][0].name == "Entity2"
 
-    assert entity_map["Entity1"]["triples"][0].subject == "Entity1"
-    assert entity_map["Entity2"]["triples"][0].subject == "Entity2"
+    assert entity_map["Entity1"]["relationships"][0].subject == "Entity1"
+    assert entity_map["Entity2"]["relationships"][0].subject == "Entity2"
 
 
 @pytest.mark.asyncio
@@ -329,14 +329,14 @@ async def test_upsert_embeddings(
 
 
 @pytest.mark.asyncio
-async def test_get_all_triples(
-    postgres_db_provider, collection_id, triples_raw_list
+async def test_get_all_relationships(
+    postgres_db_provider, collection_id, relationships_raw_list
 ):
-    await postgres_db_provider.add_triples(triples_raw_list)
-    triples = await postgres_db_provider.get_triples(collection_id)
-    assert triples["triples"][0].subject == "Entity1"
-    assert triples["triples"][1].subject == "Entity2"
-    assert len(triples["triples"]) == 2
+    await postgres_db_provider.add_relationships(relationships_raw_list)
+    relationships = await postgres_db_provider.get_relationships(collection_id)
+    assert relationships["relationships"][0].subject == "Entity1"
+    assert relationships["relationships"][1].subject == "Entity2"
+    assert len(relationships["relationships"]) == 2
 
 
 @pytest.mark.asyncio
@@ -366,15 +366,15 @@ async def test_perform_graph_clustering(
     collection_id,
     leiden_params_1,
     entities_list,
-    triples_raw_list,
+    relationships_raw_list,
 ):
 
-    # addd entities and triples
+    # addd entities and relationships
     await postgres_db_provider.add_entities(
         entities_list, table_name="document_entity"
     )
-    await postgres_db_provider.add_triples(
-        triples_raw_list, table_name="chunk_triple"
+    await postgres_db_provider.add_relationships(
+        relationships_raw_list, table_name="chunk_relationship"
     )
 
     num_communities = await postgres_db_provider.perform_graph_clustering(
@@ -387,7 +387,7 @@ async def test_perform_graph_clustering(
 async def test_get_community_details(
     postgres_db_provider,
     entities_list,
-    triples_raw_list,
+    relationships_raw_list,
     collection_id,
     community_report_list,
     community_table_info,
@@ -396,13 +396,13 @@ async def test_get_community_details(
     await postgres_db_provider.add_entities(
         entities_list, table_name="document_entity"
     )
-    await postgres_db_provider.add_triples(
-        triples_raw_list, table_name="chunk_triple"
+    await postgres_db_provider.add_relationships(
+        relationships_raw_list, table_name="chunk_relationship"
     )
     await postgres_db_provider.add_community_info(community_table_info)
     await postgres_db_provider.add_community_report(community_report_list[0])
 
-    community_level, entities, triples = (
+    community_level, entities, relationships = (
         await postgres_db_provider.get_community_details(
             community_number=1, collection_id=collection_id
         )
@@ -411,4 +411,4 @@ async def test_get_community_details(
     assert community_level == 0
     # TODO: change these to objects
     assert entities[0].name == "Entity1"
-    assert triples[0].subject == "Entity1"
+    assert relationships[0].subject == "Entity1"

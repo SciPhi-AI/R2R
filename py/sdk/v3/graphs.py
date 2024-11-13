@@ -181,8 +181,6 @@ class GraphsSDK:
         self,
         collection_id: Union[str, UUID],
         level=EntityLevel.DOCUMENT,
-        offset: int = 0,
-        limit: int = 100,
         include_embeddings: bool = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
@@ -372,7 +370,7 @@ class GraphsSDK:
         self,
         collection_id: Union[str, UUID],
         run_type: Optional[Union[str, KGRunType]] = None,
-        settings: Optional[Dict[str, Any]] = None,
+        settings: Optional[dict[str, Any]] = None,
         run_with_orchestration: bool = True,
     ):  # -> WrappedKGCommunitiesResponse:
         """
@@ -535,7 +533,7 @@ class GraphsSDK:
 
         Args:
             collection_id (Union[str, UUID]): Collection ID to tune prompt for
-            prompt_name (str): Name of prompt to tune (graphrag_triples_extraction_few_shot,
+            prompt_name (str): Name of prompt to tune (graphrag_relationships_extraction_few_shot,
                              graphrag_entity_description, or graphrag_community_reports)
             documents_offset (int): Document pagination offset
             documents_limit (int): Maximum number of documents to use

@@ -89,17 +89,17 @@ def hatchet_kg_factory(
             # context.log(f"Running KG Extraction for collection ID: {input_data['collection_id']}")
             document_id = input_data["document_id"]
 
-            await self.kg_service.kg_triples_extraction(
+            await self.kg_service.kg_relationships_extraction(
                 document_id=uuid.UUID(document_id),
                 **input_data["kg_creation_settings"],
             )
 
             logger.info(
-                f"Successfully ran kg triples extraction for document {document_id}"
+                f"Successfully ran kg relationships extraction for document {document_id}"
             )
 
             return {
-                "result": f"successfully ran kg triples extraction for document {document_id} in {time.time() - start_time:.2f} seconds",
+                "result": f"successfully ran kg relationships extraction for document {document_id} in {time.time() - start_time:.2f} seconds",
             }
 
         @orchestration_provider.step(

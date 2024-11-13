@@ -1,4 +1,4 @@
-# pipe to extract nodes/triples etc
+# pipe to extract nodes/relationships etc
 
 import asyncio
 import logging
@@ -73,16 +73,16 @@ class KGEntityDescriptionPipe(AsyncPipe):
             return truncated_info
 
         async def process_entity(
-            entities, triples, max_description_input_length, document_id
+            entities, relationships, max_description_input_length, document_id
         ):
 
             entity_info = [
                 f"{entity.name}, {entity.description}" for entity in entities
             ]
 
-            triples_txt = [
-                f"{i+1}: {triple.subject}, {triple.object}, {triple.predicate} - Summary: {triple.description}"
-                for i, triple in enumerate(triples)
+            relationships_txt = [
+                f"{i+1}: {relationship.subject}, {relationship.object}, {relationship.predicate} - Summary: {relationship.description}"
+                for i, relationship in enumerate(relationships)
             ]
 
             # potentially slow at scale, but set to avoid duplicates
@@ -107,8 +107,8 @@ class KGEntityDescriptionPipe(AsyncPipe):
                                     entity_info,
                                     max_description_input_length,
                                 ),
-                                "triples_txt": truncate_info(
-                                    triples_txt,
+                                "relationships_txt": truncate_info(
+                                    relationships_txt,
                                     max_description_input_length,
                                 ),
                             },
@@ -171,7 +171,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                 workflows.append(
                     process_entity(
                         entity_info["entities"],
-                        entity_info["triples"],
+                        entity_info["relationships"],
                         input.message["max_description_input_length"],
                         document_id,
                     )

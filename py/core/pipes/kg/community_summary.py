@@ -23,7 +23,7 @@ logger = logging.getLogger()
 
 class KGCommunitySummaryPipe(AsyncPipe):
     """
-    Clusters entities and triples into communities within the knowledge graph using hierarchical Leiden algorithm.
+    Clusters entities and relationships into communities within the knowledge graph using hierarchical Leiden algorithm.
     """
 
     def __init__(
@@ -51,28 +51,28 @@ class KGCommunitySummaryPipe(AsyncPipe):
     async def community_summary_prompt(
         self,
         entities: list[Entity],
-        triples: list[Relationship],
+        relationships: list[Relationship],
         max_summary_input_length: int,
     ):
 
         entity_map: dict[str, dict[str, list[Any]]] = {}
         for entity in entities:
             if not entity.name in entity_map:
-                entity_map[entity.name] = {"entities": [], "triples": []}
+                entity_map[entity.name] = {"entities": [], "relationships": []}
             entity_map[entity.name]["entities"].append(entity)
 
-        for triple in triples:
-            if not triple.subject in entity_map:
-                entity_map[triple.subject] = {
+        for relationship in relationships:
+            if not relationship.subject in entity_map:
+                entity_map[relationship.subject] = {
                     "entities": [],
-                    "triples": [],
+                    "relationships": [],
                 }
-            entity_map[triple.subject]["triples"].append(triple)
+            entity_map[relationship.subject]["relationships"].append(relationship)
 
-        # sort in descending order of triple count
+        # sort in descending order of relationship count
         sorted_entity_map = sorted(
             entity_map.items(),
-            key=lambda x: len(x[1]["triples"]),
+            key=lambda x: len(x[1]["relationships"]),
             reverse=True,
         )
 
@@ -90,15 +90,15 @@ class KGCommunitySummaryPipe(AsyncPipe):
                 for entity in sampled_entities
             )
 
-        async def _get_triples_string(triples: list, max_count: int = 100):
-            sampled_triples = (
-                random.sample(triples, max_count)
-                if len(triples) > max_count
-                else triples
+        async def _get_relationships_string(relationships: list, max_count: int = 100):
+            sampled_relationships = (
+                random.sample(relationships, max_count)
+                if len(relationships) > max_count
+                else relationships
             )
             return "\n".join(
-                f"{triple.id},{triple.subject},{triple.object},{triple.predicate},{triple.description}"
-                for triple in sampled_triples
+                f"{relationship.id},{relationship.subject},{relationship.object},{relationship.predicate},{relationship.description}"
+                for relationship in sampled_relationships
             )
 
         prompt = ""
@@ -106,14 +106,14 @@ class KGCommunitySummaryPipe(AsyncPipe):
             entity_descriptions = await _get_entity_descriptions_string(
                 entity_data["entities"]
             )
-            triples = await _get_triples_string(entity_data["triples"])
+            relationships = await _get_relationships_string(entity_data["relationships"])
 
             prompt += f"""
             Entity: {entity_name}
             Descriptions:
                 {entity_descriptions}
-            Triples:
-                {triples}
+            Relationships:
+                {relationships}
             """
 
             if len(prompt) > max_summary_input_length:
@@ -137,16 +137,16 @@ class KGCommunitySummaryPipe(AsyncPipe):
         Process a community by summarizing it and creating a summary embedding and storing it to a database.
         """
 
-        community_level, entities, triples = (
+        community_level, entities, relationships = (
             await self.database_provider.get_community_details(
                 community_number=community_number,
                 collection_id=collection_id,
             )
         )
 
-        if entities == [] and triples == []:
+        if entities == [] and relationships == []:
             raise ValueError(
-                f"Community {community_number} has no entities or triples."
+                f"Community {community_number} has no entities or relationships."
             )
 
         for attempt in range(3):
@@ -160,7 +160,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
                                 "input_text": (
                                     await self.community_summary_prompt(
                                         entities,
-                                        triples,
+                                        relationships,
                                         max_summary_input_length,
                                     )
                                 ),

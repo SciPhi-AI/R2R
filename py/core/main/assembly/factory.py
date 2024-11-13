@@ -364,7 +364,7 @@ class R2RPipeFactory:
         self,
         parsing_pipe_override: Optional[AsyncPipe] = None,
         embedding_pipe_override: Optional[AsyncPipe] = None,
-        kg_triples_extraction_pipe_override: Optional[AsyncPipe] = None,
+        kg_relationships_extraction_pipe_override: Optional[AsyncPipe] = None,
         kg_storage_pipe_override: Optional[AsyncPipe] = None,
         kg_search_pipe_override: Optional[AsyncPipe] = None,
         vector_storage_pipe_override: Optional[AsyncPipe] = None,
@@ -389,8 +389,8 @@ class R2RPipeFactory:
             ),
             embedding_pipe=embedding_pipe_override
             or self.create_embedding_pipe(*args, **kwargs),
-            kg_triples_extraction_pipe=kg_triples_extraction_pipe_override
-            or self.create_kg_triples_extraction_pipe(*args, **kwargs),
+            kg_relationships_extraction_pipe=kg_relationships_extraction_pipe_override
+            or self.create_kg_relationships_extraction_pipe(*args, **kwargs),
             kg_storage_pipe=kg_storage_pipe_override
             or self.create_kg_storage_pipe(*args, **kwargs),
             vector_storage_pipe=vector_storage_pipe_override
@@ -535,14 +535,14 @@ class R2RPipeFactory:
             config=AsyncPipe.PipeConfig(name="routing_search_pipe"),
         )
 
-    def create_kg_triples_extraction_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import KGTriplesExtractionPipe
+    def create_kg_relationships_extraction_pipe(self, *args, **kwargs) -> Any:
+        from core.pipes import KGRelationshipsExtractionPipe
 
-        return KGTriplesExtractionPipe(
+        return KGRelationshipsExtractionPipe(
             logging_provider=self.providers.logging,
             llm_provider=self.providers.llm,
             database_provider=self.providers.database,
-            config=AsyncPipe.PipeConfig(name="kg_triples_extraction_pipe"),
+            config=AsyncPipe.PipeConfig(name="kg_relationships_extraction_pipe"),
         )
 
     def create_kg_storage_pipe(self, *args, **kwargs) -> Any:

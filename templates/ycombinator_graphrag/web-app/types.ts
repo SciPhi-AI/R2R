@@ -335,7 +335,7 @@ export interface KGEntity {
   description: string;
 }
 
-export interface KGTriple {
+export interface KGRelationship {
   subject: string;
   predicate: string;
   object: string;

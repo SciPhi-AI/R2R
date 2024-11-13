@@ -30,10 +30,10 @@ class KGEntityDeduplicationType(str, Enum):
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 
-    graphrag_triples_extraction_few_shot: str = Field(
-        default="graphrag_triples_extraction_few_shot",
+    graphrag_relationships_extraction_few_shot: str = Field(
+        default="graphrag_relationships_extraction_few_shot",
         description="The prompt to use for knowledge graph extraction.",
-        alias="graphrag_triples_extraction_few_shot_prompt",  # TODO - mark deprecated & remove
+        alias="graphrag_relationships_extraction_few_shot_prompt",  # TODO - mark deprecated & remove
     )
 
     graphrag_entity_description: str = Field(
@@ -62,9 +62,9 @@ class KGCreationSettings(R2RSerializable):
         description="The number of extractions to merge into a single KG extraction.",
     )
 
-    max_knowledge_triples: int = Field(
+    max_knowledge_relationships: int = Field(
         default=100,
-        description="The maximum number of knowledge triples to extract from each chunk.",
+        description="The maximum number of knowledge relationships to extract from each chunk.",
     )
 
     max_description_input_length: int = Field(

@@ -30,7 +30,7 @@ from shared.api.models.kg.responses import (
     WrappedKGEnrichmentResponse,
     WrappedKGEntitiesResponse,
     WrappedKGEntityDeduplicationResponse,
-    WrappedKGTriplesResponse,
+    WrappedKGRelationshipsResponse,
     WrappedKGTunePromptResponse,
 )
 from shared.api.models.management.responses import (

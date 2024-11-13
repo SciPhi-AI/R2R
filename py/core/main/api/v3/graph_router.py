@@ -1,6 +1,6 @@
 import logging
 import textwrap
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
@@ -13,6 +13,7 @@ from core.base.api.models import (
     WrappedKGEnrichmentResponse,
     WrappedKGEntityDeduplicationResponse,
     WrappedKGTunePromptResponse,
+    WrappedKGRelationshipsResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -503,7 +504,7 @@ class GraphRouter(BaseRouterV3):
             id: UUID = Path(..., description="The ID of the chunk to create relationships for."),
             relationships: list[Union[Relationship, dict]] = Body(..., description="The relationships to create."),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[list[RelationshipResponse]]:
+        ) -> WrappedKGRelationshipsResponse:
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can access this endpoint.", 403)
 
@@ -2229,7 +2230,7 @@ class GraphRouter(BaseRouterV3):
 
                             result = client.graphs.tune_prompt(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                prompt_name="graphrag_triples_extraction_few_shot",
+                                prompt_name="graphrag_relationships_extraction_few_shot",
                                 documents_limit=100,
                                 chunks_limit=1000
                             )"""
@@ -2243,7 +2244,7 @@ class GraphRouter(BaseRouterV3):
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -d '{
-                                    "prompt_name": "graphrag_triples_extraction_few_shot",
+                                    "prompt_name": "graphrag_relationships_extraction_few_shot",
                                     "documents_limit": 100,
                                     "chunks_limit": 1000
                                 }'"""
@@ -2257,7 +2258,7 @@ class GraphRouter(BaseRouterV3):
             collection_id: UUID = Path(...),
             prompt_name: str = Body(
                 ...,
-                description="The prompt to tune. Valid options: graphrag_triples_extraction_few_shot, graphrag_entity_description, graphrag_community_reports",
+                description="The prompt to tune. Valid options: graphrag_relationships_extraction_few_shot, graphrag_entity_description, graphrag_community_reports",
             ),
             documents_offset: int = Body(0, ge=0),
             documents_limit: int = Body(100, ge=1),

@@ -223,7 +223,7 @@ async def get_entities(
 @click.option(
     "--collection-id",
     required=True,
-    help="Collection ID to retrieve triples from.",
+    help="Collection ID to retrieve relationships from.",
 )
 @click.option(
     "--offset",
@@ -238,9 +238,9 @@ async def get_entities(
     help="Limit for pagination.",
 )
 @click.option(
-    "--triple-ids",
+    "--relationship-ids",
     multiple=True,
-    help="Triple IDs to filter by.",
+    help="Relationship IDs to filter by.",
 )
 @click.option(
     "--entity-names",
@@ -248,21 +248,21 @@ async def get_entities(
     help="Entity names to filter by.",
 )
 @pass_context
-async def get_triples(
-    ctx, collection_id, offset, limit, triple_ids, entity_names
+async def get_relationships(
+    ctx, collection_id, offset, limit, relationship_ids, entity_names
 ):
     """
-    Retrieve triples from the knowledge graph.
+    Retrieve relationships from the knowledge graph.
     """
     client = ctx.obj
 
     with timer():
-        response = await client.get_triples(
+        response = await client.get_relationships(
             collection_id,
             offset,
             limit,
             list(entity_names),
-            list(triple_ids),
+            list(relationship_ids),
         )
 
     click.echo(json.dumps(response, indent=2))
@@ -284,7 +284,7 @@ async def delete_graph_for_collection(ctx, collection_id, cascade):
     """
     Delete the graph for a given collection.
 
-    NOTE: Setting the cascade flag to true will delete entities and triples for documents that are shared across multiple collections. Do not set this flag unless you are absolutely sure that you want to delete the entities and triples for all documents in the collection.
+    NOTE: Setting the cascade flag to true will delete entities and relationships for documents that are shared across multiple collections. Do not set this flag unless you are absolutely sure that you want to delete the entities and relationships for all documents in the collection.
     """
     client = ctx.obj
 

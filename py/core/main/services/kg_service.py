@@ -58,13 +58,13 @@ class KgService(Service):
             logging_connection,
         )
 
-    @telemetry_event("kg_triples_extraction")
-    async def kg_triples_extraction(
+    @telemetry_event("kg_relationships_extraction")
+    async def kg_relationships_extraction(
         self,
         document_id: UUID,
         generation_config: GenerationConfig,
         extraction_merge_count: int,
-        max_knowledge_triples: int,
+        max_knowledge_relationships: int,
         entity_types: list[str],
         relation_types: list[str],
         **kwargs,
@@ -81,13 +81,13 @@ class KgService(Service):
                 status=KGExtractionStatus.PROCESSING,
             )
 
-            triples = await self.pipes.kg_triples_extraction_pipe.run(
-                input=self.pipes.kg_triples_extraction_pipe.Input(
+            relationships = await self.pipes.kg_relationships_extraction_pipe.run(
+                input=self.pipes.kg_relationships_extraction_pipe.Input(
                     message={
                         "document_id": document_id,
                         "generation_config": generation_config,
                         "extraction_merge_count": extraction_merge_count,
-                        "max_knowledge_triples": max_knowledge_triples,
+                        "max_knowledge_relationships": max_knowledge_relationships,
                         "entity_types": entity_types,
                         "relation_types": relation_types,
                         "logger": logger,
@@ -102,7 +102,7 @@ class KgService(Service):
             )
 
             result_gen = await self.pipes.kg_storage_pipe.run(
-                input=self.pipes.kg_storage_pipe.Input(message=triples),
+                input=self.pipes.kg_storage_pipe.Input(message=relationships),
                 state=None,
                 run_manager=self.run_manager,
             )
@@ -440,58 +440,58 @@ class KgService(Service):
             entity_table_name=entity_table_name,
         )
 
-    @telemetry_event("get_triples")
-    async def get_triples(
+    @telemetry_event("get_relationships")
+    async def get_relationships(
         self,
         offset: int,
         limit: int,
         collection_id: Optional[UUID] = None,
         entity_names: Optional[list[str]] = None,
-        triple_ids: Optional[list[str]] = None,
+        relationship_ids: Optional[list[str]] = None,
         **kwargs,
     ):
-        return await self.providers.database.get_triples(
+        return await self.providers.database.get_relationships(
             offset=offset,
             limit=limit,
             collection_id=collection_id,
             entity_names=entity_names,
-            triple_ids=triple_ids,
+            relationship_ids=relationship_ids,
         )
 
-    @telemetry_event("list_triples")
-    async def list_triples(
+    @telemetry_event("list_relationships")
+    async def list_relationships(
         self,
         offset: int,
         limit: int,
         collection_id: Optional[UUID] = None,
         entity_names: Optional[list[str]] = None,
-        triple_ids: Optional[list[str]] = None,
+        relationship_ids: Optional[list[str]] = None,
         **kwargs,
     ):
-        return await self.providers.database.get_triples(
+        return await self.providers.database.get_relationships(
             offset=offset,
             limit=limit,
             collection_id=collection_id,
             entity_names=entity_names,
-            triple_ids=triple_ids,
+            relationship_ids=relationship_ids,
         )
 
     ##### Relationships #####
 
-    @telemetry_event("list_triples")
-    async def list_triples(
+    @telemetry_event("list_relationships")
+    async def list_relationships(
         self,
         collection_id: Optional[UUID] = None,
         entity_names: Optional[list[str]] = None,
-        triple_ids: Optional[list[str]] = None,
+        relationship_ids: Optional[list[str]] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
         **kwargs,
     ):
-        return await self.providers.database.get_triples(
+        return await self.providers.database.get_relationships(
             collection_id=collection_id,
             entity_names=entity_names,
-            triple_ids=triple_ids,
+            relationship_ids=relationship_ids,
             offset=offset or 0,
             limit=limit or -1,
         )

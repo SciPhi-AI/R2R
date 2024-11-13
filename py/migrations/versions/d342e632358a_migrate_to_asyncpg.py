@@ -43,7 +43,7 @@ def upgrade() -> None:
         f"ALTER TABLE IF EXISTS {project_name}.entity_raw RENAME TO chunk_entity"
     )
     op.execute(
-        f"ALTER TABLE IF EXISTS {project_name}.triple_raw RENAME TO chunk_triple"
+        f"ALTER TABLE IF EXISTS {project_name}.relationship_raw RENAME TO chunk_relationship"
     )
     op.execute(
         f"ALTER TABLE IF EXISTS {project_name}.entity_embedding RENAME TO document_entity"
@@ -158,7 +158,7 @@ def downgrade() -> None:
         f"ALTER TABLE IF EXISTS {project_name}.chunk_entity RENAME TO entity_raw"
     )
     op.execute(
-        f"ALTER TABLE IF EXISTS {project_name}.chunk_triple RENAME TO triple_raw"
+        f"ALTER TABLE IF EXISTS {project_name}.chunk_relationship RENAME TO relationship_raw"
     )
     op.execute(
         f"ALTER TABLE IF EXISTS {project_name}.document_entity RENAME TO entity_embedding"

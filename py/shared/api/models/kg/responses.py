@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from shared.abstractions.base import R2RSerializable
 from shared.abstractions.graph import CommunityReport, Entity, Relationship
-from shared.api.models.base import ResultsWrapper
+from shared.api.models.base import ResultsWrapper, PaginatedResultsWrapper
 
 
 class KGCreationResponse(BaseModel):
@@ -75,9 +75,9 @@ class KGCreationEstimationResponse(R2RSerializable):
         description="The estimated number of entities in the graph.",
     )
 
-    estimated_triples: Optional[str] = Field(
+    estimated_relationships: Optional[str] = Field(
         default=None,
-        description="The estimated number of triples in the graph.",
+        description="The estimated number of relationships in the graph.",
     )
 
     estimated_llm_calls: Optional[str] = Field(
@@ -148,9 +148,9 @@ class KGEnrichmentEstimationResponse(R2RSerializable):
         description="The total number of entities in the graph.",
     )
 
-    total_triples: Optional[int] = Field(
+    total_relationships: Optional[int] = Field(
         default=None,
-        description="The total number of triples in the graph.",
+        description="The total number of relationships in the graph.",
     )
 
     estimated_llm_calls: Optional[str] = Field(
@@ -207,23 +207,23 @@ class KGEntitiesResponse(R2RSerializable):
         }
 
 
-class KGTriplesResponse(R2RSerializable):
-    """Response for knowledge graph triples."""
+class KGRelationshipsResponse(R2RSerializable):
+    """Response for knowledge graph relationships."""
 
-    triples: list[Relationship] = Field(
+    relationships: list[Relationship] = Field(
         ...,
-        description="The list of triples in the graph.",
+        description="The list of relationships in the graph.",
     )
 
     total_entries: int = Field(
         ...,
-        description="The total number of triples in the graph for the collection or document.",
+        description="The total number of relationships in the graph for the collection or document.",
     )
 
     class Config:
         json_schema_extra = {
             "example": {
-                "triples": [
+                "relationships": [
                     {
                         "subject": "Paris",
                         "predicate": "is capital of",
@@ -306,8 +306,12 @@ WrappedKGCreationResponse = ResultsWrapper[
 WrappedKGEnrichmentResponse = ResultsWrapper[
     Union[KGEnrichmentResponse, KGEnrichmentEstimationResponse]
 ]
-WrappedKGEntitiesResponse = ResultsWrapper[KGEntitiesResponse]
-WrappedKGTriplesResponse = ResultsWrapper[KGTriplesResponse]
+
+# KG Entities
+WrappedKGEntityResponse = ResultsWrapper[KGEntitiesResponse]
+WrappedKGEntitiesResponse = PaginatedResultsWrapper[KGEntitiesResponse]
+WrappedKGRelationshipsResponse = PaginatedResultsWrapper[KGRelationshipsResponse]
+
 WrappedKGTunePromptResponse = ResultsWrapper[KGTunePromptResponse]
 WrappedKGCommunitiesResponse = ResultsWrapper[KGCommunitiesResponse]
 WrappedKGEntityDeduplicationResponse = ResultsWrapper[

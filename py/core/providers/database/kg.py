@@ -91,9 +91,9 @@ class PostgresKGHandler(KGHandler):
         """
         await self.connection_manager.execute_query(query)
 
-        # raw triples table, also the final table. this will have embeddings.
+        # raw relationships table, also the final table. this will have embeddings.
         query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("chunk_triple")} (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("chunk_relationship")} (
             id SERIAL PRIMARY KEY,
             subject TEXT NOT NULL,
             predicate TEXT NOT NULL,
@@ -148,7 +148,7 @@ class PostgresKGHandler(KGHandler):
             parent_cluster INT,
             level INT NOT NULL,
             is_final_cluster BOOLEAN NOT NULL,
-            triple_ids INT[] NOT NULL,
+            relationship_ids INT[] NOT NULL,
             collection_id UUID NOT NULL
         );"""
 
@@ -270,8 +270,8 @@ class PostgresKGHandler(KGHandler):
             [document_ids],
         )
 
-        chunk_triple_count = await self.connection_manager.fetch_query(
-            f"SELECT COUNT(*) FROM {self._get_table_name('chunk_triple')} WHERE document_id = ANY($1)",
+        chunk_relationship_count = await self.connection_manager.fetch_query(
+            f"SELECT COUNT(*) FROM {self._get_table_name('chunk_relationship')} WHERE document_id = ANY($1)",
             [document_ids],
         )
 
@@ -294,30 +294,30 @@ class PostgresKGHandler(KGHandler):
             "kg_extraction_statuses": kg_extraction_statuses,
             "kg_enrichment_status": kg_enrichment_statuses[0]["enrichment_status"],
             "chunk_entity_count": chunk_entity_count[0]["count"],
-            "chunk_triple_count": chunk_triple_count[0]["count"],
+            "chunk_relationship_count": chunk_relationship_count[0]["count"],
             "document_entity_count": document_entity_count[0]["count"],
             "collection_entity_count": collection_entity_count[0]["count"],
             "community_count": community_count[0]["count"],
         }
 
     ### Relationships BEGIN ####
-    async def add_triples(
+    async def add_relationships(
         self,
-        triples: list[Relationship],
-        table_name: str = "chunk_triple",
+        relationships: list[Relationship],
+        table_name: str = "chunk_relationship",
     ) -> None:
         """
-        Upsert triples into the chunk_triple table. These are raw triples extracted from the document.
+        Upsert relationships into the chunk_relationship table. These are raw relationships extracted from the document.
 
         Args:
-            triples: list[Relationship]: list of triples to upsert
+            relationships: list[Relationship]: list of relationships to upsert
             table_name: str: name of the table to upsert into
 
         Returns:
             result: asyncpg.Record: result of the upsert operation
         """
         return await self._add_objects(
-            [ele.to_dict() for ele in triples], table_name
+            [ele.to_dict() for ele in relationships], table_name
         )
 
     async def list_relationships_v3(
@@ -338,12 +338,12 @@ class PostgresKGHandler(KGHandler):
 
         if level == EntityLevel.CHUNK:
             QUERY = f"""
-                SELECT * FROM {self._get_table_name("chunk_triple")} WHERE $1 = ANY(chunk_ids)
+                SELECT * FROM {self._get_table_name("chunk_relationship")} WHERE $1 = ANY(chunk_ids)
                 {filter_query}
             """
         elif level == EntityLevel.DOCUMENT:
             QUERY = f"""
-                SELECT * FROM {self._get_table_name("chunk_triple")} WHERE $1 = document_id
+                SELECT * FROM {self._get_table_name("chunk_relationship")} WHERE $1 = document_id
                 {filter_query}
             """
         elif level == EntityLevel.COLLECTION:
@@ -351,7 +351,7 @@ class PostgresKGHandler(KGHandler):
                 WITH document_ids AS (
                     SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids)
                 )
-                SELECT * FROM {self._get_table_name("chunk_triple")} WHERE document_id IN (SELECT document_id FROM document_ids)
+                SELECT * FROM {self._get_table_name("chunk_relationship")} WHERE document_id IN (SELECT document_id FROM document_ids)
                 {filter_query}
             """
 
@@ -372,7 +372,7 @@ class PostgresKGHandler(KGHandler):
         table_prefix: str = "chunk_",
     ) -> Tuple[int, int]:
         """
-        Upsert entities and triples into the database. These are raw entities and triples extracted from the document fragments.
+        Upsert entities and relationships into the database. These are raw entities and relationships extracted from the document fragments.
 
         Args:
             kg_extractions: list[KGExtraction]: list of KG extractions to upsert
@@ -389,7 +389,7 @@ class PostgresKGHandler(KGHandler):
 
             total_entities, total_relationships = (
                 total_entities + len(extraction.entities),
-                total_relationships + len(extraction.triples),
+                total_relationships + len(extraction.relationships),
             )
 
             if extraction.entities:
@@ -406,16 +406,16 @@ class PostgresKGHandler(KGHandler):
                     extraction.entities, table_name=f"{table_prefix}entity"
                 )
 
-            if extraction.triples:
-                if not extraction.triples[0].extraction_ids:
-                    for i in range(len(extraction.triples)):
-                        extraction.triples[i].extraction_ids = (
+            if extraction.relationships:
+                if not extraction.relationships[0].extraction_ids:
+                    for i in range(len(extraction.relationships)):
+                        extraction.relationships[i].extraction_ids = (
                             extraction.extraction_ids
                         )
-                    extraction.triples[i].document_id = extraction.document_id
+                    extraction.relationships[i].document_id = extraction.document_id
 
-                await self.add_triples(
-                    extraction.triples, table_name=f"{table_prefix}triple"
+                await self.add_relationships(
+                    extraction.relationships, table_name=f"{table_prefix}relationship"
                 )
 
         return (total_entities, total_relationships)
@@ -466,38 +466,38 @@ class PostgresKGHandler(KGHandler):
 
             SELECT DISTINCT t.subject, t.predicate, t.object, t.weight, t.description,
                    (SELECT array_agg(DISTINCT x) FROM unnest(t.extraction_ids) x) AS extraction_ids, t.document_id
-            FROM {self._get_table_name("chunk_triple")} t
+            FROM {self._get_table_name("chunk_relationship")} t
             JOIN entities_list el ON t.subject = el.name
             ORDER BY t.subject, t.predicate, t.object;
         """
 
-        triples_list = await self.connection_manager.fetch_query(
+        relationships_list = await self.connection_manager.fetch_query(
             QUERY2, [document_id]
         )
-        triples_list = [
+        relationships_list = [
             Relationship(
-                subject=triple["subject"],
-                predicate=triple["predicate"],
-                object=triple["object"],
-                weight=triple["weight"],
-                description=triple["description"],
-                extraction_ids=triple["extraction_ids"],
-                document_id=triple["document_id"],
+                subject=relationship["subject"],
+                predicate=relationship["predicate"],
+                object=relationship["object"],
+                weight=relationship["weight"],
+                description=relationship["description"],
+                extraction_ids=relationship["extraction_ids"],
+                document_id=relationship["document_id"],
             )
-            for triple in triples_list
+            for relationship in relationships_list
         ]
 
         entity_map: dict[str, dict[str, list[Any]]] = {}
         for entity in entities_list:
             if entity.name not in entity_map:
-                entity_map[entity.name] = {"entities": [], "triples": []}
+                entity_map[entity.name] = {"entities": [], "relationships": []}
             entity_map[entity.name]["entities"].append(entity)
 
-        for triple in triples_list:
-            if triple.subject in entity_map:
-                entity_map[triple.subject]["triples"].append(triple)
-            if triple.object in entity_map:
-                entity_map[triple.object]["triples"].append(triple)
+        for relationship in relationships_list:
+            if relationship.subject in entity_map:
+                entity_map[relationship.subject]["relationships"].append(relationship)
+            if relationship.object in entity_map:
+                entity_map[relationship.object]["relationships"].append(relationship)
 
         return entity_map
 
@@ -547,7 +547,7 @@ class PostgresKGHandler(KGHandler):
                 else "document_entity"
             )
         elif search_type == "__Relationship__":
-            table_name = "chunk_triple"
+            table_name = "chunk_relationship"
         elif search_type == "__Community__":
             table_name = "community_report"
         else:
@@ -600,7 +600,7 @@ class PostgresKGHandler(KGHandler):
                 for property_name in property_names
             }
 
-    async def get_all_triples(self, collection_id: UUID) -> list[Relationship]:
+    async def get_all_relationships(self, collection_id: UUID) -> list[Relationship]:
 
         # getting all documents for a collection
         if document_ids is None:
@@ -615,18 +615,18 @@ class PostgresKGHandler(KGHandler):
             ]
 
         QUERY = f"""
-            SELECT id, subject, predicate, weight, object, document_id FROM {self._get_table_name("chunk_triple")} WHERE document_id = ANY($1)
+            SELECT id, subject, predicate, weight, object, document_id FROM {self._get_table_name("chunk_relationship")} WHERE document_id = ANY($1)
         """
-        triples = await self.connection_manager.fetch_query(
+        relationships = await self.connection_manager.fetch_query(
             QUERY, [document_ids]
         )
-        return [Relationship(**triple) for triple in triples]
+        return [Relationship(**relationship) for relationship in relationships]
 
     async def add_community_info(
         self, communities: list[CommunityInfo]
     ) -> None:
         QUERY = f"""
-            INSERT INTO {self._get_table_name("community_info")} (node, cluster, parent_cluster, level, is_final_cluster, triple_ids, collection_id)
+            INSERT INTO {self._get_table_name("community_info")} (node, cluster, parent_cluster, level, is_final_cluster, relationship_ids, collection_id)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             """
         communities_tuples_list = [
@@ -636,7 +636,7 @@ class PostgresKGHandler(KGHandler):
                 community.parent_cluster,
                 community.level,
                 community.is_final_cluster,
-                community.triple_ids,
+                community.relationship_ids,
                 community.collection_id,
             )
             for community in communities
@@ -728,16 +728,16 @@ class PostgresKGHandler(KGHandler):
         )
 
     async def _create_graph_and_cluster(
-        self, triples: list[Triple], leiden_params: dict[str, Any]
+        self, relationships: list[Relationship], leiden_params: dict[str, Any]
     ) -> Any:
 
         G = self.nx.Graph()
-        for triple in triples:
+        for relationship in relationships:
             G.add_edge(
-                triple.subject,
-                triple.object,
-                weight=triple.weight,
-                id=triple.id,
+                relationship.subject,
+                relationship.object,
+                weight=relationship.weight,
+                id=relationship.id,
             )
 
         hierarchical_communities = await self._compute_leiden_communities(
@@ -748,8 +748,8 @@ class PostgresKGHandler(KGHandler):
 
     async def _cluster_and_add_community_info(
         self,
-        triples: list[Triple],
-        triple_ids_cache: dict[str, list[int]],
+        relationships: list[Relationship],
+        relationship_ids_cache: dict[str, list[int]],
         leiden_params: dict[str, Any],
         collection_id: UUID,
     ) -> int:
@@ -768,18 +768,18 @@ class PostgresKGHandler(KGHandler):
         start_time = time.time()
 
         hierarchical_communities = await self._create_graph_and_cluster(
-            triples, leiden_params
+            relationships, leiden_params
         )
 
         logger.info(
             f"Computing Leiden communities completed, time {time.time() - start_time:.2f} seconds."
         )
 
-        def triple_ids(node: str) -> list[int]:
-            return triple_ids_cache.get(node, [])
+        def relationship_ids(node: str) -> list[int]:
+            return relationship_ids_cache.get(node, [])
 
         logger.info(
-            f"Cached {len(triple_ids_cache)} triple ids, time {time.time() - start_time:.2f} seconds."
+            f"Cached {len(relationship_ids_cache)} relationship ids, time {time.time() - start_time:.2f} seconds."
         )
 
         # upsert the communities into the database.
@@ -790,7 +790,7 @@ class PostgresKGHandler(KGHandler):
                 parent_cluster=item.parent_cluster,
                 level=item.level,
                 is_final_cluster=item.is_final_cluster,
-                triple_ids=triple_ids(item.node),
+                relationship_ids=relationship_ids(item.node),
                 collection_id=collection_id,
             )
             for item in hierarchical_communities
@@ -809,7 +809,7 @@ class PostgresKGHandler(KGHandler):
         return num_communities
 
     async def _use_community_cache(
-        self, collection_id: UUID, triple_ids_cache: dict[str, list[int]]
+        self, collection_id: UUID, relationship_ids_cache: dict[str, list[int]]
     ) -> bool:
 
         # check if status is enriched or stale
@@ -835,50 +835,50 @@ class PostgresKGHandler(KGHandler):
         )["count"]
 
         # a hard threshold of 80% of the entities in the cache.
-        if num_entities > 0.8 * len(triple_ids_cache):
+        if num_entities > 0.8 * len(relationship_ids_cache):
             return True
         else:
             return False
 
-    async def _get_triple_ids_cache(
-        self, triples: list[Triple]
+    async def _get_relationship_ids_cache(
+        self, relationships: list[Relationship]
     ) -> dict[str, list[int]]:
 
-        # caching the triple ids
-        triple_ids_cache = dict[str, list[int]]()
-        for triple in triples:
+        # caching the relationship ids
+        relationship_ids_cache = dict[str, list[int]]()
+        for relationship in relationships:
             if (
-                triple.subject not in triple_ids_cache
-                and triple.subject is not None
+                relationship.subject not in relationship_ids_cache
+                and relationship.subject is not None
             ):
-                triple_ids_cache[triple.subject] = []
+                relationship_ids_cache[relationship.subject] = []
             if (
-                triple.object not in triple_ids_cache
-                and triple.object is not None
+                relationship.object not in relationship_ids_cache
+                and relationship.object is not None
             ):
-                triple_ids_cache[triple.object] = []
-            if triple.subject is not None and triple.id is not None:
-                triple_ids_cache[triple.subject].append(triple.id)
-            if triple.object is not None and triple.id is not None:
-                triple_ids_cache[triple.object].append(triple.id)
+                relationship_ids_cache[relationship.object] = []
+            if relationship.subject is not None and relationship.id is not None:
+                relationship_ids_cache[relationship.subject].append(relationship.id)
+            if relationship.object is not None and relationship.id is not None:
+                relationship_ids_cache[relationship.object].append(relationship.id)
 
-        return triple_ids_cache
+        return relationship_ids_cache
 
     async def _incremental_clustering(
         self,
-        triple_ids_cache: dict[str, list[int]],
+        relationship_ids_cache: dict[str, list[int]],
         leiden_params: dict[str, Any],
         collection_id: UUID,
     ) -> int:
         """
-        Performs incremental clustering on new triples by:
-        1. Getting all triples and new triples
-        2. Getting community mapping for all existing triples
-        3. For each new triple:
+        Performs incremental clustering on new relationships by:
+        1. Getting all relationships and new relationships
+        2. Getting community mapping for all existing relationships
+        3. For each new relationship:
             - Check if subject/object exists in community mapping
             - If exists, add its cluster to updated communities set
-            - If not, append triple to new_triple_ids list for clustering
-        4. Run hierarchical clustering on new_triple_ids list
+            - If not, append relationship to new_relationship_ids list for clustering
+        4. Run hierarchical clustering on new_relationship_ids list
         5. Update community info table with new clusters, offsetting IDs by max_cluster_id
         """
 
@@ -908,23 +908,23 @@ class PostgresKGHandler(KGHandler):
             QUERY, [collection_id, KGExtractionStatus.SUCCESS]
         )
 
-        new_triple_ids = await self.get_all_triples(
+        new_relationship_ids = await self.get_all_relationships(
             collection_id, new_document_ids
         )
 
-        # community mapping for new triples
+        # community mapping for new relationships
         updated_communities = set()
-        new_triples = []
-        for triple in new_triple_ids:
+        new_relationships = []
+        for relationship in new_relationship_ids:
             # bias towards subject
-            if triple.subject in communities_dict:
-                for community in communities_dict[triple.subject]:
+            if relationship.subject in communities_dict:
+                for community in communities_dict[relationship.subject]:
                     updated_communities.add(community["cluster"])
-            elif triple.object in communities_dict:
-                for community in communities_dict[triple.object]:
+            elif relationship.object in communities_dict:
+                for community in communities_dict[relationship.object]:
                     updated_communities.add(community["cluster"])
             else:
-                new_triples.append(triple)
+                new_relationships.append(relationship)
 
         # delete the communities information for the updated communities
         QUERY = f"""
@@ -935,7 +935,7 @@ class PostgresKGHandler(KGHandler):
         )
 
         hierarchical_communities_output = await self._create_graph_and_cluster(
-            new_triples, leiden_params
+            new_relationships, leiden_params
         )
 
         community_info = []
@@ -950,7 +950,7 @@ class PostgresKGHandler(KGHandler):
                         else None
                     ),
                     level=community.level,
-                    triple_ids=[],  # FIXME: need to get the triple ids for the community
+                    relationship_ids=[],  # FIXME: need to get the relationship ids for the community
                     is_final_cluster=community.is_final_cluster,
                     collection_id=collection_id,
                 )
@@ -966,7 +966,7 @@ class PostgresKGHandler(KGHandler):
         leiden_params: dict[str, Any],
     ) -> int:
         """
-        Leiden clustering algorithm to cluster the knowledge graph triples into communities.
+        Leiden clustering algorithm to cluster the knowledge graph relationships into communities.
 
         Available parameters and defaults:
             max_cluster_size: int = 1000,
@@ -984,19 +984,19 @@ class PostgresKGHandler(KGHandler):
 
         start_time = time.time()
 
-        triples = await self.get_all_triples(collection_id)
+        relationships = await self.get_all_relationships(collection_id)
 
         logger.info(f"Clustering with settings: {leiden_params}")
 
-        triple_ids_cache = await self._get_triple_ids_cache(triples)
+        relationship_ids_cache = await self._get_relationship_ids_cache(relationships)
 
-        if await self._use_community_cache(collection_id, triple_ids_cache):
+        if await self._use_community_cache(collection_id, relationship_ids_cache):
             num_communities = await self._incremental_clustering(
-                triple_ids_cache, leiden_params, collection_id
+                relationship_ids_cache, leiden_params, collection_id
             )
         else:
             num_communities = await self._cluster_and_add_community_info(
-                triples, triple_ids_cache, leiden_params, collection_id
+                relationships, relationship_ids_cache, leiden_params, collection_id
             )
 
         return num_communities
@@ -1057,8 +1057,8 @@ class PostgresKGHandler(KGHandler):
         )
 
         QUERY = f"""
-            WITH node_triple_ids AS (
-                SELECT node, triple_ids
+            WITH node_relationship_ids AS (
+                SELECT node, relationship_ids
                 FROM {self._get_table_name("community_info")}
                 WHERE cluster = $1 AND collection_id = $2
             )
@@ -1066,7 +1066,7 @@ class PostgresKGHandler(KGHandler):
                 e.id AS id,
                 e.name AS name,
                 e.description AS description
-            FROM node_triple_ids nti
+            FROM node_relationship_ids nti
             JOIN {self._get_table_name(table_name)} e ON e.name = nti.node;
         """
         entities = await self.connection_manager.fetch_query(
@@ -1075,22 +1075,22 @@ class PostgresKGHandler(KGHandler):
         entities = [Entity(**entity) for entity in entities]
 
         QUERY = f"""
-            WITH node_triple_ids AS (
-                SELECT node, triple_ids
+            WITH node_relationship_ids AS (
+                SELECT node, relationship_ids
                 FROM {self._get_table_name("community_info")}
                 WHERE cluster = $1 and collection_id = $2
             )
             SELECT DISTINCT
                 t.id, t.subject, t.predicate, t.object, t.weight, t.description
-            FROM node_triple_ids nti
-            JOIN {self._get_table_name("chunk_triple")} t ON t.id = ANY(nti.triple_ids);
+            FROM node_relationship_ids nti
+            JOIN {self._get_table_name("chunk_relationship")} t ON t.id = ANY(nti.relationship_ids);
         """
-        triples = await self.connection_manager.fetch_query(
+        relationships = await self.connection_manager.fetch_query(
             QUERY, [community_number, collection_id]
         )
-        triples = [Relationship(**triple) for triple in triples]
+        relationships = [Relationship(**relationship) for relationship in relationships]
 
-        return level, entities, triples
+        return level, entities, relationships
 
     # async def client(self):
     #     return None
@@ -1144,7 +1144,7 @@ class PostgresKGHandler(KGHandler):
         
         # check if the relationship already exists
         QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("chunk_triple")} WHERE subject = $1 AND predicate = $2 AND object = $3 AND collection_id = $4
+            SELECT COUNT(*) FROM {self._get_table_name("chunk_relationship")} WHERE subject = $1 AND predicate = $2 AND object = $3 AND collection_id = $4
         """
         count = (
             await self.connection_manager.fetch_query(QUERY, [relationship.subject, relationship.predicate, relationship.object, collection_id])
@@ -1153,7 +1153,7 @@ class PostgresKGHandler(KGHandler):
         if count > 0:
             raise R2RException("Relationship already exists", 400)
 
-        await self._add_objects([relationship], "chunk_triple")
+        await self._add_objects([relationship], "chunk_relationship")
 
     async def update_relationship(
         self, relationship_id: UUID, relationship: Relationship
@@ -1161,7 +1161,7 @@ class PostgresKGHandler(KGHandler):
         
         # check if relationship_id exists
         QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("chunk_triple")} WHERE id = $1
+            SELECT COUNT(*) FROM {self._get_table_name("chunk_relationship")} WHERE id = $1
         """
         count = (
             await self.connection_manager.fetch_query(QUERY, [relationship.id])
@@ -1170,13 +1170,13 @@ class PostgresKGHandler(KGHandler):
         if count == 0:
             raise R2RException("Relationship does not exist", 404)
 
-        await self._add_objects([relationship], "chunk_triple")
+        await self._add_objects([relationship], "chunk_relationship")
 
     async def delete_relationship(
         self, relationship_id: UUID
     ) -> None:
         QUERY = f"""
-            DELETE FROM {self._get_table_name("chunk_triple")} WHERE id = $1
+            DELETE FROM {self._get_table_name("chunk_relationship")} WHERE id = $1
         """
         await self.connection_manager.execute_query(QUERY, [relationship_id])
 
@@ -1219,7 +1219,7 @@ class PostgresKGHandler(KGHandler):
         if status == KGExtractionStatus.PROCESSING.value:
             return
 
-        # remove all triples for these documents.
+        # remove all relationships for these documents.
         DELETE_QUERIES = [
             f"DELETE FROM {self._get_table_name('community_info')} WHERE collection_id = $1;",
             f"DELETE FROM {self._get_table_name('community_report')} WHERE collection_id = $1;",
@@ -1241,7 +1241,7 @@ class PostgresKGHandler(KGHandler):
         if cascade:
             DELETE_QUERIES += [
                 f"DELETE FROM {self._get_table_name('chunk_entity')} WHERE document_id = ANY($1::uuid[]);",
-                f"DELETE FROM {self._get_table_name('chunk_triple')} WHERE document_id = ANY($1::uuid[]);",
+                f"DELETE FROM {self._get_table_name('chunk_relationship')} WHERE document_id = ANY($1::uuid[]);",
                 f"DELETE FROM {self._get_table_name('document_entity')} WHERE document_id = ANY($1::uuid[]);",
                 f"DELETE FROM {self._get_table_name('collection_entity')} WHERE collection_id = $1;",
             ]
@@ -1288,7 +1288,7 @@ class PostgresKGHandler(KGHandler):
         # Execute separate DELETE queries
         delete_queries = [
             f"DELETE FROM {self._get_table_name('chunk_entity')} WHERE document_id = $1",
-            f"DELETE FROM {self._get_table_name('chunk_triple')} WHERE document_id = $1",
+            f"DELETE FROM {self._get_table_name('chunk_relationship')} WHERE document_id = $1",
             f"DELETE FROM {self._get_table_name('document_entity')} WHERE document_id = $1",
         ]
 
@@ -1375,10 +1375,10 @@ class PostgresKGHandler(KGHandler):
             total_chunks * 10,
             total_chunks * 20,
         )  # 25 entities per 4 chunks
-        estimated_triples = (
+        estimated_relationships = (
             int(estimated_entities[0] * 1.25),
             int(estimated_entities[1] * 1.5),
-        )  # Assuming 1.25 triples per entity on average
+        )  # Assuming 1.25 relationships per entity on average
 
         estimated_llm_calls = (
             total_chunks * 2 + estimated_entities[0],
@@ -1414,8 +1414,8 @@ class PostgresKGHandler(KGHandler):
             estimated_entities=self._get_str_estimation_output(
                 estimated_entities
             ),
-            estimated_triples=self._get_str_estimation_output(
-                estimated_triples
+            estimated_relationships=self._get_str_estimation_output(
+                estimated_relationships
             ),
             estimated_llm_calls=self._get_str_estimation_output(
                 estimated_llm_calls
@@ -1454,9 +1454,9 @@ class PostgresKGHandler(KGHandler):
             )
 
         QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("chunk_triple")} WHERE document_id = ANY($1);
+            SELECT COUNT(*) FROM {self._get_table_name("chunk_relationship")} WHERE document_id = ANY($1);
         """
-        triple_count = (
+        relationship_count = (
             await self.connection_manager.fetch_query(QUERY, [document_ids])
         )[0]["count"]
 
@@ -1483,7 +1483,7 @@ class PostgresKGHandler(KGHandler):
         return KGEnrichmentEstimationResponse(
             message='Ran Graph Enrichment Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG enrichment process, run `enrich-graph` with `--run` in the cli, or `run_type="run"` in the client.',
             total_entities=entity_count,
-            total_triples=triple_count,
+            total_relationships=relationship_count,
             estimated_llm_calls=self._get_str_estimation_output(
                 estimated_llm_calls
             ),
@@ -1502,7 +1502,7 @@ class PostgresKGHandler(KGHandler):
         # this needs to be run periodically for every collection.
         raise NotImplementedError
 
-    async def delete_triples(self, triple_ids: list[int]):
+    async def delete_relationships(self, relationship_ids: list[int]):
         # need to implement this.
         raise NotImplementedError
 
@@ -1625,21 +1625,21 @@ class PostgresKGHandler(KGHandler):
 
         return {"entities": entities, "total_entries": total_entries}
 
-    async def get_triples(
+    async def get_relationships(
         self,
         offset: int,
         limit: int,
         collection_id: Optional[UUID] = None,
         entity_names: Optional[list[str]] = None,
-        triple_ids: Optional[list[str]] = None,
+        relationship_ids: Optional[list[str]] = None,
     ) -> dict:
         conditions = []
         params: list = [str(collection_id)]
         param_index = 2
 
-        if triple_ids:
+        if relationship_ids:
             conditions.append(f"id = ANY(${param_index})")
-            params.append(triple_ids)
+            params.append(relationship_ids)
             param_index += 1
 
         if entity_names:
@@ -1664,7 +1664,7 @@ class PostgresKGHandler(KGHandler):
 
         query = f"""
             SELECT id, subject, predicate, object, description
-            FROM {self._get_table_name("chunk_triple")}
+            FROM {self._get_table_name("chunk_relationship")}
             WHERE document_id = ANY(
                 SELECT document_id FROM {self._get_table_name("document_info")}
                 WHERE $1 = ANY(collection_ids)
@@ -1674,13 +1674,13 @@ class PostgresKGHandler(KGHandler):
             {pagination_clause}
         """
 
-        triples = await self.connection_manager.fetch_query(query, params)
-        triples = [Relationship(**triple) for triple in triples]
-        total_entries = await self.get_triple_count(
+        relationships = await self.connection_manager.fetch_query(query, params)
+        relationships = [Relationship(**relationship) for relationship in relationships]
+        total_entries = await self.get_relationship_count(
             collection_id=collection_id
         )
 
-        return {"triples": triples, "total_entries": total_entries}
+        return {"relationships": relationships, "total_entries": total_entries}
 
     async def structured_query(self):
         raise NotImplementedError
@@ -1691,7 +1691,7 @@ class PostgresKGHandler(KGHandler):
     async def update_kg_search_prompt(self):
         raise NotImplementedError
 
-    async def upsert_triples(self):
+    async def upsert_relationships(self):
         raise NotImplementedError
 
     async def get_entity_count(
@@ -1740,7 +1740,7 @@ class PostgresKGHandler(KGHandler):
             "count"
         ]
 
-    async def get_triple_count(
+    async def get_relationship_count(
         self,
         collection_id: Optional[UUID] = None,
         document_id: Optional[UUID] = None,
@@ -1768,7 +1768,7 @@ class PostgresKGHandler(KGHandler):
             params.append(str(document_id))
 
         QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("chunk_triple")}
+            SELECT COUNT(*) FROM {self._get_table_name("chunk_relationship")}
             WHERE {" AND ".join(conditions)}
         """
         return (await self.connection_manager.fetch_query(QUERY, params))[0][

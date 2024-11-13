@@ -238,7 +238,7 @@ class CommunityInfo(BaseModel):
     level: int
     is_final_cluster: bool
     collection_id: uuid.UUID
-    triple_ids: Optional[list[int]] = None
+    relationship_ids: Optional[list[int]] = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -251,7 +251,7 @@ class CommunityInfo(BaseModel):
             parent_cluster=d["parent_cluster"],
             level=d["level"],
             is_final_cluster=d["is_final_cluster"],
-            triple_ids=d["triple_ids"],
+            relationship_ids=d["relationship_ids"],
             collection_id=d["collection_id"],
         )
 
@@ -331,4 +331,4 @@ class KGExtraction(R2RSerializable):
     extraction_ids: list[uuid.UUID]
     document_id: uuid.UUID
     entities: list[Entity]
-    triples: list[Relationship]
+    relationships: list[Relationship]

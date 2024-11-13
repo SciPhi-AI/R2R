@@ -623,12 +623,12 @@ class KGHandler(Handler):
         pass
 
     @abstractmethod
-    async def add_triples(
+    async def add_relationships(
         self,
-        triples: list[Relationship],
-        table_name: str = "chunk_triple",
+        relationships: list[Relationship],
+        table_name: str = "chunk_relationship",
     ) -> None:
-        """Add triples to storage."""
+        """Add relationships to storage."""
         pass
 
     @abstractmethod
@@ -740,15 +740,15 @@ class KGHandler(Handler):
         pass
 
     @abstractmethod
-    async def get_triples(
+    async def get_relationships(
         self,
         offset: int,
         limit: int,
         collection_id: Optional[UUID] = None,
         entity_names: Optional[list[str]] = None,
-        triple_ids: Optional[list[str]] = None,
+        relationship_ids: Optional[list[str]] = None,
     ) -> dict:
-        """Get triples from storage."""
+        """Get relationships from storage."""
         pass
 
     @abstractmethod
@@ -763,12 +763,12 @@ class KGHandler(Handler):
         pass
 
     @abstractmethod
-    async def get_triple_count(
+    async def get_relationship_count(
         self,
         collection_id: Optional[UUID] = None,
         document_id: Optional[UUID] = None,
     ) -> int:
-        """Get triple count."""
+        """Get relationship count."""
         pass
 
     # Cost estimation methods
@@ -802,8 +802,8 @@ class KGHandler(Handler):
         raise NotImplementedError
 
     @abstractmethod
-    async def delete_triples(self, triple_ids: list[int]) -> None:
-        """Delete triples."""
+    async def delete_relationships(self, relationship_ids: list[int]) -> None:
+        """Delete relationships."""
         raise NotImplementedError
 
     @abstractmethod
@@ -827,8 +827,8 @@ class KGHandler(Handler):
         raise NotImplementedError
 
     @abstractmethod
-    async def upsert_triples(self) -> None:
-        """Upsert triples."""
+    async def upsert_relationships(self) -> None:
+        """Upsert relationships."""
         raise NotImplementedError
 
     @abstractmethod
@@ -839,7 +839,7 @@ class KGHandler(Handler):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_triples(self, collection_id: UUID) -> List[Triple]:
+    async def get_all_relationships(self, collection_id: UUID) -> list[Relationship]:
         raise NotImplementedError
 
     @abstractmethod
@@ -1517,13 +1517,13 @@ class DatabaseProvider(Provider):
             entities, table_name, conflict_columns
         )
 
-    async def add_triples(
+    async def add_relationships(
         self,
-        triples: list[Relationship],
-        table_name: str = "chunk_triple",
+        relationships: list[Relationship],
+        table_name: str = "chunk_relationship",
     ) -> None:
-        """Forward to KG handler add_triples method."""
-        return await self.kg_handler.add_triples(triples, table_name)
+        """Forward to KG handler add_relationships method."""
+        return await self.kg_handler.add_relationships(relationships, table_name)
 
     async def get_entity_map(
         self, offset: int, limit: int, document_id: UUID
@@ -1638,21 +1638,21 @@ class DatabaseProvider(Provider):
             extra_columns=extra_columns,
         )
 
-    async def get_triples(
+    async def get_relationships(
         self,
         offset: int,
         limit: int,
         collection_id: Optional[UUID] = None,
         entity_names: Optional[list[str]] = None,
-        triple_ids: Optional[list[str]] = None,
+        relationship_ids: Optional[list[str]] = None,
     ) -> dict:
-        """Forward to KG handler get_triples method."""
-        return await self.kg_handler.get_triples(
+        """Forward to KG handler get_relationships method."""
+        return await self.kg_handler.get_relationships(
             offset=offset,
             limit=limit,
             collection_id=collection_id,
             entity_names=entity_names,
-            triple_ids=triple_ids,
+            relationship_ids=relationship_ids,
         )
 
     async def get_entity_count(
@@ -1667,13 +1667,13 @@ class DatabaseProvider(Provider):
             collection_id, document_id, distinct, entity_table_name
         )
 
-    async def get_triple_count(
+    async def get_relationship_count(
         self,
         collection_id: Optional[UUID] = None,
         document_id: Optional[UUID] = None,
     ) -> int:
-        """Forward to KG handler get_triple_count method."""
-        return await self.kg_handler.get_triple_count(
+        """Forward to KG handler get_relationship_count method."""
+        return await self.kg_handler.get_relationship_count(
             collection_id, document_id
         )
 
@@ -1704,8 +1704,8 @@ class DatabaseProvider(Provider):
             collection_id, kg_deduplication_settings
         )
 
-    async def get_all_triples(self, collection_id: UUID) -> List[Triple]:
-        return await self.kg_handler.get_all_triples(collection_id)
+    async def get_all_relationships(self, collection_id: UUID) -> list[Relationship]:
+        return await self.kg_handler.get_all_relationships(collection_id)
 
     async def update_entity_descriptions(self, entities: list[Entity]):
         return await self.kg_handler.update_entity_descriptions(entities)
@@ -1718,8 +1718,8 @@ class DatabaseProvider(Provider):
     async def create_vector_index(self) -> None:
         return await self.kg_handler.create_vector_index()
 
-    async def delete_triples(self, triple_ids: list[int]) -> None:
-        return await self.kg_handler.delete_triples(triple_ids)
+    async def delete_relationships(self, relationship_ids: list[int]) -> None:
+        return await self.kg_handler.delete_relationships(relationship_ids)
 
     async def get_schema(self) -> Any:
         return await self.kg_handler.get_schema()
@@ -1733,8 +1733,8 @@ class DatabaseProvider(Provider):
     async def update_kg_search_prompt(self) -> None:
         return await self.kg_handler.update_kg_search_prompt()
 
-    async def upsert_triples(self) -> None:
-        return await self.kg_handler.upsert_triples()
+    async def upsert_relationships(self) -> None:
+        return await self.kg_handler.upsert_relationships()
 
     async def get_existing_entity_extraction_ids(
         self, document_id: UUID

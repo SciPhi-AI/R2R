@@ -215,7 +215,7 @@ __all__ = [
     ## PIPES
     "SearchPipe",
     "EmbeddingPipe",
-    "KGTriplesExtractionPipe",
+    "KGRelationshipsExtractionPipe",
     "ParsingPipe",
     "QueryTransformPipe",
     "SearchRAGPipe",
