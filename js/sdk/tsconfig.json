@@ -14,7 +14,8 @@
     "jsx": "react",
     "lib": ["es2017", "dom"],
     "sourceMap": true,
-    "types": ["node", "jest", "@types/jest"]
+    "types": ["node", "jest", "@types/jest"],
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/__tests__/*", "**/*.spec.ts"]
