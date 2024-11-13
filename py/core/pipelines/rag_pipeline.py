@@ -5,7 +5,7 @@ from typing import Any, Optional
 from ..base.abstractions import (
     GenerationConfig,
     KGSearchSettings,
-    VectorSearchSettings,
+    SearchSettings,
 )
 from ..base.logger.base import RunType
 from ..base.logger.run_manager import RunManager, manage_run
@@ -34,7 +34,7 @@ class RAGPipeline(AsyncPipeline):
         input: Any,
         state: Optional[AsyncState],
         run_manager: Optional[RunManager] = None,
-        vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
+        vector_search_settings: SearchSettings = SearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         rag_generation_config: GenerationConfig = GenerationConfig(),
         *args: Any,

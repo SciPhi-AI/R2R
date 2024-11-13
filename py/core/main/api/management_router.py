@@ -337,7 +337,7 @@ class ManagementRouter(BaseRouter):
             document_ids: list[str] = Query([]),
             offset: int = Query(0, ge=0),
             limit: int = Query(
-                100,
+                1_000,
                 ge=-1,
                 description="Number of items to return. Use -1 to return all items.",
             ),

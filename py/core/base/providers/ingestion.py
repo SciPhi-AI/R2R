@@ -18,7 +18,6 @@ class IngestionConfig(ProviderConfig):
     chunk_enrichment_settings: ChunkEnrichmentSettings = (
         ChunkEnrichmentSettings()
     )
-
     extra_parsers: dict[str, str] = {}
 
     audio_transcription_model: str = "openai/whisper-1"
@@ -28,6 +27,12 @@ class IngestionConfig(ProviderConfig):
 
     vision_pdf_prompt_name: str = "vision_pdf"
     vision_pdf_model: str = "openai/gpt-4-mini"
+
+    skip_document_summary: bool = False
+    document_summary_system_prompt: str = "default_system"
+    document_summary_task_prompt: str = "default_summary"
+    chunks_for_document_summary: int = 128
+    document_summary_model: str = "openai/gpt-4o-mini"
 
     @property
     def supported_providers(self) -> list[str]:

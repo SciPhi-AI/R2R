@@ -11,10 +11,10 @@ from fastapi import (
     Depends,
     File,
     Form,
+    HTTPException,
     Path,
     Query,
     UploadFile,
-    HTTPException,
 )
 from pydantic import Json
 

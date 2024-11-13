@@ -84,6 +84,7 @@ async def upgrade(schema, revision):
         click.echo(
             f"Running database upgrade for schema {schema or 'default'}..."
         )
+        print(f"Upgrading revision = {revision}")
         command = f"upgrade {revision}" if revision else "upgrade"
         result = await run_alembic_command(command, schema_name=schema)
 

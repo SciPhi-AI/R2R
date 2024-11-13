@@ -181,51 +181,7 @@ class HybridSearchSettings(R2RSerializable):
     )
 
 
-class DocumentSearchSettings(R2RSerializable):
-    search_over_metadata: bool = Field(
-        default=True,
-        description="Whether to search over the document metadata in the search procedure",
-    )
-
-    metadata_keys: list[str] = Field(
-        default=["title"],
-        description="Metadata keys to search over",
-    )
-
-    search_over_body: bool = Field(
-        default=False,
-        description="Whether to search over the document bodies in the search procedure",
-    )
-    filters: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Filters to apply to the search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.",
-        deprecated=True,
-    )
-    search_filters: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Alias for filters",
-        deprecated=True,
-    )
-    offset: int = Field(
-        default=0,
-        ge=0,
-        description="Offset to paginate search results",
-    )
-    limit: int = Field(
-        default=10,
-        description="Maximum number of results to return",
-        ge=1,
-        le=1_000,
-    )
-    title_weight: float = Field(
-        default=0.5, description="Relative weight to apply to title search"
-    )
-    metadata_weight: float = Field(
-        default=0.5, description="Relative weight to apply to body search"
-    )
-
-
-class VectorSearchSettings(R2RSerializable):
+class SearchSettings(R2RSerializable):
     use_vector_search: bool = Field(
         default=True, description="Whether to use vector search"
     )

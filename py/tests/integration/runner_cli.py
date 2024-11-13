@@ -80,7 +80,9 @@ def compare_document_fields(documents, expected_doc):
 def test_document_overview_sample_file_cli():
     print("Testing: Document overview contains 'aristotle.txt'")
     output = run_command("poetry run r2r documents-overview")
-    output = output.replace("'", '"')
+    output = output.replace("'", '"').replace(
+        "None", "null"
+    )  # Replace Python None with JSON null
     output_lines = output.strip().split("\n")[1:]
     documents = [json.loads(ele) for ele in output_lines]
 

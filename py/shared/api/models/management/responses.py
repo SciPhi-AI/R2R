@@ -100,6 +100,7 @@ class DocumentOverviewResponse(BaseModel):
     version: str
     collection_ids: list[UUID]
     metadata: dict[str, Any]
+    summary: Optional[str] = None
 
 
 class DocumentChunkResponse(BaseModel):
