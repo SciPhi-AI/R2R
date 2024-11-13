@@ -85,7 +85,7 @@ export class DocumentsClient {
       formData.append("content", options.content);
     }
     if (options.id) {
-      formData.append("id", JSON.stringify(options.id));
+      formData.append("id", options.id);
     }
     if (options.metadata) {
       formData.append("metadata", JSON.stringify(options.metadata));

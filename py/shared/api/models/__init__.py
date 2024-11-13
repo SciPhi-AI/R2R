@@ -32,7 +32,6 @@ from shared.api.models.management.responses import (
     CollectionResponse,
     ConversationResponse,
     DocumentChunkResponse,
-    DocumentOverviewResponse,
     LogResponse,
     PromptResponse,
     ScoreCompletionResponse,
@@ -47,8 +46,9 @@ from shared.api.models.management.responses import (
     WrappedConversationsResponse,
     WrappedDocumentChunkResponse,
     WrappedDocumentChunksResponse,
-    WrappedDocumentOverviewResponse,
+    # Document Responses
     WrappedDocumentResponse,
+    WrappedDocumentsResponse,
     # Prompt Responses
     WrappedPromptResponse,
     WrappedPromptsResponse,
@@ -98,7 +98,6 @@ __all__ = [
     "AppSettingsResponse",
     "ScoreCompletionResponse",
     "UserOverviewResponse",
-    "DocumentOverviewResponse",
     "DocumentChunkResponse",
     "CollectionResponse",
     "ConversationResponse",
@@ -108,8 +107,9 @@ __all__ = [
     "WrappedAnalyticsResponse",
     "WrappedAppSettingsResponse",
     "WrappedConversationResponse",
-    "WrappedDocumentOverviewResponse",
+    # Document Responses
     "WrappedDocumentResponse",
+    "WrappedDocumentsResponse",
     # Collection Responses
     "WrappedCollectionResponse",
     "WrappedCollectionsResponse",

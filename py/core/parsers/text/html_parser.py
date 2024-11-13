@@ -3,7 +3,6 @@ from typing import AsyncGenerator
 
 from bs4 import BeautifulSoup
 
-from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -12,7 +11,7 @@ from core.base.providers import (
 )
 
 
-class HTMLParser(AsyncParser[DataType]):
+class HTMLParser(AsyncParser[str | bytes]):
     """A parser for HTML data."""
 
     def __init__(
@@ -26,7 +25,7 @@ class HTMLParser(AsyncParser[DataType]):
         self.config = config
 
     async def ingest(
-        self, data: DataType, *args, **kwargs
+        self, data: str | bytes, *args, **kwargs
     ) -> AsyncGenerator[str, None]:
         """Ingest HTML data and yield text."""
         soup = BeautifulSoup(data, "html.parser")

@@ -10,7 +10,7 @@ from fastapi import HTTPException
 from core.base import (
     Document,
     DocumentChunk,
-    DocumentInfo,
+    DocumentResponse,
     DocumentType,
     IngestionStatus,
     R2RException,
@@ -151,7 +151,7 @@ class IngestionService(Service):
         metadata: dict,
         version: str,
         size_in_bytes: int,
-    ) -> DocumentInfo:
+    ) -> DocumentResponse:
         file_extension = (
             file_name.split(".")[-1].lower() if file_name != "N/A" else "txt"
         )
@@ -164,7 +164,7 @@ class IngestionService(Service):
         metadata = metadata or {}
         metadata["version"] = version
 
-        return DocumentInfo(
+        return DocumentResponse(
             id=document_id,
             user_id=user.id,
             collection_ids=metadata.get("collection_ids", []),
@@ -189,11 +189,11 @@ class IngestionService(Service):
         chunks: list[RawChunk],
         metadata: dict,
         version: str,
-    ) -> DocumentInfo:
+    ) -> DocumentResponse:
         metadata = metadata or {}
         metadata["version"] = version
 
-        return DocumentInfo(
+        return DocumentResponse(
             id=document_id,
             user_id=user.id,
             collection_ids=metadata.get("collection_ids", []),
@@ -210,7 +210,7 @@ class IngestionService(Service):
         )
 
     async def parse_file(
-        self, document_info: DocumentInfo, ingestion_config: dict
+        self, document_info: DocumentResponse, ingestion_config: dict
     ) -> AsyncGenerator[DocumentChunk, None]:
         return await self.pipes.parsing_pipe.run(
             input=self.pipes.parsing_pipe.Input(
@@ -266,7 +266,7 @@ class IngestionService(Service):
 
     async def finalize_ingestion(
         self,
-        document_info: DocumentInfo,
+        document_info: DocumentResponse,
         is_update: bool = False,
     ) -> None:
         if is_update:
@@ -290,13 +290,15 @@ class IngestionService(Service):
 
     async def update_document_status(
         self,
-        document_info: DocumentInfo,
+        document_info: DocumentResponse,
         status: IngestionStatus,
     ) -> None:
         document_info.ingestion_status = status
         await self._update_document_status_in_db(document_info)
 
-    async def _update_document_status_in_db(self, document_info: DocumentInfo):
+    async def _update_document_status_in_db(
+        self, document_info: DocumentResponse
+    ):
         try:
             await self.providers.database.upsert_documents_overview(
                 document_info
@@ -321,7 +323,7 @@ class IngestionService(Service):
         user: UserResponse,
         *args: Any,
         **kwargs: Any,
-    ) -> DocumentInfo:
+    ) -> DocumentResponse:
         if not chunks:
             raise R2RException(
                 status_code=400, message="No chunks provided for ingestion."

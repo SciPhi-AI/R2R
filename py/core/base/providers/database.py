@@ -24,7 +24,7 @@ from core.base import (
     VectorEntry,
 )
 from core.base.abstractions import (
-    DocumentInfo,
+    DocumentResponse,
     DocumentSearchSettings,
     IndexArgsHNSW,
     IndexArgsIVFFlat,
@@ -210,7 +210,8 @@ class DocumentHandler(Handler):
 
     @abstractmethod
     async def upsert_documents_overview(
-        self, documents_overview: Union[DocumentInfo, list[DocumentInfo]]
+        self,
+        documents_overview: Union[DocumentResponse, list[DocumentResponse]],
     ) -> None:
         pass
 
@@ -284,7 +285,7 @@ class CollectionHandler(Handler):
     @abstractmethod
     async def documents_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, Union[list[DocumentInfo], int]]:
+    ) -> dict[str, Union[list[DocumentResponse], int]]:
         pass
 
     @abstractmethod
@@ -1100,7 +1101,8 @@ class DatabaseProvider(Provider):
 
     # Document handler methods
     async def upsert_documents_overview(
-        self, documents_overview: Union[DocumentInfo, list[DocumentInfo]]
+        self,
+        documents_overview: Union[DocumentResponse, list[DocumentResponse]],
     ) -> None:
         return await self.document_handler.upsert_documents_overview(
             documents_overview
@@ -1189,7 +1191,7 @@ class DatabaseProvider(Provider):
 
     async def documents_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, Union[list[DocumentInfo], int]]:
+    ) -> dict[str, Union[list[DocumentResponse], int]]:
         return await self.collection_handler.documents_in_collection(
             collection_id, offset, limit
         )

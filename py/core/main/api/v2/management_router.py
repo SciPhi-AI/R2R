@@ -1,7 +1,6 @@
 # TODO - Cleanup the handling for non-auth configurations
 import json
 import mimetypes
-import os
 from datetime import datetime, timezone
 from typing import Optional, Set
 from uuid import UUID
@@ -22,7 +21,7 @@ from core.base.api.models import (
     WrappedConversationsResponse,
     WrappedDeleteResponse,
     WrappedDocumentChunksResponse,
-    WrappedDocumentOverviewResponse,
+    WrappedDocumentsResponse,
     WrappedPromptsResponse,
     WrappedLogResponse,
     WrappedPromptMessageResponse,
@@ -341,7 +340,7 @@ class ManagementRouter(BaseRouter):
                 description="Number of items to return. Use -1 to return all items.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentOverviewResponse:
+        ) -> WrappedDocumentsResponse:
             request_user_ids = (
                 None if auth_user.is_superuser else [auth_user.id]
             )
@@ -803,7 +802,7 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentOverviewResponse:
+        ) -> WrappedDocumentsResponse:
             collection_uuid = UUID(collection_id)
             if (
                 not auth_user.is_superuser

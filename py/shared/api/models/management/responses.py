@@ -5,7 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
-from shared.abstractions.document import DocumentInfo
+from shared.abstractions.document import DocumentResponse
 
 from shared.abstractions.llm import Message
 
@@ -87,20 +87,6 @@ class UserResponse(BaseModel):
     profile_picture: Optional[str] = None
 
 
-class DocumentOverviewResponse(BaseModel):
-    id: UUID
-    title: str
-    user_id: UUID
-    document_type: str
-    created_at: datetime
-    updated_at: datetime
-    ingestion_status: str
-    kg_extraction_status: str
-    version: str
-    collection_ids: list[UUID]
-    metadata: dict[str, Any]
-
-
 class DocumentChunkResponse(BaseModel):
     id: UUID
     document_id: UUID
@@ -164,13 +150,14 @@ WrappedConversationResponse = ResultsWrapper[ConversationResponse]
 WrappedConversationsResponse = PaginatedResultsWrapper[
     list[ConversationResponse]
 ]
-
 WrappedMessageResponse = ResultsWrapper[MessageResponse]
 WrappedMessagesResponse = PaginatedResultsWrapper[list[MessageResponse]]
-
 WrappedBranchResponse = ResultsWrapper[BranchResponse]
 WrappedBranchesResponse = PaginatedResultsWrapper[list[BranchResponse]]
 
+# Document Responses
+WrappedDocumentResponse = ResultsWrapper[DocumentResponse]
+WrappedDocumentsResponse = PaginatedResultsWrapper[list[DocumentResponse]]
 
 # Prompt Responses
 WrappedPromptResponse = ResultsWrapper[PromptResponse]
@@ -188,12 +175,6 @@ WrappedLogResponse = ResultsWrapper[list[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
 WrappedAppSettingsResponse = ResultsWrapper[AppSettingsResponse]
 
-
-# FIXME: Do we really need DocumentInfo and DocumentOverviewResponse? Can it just be a DocumentResponse?
-WrappedDocumentResponse = PaginatedResultsWrapper[list[DocumentInfo]]
-WrappedDocumentOverviewResponse = PaginatedResultsWrapper[
-    list[DocumentOverviewResponse]
-]
 WrappedPromptMessageResponse = ResultsWrapper[UpdatePromptResponse]
 
 WrappedAddUserResponse = ResultsWrapper[None]

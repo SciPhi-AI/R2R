@@ -3,20 +3,24 @@ import json
 import logging
 import mimetypes
 import textwrap
-from datetime import datetime
 from io import BytesIO
-from typing import Any, Optional, TypeVar
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Depends, File, Form, Path, Query, UploadFile
 from fastapi.responses import StreamingResponse
 
 from core.base.api.models import (
+    GenericBooleanResponse,
     WrappedCollectionsResponse,
+    WrappedDocumentResponse,
+    WrappedDocumentsResponse,
+    WrappedIngestionResponse,
+    WrappedBooleanResponse,
+    WrappedDocumentChunksResponse,
 )
 
-# TODO: Need to reivew the use of JSON
-from pydantic import BaseModel, Field, Json
+from pydantic import Json
 
 from core.base import R2RException, RunType, generate_document_id
 from core.providers import (
@@ -24,70 +28,7 @@ from core.providers import (
     SimpleOrchestrationProvider,
 )
 
-# TODO: Need to move to appropriate response models
-from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
-from shared.api.models.management.responses import DocumentChunkResponse
-
 from .base_router import BaseRouterV3
-
-T = TypeVar("T")
-
-
-# TODO: Get rid of this, it shouldn't be here
-class DocumentIngestionResponse(BaseModel):
-    message: str = Field(
-        ...,
-        description="A message describing the result of the ingestion request.",
-    )
-    task_id: Optional[UUID] = Field(
-        None,
-        description="The task ID of the ingestion request.",
-    )
-    document_id: UUID = Field(
-        ...,
-        description="The ID of the document that was ingested.",
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "message": "Ingestion task queued successfully.",
-                "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
-                "document_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-            }
-        }
-
-
-class DocumentResponse(BaseModel):
-    id: UUID
-    title: str
-    user_id: UUID
-    document_type: str
-    created_at: datetime
-    updated_at: datetime
-    ingestion_status: str
-    kg_extraction_status: str
-    version: str
-    collection_ids: list[UUID]
-    metadata: dict[str, Any]
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                "title": "My Document",
-                "user_id": "3c10c8ff-4deb-43d8-a322-e92551ae1c96",
-                "document_type": "text",
-                "created_at": "2021-09-01T12:00:00Z",
-                "updated_at": "2021-09-01T12:00:00Z",
-                "ingestion_status": "success",
-                "kg_extraction_status": "success",
-                "version": "1",
-                "collection_ids": ["d09dedb1-b2ab-48a5-b950-6e1f464d83e7"],
-                "metadata": {"key": "value"},
-            }
-        }
-
 
 logger = logging.getLogger()
 
@@ -173,7 +114,7 @@ class DocumentsRouter(BaseRouterV3):
                 None,
                 description="The text content to ingest. Either a file or content must be provided, but not both.",
             ),
-            id: Optional[Json[UUID]] = Form(
+            id: Optional[UUID] = Form(
                 None,
                 description="The ID of the document. If not provided, a new ID will be generated.",
             ),
@@ -190,7 +131,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[DocumentIngestionResponse]:
+        ) -> WrappedIngestionResponse:
             """
             Creates a new Document object from an input file or text content. The document will be processed
             to create chunks for vector indexing and search.
@@ -374,7 +315,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[DocumentIngestionResponse]:
+        ) -> WrappedIngestionResponse:
             """
             Updates an existing document with new content and/or metadata. This will trigger
             reprocessing of the document's chunks and knowledge graph data.
@@ -568,7 +509,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[DocumentResponse]]:
+        ) -> WrappedDocumentsResponse:
             """
             Returns a paginated list of documents the authenticated user has access to.
 
@@ -661,7 +602,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="The ID of the document to retrieve.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[DocumentResponse]:
+        ) -> WrappedDocumentResponse:
             """
             Retrieves detailed information about a specific document by its ID.
 
@@ -765,7 +706,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Whether to include vector embeddings in the response.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[DocumentChunkResponse]]:
+        ) -> WrappedDocumentChunksResponse:
             """
             Retrieves the text chunks that were generated from a document during ingestion.
             Chunks represent semantic sections of the document and are used for retrieval
@@ -811,7 +752,7 @@ class DocumentsRouter(BaseRouterV3):
                     "Not authorized to access this document's chunks.", 403
                 )
 
-            return (  # type: ignore
+            return (
                 list_document_chunks["results"],
                 {"total_entries": list_document_chunks["total_entries"]},
             )
@@ -972,7 +913,7 @@ class DocumentsRouter(BaseRouterV3):
         async def delete_document_by_id(
             id: UUID = Path(..., description="Document ID"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[Optional[bool]]:
+        ) -> WrappedBooleanResponse:
             """
             Delete a specific document. All chunks corresponding to the document are deleted, and all other references to the document are removed.
 
@@ -985,7 +926,7 @@ class DocumentsRouter(BaseRouterV3):
                 ]
             }
             await self.services["management"].delete(filters=filters)
-            return True  # type: ignore
+            return GenericBooleanResponse(success=True)
 
         @self.router.delete(
             "/documents/by-filter",
@@ -1021,7 +962,7 @@ class DocumentsRouter(BaseRouterV3):
         async def delete_document_by_filter(
             filters: str = Query(..., description="JSON-encoded filters"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[Optional[bool]]:
+        ) -> WrappedBooleanResponse:
             """
             Delete documents based on provided filters. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`. Deletion requests are limited to a user's own documents.
             """
@@ -1047,9 +988,11 @@ class DocumentsRouter(BaseRouterV3):
                         message=f"Invalid filter format for key: {key}",
                     )
 
-            return await self.services["management"].delete(
+            delete_bool = await self.services["management"].delete(
                 filters=filters_dict
             )
+
+            return GenericBooleanResponse(success=delete_bool)
 
         @self.router.get(
             "/documents/{id}/collections",

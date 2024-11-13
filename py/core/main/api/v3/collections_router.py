@@ -12,7 +12,7 @@ from core.base.api.models import (
     WrappedBooleanResponse,
     WrappedCollectionResponse,
     WrappedCollectionsResponse,
-    WrappedDocumentResponse,
+    WrappedDocumentsResponse,
     WrappedUsersInCollectionResponse,
 )
 from core.providers import (
@@ -599,7 +599,7 @@ class CollectionsRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedDocumentResponse:
+        ) -> WrappedDocumentsResponse:
             """
             Get all documents in a collection with pagination and sorting options.
 

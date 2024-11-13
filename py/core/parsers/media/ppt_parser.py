@@ -1,7 +1,6 @@
 from io import BytesIO
 from typing import AsyncGenerator
 
-from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -10,7 +9,7 @@ from core.base.providers import (
 )
 
 
-class PPTParser(AsyncParser[DataType]):
+class PPTParser(AsyncParser[str | bytes]):
     """A parser for PPT data."""
 
     def __init__(
@@ -31,7 +30,7 @@ class PPTParser(AsyncParser[DataType]):
                 "Error, `python-pptx` is required to run `PPTParser`. Please install it using `pip install python-pptx`."
             )
 
-    async def ingest(self, data: DataType, **kwargs) -> AsyncGenerator[str, None]:  # type: ignore
+    async def ingest(self, data: str | bytes, **kwargs) -> AsyncGenerator[str, None]:  # type: ignore
         """Ingest PPT data and yield text from each slide."""
         if isinstance(data, str):
             raise ValueError("PPT data must be in bytes format.")

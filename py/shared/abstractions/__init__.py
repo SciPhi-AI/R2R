@@ -1,9 +1,8 @@
 from .base import AsyncSyncMeta, R2RSerializable, syncable
 from .document import (
-    DataType,
     Document,
     DocumentChunk,
-    DocumentInfo,
+    DocumentResponse,
     DocumentType,
     IngestionStatus,
     KGEnrichmentStatus,
@@ -74,10 +73,9 @@ __all__ = [
     # Completion abstractions
     "MessageType",
     # Document abstractions
-    "DataType",
     "Document",
     "DocumentChunk",
-    "DocumentInfo",
+    "DocumentResponse",
     "IngestionStatus",
     "KGExtractionStatus",
     "KGEnrichmentStatus",

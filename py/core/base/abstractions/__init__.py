@@ -1,9 +1,8 @@
 from shared.abstractions.base import AsyncSyncMeta, R2RSerializable, syncable
 from shared.abstractions.document import (
-    DataType,
     Document,
     DocumentChunk,
-    DocumentInfo,
+    DocumentResponse,
     DocumentType,
     IngestionStatus,
     KGEnrichmentStatus,
@@ -90,10 +89,9 @@ __all__ = [
     # Completion abstractions
     "MessageType",
     # Document abstractions
-    "DataType",
     "Document",
     "DocumentChunk",
-    "DocumentInfo",
+    "DocumentResponse",
     "DocumentType",
     "IngestionStatus",
     "KGExtractionStatus",

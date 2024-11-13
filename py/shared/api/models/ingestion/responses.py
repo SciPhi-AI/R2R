@@ -61,7 +61,7 @@ class ListVectorIndicesResponse(BaseModel):
     indices: list[dict[str, Any]]
 
 
-WrappedIngestionResponse = ResultsWrapper[list[IngestionResponse]]
+WrappedIngestionResponse = ResultsWrapper[IngestionResponse]
 WrappedMetadataUpdateResponse = ResultsWrapper[IngestionResponse]
 WrappedUpdateResponse = ResultsWrapper[UpdateResponse]
 

@@ -3,7 +3,6 @@ import asyncio
 import json
 from typing import AsyncGenerator
 
-from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -12,7 +11,7 @@ from core.base.providers import (
 )
 
 
-class JSONParser(AsyncParser[DataType]):
+class JSONParser(AsyncParser[str | bytes]):
     """A parser for JSON data."""
 
     def __init__(
@@ -26,7 +25,7 @@ class JSONParser(AsyncParser[DataType]):
         self.config = config
 
     async def ingest(
-        self, data: DataType, *args, **kwargs
+        self, data: str | bytes, *args, **kwargs
     ) -> AsyncGenerator[str, None]:
         """
         Ingest JSON data and yield a formatted text representation.
