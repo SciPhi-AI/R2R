@@ -41,7 +41,7 @@ jobs:
           run_install: false
       - name: Install JS SDK dependencies
         working-directory: ./js/sdk
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
       - name: Check if R2R server is running
         run: |
           curl http://localhost:7272/v2/health || echo "Server not responding"
