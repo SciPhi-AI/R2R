@@ -3,7 +3,6 @@ from typing import AsyncGenerator
 
 from bs4 import BeautifulSoup
 
-from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -12,7 +11,7 @@ from core.base.providers import (
 )
 
 
-class MDParser(AsyncParser[DataType]):
+class MDParser(AsyncParser[str | bytes]):
     """A parser for Markdown data."""
 
     def __init__(
@@ -30,7 +29,7 @@ class MDParser(AsyncParser[DataType]):
         self.markdown = markdown
 
     async def ingest(
-        self, data: DataType, *args, **kwargs
+        self, data: str | bytes, *args, **kwargs
     ) -> AsyncGenerator[str, None]:
         """Ingest Markdown data and yield text."""
         if isinstance(data, bytes):

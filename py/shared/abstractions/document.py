@@ -4,7 +4,7 @@ import json
 import logging
 from datetime import datetime
 from enum import Enum
-from typing import ClassVar, Optional, Union
+from typing import Optional
 from uuid import UUID, uuid4
 
 from pydantic import Field
@@ -12,8 +12,6 @@ from pydantic import Field
 from .base import R2RSerializable
 
 logger = logging.getLogger()
-
-DataType = Union[str, bytes]
 
 
 class DocumentType(str, Enum):
@@ -177,7 +175,7 @@ class KGEnrichmentStatus(str, Enum):
         return "collection_id"
 
 
-class DocumentInfo(R2RSerializable):
+class DocumentResponse(R2RSerializable):
     """Base class for document information handling."""
 
     id: UUID
@@ -187,7 +185,7 @@ class DocumentInfo(R2RSerializable):
     metadata: dict
     title: Optional[str] = None
     version: str
-    size_in_bytes: int
+    size_in_bytes: Optional[int]
     ingestion_status: IngestionStatus = IngestionStatus.PENDING
     kg_extraction_status: KGExtractionStatus = KGExtractionStatus.PENDING
     created_at: Optional[datetime] = None
@@ -240,7 +238,7 @@ class DocumentChunk(R2RSerializable):
     document_id: UUID
     collection_ids: list[UUID]
     user_id: UUID
-    data: DataType
+    data: str | bytes
     metadata: dict
 
 

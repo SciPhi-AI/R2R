@@ -15,7 +15,7 @@ from core.base import (
     generate_extraction_id,
     increment_version,
 )
-from core.base.abstractions import DocumentInfo, R2RException
+from core.base.abstractions import DocumentResponse, R2RException
 from core.utils import (
     generate_default_user_collection_id,
     update_settings_from_dict,
@@ -101,7 +101,7 @@ def hatchet_ingestion_factory(
                 # @orchestration_provider.step(parents=["parse"], timeout="60m")
                 # async def embed(self, context: Context) -> dict:
                 #     document_info_dict = context.step_output("parse")["document_info"]
-                #     document_info = DocumentInfo(**document_info_dict)
+                #     document_info = DocumentResponse(**document_info_dict)
 
                 await self.ingestion_service.update_document_status(
                     document_info,
@@ -140,7 +140,7 @@ def hatchet_ingestion_factory(
                 # async def finalize(self, context: Context) -> dict:
                 #     document_info_dict = context.step_output("embed")["document_info"]
                 #     print("Calling finalize for document_info_dict = ", document_info_dict)
-                #     document_info = DocumentInfo(**document_info_dict)
+                #     document_info = DocumentResponse(**document_info_dict)
 
                 is_update = context.workflow_input()["request"].get(
                     "is_update"
@@ -441,7 +441,7 @@ def hatchet_ingestion_factory(
         @orchestration_provider.step(parents=["ingest"], timeout="60m")
         async def embed(self, context: Context) -> dict:
             document_info_dict = context.step_output("ingest")["document_info"]
-            document_info = DocumentInfo(**document_info_dict)
+            document_info = DocumentResponse(**document_info_dict)
 
             extractions = context.step_output("ingest")["extractions"]
 
@@ -471,7 +471,7 @@ def hatchet_ingestion_factory(
         @orchestration_provider.step(parents=["embed"], timeout="60m")
         async def finalize(self, context: Context) -> dict:
             document_info_dict = context.step_output("embed")["document_info"]
-            document_info = DocumentInfo(**document_info_dict)
+            document_info = DocumentResponse(**document_info_dict)
 
             await self.ingestion_service.finalize_ingestion(
                 document_info, is_update=False

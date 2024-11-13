@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from uuid import UUID
 from fastapi import HTTPException
 
@@ -9,7 +9,7 @@ import asyncpg
 
 from core.base import (
     DocumentHandler,
-    DocumentInfo,
+    DocumentResponse,
     DocumentType,
     IngestionStatus,
     KGEnrichmentStatus,
@@ -56,9 +56,9 @@ class PostgresDocumentHandler(DocumentHandler):
         await self.connection_manager.execute_query(query)
 
     async def upsert_documents_overview(
-        self, documents_overview: Union[DocumentInfo, list[DocumentInfo]]
+        self, documents_overview: DocumentResponse | list[DocumentResponse]
     ) -> None:
-        if isinstance(documents_overview, DocumentInfo):
+        if isinstance(documents_overview, DocumentResponse):
             documents_overview = [documents_overview]
 
         # TODO: make this an arg
@@ -230,8 +230,7 @@ class PostgresDocumentHandler(DocumentHandler):
         records = await self.connection_manager.fetch_query(
             query, [status, collection_id]
         )
-        document_ids = [record["document_id"] for record in records]
-        return document_ids
+        return [record["document_id"] for record in records]
 
     async def _set_status_in_table(
         self,
@@ -280,7 +279,7 @@ class PostgresDocumentHandler(DocumentHandler):
             )
 
     async def get_workflow_status(
-        self, id: Union[UUID, list[UUID]], status_type: str
+        self, id: UUID | list[UUID], status_type: str
     ):
         """
         Get the workflow status for a given document or list of documents.
@@ -306,7 +305,7 @@ class PostgresDocumentHandler(DocumentHandler):
         return result[0] if isinstance(id, UUID) else result
 
     async def set_workflow_status(
-        self, id: Union[UUID, list[UUID]], status_type: str, status: str
+        self, id: UUID | list[UUID], status_type: str, status: str
     ):
         """
         Set the workflow status for a given document or list of documents.
@@ -330,7 +329,7 @@ class PostgresDocumentHandler(DocumentHandler):
     async def get_document_ids_by_status(
         self,
         status_type: str,
-        status: Union[str, list[str]],
+        status: str | list[str],
         collection_id: Optional[UUID] = None,
     ):
         """
@@ -346,10 +345,9 @@ class PostgresDocumentHandler(DocumentHandler):
             status = [status]
 
         out_model = self._get_status_model(status_type)
-        result = await self._get_ids_from_table(
+        return await self._get_ids_from_table(
             status, out_model.table_name(), status_type, collection_id
         )
-        return result
 
     async def get_documents_overview(
         self,
@@ -406,7 +404,7 @@ class PostgresDocumentHandler(DocumentHandler):
             total_entries = results[0]["total_entries"] if results else 0
 
             documents = [
-                DocumentInfo(
+                DocumentResponse(
                     id=row["document_id"],
                     collection_ids=row["collection_ids"],
                     user_id=row["user_id"],

@@ -2,7 +2,6 @@
 from io import BytesIO
 from typing import AsyncGenerator
 
-from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -11,7 +10,7 @@ from core.base.providers import (
 )
 
 
-class XLSXParser(AsyncParser[DataType]):
+class XLSXParser(AsyncParser[str | bytes]):
     """A parser for XLSX data."""
 
     def __init__(
@@ -45,7 +44,7 @@ class XLSXParser(AsyncParser[DataType]):
                 yield ", ".join(map(str, row))
 
 
-class XLSXParserAdvanced(AsyncParser[DataType]):
+class XLSXParserAdvanced(AsyncParser[str | bytes]):
     """A parser for XLSX data."""
 
     # identifies connected components in the excel graph and extracts data from each component

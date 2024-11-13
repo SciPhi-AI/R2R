@@ -48,10 +48,9 @@ __all__ = [
     # Completion abstractions
     "MessageType",
     # Document abstractions
-    "DataType",
     "Document",
     "DocumentChunk",
-    "DocumentInfo",
+    "DocumentResponse",
     "IngestionStatus",
     "KGExtractionStatus",
     "KGEnrichmentStatus",

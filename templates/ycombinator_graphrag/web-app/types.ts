@@ -67,7 +67,7 @@ export enum IngestionStatus {
   SUCCESS = 'success',
 }
 
-export interface DocumentInfoType {
+export interface DocumentResponseType {
   id: string;
   user_id: string;
   group_ids: string[];
@@ -82,7 +82,7 @@ export interface DocumentInfoType {
   updated_at: string;
 }
 
-export interface DocumentInfoDialogProps {
+export interface DocumentResponseDialogProps {
   documentId: string;
   apiUrl?: string;
   open: boolean;

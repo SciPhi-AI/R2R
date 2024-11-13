@@ -12,7 +12,11 @@ from core.base import (
     R2RException,
     generate_default_user_collection_id,
 )
-from core.base.abstractions import DocumentInfo, DocumentType, IngestionStatus
+from core.base.abstractions import (
+    DocumentResponse,
+    DocumentType,
+    IngestionStatus,
+)
 from core.base.api.models import CollectionResponse
 from core.utils import (
     generate_default_user_collection_id,
@@ -214,7 +218,7 @@ class PostgresCollectionHandler(CollectionHandler):
 
     async def documents_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, list[DocumentInfo] | int]:
+    ) -> dict[str, list[DocumentResponse] | int]:
         """
         Get all documents in a specific collection with pagination.
         Args:
@@ -222,7 +226,7 @@ class PostgresCollectionHandler(CollectionHandler):
             offset (int): The number of documents to skip.
             limit (int): The maximum number of documents to return.
         Returns:
-            List[DocumentInfo]: A list of DocumentInfo objects representing the documents in the collection.
+            List[DocumentResponse]: A list of DocumentResponse objects representing the documents in the collection.
         Raises:
             R2RException: If the collection doesn't exist.
         """
@@ -245,7 +249,7 @@ class PostgresCollectionHandler(CollectionHandler):
 
         results = await self.connection_manager.fetch_query(query, conditions)
         documents = [
-            DocumentInfo(
+            DocumentResponse(
                 id=row["document_id"],
                 collection_ids=[collection_id],
                 user_id=row["user_id"],

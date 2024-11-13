@@ -11,7 +11,7 @@ from typing import AsyncGenerator
 import aiofiles
 from pdf2image import convert_from_path
 
-from core.base.abstractions import DataType, GenerationConfig
+from core.base.abstractions import GenerationConfig
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -22,7 +22,7 @@ from core.base.providers import (
 logger = logging.getLogger()
 
 
-class VLMPDFParser(AsyncParser[DataType]):
+class VLMPDFParser(AsyncParser[str | bytes]):
     """A parser for PDF documents using vision models for page processing."""
 
     def __init__(
@@ -124,7 +124,7 @@ class VLMPDFParser(AsyncParser[DataType]):
             raise
 
     async def ingest(
-        self, data: DataType, maintain_order: bool = False, **kwargs
+        self, data: str | bytes, maintain_order: bool = False, **kwargs
     ) -> AsyncGenerator[dict[str, str], None]:
         """
         Ingest PDF data and yield descriptions for each page using vision model.
@@ -206,7 +206,7 @@ class VLMPDFParser(AsyncParser[DataType]):
                 os.rmdir(temp_dir)
 
 
-class BasicPDFParser(AsyncParser[DataType]):
+class BasicPDFParser(AsyncParser[str | bytes]):
     """A parser for PDF data."""
 
     def __init__(
@@ -228,7 +228,7 @@ class BasicPDFParser(AsyncParser[DataType]):
             )
 
     async def ingest(
-        self, data: DataType, **kwargs
+        self, data: str | bytes, **kwargs
     ) -> AsyncGenerator[str, None]:
         """Ingest PDF data and yield text from each page."""
         if isinstance(data, str):
@@ -265,7 +265,7 @@ class BasicPDFParser(AsyncParser[DataType]):
                 yield page_text
 
 
-class PDFParserUnstructured(AsyncParser[DataType]):
+class PDFParserUnstructured(AsyncParser[str | bytes]):
     def __init__(
         self,
         config: IngestionConfig,
@@ -291,7 +291,7 @@ class PDFParserUnstructured(AsyncParser[DataType]):
 
     async def ingest(
         self,
-        data: DataType,
+        data: str | bytes,
         partition_strategy: str = "hi_res",
         chunking_strategy="by_title",
     ) -> AsyncGenerator[str, None]:

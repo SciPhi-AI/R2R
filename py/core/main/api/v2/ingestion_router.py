@@ -29,8 +29,6 @@ from core.base.abstractions import (
 from core.base.api.models import (
     GenericMessageResponse,
     WrappedGenericMessageResponse,
-    WrappedIngestionResponse,
-    WrappedListVectorIndicesResponse,
     WrappedMetadataUpdateResponse,
     WrappedUpdateResponse,
 )
@@ -155,7 +153,7 @@ class IngestionRouter(BaseRouter):
                 ),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedIngestionResponse:  # type: ignore
+        ):
             """
             Ingests files into R2R, resulting in stored `Document` objects. Each document has corresponding `Chunk` objects which are used in vector indexing and search.
 
@@ -395,7 +393,7 @@ class IngestionRouter(BaseRouter):
                 ),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedIngestionResponse:
+        ):
             """
             Ingests `Chunk` objects into the system as raw text and associated metadata.
 
