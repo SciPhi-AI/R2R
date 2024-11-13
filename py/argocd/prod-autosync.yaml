@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: prod-amplifi-stack
+  name: prod-r2r-stack
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/thoughtswinsystems/amplifi.git
+    repoURL: https://github.com/thoughtswinsystems/R2R.git
     targetRevision: prod-release
-    path: k8s/prod/azure
+    path: py/k8s/prod/azure
     directory:
       recurse: true
   destination:
     server: https://kubernetes.default.svc
-    namespace: amplifi-prod
+    namespace: r2r-prod
 
   syncPolicy:
     syncOptions:
