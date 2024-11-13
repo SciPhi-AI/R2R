@@ -89,6 +89,14 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r documents create /path/to/file.txt
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -267,10 +275,19 @@ class DocumentsRouter(BaseRouterV3):
                             function main() {
                                 const response = await client.documents.update({
                                     file: { path: "pg_essay_1.html", name: "pg_essay_1.html" },
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
                                 });
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r documents update /path/to/file.txt --id=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
                             """
                         ),
                     },
@@ -480,6 +497,14 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r documents create /path/to/file.txt
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -584,6 +609,14 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r documents retrieve 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -673,6 +706,14 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r documents list-chunks 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -732,8 +773,10 @@ class DocumentsRouter(BaseRouterV3):
             ) == str(auth_user.id)
             document_collections = await self.services[
                 "management"
-            ].get_collections_overview(
-                offset=0, limit=-1, filter_document_ids=[id]
+            ].collections_overview(
+                offset=0,
+                limit=-1,
+                document_ids=[id],
             )
 
             user_has_access = (
@@ -898,6 +941,14 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r documents delete 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -1033,6 +1084,14 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r documents list-collections 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -1080,10 +1139,10 @@ class DocumentsRouter(BaseRouterV3):
 
             collections_response = await self.services[
                 "management"
-            ].get_collections_overview(
+            ].collections_overview(
                 offset=offset,
                 limit=limit,
-                filter_document_ids=[UUID(id)],  # Convert string ID to UUID
+                document_ids=[UUID(id)],  # Convert string ID to UUID
             )
 
             return collections_response["results"], {  # type: ignore

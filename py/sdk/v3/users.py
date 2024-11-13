@@ -187,9 +187,7 @@ class UsersSDK:
 
     async def list(
         self,
-        email: Optional[str] = None,
-        is_active: Optional[bool] = None,
-        is_superuser: Optional[bool] = None,
+        ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> dict:
@@ -197,26 +195,18 @@ class UsersSDK:
         List users with pagination and filtering options.
 
         Args:
-            email (Optional[str]): Email to filter by (partial match)
-            is_active (Optional[bool]): Filter by active status
-            is_superuser (Optional[bool]): Filter by superuser status
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of users and pagination information
         """
-        params: dict = {
+        params = {
             "offset": offset,
             "limit": limit,
         }
-
-        if email:
-            params["email"] = email
-        if is_active is not None:
-            params["is_active"] = is_active
-        if is_superuser is not None:
-            params["is_superuser"] = is_superuser
+        if ids:
+            params["ids"] = [str(user_id) for user_id in ids]  # type: ignore
 
         return await self.client._make_request(
             "GET",

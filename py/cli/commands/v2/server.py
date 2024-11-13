@@ -9,6 +9,7 @@ import asyncclick as click
 from asyncclick import pass_context
 from dotenv import load_dotenv
 
+from r2r import R2RAsyncClient
 from cli.command_group import cli
 from cli.utils.docker_utils import (
     bring_down_docker_compose,
@@ -20,21 +21,23 @@ from cli.utils.docker_utils import (
 from cli.utils.timer import timer
 
 
+# TODO
 @cli.command()
 @pass_context
 async def health(ctx):
     """Check the health of the server."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     with timer():
         response = await client.health()
 
     click.echo(response)
 
 
+# TODO
 @cli.command()
 @pass_context
 async def server_stats(ctx):
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     """Check the server stats."""
     with timer():
         response = await client.server_stats()
@@ -42,6 +45,7 @@ async def server_stats(ctx):
     click.echo(response)
 
 
+# TODO
 @cli.command()
 @click.option(
     "--offset", default=None, help="Pagination offset. Default is None."
@@ -53,7 +57,7 @@ async def server_stats(ctx):
 @pass_context
 async def logs(ctx, run_type_filter, offset, limit):
     """Retrieve logs with optional type filter."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     with timer():
         response = await client.logs(
             offset=offset, limit=limit, run_type_filter=run_type_filter
@@ -72,6 +76,7 @@ async def logs(ctx, run_type_filter, offset, limit):
     click.echo(f"Total runs: {len(response['results'])}")
 
 
+# TODO
 @cli.command()
 @click.option(
     "--volumes",
@@ -122,6 +127,7 @@ def docker_down(volumes, remove_orphans, project_name):
     remove_r2r_network()
 
 
+# TODO
 @cli.command()
 def generate_report():
     """Generate a system report including R2R version, Docker info, and OS details."""
@@ -201,6 +207,7 @@ def generate_report():
     click.echo(json.dumps(report, indent=2))
 
 
+# TODO
 @cli.command()
 @click.option("--host", default=None, help="Host to run the server on")
 @click.option(
@@ -381,6 +388,7 @@ async def serve(
         await run_local_serve(host, port, config_name, config_path, full)
 
 
+# TODO
 @cli.command()
 def update():
     """Update the R2R package to the latest version."""
@@ -400,6 +408,7 @@ def update():
         click.echo(f"An unexpected error occurred: {e}")
 
 
+# TODO
 @cli.command()
 def version():
     """Print the version of R2R."""

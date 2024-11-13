@@ -4,7 +4,7 @@ from uuid import UUID
 
 class CollectionsSDK:
     def __init__(self, client):
-        self._client = client
+        self.client = client
 
     async def create(
         self,
@@ -22,7 +22,7 @@ class CollectionsSDK:
             dict: Created collection information
         """
         data = {"name": name, "description": description}
-        return await self._make_request(  # type: ignore
+        return await self.client._make_request(
             "POST",
             "collections",
             json=data,  # {"config": data}
@@ -53,7 +53,7 @@ class CollectionsSDK:
         if ids:
             params["ids"] = ids
 
-        return await self._make_request(  # type: ignore
+        return await self.client._make_request(
             "GET", "collections", params=params, version="v3"
         )
 
@@ -70,7 +70,9 @@ class CollectionsSDK:
         Returns:
             dict: Detailed collection information
         """
-        return await self._make_request("GET", f"collections/{str(id)}", version="v3")  # type: ignore
+        return await self.client._make_request(
+            "GET", f"collections/{str(id)}", version="v3"
+        )
 
     async def update(
         self,
@@ -95,7 +97,7 @@ class CollectionsSDK:
         if description is not None:
             data["description"] = description
 
-        return await self._make_request(  # type: ignore
+        return await self.client._make_request(
             "POST",
             f"collections/{str(id)}",
             json=data,  # {"config": data}
@@ -115,7 +117,7 @@ class CollectionsSDK:
         Returns:
             bool: True if deletion was successful
         """
-        result = await self._make_request(  # type: ignore
+        result = await self.client._make_request(
             "DELETE", f"collections/{str(id)}", version="v3"
         )
         return result.get("results", True)
@@ -142,7 +144,7 @@ class CollectionsSDK:
             "limit": limit,
         }
 
-        return await self._make_request(  # type: ignore
+        return await self.client._make_request(
             "GET",
             f"collections/{str(id)}/documents",
             params=params,
@@ -164,7 +166,7 @@ class CollectionsSDK:
         Returns:
             dict: Result of the operation
         """
-        return await self._make_request(  # type: ignore
+        return await self.client._make_request(
             "POST",
             f"collections/{str(id)}/documents/{str(document_id)}",
             version="v3",
@@ -185,7 +187,7 @@ class CollectionsSDK:
         Returns:
             bool: True if removal was successful
         """
-        result = await self._make_request(  # type: ignore
+        result = await self.client._make_request(
             "DELETE",
             f"collections/{str(id)}/documents/{str(document_id)}",
             version="v3",
@@ -214,7 +216,7 @@ class CollectionsSDK:
             "limit": limit,
         }
 
-        return await self._make_request(  # type: ignore
+        return await self.client._make_request(
             "GET", f"collections/{str(id)}/users", params=params, version="v3"
         )
 
@@ -233,7 +235,7 @@ class CollectionsSDK:
         Returns:
             dict: Result of the operation
         """
-        return await self._make_request(  # type: ignore
+        return await self.client._make_request(
             "POST", f"collections/{str(id)}/users/{str(user_id)}", version="v3"
         )
 
@@ -252,7 +254,7 @@ class CollectionsSDK:
         Returns:
             bool: True if removal was successful
         """
-        result = await self._make_request(  # type: ignore
+        result = await self.client._make_request(
             "DELETE",
             f"collections/{str(id)}/users/{str(user_id)}",
             version="v3",

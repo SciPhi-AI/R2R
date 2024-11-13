@@ -4,7 +4,7 @@ from typing import Optional
 
 class PromptsSDK:
     def __init__(self, client):
-        self._client = client
+        self.client = client
 
     async def create(
         self, name: str, template: str, input_types: dict
@@ -19,7 +19,7 @@ class PromptsSDK:
             dict: Created prompt information
         """
         data = {"name": name, "template": template, "input_types": input_types}
-        return await self._make_request(
+        return await self.client._make_request(
             "POST",
             "prompts",
             json=data,
@@ -32,7 +32,7 @@ class PromptsSDK:
         Returns:
             dict: List of all available prompts
         """
-        return await self._make_request(
+        return await self.client._make_request(
             "GET",
             "prompts",
             version="v3",
@@ -58,7 +58,7 @@ class PromptsSDK:
             params["inputs"] = json.dumps(inputs)
         if prompt_override:
             params["prompt_override"] = prompt_override
-        return await self._make_request(
+        return await self.client._make_request(
             "POST",
             f"prompts/{name}",
             params=params,
@@ -85,7 +85,7 @@ class PromptsSDK:
             data["template"] = template
         if input_types:
             data["input_types"] = json.dumps(input_types)
-        return await self._make_request(
+        return await self.client._make_request(
             "PUT",
             f"prompts/{name}",
             json=data,
@@ -100,7 +100,7 @@ class PromptsSDK:
         Returns:
             bool: True if deletion was successful
         """
-        return await self._make_request(
+        return await self.client._make_request(
             "DELETE",
             f"prompts/{name}",
             version="v3",
