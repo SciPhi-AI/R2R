@@ -49,7 +49,6 @@ from shared.api.models.management.responses import (
     WrappedCollectionsResponse,
     WrappedConversationResponse,
     WrappedConversationsResponse,
-    WrappedDeleteResponse,
     # Document Responses
     WrappedDocumentResponse,
     WrappedDocumentsResponse,
@@ -151,7 +150,6 @@ __all__ = [
     "WrappedBooleanResponse",
     "WrappedGenericMessageResponse",
     # TODO: This needs to be cleaned up
-    "WrappedDeleteResponse",
     # Retrieval Responses
     "CombinedSearchResponse",
     "RAGResponse",

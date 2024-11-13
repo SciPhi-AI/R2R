@@ -22,7 +22,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
       name: "Test Collection",
     });
     expect(response).toBeTruthy();
-    collectionId = response.results.collection_id;
+    collectionId = response.results.id;
   });
 
   test("List collections", async () => {
