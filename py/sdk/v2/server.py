@@ -1,7 +1,10 @@
+from __future__ import annotations  # for Python 3.10+
+from typing_extensions import deprecated
 from typing import Optional
 
 
 class ServerMixins:
+    @deprecated("Use client.system.health() instead")
     async def health(self) -> dict:
         return await self._make_request("GET", "health")  # type: ignore
 

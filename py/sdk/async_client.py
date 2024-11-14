@@ -24,6 +24,7 @@ from .v3 import (
     IndicesSDK,
     PromptsSDK,
     RetrievalSDK,
+    SystemSDK,
     UsersSDK,
 )
 
@@ -58,6 +59,7 @@ class R2RAsyncClient(
         self.indices = IndicesSDK(self)
         self.prompts = PromptsSDK(self)
         self.retrieval = RetrievalSDK(self)
+        self.system = SystemSDK(self)
         self.users = UsersSDK(self)
 
     async def _make_request(
