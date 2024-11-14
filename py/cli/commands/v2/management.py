@@ -14,6 +14,9 @@ from cli.utils.timer import timer
 @click.option("--filters", type=JSON, help="Filters for analytics as JSON")
 @click.option("--analysis-types", type=JSON, help="Analysis types as JSON")
 @pass_context
+@deprecated_command(
+    "This command is deprecated. New, improved analytics features will be added in a future release."
+)
 async def analytics(
     ctx, filters: dict[str, Any], analysis_types: dict[str, Any]
 ):
@@ -25,9 +28,9 @@ async def analytics(
     click.echo(response)
 
 
-# TODO
 @cli.command()
 @pass_context
+@deprecated_command("r2r system settings")
 async def app_settings(ctx):
     """Retrieve application settings."""
     client: R2RAsyncClient = ctx.obj

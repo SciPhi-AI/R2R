@@ -1,6 +1,7 @@
 from cli.command_group import cli
+
+# TODO: Remove old commands in a later release
 from cli.commands.v2 import (
-    auth,
     ingestion,
     kg,
     management,
@@ -16,6 +17,7 @@ from cli.commands import (
     indices,
     prompts,
     retrieval,
+    system,
     users,
 )
 from cli.utils.telemetry import posthog, telemetry
@@ -34,12 +36,10 @@ add_command_with_telemetry(indices.indices)
 add_command_with_telemetry(prompts.prompts)
 add_command_with_telemetry(retrieval.retrieval)
 add_command_with_telemetry(users.users)
+add_command_with_telemetry(system.system)
 
-# v2 commands
-# Auth
-# TODO: Remove, this is garbage
-add_command_with_telemetry(auth.generate_private_key)
 
+# Deprecated commands
 # Ingestion
 add_command_with_telemetry(ingestion.ingest_files)  # Deprecated
 add_command_with_telemetry(ingestion.update_files)  # Deprecated
@@ -54,7 +54,7 @@ add_command_with_telemetry(
 )  # TODO: migrate to new schema
 
 # Management
-add_command_with_telemetry(management.analytics)  # TODO: migrate to new schema
+add_command_with_telemetry(management.analytics)  # Deprecated
 add_command_with_telemetry(
     management.app_settings
 )  # TODO: migrate to new schema
@@ -71,20 +71,12 @@ add_command_with_telemetry(
 )  # TODO: migrate to new schema
 
 # Retrieval
-add_command_with_telemetry(v2_retrieval.search)  # TODO: migrate to new schema
-add_command_with_telemetry(v2_retrieval.rag)  # TODO: migrate to new schema
+add_command_with_telemetry(v2_retrieval.search)  # Deprecated
+add_command_with_telemetry(v2_retrieval.rag)  # Deprecated
 
 # Server
-add_command_with_telemetry(server.health)  # TODO: migrate to new schema
-add_command_with_telemetry(server.server_stats)  # TODO: migrate to new schema
-add_command_with_telemetry(server.logs)  # TODO: migrate to new schema
-add_command_with_telemetry(server.docker_down)  # TODO: migrate to new schema
-add_command_with_telemetry(
-    server.generate_report
-)  # TODO: migrate to new schema
-add_command_with_telemetry(server.serve)  # TODO: migrate to new schema
-add_command_with_telemetry(server.update)  # TODO: migrate to new schema
-add_command_with_telemetry(server.version)  # TODO: migrate to new schema
+add_command_with_telemetry(server.server_stats)  # Deprecated
+add_command_with_telemetry(server.logs)  # Deprecated
 
 # Database
 add_command_with_telemetry(database.db)
