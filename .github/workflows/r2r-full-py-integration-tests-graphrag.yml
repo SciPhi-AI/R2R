@@ -51,12 +51,10 @@ jobs:
       - name: Run CLI GraphRAG Tests
         if: matrix.test_category == 'cli-graphrag'
         uses: ./.github/actions/run-cli-graphrag-tests
-        continue-on-error: true
 
       - name: Run SDK GraphRAG Tests
         if: matrix.test_category == 'sdk-graphrag'
         uses: ./.github/actions/run-sdk-graphrag-tests
-        continue-on-error: true
 
       - name: Print Docker logs on failure
         if: >

@@ -56,37 +56,30 @@ jobs:
       - name: Run CLI Ingestion Tests
         if: matrix.test_category == 'cli-ingestion'
         uses: ./.github/actions/run-cli-ingestion-tests
-        continue-on-error: true
 
       - name: Run CLI Retrieval Tests
         if: matrix.test_category == 'cli-retrieval'
         uses: ./.github/actions/run-cli-retrieval-tests
-        continue-on-error: true
 
       - name: Run SDK Ingestion Tests
         if: matrix.test_category == 'sdk-ingestion'
         uses: ./.github/actions/run-sdk-ingestion-tests
-        continue-on-error: true
 
       - name: Run SDK Retrieval Tests
         if: matrix.test_category == 'sdk-retrieval'
         uses: ./.github/actions/run-sdk-retrieval-tests
-        continue-on-error: true
 
       - name: Run SDK Auth Tests
         if: matrix.test_category == 'sdk-auth'
         uses: ./.github/actions/run-sdk-auth-tests
-        continue-on-error: true
 
       - name: Run SDK Collections Tests
         if: matrix.test_category == 'sdk-collections'
         uses: ./.github/actions/run-sdk-collections-tests
-        continue-on-error: true
 
       - name: Run SDK Prompt Tests
         if: matrix.test_category == 'sdk-prompts'
         uses: ./.github/actions/run-sdk-prompt-management-tests
-        continue-on-error: true
 
       - name: Print Docker logs on failure
         if: >
