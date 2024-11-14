@@ -1,18 +1,10 @@
 import { r2rClient } from "../../r2rClient";
 
 import {
-  LoginResponse,
-  TokenInfo,
   Message,
-  RefreshTokenResponse,
   VectorSearchSettings,
   KGSearchSettings,
-  KGRunType,
-  KGCreationSettings,
-  KGEnrichmentSettings,
-  KGEntityDeduplicationSettings,
   GenerationConfig,
-  RawChunk,
 } from "../../models";
 
 export class RetrievalClient {
