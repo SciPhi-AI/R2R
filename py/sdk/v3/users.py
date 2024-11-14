@@ -57,7 +57,7 @@ class UsersSDK:
         Returns:
             dict[str, Token]: Access and refresh tokens
         """
-        data = {"email": email, "password": password}
+        data = {"username": email, "password": password}
         response = await self.client._make_request(
             "POST",
             "users/login",

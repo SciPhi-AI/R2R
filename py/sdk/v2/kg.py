@@ -1,7 +1,7 @@
 from typing import Optional, Union
 from uuid import UUID
 
-from ...models import (
+from ..models import (
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationResponse,

@@ -864,14 +864,56 @@ class DocumentsRouter(BaseRouterV3):
 
             Users can only download documents they own or have access to through collections.
             """
-            # TODO: Add a check to see if the user has access to the file
-
             try:
                 document_uuid = UUID(id)
             except ValueError:
                 raise R2RException(
                     status_code=422, message="Invalid document ID format."
                 )
+
+            # Retrieve the document's information
+            documents_overview_response = await self.services[
+                "management"
+            ].documents_overview(
+                user_ids=None,
+                collection_ids=None,
+                document_ids=[document_uuid],
+                offset=0,
+                limit=1,
+            )
+
+            if not documents_overview_response["results"]:
+                raise R2RException("Document not found.", 404)
+
+            document = documents_overview_response["results"][0]
+
+            is_owner = str(document.user_id) == str(auth_user.id)
+
+            if not auth_user.is_superuser and not is_owner:
+                document_collections = await self.services[
+                    "management"
+                ].collections_overview(
+                    offset=0,
+                    limit=-1,
+                    document_ids=[document_uuid],
+                )
+
+                document_collection_ids = {
+                    str(ele.id) for ele in document_collections["results"]
+                }
+
+                user_collection_ids = set(
+                    str(cid) for cid in auth_user.collection_ids
+                )
+
+                has_collection_access = user_collection_ids.intersection(
+                    document_collection_ids
+                )
+
+                if not has_collection_access:
+                    raise R2RException(
+                        "Not authorized to access this document.", 403
+                    )
 
             file_tuple = await self.services["management"].download_file(
                 document_uuid
@@ -893,7 +935,7 @@ class DocumentsRouter(BaseRouterV3):
                         break
                     yield data
 
-            return StreamingResponse(  # type: ignore
+            return StreamingResponse(
                 file_stream(),
                 media_type=mime_type,
                 headers={

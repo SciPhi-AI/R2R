@@ -144,7 +144,7 @@ class R2RAuthProvider(AuthProvider):
         )
 
         await self.database_provider.add_user_to_collection(
-            new_user.id, default_collection.collection_id
+            new_user.id, default_collection.id
         )
 
         if self.config.require_email_verification:

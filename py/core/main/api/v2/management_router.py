@@ -569,7 +569,7 @@ class ManagementRouter(BaseRouter):
             )
             await self.service.add_user_to_collection(  # type: ignore
                 auth_user.id,
-                collection_id.collection_id,
+                collection_id.id,
             )
             return collection_id
 

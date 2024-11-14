@@ -6,7 +6,7 @@ import httpx
 from shared.abstractions import R2RException
 
 from .base.base_client import BaseClient
-from .v2.mixins import (
+from .v2 import (
     AuthMixins,
     IngestionMixins,
     KGMixins,
@@ -28,7 +28,7 @@ from .v3 import (
 )
 
 
-class R2RAsyncClient(  # type: ignore
+class R2RAsyncClient(
     BaseClient,
     AuthMixins,
     IngestionMixins,
@@ -36,34 +36,19 @@ class R2RAsyncClient(  # type: ignore
     ManagementMixins,
     RetrievalMixins,
     ServerMixins,
-    # V3 SDK Modules
-    ChunksSDK,
-    CollectionsSDK,
-    ConversationsSDK,
-    DocumentsSDK,
-    GraphsSDK,
-    IndicesSDK,
-    PromptsSDK,
-    RetrievalSDK,
-    UsersSDK,
 ):
     """
     Asynchronous client for interacting with the R2R API.
-
-    Args:
-        base_url (str, optional): The base URL of the R2R API. Defaults to "http://localhost:7272".
-        prefix (str, optional): The prefix for the API. Defaults to "/v2".
-        custom_client (httpx.AsyncClient, optional): A custom HTTP client. Defaults to None.
-        timeout (float, optional): The timeout for requests. Defaults to 300.0.
     """
 
     def __init__(
         self,
         base_url: str = "http://localhost:7272",
+        prefix: str = "/v2",
         custom_client=None,
         timeout: float = 300.0,
     ):
-        super().__init__(base_url, timeout=timeout)
+        super().__init__(base_url, prefix, timeout)
         self.client = custom_client or httpx.AsyncClient(timeout=timeout)
         self.chunks = ChunksSDK(self)
         self.collections = CollectionsSDK(self)
@@ -82,10 +67,9 @@ class R2RAsyncClient(  # type: ignore
         request_args = self._prepare_request_args(endpoint, **kwargs)
 
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.request(method, url, **request_args)
-                await self._handle_response(response)
-                return response.json() if response.content else None
+            response = await self.client.request(method, url, **request_args)
+            await self._handle_response(response)
+            return response.json() if response.content else None
         except httpx.RequestError as e:
             raise R2RException(
                 status_code=500,
