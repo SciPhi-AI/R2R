@@ -1,3 +1,8 @@
+"""
+Not currently being used due to some grossness with the way that the v2 SDK methods were structured, but
+we can return to this once we remove v2 SDK methods.
+"""
+
 import asyncio
 import functools
 import inspect

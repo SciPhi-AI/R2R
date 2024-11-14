@@ -120,7 +120,7 @@ class CollectionsRouter(BaseRouterV3):
             )
             # Add the creating user to the collection
             await self.services["management"].add_user_to_collection(
-                auth_user.id, collection.collection_id
+                auth_user.id, collection.id
             )
             return collection
 

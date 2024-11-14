@@ -3,7 +3,7 @@ from typing_extensions import deprecated
 import logging
 from typing import AsyncGenerator, Optional
 
-from ...models import (
+from ..models import (
     GenerationConfig,
     KGSearchSettings,
     Message,

@@ -1,39 +1,112 @@
 import asyncio
-
+import inspect
+import contextlib
+from typing import Any
 from .async_client import R2RAsyncClient
-from .utils import SyncClientMetaclass
+import functools
+from .v2 import (
+    SyncAuthMixins,
+    SyncIngestionMixins,
+    SyncKGMixins,
+    SyncManagementMixins,
+    SyncRetrievalMixins,
+    SyncServerMixins,
+)
 
 
-class R2RClient(R2RAsyncClient, metaclass=SyncClientMetaclass):
-    """
-    Synchronous client for the R2R API.
-
-    Args:
-        base_url (str, optional): The base URL of the R2R API. Defaults to "http://localhost:7272".
-        prefix (str, optional): The prefix for the API. Defaults to "/v2".
-        custom_client (httpx.AsyncClient, optional): A custom HTTP client. Defaults to None.
-        timeout (float, optional): The timeout for requests. Defaults to 300.0.
-    """
-
-    def __init__(self, *args, **kwargs):
+class R2RClient(R2RAsyncClient):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
+        self._loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self._loop)
 
-    def _make_streaming_request(self, method: str, endpoint: str, **kwargs):
-        async_gen = super()._make_streaming_request(method, endpoint, **kwargs)
-        return self._sync_generator(async_gen)
+        # Store async version of _make_request
+        self._async_make_request = self._make_request
 
-    def _sync_generator(self, async_gen):
-        # FIXME: This isn't compatible with some environments, like Jupyter notebooks
-        loop = asyncio.get_event_loop()
-        try:
-            while True:
-                yield loop.run_until_complete(async_gen.__anext__())
-        except StopAsyncIteration:
-            pass
+        # Only wrap v3 methods since they're already working
+        self._wrap_v3_methods()
 
-    def __enter__(self):
-        return self
+        # Override v2 methods with sync versions
+        self._override_v2_methods()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.close())
+    def _make_sync_request(self, *args, **kwargs):
+        """Sync version of _make_request for v2 methods"""
+        return self._loop.run_until_complete(
+            self._async_make_request(*args, **kwargs)
+        )
+
+    def _override_v2_methods(self):
+        """
+        Replace async v2 methods with sync versions
+
+        This is really ugly, but it's the only way to make it work once we
+        remove v2, we can just resort to the metaclass approach that is in utils
+        """
+        sync_mixins = {
+            SyncAuthMixins: ["auth_methods"],
+            SyncIngestionMixins: ["ingestion_methods"],
+            SyncKGMixins: ["kg_methods"],
+            SyncManagementMixins: ["management_methods"],
+            SyncRetrievalMixins: ["retrieval_methods"],
+            SyncServerMixins: ["server_methods"],
+        }
+
+        for sync_class in sync_mixins:
+            for name, method in sync_class.__dict__.items():
+                if not name.startswith("_") and inspect.isfunction(method):
+                    # Create a wrapper that uses sync _make_request
+                    def wrap_method(m):
+                        def wrapped(self, *args, **kwargs):
+                            # Temporarily swap _make_request
+                            original_make_request = self._make_request
+                            self._make_request = self._make_sync_request
+                            try:
+                                return m(self, *args, **kwargs)
+                            finally:
+                                # Restore original _make_request
+                                self._make_request = original_make_request
+
+                        return wrapped
+
+                    bound_method = wrap_method(method).__get__(
+                        self, self.__class__
+                    )
+                    setattr(self, name, bound_method)
+
+    def _wrap_v3_methods(self) -> None:
+        """Wraps only v3 SDK object methods"""
+        sdk_objects = [
+            self.chunks,
+            self.collections,
+            self.conversations,
+            self.documents,
+            self.graphs,
+            self.indices,
+            self.prompts,
+            self.retrieval,
+            self.users,
+        ]
+
+        for sdk_obj in sdk_objects:
+            for name in dir(sdk_obj):
+                if name.startswith("_"):
+                    continue
+
+                attr = getattr(sdk_obj, name)
+                if inspect.iscoroutinefunction(attr):
+                    wrapped = self._make_sync_method(attr)
+                    setattr(sdk_obj, name, wrapped)
+
+    def _make_sync_method(self, async_method):
+        @functools.wraps(async_method)
+        def wrapped(*args, **kwargs):
+            return self._loop.run_until_complete(async_method(*args, **kwargs))
+
+        return wrapped
+
+    def __del__(self):
+        if hasattr(self, "_loop") and self._loop is not None:
+            with contextlib.suppress(Exception):
+                if not self._loop.is_closed():
+                    self._loop.run_until_complete(self.close())
+                    self._loop.close()
