@@ -442,10 +442,33 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can access this endpoint.", 403
                 )
 
+            if not entity.level:
+                entity.level = self._get_path_level(request)
+            else:
+                if entity.level != self._get_path_level(request):
+                    raise R2RException(
+                        "Entity level must match the path level.", 400
+                    )
+
+            if entity.level == EntityLevel.CHUNK:
+                # don't override the chunk_ids
+                entity.chunk_ids = None
+
+            elif entity.level == EntityLevel.DOCUMENT:
+                entity.document_id = id
+
+            elif entity.level == EntityLevel.COLLECTION:
+                entity.collection_id = id
+
+            if not entity.id:
+                entity.id = entity_id
+            else:
+                if entity.id != entity_id:
+                    raise R2RException(
+                        "Entity ID must match the entity ID or should be empty.", 400
+                    )
+
             return await self.services["kg"].update_entity_v3(
-                level=self._get_path_level(request),
-                id=id,
-                entity_id=entity_id,
                 entity=entity,
             )
 
@@ -529,10 +552,10 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can access this endpoint.", 403
                 )
 
+            entity = Entity(id=entity_id, level=self._get_path_level(request))
+
             return await self.services["kg"].delete_entity_v3(
-                level=self._get_path_level(request),
-                id=id,
-                entity_id=entity_id,
+                entity=entity,
             )
 
         ##### RELATIONSHIPS #####
@@ -601,6 +624,7 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def list_relationships(
+            request: Request,
             id: UUID = Path(
                 ...,
                 description="The ID of the chunk to retrieve relationships for.",
@@ -635,8 +659,8 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can access this endpoint.", 403
                 )
 
-            return await self.services["kg"].list_relationships_v3(
-                level=EntityLevel.CHUNK,
+            relationships, count = await self.services["kg"].list_relationships_v3(
+                level=self._get_path_level(request),
                 id=id,
                 entity_names=entity_names,
                 relationship_types=relationship_types,
@@ -644,6 +668,10 @@ class GraphRouter(BaseRouterV3):
                 offset=offset,
                 limit=limit,
             )
+
+            return relationships, {
+                "total_entries": count,
+            }
 
         @self.router.post(
             "/chunks/{id}/relationships",
@@ -666,8 +694,51 @@ class GraphRouter(BaseRouterV3):
                 ]
             },
         )
+        @self.router.post(
+            "/documents/{id}/relationships",
+            summary="Create relationships for a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.create_relationships(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationships=[relationship1, relationship2])
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.router.post(
+            "/collections/{id}/relationships",
+            summary="Create relationships for a collection",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.collections.create_relationships(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationships=[relationship1, relationship2])
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
         @self.base_endpoint
         async def create_relationships(
+            request: Request,
             id: UUID = Path(
                 ...,
                 description="The ID of the chunk to create relationships for.",
@@ -676,26 +747,19 @@ class GraphRouter(BaseRouterV3):
                 ..., description="The relationships to create."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGRelationshipsResponse:
+        ) -> WrappedKGCreationResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
                 )
 
-            relationships = [
-                (
-                    Relationship(**relationship)
-                    if isinstance(relationship, dict)
-                    else relationship
-                )
-                for relationship in relationships
-            ]
-
-            return await self.services["kg"].create_relationships_v3(
-                level=EntityLevel.CHUNK,
-                id=id,
-                relationships=relationships,
-            )
+            return {
+                "message": "Relationships created successfully.",
+                "count": await self.services["kg"].create_relationships_v3(
+                    id=id,
+                    relationships=relationships,
+                ),
+            }
 
         @self.router.post(
             "/chunks/{id}/relationships/{relationship_id}",
@@ -711,7 +775,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.chunks.update_relationship(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_id="123e4567-e89b-12d3-a456-426614174000", relationship=relationship)
+                            result = client.chunks.update_relationship(chunk_id="9fbe403b -c11c-5aae-8ade-ef22980c3ad1", relationship_id="123e4567-e89b-12d3-a456-426614174000", relationship=relationship)
                             """
                         ),
                     },
@@ -769,409 +833,7 @@ class GraphRouter(BaseRouterV3):
                 id=id,
                 relationship_id=relationship_id,
             )
-
-        ##### DOCUMENT LEVEL OPERATIONS #####
-        @self.router.get(
-            "/documents/{id}/entities",
-            summary="List entities for a document",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.chunks.list_entities(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def list_entities(
-            id: UUID = Path(
-                ...,
-                description="The ID of the document to retrieve entities for.",
-            ),
-            entity_names: Optional[list[str]] = Query(
-                None,
-                description="A list of entity names to filter the entities by.",
-            ),
-            entity_categories: Optional[list[str]] = Query(
-                None,
-                description="A list of entity categories to filter the entities by.",
-            ),
-            attributes: Optional[list[str]] = Query(
-                None,
-                description="A list of attributes to return. By default, all attributes are returned.",
-            ),
-            offset: int = Query(
-                0,
-                ge=0,
-                description="The offset of the first entity to retrieve.",
-            ),
-            limit: int = Query(
-                100,
-                ge=0,
-                le=20_000,
-                description="The maximum number of entities to retrieve, up to 20,000.",
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[Entity]]:
-            """
-            Retrieves a list of entities associated with a specific document.
-            """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
-
-            return await self.services["kg"].list_entities_v3(
-                level=EntityLevel.DOCUMENT,
-                id=id,
-                offset=offset,
-                limit=limit,
-                entity_names=entity_names,
-                entity_categories=entity_categories,
-                attributes=attributes,
-            )
-
-        @self.router.post(
-            "/documents/{id}/entities",
-            summary="Create entities for a document",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.documents.create_entities_v3(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def create_entities_v3(
-            id: UUID = Path(
-                ..., description="The ID of the chunk to create entities for."
-            ),
-            entities: list[Union[Entity, dict]] = Body(
-                ..., description="The entities to create."
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
-
-            entities = [
-                Entity(**entity) if isinstance(entity, dict) else entity
-                for entity in entities
-            ]
-            # for each entity, set the level to CHUNK
-            for entity in entities:
-                if entity.level is None:
-                    entity.level = EntityLevel.DOCUMENT
-                else:
-                    raise R2RException(
-                        "Entity level must be chunk or empty.", 400
-                    )
-
-            return await self.services["kg"].create_entities_v3(
-                level=EntityLevel.DOCUMENT,
-                id=id,
-                entities=entities,
-            )
-
-        @self.router.post(
-            "/documents/{id}/entities/{entity_id}",
-            summary="Update an entity for a document",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.documents.update_entity(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000", entity=entity)
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def update_entity(
-            id: UUID = Path(
-                ...,
-                description="The ID of the document to update the entity for.",
-            ),
-            entity_id: UUID = Path(
-                ..., description="The ID of the entity to update."
-            ),
-            entity: Entity = Body(..., description="The updated entity."),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
-
-            return await self.services["kg"].update_entity_v3(
-                level=EntityLevel.DOCUMENT,
-                id=id,
-                entity_id=entity_id,
-                entity=entity,
-            )
-
-        @self.router.delete(
-            "/documents/{id}/entities/{entity_id}",
-            summary="Delete an entity for a document",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.documents.delete_entity(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000")
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def delete_entity(
-            id: UUID = Path(
-                ...,
-                description="The ID of the document to delete the entity for.",
-            ),
-            entity_id: UUID = Path(
-                ..., description="The ID of the entity to delete."
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
-
-        ##### RELATIONSHIPS #####
-        @self.router.get(
-            "/documents/{id}/relationships",
-            summary="List relationships for a document",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.documents.list_relationships(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def list_relationships(
-            id: UUID = Path(
-                ...,
-                description="The ID of the document to retrieve relationships for.",
-            ),
-            entity_names: Optional[list[str]] = Query(
-                None,
-                description="A list of entity names to filter the relationships by.",
-            ),
-            relationship_types: Optional[list[str]] = Query(
-                None,
-                description="A list of relationship types to filter the relationships by.",
-            ),
-            attributes: Optional[list[str]] = Query(
-                None,
-                description="A list of attributes to return. By default, all attributes are returned.",
-            ),
-            offset: int = Query(
-                0,
-                ge=0,
-                description="The offset of the first relationship to retrieve.",
-            ),
-            limit: int = Query(
-                100,
-                ge=0,
-                le=20_000,
-                description="The maximum number of relationships to retrieve, up to 20,000.",
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[Relationship]]:
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
-
-            return await self.services["kg"].list_relationships_v3(
-                level=EntityLevel.DOCUMENT,
-                id=id,
-                entity_names=entity_names,
-                relationship_types=relationship_types,
-                attributes=attributes,
-                offset=offset,
-                limit=limit,
-            )
-
-        @self.router.post(
-            "/documents/{id}/relationships",
-            summary="Create relationships for a document",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.documents.create_relationships(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationships=[relationship1, relationship2])
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def create_relationships(
-            id: UUID = Path(
-                ...,
-                description="The ID of the document to create relationships for.",
-            ),
-            relationships: list[Union[Relationship, dict]] = Body(
-                ..., description="The relationships to create."
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGCreationResponse:
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
-
-            relationships = [
-                (
-                    Relationship(**relationship)
-                    if isinstance(relationship, dict)
-                    else relationship
-                )
-                for relationship in relationships
-            ]
-
-            return await self.services["kg"].create_relationships_v3(
-                level=EntityLevel.DOCUMENT,
-                id=id,
-                relationships=relationships,
-            )
-
-        @self.router.post(
-            "/documents/{id}/relationships/{relationship_id}",
-            summary="Update a relationship for a document",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.documents.update_relationship(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_id="123e4567-e89b-12d3-a456-426614174000", relationship=relationship)
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def update_relationship(
-            id: UUID = Path(
-                ...,
-                description="The ID of the document to update the relationship for.",
-            ),
-            relationship_id: UUID = Path(
-                ..., description="The ID of the relationship to update."
-            ),
-            relationship: Relationship = Body(
-                ..., description="The updated relationship."
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
-
-            return await self.services["kg"].update_relationship_v3(
-                level=EntityLevel.DOCUMENT,
-                id=id,
-                relationship_id=relationship_id,
-                relationship=relationship,
-            )
-
-        @self.router.delete(
-            "/documents/{id}/relationships/{relationship_id}",
-            summary="Delete a relationship for a document",
-        )
-        @self.base_endpoint
-        async def delete_relationship(
-            id: UUID = Path(
-                ...,
-                description="The ID of the document to delete the relationship for.",
-            ),
-            relationship_id: UUID = Path(
-                ..., description="The ID of the relationship to delete."
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
-
-            return await self.services["kg"].delete_relationship_v3(
-                level=EntityLevel.DOCUMENT,
-                id=id,
-                relationship_id=relationship_id,
-            )
-
-        ##### COLLECTION LEVEL OPERATIONS #####
+        
 
         # Graph-level operations
         @self.router.post(
@@ -1468,313 +1130,6 @@ class GraphRouter(BaseRouterV3):
             await self.services["kg"].delete_graph(collection_id, cascade)
             return {"message": "Graph deleted successfully"}  # type: ignore
 
-        # Entity operations
-        @self.router.post(
-            "/graphs/{collection_id}/entities/{level}",
-            summary="Create a new entity",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.create_entity(
-                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                entity={
-                                    "name": "John Smith",
-                                    "type": "PERSON",
-                                    "metadata": {
-                                        "source": "manual",
-                                        "confidence": 1.0
-                                    },
-                                }
-                            )"""
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X POST "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/entities/document" \\
-                                -H "Content-Type: application/json" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" \\
-                                -d '{
-                                    "name": "John Smith",
-                                    "type": "PERSON",
-                                    "metadata": {
-                                        "source": "manual",
-                                        "confidence": 1.0
-                                    },
-                                }'"""
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def create_entity(
-            collection_id: UUID = Path(...),
-            entity: dict = Body(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[Entity]:
-            """Creates a new entity in the graph."""
-            if not auth_user.is_superuser:
-                raise R2RException("Only superusers can create entities", 403)
-
-            new_entity = await self.services["kg"].create_entity(
-                collection_id, entity
-            )
-            return new_entity  # type: ignore
-
-        @self.router.delete(
-            "/graphs/{collection_id}/entities/{entity_id}",
-            summary="Delete an entity",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.delete_entity(
-                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                entity_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                                cascade=True
-                            )"""
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X DELETE "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/entities/9fbe403b-c11c-5aae-8ade-ef22980c3ad1?cascade=true" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def delete_entity(
-            collection_id: UUID = Path(...),
-            entity_id: UUID = Path(...),
-            cascade: bool = Query(
-                False,
-                description="Whether to also delete related relationships",
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[dict]:
-            """Deletes an entity and optionally its relationships."""
-            if not auth_user.is_superuser:
-                raise R2RException("Only superusers can delete entities", 403)
-
-            # await self.services["kg"].delete_entity(
-            #     collection_id, entity_id, cascade
-            # )
-            # return {"message": "Entity deleted successfully"}  # type: ignore
-
-        @self.router.get(
-            "/graphs/{collection_id}/entities",
-            summary="List entities",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.list_entities(
-                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                level="DOCUMENT",
-                                offset=0,
-                                limit=100,
-                                include_embeddings=False
-                            )"""
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X GET "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/entities?\\
-                                level=DOCUMENT&offset=0&limit=100&include_embeddings=false" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def list_entities(
-            collection_id: UUID = Path(...),
-            level: EntityLevel = Query(EntityLevel.DOCUMENT),
-            offset: int = Query(0, ge=0),
-            limit: int = Query(100, ge=1, le=1000),
-            include_embeddings: bool = Query(False),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGEntitiesResponse:
-            """Lists entities in the graph with filtering and pagination support.
-
-            Entities represent the nodes in the knowledge graph, extracted from documents.
-            Each entity has:
-            - Unique identifier and name
-            - Entity type (e.g. PERSON, ORG, LOCATION)
-            - Source documents and extractions
-            - Generated description
-            - Community memberships
-            - Optional vector embedding
-            """
-            entities = await self.services["kg"].list_entities(
-                collection_id, level, offset, limit, include_embeddings
-            )
-            return entities  # type: ignore
-
-        @self.router.get(
-            "/graphs/{collection_id}/entities/{entity_id}",
-            summary="Get entity details",
-        )
-        @self.base_endpoint
-        async def get_entity(
-            collection_id: UUID = Path(...),
-            level: EntityLevel = Query(EntityLevel.DOCUMENT),
-            entity_id: int = Path(...),
-            # include_embeddings: bool = Query(False),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[Entity]:
-            """Retrieves details of a specific entity."""
-            entity = await self.services["kg"].get_entity(
-                collection_id, entity_id, include_embeddings
-            )
-            if not entity:
-                raise R2RException("Entity not found", 404)
-            return entity
-
-        @self.router.post(
-            "/graphs/{collection_id}/entities/{entity_id}",
-            summary="Update entity",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.update_entity(
-                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                entity_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                                entity_update={
-                                    "name": "Updated Entity Name",
-                                    "metadata": {
-                                        "confidence": 0.95,
-                                        "source": "manual_correction"
-                                    }
-                                }
-                            )"""
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X POST "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/entities/9fbe403b-c11c-5aae-8ade-ef22980c3ad1" \\
-                                -H "Content-Type: application/json" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" \\
-                                -d '{
-                                    "name": "Updated Entity Name",
-                                    "metadata": {
-                                        "confidence": 0.95,
-                                        "source": "manual_correction"
-                                    }
-                                }'"""
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def update_entity(
-            collection_id: UUID = Path(...),
-            entity_id: UUID = Path(...),
-            entity_update: dict = Body(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[Entity]:
-            """Updates an existing entity."""
-            if not auth_user.is_superuser:
-                raise R2RException("Only superusers can update entities", 403)
-
-            # updated_entity = await self.services["kg"].update_entity(
-            #     collection_id, entity_id, entity_update
-            # )
-            # return updated_entity  # type: ignore
-
-        @self.router.post(
-            "/graphs/{collection_id}/entities/deduplicate",
-            summary="Deduplicate entities in the graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.deduplicate_entities(
-                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                settings={
-                                    "kg_entity_deduplication_type": "by_name",
-                                    "kg_entity_deduplication_prompt": "default",
-                                    "generation_config": {
-                                        "model": "openai/gpt-4o-mini",
-                                        "temperature": 0.12
-                                    },
-                                    "max_description_input_length": 65536
-                                }
-                            )"""
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X POST "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/entities/deduplicate" \\
-                                -H "Content-Type: application/json" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" \\
-                                -d '{
-                                    "settings": {
-                                        "kg_entity_deduplication_type": "by_name",
-                                        "kg_entity_deduplication_prompt": "default",
-                                        "max_description_input_length": 65536,
-                                        "generation_config": {
-                                            "model": "openai/gpt-4o-mini",
-                                            "temperature": 0.12
-                                        }
-                                    }
-                                }'"""
-                        ),
-                    },
-                ]
-            },
-        )
         @self.base_endpoint
         async def deduplicate_entities(
             collection_id: UUID = Path(...),
@@ -1852,321 +1207,6 @@ class GraphRouter(BaseRouterV3):
                     "task_id": None,
                 }
 
-        @self.router.post(
-            "/graphs/{document_id}/relationships",
-            summary="Create a new relationship",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.create_relationship(
-                                document_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                relationship={
-                                    "source_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                                    "target_id": "7cde891f-2a3b-4c5d-6e7f-gh8i9j0k1l2m",
-                                    "type": "WORKS_FOR",
-                                    "metadata": {
-                                        "source": "manual",
-                                        "confidence": 1.0
-                                    }
-                                }
-                            )"""
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X POST "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/relationships" \\
-                                -H "Content-Type: application/json" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" \\
-                                -d '{
-                                    "source_id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                                    "target_id": "7cde891f-2a3b-4c5d-6e7f-gh8i9j0k1l2m",
-                                    "type": "WORKS_FOR",
-                                    "metadata": {
-                                        "source": "manual",
-                                        "confidence": 1.0
-                                    }
-                                }'"""
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def create_relationship(
-            relationship: dict = Body(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[Relationship]:
-            """Creates a new relationship between entities."""
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can create relationships", 403
-                )
-
-            new_relationship = await self.services["kg"].create_relationship(
-                collection_id, relationship
-            )
-            return new_relationship  # type: ignore
-
-        # Relationship operations
-        @self.router.get(
-            "/graphs/{collection_id}/relationships",
-            summary="List relationships",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.list_relationships(
-                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                source_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                                relationship_type="WORKS_FOR",
-                                offset=0,
-                                limit=100
-                            )"""
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X GET "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/relationships?\\
-                                source_id=9fbe403b-c11c-5aae-8ade-ef22980c3ad1&\\
-                                relationship_type=WORKS_FOR&offset=0&limit=100" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def list_relationships(
-            collection_id: UUID = Path(...),
-            source_id: Optional[UUID] = Query(None),
-            target_id: Optional[UUID] = Query(None),
-            relationship_type: Optional[str] = Query(None),
-            offset: int = Query(
-                0,
-                ge=0,
-                description="Specifies the number of objects to skip. Defaults to 0.",
-            ),
-            limit: int = Query(
-                100,
-                ge=1,
-                le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[Relationship]]:
-            """Lists relationships (edges) between entities in the knowledge graph.
-
-            Relationships represent connections between entities with:
-            - Source and target entities
-            - Relationship type and description
-            - Confidence score and metadata
-            - Source documents and extractions
-            """
-            raise R2RException("Not implemented", 501)
-            # relationships = await self.services["kg"].list_relationships(
-            #     collection_id,
-            #     source_id,
-            #     target_id,
-            #     relationship_type,
-            #     offset,
-            #     limit,
-            # )
-            # return relationships  # type: ignore
-
-        @self.router.get(
-            "/graphs/{collection_id}/relationships/{relationship_id}",
-            summary="Get relationship details",
-        )
-        @self.base_endpoint
-        async def get_relationship(
-            collection_id: UUID = Path(...),
-            relationship_id: UUID = Path(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[Relationship]:
-            """Retrieves details of a specific relationship."""
-            raise R2RException("Not implemented", 501)
-            # relationship = await self.services["kg"].get_relationship(
-            #     collection_id, relationship_id
-            # )
-            # if not relationship:
-            #     raise R2RException("Relationship not found", 404)
-            # return relationship  # type: ignore
-
-        @self.router.post(
-            "/graphs/{collection_id}/relationships/{relationship_id}",
-            summary="Update relationship",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.update_relationship(
-                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                relationship_id="8abc123d-ef45-678g-hi90-jklmno123456",
-                                relationship_update={
-                                    "type": "EMPLOYED_BY",
-                                    "metadata": {
-                                        "confidence": 0.95,
-                                        "source": "manual_correction"
-                                    }
-                                }
-                            )"""
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X POST "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/relationships/8abc123d-ef45-678g-hi90-jklmno123456" \\
-                                -H "Content-Type: application/json" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" \\
-                                -d '{
-                                    "type": "EMPLOYED_BY",
-                                    "metadata": {
-                                        "confidence": 0.95,
-                                        "source": "manual_correction"
-                                    }
-                                }'"""
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def update_relationship(
-            collection_id: UUID = Path(...),
-            relationship_id: UUID = Path(...),
-            relationship_update: dict = Body(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[Relationship]:
-            """Updates an existing relationship."""
-            raise NotImplementedError("Not implemented")
-            # if not auth_user.is_superuser:
-            #     raise R2RException(
-            #         "Only superusers can update relationships", 403
-            #     )
-
-            updated_relationship = await self.services[
-                "kg"
-            ].update_relationship(
-                collection_id, relationship_id, relationship_update
-            )
-            return updated_relationship  # type: ignore
-
-        @self.router.delete(
-            "/graphs/{collection_id}/relationships/{relationship_id}",
-            summary="Delete a relationship",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.delete_relationship(
-                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                relationship_id="8abc123d-ef45-678g-hi90-jklmno123456"
-                            )"""
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X DELETE "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/relationships/8abc123d-ef45-678g-hi90-jklmno123456" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def delete_relationship(
-            collection_id: UUID = Path(...),
-            relationship_id: UUID = Path(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[dict]:
-            """Deletes a relationship."""
-            raise NotImplementedError("Not implemented")
-            # if not auth_user.is_superuser:
-            #     raise R2RException(
-            #         "Only superusers can delete relationships", 403
-            #     )
-
-            # await self.services["kg"].delete_relationship(
-            #     collection_id, relationship_id
-            # )
-            # return {"message": "Relationship deleted successfully"}  # type: ignore
-
-        # Community operations
-        @self.router.post(
-            "/graphs/{collection_id}/communities",
-            summary="Create communities in the graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.create_communities(
-                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                settings={
-                                    "max_summary_input_length": 65536,
-                                }
-                            )"""
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X POST "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/communities/create" \\
-                                -H "Content-Type: application/json" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" \\
-                                -d '{
-                                    "settings": {
-                                        "max_summary_input_length": 65536,
-                                    }
-                                }'"""
-                        ),
-                    },
-                ]
-            },
-        )
         @self.base_endpoint
         async def create_communities(
             collection_id: UUID = Path(...),

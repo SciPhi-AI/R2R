@@ -268,29 +268,26 @@ class PostgresEntityHandler(EntityHandler):
         if count == 0:
             raise R2RException("Entity does not exist", 204)
 
-        await _add_objects(
-            objects=[entity], 
+        return await _update_object(
+            object=entity.__dict__, 
             full_table_name=self._get_table_name(table_name), 
             connection_manager=self.connection_manager,
-            conflict_columns=non_null_attributes,
-            exclude_attributes=["level"]
+            id_column="id",
         )
 
-    async def delete(self, entity_id: UUID, level: EntityLevel) -> None:
+    async def delete(self, entity: Entity) -> None:
         """Delete an entity from the database.
 
         Args:
             entity_id: UUID of the entity to delete
             level: Level of the entity (chunk, document, or collection)
         """
-        table_name = level.value + "_entity"
-        QUERY = f"""
-            DELETE FROM {self._get_table_name(table_name)} WHERE id = $1
-        """
-        await self.connection_manager.execute_query(
-            QUERY, [entity_id]
+        table_name = entity.level.value + "_entity"
+        return await _delete_object(
+            object_id=entity.id,
+            full_table_name=self._get_table_name(table_name),
+            connection_manager=self.connection_manager,
         )
-
 
 class PostgresRelationshipHandler(RelationshipHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -302,6 +299,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
         QUERY = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("relationship")} (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                sid SERIAL NOT NULL,
                 subject TEXT NOT NULL,
                 predicate TEXT NOT NULL,
                 object TEXT NOT NULL,
@@ -329,16 +327,54 @@ class PostgresRelationshipHandler(RelationshipHandler):
 
     async def create(self, relationships: list[Relationship]) -> None:
         """Create a new relationship in the database."""
-        await self._add_objects(relationships, "relationship")
+        await _add_objects(
+            objects=[relationship.__dict__ for relationship in relationships],
+            full_table_name=self._get_table_name("relationship"),
+            connection_manager=self.connection_manager,
+        )
 
-    async def get(self, relationship_id: UUID) -> list[Relationship]:
+    async def get(self, 
+        id: UUID, 
+        level: EntityLevel, 
+        entity_names: Optional[list[str]] = None, 
+        relationship_types: Optional[list[str]] = None, 
+        attributes: Optional[list[str]] = None, 
+        offset: int = 0, 
+        limit: int = -1
+    ) -> list[Relationship]:
         """Get relationships from storage by ID."""
+
+        filter = {
+            EntityLevel.CHUNK: "chunk_ids = ANY($1)",
+            EntityLevel.DOCUMENT: "document_id = $1",
+        }[level]
+
+        params = [id]
+        
+        if entity_names:
+            filter += " AND (subject = ANY($2) OR object = ANY($2))"
+            params.append(entity_names)
+
+        if relationship_types:
+            filter += " AND predicate = ANY($3)"
+            params.append(relationship_types)
+        
         QUERY = f"""
-            SELECT * FROM {self._get_table_name("relationship_chunk")}
-            WHERE id = $1
+            SELECT * FROM {self._get_table_name("relationship")}
+            WHERE {filter}
+            OFFSET ${len(params)+1} LIMIT ${len(params) + 2}
         """
-        rows = await self.connection_manager.fetch_query(QUERY, [relationship_id])
-        return [Relationship(**row) for row in rows]
+
+        
+        params.extend([offset, limit])
+        rows = await self.connection_manager.fetch_query(QUERY, params)
+        
+        QUERY_COUNT = f"""
+            SELECT COUNT(*) FROM {self._get_table_name("relationship")} WHERE {filter}
+        """
+        count = (await self.connection_manager.fetch_query(QUERY_COUNT, params[:-2]))[0]["count"]
+
+        return [Relationship(**row) for row in rows], count
 
     async def update(self, relationship: Relationship) -> None:
 
@@ -2334,3 +2370,54 @@ async def _add_objects(
     ]
 
     return await connection_manager.execute_many(QUERY, params)  # type: ignore
+
+async def _update_object(
+    object: dict[str, Any],
+    full_table_name: str,
+    connection_manager: PostgresConnectionManager,
+    id_column: str = "id",
+    exclude_attributes: list[str] = [],
+) -> asyncpg.Record:
+    """
+    Update a single object in the specified table.
+    
+    Args:
+        object: Dictionary containing the fields to update
+        full_table_name: Name of the table to update
+        connection_manager: Database connection manager
+        id_column: Name of the ID column to use in WHERE clause (default: "id")
+        exclude_attributes: List of attributes to exclude from update
+    """
+    # Get non-null attributes, excluding the ID and any excluded attributes
+    non_null_attrs = {
+        k: v for k, v in object.items() 
+        if v is not None and k != id_column and k not in exclude_attributes
+    }
+    
+    # Create SET clause with placeholders
+    set_clause = ", ".join(f"{k} = ${i+1}" for i, k in enumerate(non_null_attrs.keys()))
+    
+    QUERY = f"""
+        UPDATE {full_table_name}
+        SET {set_clause}
+        WHERE {id_column} = ${len(non_null_attrs) + 1}
+    """
+
+    # Prepare parameters: values for SET clause + ID value for WHERE clause
+    params = [
+        (json.dumps(v) if isinstance(v, dict) else str(v) if "embedding" in k else v)
+        for k, v in non_null_attrs.items()
+    ]
+    params.append(object[id_column])
+
+    return await connection_manager.execute_many(QUERY, [tuple(params)])  # type: ignore
+
+async def _delete_object(
+    object_id: UUID,
+    full_table_name: str,
+    connection_manager: PostgresConnectionManager,
+):
+    QUERY = f"""
+        DELETE FROM {full_table_name} WHERE id = $1
+    """
+    return await connection_manager.execute_query(QUERY, [object_id])

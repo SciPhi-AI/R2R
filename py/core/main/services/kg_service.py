@@ -157,49 +157,55 @@ class KgService(Service):
     @telemetry_event("update_entity_v3")
     async def update_entity_v3(
         self,
-        level: EntityLevel,
-        id: UUID,
-        entity_id: UUID,
         entity: Entity,
         **kwargs,
     ):
         return await self.providers.database.graph_handler.entities.update(
-            level, id, entity_id, entity
+            entity
         )
 
-    @telemetry_event("update_entity")
-    async def update_entity(
+    @telemetry_event(" ")
+    async def delete_entity_v3(
         self,
-        collection_id: UUID,
         entity: Entity,
         **kwargs,
     ):
-        return await self.providers.database.update_entity(
-            collection_id, entity
-        )
-
-    @telemetry_event("delete_entity")
-    async def delete_entity(
-        self,
-        collection_id: UUID,
-        entity: Entity,
-        **kwargs,
-    ):
-        return await self.providers.database.delete_entity(
-            collection_id, entity
+        return await self.providers.database.graph_handler.entities.delete(
+            entity
         )
 
     ################### RELATIONSHIPS ###################
 
-    @telemetry_event("create_relationship")
-    async def create_relationship(
+
+    @telemetry_event("list_relationships_v3")
+    async def list_relationships_v3(
         self,
-        collection_id: UUID,
-        relationship: Relationship,
+        id: UUID,
+        level: EntityLevel,
+        offset: int,
+        limit: int,
+        entity_names: Optional[list[str]] = None,
+        relationship_types: Optional[list[str]] = None,
+        attributes: Optional[list[str]] = None,
+    ):
+        return await self.providers.database.graph_handler.relationships.get(
+            id=id,
+            level=level,
+            entity_names=entity_names,
+            relationship_types=relationship_types,
+            attributes=attributes,
+            offset=offset,
+            limit=limit,
+        )
+
+    @telemetry_event("create_relationships_v3")
+    async def create_relationships_v3(
+        self,
+        relationships: list[Relationship],
         **kwargs,
     ):
-        return await self.providers.database.create_relationship(
-            collection_id, relationship
+        return await self.providers.database.graph_handler.relationships.create(
+            relationships
         )
 
     @telemetry_event("get_document_ids_for_create_graph")
@@ -540,20 +546,20 @@ class KgService(Service):
         self,
         level: EntityLevel,
         id: UUID,
+        offset: int,
+        limit: int,
         entity_names: Optional[list[str]] = None,
         relationship_types: Optional[list[str]] = None,
         attributes: Optional[list[str]] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
     ):
-        return await self.providers.database.list_relationships_v3(
-            level,
-            id,
-            entity_names,
-            relationship_types,
-            attributes,
-            offset,
-            limit,
+        return await self.providers.database.graph_handler.relationships.get(
+            level=level,
+            id=id,
+            entity_names=entity_names,
+            relationship_types=relationship_types,
+            attributes=attributes,
+            offset=offset,
+            limit=limit,
         )
 
     ##### Communities #####

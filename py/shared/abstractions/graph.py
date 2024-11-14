@@ -56,7 +56,7 @@ class EntityLevel(str, Enum):
 class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
-    name: str
+    name: Optional[str] = None
     id: Optional[UUID] = None
     sid: Optional[int] = None #serial ID
     level: Optional[EntityLevel] = None
