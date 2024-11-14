@@ -273,13 +273,13 @@ def test_rag_response_stream_sample_file_cli():
     # Check if the output contains the search and completion tags
     if "<search>" not in output or "</search>" not in output:
         print(
-            "Streaming RAG query test failed: Search results not found in output"
+            f"Streaming RAG query test failed: Search results not found in output. '{output}'"
         )
         sys.exit(1)
 
     if "<completion>" not in output or "</completion>" not in output:
         print(
-            "Streaming RAG query test failed: Completion not found in output"
+            f"Streaming RAG query test failed: Completion not found in output. '{output}'"
         )
         sys.exit(1)
 
@@ -292,7 +292,7 @@ def test_kg_create_graph_sample_file_cli():
     print("Calling `poetry run r2r create-graph --run`")
     output = run_command("poetry run r2r create-graph --run")
 
-    time.sleep(60)
+    time.sleep(120)
 
     response = requests.get(
         "http://localhost:7272/v2/entities/",
