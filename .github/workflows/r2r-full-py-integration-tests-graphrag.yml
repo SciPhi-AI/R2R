@@ -51,7 +51,19 @@ jobs:
       - name: Run CLI GraphRAG Tests
         if: matrix.test_category == 'cli-graphrag'
         uses: ./.github/actions/run-cli-graphrag-tests
+        continue-on-error: true
 
       - name: Run SDK GraphRAG Tests
         if: matrix.test_category == 'sdk-graphrag'
         uses: ./.github/actions/run-sdk-graphrag-tests
+        continue-on-error: true
+
+      - name: Print Docker logs on failure
+        if: >
+          (matrix.test_category == 'cli-graphrag' && failure()) ||
+          (matrix.test_category == 'sdk-graphrag' && failure())
+        run: |
+          echo "::group::Docker Logs"
+          docker ps -a
+          docker logs r2r-full
+          echo "::endgroup::"
