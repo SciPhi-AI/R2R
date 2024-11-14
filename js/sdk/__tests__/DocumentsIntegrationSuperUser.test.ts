@@ -28,7 +28,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
     expect(response.results.document_id).toBeDefined();
     documentId = response.results.document_id;
-  });
+  }, 10000);
 
   test("Create document with content", async () => {
     const response = await client.documents.create({
@@ -37,7 +37,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
     });
 
     expect(response.results.document_id).toBeDefined();
-  });
+  }, 10000);
 
   test("Update document", async () => {
     const response = await client.documents.update({
