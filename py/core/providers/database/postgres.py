@@ -156,11 +156,11 @@ class PostgresDBProvider(DatabaseProvider):
         )
 
         self.graph_handler = PostgresGraphHandler(
-            self.project_name,
-            self.connection_manager,
-            self.collection_handler,
-            self.dimension,
-            self.quantization_type,
+            project_name=self.project_name,
+            connection_manager=self.connection_manager,
+            collection_handler=self.collection_handler,
+            dimension=self.dimension,
+            quantization_type=self.quantization_type,
         )
 
         self.prompt_handler = PostgresPromptHandler(

@@ -39,14 +39,39 @@ logger = logging.getLogger()
 
 
 class PostgresEntityHandler(EntityHandler):
+    """Handler for managing entities in PostgreSQL database.
+    
+    Provides methods for CRUD operations on entities at different levels (chunk, document, collection).
+    Handles creation of database tables and management of entity data.
+    """
     
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+        """Initialize the PostgresEntityHandler.
+
+        Args:
+            *args: Variable length argument list
+            **kwargs: Arbitrary keyword arguments. Must include:
+                - dimension: Dimension size for vector embeddings
+                - quantization_type: Type of vector quantization to use
+        """
         self.dimension = kwargs.get("dimension")
         self.quantization_type = kwargs.get("quantization_type")
 
-    async def create_tables(self) -> None:
+        super().__init__(
+            project_name=kwargs.get("project_name"),
+            connection_manager=kwargs.get("connection_manager")
+        )
 
+    async def create_tables(self) -> None:
+        """Create the necessary database tables for storing entities.
+
+        Creates three tables:
+        - chunk_entity: For storing chunk-level entities
+        - document_entity: For storing document-level entities with embeddings
+        - collection_entity: For storing deduplicated collection-level entities
+        
+        Each table has appropriate columns and constraints for its level.
+        """
         vector_column_str = _decorate_vector_type(
             f"({self.dimension})", self.quantization_type
         )
@@ -95,19 +120,243 @@ class PostgresEntityHandler(EntityHandler):
 
         await self.connection_manager.execute_query(query)
 
+    async def create(self, entities: list[Entity]) -> None:
+        """Create new entities in the database.
+        
+        Args:
+            entities: List of Entity objects to create. All entities must be of the same level.
+            
+        Raises:
+            ValueError: If entity level is not set or if entities have different levels.
+        """
+        # assert that all entities are of the same level
+        entity_level = entities[0].level 
+        if entity_level is None:
+            raise ValueError("Entity level is not set")
+        
+        for entity in entities:
+            if entity.level != entity_level:
+                raise ValueError("All entities must be of the same level")
+
+        return await self._add_objects(
+            entities, entity_level.table_name
+        )
+
+    async def get(
+        self, 
+        level: EntityLevel,
+        id: Optional[UUID] = None,
+        entity_names: Optional[list[str]] = None,
+        entity_categories: Optional[list[str]] = None,
+        attributes: Optional[list[str]] = None,
+        offset: int = 0,
+        limit: int = -1,
+    ) -> list[Entity]:
+        """Retrieve entities from the database based on various filters.
+
+        Args:
+            level: Level of entities to retrieve (chunk, document, or collection)
+            id: Optional UUID to filter by
+            entity_names: Optional list of entity names to filter by
+            entity_categories: Optional list of categories (only for chunk level)
+            attributes: Optional list of attributes to filter by
+            offset: Number of records to skip
+            limit: Maximum number of records to return (-1 for no limit)
+
+        Returns:
+            List of matching Entity objects
+
+        Raises:
+            ValueError: If entity_categories is used with non-chunk level entities
+        """
+        params: list = [id]
+
+        if level != EntityLevel.CHUNK and entity_categories:
+            raise ValueError(
+                "entity_categories are only supported for chunk level entities"
+            )
+
+        filter = {
+            EntityLevel.CHUNK: "chunk_ids = ANY($1)",
+            EntityLevel.DOCUMENT: "document_id = $1",
+            EntityLevel.COLLECTION: "collection_id = $1",
+        }[level]
+
+        if entity_names:
+            filter += " AND name = ANY($2)"
+            params.append(entity_names)
+
+        if entity_categories:
+            filter += " AND category = ANY($3)"
+            params.append(entity_categories)
+
+        QUERY = f"""
+            SELECT * from {self._get_table_name(level.table_name)} WHERE {filter}
+            OFFSET ${len(params)} LIMIT ${len(params) + 1}
+        """
+
+        params.extend([offset, limit])
+
+        output = await self.connection_manager.fetch_query(QUERY, params)
+
+        if attributes:
+            output = [
+                entity for entity in output if entity["name"] in attributes
+            ]
+
+        return output
+
+
+    async def update(self, entity: Entity) -> None:
+        """Update an existing entity in the database.
+
+        Args:
+            entity: Entity object containing updated data
+
+        Raises:
+            R2RException: If the entity does not exist in the database
+        """
+        table_name = entity.level.value + "_entity"
+
+        # check if the entity already exists
+        QUERY = f"""
+            SELECT COUNT(*) FROM {self._get_table_name(table_name)} WHERE id = $1 AND collection_id = $2
+        """
+        count = (
+            await self.connection_manager.fetch_query(
+                QUERY, [entity.id, entity.collection_id]
+            )
+        )[0]["count"]
+
+        if count == 0:
+            raise R2RException("Entity does not exist", 404)
+
+        await self._add_objects([entity], table_name)
+
+    async def delete(self, entity_id: UUID, level: EntityLevel) -> None:
+        """Delete an entity from the database.
+
+        Args:
+            entity_id: UUID of the entity to delete
+            level: Level of the entity (chunk, document, or collection)
+        """
+        table_name = level.value + "_entity"
+        QUERY = f"""
+            DELETE FROM {self._get_table_name(table_name)} WHERE id = $1
+        """
+        await self.connection_manager.execute_query(
+            QUERY, [entity_id]
+        )
+
 
 class PostgresRelationshipHandler(RelationshipHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+        self.project_name = kwargs.get("project_name")
+        self.connection_manager = kwargs.get("connection_manager")
+
+    async def create_tables(self) -> None:
+        """Create the relationships table if it doesn't exist."""
+        QUERY = f"""
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("relationship")} (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                subject TEXT NOT NULL,
+                predicate TEXT NOT NULL,
+                object TEXT NOT NULL,
+                subject_id UUID,
+                object_id UUID,
+                weight FLOAT DEFAULT 1.0,
+                description TEXT,
+                predicate_embedding FLOAT[],
+                extraction_ids UUID[],
+                document_id UUID,
+                attributes JSONB DEFAULT '{{}}'::jsonb,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS relationship_subject_idx ON {self._get_table_name("relationship")} (subject);
+            CREATE INDEX IF NOT EXISTS relationship_object_idx ON {self._get_table_name("relationship")} (object);
+            CREATE INDEX IF NOT EXISTS relationship_predicate_idx ON {self._get_table_name("relationship")} (predicate);
+            CREATE INDEX IF NOT EXISTS relationship_document_id_idx ON {self._get_table_name("relationship")} (document_id);
+        """
+        await self.connection_manager.execute_query(QUERY)
+
+    def _get_table_name(self, table: str) -> str:
+        """Get the fully qualified table name."""
+        return f'"{self.project_name}"."{table}"'
+
+    async def create(self, relationships: list[Relationship]) -> None:
+        """Create a new relationship in the database."""
+        await self._add_objects(relationships, "relationship")
+
+    async def get(self, relationship_id: UUID) -> list[Relationship]:
+        """Get relationships from storage by ID."""
+        QUERY = f"""
+            SELECT * FROM {self._get_table_name("relationship_chunk")}
+            WHERE id = $1
+        """
+        rows = await self.connection_manager.fetch_query(QUERY, [relationship_id])
+        return [Relationship(**row) for row in rows]
+
+    async def update(self, relationship: Relationship) -> None:
+
+        # check if the relationship already exists
+        QUERY = f"""
+            SELECT COUNT(*) FROM {self._get_table_name("relationship")} WHERE id = $1
+        """
+        count = (await self.connection_manager.fetch_query(QUERY, [relationship.id]))[0]["count"]
+        if count == 0:
+            raise R2RException("Relationship does not exist", 204)
+
+        return await self._add_objects([relationship], "relationship", [relationship.id])
+
+    async def delete(self, relationship_id: UUID) -> None:
+        """Delete a relationship from the database."""
+        QUERY = f"""
+            DELETE FROM {self._get_table_name("relationship")}
+            WHERE id = $1
+        """
+        await self.connection_manager.execute_query(QUERY, [relationship_id])
+class PostgresCommunityHandler(CommunityHandler):
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.project_name = kwargs.get("project_name")
+        self.connection_manager = kwargs.get("connection_manager")
 
     async def create_tables(self) -> None:
         pass
 
-class PostgresCommunityHandler(CommunityHandler):
-    pass
+    async def create(self, communities: list[Community]) -> None:
+        pass
+
+    async def get(self, community_id: UUID) -> list[Community]:
+        pass
+
+    async def update(self, community: Community) -> None:
+        pass
+
+    async def delete(self, community_id: UUID) -> None:
+        pass
 
 class PostgresCommunityInfoHandler(CommunityInfoHandler):
-    pass
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.project_name = kwargs.get("project_name")
+        self.connection_manager = kwargs.get("connection_manager")
+
+    async def create_tables(self) -> None:
+        pass
+
+    async def create(self, community_infos: list[CommunityInfo]) -> None:
+        pass
+
+    async def get(self, community_info_id: UUID) -> list[CommunityInfo]:
+        pass
+
+    async def update(self, community_info: CommunityInfo) -> None:
+        pass
+
+    async def delete(self, community_info_id: UUID) -> None:
+        pass
 
 
 
@@ -122,8 +371,16 @@ class PostgresCommunityInfoHandler(CommunityInfoHandler):
 class PostgresGraphHandler(GraphHandler):
     """Handler for Knowledge Graph METHODS in PostgreSQL."""
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self, 
+        # project_name: str,
+        # connection_manager: PostgresConnectionManager,
+        # collection_handler: PostgresCollectionHandler,
+        # dimension: int,
+        # quantization_type: VectorQuantizationType,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
 
         self.project_name = kwargs.get("project_name")
         self.connection_manager = kwargs.get("connection_manager")
@@ -159,6 +416,7 @@ class PostgresGraphHandler(GraphHandler):
         await self.connection_manager.execute_query(QUERY)
 
         for handler in self.handlers:
+            print(f"Creating tables for {handler.__class__.__name__}")
             await handler.create_tables()
 
     async def create(self, graph: Graph) -> None:
@@ -210,15 +468,6 @@ class PostgresGraphHandler(GraphHandler):
             UPDATE {self._get_table_name("graph")} SET collection_ids = array_remove(collection_ids, $2) WHERE id = $1
         """
         await self.connection_manager.execute_query(QUERY, graph_id, collection_id)
-
-
-
-
-
-
-
-
-
 
 
 class PostgresGraphHandler_v1(GraphHandler):
@@ -361,53 +610,53 @@ class PostgresGraphHandler_v1(GraphHandler):
     ################### ENTITY METHODS ###################
 
 
-    async def get_entities_v3(
-        self,
-        level: EntityLevel,
-        id: Optional[UUID] = None,
-        entity_names: Optional[list[str]] = None,
-        entity_categories: Optional[list[str]] = None,
-        attributes: Optional[list[str]] = None,
-        offset: int = 0,
-        limit: int = -1,
-    ):
+    # async def get_entities_v3(
+    #     self,
+    #     level: EntityLevel,
+    #     id: Optional[UUID] = None,
+    #     entity_names: Optional[list[str]] = None,
+    #     entity_categories: Optional[list[str]] = None,
+    #     attributes: Optional[list[str]] = None,
+    #     offset: int = 0,
+    #     limit: int = -1,
+    # ):
 
-        params: list = [id]
+    #     params: list = [id]
 
-        if level != EntityLevel.CHUNK and entity_categories:
-            raise ValueError(
-                "entity_categories are only supported for chunk level entities"
-            )
+    #     if level != EntityLevel.CHUNK and entity_categories:
+    #         raise ValueError(
+    #             "entity_categories are only supported for chunk level entities"
+    #         )
 
-        filter = {
-            EntityLevel.CHUNK: "chunk_ids = ANY($1)",
-            EntityLevel.DOCUMENT: "document_id = $1",
-            EntityLevel.COLLECTION: "collection_id = $1",
-        }[level]
+    #     filter = {
+    #         EntityLevel.CHUNK: "chunk_ids = ANY($1)",
+    #         EntityLevel.DOCUMENT: "document_id = $1",
+    #         EntityLevel.COLLECTION: "collection_id = $1",
+    #     }[level]
 
-        if entity_names:
-            filter += " AND name = ANY($2)"
-            params.append(entity_names)
+    #     if entity_names:
+    #         filter += " AND name = ANY($2)"
+    #         params.append(entity_names)
 
-        if entity_categories:
-            filter += " AND category = ANY($3)"
-            params.append(entity_categories)
+    #     if entity_categories:
+    #         filter += " AND category = ANY($3)"
+    #         params.append(entity_categories)
 
-        QUERY = f"""
-            SELECT * from {self._get_table_name(level.table_name)} WHERE {filter}
-            OFFSET ${len(params)} LIMIT ${len(params) + 1}
-        """
+    #     QUERY = f"""
+    #         SELECT * from {self._get_table_name(level.table_name)} WHERE {filter}
+    #         OFFSET ${len(params)} LIMIT ${len(params) + 1}
+    #     """
 
-        params.extend([offset, limit])
+    #     params.extend([offset, limit])
 
-        output = await self.connection_manager.fetch_query(QUERY, params)
+    #     output = await self.connection_manager.fetch_query(QUERY, params)
 
-        if attributes:
-            output = [
-                entity for entity in output if entity["name"] in attributes
-            ]
+    #     if attributes:
+    #         output = [
+    #             entity for entity in output if entity["name"] in attributes
+    #         ]
 
-        return output
+    #     return output
 
     # TODO: deprecate this
     async def get_entities(
@@ -522,33 +771,33 @@ class PostgresGraphHandler_v1(GraphHandler):
         # TODO: check if already exists
         await self._add_objects(entities, level.table_name)
 
-    async def update_entity(self, collection_id: UUID, entity: Entity) -> None:
-        table_name = entity.level.value + "_entity"
+    # async def update_entity(self, collection_id: UUID, entity: Entity) -> None:
+    #     table_name = entity.level.value + "_entity"
 
-        # check if the entity already exists
-        QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name(table_name)} WHERE id = $1 AND collection_id = $2
-        """
-        count = (
-            await self.connection_manager.fetch_query(
-                QUERY, [entity.id, collection_id]
-            )
-        )[0]["count"]
+    #     # check if the entity already exists
+    #     QUERY = f"""
+    #         SELECT COUNT(*) FROM {self._get_table_name(table_name)} WHERE id = $1 AND collection_id = $2
+    #     """
+    #     count = (
+    #         await self.connection_manager.fetch_query(
+    #             QUERY, [entity.id, collection_id]
+    #         )
+    #     )[0]["count"]
 
-        if count == 0:
-            raise R2RException("Entity does not exist", 404)
+    #     if count == 0:
+    #         raise R2RException("Entity does not exist", 404)
 
-        await self._add_objects([entity], table_name)
+    #     await self._add_objects([entity], table_name)
 
-    async def delete_entity(self, collection_id: UUID, entity: Entity) -> None:
+    # async def delete_entity(self, collection_id: UUID, entity: Entity) -> None:
 
-        table_name = entity.level.value + "_entity"
-        QUERY = f"""
-            DELETE FROM {self._get_table_name(table_name)} WHERE id = $1 AND collection_id = $2
-        """
-        await self.connection_manager.execute_query(
-            QUERY, [entity.id, collection_id]
-        )
+    #     table_name = entity.level.value + "_entity"
+    #     QUERY = f"""
+    #         DELETE FROM {self._get_table_name(table_name)} WHERE id = $1 AND collection_id = $2
+    #     """
+    #     await self.connection_manager.execute_query(
+    #         QUERY, [entity.id, collection_id]
+    #     )
 
 
     async def delete_node_via_document_id(
@@ -2028,9 +2277,8 @@ class PostgresGraphHandler_v1(GraphHandler):
         # Filter out null values for each object
         params = [
             tuple(
-                (json.dumps(v) if isinstance(v, dict) else v)
-                for v in obj.values()
-                if v is not None
+                (json.dumps(v) if isinstance(v, dict) else str(v) if "embedding" in k else v)
+                for k, v in ((k, v) for k, v in obj.items() if v is not None)
             )
             for obj in objects
         ]

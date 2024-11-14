@@ -101,6 +101,12 @@ class Relationship(R2RSerializable):
     predicate: str
     """A description of the relationship (optional)."""
 
+    subject_id: UUID | None = None
+    """The source entity ID (optional)."""
+
+    object_id: UUID | None = None
+    """The target entity ID (optional)."""
+
     object: str
     """The target entity name."""
 
