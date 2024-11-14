@@ -10,7 +10,7 @@ provider = "litellm"
 concurrent_request_limit = 1
 
   [completion.generation_config]
-  model = "ollama/llama3.1"
+  model = "azure/gpt-4"
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 1_024
