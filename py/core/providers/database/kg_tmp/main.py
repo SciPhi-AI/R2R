@@ -13,7 +13,7 @@
 #     Entity,
 #     KGExtraction,
 #     KGExtractionStatus,
-#     GraphHandler,
+#     KGHandler,
 #     R2RException,
 #     Relationship,
 # )
@@ -39,7 +39,7 @@
 # logger = logging.getLogger()
 
 
-# class PostgresGraphHandler(GraphHandler):
+# class PostgresKGHandler(KGHandler):
 #     """Handler for Knowledge Graph METHODS in PostgreSQL."""
 
 #     entity_handler: PostgresEntityHandler

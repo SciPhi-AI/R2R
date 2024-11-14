@@ -108,6 +108,7 @@ class GraphRouter(BaseRouterV3):
             return EntityLevel.COLLECTION
 
     def _setup_routes(self):
+
         ##### ENTITIES ######
         @self.router.get(
             "/chunks/{id}/entities",
@@ -216,7 +217,7 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can access this endpoint.", 403
                 )
 
-            return await self.services["kg"].list_entities_v3(
+            entities, count = await self.services["kg"].list_entities_v3(
                 level=self._get_path_level(request),
                 id=id,
                 offset=offset,
@@ -225,6 +226,10 @@ class GraphRouter(BaseRouterV3):
                 entity_categories=entity_categories,
                 attributes=attributes,
             )
+
+            return entities, {
+                "total_entries": count,
+            }
 
         @self.router.post(
             "/chunks/{id}/entities",
@@ -293,7 +298,7 @@ class GraphRouter(BaseRouterV3):
         async def create_entities_v3(
             request: Request,
             id: UUID = Path(
-                ..., description="The ID of the chunk to create entities for."
+                ..., description="The ID of the object to create entities for."
             ),
             entities: list[Entity] = Body(
                 ..., description="The entities to create."
@@ -305,18 +310,54 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can access this endpoint.", 403
                 )
 
-            # for each entity, set the level to CHUNK
+            # get entity level from path
+            path = request.url.path
+            if "/chunks/" in path:
+                level = EntityLevel.CHUNK
+            elif "/documents/" in path:
+                level = EntityLevel.DOCUMENT
+            else:
+                level = EntityLevel.COLLECTION
+
+            # set entity level if not set 
             for entity in entities:
-                if entity.level is None:
-                    entity.level = EntityLevel.CHUNK
+                if entity.level:
+                    if entity.level != level:
+                        raise R2RException(
+                            "Entity level must match the path level.", 400
+                        )
                 else:
-                    raise R2RException(
-                        "Entity level must be chunk or empty.", 400
-                    )
+                    entity.level = level
+
+            # depending on the level, perform validation
+            if level == EntityLevel.CHUNK:
+                for entity in entities:
+                    if entity.chunk_ids and id not in entity.chunk_ids:
+                        raise R2RException(
+                            "Entity extraction IDs must include the chunk ID or should be empty.", 400
+                        )
+                    
+            elif level == EntityLevel.DOCUMENT:
+                for entity in entities: 
+                    if entity.document_id:
+                        if entity.document_id != id:
+                            raise R2RException(
+                                "Entity document IDs must match the document ID or should be empty.", 400
+                            )
+                    else:
+                        entity.document_id = id
+
+            elif level == EntityLevel.COLLECTION:
+                for entity in entities:
+                    if entity.collection_id: 
+                        if entity.collection_id != id:
+                            raise R2RException(
+                                "Entity collection IDs must match the collection ID or should be empty.", 400
+                            )
+                    else:
+                        entity.collection_id = id
 
             return await self.services["kg"].create_entities_v3(
-                level=self._get_path_level(request),
-                id=id,
                 entities=entities,
             )
 
@@ -335,6 +376,48 @@ class GraphRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.chunks.update_entity(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000", entity=entity)
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.router.post(
+            "/documents/{id}/entities/{entity_id}",
+            summary="Update an entity for a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.update_entity(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000", entity=entity)
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.router.post(
+            "/collections/{id}/entities/{entity_id}",
+            summary="Update an entity for a collection",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.collections.update_entity(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000", entity=entity)
                             """
                         ),
                     },

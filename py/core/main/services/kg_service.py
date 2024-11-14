@@ -58,6 +58,8 @@ class KgService(Service):
             logging_connection,
         )
 
+    ################### EXTRACTION ###################
+
     @telemetry_event("kg_relationships_extraction")
     async def kg_relationships_extraction(
         self,
@@ -118,16 +120,45 @@ class KgService(Service):
 
         return await _collect_results(result_gen)
 
+    ################### ENTITIES ###################
+
     @telemetry_event("create_entities_v3")
     async def create_entities_v3(
         self,
-        level: EntityLevel,
-        id: UUID,
         entities: list[Entity],
         **kwargs,
     ):
-        return await self.providers.database.create_entities_v3(
-            level, id, entities, **kwargs
+        return await self.providers.database.graph_handler.entities.create(
+            entities, **kwargs
+        )
+    
+    @telemetry_event("list_entities_v3")
+    async def list_entities_v3(
+        self,
+        level: EntityLevel,
+        id: UUID,
+        entity_names: Optional[list[str]] = None,
+        entity_categories: Optional[list[str]] = None,
+        attributes: Optional[list[str]] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.entities.get(
+            level, id, entity_names, entity_categories, attributes, offset, limit
+        )
+
+    @telemetry_event("update_entity_v3")
+    async def update_entity_v3(
+        self,
+        level: EntityLevel,
+        id: UUID,
+        entity_id: UUID,
+        entity: Entity,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.entities.update(
+            level, id, entity_id, entity
         )
 
     @telemetry_event("update_entity")
@@ -151,6 +182,8 @@ class KgService(Service):
         return await self.providers.database.delete_entity(
             collection_id, entity
         )
+
+    ################### RELATIONSHIPS ###################
 
     @telemetry_event("create_relationship")
     async def create_relationship(

@@ -856,7 +856,7 @@ class VectorHandler(Handler):
 #         raise NotImplementedError
 
 #     @abstractmethod
-#     async def get_existing_entity_extraction_ids(
+#     async def get_existing_entity_chunk_ids(
 #         self, document_id: UUID
 #     ) -> list[str]:
 #         """Get existing entity extraction IDs."""
@@ -1873,10 +1873,10 @@ class DatabaseProvider(Provider):
     async def upsert_relationships(self) -> None:
         return await self.graph_handler.upsert_relationships()
 
-    async def get_existing_entity_extraction_ids(
+    async def get_existing_entity_chunk_ids(
         self, document_id: UUID
     ) -> list[str]:
-        return await self.graph_handler.get_existing_entity_extraction_ids(
+        return await self.graph_handler.get_existing_entity_chunk_ids(
             document_id
         )
 

@@ -78,11 +78,12 @@ class PostgresEntityHandler(EntityHandler):
 
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("chunk_entity")} (
-            id SERIAL PRIMARY KEY,
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            sid SERIAL NOT NULL,
             category TEXT NOT NULL,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
-            extraction_ids UUID[] NOT NULL,
+            chunk_ids UUID[] NOT NULL,
             document_id UUID NOT NULL,
             attributes JSONB
         );
@@ -92,10 +93,11 @@ class PostgresEntityHandler(EntityHandler):
         # embeddings tables
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("document_entity")} (
-            id SERIAL PRIMARY KEY,
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            sid SERIAL NOT NULL,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
-            extraction_ids UUID[] NOT NULL,
+            chunk_ids UUID[] NOT NULL,
             description_embedding {vector_column_str} NOT NULL,
             document_id UUID NOT NULL,
             UNIQUE (name, document_id)
@@ -107,10 +109,11 @@ class PostgresEntityHandler(EntityHandler):
         # deduplicated entities table
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("collection_entity")} (
-            id SERIAL PRIMARY KEY,
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            sid SERIAL NOT NULL,
             name TEXT NOT NULL,
             description TEXT,
-            extraction_ids UUID[] NOT NULL,
+            chunk_ids UUID[] NOT NULL,
             document_ids UUID[] NOT NULL,
             collection_id UUID NOT NULL,
             description_embedding {vector_column_str},
@@ -129,6 +132,8 @@ class PostgresEntityHandler(EntityHandler):
         Raises:
             ValueError: If entity level is not set or if entities have different levels.
         """
+
+        # TODO: move this the router layer
         # assert that all entities are of the same level
         entity_level = entities[0].level 
         if entity_level is None:
@@ -138,8 +143,11 @@ class PostgresEntityHandler(EntityHandler):
             if entity.level != entity_level:
                 raise ValueError("All entities must be of the same level")
 
-        return await self._add_objects(
-            entities, entity_level.table_name
+        return await _add_objects(
+            objects=[entity.__dict__ for entity in entities],
+            full_table_name=self._get_table_name(entity_level + "_entity"),
+            connection_manager=self.connection_manager,
+            exclude_attributes=["level"]
         )
 
     async def get(
@@ -191,11 +199,14 @@ class PostgresEntityHandler(EntityHandler):
             params.append(entity_categories)
 
         QUERY = f"""
-            SELECT * from {self._get_table_name(level.table_name)} WHERE {filter}
-            OFFSET ${len(params)} LIMIT ${len(params) + 1}
+            SELECT * from {self._get_table_name(level + "_entity")} WHERE {filter}
+            OFFSET ${len(params)+1} LIMIT ${len(params) + 2}
         """
 
         params.extend([offset, limit])
+
+        print(QUERY)
+        print(params)
 
         output = await self.connection_manager.fetch_query(QUERY, params)
 
@@ -204,7 +215,14 @@ class PostgresEntityHandler(EntityHandler):
                 entity for entity in output if entity["name"] in attributes
             ]
 
-        return output
+        output = [Entity(**entity) for entity in output]
+
+        QUERY = f"""
+            SELECT COUNT(*) from {self._get_table_name(level + "_entity")} WHERE {filter}
+        """
+        count = (await self.connection_manager.fetch_query(QUERY, params[:-2]))[0]["count"]
+
+        return output, count
 
 
     async def update(self, entity: Entity) -> None:
@@ -218,20 +236,45 @@ class PostgresEntityHandler(EntityHandler):
         """
         table_name = entity.level.value + "_entity"
 
+        filter = "id = $1"
+        params = [entity.id]
+        if entity.level == EntityLevel.CHUNK:
+            filter += " AND chunk_ids = ANY($2)"
+            params.append(entity.chunk_ids)
+        elif entity.level == EntityLevel.DOCUMENT:
+            filter += " AND document_id = $2"
+            params.append(entity.document_id)
+        else:
+            filter += " AND collection_id = $2"
+            params.append(entity.collection_id)
+
         # check if the entity already exists
         QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name(table_name)} WHERE id = $1 AND collection_id = $2
+            SELECT COUNT(*) FROM {self._get_table_name(table_name)} WHERE {filter}
         """
         count = (
             await self.connection_manager.fetch_query(
-                QUERY, [entity.id, entity.collection_id]
+                QUERY, params
             )
         )[0]["count"]
 
-        if count == 0:
-            raise R2RException("Entity does not exist", 404)
+        # don't override the chunk_ids
+        entity.chunk_ids = None
+        entity.level = None
 
-        await self._add_objects([entity], table_name)
+        # get non null attributes
+        non_null_attributes = [k for k, v in entity.to_dict().items() if v is not None]
+
+        if count == 0:
+            raise R2RException("Entity does not exist", 204)
+
+        await _add_objects(
+            objects=[entity], 
+            full_table_name=self._get_table_name(table_name), 
+            connection_manager=self.connection_manager,
+            conflict_columns=non_null_attributes,
+            exclude_attributes=["level"]
+        )
 
     async def delete(self, entity_id: UUID, level: EntityLevel) -> None:
         """Delete an entity from the database.
@@ -267,7 +310,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 weight FLOAT DEFAULT 1.0,
                 description TEXT,
                 predicate_embedding FLOAT[],
-                extraction_ids UUID[],
+                chunk_ids UUID[],
                 document_id UUID,
                 attributes JSONB DEFAULT '{{}}'::jsonb,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -388,16 +431,16 @@ class PostgresGraphHandler(GraphHandler):
         self.quantization_type = kwargs.get("quantization_type")
         self.collection_handler = kwargs.get("collection_handler")
 
-        self.entity_handler = PostgresEntityHandler(*args, **kwargs)
-        self.relationship_handler = PostgresRelationshipHandler(*args, **kwargs)
-        self.community_handler = PostgresCommunityHandler(*args, **kwargs)
-        self.community_info_handler = PostgresCommunityInfoHandler(*args, **kwargs)
+        self.entities = PostgresEntityHandler(*args, **kwargs)
+        self.relationships = PostgresRelationshipHandler(*args, **kwargs)
+        self.communities = PostgresCommunityHandler(*args, **kwargs)
+        self.community_infos = PostgresCommunityInfoHandler(*args, **kwargs)
 
         self.handlers = [
-            self.entity_handler,
-            self.relationship_handler,
-            self.community_handler,
-            self.community_info_handler,
+            self.entities,
+            self.relationships,
+            self.communities,
+            self.community_infos,
         ]
 
     async def create_tables(self) -> None:
@@ -513,11 +556,12 @@ class PostgresGraphHandler_v1(GraphHandler):
 
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("chunk_entity")} (
-            id SERIAL PRIMARY KEY,
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            sid SERIAL PRIMARY KEY,
             category TEXT NOT NULL,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
-            extraction_ids UUID[] NOT NULL,
+            chunk_ids UUID[] NOT NULL,
             document_id UUID NOT NULL,
             attributes JSONB
         );
@@ -527,14 +571,15 @@ class PostgresGraphHandler_v1(GraphHandler):
         # raw relationships table, also the final table. this will have embeddings.
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("chunk_relationship")} (
-            id SERIAL PRIMARY KEY,
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            sid SERIAL PRIMARY KEY,
             subject TEXT NOT NULL,
             predicate TEXT NOT NULL,
             object TEXT NOT NULL,
             weight FLOAT NOT NULL,
             description TEXT NOT NULL,
             embedding {vector_column_str},
-            extraction_ids UUID[] NOT NULL,
+            chunk_ids UUID[] NOT NULL,
             document_id UUID NOT NULL,
             attributes JSONB NOT NULL
         );
@@ -544,10 +589,11 @@ class PostgresGraphHandler_v1(GraphHandler):
         # embeddings tables
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("document_entity")} (
-            id SERIAL PRIMARY KEY,
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            sid SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
-            extraction_ids UUID[] NOT NULL,
+            chunk_ids UUID[] NOT NULL,
             description_embedding {vector_column_str} NOT NULL,
             document_id UUID NOT NULL,
             UNIQUE (name, document_id)
@@ -559,10 +605,11 @@ class PostgresGraphHandler_v1(GraphHandler):
         # deduplicated entities table
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("collection_entity")} (
-            id SERIAL PRIMARY KEY,
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            sid SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             description TEXT,
-            extraction_ids UUID[] NOT NULL,
+            chunk_ids UUID[] NOT NULL,
             document_ids UUID[] NOT NULL,
             collection_id UUID NOT NULL,
             description_embedding {vector_column_str},
@@ -575,7 +622,8 @@ class PostgresGraphHandler_v1(GraphHandler):
         # communities table, result of the Leiden algorithm
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("community_info")} (
-            id SERIAL PRIMARY KEY,
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            sid SERIAL PRIMARY KEY,
             node TEXT NOT NULL,
             cluster INT NOT NULL,
             parent_cluster INT,
@@ -590,7 +638,8 @@ class PostgresGraphHandler_v1(GraphHandler):
         # communities_report table
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("community")} (
-            id SERIAL PRIMARY KEY,
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            sid SERIAL PRIMARY KEY,
             community_number INT NOT NULL,
             collection_id UUID NOT NULL,
             level INT NOT NULL,
@@ -698,7 +747,7 @@ class PostgresGraphHandler_v1(GraphHandler):
 
         if entity_table_name == "collection_entity":
             query = f"""
-            SELECT id, name, description, extraction_ids, document_ids {", " + ", ".join(extra_columns) if extra_columns else ""}
+            SELECT id, name, description, chunk_ids, document_ids {", " + ", ".join(extra_columns) if extra_columns else ""}
             FROM {self._get_table_name(entity_table_name)}
             WHERE collection_id = $1
             {" AND " + " AND ".join(conditions) if conditions else ""}
@@ -707,7 +756,7 @@ class PostgresGraphHandler_v1(GraphHandler):
             """
         else:
             query = f"""
-            SELECT id, name, description, extraction_ids, document_id {", " + ", ".join(extra_columns) if extra_columns else ""}
+            SELECT id, name, description, chunk_ids, document_id {", " + ", ".join(extra_columns) if extra_columns else ""}
             FROM {self._get_table_name(entity_table_name)}
             WHERE document_id = ANY(
                 SELECT document_id FROM {self._get_table_name("document_info")}
@@ -747,9 +796,9 @@ class PostgresGraphHandler_v1(GraphHandler):
         cleaned_entities = []
         for entity in entities:
             entity_dict = entity.to_dict()
-            entity_dict["extraction_ids"] = (
-                entity_dict["extraction_ids"]
-                if entity_dict.get("extraction_ids")
+            entity_dict["chunk_ids"] = (
+                entity_dict["chunk_ids"]
+                if entity_dict.get("chunk_ids")
                 else []
             )
             entity_dict["description_embedding"] = (
@@ -1385,11 +1434,11 @@ class PostgresGraphHandler_v1(GraphHandler):
                 LIMIT {limit} OFFSET {offset}
             )
             SELECT e.name, e.description, e.category,
-                   (SELECT array_agg(DISTINCT x) FROM unnest(e.extraction_ids) x) AS extraction_ids,
+                   (SELECT array_agg(DISTINCT x) FROM unnest(e.chunk_ids) x) AS chunk_ids,
                    e.document_id
             FROM {self._get_table_name("chunk_entity")} e
             JOIN entities_list el ON e.name = el.name
-            GROUP BY e.name, e.description, e.category, e.extraction_ids, e.document_id
+            GROUP BY e.name, e.description, e.category, e.chunk_ids, e.document_id
             ORDER BY e.name;"""
 
         entities_list = await self.connection_manager.fetch_query(
@@ -1400,7 +1449,7 @@ class PostgresGraphHandler_v1(GraphHandler):
                 name=entity["name"],
                 description=entity["description"],
                 category=entity["category"],
-                extraction_ids=entity["extraction_ids"],
+                chunk_ids=entity["chunk_ids"],
                 document_id=entity["document_id"],
             )
             for entity in entities_list
@@ -1417,7 +1466,7 @@ class PostgresGraphHandler_v1(GraphHandler):
             )
 
             SELECT DISTINCT t.subject, t.predicate, t.object, t.weight, t.description,
-                   (SELECT array_agg(DISTINCT x) FROM unnest(t.extraction_ids) x) AS extraction_ids, t.document_id
+                   (SELECT array_agg(DISTINCT x) FROM unnest(t.chunk_ids) x) AS chunk_ids, t.document_id
             FROM {self._get_table_name("chunk_relationship")} t
             JOIN entities_list el ON t.subject = el.name
             ORDER BY t.subject, t.predicate, t.object;
@@ -1433,7 +1482,7 @@ class PostgresGraphHandler_v1(GraphHandler):
                 object=relationship["object"],
                 weight=relationship["weight"],
                 description=relationship["description"],
-                extraction_ids=relationship["extraction_ids"],
+                chunk_ids=relationship["chunk_ids"],
                 document_id=relationship["document_id"],
             )
             for relationship in relationships_list
@@ -2109,11 +2158,11 @@ class PostgresGraphHandler_v1(GraphHandler):
         else:
             return " - ".join(f"{round(a, 2)}" for a in x)
 
-    async def get_existing_entity_extraction_ids(
+    async def get_existing_entity_chunk_ids(
         self, document_id: UUID
     ) -> list[str]:
         QUERY = f"""
-            SELECT DISTINCT unnest(extraction_ids) AS chunk_id FROM {self._get_table_name("chunk_entity")} WHERE document_id = $1
+            SELECT DISTINCT unnest(chunk_ids) AS chunk_id FROM {self._get_table_name("chunk_entity")} WHERE document_id = $1
         """
         return [
             item["chunk_id"]
@@ -2244,43 +2293,44 @@ class PostgresGraphHandler_v1(GraphHandler):
 
     ####################### PRIVATE  METHODS ##########################
 
-    async def _add_objects(
-        self,
-        objects: list[Any],
-        table_name: str,
-        conflict_columns: list[str] = [],
-    ) -> asyncpg.Record:
-        """
-        Upsert objects into the specified table.
-        """
-        # Get non-null attributes from the first object
-        non_null_attrs = {k: v for k, v in objects[0].items() if v is not None}
-        columns = ", ".join(non_null_attrs.keys())
+async def _add_objects(
+    objects: list[Any],
+    full_table_name: str,
+    connection_manager: PostgresConnectionManager,
+    conflict_columns: list[str] = [],
+    exclude_attributes: list[str] = [],
+) -> asyncpg.Record:
+    """
+    Upsert objects into the specified table.
+    """
+    # Get non-null attributes from the first object
+    non_null_attrs = {k: v for k, v in objects[0].items() if v is not None and k not in exclude_attributes}
+    columns = ", ".join(non_null_attrs.keys())
 
-        placeholders = ", ".join(f"${i+1}" for i in range(len(non_null_attrs)))
+    placeholders = ", ".join(f"${i+1}" for i in range(len(non_null_attrs)))
 
-        if conflict_columns:
-            conflict_columns_str = ", ".join(conflict_columns)
-            replace_columns_str = ", ".join(
-                f"{column} = EXCLUDED.{column}" for column in non_null_attrs
-            )
-            on_conflict_query = f"ON CONFLICT ({conflict_columns_str}) DO UPDATE SET {replace_columns_str}"
-        else:
-            on_conflict_query = ""
+    if conflict_columns:
+        conflict_columns_str = ", ".join(conflict_columns)
+        replace_columns_str = ", ".join(
+            f"{column} = EXCLUDED.{column}" for column in non_null_attrs
+        )
+        on_conflict_query = f"ON CONFLICT ({conflict_columns_str}) DO UPDATE SET {replace_columns_str}"
+    else:
+        on_conflict_query = ""
 
-        QUERY = f"""
-            INSERT INTO {self._get_table_name(table_name)} ({columns})
-            VALUES ({placeholders})
-            {on_conflict_query}
-        """
+    QUERY = f"""
+        INSERT INTO {full_table_name} ({columns})
+        VALUES ({placeholders})
+        {on_conflict_query}
+    """
 
-        # Filter out null values for each object
-        params = [
-            tuple(
-                (json.dumps(v) if isinstance(v, dict) else str(v) if "embedding" in k else v)
-                for k, v in ((k, v) for k, v in obj.items() if v is not None)
-            )
-            for obj in objects
-        ]
+    # Filter out null values for each object
+    params = [
+        tuple(
+            (json.dumps(v) if isinstance(v, dict) else str(v) if "embedding" in k else v)
+            for k, v in ((k, v) for k, v in obj.items() if v is not None and k not in exclude_attributes)
+        )
+        for obj in objects
+    ]
 
-        return await self.connection_manager.execute_many(QUERY, params)  # type: ignore
+    return await connection_manager.execute_many(QUERY, params)  # type: ignore

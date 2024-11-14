@@ -86,14 +86,14 @@ class KGEntityDescriptionPipe(AsyncPipe):
             ]
 
             # potentially slow at scale, but set to avoid duplicates
-            unique_extraction_ids = set()
+            unique_chunk_ids = set()
             for entity in entities:
-                for chunk_id in entity.extraction_ids:
-                    unique_extraction_ids.add(chunk_id)
+                for chunk_id in entity.chunk_ids:
+                    unique_chunk_ids.add(chunk_id)
 
             out_entity = Entity(
                 name=entities[0].name,
-                extraction_ids=list(unique_extraction_ids),
+                chunk_ids=list(unique_chunk_ids),
                 document_ids=[document_id],
             )
 
@@ -137,7 +137,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                         out_entity.name,
                         out_entity.description,
                         str(out_entity.description_embedding),
-                        out_entity.extraction_ids,
+                        out_entity.chunk_ids,
                         document_id,
                     )
                 ],

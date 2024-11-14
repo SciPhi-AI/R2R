@@ -66,10 +66,10 @@ class KGStoragePipe(AsyncPipe):
                 )
 
                 if extraction.entities:
-                    if not extraction.entities[0].extraction_ids:
+                    if not extraction.entities[0].chunk_ids:
                         for i in range(len(extraction.entities)):
-                            extraction.entities[i].extraction_ids = (
-                                extraction.extraction_ids
+                            extraction.entities[i].chunk_ids = (
+                                extraction.chunk_ids
                             )
                             extraction.entities[i].document_id = (
                                 extraction.document_id
@@ -80,10 +80,10 @@ class KGStoragePipe(AsyncPipe):
                     )
 
                 if extraction.relationships:
-                    if not extraction.relationships[0].extraction_ids:
+                    if not extraction.relationships[0].chunk_ids:
                         for i in range(len(extraction.relationships)):
-                            extraction.relationships[i].extraction_ids = (
-                                extraction.extraction_ids
+                            extraction.relationships[i].chunk_ids = (
+                                extraction.chunk_ids
                             )
                         extraction.relationships[i].document_id = (
                             extraction.document_id

@@ -144,7 +144,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
                                 description=entity_description,
                                 name=entity_value,
                                 document_id=extractions[0].document_id,
-                                extraction_ids=[
+                                chunk_ids=[
                                     extraction.id for extraction in extractions
                                 ],
                                 attributes={},
@@ -168,7 +168,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
                                 description=description,
                                 weight=weight,
                                 document_id=extractions[0].document_id,
-                                extraction_ids=[
+                                chunk_ids=[
                                     extraction.id for extraction in extractions
                                 ],
                                 attributes={},
@@ -179,7 +179,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
 
                 entities, relationships = parse_fn(kg_extraction)
                 return KGExtraction(
-                    extraction_ids=[
+                    chunk_ids=[
                         extraction.id for extraction in extractions
                     ],
                     document_id=extractions[0].document_id,
@@ -208,7 +208,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
         )
 
         return KGExtraction(
-            extraction_ids=[extraction.id for extraction in extractions],
+            chunk_ids=[extraction.id for extraction in extractions],
             document_id=extractions[0].document_id,
             entities=[],
             relationships=[],
@@ -268,16 +268,16 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
         )
 
         if filter_out_existing_chunks:
-            existing_extraction_ids = await self.database_provider.get_existing_entity_extraction_ids(
+            existing_chunk_ids = await self.database_provider.get_existing_entity_chunk_ids(
                 document_id=document_id
             )
             extractions = [
                 extraction
                 for extraction in extractions
-                if extraction.id not in existing_extraction_ids
+                if extraction.id not in existing_chunk_ids
             ]
             logger.info(
-                f"Filtered out {len(existing_extraction_ids)} existing extractions, remaining {len(extractions)} extractions for document {document_id}"
+                f"Filtered out {len(existing_chunk_ids)} existing extractions, remaining {len(extractions)} extractions for document {document_id}"
             )
 
             if len(extractions) == 0:

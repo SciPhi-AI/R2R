@@ -53,18 +53,18 @@ class EntityLevel(str, Enum):
     def __str__(self):
         return self.value
 
-
 class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
     name: str
-    id: Optional[Union[int, UUID]] = None
+    id: Optional[UUID] = None
+    sid: Optional[int] = None #serial ID
     level: Optional[EntityLevel] = None
     category: Optional[str] = None
     description: Optional[str] = None
     description_embedding: Optional[Union[list[float], str]] = None
     community_numbers: Optional[list[str]] = None
-    extraction_ids: Optional[list[UUID]] = None
+    chunk_ids: Optional[list[UUID]] = None
     collection_id: Optional[UUID] = None
     document_id: Optional[UUID] = None
     document_ids: Optional[list[UUID]] = None
@@ -93,7 +93,8 @@ class Entity(R2RSerializable):
 class Relationship(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
-    id: Optional[Union[int, UUID]] = None
+    id: Optional[UUID] = None
+    sid: Optional[int] = None #serial ID
 
     subject: str
     """The source entity name."""
@@ -119,7 +120,7 @@ class Relationship(R2RSerializable):
     predicate_embedding: list[float] | None = None
     """The semantic embedding for the relationship description (optional)."""
 
-    extraction_ids: list[UUID] = []
+    chunk_ids: list[UUID] = []
     """List of text unit IDs in which the relationship appears (optional)."""
 
     document_id: UUID | None = None
@@ -147,7 +148,7 @@ class Relationship(R2RSerializable):
         predicate_key: str = "predicate",
         description_key: str = "description",
         weight_key: str = "weight",
-        extraction_ids_key: str = "extraction_ids",
+        chunk_ids_key: str = "chunk_ids",
         document_id_key: str = "document_id",
         attributes_key: str = "attributes",
     ) -> "Relationship":
@@ -161,7 +162,7 @@ class Relationship(R2RSerializable):
             predicate=d.get(predicate_key),
             description=d.get(description_key),
             weight=d.get(weight_key, 1.0),
-            extraction_ids=d.get(extraction_ids_key),
+            chunk_ids=d.get(chunk_ids_key),
             document_id=d.get(document_id_key),
             attributes=d.get(attributes_key, {}),
         )
@@ -297,7 +298,7 @@ class Graph(BaseModel):
 class KGExtraction(R2RSerializable):
     """An extraction from a document that is part of a knowledge graph."""
 
-    extraction_ids: list[uuid.UUID]
+    chunk_ids: list[uuid.UUID]
     document_id: uuid.UUID
     entities: list[Entity]
     relationships: list[Relationship]

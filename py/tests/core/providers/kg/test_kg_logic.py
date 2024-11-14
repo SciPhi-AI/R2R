@@ -25,7 +25,7 @@ def document_id():
 
 
 @pytest.fixture(scope="function")
-def extraction_ids():
+def chunk_ids():
     return [
         uuid.UUID("32ff6daf-6e67-44fa-b2a9-19384f5d9d19"),
         uuid.UUID("42ff6daf-6e67-44fa-b2a9-19384f5d9d19"),
@@ -51,13 +51,13 @@ def embedding_vectors(embedding_dimension):
 
 
 @pytest.fixture(scope="function")
-def entities_raw_list(document_id, extraction_ids):
+def entities_raw_list(document_id, chunk_ids):
     return [
         Entity(
             name="Entity1",
             description="Description1",
             category="Category1",
-            extraction_ids=extraction_ids,
+            chunk_ids=chunk_ids,
             document_id=document_id,
             attributes={"attr1": "value1", "attr2": "value2"},
         ),
@@ -65,7 +65,7 @@ def entities_raw_list(document_id, extraction_ids):
             name="Entity2",
             description="Description2",
             category="Category2",
-            extraction_ids=extraction_ids,
+            chunk_ids=chunk_ids,
             document_id=document_id,
             attributes={"attr3": "value3", "attr4": "value4"},
         ),
@@ -73,19 +73,19 @@ def entities_raw_list(document_id, extraction_ids):
 
 
 @pytest.fixture(scope="function")
-def entities_list(extraction_ids, document_id, embedding_vectors):
+def entities_list(chunk_ids, document_id, embedding_vectors):
     return [
         Entity(
             name="Entity1",
             description="Description1",
-            extraction_ids=extraction_ids,
+            chunk_ids=chunk_ids,
             document_id=document_id,
             description_embedding=embedding_vectors[0],
         ),
         Entity(
             name="Entity2",
             description="Description2",
-            extraction_ids=extraction_ids,
+            chunk_ids=chunk_ids,
             document_id=document_id,
             description_embedding=embedding_vectors[1],
         ),
@@ -93,7 +93,7 @@ def entities_list(extraction_ids, document_id, embedding_vectors):
 
 
 @pytest.fixture(scope="function")
-def relationships_raw_list(embedding_vectors, extraction_ids, document_id):
+def relationships_raw_list(embedding_vectors, chunk_ids, document_id):
     return [
         Relationship(
             subject="Entity1",
@@ -102,7 +102,7 @@ def relationships_raw_list(embedding_vectors, extraction_ids, document_id):
             weight=1.0,
             description="description1",
             embedding=embedding_vectors[0],
-            extraction_ids=extraction_ids,
+            chunk_ids=chunk_ids,
             document_id=document_id,
             attributes={"attr1": "value1", "attr2": "value2"},
         ),
@@ -113,7 +113,7 @@ def relationships_raw_list(embedding_vectors, extraction_ids, document_id):
             weight=1.0,
             description="description2",
             embedding=embedding_vectors[1],
-            extraction_ids=extraction_ids,
+            chunk_ids=chunk_ids,
             document_id=document_id,
             attributes={"attr3": "value3", "attr4": "value4"},
         ),
@@ -148,11 +148,11 @@ def community_table_info(collection_id):
 
 @pytest.fixture(scope="function")
 def kg_extractions(
-    extraction_ids, entities_raw_list, relationships_raw_list, document_id
+    chunk_ids, entities_raw_list, relationships_raw_list, document_id
 ):
     return [
         KGExtraction(
-            extraction_ids=extraction_ids,
+            chunk_ids=chunk_ids,
             entities=entities_raw_list,
             relationships=relationships_raw_list,
             document_id=document_id,
@@ -288,7 +288,7 @@ async def test_upsert_embeddings(
             entity.name,
             entity.description,
             str(entity.description_embedding),
-            entity.extraction_ids,
+            entity.chunk_ids,
             entity.document_id,
         )
         for entity in entities_list
