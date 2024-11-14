@@ -672,7 +672,7 @@ class GraphRouter(BaseRouterV3):
                 ...,
                 description="The ID of the chunk to create relationships for.",
             ),
-            relationships: list[Union[Relationship, dict]] = Body(
+            relationships: list[Relationship] = Body(
                 ..., description="The relationships to create."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),

@@ -137,15 +137,21 @@ class KgService(Service):
         self,
         level: EntityLevel,
         id: UUID,
+        offset: int,
+        limit: int,
         entity_names: Optional[list[str]] = None,
         entity_categories: Optional[list[str]] = None,
         attributes: Optional[list[str]] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
         **kwargs,
     ):
         return await self.providers.database.graph_handler.entities.get(
-            level, id, entity_names, entity_categories, attributes, offset, limit
+            level=level, 
+            id=id, 
+            entity_names=entity_names, 
+            entity_categories=entity_categories, 
+            attributes=attributes, 
+            offset=offset, 
+            limit=limit
         )
 
     @telemetry_event("update_entity_v3")
@@ -434,8 +440,8 @@ class KgService(Service):
             entity_names=entity_names,
             entity_categories=entity_categories,
             attributes=attributes,
-            offset=offset or 0,
-            limit=limit or -1,
+            offset=offset,
+            limit=limit,
         )
 
     @telemetry_event("get_entities")
