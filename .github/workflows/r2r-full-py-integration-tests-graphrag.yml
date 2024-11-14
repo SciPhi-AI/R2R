@@ -63,5 +63,5 @@ jobs:
         run: |
           echo "::group::Docker Logs"
           docker ps -a
-          docker logs r2r-full
+          docker logs r2r-local
           echo "::endgroup::"
