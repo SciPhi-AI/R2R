@@ -60,8 +60,6 @@ class KgService(Service):
             logging_connection,
         )
 
-    ################### EXTRACTION ###################
-
     @telemetry_event("kg_relationships_extraction")
     async def kg_relationships_extraction(
         self,
@@ -122,20 +120,17 @@ class KgService(Service):
 
         return await _collect_results(result_gen)
 
-    ################### ENTITIES ###################
-
-    @telemetry_event("create_entities_v3")
-    async def create_entities_v3(
+    @telemetry_event("create_entities")
+    async def create_entities(
         self,
         entities: list[Entity],
-        **kwargs,
     ):
         return await self.providers.database.graph_handler.entities.create(
-            entities, **kwargs
+            entities=entities,
         )
 
-    @telemetry_event("list_entities_v3")
-    async def list_entities_v3(
+    @telemetry_event("list_entities")
+    async def list_entities(
         self,
         level: EntityLevel,
         id: UUID,
@@ -144,7 +139,6 @@ class KgService(Service):
         entity_names: Optional[list[str]] = None,
         entity_categories: Optional[list[str]] = None,
         attributes: Optional[list[str]] = None,
-        **kwargs,
     ):
         return await self.providers.database.graph_handler.entities.get(
             level=level,
@@ -156,24 +150,23 @@ class KgService(Service):
             limit=limit,
         )
 
-    @telemetry_event("update_entity_v3")
+    @telemetry_event("update_entity")
     async def update_entity_v3(
         self,
         entity: Entity,
-        **kwargs,
     ):
         return await self.providers.database.graph_handler.entities.update(
-            entity
+            entity=entity,
         )
 
-    @telemetry_event("delete_entity_v3")
+    @telemetry_event("delete_entity")
     async def delete_entity_v3(
         self,
         entity: Entity,
         **kwargs,
     ):
         return await self.providers.database.graph_handler.entities.delete(
-            entity
+            entity=entity
         )
 
     # TODO: deprecate this
@@ -357,15 +350,11 @@ class KgService(Service):
                 KGExtractionStatus.PROCESSING,
             ]
 
-        document_ids = (
-            await self.providers.database.get_document_ids_by_status(
-                status_type="kg_extraction_status",
-                status=[str(ele) for ele in document_status_filter],
-                collection_id=collection_id,
-            )
+        return await self.providers.database.get_document_ids_by_status(
+            status_type="kg_extraction_status",
+            status=[str(ele) for ele in document_status_filter],
+            collection_id=collection_id,
         )
-
-        return document_ids
 
     @telemetry_event("kg_entity_description")
     async def kg_entity_description(
@@ -515,7 +504,9 @@ class KgService(Service):
         cascade: bool,
         **kwargs,
     ):
-        return await self.delete_graph_for_collection(collection_id, cascade)
+        return await self.delete_graph_for_collection(
+            collection_id=collection_id, cascade=cascade
+        )
 
     @telemetry_event("delete_graph_for_collection")
     async def delete_graph_for_collection(
@@ -525,7 +516,8 @@ class KgService(Service):
         **kwargs,
     ):
         return await self.providers.database.graph_handler.delete_graph_for_collection(
-            collection_id, cascade
+            collection_id=collection_id,
+            cascade=cascade,
         )
 
     @telemetry_event("delete_node_via_document_id")
@@ -536,7 +528,8 @@ class KgService(Service):
         **kwargs,
     ):
         return await self.providers.database.graph_handler.delete_node_via_document_id(
-            collection_id, document_id
+            document_id=document_id,
+            collection_id=collection_id,
         )
 
     @telemetry_event("get_creation_estimate")

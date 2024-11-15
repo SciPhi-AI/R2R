@@ -23,7 +23,6 @@ from shared.api.models.kg.responses import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
     WrappedKGEntityDeduplicationResponse,
-    WrappedKGRelationshipsResponse,
 )
 from shared.api.models.management.responses import (
     AnalyticsResponse,
@@ -83,9 +82,11 @@ __all__ = [
     "WrappedMetadataUpdateResponse",
     # Restructure Responses
     "KGCreationResponse",
-    "WrappedKGCreationResponse",
     "KGEnrichmentResponse",
+    "KGEntityDeduplicationResponse",
+    "WrappedKGCreationResponse",
     "WrappedKGEnrichmentResponse",
+    "WrappedKGEntityDeduplicationResponse",
     # Management Responses
     "PromptResponse",
     "ServerStats",

@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -8,52 +8,8 @@ from shared.abstractions.graph import Community, Entity, Relationship
 from shared.api.models.base import ResultsWrapper, PaginatedResultsWrapper
 
 
-class KGCreationResponse(BaseModel):
-    message: str = Field(
-        ...,
-        description="A message describing the result of the KG creation request.",
-    )
-    task_id: UUID = Field(
-        ...,
-        description="The task ID of the KG creation request.",
-    )
-
-
-class Config:
-    json_schema_extra = {
-        "example": {
-            "message": "Graph creation queued successfully.",
-            "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
-        }
-    }
-
-
-class KGEnrichmentResponse(BaseModel):
-    message: str = Field(
-        ...,
-        description="A message describing the result of the KG enrichment request.",
-    )
-    task_id: UUID = Field(
-        ...,
-        description="The task ID of the KG enrichment request.",
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "message": "Graph enrichment queued successfuly.",
-                "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
-            }
-        }
-
-
-class KGCreationEstimationResponse(R2RSerializable):
+class KGCreationEstimate(R2RSerializable):
     """Response for knowledge graph creation estimation."""
-
-    message: str = Field(
-        default="",
-        description="The message to display to the user.",
-    )
 
     document_count: Optional[int] = Field(
         default=None,
@@ -101,48 +57,7 @@ class KGCreationEstimationResponse(R2RSerializable):
     )
 
 
-class KGDeduplicationEstimationResponse(R2RSerializable):
-    """Response for knowledge graph deduplication estimation."""
-
-    message: str = Field(
-        default="",
-        description="The message to display to the user.",
-    )
-
-    num_entities: Optional[int] = Field(
-        default=None,
-        description="The number of entities in the collection.",
-    )
-
-    estimated_llm_calls: Optional[str] = Field(
-        default=None,
-        description="The estimated number of LLM calls.",
-    )
-
-    estimated_total_in_out_tokens_in_millions: Optional[str] = Field(
-        default=None,
-        description="The estimated total number of input and output tokens in millions.",
-    )
-
-    estimated_cost_in_usd: Optional[str] = Field(
-        default=None,
-        description="The estimated cost in USD.",
-    )
-
-    estimated_total_time_in_minutes: Optional[str] = Field(
-        default=None,
-        description="The estimated time in minutes.",
-    )
-
-
-class KGEnrichmentEstimationResponse(R2RSerializable):
-    """Response for knowledge graph enrichment estimation."""
-
-    message: str = Field(
-        default="",
-        description="The message to display to the user.",
-    )
-
+class KGEnrichmentEstimate(BaseModel):
     total_entities: Optional[int] = Field(
         default=None,
         description="The total number of entities in the graph.",
@@ -174,100 +89,102 @@ class KGEnrichmentEstimationResponse(R2RSerializable):
     )
 
 
-class KGEntitiesResponse(R2RSerializable):
-    """Response for knowledge graph entities."""
+class KGDeduplicationEstimate(R2RSerializable):
+    """Response for knowledge graph deduplication estimation."""
 
-    entities: list[Entity] = Field(
-        ...,
-        description="The list of entities in the graph.",
+    num_entities: Optional[int] = Field(
+        default=None,
+        description="The number of entities in the collection.",
     )
 
-    total_entries: int = Field(
-        ...,
-        description="The total number of entities in the graph for the collection or document.",
+    estimated_llm_calls: Optional[str] = Field(
+        default=None,
+        description="The estimated number of LLM calls.",
     )
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "entities": [
-                    {
-                        "id": "1",
-                        "name": "Entity 1",
-                        "description": "Description 1",
-                    },
-                    {
-                        "id": "2",
-                        "name": "Entity 2",
-                        "description": "Description 2",
-                    },
-                ],
-                "total_entries": 2,
-            }
+    estimated_total_in_out_tokens_in_millions: Optional[str] = Field(
+        default=None,
+        description="The estimated total number of input and output tokens in millions.",
+    )
+
+    estimated_cost_in_usd: Optional[str] = Field(
+        default=None,
+        description="The estimated cost in USD.",
+    )
+
+    estimated_total_time_in_minutes: Optional[str] = Field(
+        default=None,
+        description="The estimated time in minutes.",
+    )
+
+
+class KGCreationResponse(BaseModel):
+    message: str = Field(
+        ...,
+        description="A message describing the result of the KG creation request.",
+    )
+    id: Optional[UUID] = Field(
+        None,
+        description="The ID of the created object.",
+    )
+    task_id: Optional[UUID] = Field(
+        None,
+        description="The task ID of the KG creation request.",
+    )
+    estimate: Optional[KGCreationEstimate] = Field(
+        None,
+        description="The estimation of the KG creation request.",
+    )
+
+
+class Config:
+    json_schema_extra = {
+        "example": {
+            "message": "Graph creation queued successfully.",
+            "id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+            "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+            "estimate": {
+                "document_count": 100,
+                "number_of_jobs_created": 10,
+                "total_chunks": 1000,
+                "estimated_entities": "1000",
+                "estimated_relationships": "1000",
+                "estimated_llm_calls": "1000",
+                "estimated_total_in_out_tokens_in_millions": "1000",
+                "estimated_total_time_in_minutes": "1000",
+                "estimated_cost_in_usd": "1000",
+            },
         }
+    }
 
 
-class KGRelationshipsResponse(R2RSerializable):
-    """Response for knowledge graph relationships."""
-
-    relationships: list[Relationship] = Field(
+class KGEnrichmentResponse(BaseModel):
+    message: str = Field(
         ...,
-        description="The list of relationships in the graph.",
+        description="A message describing the result of the KG enrichment request.",
     )
-
-    total_entries: int = Field(
+    task_id: UUID = Field(
         ...,
-        description="The total number of relationships in the graph for the collection or document.",
+        description="The task ID of the KG enrichment request.",
     )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "relationships": [
-                    {
-                        "subject": "Paris",
-                        "predicate": "is capital of",
-                        "object": "France",
-                        "description": "Paris is the capital of France",
-                    }
-                ],
-                "total_entries": 2,
-            }
-        }
-
-
-class KGCommunitiesResponse(R2RSerializable):
-    """Response for knowledge graph communities."""
-
-    communities: list[Community] = Field(
-        ...,
-        description="The list of communities in the graph for the collection.",
-    )
-
-    total_entries: int = Field(
-        ...,
-        description="The total number of communities in the graph.",
+    estimate: Optional[KGEnrichmentEstimate] = Field(
+        None,
+        description="The estimation of the KG enrichment request.",
     )
 
     class Config:
         json_schema_extra = {
             "example": {
-                "total_count": 1,
-                "communities": [
-                    {
-                        "id": "1",
-                        "community_number": 1,
-                        "collection_ids": [
-                            "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
-                        ],
-                        "level": 0,
-                        "name": "community name",
-                        "summary": "community summary",
-                        "findings": ["finding1", "finding2"],
-                        "rating": "8",
-                        "rating_explanation": "rating explanation",
-                    }
-                ],
+                "message": "Graph enrichment queued successfuly.",
+                "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+                "estimate": {
+                    "total_entities": 1000,
+                    "total_relationships": 1000,
+                    "estimated_llm_calls": "1000",
+                    "estimated_total_in_out_tokens_in_millions": "1000",
+                    "estimated_cost_in_usd": "1000",
+                    "estimated_total_time_in_minutes": "1000",
+                },
             }
         }
 
@@ -280,10 +197,28 @@ class KGEntityDeduplicationResponse(BaseModel):
         description="The message to display to the user.",
     )
 
+    task_id: Optional[UUID] = Field(
+        None,
+        description="The task ID of the KG entity deduplication request.",
+    )
+
+    estimate: Optional[KGDeduplicationEstimate] = Field(
+        None,
+        description="The estimation of the KG entity deduplication request.",
+    )
+
     class Config:
         json_schema_extra = {
             "example": {
                 "message": "Entity deduplication queued successfully.",
+                "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
+                "estimate": {
+                    "num_entities": 1000,
+                    "estimated_llm_calls": "1000",
+                    "estimated_total_in_out_tokens_in_millions": "1000",
+                    "estimated_cost_in_usd": "1000",
+                    "estimated_total_time_in_minutes": "1000",
+                },
             }
         }
 
@@ -300,41 +235,18 @@ class KGTunePromptResponse(R2RSerializable):
         json_schema_extra = {"example": {"tuned_prompt": "The updated prompt"}}
 
 
-class KGDeletionResponse(BaseModel):
-    """Response for knowledge graph deletion."""
-
-    message: str = Field(
-        ...,
-        description="The message to display to the user.",
-    )
-    id: UUID = Field(
-        ...,
-        description="The ID of the deleted graph.",
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "message": "Entity deleted successfully.",
-                "id": "123e4567-e89b-12d3-a456-426614174000",
-            }
-        }
+WrappedEntityResponse = ResultsWrapper[Entity]
+WrappedEntitiesResponse = PaginatedResultsWrapper[list[Entity]]
+WrappedRelationshipResponse = ResultsWrapper[Relationship]
+WrappedRelationshipsResponse = PaginatedResultsWrapper[list[Relationship]]
+WrappedCommunityResponse = ResultsWrapper[Community]
+WrappedCommunitiesResponse = PaginatedResultsWrapper[list[Community]]
 
 
-WrappedKGCreationResponse = ResultsWrapper[
-    Union[KGCreationResponse, KGCreationEstimationResponse]
-]
-WrappedKGEnrichmentResponse = ResultsWrapper[
-    Union[KGEnrichmentResponse, KGEnrichmentEstimationResponse]
-]
-
-# KG Entities
-WrappedKGEntitiesResponse = ResultsWrapper[KGEntitiesResponse]
-WrappedKGRelationshipsResponse = ResultsWrapper[KGRelationshipsResponse]
-
+# CREATE
+WrappedKGCreationResponse = ResultsWrapper[KGCreationResponse]
+WrappedKGEnrichmentResponse = ResultsWrapper[KGEnrichmentResponse]
 WrappedKGTunePromptResponse = ResultsWrapper[KGTunePromptResponse]
-WrappedKGCommunitiesResponse = ResultsWrapper[KGCommunitiesResponse]
 WrappedKGEntityDeduplicationResponse = ResultsWrapper[
-    Union[KGEntityDeduplicationResponse, KGDeduplicationEstimationResponse]
+    KGEntityDeduplicationResponse
 ]
-WrappedKGDeletionResponse = ResultsWrapper[KGDeletionResponse]

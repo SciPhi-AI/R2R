@@ -4,12 +4,10 @@ from datetime import datetime
 from io import BytesIO
 from typing import (
     Any,
-    AsyncGenerator,
     BinaryIO,
     Optional,
     Sequence,
     Tuple,
-    Union,
 )
 from uuid import UUID
 
@@ -20,11 +18,9 @@ from core.base.abstractions import (
     CommunityInfo,
     Entity,
     Graph,
-    KGExtraction,
     Message,
     Relationship,
     VectorEntry,
-    EntityLevel,
 )
 from core.base.abstractions import (
     DocumentResponse,
@@ -38,7 +34,6 @@ from core.base.abstractions import (
     SearchSettings,
     UserStats,
     VectorEntry,
-    VectorQuantizationType,
     VectorSearchResult,
     VectorTableName,
 )
@@ -160,7 +155,7 @@ class DatabaseConnectionManager(ABC):
     def execute_query(
         self,
         query: str,
-        params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
+        params: Optional[dict[str, Any] | Sequence[Any]] = None,
         isolation_level: Optional[str] = None,
     ):
         pass
@@ -173,7 +168,7 @@ class DatabaseConnectionManager(ABC):
     def fetch_query(
         self,
         query: str,
-        params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
+        params: Optional[dict[str, Any] | Sequence[Any]] = None,
     ):
         pass
 
@@ -181,7 +176,7 @@ class DatabaseConnectionManager(ABC):
     def fetchrow_query(
         self,
         query: str,
-        params: Optional[Union[dict[str, Any], Sequence[Any]]] = None,
+        params: Optional[dict[str, Any] | Sequence[Any]] = None,
     ):
         pass
 
@@ -192,7 +187,9 @@ class DatabaseConnectionManager(ABC):
 
 class Handler(ABC):
     def __init__(
-        self, project_name: str, connection_manager: DatabaseConnectionManager
+        self,
+        project_name: str,
+        connection_manager: DatabaseConnectionManager,
     ):
         self.project_name = project_name
         self.connection_manager = connection_manager
@@ -210,13 +207,15 @@ class DocumentHandler(Handler):
     @abstractmethod
     async def upsert_documents_overview(
         self,
-        documents_overview: Union[DocumentResponse, list[DocumentResponse]],
+        documents_overview: DocumentResponse | list[DocumentResponse],
     ) -> None:
         pass
 
     @abstractmethod
     async def delete_from_documents_overview(
-        self, document_id: UUID, version: Optional[str] = None
+        self,
+        document_id: UUID,
+        version: Optional[str] = None,
     ) -> None:
         pass
 
@@ -233,13 +232,18 @@ class DocumentHandler(Handler):
 
     @abstractmethod
     async def get_workflow_status(
-        self, id: Union[UUID, list[UUID]], status_type: str
+        self,
+        id: UUID | list[UUID],
+        status_type: str,
     ):
         pass
 
     @abstractmethod
     async def set_workflow_status(
-        self, id: Union[UUID, list[UUID]], status_type: str, status: str
+        self,
+        id: UUID | list[UUID],
+        status_type: str,
+        status: str,
     ):
         pass
 
@@ -433,7 +437,7 @@ class UserHandler(Handler):
     @abstractmethod
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, Union[list[UserResponse], int]]:
+    ) -> dict[str, list[UserResponse] | int]:
         pass
 
     @abstractmethod
@@ -524,6 +528,10 @@ class VectorHandler(Handler):
         pass
 
     @abstractmethod
+    async def delete_node_via_document_id(self, document_id: UUID) -> None:
+        pass
+
+    @abstractmethod
     async def delete_user_vector(self, user_id: UUID) -> None:
         pass
 
@@ -551,9 +559,7 @@ class VectorHandler(Handler):
         table_name: Optional[VectorTableName] = None,
         index_measure: IndexMeasure = IndexMeasure.cosine_distance,
         index_method: IndexMethod = IndexMethod.auto,
-        index_arguments: Optional[
-            Union[IndexArgsIVFFlat, IndexArgsHNSW]
-        ] = None,
+        index_arguments: Optional[IndexArgsIVFFlat | IndexArgsHNSW] = None,
         index_name: Optional[str] = None,
         index_column: Optional[str] = None,
         concurrently: bool = True,
@@ -1285,19 +1291,32 @@ class DatabaseProvider(Provider):
         return await self.vector_handler.delete(filters)
 
     async def assign_document_to_collection_vector(
-        self, document_id: UUID, collection_id: UUID
+        self,
+        document_id: UUID,
+        collection_id: UUID,
     ) -> None:
         return await self.vector_handler.assign_document_to_collection_vector(
-            document_id, collection_id
+            document_id=document_id,
+            collection_id=collection_id,
         )
 
     async def remove_document_from_collection_vector(
-        self, document_id: UUID, collection_id: UUID
+        self,
+        document_id: UUID,
+        collection_id: UUID,
     ) -> None:
         return (
             await self.vector_handler.remove_document_from_collection_vector(
                 document_id, collection_id
             )
+        )
+
+    async def delete_node_via_document_id(
+        self,
+        document_id: UUID,
+    ) -> None:
+        return await self.vector_handler.delete_node_via_document_id(
+            document_id=document_id,
         )
 
     async def delete_user_vector(self, user_id: UUID) -> None:

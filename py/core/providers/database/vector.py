@@ -1355,7 +1355,7 @@ class PostgresVectorHandler(VectorHandler):
         metadata_fields_expr = " || ' ' || ".join(
             [
                 f"COALESCE(v.metadata->>{psql_quote_literal(key)}, '')"
-                for key in settings.metadata_keys
+                for key in settings.metadata_keys  # type: ignore
             ]
         )
 

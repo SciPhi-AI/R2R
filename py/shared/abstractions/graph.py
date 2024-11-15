@@ -7,8 +7,6 @@ from typing import Any, Optional, Union
 from uuid import UUID
 from datetime import datetime
 
-from pydantic import BaseModel
-
 from .base import R2RSerializable
 
 logger = logging.getLogger()
