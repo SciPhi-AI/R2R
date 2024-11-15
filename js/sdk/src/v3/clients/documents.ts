@@ -15,9 +15,10 @@ export class DocumentsClient {
 
   /**
    * Create a new document from either a file or content.
-   * @param file File to ingest
-   * @param content Content to ingest
+   * @param file The file to upload, if any
+   * @param content Optional text content to upload, if no file path is provided
    * @param id Optional ID to assign to the document
+   * @param collectionIds Collection IDs to associate with the document. If none are provided, the document will be assigned to the user's default collection.
    * @param metadata Optional metadata to assign to the document
    * @param ingestionConfig Optional ingestion configuration to use
    * @param runWithOrchestration Optional flag to run with orchestration
@@ -29,6 +30,7 @@ export class DocumentsClient {
     id?: string;
     metadata?: Record<string, any>;
     ingestionConfig?: Record<string, any>;
+    collectionIds?: string[];
     runWithOrchestration?: boolean;
   }): Promise<any> {
     if (!options.file && !options.content) {
@@ -95,6 +97,9 @@ export class DocumentsClient {
         "ingestion_config",
         JSON.stringify(options.ingestionConfig),
       );
+    }
+    if (options.collectionIds) {
+      formData.append("collection_ids", JSON.stringify(options.collectionIds));
     }
     if (options.runWithOrchestration !== undefined) {
       formData.append(
