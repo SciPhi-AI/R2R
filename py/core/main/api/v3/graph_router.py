@@ -1,6 +1,6 @@
 import logging
 import textwrap
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
@@ -689,8 +689,8 @@ class GraphRouter(BaseRouterV3):
             limit: int = Query(
                 100,
                 ge=0,
-                le=20_000,
-                description="The maximum number of relationships to retrieve, up to 20,000.",
+                le=1000,
+                description="The maximum number of relationships to retrieve, up to 1000.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[list[Relationship]]:

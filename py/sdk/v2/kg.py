@@ -103,7 +103,7 @@ class KGMixins:
 
         return await self._make_request("GET", "entities", params=params)  # type: ignore
 
-    async def get_relationships(
+    async def get_triples(
         self,
         collection_id: Optional[Union[UUID, str]] = None,
         entity_names: Optional[list[str]] = None,

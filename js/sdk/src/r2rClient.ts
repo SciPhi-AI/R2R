@@ -1705,8 +1705,8 @@ export class r2rClient extends BaseClient {
    * @param entity_level The level of entity to filter by.
    * @param relationship_ids Relationship IDs to filter by.
    */
-  @feature("getRelationships")
-  async getRelationships(
+  @feature("getTriples")
+  async getTriples(
     collection_id?: string,
     offset?: number,
     limit?: number,

@@ -149,9 +149,8 @@ class PostgresEntityHandler(EntityHandler):
         if entity_level is None:
             raise ValueError("Entity level is not set")
 
-        for entity in entities:
-            if entity.level != entity_level:
-                raise ValueError("All entities must be of the same level")
+        if not all(entity.level == entity_level for entity in entities):
+            raise ValueError("All entities must be of the same level")
 
         return await _add_objects(
             objects=[entity.__dict__ for entity in entities],

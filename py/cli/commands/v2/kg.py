@@ -229,7 +229,7 @@ async def get_entities(
 @click.option(
     "--collection-id",
     required=True,
-    help="Collection ID to retrieve relationships from.",
+    help="Collection ID to retrieve triples from.",
 )
 @click.option(
     "--offset",
@@ -254,7 +254,7 @@ async def get_entities(
     help="Entity names to filter by.",
 )
 @pass_context
-async def get_relationships(
+async def get_triples(
     ctx, collection_id, offset, limit, relationship_ids, entity_names
 ):
     """
