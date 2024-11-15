@@ -5,12 +5,12 @@ from uuid import UUID
 
 from core.base import (
     AsyncState,
-    DatabaseProvider,
     KGExtraction,
     R2RDocumentProcessingError,
 )
 from core.base.pipes.base_pipe import AsyncPipe
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
+from core.providers.database.postgres import PostgresDBProvider
 
 logger = logging.getLogger()
 
@@ -22,7 +22,7 @@ class KGStoragePipe(AsyncPipe):
 
     def __init__(
         self,
-        database_provider: DatabaseProvider,
+        database_provider: PostgresDBProvider,
         config: AsyncPipe.PipeConfig,
         logging_provider: SqlitePersistentLoggingProvider,
         storage_batch_size: int = 1,

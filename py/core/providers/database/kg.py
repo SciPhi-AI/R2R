@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from typing import Any, AsyncGenerator, Optional, Tuple
+from typing import Any, AsyncGenerator, Optional, Tuple, Union
 from uuid import UUID
 
 import asyncpg
@@ -64,13 +64,13 @@ class PostgresEntityHandler(EntityHandler):
                 - dimension: Dimension size for vector embeddings
                 - quantization_type: Type of vector quantization to use
         """
-        self.dimension = kwargs.get("dimension")
-        self.quantization_type = kwargs.get("quantization_type")
 
-        super().__init__(
-            project_name=kwargs.get("project_name"),
-            connection_manager=kwargs.get("connection_manager"),
-        )
+        # The signature to this class isn't finalized yet, so we need to use type ignore
+        self.dimension: int = kwargs.get("dimension")  # type: ignore
+        self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type", VectorQuantizationType.FP32)  # type: ignore
+
+        self.project_name: str = kwargs.get("project_name")  # type: ignore
+        self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
 
     async def create_tables(self) -> None:
         """Create the necessary database tables for storing entities.
@@ -168,7 +168,7 @@ class PostgresEntityHandler(EntityHandler):
         attributes: Optional[list[str]] = None,
         offset: int = 0,
         limit: int = -1,
-    ) -> list[Entity]:
+    ):
         """Retrieve entities from the database based on various filters.
 
         Args:
@@ -214,9 +214,6 @@ class PostgresEntityHandler(EntityHandler):
 
         params.extend([offset, limit])
 
-        print(QUERY)
-        print(params)
-
         output = await self.connection_manager.fetch_query(QUERY, params)
 
         if attributes:
@@ -244,10 +241,10 @@ class PostgresEntityHandler(EntityHandler):
         Raises:
             R2RException: If the entity does not exist in the database
         """
-        table_name = entity.level.value + "_entity"
+        table_name = entity.level.value + "_entity"  # type: ignore
 
         filter = "id = $1"
-        params = [entity.id]
+        params: list[Any] = [entity.id]
         if entity.level == EntityLevel.CHUNK:
             filter += " AND chunk_ids = ANY($2)"
             params.append(entity.chunk_ids)
@@ -292,9 +289,9 @@ class PostgresEntityHandler(EntityHandler):
             entity_id: UUID of the entity to delete
             level: Level of the entity (chunk, document, or collection)
         """
-        table_name = entity.level.value + "_entity"
+        table_name = entity.level.value + "_entity"  # type: ignore
         return await _delete_object(
-            object_id=entity.id,
+            object_id=entity.id,  # type: ignore
             full_table_name=self._get_table_name(table_name),
             connection_manager=self.connection_manager,
         )
@@ -302,8 +299,8 @@ class PostgresEntityHandler(EntityHandler):
 
 class PostgresRelationshipHandler(RelationshipHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        self.project_name = kwargs.get("project_name")
-        self.connection_manager = kwargs.get("connection_manager")
+        self.project_name: str = kwargs.get("project_name")  # type: ignore
+        self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
 
     async def create_tables(self) -> None:
         """Create the relationships table if it doesn't exist."""
@@ -354,7 +351,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
         attributes: Optional[list[str]] = None,
         offset: int = 0,
         limit: int = -1,
-    ) -> list[Relationship]:
+    ):
         """Get relationships from storage by ID."""
 
         filter = {
@@ -366,11 +363,11 @@ class PostgresRelationshipHandler(RelationshipHandler):
 
         if entity_names:
             filter += " AND (subject = ANY($2) OR object = ANY($2))"
-            params.append(entity_names)
+            params.append(entity_names)  # type: ignore
 
         if relationship_types:
             filter += " AND predicate = ANY($3)"
-            params.append(relationship_types)
+            params.append(relationship_types)  # type: ignore
 
         QUERY = f"""
             SELECT * FROM {self._get_table_name("chunk_relationship")}
@@ -378,7 +375,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
             OFFSET ${len(params)+1} LIMIT ${len(params) + 2}
         """
 
-        params.extend([offset, limit])
+        params.extend([offset, limit])  # type: ignore
         rows = await self.connection_manager.fetch_query(QUERY, params)
 
         QUERY_COUNT = f"""
@@ -388,7 +385,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
             await self.connection_manager.fetch_query(QUERY_COUNT, params[:-2])
         )[0]["count"]
 
-        return [Relationship(**row) for row in rows], count
+        return [Relationship(**row) for row in rows], count  # type: ignore
 
     async def update(self, relationship: Relationship) -> None:
         return await _update_object(
@@ -412,10 +409,10 @@ class PostgresRelationshipHandler(RelationshipHandler):
 class PostgresCommunityHandler(CommunityHandler):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        self.project_name = kwargs.get("project_name")
-        self.connection_manager = kwargs.get("connection_manager")
-        self.dimension = kwargs.get("dimension")
-        self.quantization_type = kwargs.get("quantization_type")
+        self.project_name: str = kwargs.get("project_name")  # type: ignore
+        self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
+        self.dimension: int = kwargs.get("dimension")  # type: ignore
+        self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
 
     async def create_tables(self) -> None:
 
@@ -476,23 +473,32 @@ class PostgresCommunityHandler(CommunityHandler):
 
     async def delete(self, community: Community) -> None:
         return await _delete_object(
-            object_id=community.id,
+            object_id=community.id,  # type: ignore
             full_table_name=self._get_table_name("community"),
             connection_manager=self.connection_manager,
         )
 
-    async def get(
-        self, collection_id: UUID, offset: int, limit: int
-    ) -> list[Community]:
+    async def get(self, collection_id: UUID, offset: int, limit: int):
         QUERY = f"""
             SELECT * FROM {self._get_table_name("community")} WHERE collection_id = $1
             OFFSET $2 LIMIT $3
         """
         params = [collection_id, offset, limit]
-        return [
+        communities = [
             Community(**row)
             for row in await self.connection_manager.fetch_query(QUERY, params)
         ]
+
+        QUERY_COUNT = f"""
+            SELECT COUNT(*) FROM {self._get_table_name("community")} WHERE collection_id = $1
+        """
+        count = (
+            await self.connection_manager.fetch_query(
+                QUERY_COUNT, [collection_id]
+            )
+        )[0]["count"]
+
+        return communities, count
 
 
 class PostgresGraphHandler(GraphHandler):
@@ -509,11 +515,11 @@ class PostgresGraphHandler(GraphHandler):
         **kwargs: Any,
     ) -> None:
 
-        self.project_name = kwargs.get("project_name")
-        self.connection_manager = kwargs.get("connection_manager")
-        self.dimension = kwargs.get("dimension")
-        self.quantization_type = kwargs.get("quantization_type")
-        self.collection_handler = kwargs.get("collection_handler")
+        self.project_name: str = kwargs.get("project_name")  # type: ignore
+        self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
+        self.dimension: int = kwargs.get("dimension")  # type: ignore
+        self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
+        self.collection_handler: PostgresCollectionHandler = kwargs.get("collection_handler")  # type: ignore
 
         self.entities = PostgresEntityHandler(*args, **kwargs)
         self.relationships = PostgresRelationshipHandler(*args, **kwargs)
@@ -554,7 +560,7 @@ class PostgresGraphHandler(GraphHandler):
             VALUES ($1, $2, $3, $4, $5, $6, $7)
         """
         await self.connection_manager.execute_query(
-            QUERY, *graph.to_dict().values()
+            QUERY, [*graph.to_dict().values()]
         )
 
     async def update(self, graph: Graph) -> None:
@@ -562,21 +568,21 @@ class PostgresGraphHandler(GraphHandler):
             UPDATE {self._get_table_name("graph")} SET status = $2, updated_at = $3, document_ids = $4, collection_ids = $5, attributes = $6 WHERE id = $1
         """
         await self.connection_manager.execute_query(
-            QUERY, *graph.to_dict().values()
+            QUERY, [*graph.to_dict().values()]
         )
 
     async def delete(self, graph_id: UUID) -> None:
         QUERY = f"""
             DELETE FROM {self._get_table_name("graph")} WHERE id = $1
         """
-        await self.connection_manager.execute_query(QUERY, graph_id)
+        await self.connection_manager.execute_query(QUERY, [graph_id])
 
-    async def get(self, graph_id: UUID) -> Graph:
+    async def get(self, graph_id: UUID):
         QUERY = f"""
             SELECT * FROM {self._get_table_name("graph")} WHERE id = $1
         """
         return Graph.from_dict(
-            await self.connection_manager.fetch_query(QUERY, graph_id)
+            await self.connection_manager.fetch_query(QUERY, [graph_id])
         )
 
     async def add_document(self, graph_id: UUID, document_id: UUID) -> None:
@@ -584,7 +590,7 @@ class PostgresGraphHandler(GraphHandler):
             UPDATE {self._get_table_name("graph")} SET document_ids = array_append(document_ids, $2) WHERE id = $1
         """
         await self.connection_manager.execute_query(
-            QUERY, graph_id, document_id
+            QUERY, [graph_id, document_id]
         )
 
     async def remove_document(self, graph_id: UUID, document_id: UUID) -> None:
@@ -592,7 +598,7 @@ class PostgresGraphHandler(GraphHandler):
             UPDATE {self._get_table_name("graph")} SET document_ids = array_remove(document_ids, $2) WHERE id = $1
         """
         await self.connection_manager.execute_query(
-            QUERY, graph_id, document_id
+            QUERY, [graph_id, document_id]
         )
 
     async def add_collection(
@@ -602,7 +608,7 @@ class PostgresGraphHandler(GraphHandler):
             UPDATE {self._get_table_name("graph")} SET collection_ids = array_append(collection_ids, $2) WHERE id = $1
         """
         await self.connection_manager.execute_query(
-            QUERY, graph_id, collection_id
+            QUERY, [graph_id, collection_id]
         )
 
     async def remove_collection(
@@ -612,7 +618,7 @@ class PostgresGraphHandler(GraphHandler):
             UPDATE {self._get_table_name("graph")} SET collection_ids = array_remove(collection_ids, $2) WHERE id = $1
         """
         await self.connection_manager.execute_query(
-            QUERY, graph_id, collection_id
+            QUERY, [graph_id, collection_id]
         )
 
     ###### ESTIMATION METHODS ######
@@ -919,7 +925,7 @@ class PostgresGraphHandler(GraphHandler):
             )
             entity_dict["description_embedding"] = (
                 str(entity_dict["description_embedding"])
-                if entity_dict.get("description_embedding")
+                if entity_dict.get("description_embedding")  # type: ignore
                 else None
             )
             cleaned_entities.append(entity_dict)
@@ -1095,14 +1101,6 @@ class PostgresGraphHandler(GraphHandler):
         return {"relationships": relationships, "total_entries": total_entries}
 
     ####################### COMMUNITY METHODS #######################
-
-    async def get_communities(self, collection_id: UUID) -> list[Community]:
-        QUERY = f"""
-            SELECT *c FROM {self._get_table_name("community")} WHERE collection_id = $1
-        """
-        return await self.connection_manager.fetch_query(
-            QUERY, [collection_id]
-        )
 
     async def check_communities_exist(
         self, collection_id: UUID, offset: int, limit: int
@@ -1738,7 +1736,7 @@ class PostgresGraphHandler(GraphHandler):
     ) -> dict[str, list[int]]:
 
         # caching the relationship ids
-        relationship_ids_cache = dict[str, list[int]]()
+        relationship_ids_cache = dict[str, list[Union[int, UUID]]]()
         for relationship in relationships:
             if (
                 relationship.subject not in relationship_ids_cache
@@ -1762,7 +1760,7 @@ class PostgresGraphHandler(GraphHandler):
                     relationship.id
                 )
 
-        return relationship_ids_cache
+        return relationship_ids_cache  # type: ignore
 
     async def _incremental_clustering(
         self,

@@ -59,16 +59,16 @@ class KGCommunitySummaryPipe(AsyncPipe):
         entity_map: dict[str, dict[str, list[Any]]] = {}
         for entity in entities:
             if not entity.name in entity_map:
-                entity_map[entity.name] = {"entities": [], "relationships": []}
-            entity_map[entity.name]["entities"].append(entity)
+                entity_map[entity.name] = {"entities": [], "relationships": []}  # type: ignore
+            entity_map[entity.name]["entities"].append(entity)  # type: ignore
 
         for relationship in relationships:
             if not relationship.subject in entity_map:
-                entity_map[relationship.subject] = {
+                entity_map[relationship.subject] = {  # type: ignore
                     "entities": [],
                     "relationships": [],
                 }
-            entity_map[relationship.subject]["relationships"].append(
+            entity_map[relationship.subject]["relationships"].append(  # type: ignore
                 relationship
             )
 

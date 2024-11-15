@@ -309,11 +309,14 @@ class KgService(Service):
     async def list_communities_v3(
         self,
         id: UUID,
-        level: EntityLevel,
+        offset: int,
+        limit: int,
         **kwargs,
     ):
         return await self.providers.database.graph_handler.communities.get(
-            id, level
+            collection_id=id,
+            offset=offset,
+            limit=limit,
         )
 
     # TODO: deprecate this
@@ -442,7 +445,7 @@ class KgService(Service):
         collection_id: UUID,
         **kwargs,
     ):
-        return await self.providers.database.get_graph_status(collection_id)
+        raise NotImplementedError("Not implemented")
 
     @telemetry_event("kg_clustering")
     async def kg_clustering(
