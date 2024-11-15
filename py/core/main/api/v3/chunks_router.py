@@ -6,7 +6,7 @@ import json
 from typing import Any, Optional
 from uuid import UUID
 
-from fastapi import Body, Depends, Path, Query, Form
+from fastapi import Body, Depends, Path, Query
 
 from core.base import (
     KGSearchSettings,
@@ -486,7 +486,7 @@ class ChunksRouter(BaseRouterV3):
             )
             await simple_ingestor["update-chunk"](workflow_input)
 
-            return ChunkResponse(
+            return ChunkResponse(  # type: ignore
                 id=chunk_update.id,
                 document_id=existing_chunk["document_id"],
                 user_id=existing_chunk["user_id"],

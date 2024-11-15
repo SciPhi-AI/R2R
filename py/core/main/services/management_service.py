@@ -609,7 +609,7 @@ class ManagementService(Service):
     @telemetry_event("GetDocumentsInCollection")
     async def documents_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
-    ) -> dict[str, list[DocumentResponse], int]:
+    ) -> dict[str, list[DocumentResponse] | int]:
         return await self.providers.database.documents_in_collection(
             collection_id, offset=offset, limit=limit
         )
