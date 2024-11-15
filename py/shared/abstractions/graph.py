@@ -53,12 +53,13 @@ class EntityLevel(str, Enum):
     def __str__(self):
         return self.value
 
+
 class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
     name: Optional[str] = None
     id: Optional[UUID] = None
-    sid: Optional[int] = None #serial ID
+    sid: Optional[int] = None  # serial ID
     level: Optional[EntityLevel] = None
     category: Optional[str] = None
     description: Optional[str] = None
@@ -94,7 +95,7 @@ class Relationship(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
     id: Optional[UUID] = None
-    sid: Optional[int] = None #serial ID
+    sid: Optional[int] = None  # serial ID
 
     subject: Optional[str] = None
     """The source entity name."""
@@ -166,6 +167,7 @@ class Relationship(R2RSerializable):
             document_id=d.get(document_id_key),
             attributes=d.get(attributes_key, {}),
         )
+
 
 @dataclass
 class CommunityInfo(BaseModel):
@@ -295,6 +297,7 @@ class Graph(BaseModel):
             attributes=d["attributes"],
         )
 
+
 class KGExtraction(R2RSerializable):
     """An extraction from a document that is part of a knowledge graph."""
 
@@ -302,6 +305,7 @@ class KGExtraction(R2RSerializable):
     document_id: uuid.UUID
     entities: list[Entity]
     relationships: list[Relationship]
+
 
 class Graph(R2RSerializable):
     """A request to create a graph."""
@@ -313,12 +317,11 @@ class Graph(R2RSerializable):
     collection_ids: list[uuid.UUID] = []
     statistics: dict[str, Any] = {}
     created_at: datetime
-    updated_at: datetime # Implemntation is not yet complete
+    updated_at: datetime  # Implemntation is not yet complete
     status: str = "pending"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "Graph":

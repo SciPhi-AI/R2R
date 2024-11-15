@@ -54,9 +54,7 @@ def chunk_ids():
 
 
 @pytest.fixture
-def sample_chunks(
-    sample_document_id, sample_user, collection_ids, chunk_ids
-):
+def sample_chunks(sample_document_id, sample_user, collection_ids, chunk_ids):
     return [
         VectorEntry(
             chunk_id=chunk_ids[0],

@@ -250,7 +250,6 @@ class KGDeletionResponse(BaseModel):
         }
 
 
-
 class KGTunePromptResponse(R2RSerializable):
     """Response containing just the tuned prompt string."""
 

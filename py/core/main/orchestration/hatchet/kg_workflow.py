@@ -188,9 +188,7 @@ def hatchet_kg_factory(
                     )
 
             else:
-                return_val = {
-                    "document_ids": [str(input_data["document_id"])]
-                }
+                return_val = {"document_ids": [str(input_data["document_id"])]}
 
             return return_val
 

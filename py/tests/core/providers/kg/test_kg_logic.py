@@ -254,6 +254,7 @@ async def test_add_relationships(
     assert len(relationships["relationships"]) == 2
     assert relationships["total_entries"] == 2
 
+
 @pytest.mark.asyncio
 async def test_get_entity_map(
     postgres_db_provider,

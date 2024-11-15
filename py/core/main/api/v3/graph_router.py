@@ -72,7 +72,6 @@ class GraphRouter(BaseRouterV3):
     def _setup_routes(self):
 
         # create graph new endpoint
-
         @self.router.post(
             "/documents/{id}/graphs/{run_type}",
         )
@@ -354,7 +353,7 @@ class GraphRouter(BaseRouterV3):
             else:
                 level = EntityLevel.COLLECTION
 
-            # set entity level if not set 
+            # set entity level if not set
             for entity in entities:
                 if entity.level:
                     if entity.level != level:
@@ -371,9 +370,9 @@ class GraphRouter(BaseRouterV3):
                         raise R2RException(
                             "Entity extraction IDs must include the chunk ID or should be empty.", 400
                         )
-                    
+
             elif level == EntityLevel.DOCUMENT:
-                for entity in entities: 
+                for entity in entities:
                     if entity.document_id:
                         if entity.document_id != id:
                             raise R2RException(
@@ -384,7 +383,7 @@ class GraphRouter(BaseRouterV3):
 
             elif level == EntityLevel.COLLECTION:
                 for entity in entities:
-                    if entity.collection_id: 
+                    if entity.collection_id:
                         if entity.collection_id != id:
                             raise R2RException(
                                 "Entity collection IDs must match the collection ID or should be empty.", 400
@@ -880,7 +879,7 @@ class GraphRouter(BaseRouterV3):
                 )
 
             level = self._get_path_level(request)
-            
+
             if not relationship.id:
                 relationship.id = relationship_id
             else:
@@ -1119,7 +1118,7 @@ class GraphRouter(BaseRouterV3):
         async def create_empty_graph(
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
-            
+
 
 
 

@@ -132,7 +132,7 @@ class KgService(Service):
         return await self.providers.database.graph_handler.entities.create(
             entities, **kwargs
         )
-    
+
     @telemetry_event("list_entities_v3")
     async def list_entities_v3(
         self,
@@ -146,13 +146,13 @@ class KgService(Service):
         **kwargs,
     ):
         return await self.providers.database.graph_handler.entities.get(
-            level=level, 
-            id=id, 
-            entity_names=entity_names, 
-            entity_categories=entity_categories, 
-            attributes=attributes, 
-            offset=offset, 
-            limit=limit
+            level=level,
+            id=id,
+            entity_names=entity_names,
+            entity_categories=entity_categories,
+            attributes=attributes,
+            offset=offset,
+            limit=limit,
         )
 
     @telemetry_event("update_entity_v3")
@@ -204,18 +204,23 @@ class KgService(Service):
         relationships: list[Relationship],
         **kwargs,
     ):
-        return await self.providers.database.graph_handler.relationships.create(
-            relationships
+        return (
+            await self.providers.database.graph_handler.relationships.create(
+                relationships
+            )
         )
-    
+
     @telemetry_event("delete_relationship_v3")
     async def delete_relationship_v3(
         self,
         relationship: Relationship,
         **kwargs,
     ):
-        return await self.providers.database.graph_handler.relationships.delete(relationship)
-
+        return (
+            await self.providers.database.graph_handler.relationships.delete(
+                relationship
+            )
+        )
 
     @telemetry_event("update_relationship_v3")
     async def update_relationship_v3(
@@ -223,34 +228,43 @@ class KgService(Service):
         relationship: Relationship,
         **kwargs,
     ):
-        return await self.providers.database.graph_handler.relationships.update(relationship)
-
+        return (
+            await self.providers.database.graph_handler.relationships.update(
+                relationship
+            )
+        )
 
     ################### COMMUNITIES ###################
 
-    @telemetry_event("create_communities_v3")   
+    @telemetry_event("create_communities_v3")
     async def create_communities_v3(
         self,
         communities: list[Community],
         **kwargs,
     ):
-        return await self.providers.database.graph_handler.communities.create(communities)
-    
+        return await self.providers.database.graph_handler.communities.create(
+            communities
+        )
+
     @telemetry_event("update_community_v3")
     async def update_community_v3(
         self,
         community: Community,
         **kwargs,
     ):
-        return await self.providers.database.graph_handler.communities.update(community)
-    
+        return await self.providers.database.graph_handler.communities.update(
+            community
+        )
+
     @telemetry_event("delete_community_v3")
     async def delete_community_v3(
         self,
         community: Community,
         **kwargs,
     ):
-        return await self.providers.database.graph_handler.communities.delete(community)
+        return await self.providers.database.graph_handler.communities.delete(
+            community
+        )
 
     @telemetry_event("list_communities_v3")
     async def list_communities_v3(
@@ -259,7 +273,9 @@ class KgService(Service):
         level: EntityLevel,
         **kwargs,
     ):
-        return await self.providers.database.graph_handler.communities.get(id, level)
+        return await self.providers.database.graph_handler.communities.get(
+            id, level
+        )
 
     ################### GRAPH ###################
 

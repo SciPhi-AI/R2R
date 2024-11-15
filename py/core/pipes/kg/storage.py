@@ -53,9 +53,9 @@ class KGStoragePipe(AsyncPipe):
         Stores a batch of knowledge graph extractions in the graph database.
         """
         try:
-            # clean up and remove this method. 
+            # clean up and remove this method.
             # make add_kg_extractions a method in the GraphHandler
-            
+
             total_entities, total_relationships = 0, 0
 
             for extraction in kg_extractions:
@@ -95,7 +95,7 @@ class KGStoragePipe(AsyncPipe):
                     )
 
                 return (total_entities, total_relationships)
-            
+
         except Exception as e:
             error_message = f"Failed to store knowledge graph extractions in the database: {e}"
             logger.error(error_message)

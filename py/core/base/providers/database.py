@@ -17,7 +17,7 @@ from pydantic import BaseModel
 
 from core.base.abstractions import (
     Community,
-    CommunityInfo, 
+    CommunityInfo,
     Entity,
     Graph,
     KGExtraction,
@@ -635,7 +635,7 @@ class VectorHandler(Handler):
 #     ) -> Any:
 #         """Update an entity in storage."""
 #         pass
-        
+
 #     @abstractmethod
 #     async def delete_entity(
 #         self,
@@ -873,9 +873,8 @@ class VectorHandler(Handler):
 #         raise NotImplementedError
 
 
-
 class EntityHandler(Handler):
-    
+
     @abstractmethod
     async def create(self, *args: Any, **kwargs: Any) -> None:
         """Create entities in storage."""
@@ -918,6 +917,7 @@ class RelationshipHandler(Handler):
         """Delete relationships from storage."""
         pass
 
+
 class CommunityHandler(Handler):
     @abstractmethod
     async def create(self, *args: Any, **kwargs: Any) -> None:
@@ -939,6 +939,7 @@ class CommunityHandler(Handler):
         """Delete communities from storage."""
         pass
 
+
 class CommunityInfoHandler(Handler):
     @abstractmethod
     async def create(self, *args: Any, **kwargs: Any) -> None:
@@ -948,7 +949,7 @@ class CommunityInfoHandler(Handler):
     @abstractmethod
     async def get(self, *args: Any, **kwargs: Any) -> list[CommunityInfo]:
         """Get community info from storage."""
-        pass    
+        pass
 
     @abstractmethod
     async def update(self, *args: Any, **kwargs: Any) -> None:
@@ -960,8 +961,9 @@ class CommunityInfoHandler(Handler):
         """Delete community info from storage."""
         pass
 
+
 class GraphHandler(Handler):
-    
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
@@ -995,7 +997,6 @@ class GraphHandler(Handler):
     async def remove_document(self, *args: Any, **kwargs: Any) -> None:
         """Delete document from graph."""
         pass
-
 
 
 class PromptHandler(Handler):
@@ -1672,7 +1673,9 @@ class DatabaseProvider(Provider):
         self, offset: int, limit: int, document_id: UUID
     ) -> dict[str, dict[str, list[dict[str, Any]]]]:
         """Forward to KG handler get_entity_map method."""
-        return await self.graph_handler.get_entity_map(offset, limit, document_id)
+        return await self.graph_handler.get_entity_map(
+            offset, limit, document_id
+        )
 
     # Community methods
     async def add_community_info(self, communities: list[Any]) -> None:
@@ -1696,9 +1699,7 @@ class DatabaseProvider(Provider):
             community_numbers=community_numbers,
         )
 
-    async def add_community(
-        self, community: Community
-    ) -> None:
+    async def add_community(self, community: Community) -> None:
         """Forward to KG handler add_community method."""
         return await self.graph_handler.add_community(community)
 
@@ -1710,9 +1711,7 @@ class DatabaseProvider(Provider):
             community_number, collection_id
         )
 
-    async def get_community(
-        self, collection_id: UUID
-    ) -> list[Community]:
+    async def get_community(self, collection_id: UUID) -> list[Community]:
         """Forward to KG handler get_community method."""
         return await self.graph_handler.get_community(collection_id)
 
@@ -2079,4 +2078,3 @@ class DatabaseProvider(Provider):
         return await self.vector_handler.list_chunks(
             offset, limit, filters, include_vectors
         )
-

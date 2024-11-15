@@ -179,9 +179,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
 
                 entities, relationships = parse_fn(kg_extraction)
                 return KGExtraction(
-                    chunk_ids=[
-                        extraction.id for extraction in extractions
-                    ],
+                    chunk_ids=[extraction.id for extraction in extractions],
                     document_id=extractions[0].document_id,
                     entities=entities,
                     relationships=relationships,
@@ -268,8 +266,10 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
         )
 
         if filter_out_existing_chunks:
-            existing_chunk_ids = await self.database_provider.get_existing_entity_chunk_ids(
-                document_id=document_id
+            existing_chunk_ids = (
+                await self.database_provider.get_existing_entity_chunk_ids(
+                    document_id=document_id
+                )
             )
             extractions = [
                 extraction
