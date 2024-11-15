@@ -1,12 +1,7 @@
 from typing import Any, AsyncGenerator
 from uuid import UUID
 
-from core.base import (
-    AsyncPipe,
-    AsyncState,
-    VectorSearchResult,
-    VectorSearchSettings,
-)
+from core.base import AsyncPipe, AsyncState, SearchSettings, VectorSearchResult
 
 
 class RoutingSearchPipe(AsyncPipe):
@@ -27,7 +22,7 @@ class RoutingSearchPipe(AsyncPipe):
         input: AsyncPipe.Input,
         state: AsyncState,
         run_id: UUID,
-        vector_search_settings: VectorSearchSettings,
+        vector_search_settings: SearchSettings,
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[VectorSearchResult, None]:

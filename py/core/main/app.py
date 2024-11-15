@@ -1,9 +1,9 @@
-from core.base import R2RException
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+from fastapi.responses import JSONResponse
 
+from core.base import R2RException
 from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
@@ -22,6 +22,7 @@ from .api.v3.graph_router import GraphRouter
 from .api.v3.indices_router import IndicesRouter
 from .api.v3.prompts_router import PromptsRouter
 from .api.v3.retrieval_router import RetrievalRouterV3
+from .api.v3.system_router import SystemRouter
 from .api.v3.users_router import UsersRouter
 from .config import R2RConfig
 
@@ -46,6 +47,7 @@ class R2RApp:
         conversations_router: ConversationsRouter,
         prompts_router: PromptsRouter,
         retrieval_router_v3: RetrievalRouterV3,
+        system_router: SystemRouter,
         graph_router: GraphRouter,
     ):
         self.config = config
@@ -63,7 +65,9 @@ class R2RApp:
         self.conversations_router = conversations_router
         self.prompts_router = prompts_router
         self.retrieval_router_v3 = retrieval_router_v3
+        self.system_router = system_router
         self.graph_router = graph_router
+
         self.app = FastAPI()
 
         @self.app.exception_handler(R2RException)
@@ -96,6 +100,7 @@ class R2RApp:
         self.app.include_router(self.prompts_router, prefix="/v3")
         self.app.include_router(self.retrieval_router_v3, prefix="/v3")
         self.app.include_router(self.graph_router, prefix="/v3")
+        self.app.include_router(self.system_router, prefix="/v3")
 
         @self.app.get("/openapi_spec", include_in_schema=False)
         async def openapi_spec():

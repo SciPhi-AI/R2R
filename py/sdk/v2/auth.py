@@ -1,10 +1,13 @@
+from __future__ import annotations  # for Python 3.10+
+from typing_extensions import deprecated
 from typing import Optional, Union
 from uuid import UUID
 
-from ...models import Token, UserResponse
+from ..models import Token, UserResponse
 
 
 class AuthMixins:
+    @deprecated("Use client.users.register() instead")
     async def register(self, email: str, password: str) -> UserResponse:
         """
         Registers a new user with the given email and password.
@@ -19,6 +22,7 @@ class AuthMixins:
         data = {"email": email, "password": password}
         return await self._make_request("POST", "register", json=data)  # type: ignore
 
+    @deprecated("Use client.users.verify_email() instead")
     async def verify_email(self, verification_code: str) -> dict:
         """
         Verifies the email of a user with the given verification code.
@@ -33,6 +37,7 @@ class AuthMixins:
             json=verification_code,
         )
 
+    @deprecated("Use client.users.login() instead")
     async def login(self, email: str, password: str) -> dict[str, Token]:
         """
         Attempts to log in a user with the given email and password.
@@ -50,6 +55,7 @@ class AuthMixins:
         self._refresh_token = response["results"]["refresh_token"]["token"]
         return response
 
+    @deprecated("Use client.users.logout() instead")
     async def logout(self) -> dict:
         """
         Logs out the currently authenticated user.
@@ -62,6 +68,7 @@ class AuthMixins:
         self._refresh_token = None
         return response
 
+    @deprecated("Use client.users.retrieve() instead")
     async def user(self) -> UserResponse:
         """
         Retrieves the user information for the currently authenticated user.
@@ -71,6 +78,7 @@ class AuthMixins:
         """
         return await self._make_request("GET", "user")  # type: ignore
 
+    @deprecated("Use client.users.update() instead")
     async def update_user(
         self,
         user_id: Union[str, UUID],
@@ -105,6 +113,7 @@ class AuthMixins:
         data = {k: v for k, v in data.items() if v is not None}
         return await self._make_request("PUT", "user", json=data)  # type: ignore
 
+    @deprecated("Use client.users.refresh_token() instead")
     async def refresh_access_token(self) -> dict[str, Token]:
         """
         Refreshes the access token for the currently authenticated user.
@@ -119,6 +128,7 @@ class AuthMixins:
         self._refresh_token = response["results"]["refresh_token"]["token"]
         return response
 
+    @deprecated("Use client.users.change_password() instead")
     async def change_password(
         self, current_password: str, new_password: str
     ) -> dict:
@@ -138,6 +148,7 @@ class AuthMixins:
         }
         return await self._make_request("POST", "change_password", json=data)  # type: ignore
 
+    @deprecated("Use client.users.request_password_reset() instead")
     async def request_password_reset(self, email: str) -> dict:
         """
         Requests a password reset for the user with the given email.
@@ -152,6 +163,7 @@ class AuthMixins:
             "POST", "request_password_reset", json=email
         )
 
+    @deprecated("Use client.users.reset_password() instead")
     async def confirm_password_reset(
         self, reset_token: str, new_password: str
     ) -> dict:
@@ -168,6 +180,7 @@ class AuthMixins:
         data = {"reset_token": reset_token, "new_password": new_password}
         return await self._make_request("POST", "reset_password", json=data)  # type: ignore
 
+    @deprecated("Use client.users.login_with_token() instead")
     async def login_with_token(
         self,
         access_token: str,
@@ -197,6 +210,7 @@ class AuthMixins:
             self._refresh_token = None
             raise ValueError("Invalid tokens provided")
 
+    @deprecated("")
     async def get_user_verification_code(
         self, user_id: Union[str, UUID]
     ) -> dict:
@@ -213,6 +227,7 @@ class AuthMixins:
             "GET", f"user/{user_id}/verification_data"
         )
 
+    @deprecated("")
     async def send_reset_email(self, email: str) -> dict:
         """
         Generates a new verification code and sends a reset email to the user.

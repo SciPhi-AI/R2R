@@ -4,8 +4,8 @@ from uuid import UUID
 
 from core.base.abstractions import (
     GenerationConfig,
+    SearchSettings,
     VectorSearchResult,
-    VectorSearchSettings,
 )
 from core.base.pipes.base_pipe import AsyncPipe
 
@@ -51,7 +51,7 @@ class MultiSearchPipe(AsyncPipe):
         input: Any,
         state: Any,
         run_id: UUID,
-        vector_search_settings: VectorSearchSettings,
+        vector_search_settings: SearchSettings,
         query_transform_generation_config: Optional[GenerationConfig] = None,
         *args: Any,
         **kwargs: Any,

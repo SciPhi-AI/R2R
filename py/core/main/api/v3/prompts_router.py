@@ -151,6 +151,14 @@ class PromptsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r prompts list
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -226,6 +234,14 @@ class PromptsRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r prompts retrieve greeting_prompt --inputs '{"name": "John"}' --prompt-override "Hi, {name}!"
                             """
                         ),
                     },
@@ -384,6 +400,14 @@ class PromptsRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r prompts delete greeting_prompt
                             """
                         ),
                     },

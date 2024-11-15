@@ -1,20 +1,20 @@
 from typing import Optional
 
 
-class ServerMixins:
-    async def health(self) -> dict:
-        return await self._make_request("GET", "health")  # type: ignore
+class SyncServerMixins:
+    def health(self) -> dict:
+        return self._make_request("GET", "health")  # type: ignore
 
-    async def server_stats(self) -> dict:
+    def server_stats(self) -> dict:
         """
         Get statistics about the server, including the start time, uptime, CPU usage, and memory usage.
 
         Returns:
             dict: The server statistics.
         """
-        return await self._make_request("GET", "server_stats")  # type: ignore
+        return self._make_request("GET", "server_stats")  # type: ignore
 
-    async def logs(
+    def logs(
         self,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
@@ -40,4 +40,4 @@ class ServerMixins:
             }.items()
             if value is not None
         }
-        return await self._make_request("GET", "logs", params=params)  # type: ignore
+        return self._make_request("GET", "logs", params=params)  # type: ignore

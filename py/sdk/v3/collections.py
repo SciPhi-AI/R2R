@@ -1,15 +1,8 @@
-from inspect import isasyncgenfunction, iscoroutinefunction
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
-
-from ..base.base_client import sync_generator_wrapper, sync_wrapper
 
 
 class CollectionsSDK:
-    """
-    SDK for interacting with collections in the v3 API.
-    """
-
     def __init__(self, client):
         self.client = client
 
@@ -33,6 +26,7 @@ class CollectionsSDK:
             "POST",
             "collections",
             json=data,  # {"config": data}
+            version="v3",
         )
 
     async def list(
@@ -60,27 +54,29 @@ class CollectionsSDK:
             params["ids"] = ids
 
         return await self.client._make_request(
-            "GET", "collections", params=params
+            "GET", "collections", params=params, version="v3"
         )
 
     async def retrieve(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
     ) -> dict:
         """
         Get detailed information about a specific collection.
 
         Args:
-            id (Union[str, UUID]): Collection ID to retrieve
+            id (str | UUID): Collection ID to retrieve
 
         Returns:
             dict: Detailed collection information
         """
-        return await self.client._make_request("GET", f"collections/{str(id)}")
+        return await self.client._make_request(
+            "GET", f"collections/{str(id)}", version="v3"
+        )
 
     async def update(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> dict:
@@ -88,7 +84,7 @@ class CollectionsSDK:
         Update collection information.
 
         Args:
-            id (Union[str, UUID]): Collection ID to update
+            id (str | UUID): Collection ID to update
             name (Optional[str]): Optional new name for the collection
             description (Optional[str]): Optional new description for the collection
 
@@ -102,30 +98,33 @@ class CollectionsSDK:
             data["description"] = description
 
         return await self.client._make_request(
-            "POST", f"collections/{str(id)}", json=data  # {"config": data}
+            "POST",
+            f"collections/{str(id)}",
+            json=data,  # {"config": data}
+            version="v3",
         )
 
     async def delete(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
     ) -> bool:
         """
         Delete a collection.
 
         Args:
-            id (Union[str, UUID]): Collection ID to delete
+            id (str | UUID): Collection ID to delete
 
         Returns:
             bool: True if deletion was successful
         """
         result = await self.client._make_request(
-            "DELETE", f"collections/{str(id)}"
+            "DELETE", f"collections/{str(id)}", version="v3"
         )
         return result.get("results", True)
 
     async def list_documents(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> dict:
@@ -133,7 +132,7 @@ class CollectionsSDK:
         List all documents in a collection.
 
         Args:
-            id (Union[str, UUID]): Collection ID
+            id (str | UUID): Collection ID
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
@@ -146,51 +145,58 @@ class CollectionsSDK:
         }
 
         return await self.client._make_request(
-            "GET", f"collections/{str(id)}/documents", params=params
+            "GET",
+            f"collections/{str(id)}/documents",
+            params=params,
+            version="v3",
         )
 
     async def add_document(
         self,
-        id: Union[str, UUID],
-        document_id: Union[str, UUID],
+        id: str | UUID,
+        document_id: str | UUID,
     ) -> dict:
         """
         Add a document to a collection.
 
         Args:
-            id (Union[str, UUID]): Collection ID
-            document_id (Union[str, UUID]): Document ID to add
+            id (str | UUID): Collection ID
+            document_id (str | UUID): Document ID to add
 
         Returns:
             dict: Result of the operation
         """
         return await self.client._make_request(
-            "POST", f"collections/{str(id)}/documents/{str(document_id)}"
+            "POST",
+            f"collections/{str(id)}/documents/{str(document_id)}",
+            version="v3",
         )
 
     async def remove_document(
         self,
-        id: Union[str, UUID],
-        document_id: Union[str, UUID],
+        id: str | UUID,
+        document_id: str | UUID,
     ) -> bool:
         """
         Remove a document from a collection.
 
         Args:
-            id (Union[str, UUID]): Collection ID
-            document_id (Union[str, UUID]): Document ID to remove
+            id (str | UUID): Collection ID
+            document_id (str | UUID): Document ID to remove
 
         Returns:
             bool: True if removal was successful
         """
         result = await self.client._make_request(
-            "DELETE", f"collections/{str(id)}/documents/{str(document_id)}"
+            "DELETE",
+            f"collections/{str(id)}/documents/{str(document_id)}",
+            version="v3",
         )
         return result.get("results", True)
 
     async def list_users(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> dict:
@@ -198,7 +204,7 @@ class CollectionsSDK:
         List all users in a collection.
 
         Args:
-            id (Union[str, UUID]): Collection ID
+            id (str, UUID): Collection ID
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
@@ -211,64 +217,46 @@ class CollectionsSDK:
         }
 
         return await self.client._make_request(
-            "GET", f"collections/{str(id)}/users", params=params
+            "GET", f"collections/{str(id)}/users", params=params, version="v3"
         )
 
     async def add_user(
         self,
-        id: Union[str, UUID],
-        user_id: Union[str, UUID],
+        id: str | UUID,
+        user_id: str | UUID,
     ) -> dict:
         """
         Add a user to a collection.
 
         Args:
-            id (Union[str, UUID]): Collection ID
-            user_id (Union[str, UUID]): User ID to add
+            id (str | UUID): Collection ID
+            user_id (str | UUID): User ID to add
 
         Returns:
             dict: Result of the operation
         """
         return await self.client._make_request(
-            "POST", f"collections/{str(id)}/users/{str(user_id)}"
+            "POST", f"collections/{str(id)}/users/{str(user_id)}", version="v3"
         )
 
     async def remove_user(
         self,
-        id: Union[str, UUID],
-        user_id: Union[str, UUID],
+        id: str | UUID,
+        user_id: str | UUID,
     ) -> bool:
         """
         Remove a user from a collection.
 
         Args:
-            id (Union[str, UUID]): Collection ID
-            user_id (Union[str, UUID]): User ID to remove
+            id (str | UUID): Collection ID
+            user_id (str | UUID): User ID to remove
 
         Returns:
             bool: True if removal was successful
         """
         result = await self.client._make_request(
-            "DELETE", f"collections/{str(id)}/users/{str(user_id)}"
+            "DELETE",
+            f"collections/{str(id)}/users/{str(user_id)}",
+            version="v3",
         )
         return result.get("results", True)
-
-
-class SyncCollectionsSDK:
-    """Synchronous wrapper for CollectionsSDK"""
-
-    def __init__(self, async_sdk: CollectionsSDK):
-        self._async_sdk = async_sdk
-
-        # Get all attributes from the instance
-        for name in dir(async_sdk):
-            if not name.startswith("_"):  # Skip private methods
-                attr = getattr(async_sdk, name)
-                # Check if it's a method and if it's async
-                if callable(attr) and (
-                    iscoroutinefunction(attr) or isasyncgenfunction(attr)
-                ):
-                    if isasyncgenfunction(attr):
-                        setattr(self, name, sync_generator_wrapper(attr))
-                    else:
-                        setattr(self, name, sync_wrapper(attr))

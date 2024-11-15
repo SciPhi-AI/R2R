@@ -6,7 +6,7 @@ from typing import Any, Optional
 from ..base.abstractions import (
     AggregateSearchResult,
     KGSearchSettings,
-    VectorSearchSettings,
+    SearchSettings,
 )
 from ..base.logger.run_manager import RunManager, manage_run
 from ..base.pipeline.base_pipeline import AsyncPipeline, dequeue_requests
@@ -35,7 +35,7 @@ class SearchPipeline(AsyncPipeline):
         state: Optional[AsyncState],
         stream: bool = False,
         run_manager: Optional[RunManager] = None,
-        vector_search_settings: VectorSearchSettings = VectorSearchSettings(),
+        vector_search_settings: SearchSettings = SearchSettings(),
         kg_search_settings: KGSearchSettings = KGSearchSettings(),
         *args: Any,
         **kwargs: Any,

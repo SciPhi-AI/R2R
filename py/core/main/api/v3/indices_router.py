@@ -292,6 +292,14 @@ class IndicesRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r indices list
+                            """
+                        ),
+                    },
+                    {
                         "lang": "Shell",
                         "source": textwrap.dedent(
                             """
@@ -311,7 +319,7 @@ class IndicesRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def list_indices(
-            filters: Optional[dict] = Depends(),
+            filters: list[str] = Query([]),
             offset: int = Query(
                 0,
                 ge=0,
@@ -385,6 +393,14 @@ class IndicesRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r indices retrieve index_1 vectors
                             """
                         ),
                     },
@@ -537,6 +553,14 @@ class IndicesRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r indices delete index_1 vectors
                             """
                         ),
                     },

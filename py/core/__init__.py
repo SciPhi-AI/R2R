@@ -1,7 +1,6 @@
 import logging
 
 # Keep '*' imports for enhanced development velocity
-# corresponding flake8 error codes are F403, F405
 from .agent import *
 from .base import *
 from .main import *
@@ -77,8 +76,7 @@ __all__ = [
     "KGSearchResult",
     "KGSearchSettings",
     "VectorSearchResult",
-    "VectorSearchSettings",
-    "DocumentSearchSettings",
+    "SearchSettings",
     "HybridSearchSettings",
     # User abstractions
     "Token",

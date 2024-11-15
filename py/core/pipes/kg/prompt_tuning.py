@@ -5,6 +5,7 @@ Pipe to tune the prompt for the KG model.
 import logging
 from typing import Any
 from uuid import UUID
+
 from fastapi import HTTPException
 
 from core.base import (

@@ -1,11 +1,14 @@
+from __future__ import annotations  # for Python 3.10+
+from typing_extensions import deprecated
 import json
 from typing import Any, Optional, Union
 from uuid import UUID
 
-from ...models import Message
+from ..models import Message
 
 
 class ManagementMixins:
+    @deprecated("Use client.prompts.update() instead")
     async def update_prompt(
         self,
         name: str,
@@ -31,6 +34,7 @@ class ManagementMixins:
 
         return await self._make_request("POST", "update_prompt", json=data)  # type: ignore
 
+    @deprecated("Use client.prompts.create() instead")
     async def add_prompt(
         self,
         name: str,
@@ -55,6 +59,7 @@ class ManagementMixins:
         }
         return await self._make_request("POST", "add_prompt", json=data)  # type: ignore
 
+    @deprecated("Use client.prompts.retrieve() instead")
     async def get_prompt(
         self,
         prompt_name: str,
@@ -81,6 +86,7 @@ class ManagementMixins:
             "GET", f"get_prompt/{prompt_name}", params=params
         )
 
+    @deprecated("Use client.prompts.list() instead")
     async def get_all_prompts(self) -> dict:
         """
         Get all prompts from the system.
@@ -90,6 +96,7 @@ class ManagementMixins:
         """
         return await self._make_request("GET", "get_all_prompts")  # type: ignore
 
+    @deprecated("Use client.prompts.delete() instead")
     async def delete_prompt(self, prompt_name: str) -> dict:
         """
         Delete a prompt from the system.
@@ -142,6 +149,7 @@ class ManagementMixins:
         """
         return await self._make_request("GET", "app_settings")  # type: ignore
 
+    @deprecated("Use client.users.list() instead")
     async def users_overview(
         self,
         user_ids: Optional[list[str]] = None,
@@ -168,6 +176,7 @@ class ManagementMixins:
             "GET", "users_overview", params=params
         )
 
+    @deprecated("Use client.<object>.delete() instead")
     async def delete(
         self,
         filters: dict,
@@ -187,6 +196,7 @@ class ManagementMixins:
             "DELETE", "delete", params={"filters": filters_json}
         ) or {"results": {}}
 
+    @deprecated("Use client.documents.download() instead")
     async def download_file(
         self,
         document_id: Union[str, UUID],
@@ -204,6 +214,7 @@ class ManagementMixins:
             "GET", f"download_file/{str(document_id)}"
         )
 
+    @deprecated("Use client.documents.list() instead")
     async def documents_overview(
         self,
         document_ids: Optional[list[Union[UUID, str]]] = None,
@@ -233,6 +244,7 @@ class ManagementMixins:
             "GET", "documents_overview", params=params
         )
 
+    @deprecated("Use client.documents.list_chunks() instead")
     async def list_document_chunks(
         self,
         document_id: str,
@@ -265,6 +277,7 @@ class ManagementMixins:
                 "GET", f"list_document_chunks/{document_id}", params=params
             )
 
+    @deprecated("Use client.collections.list() instead")
     async def collections_overview(
         self,
         collection_ids: Optional[list[str]] = None,
@@ -293,6 +306,7 @@ class ManagementMixins:
             "GET", "collections_overview", params=params
         )
 
+    @deprecated("Use client.collections.create() instead")
     async def create_collection(
         self,
         name: str,
@@ -316,6 +330,7 @@ class ManagementMixins:
             "POST", "create_collection", json=data
         )
 
+    @deprecated("Use client.collections.retrieve() instead")
     async def get_collection(
         self,
         collection_id: Union[str, UUID],
@@ -333,6 +348,7 @@ class ManagementMixins:
             "GET", f"get_collection/{str(collection_id)}"
         )
 
+    @deprecated("Use client.collections.update() instead")
     async def update_collection(
         self,
         collection_id: Union[str, UUID],
@@ -360,6 +376,7 @@ class ManagementMixins:
             "PUT", "update_collection", json=data
         )
 
+    @deprecated("Use client.collections.delete() instead")
     async def delete_collection(
         self,
         collection_id: Union[str, UUID],
@@ -377,6 +394,7 @@ class ManagementMixins:
             "DELETE", f"delete_collection/{str(collection_id)}"
         )
 
+    @deprecated("Use client.users.delete() instead")
     async def delete_user(
         self,
         user_id: str,
@@ -404,6 +422,7 @@ class ManagementMixins:
                 "DELETE", f"user/{user_id}", json=params
             )
 
+    @deprecated("Use client.collections.list() instead")
     async def list_collections(
         self,
         offset: Optional[int] = None,
@@ -428,6 +447,7 @@ class ManagementMixins:
             "GET", "list_collections", params=params
         )
 
+    @deprecated("Use client.collections.add_user() instead")
     async def add_user_to_collection(
         self,
         user_id: Union[str, UUID],
@@ -451,6 +471,7 @@ class ManagementMixins:
             "POST", "add_user_to_collection", json=data
         )
 
+    @deprecated("Use client.collections.remove_user() instead")
     async def remove_user_from_collection(
         self,
         user_id: Union[str, UUID],
@@ -474,6 +495,7 @@ class ManagementMixins:
             "POST", "remove_user_from_collection", json=data
         )
 
+    @deprecated("Use client.collections.list_users() instead")
     async def get_users_in_collection(
         self,
         collection_id: Union[str, UUID],
@@ -502,6 +524,7 @@ class ManagementMixins:
             params=params,
         )
 
+    @deprecated("Use client.users.list_collections() instead")
     async def user_collections(
         self,
         user_id: Union[str, UUID],
@@ -531,6 +554,7 @@ class ManagementMixins:
                 "GET", f"user_collections/{str(user_id)}", params=params
             )
 
+    @deprecated("Use client.collections.add_document() instead")
     async def assign_document_to_collection(
         self,
         document_id: Union[str, UUID],
@@ -555,6 +579,7 @@ class ManagementMixins:
         )
 
     # TODO: Verify that this method is implemented, also, should be a PUT request
+    @deprecated("Use client.collections.remove_document() instead")
     async def remove_document_from_collection(
         self,
         document_id: Union[str, UUID],
@@ -578,6 +603,7 @@ class ManagementMixins:
             "POST", "remove_document_from_collection", json=data
         )
 
+    @deprecated("Use client.documents.list_collections() instead")
     async def document_collections(
         self,
         document_id: Union[str, UUID],
@@ -609,6 +635,7 @@ class ManagementMixins:
                 "GET", f"document_collections/{str(document_id)}"
             )
 
+    @deprecated("Use client.collections.list_documents() instead")
     async def documents_in_collection(
         self,
         collection_id: Union[str, UUID],
@@ -635,6 +662,7 @@ class ManagementMixins:
             "GET", f"collection/{str(collection_id)}/documents", params=params
         )
 
+    @deprecated("Use client.conversations.list() instead")
     async def conversations_overview(
         self,
         conversation_ids: Optional[list[Union[UUID, str]]] = None,
@@ -663,6 +691,7 @@ class ManagementMixins:
             "GET", "conversations_overview", params=params
         )
 
+    @deprecated("Use client.conversations.retrieve() instead")
     async def get_conversation(
         self,
         conversation_id: Union[str, UUID],
@@ -683,6 +712,7 @@ class ManagementMixins:
             "GET", f"get_conversation/{str(conversation_id)}{query_params}"
         )
 
+    @deprecated("Use client.conversations.create() instead")
     async def create_conversation(self) -> dict:
         """
         Create a new conversation.
@@ -692,6 +722,7 @@ class ManagementMixins:
         """
         return await self._make_request("POST", "create_conversation")  # type: ignore
 
+    @deprecated("Use client.conversations.add_message() instead")
     async def add_message(
         self,
         conversation_id: Union[str, UUID],
@@ -720,6 +751,7 @@ class ManagementMixins:
             "POST", f"add_message/{str(conversation_id)}", data=data
         )
 
+    @deprecated("Use client.conversations.update_message() instead")
     async def update_message(
         self,
         message_id: str,
@@ -758,6 +790,7 @@ class ManagementMixins:
             "PATCH", f"messages/{message_id}/metadata", data=metadata
         )
 
+    @deprecated("Use client.conversations.list_branches() instead")
     async def branches_overview(
         self,
         conversation_id: Union[str, UUID],
@@ -817,6 +850,7 @@ class ManagementMixins:
     #     """
     #     return await self._make_request("POST", f"branch_at_message/{str(conversation_id)}/{message_id}") # type: ignore
 
+    @deprecated("Use client.conversations.delete() instead")
     async def delete_conversation(
         self,
         conversation_id: Union[str, UUID],

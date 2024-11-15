@@ -2,8 +2,9 @@ import json
 import logging
 from typing import Any, Optional
 from uuid import UUID, uuid4
-from fastapi import HTTPException
+
 from asyncpg.exceptions import UniqueViolationError
+from fastapi import HTTPException
 
 from core.base import (
     CollectionHandler,
@@ -18,9 +19,7 @@ from core.base.abstractions import (
     IngestionStatus,
 )
 from core.base.api.models import CollectionResponse
-from core.utils import (
-    generate_default_user_collection_id,
-)
+from core.utils import generate_default_user_collection_id
 
 from .base import PostgresConnectionManager
 
@@ -99,7 +98,7 @@ class PostgresCollectionHandler(CollectionHandler):
                 )
 
             return CollectionResponse(
-                collection_id=result["collection_id"],
+                id=result["collection_id"],
                 user_id=result["user_id"],
                 name=result["name"],
                 description=result["description"],
@@ -164,7 +163,7 @@ class PostgresCollectionHandler(CollectionHandler):
             raise R2RException(status_code=404, message="Collection not found")
 
         return CollectionResponse(
-            collection_id=result["collection_id"],
+            id=result["collection_id"],
             user_id=result["user_id"],
             name=result["name"],
             description=result["description"],
@@ -347,7 +346,7 @@ class PostgresCollectionHandler(CollectionHandler):
 
             collections = [
                 CollectionResponse(
-                    collection_id=row["collection_id"],
+                    id=row["collection_id"],
                     user_id=row["user_id"],
                     name=row["name"],
                     description=row["description"],

@@ -3,19 +3,24 @@ from typing import Any
 import asyncclick as click
 from asyncclick import pass_context
 
+from r2r import R2RAsyncClient
 from cli.command_group import cli, deprecated_command
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
 
 
+# TODO
 @cli.command()
 @click.option("--filters", type=JSON, help="Filters for analytics as JSON")
 @click.option("--analysis-types", type=JSON, help="Analysis types as JSON")
 @pass_context
+@deprecated_command(
+    "This command is deprecated. New, improved analytics features will be added in a future release."
+)
 async def analytics(
     ctx, filters: dict[str, Any], analysis_types: dict[str, Any]
 ):
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     """Retrieve analytics data."""
     with timer():
         response = await client.analytics(filters, analysis_types)
@@ -25,9 +30,10 @@ async def analytics(
 
 @cli.command()
 @pass_context
+@deprecated_command("r2r system settings")
 async def app_settings(ctx):
     """Retrieve application settings."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     with timer():
         response = await client.app_settings()
 
@@ -47,9 +53,10 @@ async def app_settings(ctx):
     help="The maximum number of nodes to return. Defaults to 100.",
 )
 @pass_context
+@deprecated_command("r2r users list")
 async def users_overview(ctx, user_ids, offset, limit):
     """Get an overview of users."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     user_ids = list(user_ids) if user_ids else None
 
     with timer():
@@ -76,9 +83,10 @@ async def users_overview(ctx, user_ids, offset, limit):
     help="Filters for deletion in the format key:operator:value",
 )
 @pass_context
+@deprecated_command("r2r delete <document id>")
 async def delete(ctx, filter):
     """Delete documents based on filters."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     filters = {}
     for f in filter:
         key, operator, value = f.split(":", 2)
@@ -105,9 +113,10 @@ async def delete(ctx, filter):
     help="The maximum number of nodes to return. Defaults to 100.",
 )
 @pass_context
+@deprecated_command("r2r documents list")
 async def documents_overview(ctx, document_ids, offset, limit):
     """Get an overview of documents."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     document_ids = list(document_ids) if document_ids else None
 
     with timer():
@@ -136,11 +145,12 @@ async def documents_overview(ctx, document_ids, offset, limit):
     help="Should the vector be included in the response chunks",
 )
 @pass_context
+@deprecated_command("r2r documents list-chunks <document id>")
 async def list_document_chunks(
     ctx, document_id, offset, limit, include_vectors
 ):
     """Get chunks of a specific document."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     if not document_id:
         click.echo("Error: Document ID is required.")
         return
@@ -191,7 +201,7 @@ async def list_document_chunks(
 @deprecated_command("document_chunks")
 async def document_chunks(ctx, document_id, offset, limit, include_vectors):
     """Get chunks of a specific document."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     if not document_id:
         click.echo("Error: Document ID is required.")
         return

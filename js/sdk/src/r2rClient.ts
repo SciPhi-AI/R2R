@@ -8,8 +8,9 @@ import { CollectionsClient } from "./v3/clients/collections";
 import { ConversationsClient } from "./v3/clients/conversations";
 import { DocumentsClient } from "./v3/clients/documents";
 import { IndiciesClient } from "./v3/clients/indices";
-import { UsersClient } from "./v3/clients/users";
 import { PromptsClient } from "./v3/clients/prompts";
+import { RetrievalClient } from "./v3/clients/retrieval";
+import { UsersClient } from "./v3/clients/users";
 
 let fs: any;
 if (typeof window === "undefined") {
@@ -40,8 +41,9 @@ export class r2rClient extends BaseClient {
   public readonly conversations: ConversationsClient;
   public readonly documents: DocumentsClient;
   public readonly indices: IndiciesClient;
-  public readonly users: UsersClient;
   public readonly prompts: PromptsClient;
+  public readonly retrieval: RetrievalClient;
+  public readonly users: UsersClient;
 
   constructor(baseURL: string, anonymousTelemetry = true) {
     super(baseURL, "", anonymousTelemetry);
@@ -51,8 +53,9 @@ export class r2rClient extends BaseClient {
     this.conversations = new ConversationsClient(this);
     this.documents = new DocumentsClient(this);
     this.indices = new IndiciesClient(this);
-    this.users = new UsersClient(this);
     this.prompts = new PromptsClient(this);
+    this.retrieval = new RetrievalClient(this);
+    this.users = new UsersClient(this);
 
     initializeTelemetry(this.anonymousTelemetry);
 
@@ -1841,40 +1844,23 @@ export class r2rClient extends BaseClient {
   /**
    * Search over documents.
    * @param query The query to search for.
-   * @param settings Settings for the document search.
+   * @param vector_search_settings Settings for the document search.
    * @returns A promise that resolves to the response from the server.
    */
   @feature("searchDocuments")
   async searchDocuments(
     query: string,
-    settings?: {
-      searchOverMetadata?: boolean;
-      metadataKeys?: string[];
-      searchOverBody?: boolean;
-      filters?: Record<string, any>;
-      searchFilters?: Record<string, any>;
-      offset?: number;
-      limit?: number;
-      titleWeight?: number;
-      metadataWeight?: number;
-    },
+    vector_search_settings?: VectorSearchSettings | Record<string, any>,
   ): Promise<any> {
     this._ensureAuthenticated();
-
     const json_data: Record<string, any> = {
       query,
-      settings: {
-        search_over_metadata: settings?.searchOverMetadata ?? true,
-        metadata_keys: settings?.metadataKeys ?? ["title"],
-        search_over_body: settings?.searchOverBody ?? false,
-        filters: settings?.filters ?? {},
-        search_filters: settings?.searchFilters ?? {},
-        offset: settings?.offset ?? 0,
-        limit: settings?.limit ?? 10,
-        title_weight: settings?.titleWeight ?? 0.5,
-        metadata_weight: settings?.metadataWeight ?? 0.5,
-      },
+      vector_search_settings,
     };
+
+    Object.keys(json_data).forEach(
+      (key) => json_data[key] === undefined && delete json_data[key],
+    );
 
     return await this._makeRequest("POST", "search_documents", {
       data: json_data,
@@ -1886,6 +1872,7 @@ export class r2rClient extends BaseClient {
    * @param query The query to search for.
    * @param vector_search_settings Vector search settings.
    * @param kg_search_settings KG search settings.
+   * @deprecated use `client.retrieval.search` instead
    * @returns
    */
   @feature("search")
@@ -1917,6 +1904,7 @@ export class r2rClient extends BaseClient {
    * @param rag_generation_config RAG generation configuration.
    * @param task_prompt_override Task prompt override.
    * @param include_title_if_available Include title if available.
+   * @deprecated use `client.retrieval.search` instead
    * @returns A promise that resolves to the response from the server.
    */
   @feature("rag")
@@ -1977,6 +1965,7 @@ export class r2rClient extends BaseClient {
    * @param conversation_id The ID of the conversation, if not a new conversation.
    * @param branch_id The ID of the branch to use, if not a new branch.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated use `client.retrieval.agent` instead
    */
   @feature("agent")
   async agent(

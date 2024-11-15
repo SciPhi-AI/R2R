@@ -73,6 +73,14 @@ class ConversationsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r conversations create
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -129,6 +137,14 @@ class ConversationsRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r conversations list
                             """
                         ),
                     },
@@ -198,8 +214,7 @@ class ConversationsRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.conversations.get(
-                                "123e4567-e89b-12d3-a456-426614174000",
-                                branch_id="branch_1"
+                                "123e4567-e89b-12d3-a456-426614174000"
                             )
                             """
                         ),
@@ -215,11 +230,18 @@ class ConversationsRouter(BaseRouterV3):
                             function main() {
                                 const response = await client.conversations.retrieve({
                                     id: "123e4567-e89b-12d3-a456-426614174000",
-                                    branch_id: "branch_1"
                                 });
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r conversations retrieve 123e4567-e89b-12d3-a456-426614174000
                             """
                         ),
                     },
@@ -288,6 +310,14 @@ class ConversationsRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r conversations delete 123e4567-e89b-12d3-a456-426614174000
                             """
                         ),
                     },
@@ -525,6 +555,14 @@ class ConversationsRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r conversations list-branches 123e4567-e89b-12d3-a456-426614174000
                             """
                         ),
                     },

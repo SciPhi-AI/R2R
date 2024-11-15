@@ -1,4 +1,6 @@
 import asyncio
+import contextlib
+
 from functools import wraps
 from typing import Optional
 
@@ -23,11 +25,9 @@ def sync_generator_wrapper(async_gen_func):
     def wrapper(*args, **kwargs):
         async_gen = async_gen_func(*args, **kwargs)
         loop = asyncio.get_event_loop()
-        try:
+        with contextlib.suppress(StopAsyncIteration):
             while True:
                 yield loop.run_until_complete(async_gen.__anext__())
-        except StopAsyncIteration:
-            pass
 
     return wrapper
 
@@ -57,8 +57,8 @@ class BaseClient:
                 message="Not authenticated. Please login first.",
             )
 
-    def _get_full_url(self, endpoint: str) -> str:
-        return f"{self.base_url}{self.prefix}/{endpoint}"
+    def _get_full_url(self, endpoint: str, version: str = "v2") -> str:
+        return f"{self.base_url}/{version}/{endpoint}"
 
     def _prepare_request_args(self, endpoint: str, **kwargs) -> dict:
         headers = kwargs.pop("headers", {})

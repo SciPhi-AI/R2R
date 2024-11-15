@@ -2,10 +2,9 @@ import asyncio
 import logging
 from uuid import UUID
 
+from fastapi import HTTPException
 from litellm import AuthenticationError
 
-from fastapi import HTTPException
-from core.base import R2RException, increment_version
 from core.base import DocumentChunk, R2RException, increment_version
 from core.utils import (
     generate_default_user_collection_id,
@@ -44,6 +43,11 @@ def simple_ingestion_factory(service: IngestionService):
                 extraction.model_dump()
                 async for extraction in extractions_generator
             ]
+
+            await service.update_document_status(
+                document_info, status=IngestionStatus.AUGMENTING
+            )
+            await service.augment_document_info(document_info, extractions)
 
             await service.update_document_status(
                 document_info, status=IngestionStatus.EMBEDDING

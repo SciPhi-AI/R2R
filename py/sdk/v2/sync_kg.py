@@ -1,7 +1,7 @@
 from typing import Optional, Union
 from uuid import UUID
 
-from ...models import (
+from ..models import (
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationResponse,
@@ -10,8 +10,8 @@ from ...models import (
 )
 
 
-class KGMixins:
-    async def create_graph(
+class SyncKGMixins:
+    def create_graph(
         self,
         collection_id: Optional[Union[UUID, str]] = None,
         run_type: Optional[Union[str, KGRunType]] = None,
@@ -36,9 +36,9 @@ class KGMixins:
             "run_with_orchestration": run_with_orchestration or True,
         }
 
-        return await self._make_request("POST", "create_graph", json=data)  # type: ignore
+        return self._make_request("POST", "create_graph", json=data)  # type: ignore
 
-    async def enrich_graph(
+    def enrich_graph(
         self,
         collection_id: Optional[Union[UUID, str]] = None,
         run_type: Optional[Union[str, KGRunType]] = None,
@@ -67,9 +67,9 @@ class KGMixins:
             "run_with_orchestration": run_with_orchestration or True,
         }
 
-        return await self._make_request("POST", "enrich_graph", json=data)  # type: ignore
+        return self._make_request("POST", "enrich_graph", json=data)  # type: ignore
 
-    async def get_entities(
+    def get_entities(
         self,
         collection_id: Optional[Union[UUID, str]] = None,
         entity_level: Optional[str] = None,
@@ -101,43 +101,43 @@ class KGMixins:
 
         params = {k: v for k, v in params.items() if v is not None}
 
-        return await self._make_request("GET", "entities", params=params)  # type: ignore
+        return self._make_request("GET", "entities", params=params)  # type: ignore
 
-    async def get_relationships(
+    def get_triples(
         self,
         collection_id: Optional[Union[UUID, str]] = None,
         entity_names: Optional[list[str]] = None,
-        relationship_ids: Optional[list[str]] = None,
+        triple_ids: Optional[list[str]] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> dict:
         """
-        Retrieve relationships from the knowledge graph.
+        Retrieve triples from the knowledge graph.
 
         Args:
-            collection_id (str): The ID of the collection to retrieve relationships from.
+            collection_id (str): The ID of the collection to retrieve triples from.
             offset (int): The offset for pagination.
             limit (int): The limit for pagination.
             entity_names (Optional[List[str]]): Optional list of entity names to filter by.
-            relationship_ids (Optional[List[str]]): Optional list of relationship IDs to filter by.
+            triple_ids (Optional[List[str]]): Optional list of triple IDs to filter by.
 
         Returns:
-            dict: A dictionary containing the retrieved relationships and total count.
+            dict: A dictionary containing the retrieved triples and total count.
         """
 
         params = {
             "collection_id": collection_id,
             "entity_names": entity_names,
-            "relationship_ids": relationship_ids,
+            "triple_ids": triple_ids,
             "offset": offset,
             "limit": limit,
         }
 
         params = {k: v for k, v in params.items() if v is not None}
 
-        return await self._make_request("GET", "relationships", params=params)  # type: ignore
+        return self._make_request("GET", "triples", params=params)  # type: ignore
 
-    async def get_communities(
+    def get_communities(
         self,
         collection_id: Optional[Union[UUID, str]] = None,
         levels: Optional[list[int]] = None,
@@ -169,9 +169,9 @@ class KGMixins:
 
         params = {k: v for k, v in params.items() if v is not None}
 
-        return await self._make_request("GET", "communities", params=params)  # type: ignore
+        return self._make_request("GET", "communities", params=params)  # type: ignore
 
-    async def get_tuned_prompt(
+    def get_tuned_prompt(
         self,
         prompt_name: str,
         collection_id: Optional[str] = None,
@@ -207,9 +207,9 @@ class KGMixins:
 
         params = {k: v for k, v in params.items() if v is not None}
 
-        return await self._make_request("GET", "tuned_prompt", params=params)  # type: ignore
+        return self._make_request("GET", "tuned_prompt", params=params)  # type: ignore
 
-    async def deduplicate_entities(
+    def deduplicate_entities(
         self,
         collection_id: Optional[Union[UUID, str]] = None,
         run_type: Optional[Union[str, KGRunType]] = None,
@@ -233,11 +233,11 @@ class KGMixins:
             "deduplication_settings": deduplication_settings or {},
         }
 
-        return await self._make_request(  # type: ignore
+        return self._make_request(  # type: ignore
             "POST", "deduplicate_entities", json=data
         )
 
-    async def delete_graph_for_collection(
+    def delete_graph_for_collection(
         self, collection_id: Union[UUID, str], cascade: bool = False
     ) -> dict:
         """
@@ -245,9 +245,9 @@ class KGMixins:
 
         Args:
             collection_id (Union[UUID, str]): The ID of the collection to delete the graph for.
-            cascade (bool): Whether to cascade the deletion, and delete entities and relationships belonging to the collection.
+            cascade (bool): Whether to cascade the deletion, and delete entities and triples belonging to the collection.
 
-            NOTE: Setting this flag to true will delete entities and relationships for documents that are shared across multiple collections. Do not set this flag unless you are absolutely sure that you want to delete the entities and relationships for all documents in the collection.
+            NOTE: Setting this flag to true will delete entities and triples for documents that are shared across multiple collections. Do not set this flag unless you are absolutely sure that you want to delete the entities and triples for all documents in the collection.
         """
 
         data = {
@@ -255,4 +255,4 @@ class KGMixins:
             "cascade": cascade,
         }
 
-        return await self._make_request("DELETE", "delete_graph_for_collection", json=data)  # type: ignore
+        return self._make_request("DELETE", "delete_graph_for_collection", json=data)  # type: ignore

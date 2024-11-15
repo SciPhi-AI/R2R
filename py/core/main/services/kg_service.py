@@ -3,6 +3,7 @@ import math
 import time
 from typing import AsyncGenerator, Optional
 from uuid import UUID
+
 from fastapi import HTTPException
 
 from core.base import KGExtractionStatus, RunManager

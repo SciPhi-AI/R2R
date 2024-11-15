@@ -28,7 +28,6 @@ from core.base.abstractions import (
 )
 from core.base.abstractions import (
     DocumentResponse,
-    DocumentSearchSettings,
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
@@ -36,11 +35,11 @@ from core.base.abstractions import (
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
+    SearchSettings,
     UserStats,
     VectorEntry,
     VectorQuantizationType,
     VectorSearchResult,
-    VectorSearchSettings,
     VectorTableName,
 )
 from core.base.api.models import (
@@ -251,6 +250,15 @@ class DocumentHandler(Handler):
         status: Union[str, list[str]],
         collection_id: Optional[UUID] = None,
     ):
+        pass
+
+    @abstractmethod
+    async def search_documents(
+        self,
+        query_text: str,
+        query_embedding: Optional[list[float]] = None,
+        search_settings: Optional[SearchSettings] = None,
+    ) -> list[DocumentResponse]:
         pass
 
 
@@ -476,20 +484,14 @@ class VectorHandler(Handler):
 
     @abstractmethod
     async def semantic_search(
-        self, query_vector: list[float], search_settings: VectorSearchSettings
+        self, query_vector: list[float], search_settings: SearchSettings
     ) -> list[VectorSearchResult]:
         pass
 
     @abstractmethod
     async def full_text_search(
-        self, query_text: str, search_settings: VectorSearchSettings
+        self, query_text: str, search_settings: SearchSettings
     ) -> list[VectorSearchResult]:
-        pass
-
-    @abstractmethod
-    async def search_documents(
-        self, query_text: str, settings: DocumentSearchSettings
-    ) -> list[dict]:
         pass
 
     @abstractmethod
@@ -497,7 +499,7 @@ class VectorHandler(Handler):
         self,
         query_text: str,
         query_vector: list[float],
-        search_settings: VectorSearchSettings,
+        search_settings: SearchSettings,
         *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
@@ -1519,14 +1521,14 @@ class DatabaseProvider(Provider):
         return await self.vector_handler.upsert_entries(entries)
 
     async def semantic_search(
-        self, query_vector: list[float], search_settings: VectorSearchSettings
+        self, query_vector: list[float], search_settings: SearchSettings
     ) -> list[VectorSearchResult]:
         return await self.vector_handler.semantic_search(
             query_vector, search_settings
         )
 
     async def full_text_search(
-        self, query_text: str, search_settings: VectorSearchSettings
+        self, query_text: str, search_settings: SearchSettings
     ) -> list[VectorSearchResult]:
         return await self.vector_handler.full_text_search(
             query_text, search_settings
@@ -1536,7 +1538,7 @@ class DatabaseProvider(Provider):
         self,
         query_text: str,
         query_vector: list[float],
-        search_settings: VectorSearchSettings,
+        search_settings: SearchSettings,
         *args,
         **kwargs,
     ) -> list[VectorSearchResult]:
@@ -1545,9 +1547,14 @@ class DatabaseProvider(Provider):
         )
 
     async def search_documents(
-        self, query_text: str, settings: DocumentSearchSettings
-    ) -> list[dict]:
-        return await self.vector_handler.search_documents(query_text, settings)
+        self,
+        query_text: str,
+        settings: SearchSettings,
+        query_embedding: Optional[list[float]] = None,
+    ) -> list[DocumentResponse]:
+        return await self.document_handler.search_documents(
+            query_text, query_embedding, settings
+        )
 
     async def delete(
         self, filters: dict[str, Any]

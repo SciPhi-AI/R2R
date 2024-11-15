@@ -3,8 +3,8 @@ import logging
 import uuid
 from typing import TYPE_CHECKING
 from uuid import UUID
-from fastapi import HTTPException
 
+from fastapi import HTTPException
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
 from litellm import AuthenticationError
 
@@ -102,6 +102,14 @@ def hatchet_ingestion_factory(
                 # async def embed(self, context: Context) -> dict:
                 #     document_info_dict = context.step_output("parse")["document_info"]
                 #     document_info = DocumentResponse(**document_info_dict)
+
+                await service.update_document_status(
+                    document_info, status=IngestionStatus.AUGMENTING
+                )
+                await service.augment_document_info(
+                    document_info,
+                    [extraction.to_dict() for extraction in extractions],
+                )
 
                 await self.ingestion_service.update_document_status(
                     document_info,

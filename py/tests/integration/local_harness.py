@@ -16,7 +16,7 @@ class TestResult:
     name: str
     passed: bool
     duration: float
-    error: dict = None
+    error: dict
 
 
 class TestRunner:

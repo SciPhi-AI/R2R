@@ -1,11 +1,5 @@
 import json
-import logging
-from inspect import isasyncgenfunction, iscoroutinefunction
 from typing import Optional
-
-from ..base.base_client import sync_generator_wrapper, sync_wrapper
-
-logger = logging.getLogger()
 
 
 class IndicesSDK:
@@ -14,7 +8,7 @@ class IndicesSDK:
 
     async def create(
         self,
-        config: dict,  # Union[dict, IndexConfig],
+        config: dict,
         run_with_orchestration: Optional[bool] = True,
     ) -> dict:
         """
@@ -31,7 +25,12 @@ class IndicesSDK:
             "config": config,
             "run_with_orchestration": run_with_orchestration,
         }
-        return await self.client._make_request("POST", "indices", json=data)  # type: ignore
+        return await self.client._make_request(
+            "POST",
+            "indices",
+            json=data,
+            version="v3",
+        )
 
     async def list(
         self,
@@ -56,7 +55,12 @@ class IndicesSDK:
         }
         if filters:
             params["filters"] = json.dumps(filters)
-        return await self.client._make_request("GET", "indices", params=params)  # type: ignore
+        return await self.client._make_request(
+            "GET",
+            "indices",
+            params=params,
+            version="v3",
+        )
 
     async def retrieve(
         self,
@@ -73,7 +77,11 @@ class IndicesSDK:
         Returns:
             WrappedGetIndexResponse: The response containing the index details.
         """
-        return await self.client._make_request("GET", f"indices/{table_name}/{index_name}")  # type: ignore
+        return await self.client._make_request(
+            "GET",
+            f"indices/{table_name}/{index_name}",
+            version="v3",
+        )
 
     # async def update_index(
     #     self,
@@ -116,24 +124,8 @@ class IndicesSDK:
         Returns:
             WrappedGetIndexResponse: The response containing the index details.
         """
-        return await self.client._make_request("DELETE", f"indices/{table_name}/{index_name}")  # type: ignore
-
-
-class SyncIndexSDK:
-    """Synchronous wrapper for DocumentsSDK"""
-
-    def __init__(self, async_sdk: IndicesSDK):
-        self._async_sdk = async_sdk
-
-        # Get all attributes from the instance
-        for name in dir(async_sdk):
-            if not name.startswith("_"):  # Skip private methods
-                attr = getattr(async_sdk, name)
-                # Check if it's a method and if it's async
-                if callable(attr) and (
-                    iscoroutinefunction(attr) or isasyncgenfunction(attr)
-                ):
-                    if isasyncgenfunction(attr):
-                        setattr(self, name, sync_generator_wrapper(attr))
-                    else:
-                        setattr(self, name, sync_wrapper(attr))
+        return await self.client._make_request(
+            "DELETE",
+            f"indices/{table_name}/{index_name}",
+            version="v3",
+        )

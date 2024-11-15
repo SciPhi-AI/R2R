@@ -1,20 +1,13 @@
-from inspect import isasyncgenfunction, iscoroutinefunction
 from typing import Optional, Union
 from uuid import UUID
 
-from ..base.base_client import sync_generator_wrapper, sync_wrapper
 from ..models import Token, UserResponse
 
 
 class UsersSDK:
-    """
-    SDK for interacting with users in the v3 API.
-    """
-
     def __init__(self, client):
         self.client = client
 
-    # New authentication methods
     async def register(self, email: str, password: str) -> UserResponse:
         """
         Register a new user.
@@ -28,7 +21,10 @@ class UsersSDK:
         """
         data = {"email": email, "password": password}
         return await self.client._make_request(
-            "POST", "users/register", json=data
+            "POST",
+            "users/register",
+            json=data,
+            version="v3",
         )
 
     async def verify_email(self, email: str, verification_code: str) -> dict:
@@ -44,7 +40,10 @@ class UsersSDK:
         """
         data = {"email": email, "verification_code": verification_code}
         return await self.client._make_request(
-            "POST", "users/verify-email", json=data
+            "POST",
+            "users/verify-email",
+            json=data,
+            version="v3",
         )
 
     async def login(self, email: str, password: str) -> dict[str, Token]:
@@ -58,9 +57,12 @@ class UsersSDK:
         Returns:
             dict[str, Token]: Access and refresh tokens
         """
-        data = {"email": email, "password": password}
+        data = {"username": email, "password": password}
         response = await self.client._make_request(
-            "POST", "users/login", data=data
+            "POST",
+            "users/login",
+            data=data,
+            version="v3",
         )
         self.client.access_token = response["results"]["access_token"]["token"]
         self.client._refresh_token = response["results"]["refresh_token"][
@@ -81,7 +83,11 @@ class UsersSDK:
         """
         self.client.access_token = access_token
         try:
-            await self.client._make_request("GET", "users/me")
+            await self.client._make_request(
+                "GET",
+                "users/me",
+                version="v3",
+            )
             return {
                 "access_token": Token(
                     token=access_token, token_type="access_token"
@@ -94,7 +100,11 @@ class UsersSDK:
 
     async def logout(self) -> dict:
         """Log out the current user."""
-        response = await self.client._make_request("POST", "users/logout")
+        response = await self.client._make_request(
+            "POST",
+            "users/logout",
+            version="v3",
+        )
         self.client.access_token = None
         self.client._refresh_token = None
         return response
@@ -105,6 +115,7 @@ class UsersSDK:
             "POST",
             "users/refresh-token",
             json=self.client._refresh_token,
+            version="v3",
         )
         self.client.access_token = response["results"]["access_token"]["token"]
         self.client._refresh_token = response["results"]["refresh_token"][
@@ -130,7 +141,10 @@ class UsersSDK:
             "new_password": new_password,
         }
         return await self.client._make_request(
-            "POST", "users/change-password", json=data
+            "POST",
+            "users/change-password",
+            json=data,
+            version="v3",
         )
 
     async def request_password_reset(self, email: str) -> dict:
@@ -144,7 +158,10 @@ class UsersSDK:
             dict: Password reset request result
         """
         return await self.client._make_request(
-            "POST", "users/request-password-reset", json=email
+            "POST",
+            "users/request-password-reset",
+            json=email,
+            version="v3",
         )
 
     async def reset_password(
@@ -162,14 +179,15 @@ class UsersSDK:
         """
         data = {"reset_token": reset_token, "new_password": new_password}
         return await self.client._make_request(
-            "POST", "users/reset-password", json=data
+            "POST",
+            "users/reset-password",
+            json=data,
+            version="v3",
         )
 
     async def list(
         self,
-        email: Optional[str] = None,
-        is_active: Optional[bool] = None,
-        is_superuser: Optional[bool] = None,
+        ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> dict:
@@ -177,29 +195,27 @@ class UsersSDK:
         List users with pagination and filtering options.
 
         Args:
-            email (Optional[str]): Email to filter by (partial match)
-            is_active (Optional[bool]): Filter by active status
-            is_superuser (Optional[bool]): Filter by superuser status
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: List of users and pagination information
         """
-        params: dict = {
+        params = {
             "offset": offset,
             "limit": limit,
         }
+        if ids:
+            params["ids"] = [str(user_id) for user_id in ids]  # type: ignore
 
-        if email:
-            params["email"] = email
-        if is_active is not None:
-            params["is_active"] = is_active
-        if is_superuser is not None:
-            params["is_superuser"] = is_superuser
+        return await self.client._make_request(
+            "GET",
+            "users",
+            params=params,
+            version="v3",
+        )
 
-        return await self.client._make_request("GET", "users", params=params)
-
+    # TODO: We should make this optional, that way they can retrieve themselves
     async def retrieve(
         self,
         id: Union[str, UUID],
@@ -213,7 +229,11 @@ class UsersSDK:
         Returns:
             dict: Detailed user information
         """
-        return await self.client._make_request("GET", f"users/{str(id)}")
+        return await self.client._make_request(
+            "GET",
+            f"users/{str(id)}",
+            version="v3",
+        )
 
     async def update(
         self,
@@ -252,6 +272,7 @@ class UsersSDK:
             "POST",
             f"users/{str(id)}",
             json=data,  #  if len(data.keys()) != 1 else list(data.values())[0]
+            version="v3",
         )
 
     async def list_collections(
@@ -277,7 +298,10 @@ class UsersSDK:
         }
 
         return await self.client._make_request(
-            "GET", f"users/{str(id)}/collections", params=params
+            "GET",
+            f"users/{str(id)}/collections",
+            params=params,
+            version="v3",
         )
 
     async def add_to_collection(
@@ -293,7 +317,9 @@ class UsersSDK:
             collection_id (Union[str, UUID]): Collection ID to add user to
         """
         await self.client._make_request(
-            "POST", f"users/{str(id)}/collections/{str(collection_id)}"
+            "POST",
+            f"users/{str(id)}/collections/{str(collection_id)}",
+            version="v3",
         )
 
     async def remove_from_collection(
@@ -312,25 +338,7 @@ class UsersSDK:
             bool: True if successful
         """
         return await self.client._make_request(
-            "DELETE", f"users/{str(id)}/collections/{str(collection_id)}"
+            "DELETE",
+            f"users/{str(id)}/collections/{str(collection_id)}",
+            version="v3",
         )
-
-
-class SyncUsersSDK:
-    """Synchronous wrapper for UsersSDK"""
-
-    def __init__(self, async_sdk: UsersSDK):
-        self._async_sdk = async_sdk
-
-        # Get all attributes from the instance
-        for name in dir(async_sdk):
-            if not name.startswith("_"):  # Skip private methods
-                attr = getattr(async_sdk, name)
-                # Check if it's a method and if it's async
-                if callable(attr) and (
-                    iscoroutinefunction(attr) or isasyncgenfunction(attr)
-                ):
-                    if isasyncgenfunction(attr):
-                        setattr(self, name, sync_generator_wrapper(attr))
-                    else:
-                        setattr(self, name, sync_wrapper(attr))

@@ -1,10 +1,7 @@
 import json
-from inspect import isasyncgenfunction, iscoroutinefunction
 from io import BytesIO
-from typing import Any, Optional, Union
+from typing import Optional
 from uuid import UUID
-
-from ..base.base_client import sync_generator_wrapper, sync_wrapper
 
 
 class DocumentsSDK:
@@ -19,7 +16,7 @@ class DocumentsSDK:
         self,
         file_path: Optional[str] = None,
         content: Optional[str] = None,
-        id: Optional[Union[str, UUID]] = None,
+        id: Optional[str | UUID] = None,
         metadata: Optional[dict] = None,
         ingestion_config: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
@@ -55,7 +52,11 @@ class DocumentsSDK:
             ]
             try:
                 result = await self.client._make_request(
-                    "POST", "documents", data=data, files=files
+                    "POST",
+                    "documents",
+                    data=data,
+                    files=files,
+                    version="v3",
                 )
             finally:
                 # Ensure we close the file after the request is complete
@@ -64,12 +65,15 @@ class DocumentsSDK:
         else:
             data["content"] = content  # type: ignore
             return await self.client._make_request(
-                "POST", "documents", data=data
+                "POST",
+                "documents",
+                data=data,
+                version="v3",
             )
 
     async def update(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
         file_path: Optional[str] = None,
         content: Optional[str] = None,
         metadata: Optional[dict] = None,
@@ -120,6 +124,7 @@ class DocumentsSDK:
                     f"documents/{str(id)}",
                     data=data,
                     files=files,
+                    version="v3",
                 )
             finally:
                 # Ensure we close the file after the request is complete
@@ -128,12 +133,15 @@ class DocumentsSDK:
         else:
             data["content"] = content  # type: ignore
             return await self.client._make_request(
-                "POST", f"documents/{str(id)}", data=data
+                "POST",
+                f"documents/{str(id)}",
+                data=data,
+                version="v3",
             )
 
     async def retrieve(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
     ) -> dict:
         """
         Get a specific document by ID.
@@ -144,11 +152,15 @@ class DocumentsSDK:
         Returns:
             dict: Document information
         """
-        return await self.client._make_request("GET", f"documents/{str(id)}")
+        return await self.client._make_request(
+            "GET",
+            f"documents/{str(id)}",
+            version="v3",
+        )
 
     async def list(
         self,
-        ids: Optional[list[Union[str, UUID]]] = None,
+        ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> dict:
@@ -171,12 +183,15 @@ class DocumentsSDK:
             params["ids"] = [str(doc_id) for doc_id in ids]  # type: ignore
 
         return await self.client._make_request(
-            "GET", "documents", params=params
+            "GET",
+            "documents",
+            params=params,
+            version="v3",
         )
 
     async def download(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
     ) -> BytesIO:
         """
         Download a document's file content.
@@ -188,12 +203,14 @@ class DocumentsSDK:
             BytesIO: File content as a binary stream
         """
         return await self.client._make_request(
-            "GET", f"documents/{str(id)}/download"
+            "GET",
+            f"documents/{str(id)}/download",
+            version="v3",
         )
 
     async def delete(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
     ) -> None:
         """
         Delete a specific document.
@@ -202,12 +219,14 @@ class DocumentsSDK:
             id (Union[str, UUID]): ID of document to delete
         """
         return await self.client._make_request(
-            "DELETE", f"documents/{str(id)}"
+            "DELETE",
+            f"documents/{str(id)}",
+            version="v3",
         )
 
     async def list_chunks(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
         include_vectors: Optional[bool] = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
@@ -231,12 +250,15 @@ class DocumentsSDK:
         }
 
         return await self.client._make_request(
-            "GET", f"documents/{str(id)}/chunks", params=params
+            "GET",
+            f"documents/{str(id)}/chunks",
+            params=params,
+            version="v3",
         )
 
     async def list_collections(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
         include_vectors: Optional[bool] = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
@@ -258,40 +280,26 @@ class DocumentsSDK:
         }
 
         return await self.client._make_request(
-            "GET", f"documents/{str(id)}/collections", params=params
+            "GET",
+            f"documents/{str(id)}/collections",
+            params=params,
+            version="v3",
         )
 
     async def delete_by_filter(
         self,
-        filters: dict[str, Any],
+        filters: dict,
     ) -> None:
         """
         Delete documents based on filters.
 
         Args:
-            filters (dict[str, Any]): Filters to apply when selecting documents to delete
+            filters (dict): Filters to apply when selecting documents to delete
         """
         filters_json = json.dumps(filters)
         return await self.client._make_request(
-            "DELETE", "documents/by-filter", params={"filters": filters_json}
+            "DELETE",
+            "documents/by-filter",
+            params={"filters": filters_json},
+            version="v3",
         )
-
-
-class SyncDocumentSDK:
-    """Synchronous wrapper for DocumentsSDK"""
-
-    def __init__(self, async_sdk: DocumentsSDK):
-        self._async_sdk = async_sdk
-
-        # Get all attributes from the instance
-        for name in dir(async_sdk):
-            if not name.startswith("_"):  # Skip private methods
-                attr = getattr(async_sdk, name)
-                # Check if it's a method and if it's async
-                if callable(attr) and (
-                    iscoroutinefunction(attr) or isasyncgenfunction(attr)
-                ):
-                    if isasyncgenfunction(attr):
-                        setattr(self, name, sync_generator_wrapper(attr))
-                    else:
-                        setattr(self, name, sync_wrapper(attr))

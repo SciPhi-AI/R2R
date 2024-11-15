@@ -1,20 +1,8 @@
-import json
-from inspect import getmembers, isasyncgenfunction, iscoroutinefunction
-from typing import Any, Optional, Union
+from typing import Optional
 from uuid import UUID
 
-from ..base.base_client import sync_generator_wrapper, sync_wrapper
 from core.base.abstractions import EntityLevel, KGRunType
 
-# from shared.abstractions import EntityLevel
-
-
-# from ..models import (
-#     WrappedKGCommunitiesResponse,
-#     WrappedKGCreationResponse,
-#     WrappedKGEntityDeduplicationResponse,
-#     WrappedKGTunePromptResponse,
-# )
 from ..models import KGCreationSettings, KGRunType
 
 
@@ -28,17 +16,17 @@ class GraphsSDK:
 
     async def create(
         self,
-        collection_id: Union[str, UUID],
-        run_type: Optional[Union[str, KGRunType]] = None,
-        settings: Optional[Union[dict, KGCreationSettings]] = None,
+        collection_id: str | UUID,
+        run_type: Optional[str | KGRunType] = None,
+        settings: Optional[dict | KGCreationSettings] = None,
         run_with_orchestration: Optional[bool] = True,
-    ):  # -> WrappedKGCreationResponse:
+    ):
         """
         Create a new knowledge graph for a collection.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID to create graph for
-            settings (Optional[dict[str, Any]]): Graph creation settings
+            collection_id (str | UUID): Collection ID to create graph for
+            settings (Optional[dict]): Graph creation settings
             run_with_orchestration (Optional[bool]): Whether to run with task orchestration
 
         Returns:
@@ -56,12 +44,12 @@ class GraphsSDK:
 
         return await self.client._make_request("POST", f"graphs/{collection_id}", json=data)  # type: ignore
 
-    async def get_status(self, collection_id: Union[str, UUID]) -> dict:
+    async def get_status(self, collection_id: str | UUID) -> dict:
         """
         Get the status of a graph.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID to get graph status for
+            collection_id (str | UUID): Collection ID to get graph status for
 
         Returns:
             dict: Graph status information
@@ -71,13 +59,15 @@ class GraphsSDK:
         )
 
     async def delete(
-        self, collection_id: Union[str, UUID], cascade: bool = False
+        self,
+        collection_id: str | UUID,
+        cascade: bool = False,
     ) -> dict:
         """
         Delete a graph.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID of graph to delete
+            collection_id (str | UUID): Collection ID of graph to delete
             cascade (bool): Whether to delete associated entities and relationships
 
         Returns:
@@ -90,34 +80,39 @@ class GraphsSDK:
 
     # Entity operations
     async def create_entity(
-        self, collection_id: Union[str, UUID], entity: dict[str, Any]
+        self,
+        collection_id: str | UUID,
+        entity: dict,
     ) -> dict:
         """
         Create a new entity in the graph.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID to create entity in
-            entity (dict[str, Any]): Entity data including name, type, and metadata
+            collection_id (str | UUID): Collection ID to create entity in
+            entity (dict): Entity data including name, type, and metadata
 
         Returns:
             dict: Created entity information
         """
         return await self.client._make_request(
-            "POST", f"graphs/{str(collection_id)}/entities", json=entity
+            "POST",
+            f"graphs/{str(collection_id)}/entities",
+            json=entity,
+            version="v3",
         )
 
     async def get_entity(
         self,
-        collection_id: Union[str, UUID],
-        entity_id: Union[str, int],
+        collection_id: str | UUID,
+        entity_id: str | int,
         include_embeddings: bool = False,
     ) -> dict:
         """
         Get details of a specific entity.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID containing the entity
-            entity_id (Union[str, UUID]): Entity ID to retrieve
+            collection_id (str | UUID): Collection ID containing the entity
+            entity_id (str | UUID): Entity ID to retrieve
             include_embeddings (bool): Whether to include vector embeddings
 
         Returns:
@@ -128,21 +123,22 @@ class GraphsSDK:
             "GET",
             f"graphs/{str(collection_id)}/entities/{str(entity_id)}",
             params=params,
+            version="v3",
         )
 
     async def update_entity(
         self,
-        collection_id: Union[str, UUID],
-        entity_id: Union[str, UUID],
-        entity_update: dict[str, Any],
+        collection_id: str | UUID,
+        entity_id: str | UUID,
+        entity_update: dict,
     ) -> dict:
         """
         Update an existing entity.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID containing the entity
-            entity_id (Union[str, UUID]): Entity ID to update
-            entity_update (dict[str, Any]): Updated entity data
+            collection_id (str | UUID): Collection ID containing the entity
+            entity_id (str | UUID): Entity ID to update
+            entity_update (dict): Updated entity data
 
         Returns:
             dict: Updated entity information
@@ -151,20 +147,21 @@ class GraphsSDK:
             "POST",
             f"graphs/{str(collection_id)}/entities/{str(entity_id)}",
             json=entity_update,
+            version="v3",
         )
 
     async def delete_entity(
         self,
-        collection_id: Union[str, UUID],
-        entity_id: Union[str, UUID],
+        collection_id: str | UUID,
+        entity_id: str | UUID,
         cascade: bool = False,
     ) -> dict:
         """
         Delete an entity.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID containing the entity
-            entity_id (Union[str, UUID]): Entity ID to delete
+            collection_id (str | UUID): Collection ID containing the entity
+            entity_id (str | UUID): Entity ID to delete
             cascade (bool): Whether to delete related relationships
 
         Returns:
@@ -175,11 +172,12 @@ class GraphsSDK:
             "DELETE",
             f"graphs/{str(collection_id)}/entities/{str(entity_id)}",
             params=params,
+            version="v3",
         )
 
     async def list_entities(
         self,
-        collection_id: Union[str, UUID],
+        collection_id: str | UUID,
         level=EntityLevel.DOCUMENT,
         include_embeddings: bool = False,
         offset: Optional[int] = 0,
@@ -189,7 +187,7 @@ class GraphsSDK:
         List entities in the graph.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID to list entities from
+            collection_id (str | UUID): Collection ID to list entities from
             level (EntityLevel): Entity level filter
             include_embeddings (bool): Whether to include vector embeddings
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
@@ -205,22 +203,25 @@ class GraphsSDK:
             "include_embeddings": include_embeddings,
         }
         return await self.client._make_request(
-            "GET", f"graphs/{str(collection_id)}/entities", params=params
+            "GET",
+            f"graphs/{str(collection_id)}/entities",
+            params=params,
+            version="v3",
         )
 
     async def deduplicate_entities(
         self,
-        collection_id: Union[str, UUID],
-        settings: Optional[dict[str, Any]] = None,
+        collection_id: str | UUID,
+        settings: Optional[dict] = None,
         run_type: str = "ESTIMATE",
         run_with_orchestration: bool = True,
-    ):  # -> WrappedKGEntityDeduplicationResponse:
+    ):
         """
         Deduplicate entities in the graph.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID to deduplicate entities in
-            settings (Optional[dict[str, Any]]): Deduplication settings
+            collection_id (str | UUID): Collection ID to deduplicate entities in
+            settings (Optional[dict]): Deduplication settings
             run_type (str): Whether to estimate cost or run deduplication
             run_with_orchestration (bool): Whether to run with task orchestration
 
@@ -240,18 +241,19 @@ class GraphsSDK:
             f"graphs/{str(collection_id)}/entities/deduplicate",
             json=data,
             params=params,
+            version="v3",
         )
 
     # Relationship operations
     async def create_relationship(
-        self, collection_id: Union[str, UUID], relationship: dict[str, Any]
+        self, collection_id: str | UUID, relationship: dict
     ) -> dict:
         """
         Create a new relationship between entities.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID to create relationship in
-            relationship (dict[str, Any]): Relationship data including source, target, and type
+            collection_id (str | UUID): Collection ID to create relationship in
+            relationship (dict): Relationship data including source, target, and type
 
         Returns:
             dict: Created relationship information
@@ -260,19 +262,20 @@ class GraphsSDK:
             "POST",
             f"graphs/{str(collection_id)}/relationships",
             json=relationship,
+            version="v3",
         )
 
     async def get_relationship(
         self,
-        collection_id: Union[str, UUID],
-        relationship_id: Union[str, UUID],
+        collection_id: str | UUID,
+        relationship_id: str | UUID,
     ) -> dict:
         """
         Get details of a specific relationship.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID containing the relationship
-            relationship_id (Union[str, UUID]): Relationship ID to retrieve
+            collection_id (str | UUID): Collection ID containing the relationship
+            relationship_id (str | UUID): Relationship ID to retrieve
 
         Returns:
             dict: Relationship details
@@ -280,21 +283,22 @@ class GraphsSDK:
         return await self.client._make_request(
             "GET",
             f"graphs/{str(collection_id)}/relationships/{str(relationship_id)}",
+            version="v3",
         )
 
     async def update_relationship(
         self,
-        collection_id: Union[str, UUID],
-        relationship_id: Union[str, UUID],
-        relationship_update: dict[str, Any],
+        collection_id: str | UUID,
+        relationship_id: str | UUID,
+        relationship_update: dict,
     ) -> dict:
         """
         Update an existing relationship.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID containing the relationship
-            relationship_id (Union[str, UUID]): Relationship ID to update
-            relationship_update (dict[str, Any]): Updated relationship data
+            collection_id (str | UUID): Collection ID containing the relationship
+            relationship_id (str | UUID): Relationship ID to update
+            relationship_update (dict): Updated relationship data
 
         Returns:
             dict: Updated relationship information
@@ -303,19 +307,20 @@ class GraphsSDK:
             "POST",
             f"graphs/{str(collection_id)}/relationships/{str(relationship_id)}",
             json=relationship_update,
+            version="v3",
         )
 
     async def delete_relationship(
         self,
-        collection_id: Union[str, UUID],
-        relationship_id: Union[str, UUID],
+        collection_id: str | UUID,
+        relationship_id: str | UUID,
     ) -> dict:
         """
         Delete a relationship.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID containing the relationship
-            relationship_id (Union[str, UUID]): Relationship ID to delete
+            collection_id (str | UUID): Collection ID containing the relationship
+            relationship_id (str | UUID): Relationship ID to delete
 
         Returns:
             dict: Deletion confirmation
@@ -323,13 +328,14 @@ class GraphsSDK:
         return await self.client._make_request(
             "DELETE",
             f"graphs/{str(collection_id)}/relationships/{str(relationship_id)}",
+            version="v3",
         )
 
     async def list_relationships(
         self,
-        collection_id: Union[str, UUID],
-        source_id: Optional[Union[str, UUID]] = None,
-        target_id: Optional[Union[str, UUID]] = None,
+        collection_id: str | UUID,
+        source_id: Optional[str | UUID] = None,
+        target_id: Optional[str | UUID] = None,
         relationship_type: Optional[str] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
@@ -338,9 +344,9 @@ class GraphsSDK:
         List relationships in the graph.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID to list relationships from
-            source_id (Optional[Union[str, UUID]]): Filter by source entity
-            target_id (Optional[Union[str, UUID]]): Filter by target entity
+            collection_id (str | UUID): Collection ID to list relationships from
+            source_id (Optional[str | UUID]): Filter by source entity
+            target_id (Optional[str | UUID]): Filter by target entity
             relationship_type (Optional[str]): Filter by relationship type
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
@@ -363,22 +369,23 @@ class GraphsSDK:
             "GET",
             f"graphs/{str(collection_id)}/relationships",
             params=params,
+            version="v3",
         )
 
     # Community operations
     async def create_communities(
         self,
-        collection_id: Union[str, UUID],
-        run_type: Optional[Union[str, KGRunType]] = None,
-        settings: Optional[dict[str, Any]] = None,
+        collection_id: str | UUID,
+        run_type: Optional[str | KGRunType] = None,
+        settings: Optional[dict] = None,
         run_with_orchestration: bool = True,
     ):  # -> WrappedKGCommunitiesResponse:
         """
         Create communities in the graph.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID to create communities in
-            settings (Optional[dict[str, Any]]): Community detection settings
+            collection_id (str | UUID): Collection ID to create communities in
+            settings (Optional[dict]): Community detection settings
             run_with_orchestration (bool): Whether to run with task orchestration
 
         Returns:
@@ -397,19 +404,20 @@ class GraphsSDK:
             f"graphs/{str(collection_id)}/communities",
             json=data,
             params=params,
+            version="v3",
         )
 
     async def get_community(
         self,
-        collection_id: Union[str, UUID],
-        community_id: Union[str, UUID],
+        collection_id: str | UUID,
+        community_id: str | UUID,
     ) -> dict:
         """
         Get details of a specific community.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID containing the community
-            community_id (Union[str, UUID]): Community ID to retrieve
+            collection_id (str | UUID): Collection ID containing the community
+            community_id (str | UUID): Community ID to retrieve
 
         Returns:
             dict: Community details
@@ -417,21 +425,22 @@ class GraphsSDK:
         return await self.client._make_request(
             "GET",
             f"graphs/{str(collection_id)}/communities/{str(community_id)}",
+            version="v3",
         )
 
     async def update_community(
         self,
-        collection_id: Union[str, UUID],
-        community_id: Union[str, UUID],
-        community_update: dict[str, Any],
+        collection_id: str | UUID,
+        community_id: str | UUID,
+        community_update: dict,
     ) -> dict:
         """
         Update a community.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID containing the community
-            community_id (Union[str, UUID]): Community ID to update
-            community_update (dict[str, Any]): Updated community data
+            collection_id (str | UUID): Collection ID containing the community
+            community_id (str | UUID): Community ID to update
+            community_update (dict): Updated community data
 
         Returns:
             dict: Updated community information
@@ -440,11 +449,12 @@ class GraphsSDK:
             "POST",
             f"graphs/{str(collection_id)}/communities/{str(community_id)}",
             json=community_update,
+            version="v3",
         )
 
     async def list_communities(
         self,
-        collection_id: Union[str, UUID],
+        collection_id: str | UUID,
         level: Optional[int] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
@@ -453,7 +463,7 @@ class GraphsSDK:
         List communities in the graph.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID to list communities from
+            collection_id (str | UUID): Collection ID to list communities from
             level (Optional[int]): Filter by community level
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
@@ -472,19 +482,20 @@ class GraphsSDK:
             "GET",
             f"graphs/{str(collection_id)}/communities",
             params=params,
+            version="v3",
         )
 
     async def delete_community(
         self,
-        collection_id: Union[str, UUID],
-        community_id: Union[str, UUID],
+        collection_id: str | UUID,
+        community_id: str | UUID,
     ) -> dict:
         """
         Delete a specific community.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID containing the community
-            community_id (Union[str, UUID]): Community ID to delete
+            collection_id (str | UUID): Collection ID containing the community
+            community_id (str | UUID): Community ID to delete
 
         Returns:
             dict: Deletion confirmation
@@ -492,18 +503,19 @@ class GraphsSDK:
         return await self.client._make_request(
             "DELETE",
             f"graphs/{str(collection_id)}/communities/{str(community_id)}",
+            version="v3",
         )
 
     async def delete_communities(
         self,
-        collection_id: Union[str, UUID],
+        collection_id: str | UUID,
         level: Optional[int] = None,
     ) -> dict:
         """
         Delete communities from the graph.
 
         Args:
-            collection_id (Union[str, UUID]): Collection ID to delete communities from
+            collection_id (str | UUID): Collection ID to delete communities from
             level (Optional[int]): Specific level to delete, or None for all levels
 
         Returns:
@@ -517,11 +529,12 @@ class GraphsSDK:
             "DELETE",
             f"graphs/{str(collection_id)}/communities",
             params=params,
+            version="v3",
         )
 
     async def tune_prompt(
         self,
-        collection_id: Union[str, UUID],
+        collection_id: str | UUID,
         prompt_name: str,
         documents_offset: Optional[int] = 0,
         documents_limit: Optional[int] = 100,
@@ -555,24 +568,5 @@ class GraphsSDK:
             "POST",
             f"graphs/{str(collection_id)}/tune-prompt",
             json=data,
+            version="v3",
         )
-
-
-class SyncGraphsSDK:
-    """Synchronous wrapper for GraphsSDK"""
-
-    def __init__(self, async_sdk: GraphsSDK):
-        self._async_sdk = async_sdk
-
-        # Get all attributes from the async SDK instance
-        for name in dir(async_sdk):
-            if not name.startswith("_"):  # Skip private methods
-                attr = getattr(async_sdk, name)
-                # Check if it's a method and if it's async
-                if callable(attr) and (
-                    iscoroutinefunction(attr) or isasyncgenfunction(attr)
-                ):
-                    if isasyncgenfunction(attr):
-                        setattr(self, name, sync_generator_wrapper(attr))
-                    else:
-                        setattr(self, name, sync_wrapper(attr))

@@ -1,14 +1,20 @@
 import json
+
+import asyncclick as click
+from asyncclick import pass_context
+
+from r2r import R2RAsyncClient
+from cli.utils.timer import timer
+from cli.command_group import cli
+
+
 import os
 import platform
 import subprocess
 import sys
 from importlib.metadata import version as get_version
 
-import asyncclick as click
-from asyncclick import pass_context
 from dotenv import load_dotenv
-
 from cli.command_group import cli
 from cli.utils.docker_utils import (
     bring_down_docker_compose,
@@ -17,46 +23,42 @@ from cli.utils.docker_utils import (
     run_local_serve,
     wait_for_container_health,
 )
-from cli.utils.timer import timer
+
+
+@click.group()
+def system():
+    """System commands."""
+    pass
 
 
 @cli.command()
 @pass_context
 async def health(ctx):
     """Check the health of the server."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     with timer():
-        response = await client.health()
+        response = await client.system.health()
 
-    click.echo(response)
-
-
-@cli.command()
-@pass_context
-async def server_stats(ctx):
-    client = ctx.obj
-    """Check the server stats."""
-    with timer():
-        response = await client.server_stats()
-
-    click.echo(response)
+    click.echo(json.dumps(response, indent=2))
 
 
-@cli.command()
+@system.command()
+@click.option("--run-type-filter", help="Filter for log types")
 @click.option(
     "--offset", default=None, help="Pagination offset. Default is None."
 )
 @click.option(
     "--limit", default=None, help="Pagination limit. Defaults to 100."
 )
-@click.option("--run-type-filter", help="Filter for log types")
 @pass_context
 async def logs(ctx, run_type_filter, offset, limit):
     """Retrieve logs with optional type filter."""
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
     with timer():
-        response = await client.logs(
-            offset=offset, limit=limit, run_type_filter=run_type_filter
+        response = await client.system.logs(
+            run_type_filter=run_type_filter,
+            offset=offset,
+            limit=limit,
         )
 
     for log in response["results"]:
@@ -72,133 +74,26 @@ async def logs(ctx, run_type_filter, offset, limit):
     click.echo(f"Total runs: {len(response['results'])}")
 
 
-@cli.command()
-@click.option(
-    "--volumes",
-    is_flag=True,
-    help="Remove named volumes declared in the `volumes` section of the Compose file",
-)
-@click.option(
-    "--remove-orphans",
-    is_flag=True,
-    help="Remove containers for services not defined in the Compose file",
-)
-@click.option(
-    "--project-name",
-    default=None,
-    help="Which Docker Compose project to bring down",
-)
-def docker_down(volumes, remove_orphans, project_name):
-    """Bring down the Docker Compose setup and attempt to remove the network if necessary."""
+@system.command()
+@pass_context
+async def app_settings(ctx):
+    """Retrieve application settings."""
+    client: R2RAsyncClient = ctx.obj
+    with timer():
+        response = await client.app_settings()
 
-    if not project_name:
-        print("Bringing down the default R2R Docker setup(s)...")
-        try:
-            result = bring_down_docker_compose(
-                project_name or "r2r", volumes, remove_orphans
-            )
-        except:
-            pass
-        try:
-            result = bring_down_docker_compose(
-                project_name or "r2r-full", volumes, remove_orphans
-            )
-        except:
-            pass
-    else:
-        print(f"Bringing down the `{project_name}` R2R Docker setup...")
-        result = bring_down_docker_compose(
-            project_name, volumes, remove_orphans
-        )
-
-        if result != 0:
-            click.echo(
-                f"An error occurred while bringing down the {project_name} Docker Compose setup. Attempting to remove the network..."
-            )
-        else:
-            click.echo(
-                f"{project_name} Docker Compose setup has been successfully brought down."
-            )
-    remove_r2r_network()
+    click.echo(response)
 
 
-@cli.command()
-def generate_report():
-    """Generate a system report including R2R version, Docker info, and OS details."""
+@system.command()
+@pass_context
+async def status(ctx):
+    """Get statistics about the server, including the start time, uptime, CPU usage, and memory usage."""
+    client: R2RAsyncClient = ctx.obj
+    with timer():
+        response = await client.system.status()
 
-    # Get R2R version
-    from importlib.metadata import version
-
-    report = {"r2r_version": version("r2r")}
-
-    # Get Docker info
-    try:
-        subprocess.run(
-            ["docker", "version"], check=True, capture_output=True, timeout=5
-        )
-
-        docker_ps_output = subprocess.check_output(
-            ["docker", "ps", "--format", "{{.ID}}\t{{.Names}}\t{{.Status}}"],
-            text=True,
-            timeout=5,
-        ).strip()
-        report["docker_ps"] = [
-            dict(zip(["id", "name", "status"], line.split("\t")))
-            for line in docker_ps_output.split("\n")
-            if line
-        ]
-
-        docker_network_output = subprocess.check_output(
-            ["docker", "network", "ls", "--format", "{{.ID}}\t{{.Name}}"],
-            text=True,
-            timeout=5,
-        ).strip()
-        networks = [
-            dict(zip(["id", "name"], line.split("\t")))
-            for line in docker_network_output.split("\n")
-            if line
-        ]
-
-        report["docker_subnets"] = []
-        for network in networks:
-            inspect_output = subprocess.check_output(
-                [
-                    "docker",
-                    "network",
-                    "inspect",
-                    network["id"],
-                    "--format",
-                    "{{range .IPAM.Config}}{{.Subnet}}{{end}}",
-                ],
-                text=True,
-                timeout=5,
-            ).strip()
-            if subnet := inspect_output:
-                network["subnet"] = subnet
-                report["docker_subnets"].append(network)
-
-    except subprocess.CalledProcessError as e:
-        report["docker_error"] = f"Error running Docker command: {e}"
-    except FileNotFoundError:
-        report["docker_error"] = (
-            "Docker command not found. Is Docker installed and in PATH?"
-        )
-    except subprocess.TimeoutExpired:
-        report["docker_error"] = (
-            "Docker command timed out. Docker might be unresponsive."
-        )
-
-    # Get OS information
-    report["os_info"] = {
-        "system": platform.system(),
-        "release": platform.release(),
-        "version": platform.version(),
-        "machine": platform.machine(),
-        "processor": platform.processor(),
-    }
-
-    click.echo("System Report:")
-    click.echo(json.dumps(report, indent=2))
+    click.echo(json.dumps(response, indent=2))
 
 
 @cli.command()
@@ -382,6 +277,135 @@ async def serve(
 
 
 @cli.command()
+@click.option(
+    "--volumes",
+    is_flag=True,
+    help="Remove named volumes declared in the `volumes` section of the Compose file",
+)
+@click.option(
+    "--remove-orphans",
+    is_flag=True,
+    help="Remove containers for services not defined in the Compose file",
+)
+@click.option(
+    "--project-name",
+    default=None,
+    help="Which Docker Compose project to bring down",
+)
+def docker_down(volumes, remove_orphans, project_name):
+    """Bring down the Docker Compose setup and attempt to remove the network if necessary."""
+
+    if not project_name:
+        print("Bringing down the default R2R Docker setup(s)...")
+        try:
+            result = bring_down_docker_compose(
+                project_name or "r2r", volumes, remove_orphans
+            )
+        except:
+            pass
+        try:
+            result = bring_down_docker_compose(
+                project_name or "r2r-full", volumes, remove_orphans
+            )
+        except:
+            pass
+    else:
+        print(f"Bringing down the `{project_name}` R2R Docker setup...")
+        result = bring_down_docker_compose(
+            project_name, volumes, remove_orphans
+        )
+
+        if result != 0:
+            click.echo(
+                f"An error occurred while bringing down the {project_name} Docker Compose setup. Attempting to remove the network..."
+            )
+        else:
+            click.echo(
+                f"{project_name} Docker Compose setup has been successfully brought down."
+            )
+    remove_r2r_network()
+
+
+@cli.command()
+def generate_report():
+    """Generate a system report including R2R version, Docker info, and OS details."""
+
+    # Get R2R version
+    from importlib.metadata import version
+
+    report = {"r2r_version": version("r2r")}
+
+    # Get Docker info
+    try:
+        subprocess.run(
+            ["docker", "version"], check=True, capture_output=True, timeout=5
+        )
+
+        docker_ps_output = subprocess.check_output(
+            ["docker", "ps", "--format", "{{.ID}}\t{{.Names}}\t{{.Status}}"],
+            text=True,
+            timeout=5,
+        ).strip()
+        report["docker_ps"] = [
+            dict(zip(["id", "name", "status"], line.split("\t")))
+            for line in docker_ps_output.split("\n")
+            if line
+        ]
+
+        docker_network_output = subprocess.check_output(
+            ["docker", "network", "ls", "--format", "{{.ID}}\t{{.Name}}"],
+            text=True,
+            timeout=5,
+        ).strip()
+        networks = [
+            dict(zip(["id", "name"], line.split("\t")))
+            for line in docker_network_output.split("\n")
+            if line
+        ]
+
+        report["docker_subnets"] = []
+        for network in networks:
+            inspect_output = subprocess.check_output(
+                [
+                    "docker",
+                    "network",
+                    "inspect",
+                    network["id"],
+                    "--format",
+                    "{{range .IPAM.Config}}{{.Subnet}}{{end}}",
+                ],
+                text=True,
+                timeout=5,
+            ).strip()
+            if subnet := inspect_output:
+                network["subnet"] = subnet
+                report["docker_subnets"].append(network)
+
+    except subprocess.CalledProcessError as e:
+        report["docker_error"] = f"Error running Docker command: {e}"
+    except FileNotFoundError:
+        report["docker_error"] = (
+            "Docker command not found. Is Docker installed and in PATH?"
+        )
+    except subprocess.TimeoutExpired:
+        report["docker_error"] = (
+            "Docker command timed out. Docker might be unresponsive."
+        )
+
+    # Get OS information
+    report["os_info"] = {
+        "system": platform.system(),
+        "release": platform.release(),
+        "version": platform.version(),
+        "machine": platform.machine(),
+        "processor": platform.processor(),
+    }
+
+    click.echo("System Report:")
+    click.echo(json.dumps(report, indent=2))
+
+
+@cli.command()
 def update():
     """Update the R2R package to the latest version."""
     try:
@@ -402,7 +426,7 @@ def update():
 
 @cli.command()
 def version():
-    """Print the version of R2R."""
+    """Reports the SDK version."""
     from importlib.metadata import version
 
-    click.echo(version("r2r"))
+    click.echo(json.dumps(version("r2r"), indent=2))

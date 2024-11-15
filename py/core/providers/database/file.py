@@ -2,9 +2,9 @@ import io
 import logging
 from typing import BinaryIO, Optional, Union
 from uuid import UUID
-from fastapi import HTTPException
 
 import asyncpg
+from fastapi import HTTPException
 
 from core.base import FileHandler, R2RException
 

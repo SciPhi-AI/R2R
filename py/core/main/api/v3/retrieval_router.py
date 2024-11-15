@@ -11,7 +11,7 @@ from core.base import (
     KGSearchSettings,
     Message,
     R2RException,
-    VectorSearchSettings,
+    SearchSettings,
 )
 from core.base.api.models import (
     WrappedCompletionResponse,
@@ -46,7 +46,7 @@ class RetrievalRouterV3(BaseRouterV3):
     def _select_filters(
         self,
         auth_user: Any,
-        search_settings: VectorSearchSettings | KGSearchSettings,
+        search_settings: SearchSettings | KGSearchSettings,
     ) -> dict[str, Any]:
         selected_collections = {
             str(cid) for cid in set(search_settings.selected_collection_ids)
@@ -131,6 +131,54 @@ class RetrievalRouterV3(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.search({
+                                    query: "Who is Aristotle?",
+                                    vector_search_settings: {
+                                        use_vector_search: true,
+                                        filters: { document_id: { $eq: "3e157b3a-8469-51db-90d9-52e7d896b49b" } },
+                                        search_limit: 20,
+                                        use_hybrid_search: true
+                                    },
+                                    kg_search_settings: {
+                                        use_kg_search: true,
+                                        kg_search_type: "local",
+                                        kg_search_level: "0",
+                                        generation_config: {
+                                            model: "gpt-4o-mini",
+                                            temperature: 0.7
+                                        },
+                                        local_search_limits: {
+                                            __Entity__: 20,
+                                            __Relationship__: 20,
+                                            __Community__: 20
+                                        },
+                                        max_community_description_length: 65536,
+                                        max_llm_queries_for_global_search: 250
+                                    }
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r retrieval search --query "Who is Aristotle?"
+                            """
+                        ),
+                    },
+                    {
                         "lang": "Shell",
                         "source": textwrap.dedent(
                             """
@@ -174,8 +222,8 @@ class RetrievalRouterV3(BaseRouterV3):
                 ...,
                 description="Search query to find relevant documents",
             ),
-            vector_search_settings: VectorSearchSettings = Body(
-                default_factory=VectorSearchSettings,
+            vector_search_settings: SearchSettings = Body(
+                default_factory=SearchSettings,
                 description="Settings for vector-based search",
             ),
             kg_search_settings: KGSearchSettings = Body(
@@ -183,7 +231,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 description="Settings for knowledge graph search",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedSearchResponse:  # type: ignore
+        ) -> WrappedSearchResponse:
             """
             Perform a search query on the vector database and knowledge graph and any other configured search engines.
 
@@ -249,6 +297,59 @@ class RetrievalRouterV3(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.rag({
+                                    query: "Who is Aristotle?",
+                                    vector_search_settings: {
+                                        use_vector_search: true,
+                                        filters: { document_id: { $eq: "3e157b3a-8469-51db-90d9-52e7d896b49b" } },
+                                        search_limit: 20,
+                                        use_hybrid_search: true
+                                    },
+                                    kg_search_settings: {
+                                        use_kg_search: true,
+                                        kg_search_type: "local",
+                                        kg_search_level: "0",
+                                        generation_config: {
+                                            model: "gpt-4o-mini",
+                                            temperature: 0.7
+                                        },
+                                        local_search_limits: {
+                                            __Entity__: 20,
+                                            __Relationship__: 20,
+                                            __Community__: 20
+                                        },
+                                        max_community_description_length: 65536,
+                                        max_llm_queries_for_global_search: 250
+                                    },
+                                    rag_generation_config: {
+                                        stream: false,
+                                        temperature: 0.7,
+                                        max_tokens: 150
+                                    }
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r retrieval search --query "Who is Aristotle?" --stream
+                            """
+                        ),
+                    },
+                    {
                         "lang": "Shell",
                         "source": textwrap.dedent(
                             """
@@ -287,8 +388,8 @@ class RetrievalRouterV3(BaseRouterV3):
         @self.base_endpoint
         async def rag_app(
             query: str = Body(...),
-            vector_search_settings: VectorSearchSettings = Body(
-                default_factory=VectorSearchSettings,
+            vector_search_settings: SearchSettings = Body(
+                default_factory=SearchSettings,
                 description="Settings for vector-based search",
             ),
             kg_search_settings: KGSearchSettings = Body(
@@ -387,6 +488,45 @@ class RetrievalRouterV3(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.agent({
+                                    message: {
+                                        role: "user",
+                                        content: "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
+                                    },
+                                    vector_search_settings: {
+                                        use_vector_search: true,
+                                        filters: { collection_ids: ["5e157b3a-8469-51db-90d9-52e7d896b49b"] },
+                                        search_limit: 20,
+                                        use_hybrid_search: true
+                                    },
+                                    kg_search_settings: {
+                                        use_kg_search: true,
+                                        kg_search_type: "local",
+                                        kg_search_level: "1"
+                                    },
+                                    rag_generation_config: {
+                                        stream: false,
+                                        temperature: 0.7,
+                                        max_tokens: 1000
+                                    },
+                                    include_title_if_available: true,
+                                    conversation_id: "550e8400-e29b-41d4-a716-446655440000"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "Shell",
                         "source": textwrap.dedent(
                             """
@@ -434,8 +574,8 @@ class RetrievalRouterV3(BaseRouterV3):
                 deprecated=True,
                 description="List of messages (deprecated, use message instead)",
             ),
-            vector_search_settings: VectorSearchSettings = Body(
-                default_factory=VectorSearchSettings,
+            vector_search_settings: SearchSettings = Body(
+                default_factory=SearchSettings,
                 description="Settings for vector-based search",
             ),
             kg_search_settings: KGSearchSettings = Body(
@@ -561,6 +701,35 @@ class RetrievalRouterV3(BaseRouterV3):
                                     "stream": False
                                 }
                             )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.completion({
+                                    messages: [
+                                        { role: "system", content: "You are a helpful assistant." },
+                                        { role: "user", content: "What is the capital of France?" },
+                                        { role: "assistant", content: "The capital of France is Paris." },
+                                        { role: "user", content: "What about Italy?" }
+                                    ],
+                                    generation_config: {
+                                        model: "gpt-4o-mini",
+                                        temperature: 0.7,
+                                        max_tokens: 150,
+                                        stream: false
+                                    }
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },

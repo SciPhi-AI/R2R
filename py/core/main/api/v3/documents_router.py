@@ -89,6 +89,14 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r documents create /path/to/file.txt
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -267,10 +275,19 @@ class DocumentsRouter(BaseRouterV3):
                             function main() {
                                 const response = await client.documents.update({
                                     file: { path: "pg_essay_1.html", name: "pg_essay_1.html" },
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
                                 });
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r documents update /path/to/file.txt --id=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
                             """
                         ),
                     },
@@ -480,6 +497,14 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r documents create /path/to/file.txt
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -584,6 +609,14 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r documents retrieve 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -673,6 +706,14 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r documents list-chunks 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -732,8 +773,10 @@ class DocumentsRouter(BaseRouterV3):
             ) == str(auth_user.id)
             document_collections = await self.services[
                 "management"
-            ].get_collections_overview(
-                offset=0, limit=-1, filter_document_ids=[id]
+            ].collections_overview(
+                offset=0,
+                limit=-1,
+                document_ids=[id],
             )
 
             user_has_access = (
@@ -821,14 +864,56 @@ class DocumentsRouter(BaseRouterV3):
 
             Users can only download documents they own or have access to through collections.
             """
-            # TODO: Add a check to see if the user has access to the file
-
             try:
                 document_uuid = UUID(id)
             except ValueError:
                 raise R2RException(
                     status_code=422, message="Invalid document ID format."
                 )
+
+            # Retrieve the document's information
+            documents_overview_response = await self.services[
+                "management"
+            ].documents_overview(
+                user_ids=None,
+                collection_ids=None,
+                document_ids=[document_uuid],
+                offset=0,
+                limit=1,
+            )
+
+            if not documents_overview_response["results"]:
+                raise R2RException("Document not found.", 404)
+
+            document = documents_overview_response["results"][0]
+
+            is_owner = str(document.user_id) == str(auth_user.id)
+
+            if not auth_user.is_superuser and not is_owner:
+                document_collections = await self.services[
+                    "management"
+                ].collections_overview(
+                    offset=0,
+                    limit=-1,
+                    document_ids=[document_uuid],
+                )
+
+                document_collection_ids = {
+                    str(ele.id) for ele in document_collections["results"]
+                }
+
+                user_collection_ids = set(
+                    str(cid) for cid in auth_user.collection_ids
+                )
+
+                has_collection_access = user_collection_ids.intersection(
+                    document_collection_ids
+                )
+
+                if not has_collection_access:
+                    raise R2RException(
+                        "Not authorized to access this document.", 403
+                    )
 
             file_tuple = await self.services["management"].download_file(
                 document_uuid
@@ -850,7 +935,7 @@ class DocumentsRouter(BaseRouterV3):
                         break
                     yield data
 
-            return StreamingResponse(  # type: ignore
+            return StreamingResponse(
                 file_stream(),
                 media_type=mime_type,
                 headers={
@@ -894,6 +979,14 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r documents delete 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
                             """
                         ),
                     },
@@ -1033,6 +1126,14 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r documents list-collections 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -1080,10 +1181,10 @@ class DocumentsRouter(BaseRouterV3):
 
             collections_response = await self.services[
                 "management"
-            ].get_collections_overview(
+            ].collections_overview(
                 offset=offset,
                 limit=limit,
-                filter_document_ids=[UUID(id)],  # Convert string ID to UUID
+                document_ids=[UUID(id)],  # Convert string ID to UUID
             )
 
             return collections_response["results"], {  # type: ignore

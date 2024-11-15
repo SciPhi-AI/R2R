@@ -183,3 +183,12 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         limit: int = 10,
     ) -> list[VectorSearchResult]:
         return results[:limit]
+
+    async def arerank(
+        self,
+        query: str,
+        results: list[VectorSearchResult],
+        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
+        limit: int = 10,
+    ):
+        return results[:limit]

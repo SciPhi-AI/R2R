@@ -1,15 +1,8 @@
 import json
-from inspect import isasyncgenfunction, iscoroutinefunction
 from typing import Optional
-
-from ..base.base_client import sync_generator_wrapper, sync_wrapper
 
 
 class PromptsSDK:
-    """
-    SDK for interacting with prompts in the v3 API.
-    """
-
     def __init__(self, client):
         self.client = client
 
@@ -26,7 +19,12 @@ class PromptsSDK:
             dict: Created prompt information
         """
         data = {"name": name, "template": template, "input_types": input_types}
-        return await self.client._make_request("POST", "prompts", json=data)
+        return await self.client._make_request(
+            "POST",
+            "prompts",
+            json=data,
+            version="v3",
+        )
 
     async def list(self) -> dict:
         """
@@ -34,7 +32,11 @@ class PromptsSDK:
         Returns:
             dict: List of all available prompts
         """
-        return await self.client._make_request("GET", "prompts")
+        return await self.client._make_request(
+            "GET",
+            "prompts",
+            version="v3",
+        )
 
     async def retrieve(
         self,
@@ -57,7 +59,10 @@ class PromptsSDK:
         if prompt_override:
             params["prompt_override"] = prompt_override
         return await self.client._make_request(
-            "POST", f"prompts/{name}", params=params
+            "POST",
+            f"prompts/{name}",
+            params=params,
+            version="v3",
         )
 
     async def update(
@@ -81,7 +86,10 @@ class PromptsSDK:
         if input_types:
             data["input_types"] = json.dumps(input_types)
         return await self.client._make_request(
-            "PUT", f"prompts/{name}", json=data
+            "PUT",
+            f"prompts/{name}",
+            json=data,
+            version="v3",
         )
 
     async def delete(self, name: str) -> bool:
@@ -92,25 +100,8 @@ class PromptsSDK:
         Returns:
             bool: True if deletion was successful
         """
-        result = await self.client._make_request("DELETE", f"prompts/{name}")
-        return result.get("results", True)
-
-
-class SyncPromptsSDK:
-    """Synchronous wrapper for PromptsSDK"""
-
-    def __init__(self, async_sdk: PromptsSDK):
-        self._async_sdk = async_sdk
-
-        # Get all attributes from the instance
-        for name in dir(async_sdk):
-            if not name.startswith("_"):  # Skip private methods
-                attr = getattr(async_sdk, name)
-                # Check if it's a method and if it's async
-                if callable(attr) and (
-                    iscoroutinefunction(attr) or isasyncgenfunction(attr)
-                ):
-                    if isasyncgenfunction(attr):
-                        setattr(self, name, sync_generator_wrapper(attr))
-                    else:
-                        setattr(self, name, sync_wrapper(attr))
+        return await self.client._make_request(
+            "DELETE",
+            f"prompts/{name}",
+            version="v3",
+        )

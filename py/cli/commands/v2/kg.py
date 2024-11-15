@@ -3,10 +3,12 @@ import json
 import asyncclick as click
 from asyncclick import pass_context
 
+from r2r import R2RAsyncClient
 from cli.command_group import cli
 from cli.utils.timer import timer
 
 
+# TODO
 @cli.command()
 @click.option(
     "--collection-id",
@@ -33,7 +35,7 @@ from cli.utils.timer import timer
 async def create_graph(
     ctx, collection_id, run, kg_creation_settings, force_kg_creation
 ):
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
 
     if kg_creation_settings:
         try:
@@ -61,6 +63,7 @@ async def create_graph(
     click.echo(json.dumps(response, indent=2))
 
 
+# TODO
 @cli.command()
 @click.option(
     "--collection-id",
@@ -89,7 +92,7 @@ async def deduplicate_entities(
     """
     Deduplicate entities in the knowledge graph.
     """
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
 
     if deduplication_settings:
         try:
@@ -115,6 +118,7 @@ async def deduplicate_entities(
     click.echo(json.dumps(response, indent=2))
 
 
+# TODO
 @cli.command()
 @click.option(
     "--collection-id",
@@ -144,7 +148,7 @@ async def enrich_graph(
     """
     Enrich an existing graph.
     """
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
 
     if kg_enrichment_settings:
         try:
@@ -170,6 +174,7 @@ async def enrich_graph(
     click.echo(json.dumps(response, indent=2))
 
 
+# TODO
 @cli.command()
 @click.option(
     "--collection-id",
@@ -205,7 +210,7 @@ async def get_entities(
     """
     Retrieve entities from the knowledge graph.
     """
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
 
     with timer():
         response = await client.get_entities(
@@ -219,6 +224,7 @@ async def get_entities(
     click.echo(json.dumps(response, indent=2))
 
 
+# TODO
 @cli.command()
 @click.option(
     "--collection-id",
@@ -254,7 +260,7 @@ async def get_relationships(
     """
     Retrieve relationships from the knowledge graph.
     """
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
 
     with timer():
         response = await client.get_relationships(
@@ -268,6 +274,7 @@ async def get_relationships(
     click.echo(json.dumps(response, indent=2))
 
 
+# TODO
 @cli.command()
 @click.option(
     "--collection-id",
@@ -286,7 +293,7 @@ async def delete_graph_for_collection(ctx, collection_id, cascade):
 
     NOTE: Setting the cascade flag to true will delete entities and relationships for documents that are shared across multiple collections. Do not set this flag unless you are absolutely sure that you want to delete the entities and relationships for all documents in the collection.
     """
-    client = ctx.obj
+    client: R2RAsyncClient = ctx.obj
 
     with timer():
         response = await client.delete_graph_for_collection(

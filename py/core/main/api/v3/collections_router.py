@@ -78,6 +78,14 @@ class CollectionsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r collections create "My New Collection" --description="This is a sample collection"
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -112,7 +120,7 @@ class CollectionsRouter(BaseRouterV3):
             )
             # Add the creating user to the collection
             await self.services["management"].add_user_to_collection(
-                auth_user.id, collection.collection_id
+                auth_user.id, collection.id
             )
             return collection
 
@@ -150,6 +158,14 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r collections list
                             """
                         ),
                     },
@@ -247,6 +263,14 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r collections retrieve 123e4567-e89b-12d3-a456-426614174000
                             """
                         ),
                     },
@@ -418,6 +442,14 @@ class CollectionsRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r collections delete 123e4567-e89b-12d3-a456-426614174000
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -566,6 +598,14 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r collections list-documents 123e4567-e89b-12d3-a456-426614174000
                             """
                         ),
                     },
@@ -744,6 +784,14 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r collections list-users 123e4567-e89b-12d3-a456-426614174000
                             """
                         ),
                     },

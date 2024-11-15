@@ -1,22 +1,21 @@
 import logging
 import os
 from datetime import datetime, timedelta, timezone
-from fastapi import HTTPException
 
 import jwt
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 
 from core.base import (
     AuthConfig,
     AuthProvider,
+    CollectionResponse,
     CryptoProvider,
     DatabaseProvider,
     EmailProvider,
     R2RException,
     Token,
     TokenData,
-    CollectionResponse,
 )
 from core.base.api.models import UserResponse
 
@@ -145,7 +144,7 @@ class R2RAuthProvider(AuthProvider):
         )
 
         await self.database_provider.add_user_to_collection(
-            new_user.id, default_collection.collection_id
+            new_user.id, default_collection.id
         )
 
         if self.config.require_email_verification:

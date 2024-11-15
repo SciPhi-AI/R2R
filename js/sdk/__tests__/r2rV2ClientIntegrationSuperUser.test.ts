@@ -136,7 +136,7 @@ describe("r2rClient Integration Tests", () => {
     const files = ["examples/data/folder"];
 
     await expect(client.ingestFiles(files)).resolves.not.toThrow();
-  });
+  }, 10000);
 
   test("Update files", async () => {
     const updated_file = [
@@ -313,7 +313,7 @@ describe("r2rClient Integration Tests", () => {
       "test_collection",
       "test_description",
     );
-    newCollectionId = response.results.collection_id;
+    newCollectionId = response.results.id;
 
     expect(newCollectionId).toBeDefined();
   });

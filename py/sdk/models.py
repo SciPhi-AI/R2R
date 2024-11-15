@@ -1,5 +1,4 @@
 from shared.abstractions import (
-    DocumentSearchSettings,
     GenerationConfig,
     HybridSearchSettings,
     KGCommunityResult,
@@ -18,9 +17,9 @@ from shared.abstractions import (
     MessageType,
     R2RException,
     R2RSerializable,
+    SearchSettings,
     Token,
     VectorSearchResult,
-    VectorSearchSettings,
 )
 from shared.api.models import (
     CombinedSearchResponse,
@@ -51,8 +50,7 @@ __all__ = [
     "R2RSerializable",
     "Token",
     "VectorSearchResult",
-    "VectorSearchSettings",
-    "DocumentSearchSettings",
+    "SearchSettings",
     "KGEntityDeduplicationSettings",
     "KGEntityDeduplicationResponse",
     "KGCreationResponse",

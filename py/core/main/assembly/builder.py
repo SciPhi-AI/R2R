@@ -30,6 +30,7 @@ from ..api.v3.graph_router import GraphRouter
 from ..api.v3.indices_router import IndicesRouter
 from ..api.v3.prompts_router import PromptsRouter
 from ..api.v3.retrieval_router import RetrievalRouterV3
+from ..api.v3.system_router import SystemRouter
 from ..api.v3.users_router import UsersRouter
 from ..app import R2RApp
 from ..config import R2RConfig
@@ -294,6 +295,11 @@ class R2RBuilder:
                 orchestration_provider=orchestration_provider,
             ).get_router(),
             "retrieval_router_v3": RetrievalRouterV3(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "system_router": SystemRouter(
                 providers=providers,
                 services=services,
                 orchestration_provider=orchestration_provider,

@@ -66,6 +66,8 @@ new_after_n_chars = 512
 max_characters = 1_024
 combine_under_n_chars = 128
 overlap = 20
+chunks_for_document_summary = 16
+document_summary_model = "ollama/llama3.1"
 
 [orchestration]
 provider = "hatchet"
