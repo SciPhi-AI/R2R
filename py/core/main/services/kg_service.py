@@ -16,6 +16,7 @@ from core.base.abstractions import (
     R2RException,
     Entity,
     Relationship,
+    Community,
 )
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -176,7 +177,6 @@ class KgService(Service):
 
     ################### RELATIONSHIPS ###################
 
-
     @telemetry_event("list_relationships_v3")
     async def list_relationships_v3(
         self,
@@ -207,6 +207,61 @@ class KgService(Service):
         return await self.providers.database.graph_handler.relationships.create(
             relationships
         )
+    
+    @telemetry_event("delete_relationship_v3")
+    async def delete_relationship_v3(
+        self,
+        relationship: Relationship,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.relationships.delete(relationship)
+
+
+    @telemetry_event("update_relationship_v3")
+    async def update_relationship_v3(
+        self,
+        relationship: Relationship,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.relationships.update(relationship)
+
+
+    ################### COMMUNITIES ###################
+
+    @telemetry_event("create_communities_v3")   
+    async def create_communities_v3(
+        self,
+        communities: list[Community],
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.communities.create(communities)
+    
+    @telemetry_event("update_community_v3")
+    async def update_community_v3(
+        self,
+        community: Community,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.communities.update(community)
+    
+    @telemetry_event("delete_community_v3")
+    async def delete_community_v3(
+        self,
+        community: Community,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.communities.delete(community)
+
+    @telemetry_event("list_communities_v3")
+    async def list_communities_v3(
+        self,
+        id: UUID,
+        level: EntityLevel,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.communities.get(id, level)
+
+    ################### GRAPH ###################
 
     @telemetry_event("get_document_ids_for_create_graph")
     async def get_document_ids_for_create_graph(

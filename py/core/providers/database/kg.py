@@ -297,7 +297,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
     async def create_tables(self) -> None:
         """Create the relationships table if it doesn't exist."""
         QUERY = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("relationship")} (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("chunk_relationship")} (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 sid SERIAL NOT NULL,
                 subject TEXT NOT NULL,
@@ -310,14 +310,15 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 predicate_embedding FLOAT[],
                 chunk_ids UUID[],
                 document_id UUID,
+                collection_id UUID,
                 attributes JSONB DEFAULT '{{}}'::jsonb,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
-            CREATE INDEX IF NOT EXISTS relationship_subject_idx ON {self._get_table_name("relationship")} (subject);
-            CREATE INDEX IF NOT EXISTS relationship_object_idx ON {self._get_table_name("relationship")} (object);
-            CREATE INDEX IF NOT EXISTS relationship_predicate_idx ON {self._get_table_name("relationship")} (predicate);
-            CREATE INDEX IF NOT EXISTS relationship_document_id_idx ON {self._get_table_name("relationship")} (document_id);
+            CREATE INDEX IF NOT EXISTS relationship_subject_idx ON {self._get_table_name("chunk_relationship")} (subject);
+            CREATE INDEX IF NOT EXISTS relationship_object_idx ON {self._get_table_name("chunk_relationship")} (object);
+            CREATE INDEX IF NOT EXISTS relationship_predicate_idx ON {self._get_table_name("chunk_relationship")} (predicate);
+            CREATE INDEX IF NOT EXISTS relationship_document_id_idx ON {self._get_table_name("chunk_relationship")} (document_id);
         """
         await self.connection_manager.execute_query(QUERY)
 
@@ -329,7 +330,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
         """Create a new relationship in the database."""
         await _add_objects(
             objects=[relationship.__dict__ for relationship in relationships],
-            full_table_name=self._get_table_name("relationship"),
+            full_table_name=self._get_table_name("chunk_relationship"),
             connection_manager=self.connection_manager,
         )
 
@@ -360,7 +361,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
             params.append(relationship_types)
         
         QUERY = f"""
-            SELECT * FROM {self._get_table_name("relationship")}
+            SELECT * FROM {self._get_table_name("chunk_relationship")}
             WHERE {filter}
             OFFSET ${len(params)+1} LIMIT ${len(params) + 2}
         """
@@ -370,81 +371,107 @@ class PostgresRelationshipHandler(RelationshipHandler):
         rows = await self.connection_manager.fetch_query(QUERY, params)
         
         QUERY_COUNT = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("relationship")} WHERE {filter}
+            SELECT COUNT(*) FROM {self._get_table_name("chunk_relationship")} WHERE {filter}
         """
         count = (await self.connection_manager.fetch_query(QUERY_COUNT, params[:-2]))[0]["count"]
 
         return [Relationship(**row) for row in rows], count
 
     async def update(self, relationship: Relationship) -> None:
+        return await _update_object(
+            object=relationship.__dict__,
+            full_table_name=self._get_table_name("chunk_relationship"),
+            connection_manager=self.connection_manager,
+            id_column="id",
+        )
 
-        # check if the relationship already exists
-        QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("relationship")} WHERE id = $1
-        """
-        count = (await self.connection_manager.fetch_query(QUERY, [relationship.id]))[0]["count"]
-        if count == 0:
-            raise R2RException("Relationship does not exist", 204)
-
-        return await self._add_objects([relationship], "relationship", [relationship.id])
-
-    async def delete(self, relationship_id: UUID) -> None:
+    async def delete(self, relationship: Relationship) -> None:
         """Delete a relationship from the database."""
         QUERY = f"""
-            DELETE FROM {self._get_table_name("relationship")}
+            DELETE FROM {self._get_table_name("chunk_relationship")}
             WHERE id = $1
         """
-        await self.connection_manager.execute_query(QUERY, [relationship_id])
+        return await self.connection_manager.execute_query(QUERY, [relationship.id])
+
 class PostgresCommunityHandler(CommunityHandler):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.project_name = kwargs.get("project_name")
         self.connection_manager = kwargs.get("connection_manager")
+        self.dimension = kwargs.get("dimension")
+        self.quantization_type = kwargs.get("quantization_type")
 
     async def create_tables(self) -> None:
-        pass
+
+        vector_column_str = _decorate_vector_type(
+            f"({self.dimension})", self.quantization_type
+        )
+        
+        # communities table, result of the Leiden algorithm
+        query = f"""
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("community_info")} (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            sid SERIAL PRIMARY KEY,
+            node TEXT NOT NULL,
+            cluster INT NOT NULL,
+            parent_cluster INT,
+            level INT NOT NULL,
+            is_final_cluster BOOLEAN NOT NULL,
+            relationship_ids INT[] NOT NULL,
+            collection_id UUID NOT NULL
+        );"""
+
+        await self.connection_manager.execute_query(query)
+
+        # communities_report table
+        query = f"""
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("community")} (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            sid SERIAL PRIMARY KEY,
+            community_number INT NOT NULL,
+            collection_id UUID NOT NULL,
+            level INT NOT NULL,
+            name TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            findings TEXT[] NOT NULL,
+            rating FLOAT NOT NULL,
+            rating_explanation TEXT NOT NULL,
+            embedding {vector_column_str} NOT NULL,
+            attributes JSONB,
+            UNIQUE (community_number, level, collection_id)
+        );"""
+
+        await self.connection_manager.execute_query(query)
 
     async def create(self, communities: list[Community]) -> None:
-        pass
-
-    async def get(self, community_id: UUID) -> list[Community]:
-        pass
+        await _add_objects(
+            objects=[community.__dict__ for community in communities],
+            full_table_name=self._get_table_name("community"),
+            connection_manager=self.connection_manager,
+        )
 
     async def update(self, community: Community) -> None:
-        pass
+        return await _update_object(
+            object=community.__dict__,
+            full_table_name=self._get_table_name("community"),
+            connection_manager=self.connection_manager,
+            id_column="id",
+        )
 
-    async def delete(self, community_id: UUID) -> None:
-        pass
+    async def delete(self, community: Community) -> None:
+        return await _delete_object(
+            object_id=community.id,
+            full_table_name=self._get_table_name("community"),
+            connection_manager=self.connection_manager,
+        )
 
-class PostgresCommunityInfoHandler(CommunityInfoHandler):
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        self.project_name = kwargs.get("project_name")
-        self.connection_manager = kwargs.get("connection_manager")
-
-    async def create_tables(self) -> None:
-        pass
-
-    async def create(self, community_infos: list[CommunityInfo]) -> None:
-        pass
-
-    async def get(self, community_info_id: UUID) -> list[CommunityInfo]:
-        pass
-
-    async def update(self, community_info: CommunityInfo) -> None:
-        pass
-
-    async def delete(self, community_info_id: UUID) -> None:
-        pass
-
-
-
-
-
-
-
-
-
+    async def get(self, collection_id: UUID, offset: int, limit: int) -> list[Community]:
+        QUERY = f"""
+            SELECT * FROM {self._get_table_name("community")} WHERE collection_id = $1
+            OFFSET $2 LIMIT $3
+        """
+        params = [collection_id, offset, limit]
+        return [Community(**row) for row in await self.connection_manager.fetch_query(QUERY, params)]
 
 
 class PostgresGraphHandler(GraphHandler):
@@ -470,13 +497,11 @@ class PostgresGraphHandler(GraphHandler):
         self.entities = PostgresEntityHandler(*args, **kwargs)
         self.relationships = PostgresRelationshipHandler(*args, **kwargs)
         self.communities = PostgresCommunityHandler(*args, **kwargs)
-        self.community_infos = PostgresCommunityInfoHandler(*args, **kwargs)
 
         self.handlers = [
             self.entities,
             self.relationships,
             self.communities,
-            self.community_infos,
         ]
 
     async def create_tables(self) -> None:
@@ -2401,6 +2426,7 @@ async def _update_object(
         UPDATE {full_table_name}
         SET {set_clause}
         WHERE {id_column} = ${len(non_null_attrs) + 1}
+        RETURNING id
     """
 
     # Prepare parameters: values for SET clause + ID value for WHERE clause
@@ -2410,7 +2436,9 @@ async def _update_object(
     ]
     params.append(object[id_column])
 
-    return await connection_manager.execute_many(QUERY, [tuple(params)])  # type: ignore
+    ret = await connection_manager.execute_many(QUERY, [tuple(params)])  # type: ignore
+    import pdb; pdb.set_trace()
+    return ret
 
 async def _delete_object(
     object_id: UUID,

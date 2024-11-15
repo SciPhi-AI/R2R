@@ -10,7 +10,7 @@ class KGRunType(str, Enum):
     """Type of KG run."""
 
     ESTIMATE = "estimate"
-    RUN = "run"
+    CREATE = "create"
 
     def __str__(self):
         return self.value

@@ -96,19 +96,19 @@ class Relationship(R2RSerializable):
     id: Optional[UUID] = None
     sid: Optional[int] = None #serial ID
 
-    subject: str
+    subject: Optional[str] = None
     """The source entity name."""
 
-    predicate: str
+    predicate: Optional[str] = None
     """A description of the relationship (optional)."""
 
-    subject_id: UUID | None = None
+    subject_id: Optional[UUID] = None
     """The source entity ID (optional)."""
 
-    object_id: UUID | None = None
+    object_id: Optional[UUID] = None
     """The target entity ID (optional)."""
 
-    object: str
+    object: Optional[str] = None
     """The target entity name."""
 
     weight: float | None = 1.0
@@ -123,7 +123,7 @@ class Relationship(R2RSerializable):
     chunk_ids: list[UUID] = []
     """List of text unit IDs in which the relationship appears (optional)."""
 
-    document_id: UUID | None = None
+    document_id: Optional[UUID] = None
     """Document ID in which the relationship appears (optional)."""
 
     attributes: dict[str, Any] | str = {}
@@ -303,5 +303,33 @@ class KGExtraction(R2RSerializable):
     entities: list[Entity]
     relationships: list[Relationship]
 
+class Graph(R2RSerializable):
+    """A request to create a graph."""
+
+    id: Optional[uuid.UUID] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    document_ids: list[uuid.UUID] = []
+    collection_ids: list[uuid.UUID] = []
+    statistics: dict[str, Any] = {}
+    created_at: datetime
+    updated_at: datetime # Implemntation is not yet complete
+    status: str = "pending"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "Graph":
+        return Graph(
+            id=d["id"],
+            name=d["name"],
+            description=d["description"],
+            document_ids=d["document_ids"],
+            collection_ids=d["collection_ids"],
+            statistics=d["statistics"],
+            created_at=d["created_at"],
+            updated_at=d["updated_at"],
+            status=d["status"],
+        )

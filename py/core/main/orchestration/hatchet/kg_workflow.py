@@ -27,6 +27,9 @@ def hatchet_kg_factory(
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
 
+            if key == "document_id":
+                input_data[key] = uuid.UUID(value)
+
             if key == "collection_id":
                 input_data[key] = uuid.UUID(value)
 
@@ -164,22 +167,30 @@ def hatchet_kg_factory(
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
-            collection_id = input_data["collection_id"]
 
-            return_val = {
-                "document_ids": [
-                    str(doc_id)
-                    for doc_id in await self.kg_service.get_document_ids_for_create_graph(
-                        collection_id=collection_id,
-                        **input_data["kg_creation_settings"],
+            if "collection_id" in input_data:
+
+                collection_id = input_data["collection_id"]
+
+                return_val = {
+                    "document_ids": [
+                        str(doc_id)
+                        for doc_id in await self.kg_service.get_document_ids_for_create_graph(
+                            collection_id=collection_id,
+                            **input_data["kg_creation_settings"],
+                        )
+                    ]
+                }
+
+                if len(return_val["document_ids"]) == 0:
+                    raise ValueError(
+                        "No documents to process, either all documents to create the graph were already created or in progress, or the collection is empty."
                     )
-                ]
-            }
 
-            if len(return_val["document_ids"]) == 0:
-                raise ValueError(
-                    "No documents to process, either all documents to create the graph were already created or in progress, or the collection is empty."
-                )
+            else:
+                return_val = {
+                    "document_ids": [str(input_data["document_id"])]
+                }
 
             return return_val
 
