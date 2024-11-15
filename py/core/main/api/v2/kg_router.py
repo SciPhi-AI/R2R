@@ -9,12 +9,12 @@ from fastapi import Body, Depends, Query
 from core.base import Workflow
 from core.base.abstractions import EntityLevel, KGRunType
 from core.base.api.models import (
-    WrappedKGCommunitiesResponse,
+    WrappedCommunitiesResponse,
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
-    WrappedKGEntitiesResponse,
+    WrappedEntitiesResponse,
     WrappedKGEntityDeduplicationResponse,
-    WrappedKGRelationshipsResponse,
+    WrappedRelationshipsResponse,
     WrappedKGTunePromptResponse,
 )
 
@@ -262,7 +262,7 @@ class KGRouter(BaseRouter):
                 description="Number of items to return. Use -1 to return all items.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGEntitiesResponse:
+        ) -> WrappedEntitiesResponse:
             """
             Retrieve entities from the knowledge graph.
             """
@@ -311,7 +311,7 @@ class KGRouter(BaseRouter):
                 description="Number of items to return. Use -1 to return all items.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGRelationshipsResponse:
+        ) -> WrappedRelationshipsResponse:
             """
             Retrieve relationships from the knowledge graph.
             """
@@ -350,7 +350,7 @@ class KGRouter(BaseRouter):
                 description="Number of items to return. Use -1 to return all items.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGCommunitiesResponse:
+        ) -> WrappedCommunitiesResponse:
             """
             Retrieve communities from the knowledge graph.
             """

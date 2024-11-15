@@ -48,7 +48,7 @@ class KGStoragePipe(AsyncPipe):
     async def store(
         self,
         kg_extractions: list[KGExtraction],
-    ) -> None:
+    ):
         """
         Stores a batch of knowledge graph extractions in the graph database.
         """

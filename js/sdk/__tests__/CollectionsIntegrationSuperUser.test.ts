@@ -4,6 +4,9 @@ import { describe, test, beforeAll, expect } from "@jest/globals";
 
 const baseUrl = "http://localhost:7272";
 
+/**
+ * zametov.txt will have an id of 69100f1e-2839-5b37-916d-5c87afe14094
+ */
 describe("r2rClient V3 Collections Integration Tests", () => {
   let client: r2rClient;
   let collectionId: string;
@@ -94,6 +97,14 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     const response = await client.collections.removeDocument({
       id: collectionId,
       documentId: documentId,
+    });
+
+    expect(response.results).toBeDefined();
+  });
+
+  test("Delete zametov.txt", async () => {
+    const response = await client.documents.delete({
+      id: "69100f1e-2839-5b37-916d-5c87afe14094",
     });
 
     expect(response.results).toBeDefined();

@@ -126,7 +126,7 @@ class DocumentsRouter(BaseRouterV3):
                 None,
                 description="The ID of the document. If not provided, a new ID will be generated.",
             ),
-            collection_ids: Optional[list[UUID]] = Form(
+            collection_ids: Optional[list[str]] = Form(
                 None,
                 description="Collection IDs to associate with the document. If none are provided, the document will be assigned to the user's default collection.",
             ),
@@ -201,10 +201,20 @@ class DocumentsRouter(BaseRouterV3):
                     message="Either a file or content must be provided.",
                 )
 
+            collection_uuids = None
+            if collection_ids:
+                try:
+                    collection_uuids = [UUID(cid) for cid in collection_ids]
+                except ValueError:
+                    raise R2RException(
+                        status_code=422,
+                        message="Collection IDs must be valid UUIDs.",
+                    )
+
             workflow_input = {
                 "file_data": file_data,
                 "document_id": str(document_id),
-                "collection_ids": collection_ids,
+                "collection_ids": collection_uuids,
                 "metadata": metadata,
                 "ingestion_config": ingestion_config,
                 "user": auth_user.model_dump_json(),
@@ -389,13 +399,13 @@ class DocumentsRouter(BaseRouterV3):
                     if (
                         metadata is not None
                         and "user_id" in metadata
-                        and metadata["user_id"] != str(auth_user.id)
+                        and metadata["user_id"] != str(auth_user.id)  # type: ignore
                     ):
                         raise R2RException(
                             status_code=403,
                             message="Non-superusers cannot set user_id in metadata.",
                         )
-                    metadata["user_id"] = str(auth_user.id)
+                    metadata["user_id"] = str(auth_user.id)  # type: ignore
 
                 if file:
                     file_data = await self._process_file(file)

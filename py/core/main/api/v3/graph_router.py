@@ -4,27 +4,24 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
-from pydantic import BaseModel, Field
 
 from core.base import R2RException, RunType
 from core.base.abstractions import EntityLevel, KGRunType
 from core.base.abstractions import Community, Entity, Relationship
 
 from core.base.api.models import (
-    WrappedKGCreationResponseV3 as WrappedKGCreationResponse,
-    WrappedKGEnrichmentResponseV3 as WrappedKGEnrichmentResponse,
-    WrappedKGEntityDeduplicationResponseV3 as WrappedKGEntityDeduplicationResponse,
-    WrappedKGTunePromptResponseV3 as WrappedKGTunePromptResponse,
-    WrappedKGRelationshipsResponseV3 as WrappedKGRelationshipsResponse,
-    WrappedKGCommunitiesResponseV3 as WrappedKGCommunitiesResponse,
-    KGCreationResponseV3 as KGCreationResponse,
-    KGEnrichmentResponseV3 as KGEnrichmentResponse,
-    KGEntityDeduplicationResponseV3 as KGEntityDeduplicationResponse,
-    KGTunePromptResponseV3 as KGTunePromptResponse,
-    WrappedKGEntitiesResponseV3 as WrappedKGEntitiesResponse,
-    WrappedKGRelationshipsResponseV3 as WrappedKGRelationshipsResponse,
-    WrappedKGCommunitiesResponseV3 as WrappedKGCommunitiesResponse,
-    WrappedKGDeletionResponseV3 as WrappedKGDeletionResponse,
+    GenericMessageResponse,
+    WrappedGenericMessageResponse,
+    WrappedKGCreationResponse,
+    WrappedEntityResponse,
+    WrappedEntitiesResponse,
+    WrappedRelationshipResponse,
+    WrappedRelationshipsResponse,
+    WrappedCommunityResponse,
+    WrappedCommunitiesResponse,
+    WrappedKGEntityDeduplicationResponse,
+    WrappedKGEnrichmentResponse,
+    WrappedKGTunePromptResponse,
 )
 
 
@@ -33,11 +30,8 @@ from core.providers import (
     SimpleOrchestrationProvider,
 )
 from core.utils import (
-    generate_default_user_collection_id,
     update_settings_from_dict,
 )
-
-from core.base.api.models import PaginatedResultsWrapper, ResultsWrapper
 
 from core.base.abstractions import Entity, KGCreationSettings, Relationship
 
@@ -90,7 +84,7 @@ class GraphRouter(BaseRouterV3):
             ),
             run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGCreationResponse:  # type: ignore
+        ) -> WrappedKGCreationResponse:
             """
             Creates a new knowledge graph by extracting entities and relationships from a document.
                 The graph creation process involves:
@@ -112,8 +106,9 @@ class GraphRouter(BaseRouterV3):
             )
 
             if settings:
-                server_kg_creation_settings = update_settings_from_dict(  # type: ignore
-                    server_kg_creation_settings, settings
+                server_kg_creation_settings = update_settings_from_dict(
+                    server_settings=server_kg_creation_settings,
+                    settings_dict=settings,  # type: ignore
                 )
 
             # If the run type is estimate, return an estimate of the creation cost
@@ -139,12 +134,11 @@ class GraphRouter(BaseRouterV3):
                     logger.info("Running create-graph without orchestration.")
                     simple_kg = simple_kg_factory(self.services["kg"])
                     await simple_kg["create-graph"](workflow_input)  # type: ignore
-                    return {
+                    return {  # type: ignore
                         "message": "Graph created successfully.",
                         "task_id": None,
                     }
 
-        ##### ENTITIES ######
         @self.router.get(
             "/chunks/{id}/graphs/entities",
             summary="List entities for a chunk",
@@ -230,16 +224,16 @@ class GraphRouter(BaseRouterV3):
             offset: int = Query(
                 0,
                 ge=0,
-                description="The offset of the first entity to retrieve.",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
-                ge=0,
+                ge=1,
                 le=1000,
-                description="The maximum number of entities to retrieve, up to 1000.",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGEntitiesResponse:  # type: ignore
+        ) -> WrappedEntitiesResponse:
             """
             Retrieves a list of entities associated with a specific chunk.
 
@@ -597,7 +591,6 @@ class GraphRouter(BaseRouterV3):
                 entity=entity,
             )
 
-        ##### RELATIONSHIPS #####
         @self.router.get(
             "/chunks/{id}/graphs/relationships",
             summary="List relationships for a chunk",
@@ -683,16 +676,16 @@ class GraphRouter(BaseRouterV3):
             offset: int = Query(
                 0,
                 ge=0,
-                description="The offset of the first relationship to retrieve.",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
-                ge=0,
+                ge=1,
                 le=1000,
-                description="The maximum number of relationships to retrieve, up to 1000.",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGRelationshipsResponse:  # type: ignore
+        ) -> WrappedRelationshipResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
@@ -1042,10 +1035,15 @@ class GraphRouter(BaseRouterV3):
                 description="The ID of the collection to get communities for.",
             ),
             offset: int = Query(
-                0, description="Number of communities to skip"
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
-                100, description="Maximum number of communities to return"
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
@@ -1086,8 +1084,6 @@ class GraphRouter(BaseRouterV3):
             return await self.services["kg"].delete_community_v3(
                 community=community,
             )
-
-        ################### GRAPHS ###################
 
         @self.base_endpoint
         async def create_entities(
@@ -1187,7 +1183,7 @@ class GraphRouter(BaseRouterV3):
         async def get_graph_status(
             collection_id: UUID = Path(...),  # TODO: change to id?
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[dict]:
+        ):
             """
             Gets the status and metadata of a graph for a collection.
 
@@ -1241,13 +1237,14 @@ class GraphRouter(BaseRouterV3):
             collection_id: UUID = Path(...),
             cascade: bool = Query(False),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[dict]:
+        ) -> WrappedGenericMessageResponse:
             """Deletes a graph and optionally its associated entities and relationships."""
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can delete graphs", 403)
 
             await self.services["kg"].delete_graph(collection_id, cascade)
-            return {"message": "Graph deleted successfully"}  # type: ignore
+            # FIXME: Can we sync this with the deletion response from other routes? Those return a boolean.
+            return GenericMessageResponse(message="Graph deleted successfully")  # type: ignore
 
         @self.base_endpoint
         async def deduplicate_entities(
@@ -1259,7 +1256,7 @@ class GraphRouter(BaseRouterV3):
             ),
             run_with_orchestration: bool = Query(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> ResultsWrapper[WrappedKGEntityDeduplicationResponse]:
+        ) -> WrappedKGEntityDeduplicationResponse:
             """Deduplicates entities in the knowledge graph using LLM-based analysis.
 
             The deduplication process:
@@ -1606,7 +1603,7 @@ class GraphRouter(BaseRouterV3):
         #     collection_id: UUID = Path(...),
         #     community_id: UUID = Path(...),
         #     auth_user=Depends(self.providers.auth.auth_wrapper),
-        # ) -> WrappedKGDeletionResponse:
+        # ):
         #     """
         #     Deletes a specific community by ID.
         #     This operation will not affect other communities or the underlying entities.
