@@ -38,6 +38,7 @@ class RelationshipType(R2RSerializable):
 
 
 class EntityLevel(str, Enum):
+    GRAPH = "graph"
     COLLECTION = "collection"
     DOCUMENT = "document"
     CHUNK = "chunk"
@@ -58,9 +59,10 @@ class Entity(R2RSerializable):
     description_embedding: Optional[Union[list[float], str]] = None
     community_numbers: Optional[list[str]] = None
     chunk_ids: Optional[list[UUID]] = None
-    collection_id: Optional[UUID] = None
+    graph_id: Optional[UUID] = None
     document_id: Optional[UUID] = None
     document_ids: Optional[list[UUID]] = None
+
     # we don't use these yet
     # name_embedding: Optional[list[float]] = None
     # graph_embedding: Optional[list[float]] = None
@@ -100,6 +102,7 @@ class Relationship(R2RSerializable):
     predicate_embedding: list[float] | None = None
     chunk_ids: list[UUID] = []
     document_id: Optional[UUID] = None
+    graph_id: Optional[UUID] = None
     attributes: dict[str, Any] | str = {}
 
     def __init__(self, **kwargs):
@@ -120,7 +123,7 @@ class CommunityInfo(R2RSerializable):
     parent_cluster: int | None
     level: int
     is_final_cluster: bool
-    collection_id: uuid.UUID
+    graph_id: uuid.UUID
     relationship_ids: Optional[list[int]] = None
 
     def __init__(self, **kwargs):
@@ -132,7 +135,7 @@ class Community(R2RSerializable):
 
     community_number: int
     level: int
-    collection_id: uuid.UUID
+    graph_id: uuid.UUID
     name: str = ""
     summary: str = ""
     findings: list[str] = []

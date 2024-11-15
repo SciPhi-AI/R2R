@@ -16,6 +16,9 @@ def simple_kg_factory(service: KgService):
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
 
+            if key == "document_id":
+                input_data[key] = uuid.UUID(value)
+
             if key == "collection_id":
                 input_data[key] = uuid.UUID(value)
 
@@ -35,10 +38,13 @@ def simple_kg_factory(service: KgService):
 
         input_data = get_input_data_dict(input_data)
 
-        document_ids = await service.get_document_ids_for_create_graph(
-            collection_id=input_data["collection_id"],
-            **input_data["kg_creation_settings"],
-        )
+        if input_data.get("document_id"):
+            document_ids = [input_data.get("document_id")]
+        else:
+            document_ids = await service.get_document_ids_for_create_graph(
+                collection_id=input_data.get("collection_id"),
+                **input_data["kg_creation_settings"],
+            )
 
         logger.info(
             f"Creating graph for {len(document_ids)} documents with IDs: {document_ids}"

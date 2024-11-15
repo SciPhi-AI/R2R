@@ -12,7 +12,6 @@ def conversations():
     """Conversations commands."""
     pass
 
-
 @conversations.command()
 @pass_context
 async def create(ctx):

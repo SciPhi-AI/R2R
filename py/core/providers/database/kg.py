@@ -230,6 +230,13 @@ class PostgresEntityHandler(EntityHandler):
             await self.connection_manager.fetch_query(QUERY, params[:-2])
         )[0]["count"]
 
+        # TEMPORARY: if there are no entities in the collection, get all the document level entities
+        if count == 0 and level == EntityLevel.COLLECTION:
+            raise R2RException(
+                "No entities found in collection, please run the deduplication step",
+                204,
+            )
+
         return output, count
 
     async def update(self, entity: Entity) -> None:
