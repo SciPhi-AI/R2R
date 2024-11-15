@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 from uuid import UUID
 
 
@@ -101,7 +101,7 @@ class ConversationsSDK:
         content: str,
         role: str,
         parent_id: Optional[str] = None,
-        metadata: Optional[dict[str, str]] = None,
+        metadata: Optional[dict] = None,
     ) -> dict:
         """
         Add a new message to a conversation.

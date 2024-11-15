@@ -156,7 +156,7 @@ class CacheablePromptHandler(PromptHandler):
         self._prompt_cache.set(cache_key, result)
         return result
 
-    async def get_prompt(
+    async def get_prompt(  # type: ignore
         self,
         name: str,
         inputs: Optional[dict] = None,

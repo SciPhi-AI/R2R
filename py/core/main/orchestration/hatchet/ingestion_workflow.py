@@ -183,9 +183,10 @@ def hatchet_ingestion_factory(
                     for collection_id in collection_ids:
                         try:
                             await service.providers.database.create_collection(
+                                user_id=document_info.user_id,
                                 name=document_info.title,
-                                collection_id=collection_id,
                                 description="",
+                                collection_id=collection_id,
                             )
                         except Exception as e:
                             logger.warning(
@@ -511,9 +512,10 @@ def hatchet_ingestion_factory(
                     for collection_id in collection_ids:
                         try:
                             await service.providers.database.create_collection(
+                                user_id=document_info.user_id,
                                 name=document_info.title or "N/A",
-                                collection_id=collection_id,
                                 description="",
+                                collection_id=collection_id,
                             )
                         except Exception as e:
                             logger.warning(

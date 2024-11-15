@@ -126,6 +126,10 @@ class DocumentsRouter(BaseRouterV3):
                 None,
                 description="The ID of the document. If not provided, a new ID will be generated.",
             ),
+            collection_ids: Optional[list[UUID]] = Form(
+                None,
+                description="Collection IDs to associate with the document. If none are provided, the document will be assigned to the user's default collection.",
+            ),
             metadata: Optional[Json[dict]] = Form(
                 None,
                 description="Metadata to associate with the document, such as title, description, or custom fields.",
@@ -200,6 +204,7 @@ class DocumentsRouter(BaseRouterV3):
             workflow_input = {
                 "file_data": file_data,
                 "document_id": str(document_id),
+                "collection_ids": collection_ids,
                 "metadata": metadata,
                 "ingestion_config": ingestion_config,
                 "user": auth_user.model_dump_json(),
@@ -306,7 +311,7 @@ class DocumentsRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def update_document(
+        async def update_document(  # type: ignore
             file: Optional[UploadFile] = File(
                 None,
                 description="The file to ingest. Either a file or content must be provided, but not both.",
@@ -381,8 +386,10 @@ class DocumentsRouter(BaseRouterV3):
 
                 # Check if the user is a superuser
                 if not auth_user.is_superuser:
-                    if "user_id" in metadata and metadata["user_id"] != str(
-                        auth_user.id
+                    if (
+                        metadata is not None
+                        and "user_id" in metadata
+                        and metadata["user_id"] != str(auth_user.id)
                     ):
                         raise R2RException(
                             status_code=403,
@@ -795,7 +802,7 @@ class DocumentsRouter(BaseRouterV3):
                     "Not authorized to access this document's chunks.", 403
                 )
 
-            return (
+            return (  # type: ignore
                 list_document_chunks["results"],
                 {"total_entries": list_document_chunks["total_entries"]},
             )
@@ -1019,7 +1026,7 @@ class DocumentsRouter(BaseRouterV3):
                 ]
             }
             await self.services["management"].delete(filters=filters)
-            return GenericBooleanResponse(success=True)
+            return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.delete(
             "/documents/by-filter",
@@ -1085,7 +1092,7 @@ class DocumentsRouter(BaseRouterV3):
                 filters=filters_dict
             )
 
-            return GenericBooleanResponse(success=delete_bool)
+            return GenericBooleanResponse(success=delete_bool)  # type: ignore
 
         @self.router.get(
             "/documents/{id}/collections",

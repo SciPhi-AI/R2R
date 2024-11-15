@@ -145,6 +145,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         """Create a savepoint with proper error handling."""
         if self.conn is None:
             await self.initialize()
+        assert self.conn is not None
         async with self.conn.cursor() as cursor:
             await cursor.execute(f"SAVEPOINT {name}")
             try:
@@ -865,8 +866,8 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         """Delete a conversation and all related data."""
         if self.conn is None:
             await self.initialize()
-
         try:
+            assert self.conn is not None
             # Delete all message branches associated with the conversation
             await self.conn.execute(
                 "DELETE FROM message_branches WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)",
@@ -888,6 +889,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             )
             await self.conn.commit()
         except Exception:
+            assert self.conn is not None
             await self.conn.rollback()
             raise
 
