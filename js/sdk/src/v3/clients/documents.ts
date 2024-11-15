@@ -99,7 +99,9 @@ export class DocumentsClient {
       );
     }
     if (options.collectionIds) {
-      formData.append("collection_ids", JSON.stringify(options.collectionIds));
+      options.collectionIds.forEach((id) => {
+        formData.append("collection_ids", id);
+      });
     }
     if (options.runWithOrchestration !== undefined) {
       formData.append(

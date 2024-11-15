@@ -182,6 +182,7 @@ def hatchet_ingestion_factory(
                 else:
                     for collection_id in collection_ids:
                         try:
+                            # FIXME: Right now we just throw a warning if the collection already exists, but we should probably handle this more gracefully
                             await service.providers.database.create_collection(
                                 user_id=document_info.user_id,
                                 name=document_info.title,

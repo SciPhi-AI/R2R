@@ -6,7 +6,7 @@ import json
 from typing import Any, Optional
 from uuid import UUID
 
-from fastapi import Body, Depends, Path, Query
+from fastapi import Body, Depends, Path, Query, Form
 
 from core.base import (
     KGSearchSettings,
@@ -210,6 +210,7 @@ class ChunksRouter(BaseRouterV3):
                 chunks_by_document[chunk.document_id].append(chunk)
 
             responses = []
+            # FIXME: Need to verify that the collection_id workflow is valid
             for document_id, doc_chunks in chunks_by_document.items():
                 document_id = document_id or default_document_id
                 # Convert UnprocessedChunks to RawChunks for ingestion
@@ -233,7 +234,6 @@ class ChunksRouter(BaseRouterV3):
                     "user": auth_user.model_dump_json(),
                 }
 
-                # TODO - Modify create_chunks so that we can add chunks to existing document
                 # TODO - Modify create_chunks so that we can add chunks to existing document
 
                 if run_with_orchestration:

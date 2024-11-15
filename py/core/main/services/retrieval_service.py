@@ -338,7 +338,7 @@ class RetrievalService(Service):
                     parent_id=str(ids[-2]) if (ids and len(ids) > 1) else None,  # type: ignore
                 )
                 if message is not None:
-                    message_id = message["id"] # type: ignore
+                    message_id = message["id"]  # type: ignore
 
                 if rag_generation_config.stream:
                     t1 = time.time()

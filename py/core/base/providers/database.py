@@ -1092,7 +1092,8 @@ class DatabaseProvider(Provider):
         collection_id: UUID,
     ) -> UUID:
         return await self.collection_handler.assign_document_to_collection_relational(
-            document_id=document_id, collection_id=collection_id
+            document_id=document_id,
+            collection_id=collection_id,
         )
 
     async def remove_document_from_collection_relational(

@@ -5,4 +5,5 @@ module.exports = {
     "**/__tests__/**/*.ts?(x)",
     "**/__tests__/**/?(*.)+(spec|test).ts?(x)",
   ],
+  maxWorkers: 1,
 };

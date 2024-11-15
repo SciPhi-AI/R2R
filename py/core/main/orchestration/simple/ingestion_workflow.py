@@ -92,6 +92,7 @@ def simple_ingestion_factory(service: IngestionService):
                 else:
                     for collection_id in collection_ids:
                         try:
+                            # FIXME: Right now we just throw a warning if the collection already exists, but we should probably handle this more gracefully
                             await service.providers.database.create_collection(
                                 name=document_info.title,
                                 collection_id=collection_id,
