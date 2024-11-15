@@ -25,14 +25,6 @@ class Identified:
     """Human readable ID used to refer to this community in prompts or texts displayed to users, such as in a report text (optional)."""
 
 
-@dataclass
-class Named(Identified):
-    """A protocol for an item with a name/title."""
-
-    title: str
-    """The name/title of the item."""
-
-
 class EntityType(R2RSerializable):
     id: str
     name: str
@@ -98,37 +90,17 @@ class Relationship(R2RSerializable):
     sid: Optional[int] = None  # serial ID
 
     subject: Optional[str] = None
-    """The source entity name."""
-
     predicate: Optional[str] = None
-    """A description of the relationship (optional)."""
-
     subject_id: Optional[UUID] = None
-    """The source entity ID (optional)."""
-
     object_id: Optional[UUID] = None
-    """The target entity ID (optional)."""
-
     object: Optional[str] = None
-    """The target entity name."""
-
     weight: float | None = 1.0
-    """The edge weight."""
-
     description: str | None = None
-    """A description of the relationship (optional)."""
-
+    description_embedding: list[float] | None = None
     predicate_embedding: list[float] | None = None
-    """The semantic embedding for the relationship description (optional)."""
-
     chunk_ids: list[UUID] = []
-    """List of text unit IDs in which the relationship appears (optional)."""
-
     document_id: Optional[UUID] = None
-    """Document ID in which the relationship appears (optional)."""
-
     attributes: dict[str, Any] | str = {}
-    """Additional attributes associated with the relationship (optional). To be included in the search prompt"""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -138,39 +110,9 @@ class Relationship(R2RSerializable):
             except json.JSONDecodeError:
                 self.attributes = self.attributes
 
-    @classmethod
-    def from_dict(  # type: ignore
-        cls,
-        d: dict[str, Any],
-        id_key: str = "id",
-        short_id_key: str = "short_id",
-        source_key: str = "subject",
-        target_key: str = "object",
-        predicate_key: str = "predicate",
-        description_key: str = "description",
-        weight_key: str = "weight",
-        chunk_ids_key: str = "chunk_ids",
-        document_id_key: str = "document_id",
-        attributes_key: str = "attributes",
-    ) -> "Relationship":
-        """Create a new relationship from the dict data."""
-
-        return Relationship(
-            id=d[id_key],
-            short_id=d.get(short_id_key),
-            subject=d[source_key],
-            object=d[target_key],
-            predicate=d.get(predicate_key),
-            description=d.get(description_key),
-            weight=d.get(weight_key, 1.0),
-            chunk_ids=d.get(chunk_ids_key),
-            document_id=d.get(document_id_key),
-            attributes=d.get(attributes_key, {}),
-        )
-
 
 @dataclass
-class CommunityInfo(BaseModel):
+class CommunityInfo(R2RSerializable):
     """A protocol for a community in the system."""
 
     node: str
@@ -184,122 +126,30 @@ class CommunityInfo(BaseModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "CommunityInfo":
-        return CommunityInfo(
-            node=d["node"],
-            cluster=d["cluster"],
-            parent_cluster=d["parent_cluster"],
-            level=d["level"],
-            is_final_cluster=d["is_final_cluster"],
-            relationship_ids=d["relationship_ids"],
-            collection_id=d["collection_id"],
-        )
-
 
 @dataclass
-class Community(BaseModel):
-
-    id: Optional[Union[int, UUID]] = None
-
-    """Defines an LLM-generated summary report of a community."""
+class Community(R2RSerializable):
 
     community_number: int
-    """The ID of the community this report is associated with."""
-
     level: int
-    """The level of the community this report is associated with."""
-
     collection_id: uuid.UUID
-    """The ID of the collection this report is associated with."""
-
     name: str = ""
-    """Name of the report."""
-
     summary: str = ""
-    """Summary of the report."""
-
     findings: list[str] = []
-    """Findings of the report."""
-
+    id: Optional[Union[int, UUID]] = None
     rating: float | None = None
-    """Rating of the report."""
-
     rating_explanation: str | None = None
-    """Explanation of the rating."""
-
     embedding: list[float] | None = None
-    """Embedding of summary and findings."""
-
     attributes: dict[str, Any] | None = None
-    """A dictionary of additional attributes associated with the report (optional)."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if isinstance(self.attributes, str):
             self.attributes = json.loads(self.attributes)
-
-    @classmethod
-    def from_dict(
-        cls,
-        d: dict[str, Any],
-        id_key: str = "id",
-        title_key: str = "title",
-        community_number_key: str = "community_number",
-        short_id_key: str = "short_id",
-        summary_key: str = "summary",
-        findings_key: str = "findings",
-        rank_key: str = "rank",
-        summary_embedding_key: str = "summary_embedding",
-        embedding_key: str = "embedding",
-        attributes_key: str = "attributes",
-    ) -> "Community":
-        """Create a new community report from the dict data."""
-        return Community(
-            id=d[id_key],
-            title=d[title_key],
-            community_number=d[community_number_key],
-            short_id=d.get(short_id_key),
-            summary=d[summary_key],
-            findings=d[findings_key],
-            rank=d[rank_key],
-            summary_embedding=d.get(summary_embedding_key),
-            embedding=d.get(embedding_key),
-            attributes=d.get(attributes_key),
-        )
-
-
-class Graph(BaseModel):
-    """A graph in the system."""
-
-    id: uuid.UUID
-    status: str
-    created_at: datetime
-    updated_at: datetime
-    document_ids: list[uuid.UUID] = []
-    collection_ids: list[uuid.UUID] = []
-    attributes: dict[str, Any] = {}
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        if isinstance(self.attributes, str):
-            self.attributes = json.loads(self.attributes)
-
-    @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "Graph":
-        return Graph(
-            id=d["id"],
-            status=d["status"],
-            created_at=d["created_at"],
-            updated_at=d["updated_at"],
-            document_ids=d["document_ids"],
-            collection_ids=d["collection_ids"],
-            attributes=d["attributes"],
-        )
 
 
 class KGExtraction(R2RSerializable):
-    """An extraction from a document that is part of a knowledge graph."""
+    """A protocol for a knowledge graph extraction."""
 
     chunk_ids: list[uuid.UUID]
     document_id: uuid.UUID
@@ -322,17 +172,3 @@ class Graph(R2RSerializable):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-    @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "Graph":
-        return Graph(
-            id=d["id"],
-            name=d["name"],
-            description=d["description"],
-            document_ids=d["document_ids"],
-            collection_ids=d["collection_ids"],
-            statistics=d["statistics"],
-            created_at=d["created_at"],
-            updated_at=d["updated_at"],
-            status=d["status"],
-        )

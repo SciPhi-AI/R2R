@@ -240,7 +240,7 @@ class GraphRouter(BaseRouterV3):
                 description="The maximum number of entities to retrieve, up to 20,000.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[Entity]]:
+        ) -> WrappedKGEntitiesResponse:  # type: ignore
             """
             Retrieves a list of entities associated with a specific chunk.
 
@@ -263,7 +263,7 @@ class GraphRouter(BaseRouterV3):
                 attributes=attributes,
             )
 
-            return entities, {
+            return entities, {  # type: ignore
                 "total_entries": count,
             }
 

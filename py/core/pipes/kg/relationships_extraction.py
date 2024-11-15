@@ -8,7 +8,6 @@ from typing import Any, AsyncGenerator, Optional, Union
 from core.base import (
     AsyncState,
     CompletionProvider,
-    DatabaseProvider,
     DocumentChunk,
     Entity,
     GenerationConfig,
@@ -19,6 +18,7 @@ from core.base import (
 )
 from core.base.pipes.base_pipe import AsyncPipe
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
+from core.providers.database import PostgresDBProvider
 
 logger = logging.getLogger()
 
@@ -43,7 +43,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
 
     def __init__(
         self,
-        database_provider: DatabaseProvider,
+        database_provider: PostgresDBProvider,
         llm_provider: CompletionProvider,
         config: AsyncPipe.PipeConfig,
         logging_provider: SqlitePersistentLoggingProvider,
@@ -266,10 +266,8 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
         )
 
         if filter_out_existing_chunks:
-            existing_chunk_ids = (
-                await self.database_provider.get_existing_entity_chunk_ids(
-                    document_id=document_id
-                )
+            existing_chunk_ids = await self.database_provider.graph_handler.get_existing_entity_chunk_ids(
+                document_id=document_id
             )
             extractions = [
                 extraction

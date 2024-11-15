@@ -229,7 +229,7 @@ async def test_add_entities_raw(
 async def test_add_entities(
     postgres_db_provider, entities_list, collection_id
 ):
-    await postgres_db_provider.add_entities(
+    await postgres_db_provider.graph_handler.add_entities(
         entities_list, table_name="document_entity"
     )
     entities = await postgres_db_provider.get_entities(
@@ -245,7 +245,7 @@ async def test_add_entities(
 async def test_add_relationships(
     postgres_db_provider, relationships_raw_list, collection_id
 ):
-    await postgres_db_provider.add_relationships(
+    await postgres_db_provider.graph_handler.add_relationships(
         relationships_raw_list, table_name="chunk_relationship"
     )
     relationships = await postgres_db_provider.get_relationships(collection_id)
@@ -269,7 +269,9 @@ async def test_get_entity_map(
     assert entity_map["Entity1"]["entities"][0].name == "Entity1"
     assert entity_map["Entity2"]["entities"][0].name == "Entity2"
 
-    await postgres_db_provider.add_relationships(relationships_raw_list)
+    await postgres_db_provider.graph_handler.add_relationships(
+        relationships_raw_list
+    )
     entity_map = await postgres_db_provider.get_entity_map(0, 2, document_id)
     assert entity_map["Entity1"]["entities"][0].name == "Entity1"
     assert entity_map["Entity2"]["entities"][0].name == "Entity2"
@@ -310,7 +312,9 @@ async def test_upsert_embeddings(
 async def test_get_all_relationships(
     postgres_db_provider, collection_id, relationships_raw_list
 ):
-    await postgres_db_provider.add_relationships(relationships_raw_list)
+    await postgres_db_provider.graph_handler.add_relationships(
+        relationships_raw_list
+    )
     relationships = await postgres_db_provider.get_relationships(collection_id)
     assert relationships["relationships"][0].subject == "Entity1"
     assert relationships["relationships"][1].subject == "Entity2"
@@ -351,7 +355,7 @@ async def test_perform_graph_clustering(
     await postgres_db_provider.add_entities(
         entities_list, table_name="document_entity"
     )
-    await postgres_db_provider.add_relationships(
+    await postgres_db_provider.graph_handler.add_relationships(
         relationships_raw_list, table_name="chunk_relationship"
     )
 
@@ -374,7 +378,7 @@ async def test_get_community_details(
     await postgres_db_provider.add_entities(
         entities_list, table_name="document_entity"
     )
-    await postgres_db_provider.add_relationships(
+    await postgres_db_provider.graph_handler.add_relationships(
         relationships_raw_list, table_name="chunk_relationship"
     )
     await postgres_db_provider.add_community_info(community_table_info)

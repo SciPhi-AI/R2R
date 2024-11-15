@@ -50,8 +50,10 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         self, collection_id: UUID, **kwargs
     ):
         try:
-            entity_count = await self.database_provider.get_entity_count(
-                collection_id=collection_id, distinct=True
+            entity_count = (
+                await self.database_provider.graph_handler.get_entity_count(
+                    collection_id=collection_id, distinct=True
+                )
             )
 
             logger.info(
@@ -62,7 +64,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             )
 
             entities = (
-                await self.database_provider.get_entities(
+                await self.database_provider.graph_handler.get_entities(
                     collection_id=collection_id, offset=0, limit=-1
                 )
             )["entities"]
@@ -121,7 +123,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             logger.info(
                 f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {collection_id}"
             )
-            await self.database_provider.add_entities(
+            await self.database_provider.graph_handler.add_entities(
                 deduplicated_entities_list,
                 table_name="collection_entity",
                 conflict_columns=["name", "collection_id", "attributes"],
@@ -146,7 +148,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         from sklearn.cluster import DBSCAN
 
         entities = (
-            await self.database_provider.get_entities(
+            await self.database_provider.graph_handler.get_entities(
                 collection_id=collection_id,
                 offset=0,
                 limit=-1,
@@ -247,7 +249,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         logger.info(
             f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {collection_id}"
         )
-        await self.database_provider.add_entities(
+        await self.database_provider.graph_handler.add_entities(
             deduplicated_entities_list,
             table_name="collection_entity",
             conflict_columns=["name", "collection_id", "attributes"],

@@ -11,11 +11,12 @@ from core.base import (
     AsyncState,
     Community,
     CompletionProvider,
-    DatabaseProvider,
     EmbeddingProvider,
     GenerationConfig,
 )
+
 from core.base.abstractions import Entity, Relationship
+from core.providers.database import PostgresDBProvider
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
@@ -28,7 +29,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     def __init__(
         self,
-        database_provider: DatabaseProvider,
+        database_provider: PostgresDBProvider,
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
@@ -144,7 +145,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         """
 
         community_level, entities, relationships = (
-            await self.database_provider.get_community_details(
+            await self.database_provider.graph_handler.get_community_details(
                 community_number=community_number,
                 collection_id=collection_id,
             )
@@ -223,7 +224,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
-        await self.database_provider.add_community(community)
+        await self.database_provider.graph_handler.add_community(community)
 
         return {
             "community_number": community.community_number,

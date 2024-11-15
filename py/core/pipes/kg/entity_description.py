@@ -15,6 +15,7 @@ from core.base import (
 )
 from core.base.abstractions import Entity
 from core.base.pipes.base_pipe import AsyncPipe
+from core.providers.database import PostgresDBProvider
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
@@ -30,7 +31,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
 
     def __init__(
         self,
-        database_provider: DatabaseProvider,
+        database_provider: PostgresDBProvider,
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
@@ -131,7 +132,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
             )[0]
 
             # upsert the entity and its embedding
-            await self.database_provider.add_entities(
+            await self.database_provider.graph_handler.add_entities(
                 [out_entity],
                 table_name="document_entity",
             )
@@ -147,7 +148,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
             f"KGEntityDescriptionPipe: Getting entity map for document {document_id}",
         )
 
-        entity_map = await self.database_provider.get_entity_map(
+        entity_map = await self.database_provider.graph_handler.get_entity_map(
             offset, limit, document_id
         )
         total_entities = len(entity_map)

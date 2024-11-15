@@ -187,7 +187,7 @@ class KgService(Service):
         limit: Optional[int] = None,
         **kwargs,
     ):
-        return await self.providers.database.get_entities(
+        return await self.providers.database.graph_handler.get_entities(
             collection_id=collection_id,
             entity_ids=entity_ids,
             entity_table_name=entity_table_name,
@@ -265,7 +265,7 @@ class KgService(Service):
         limit: Optional[int] = None,
         **kwargs,
     ):
-        return await self.providers.database.get_relationships(
+        return await self.providers.database.graph_handler.get_relationships(
             collection_id=collection_id,
             entity_names=entity_names,
             relationship_ids=relationship_ids,
@@ -327,7 +327,7 @@ class KgService(Service):
         limit: Optional[int] = None,
         **kwargs,
     ):
-        return await self.providers.database.get_communities(
+        return await self.providers.database.graph_handler.get_communities(
             collection_id=collection_id,
             levels=levels,
             community_numbers=community_numbers,
@@ -378,10 +378,12 @@ class KgService(Service):
             f"KGService: Running kg_entity_description for document {document_id}"
         )
 
-        entity_count = await self.providers.database.get_entity_count(
-            document_id=document_id,
-            distinct=True,
-            entity_table_name="chunk_entity",
+        entity_count = (
+            await self.providers.database.graph_handler.get_entity_count(
+                document_id=document_id,
+                distinct=True,
+                entity_table_name="chunk_entity",
+            )
         )
 
         logger.info(
@@ -519,7 +521,7 @@ class KgService(Service):
         cascade: bool,
         **kwargs,
     ):
-        return await self.providers.database.delete_graph_for_collection(
+        return await self.providers.database.graph_handler.delete_graph_for_collection(
             collection_id, cascade
         )
 
@@ -530,7 +532,7 @@ class KgService(Service):
         collection_id: UUID,
         **kwargs,
     ):
-        return await self.providers.database.delete_node_via_document_id(
+        return await self.providers.database.graph_handler.delete_node_via_document_id(
             collection_id, document_id
         )
 
@@ -541,9 +543,11 @@ class KgService(Service):
         kg_creation_settings: KGCreationSettings,
         **kwargs,
     ):
-        return await self.providers.database.get_creation_estimate(
-            collection_id=collection_id,
-            kg_creation_settings=kg_creation_settings,
+        return (
+            await self.providers.database.graph_handler.get_creation_estimate(
+                collection_id=collection_id,
+                kg_creation_settings=kg_creation_settings,
+            )
         )
 
     @telemetry_event("get_enrichment_estimate")
@@ -554,7 +558,7 @@ class KgService(Service):
         **kwargs,
     ):
 
-        return await self.providers.database.get_enrichment_estimate(
+        return await self.providers.database.graph_handler.get_enrichment_estimate(
             collection_id, kg_enrichment_settings
         )
 
@@ -565,7 +569,7 @@ class KgService(Service):
         kg_deduplication_settings: KGEntityDeduplicationSettings,
         **kwargs,
     ):
-        return await self.providers.database.get_deduplication_estimate(
+        return await self.providers.database.graph_handler.get_deduplication_estimate(
             collection_id, kg_deduplication_settings
         )
 

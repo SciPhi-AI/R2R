@@ -75,7 +75,7 @@ class KGStoragePipe(AsyncPipe):
                                 extraction.document_id
                             )
 
-                    await self.database_provider.add_entities(
+                    await self.database_provider.graph_handler.add_entities(
                         extraction.entities, table_name=f"chunk_entity"
                     )
 
@@ -89,7 +89,7 @@ class KGStoragePipe(AsyncPipe):
                             extraction.document_id
                         )
 
-                    await self.database_provider.add_relationships(
+                    await self.database_provider.graph_handler.add_relationships(
                         extraction.relationships,
                         table_name=f"chunk_relationship",
                     )
