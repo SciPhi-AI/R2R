@@ -191,7 +191,7 @@ class ManagementService(Service):
         }
 
     @telemetry_event("AppSettings")
-    async def app_settings(self, *args: Any, **kwargs: Any):
+    async def app_settings(self):
         prompts = await self.providers.database.get_all_prompts()
         config_toml = self.config.to_toml()
         config_dict = toml.loads(config_toml)

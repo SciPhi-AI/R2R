@@ -47,7 +47,7 @@ class AnalyticsResponse(BaseModel):
     filtered_logs: dict[str, Any]
 
 
-class AppSettingsResponse(BaseModel):
+class SettingsResponse(BaseModel):
     config: dict[str, Any]
     prompts: dict[str, Any]
     r2r_project_name: str
@@ -152,6 +152,9 @@ WrappedDocumentsResponse = PaginatedResultsWrapper[list[DocumentResponse]]
 WrappedPromptResponse = ResultsWrapper[PromptResponse]
 WrappedPromptsResponse = PaginatedResultsWrapper[list[PromptResponse]]
 
+# System Responses
+WrappedSettingsResponse = ResultsWrapper[SettingsResponse]
+
 # User Responses
 WrappedUserResponse = ResultsWrapper[UserResponse]
 WrappedUsersResponse = PaginatedResultsWrapper[list[UserResponse]]
@@ -160,6 +163,4 @@ WrappedUsersResponse = PaginatedResultsWrapper[list[UserResponse]]
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
 WrappedLogResponse = ResultsWrapper[list[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
-WrappedAppSettingsResponse = ResultsWrapper[AppSettingsResponse]
-
 WrappedVerificationResult = ResultsWrapper[VerificationResult]

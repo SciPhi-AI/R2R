@@ -76,13 +76,13 @@ async def logs(ctx, run_type_filter, offset, limit):
 
 @system.command()
 @pass_context
-async def app_settings(ctx):
+async def settings(ctx):
     """Retrieve application settings."""
     client: R2RAsyncClient = ctx.obj
     with timer():
-        response = await client.app_settings()
+        response = await client.system.settings()
 
-    click.echo(response)
+    click.echo(json.dumps(response, indent=2))
 
 
 @system.command()

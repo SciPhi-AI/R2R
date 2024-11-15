@@ -17,7 +17,7 @@ from core.base import (
 from core.base.api.models import (
     WrappedCompletionResponse,
     WrappedDocumentSearchResponse,
-    WrappedRAGAgentResponse,
+    WrappedAgentResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
@@ -295,7 +295,7 @@ class RetrievalRouter(BaseRouter):
                 None, description=agent_descriptions.get("branch_id")
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedRAGAgentResponse:  # type: ignore
+        ) -> WrappedAgentResponse:  # type: ignore
             """
             Implement an agent-based interaction for complex query processing.
 

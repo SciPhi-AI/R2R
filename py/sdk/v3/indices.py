@@ -44,7 +44,7 @@ class IndicesSDK:
         Args:
             filters (Optional[dict]): Filter criteria for indices.
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
-            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100..
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             WrappedListVectorIndicesResponse: The response containing the list of indices.

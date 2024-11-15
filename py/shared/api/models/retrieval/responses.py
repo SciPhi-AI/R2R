@@ -69,7 +69,7 @@ class RAGResponse(BaseModel):
         }
 
 
-class RAGAgentResponse(BaseModel):
+class AgentResponse(BaseModel):
     messages: list[Message] = Field(..., description="Agent response messages")
     conversation_id: str = Field(
         ..., description="The conversation ID for the RAG agent response"
@@ -145,4 +145,4 @@ WrappedVectorSearchResponse = ResultsWrapper[list[VectorSearchResult]]
 WrappedSearchResponse = ResultsWrapper[CombinedSearchResponse]
 WrappedDocumentSearchResponse = ResultsWrapper[list[DocumentSearchResult]]
 WrappedRAGResponse = ResultsWrapper[RAGResponse]
-WrappedRAGAgentResponse = ResultsWrapper[RAGAgentResponse]
+WrappedAgentResponse = ResultsWrapper[AgentResponse]
