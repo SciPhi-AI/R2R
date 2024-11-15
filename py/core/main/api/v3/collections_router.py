@@ -223,7 +223,7 @@ class CollectionsRouter(BaseRouterV3):
                 limit=limit,
             )
 
-            return (
+            return (  # type: ignore
                 collections_overview_response["results"],
                 {
                     "total_entries": collections_overview_response[
@@ -486,7 +486,7 @@ class CollectionsRouter(BaseRouterV3):
                 )
 
             await self.services["management"].delete_collection(id)
-            return GenericBooleanResponse(success=True)
+            return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
             "/collections/{id}/documents/{document_id}",
@@ -745,7 +745,7 @@ class CollectionsRouter(BaseRouterV3):
             await self.services["management"].remove_document_from_collection(
                 document_id, id
             )
-            return GenericBooleanResponse(success=True)
+            return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.get(
             "/collections/{id}/users",
@@ -932,7 +932,7 @@ class CollectionsRouter(BaseRouterV3):
             result = await self.services["management"].add_user_to_collection(
                 user_id, id
             )
-            return GenericBooleanResponse(success=result)
+            return GenericBooleanResponse(success=result)  # type: ignore
 
         @self.router.delete(
             "/collections/{id}/users/{user_id}",
@@ -1014,4 +1014,4 @@ class CollectionsRouter(BaseRouterV3):
             await self.services["management"].remove_user_from_collection(
                 user_id, id
             )
-            return GenericBooleanResponse(success=True)
+            return GenericBooleanResponse(success=True)  # type: ignore

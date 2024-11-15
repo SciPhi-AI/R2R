@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, AsyncGenerator, Optional, Type, Union
+from typing import Any, AsyncGenerator, Optional, Type
 
 from pydantic import BaseModel
 
@@ -26,7 +26,7 @@ class Conversation:
 
     def create_and_add_message(
         self,
-        role: Union[MessageType, str],
+        role: MessageType | str,
         content: Optional[str] = None,
         name: Optional[str] = None,
         function_call: Optional[dict[str, Any]] = None,
@@ -123,9 +123,7 @@ class Agent(ABC):
         messages: Optional[list[Message]] = None,
         *args,
         **kwargs,
-    ) -> Union[
-        list[LLMChatCompletion], AsyncGenerator[LLMChatCompletion, None]
-    ]:
+    ) -> list[LLMChatCompletion] | AsyncGenerator[LLMChatCompletion, None]:
         pass
 
     @abstractmethod
@@ -134,7 +132,7 @@ class Agent(ABC):
         response: Any,
         *args,
         **kwargs,
-    ) -> Union[None, AsyncGenerator[str, None]]:
+    ) -> None | AsyncGenerator[str, None]:
         pass
 
     async def execute_tool(self, tool_name: str, *args, **kwargs) -> str:

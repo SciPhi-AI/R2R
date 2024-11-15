@@ -484,15 +484,10 @@ class IngestionRouter(BaseRouter):
                     workflow_input
                 )
 
-                return {  # type: ignore
-                    "message": "Update metadata task completed successfully.",
-                    "document_id": str(document_id),
-                    "task_id": None,
-                }
                 return [
                     {  # type: ignore
                         "message": "Ingestion task completed successfully.",
-                        "document_id": str(document_uuid),
+                        "document_id": str(document_id),
                         "task_id": None,
                     }
                 ]
@@ -636,7 +631,7 @@ class IngestionRouter(BaseRouter):
                 },
             )
 
-            return GenericMessageResponse(message=raw_message)
+            return GenericMessageResponse(message=raw_message)  # type: ignore
 
         list_vector_indices_extras = self.openapi_extras.get(
             "create_vector_index", {}
@@ -725,7 +720,7 @@ class IngestionRouter(BaseRouter):
                 },
             )
 
-            return GenericMessageResponse(message=raw_message)
+            return GenericMessageResponse(message=raw_message)  # type: ignore
 
     @staticmethod
     async def _process_files(files):

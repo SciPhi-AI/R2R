@@ -94,7 +94,7 @@ class SystemRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def health_check() -> WrappedGenericMessageResponse:
-            return GenericMessageResponse(message="ok")
+            return GenericMessageResponse(message="ok")  # type: ignore
 
         @self.router.get(
             "/system/settings",
@@ -224,7 +224,7 @@ class SystemRouter(BaseRouterV3):
                     "Only an authorized user can call the `server_stats` endpoint.",
                     403,
                 )
-            return {
+            return {  # type: ignore
                 "start_time": self.start_time.isoformat(),
                 "uptime_seconds": (
                     datetime.now(timezone.utc) - self.start_time

@@ -241,7 +241,7 @@ class IndicesRouter(BaseRouterV3):
                 },
             )
 
-            return GenericMessageResponse(message=raw_message)
+            return GenericMessageResponse(message=raw_message)  # type: ignore
 
         @self.router.get(
             "/indices",
@@ -625,4 +625,4 @@ class IndicesRouter(BaseRouterV3):
                 },
             )
 
-            return GenericMessageResponse(message=raw_message)
+            return GenericMessageResponse(message=raw_message)  # type: ignore

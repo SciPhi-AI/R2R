@@ -17,12 +17,22 @@ class DocumentsSDK:
         file_path: Optional[str] = None,
         content: Optional[str] = None,
         id: Optional[str | UUID] = None,
+        collection_ids: Optional[list[str | UUID]] = None,
         metadata: Optional[dict] = None,
         ingestion_config: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
     ) -> dict:
         """
         Create a new document from either a file or content.
+
+        Args:
+            file_path (Optional[str]): The file to upload, if any
+            content (Optional[str]): Optional text content to upload, if no file path is provided
+            id (Optional[Union[str, UUID]]): Optional ID to assign to the document
+            collection_ids (Optional[list[Union[str, UUID]]]): Collection IDs to associate with the document. If none are provided, the document will be assigned to the user's default collection.
+            metadata (Optional[dict]): Optional metadata to assign to the document
+            ingestion_config (Optional[dict]): Optional ingestion configuration to use
+            run_with_orchestration (Optional[bool]): Whether to run with orchestration
         """
         if not file_path and not content:
             raise ValueError("Either file_path or content must be provided")
@@ -38,6 +48,10 @@ class DocumentsSDK:
             data["metadata"] = json.dumps(metadata)
         if ingestion_config:
             data["ingestion_config"] = json.dumps(ingestion_config)
+        if collection_ids:
+            data["collection_ids"] = json.dumps(
+                [str(collection_id) for collection_id in collection_ids]
+            )
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
 

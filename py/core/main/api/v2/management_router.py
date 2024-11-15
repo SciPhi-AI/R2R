@@ -99,7 +99,7 @@ class ManagementRouter(BaseRouter):
             result = await self.service.update_prompt(
                 name, template, input_types
             )
-            return GenericMessageResponse(message=result)
+            return GenericMessageResponse(message=result)  # type: ignore
 
         @self.router.post("/add_prompt")
         @self.base_endpoint
@@ -115,7 +115,7 @@ class ManagementRouter(BaseRouter):
                     403,
                 )
             result = await self.service.add_prompt(name, template, input_types)
-            return GenericMessageResponse(message=result)
+            return GenericMessageResponse(message=result)  # type: ignore
 
         @self.router.get("/get_prompt/{prompt_name}")
         @self.base_endpoint
@@ -137,7 +137,7 @@ class ManagementRouter(BaseRouter):
             result = await self.service.get_cached_prompt(
                 prompt_name, inputs, prompt_override
             )
-            return GenericMessageResponse(message=result)
+            return GenericMessageResponse(message=result)  # type: ignore
 
         @self.router.get("/get_all_prompts")
         @self.base_endpoint
@@ -519,7 +519,7 @@ class ManagementRouter(BaseRouter):
                 )
             )
 
-            return collections_overview_response["results"], {
+            return collections_overview_response["results"], {  # type: ignore
                 "total_entries": collections_overview_response["total_entries"]
             }
 
@@ -640,7 +640,7 @@ class ManagementRouter(BaseRouter):
             result = await self.service.add_user_to_collection(
                 user_uuid, collection_uuid
             )
-            return WrappedBooleanResponse(result=result)
+            return WrappedBooleanResponse(result=result)  # type: ignore
 
         @self.router.post("/remove_user_from_collection")
         @self.base_endpoint

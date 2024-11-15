@@ -688,11 +688,11 @@ class IngestionService(Service):
         user: UserResponse,
     ) -> None:
         # Verify document exists and user has access
-        existing_document = (
-            await self.providers.database.get_documents_overview(
-                filter_document_ids=[document_id],
-                filter_user_ids=[user.id],
-            )
+        existing_document = await self.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+            offset=0,
+            limit=100,
+            filter_document_ids=[document_id],
+            filter_user_ids=[user.id],
         )
 
         if not existing_document["results"]:

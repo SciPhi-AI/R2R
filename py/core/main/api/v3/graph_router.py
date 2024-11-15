@@ -32,31 +32,6 @@ from .base_router import BaseRouterV3
 logger = logging.getLogger()
 
 
-# class Entity(BaseModel):
-#     """Model representing a graph entity."""
-
-#     id: UUID
-#     name: str
-#     type: str
-#     metadata: dict = Field(default_factory=dict)
-#     level: EntityLevel
-#     collection_ids: list[UUID]
-#     embedding: Optional[list[float]] = None
-
-#     class Config:
-#         json_schema_extra = {
-#             "example": {
-#                 "id": "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-#                 "name": "John Smith",
-#                 "type": "PERSON",
-#                 "metadata": {"confidence": 0.95},
-#                 "level": "DOCUMENT",
-#                 "collection_ids": ["d09dedb1-b2ab-48a5-b950-6e1f464d83e7"],
-#                 "embedding": [0.1, 0.2, 0.3],
-#             }
-#         }
-
-
 class Relationship(BaseModel):
     """Model representing a graph relationship."""
 
