@@ -55,9 +55,7 @@ add_command_with_telemetry(
 
 # Management
 add_command_with_telemetry(management.analytics)  # Deprecated
-add_command_with_telemetry(
-    management.app_settings
-)  # TODO: migrate to new schema
+add_command_with_telemetry(management.app_settings)  # Deprecated
 add_command_with_telemetry(management.users_overview)  # Deprecated
 add_command_with_telemetry(management.documents_overview)  # Deprecated
 add_command_with_telemetry(management.list_document_chunks)  # Deprecated

@@ -32,7 +32,7 @@ class ChunksSDK:
             list[dict]: List of creation results containing processed chunk information
         """
         data = {
-            "chunks": [chunk.dict() for chunk in chunks],
+            "chunks": chunks,
             "run_with_orchestration": run_with_orchestration,
         }
         return await self.client._make_request(

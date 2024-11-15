@@ -320,12 +320,13 @@ class RetrievalService(Service):
                         conversation_id = conversation["id"]
 
                         parent_id = None
-                        for inner_message in messages[:-1]:
-                            parent_id = await self.logging_connection.add_message(
-                                conversation_id,  # Use the stored conversation_id
-                                inner_message,
-                                parent_id,
-                            )
+                        if conversation_id and messages:
+                            for inner_message in messages[:-1]:
+                                parent_id = await self.logging_connection.add_message(
+                                    conversation_id,  # Use the stored conversation_id
+                                    inner_message,
+                                    parent_id,
+                                )
                     messages = messages or []
 
                 current_message = messages[-1]  # type: ignore
@@ -336,7 +337,8 @@ class RetrievalService(Service):
                     current_message,  # type: ignore
                     parent_id=str(ids[-2]) if (ids and len(ids) > 1) else None,  # type: ignore
                 )
-                message_id = message["id"]
+                if message is not None:
+                    message_id = message.model_dump()["id"]
 
                 if rag_generation_config.stream:
                     t1 = time.time()
@@ -381,8 +383,8 @@ class RetrievalService(Service):
                     **kwargs,
                 )
                 await self.logging_connection.add_message(
-                    conversation_id,
-                    Message(**results[-1]),
+                    conversation_id=conversation_id,
+                    content=Message(**results[-1]),
                     parent_id=message_id,
                 )
 

@@ -27,29 +27,32 @@ from shared.api.models.kg.responses import (
 )
 from shared.api.models.management.responses import (
     AnalyticsResponse,
-    AppSettingsResponse,
+    ChunkResponse,
     CollectionResponse,
     ConversationResponse,
-    ChunkResponse,
-    UserResponse,
     LogResponse,
     PromptResponse,
     ServerStats,
-    WrappedAnalyticsResponse,
-    WrappedAppSettingsResponse,
-    WrappedCollectionResponse,
-    WrappedCollectionsResponse,
-    WrappedConversationResponse,
-    WrappedConversationsResponse,
+    SettingsResponse,
+    UserResponse,
+    # Chunk Responses
     WrappedChunkResponse,
     WrappedChunksResponse,
+    # Conversation Responses
+    WrappedConversationResponse,
+    WrappedConversationsResponse,
     # Document Responses
     WrappedDocumentResponse,
     WrappedDocumentsResponse,
+    # Collection Responses
+    WrappedCollectionResponse,
+    WrappedCollectionsResponse,
     # Prompt Responses
     WrappedPromptResponse,
     WrappedPromptsResponse,
-    # Collection Responses
+    # System Responses
+    WrappedAnalyticsResponse,
+    WrappedSettingsResponse,
     # User Responses
     WrappedUserResponse,
     WrappedUsersResponse,
@@ -58,10 +61,10 @@ from shared.api.models.management.responses import (
 )
 from shared.api.models.retrieval.responses import (
     CombinedSearchResponse,
-    RAGAgentResponse,
+    AgentResponse,
     RAGResponse,
     WrappedDocumentSearchResponse,
-    WrappedRAGAgentResponse,
+    WrappedAgentResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
     WrappedVectorSearchResponse,
@@ -88,14 +91,14 @@ __all__ = [
     "ServerStats",
     "LogResponse",
     "AnalyticsResponse",
-    "AppSettingsResponse",
+    "SettingsResponse",
     "ChunkResponse",
     "CollectionResponse",
     "ConversationResponse",
     "WrappedServerStatsResponse",
     "WrappedLogResponse",
     "WrappedAnalyticsResponse",
-    "WrappedAppSettingsResponse",
+    "WrappedSettingsResponse",
     # Document Responses
     "WrappedDocumentResponse",
     "WrappedDocumentsResponse",
@@ -126,10 +129,10 @@ __all__ = [
     # Retrieval Responses
     "CombinedSearchResponse",
     "RAGResponse",
-    "RAGAgentResponse",
+    "WrappedRAGResponse",
+    "AgentResponse",
     "WrappedSearchResponse",
     "WrappedDocumentSearchResponse",
     "WrappedVectorSearchResponse",
-    "WrappedRAGResponse",
-    "WrappedRAGAgentResponse",
+    "WrappedAgentResponse",
 ]

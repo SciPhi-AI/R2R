@@ -111,6 +111,9 @@ class SyncManagementMixins:
             "DELETE", f"delete_prompt/{prompt_name}"
         )
 
+    @deprecated(
+        "This method is deprecated. New, improved analytics features will be added in a future release."
+    )
     def analytics(
         self,
         filter_criteria: Optional[Union[dict, str]] = None,
@@ -140,6 +143,7 @@ class SyncManagementMixins:
 
         return self._make_request("GET", "analytics", params=params)  # type: ignore
 
+    @deprecated("Use client.system.settings() instead")
     def app_settings(self) -> dict:
         """
         Get the configuration settings for the app.

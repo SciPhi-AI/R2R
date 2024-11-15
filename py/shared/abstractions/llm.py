@@ -2,7 +2,7 @@
 
 import json
 from enum import Enum
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from pydantic import BaseModel, Field
@@ -75,7 +75,7 @@ class GenerationConfig(R2RSerializable):
     api_base: Optional[str] = Field(
         default_factory=lambda: GenerationConfig._defaults["api_base"]
     )
-    response_format: Optional[Union[dict, BaseModel]] = None
+    response_format: Optional[dict | BaseModel] = None
 
     @classmethod
     def set_default(cls, **kwargs):
@@ -137,7 +137,7 @@ class MessageType(Enum):
 
 
 class Message(R2RSerializable):
-    role: Union[MessageType, str]
+    role: MessageType | str
     content: Optional[str] = None
     name: Optional[str] = None
     function_call: Optional[dict[str, Any]] = None

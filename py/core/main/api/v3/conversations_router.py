@@ -195,7 +195,7 @@ class ConversationsRouter(BaseRouterV3):
                 offset=offset,
                 limit=limit,
             )
-            return conversations_response["results"], {
+            return conversations_response["results"], {  # type: ignore
                 "total_entries": conversations_response["total_entries"]
             }
 
@@ -347,7 +347,7 @@ class ConversationsRouter(BaseRouterV3):
             This endpoint deletes a conversation identified by its UUID.
             """
             await self.services["management"].delete_conversation(str(id))
-            return GenericBooleanResponse(success=True)
+            return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
             "/conversations/{id}/messages",
@@ -609,7 +609,7 @@ class ConversationsRouter(BaseRouterV3):
                 conversation_id=str(id),
             )
 
-            return branches_response["results"], {
+            return branches_response["results"], {  # type: ignore
                 "total_entries": branches_response["total_entries"]
             }
 

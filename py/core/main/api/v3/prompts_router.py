@@ -114,7 +114,7 @@ class PromptsRouter(BaseRouterV3):
             result = await self.services["management"].add_prompt(
                 name, template, input_types
             )
-            return GenericMessageResponse(message=result)
+            return GenericMessageResponse(message=result)  # type: ignore
 
         @self.router.get(
             "/prompts",
@@ -188,7 +188,7 @@ class PromptsRouter(BaseRouterV3):
                 "management"
             ].get_all_prompts()
 
-            return (
+            return (  # type: ignore
                 get_prompts_response["results"],
                 {
                     "total_entries": get_prompts_response["total_entries"],
@@ -365,7 +365,7 @@ class PromptsRouter(BaseRouterV3):
             result = await self.services["management"].update_prompt(
                 name, template, input_types
             )
-            return GenericMessageResponse(message=result)
+            return GenericMessageResponse(message=result)  # type: ignore
 
         @self.router.delete(
             "/prompts/{name}",
@@ -439,4 +439,4 @@ class PromptsRouter(BaseRouterV3):
                     403,
                 )
             await self.services["management"].delete_prompt(name)
-            return GenericBooleanResponse(success=True)
+            return GenericBooleanResponse(success=True)  # type: ignore

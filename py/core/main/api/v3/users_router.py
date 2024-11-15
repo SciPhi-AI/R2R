@@ -892,7 +892,7 @@ class UsersRouter(BaseRouterV3):
             await self.services["management"].add_user_to_collection(  # type: ignore
                 id, collection_id
             )
-            return GenericBooleanResponse(success=True)
+            return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.delete(
             "/users/{id}/collections/{collection_id}",
@@ -979,7 +979,7 @@ class UsersRouter(BaseRouterV3):
             await self.services["management"].remove_user_from_collection(  # type: ignore
                 id, collection_id
             )
-            return GenericBooleanResponse(success=True)
+            return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
             "/users/{id}",

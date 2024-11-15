@@ -1,4 +1,5 @@
 import psutil
+import textwrap
 
 from datetime import datetime, timezone
 from fastapi import Depends
@@ -10,6 +11,7 @@ from fastapi import Depends, Query
 from core.base import R2RException, RunType
 from core.base.api.models import (
     GenericMessageResponse,
+    WrappedSettingsResponse,
     WrappedGenericMessageResponse,
     WrappedLogResponse,
     WrappedServerStatsResponse,
@@ -38,16 +40,180 @@ class SystemRouter(BaseRouterV3):
     def _setup_routes(self):
         @self.router.get(
             "/health",
-            include_in_schema=True,
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.system.health()
+                        """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.system.health();
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r health
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/health"\\
+                                 -H "Content-Type: application/json" \\
+                                 -H "Authorization: Bearer YOUR_API_KEY" \\
+                        """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def health_check() -> WrappedGenericMessageResponse:
-            # Basic health check that doesn't require auth
-            return GenericMessageResponse(message="ok")
+            return GenericMessageResponse(message="ok")  # type: ignore
+
+        @self.router.get(
+            "/system/settings",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.system.settings()
+                        """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.system.settings();
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r system settings
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/system/settings" \\
+                                 -H "Content-Type: application/json" \\
+                                 -H "Authorization: Bearer YOUR_API_KEY" \\
+                        """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def app_settings(
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedSettingsResponse:
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can call the `app_settings` endpoint.",
+                    403,
+                )
+            return await self.services["management"].app_settings()
 
         @self.router.get(
             "/system/status",
-            include_in_schema=True,
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.system.status()
+                        """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.system.status();
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r system status
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/system/status" \\
+                                 -H "Content-Type: application/json" \\
+                                 -H "Authorization: Bearer YOUR_API_KEY" \\
+                            """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def server_stats(
@@ -58,7 +224,7 @@ class SystemRouter(BaseRouterV3):
                     "Only an authorized user can call the `server_stats` endpoint.",
                     403,
                 )
-            return {
+            return {  # type: ignore
                 "start_time": self.start_time.isoformat(),
                 "uptime_seconds": (
                     datetime.now(timezone.utc) - self.start_time
@@ -67,7 +233,60 @@ class SystemRouter(BaseRouterV3):
                 "memory_usage": psutil.virtual_memory().percent,
             }
 
-        @self.router.get("/system/logs")
+        @self.router.get(
+            "/system/logs",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.system.logs()
+                        """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.system.logs({});
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r system logs
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/system/logs" \\
+                                 -H "Content-Type: application/json" \\
+                                 -H "Authorization: Bearer YOUR_API_KEY" \\
+                        """
+                        ),
+                    },
+                ]
+            },
+        )
         @self.base_endpoint
         async def logs(
             run_type_filter: Optional[str] = Query(""),
