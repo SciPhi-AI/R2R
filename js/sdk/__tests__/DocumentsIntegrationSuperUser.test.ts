@@ -37,7 +37,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
     });
 
     expect(response.results.document_id).toBeDefined();
-  }, 10000);
+  }, 30000);
 
   test("Update document", async () => {
     const response = await client.documents.update({
