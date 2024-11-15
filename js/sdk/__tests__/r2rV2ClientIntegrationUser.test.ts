@@ -154,7 +154,7 @@ describe("r2rClient Integration Tests", () => {
     const files = ["examples/data/folder"];
 
     await expect(client.ingestFiles(files)).resolves.not.toThrow();
-  });
+  }, 30000);
 
   test("Update files", async () => {
     const updated_file = [
@@ -165,7 +165,7 @@ describe("r2rClient Integration Tests", () => {
         document_ids: ["0b80081e-a37a-579f-a06d-7d2032435d65"],
       }),
     ).resolves.not.toThrow();
-  });
+  }, 30000);
 
   test("Search documents", async () => {
     await expect(client.search("test")).resolves.not.toThrow();

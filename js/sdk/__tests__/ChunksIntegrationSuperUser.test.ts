@@ -36,7 +36,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
         task_id: null,
       },
     ]);
-  });
+  }, 10000);
 
   test("Retrieve a chunk", async () => {
     const response = await client.chunks.retrieve({

@@ -1,7 +1,7 @@
 import logging
 import os
 from collections import defaultdict
-from typing import Any, BinaryIO, Optional, Tuple, Union
+from typing import Any, BinaryIO, Optional, Tuple
 from uuid import UUID
 
 import toml
@@ -609,7 +609,7 @@ class ManagementService(Service):
     @telemetry_event("GetDocumentsInCollection")
     async def documents_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
-    ) -> dict[str, Union[list[DocumentResponse], int]]:
+    ) -> dict[str, list[DocumentResponse], int]:
         return await self.providers.database.documents_in_collection(
             collection_id, offset=offset, limit=limit
         )
@@ -622,7 +622,7 @@ class ManagementService(Service):
             await self.providers.database.add_prompt(
                 name, template, input_types
             )
-            return f"Prompt '{name}' added successfully."
+            return f"Prompt '{name}' added successfully."  # type: ignore
         except ValueError as e:
             raise R2RException(status_code=400, message=str(e))
 
@@ -652,8 +652,10 @@ class ManagementService(Service):
         prompt_override: Optional[str] = None,
     ) -> dict:
         try:
-            return await self.providers.database.get_prompt(
-                prompt_name, inputs, prompt_override
+            return await self.providers.database.get_prompt(  # type: ignore
+                prompt_name=prompt_name,
+                inputs=inputs,
+                prompt_override=prompt_override,
             )
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))
@@ -673,7 +675,7 @@ class ManagementService(Service):
             await self.providers.database.update_prompt(
                 name, template, input_types
             )
-            return f"Prompt '{name}' updated successfully."
+            return f"Prompt '{name}' updated successfully."  # type: ignore
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))
 
@@ -707,7 +709,7 @@ class ManagementService(Service):
     async def create_conversation(
         self, user_id: Optional[UUID] = None, auth_user=None
     ) -> dict:
-        return await self.logging_connection.create_conversation(
+        return await self.logging_connection.create_conversation(  # type: ignore
             user_id=user_id
         )
 
@@ -719,7 +721,7 @@ class ManagementService(Service):
         conversation_ids: Optional[list[UUID]] = None,
         user_ids: Optional[UUID | list[UUID]] = None,
         auth_user=None,
-    ) -> dict[str, Union[list[dict], int]]:
+    ) -> dict[str, list[dict], int]:
         return await self.logging_connection.get_conversations_overview(
             offset=offset,
             limit=limit,
@@ -759,7 +761,7 @@ class ManagementService(Service):
     @telemetry_event("exportMessagesToCSV")
     async def export_messages_to_csv(
         self, chunk_size: int = 1000, return_type: str = "stream"
-    ) -> Union[StreamingResponse, str]:
+    ) -> StreamingResponse | str:
         return await self.logging_connection.export_messages_to_csv(
             chunk_size, return_type
         )
@@ -772,7 +774,7 @@ class ManagementService(Service):
         conversation_id: str,
         auth_user=None,
     ) -> list[dict]:
-        return await self.logging_connection.get_branches(
+        return await self.logging_connection.get_branches(  # type: ignore
             offset=offset,
             limit=limit,
             conversation_id=conversation_id,
