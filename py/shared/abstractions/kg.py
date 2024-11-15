@@ -11,6 +11,7 @@ class KGRunType(str, Enum):
 
     ESTIMATE = "estimate"
     CREATE = "create"
+    RUN = "run"  # deprecated
 
     def __str__(self):
         return self.value

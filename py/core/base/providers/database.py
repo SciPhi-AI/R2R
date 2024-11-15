@@ -1545,7 +1545,8 @@ class DatabaseProvider(Provider):
     ):
         """Forward to KG handler get_creation_estimate method."""
         return await self.graph_handler.get_creation_estimate(
-            collection_id, kg_creation_settings
+            collection_id = collection_id,
+            kg_creation_settings = kg_creation_settings
         )
 
     async def get_enrichment_estimate(

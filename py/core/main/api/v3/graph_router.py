@@ -79,7 +79,6 @@ class GraphRouter(BaseRouterV3):
         async def create_graph(
             id: UUID = Path(..., description="The ID of the document to create a graph for."),
             run_type: KGRunType = Path(
-                default=KGRunType.CREATE,
                 description="Run type for the graph creation process.",
             ),
             settings: Optional[KGCreationSettings] = Body(
@@ -1118,9 +1117,7 @@ class GraphRouter(BaseRouterV3):
         async def create_empty_graph(
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
-
-
-
+            pass
 
         @self.router.get(
             "/graphs/{collection_id}",

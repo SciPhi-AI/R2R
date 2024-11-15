@@ -267,7 +267,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
 
         if filter_out_existing_chunks:
             existing_chunk_ids = (
-                await self.database_provider.get_existing_entity_chunk_ids(
+                await self.database_provider.graph_handler.relationships_handler.get(
                     document_id=document_id
                 )
             )

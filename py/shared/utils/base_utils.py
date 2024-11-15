@@ -254,3 +254,10 @@ def _decorate_vector_type(
     quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
 ) -> str:
     return f"{quantization_type.db_type}{input_str}"
+
+
+def _get_str_estimation_output(x: tuple[Any, Any]) -> str:
+    if isinstance(x[0], int) and isinstance(x[1], int):
+        return " - ".join(map(str, x))
+    else:
+        return " - ".join(f"{round(a, 2)}" for a in x)

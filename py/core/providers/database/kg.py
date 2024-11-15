@@ -36,7 +36,7 @@ from core.base.abstractions import (
     VectorQuantizationType,
 )
 
-from core.base.utils import _decorate_vector_type, llm_cost_per_million_tokens
+from core.base.utils import _decorate_vector_type, llm_cost_per_million_tokens, _get_str_estimation_output
 
 from .base import PostgresConnectionManager
 from .collection import PostgresCollectionHandler
@@ -424,7 +424,7 @@ class PostgresCommunityHandler(CommunityHandler):
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("community_info")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            sid SERIAL PRIMARY KEY,
+            sid SERIAL,
             node TEXT NOT NULL,
             cluster INT NOT NULL,
             parent_cluster INT,
@@ -440,7 +440,7 @@ class PostgresCommunityHandler(CommunityHandler):
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("community")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            sid SERIAL PRIMARY KEY,
+            sid SERIAL,
             community_number INT NOT NULL,
             collection_id UUID NOT NULL,
             level INT NOT NULL,
@@ -609,6 +609,139 @@ class PostgresGraphHandler(GraphHandler):
         )
 
 
+    ###### ESTIMATION METHODS ######
+    
+    async def get_creation_estimate(
+        self, 
+        kg_creation_settings: KGCreationSettings,
+        document_id: Optional[UUID] = None,
+        collection_id: Optional[UUID] = None,
+    ):
+        """Get the estimated cost and time for creating a KG."""
+
+        if bool(document_id) ^ bool(collection_id) is False:
+            raise ValueError("Exactly one of document_id or collection_id must be provided.")
+
+        # todo: harmonize the document_id and id fields: postgres table contains document_id, but other places use id.
+
+        document_ids = [document_id] if document_id else [
+            doc.id for doc in (await self.collection_handler.documents_in_collection(collection_id, offset=0, limit=-1))["results"]  # type: ignore
+        ]
+
+        chunk_counts = await self.connection_manager.fetch_query(
+            f"SELECT document_id, COUNT(*) as chunk_count FROM {self._get_table_name('vectors')} "
+            f"WHERE document_id = ANY($1) GROUP BY document_id", [document_ids]
+        )
+
+        total_chunks = sum(doc["chunk_count"] for doc in chunk_counts) // kg_creation_settings.extraction_merge_count
+        estimated_entities = (total_chunks * 10, total_chunks * 20)
+        estimated_relationships = (int(estimated_entities[0] * 1.25), int(estimated_entities[1] * 1.5))
+        estimated_llm_calls = (total_chunks * 2 + estimated_entities[0], total_chunks * 2 + estimated_entities[1])
+        total_in_out_tokens = tuple(2000 * calls // 1000000 for calls in estimated_llm_calls)
+        cost_per_million = llm_cost_per_million_tokens(kg_creation_settings.generation_config.model)
+        estimated_cost = tuple(tokens * cost_per_million for tokens in total_in_out_tokens)
+        total_time_in_minutes = tuple(tokens * 10 / 60 for tokens in total_in_out_tokens)
+
+        return {
+            "message": 'Ran Graph Creation Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_type="run"` in the client.',
+            "document_count": len(document_ids),
+            "number_of_jobs_created": len(document_ids) + 1,
+            "total_chunks": total_chunks,
+            "estimated_entities": _get_str_estimation_output(estimated_entities),
+            "estimated_relationships": _get_str_estimation_output(estimated_relationships),
+            "estimated_llm_calls": _get_str_estimation_output(estimated_llm_calls),
+            "estimated_total_in_out_tokens_in_millions": _get_str_estimation_output(total_in_out_tokens),
+            "estimated_cost_in_usd": _get_str_estimation_output(estimated_cost),
+            "estimated_total_time_in_minutes": "Depends on your API key tier. Accurate estimate coming soon. Rough estimate: " + _get_str_estimation_output(total_time_in_minutes),
+        }
+
+    async def get_enrichment_estimate(
+        self, collection_id: UUID, kg_enrichment_settings: KGEnrichmentSettings
+    ):
+        """Get the estimated cost and time for enriching a KG."""
+
+        document_ids = [
+            doc.id
+            for doc in (
+                await self.collection_handler.documents_in_collection(collection_id)  # type: ignore
+            )["results"]
+        ]
+
+        # Get entity and relationship counts
+        entity_count = (await self.connection_manager.fetch_query(
+            f"SELECT COUNT(*) FROM {self._get_table_name('document_entity')} WHERE document_id = ANY($1);",
+            [document_ids]
+        ))[0]["count"]
+
+        if not entity_count:
+            raise ValueError("No entities found in the graph. Please run `create-graph` first.")
+
+        relationship_count = (await self.connection_manager.fetch_query(
+            f"SELECT COUNT(*) FROM {self._get_table_name('chunk_relationship')} WHERE document_id = ANY($1);",
+            [document_ids]
+        ))[0]["count"]
+
+        # Calculate estimates
+        estimated_llm_calls = (entity_count // 10, entity_count // 5)
+        tokens_in_millions = tuple(2000 * calls / 1000000 for calls in estimated_llm_calls)
+        cost_per_million = llm_cost_per_million_tokens(kg_enrichment_settings.generation_config.model)
+        estimated_cost = tuple(tokens * cost_per_million for tokens in tokens_in_millions)
+        estimated_time = tuple(tokens * 10 / 60 for tokens in tokens_in_millions)
+
+        return {
+            "message": 'Ran Graph Enrichment Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG enrichment process, run `enrich-graph` with `--run` in the cli, or `run_type="run"` in the client.',
+            "total_entities": entity_count,
+            "total_relationships": relationship_count,
+            "estimated_llm_calls": _get_str_estimation_output(estimated_llm_calls),
+            "estimated_total_in_out_tokens_in_millions": _get_str_estimation_output(tokens_in_millions),
+            "estimated_cost_in_usd": _get_str_estimation_output(estimated_cost),
+            "estimated_total_time_in_minutes": "Depends on your API key tier. Accurate estimate coming soon. Rough estimate: "
+            + _get_str_estimation_output(estimated_time),
+        }
+
+    async def get_deduplication_estimate(
+        self,
+        collection_id: UUID,
+        kg_deduplication_settings: KGEntityDeduplicationSettings,
+    ):
+        """Get the estimated cost and time for deduplicating entities in a KG."""
+        try:
+            query = f"""
+                SELECT name, count(name)
+                FROM {self._get_table_name("document_entity")}
+                WHERE document_id = ANY(
+                    SELECT document_id FROM {self._get_table_name("document_info")}
+                    WHERE $1 = ANY(collection_ids)
+                )
+                GROUP BY name
+                HAVING count(name) >= 5
+            """
+            entities = await self.connection_manager.fetch_query(query, [collection_id])
+            num_entities = len(entities)
+
+            estimated_llm_calls = (num_entities, num_entities)
+            tokens_in_millions = (
+                estimated_llm_calls[0] * 1000 / 1000000,
+                estimated_llm_calls[1] * 5000 / 1000000,
+            )
+            cost_per_million = llm_cost_per_million_tokens(kg_deduplication_settings.generation_config.model)
+            estimated_cost = (tokens_in_millions[0] * cost_per_million, tokens_in_millions[1] * cost_per_million)
+            estimated_time = (tokens_in_millions[0] * 10 / 60, tokens_in_millions[1] * 10 / 60)
+
+            return {
+                "message": 'Ran Deduplication Estimate (not the actual run). Note that these are estimated ranges.',
+                "num_entities": num_entities,
+                "estimated_llm_calls": _get_str_estimation_output(estimated_llm_calls),
+                "estimated_total_in_out_tokens_in_millions": _get_str_estimation_output(tokens_in_millions),
+                "estimated_cost_in_usd": _get_str_estimation_output(estimated_cost),
+                "estimated_total_time_in_minutes": _get_str_estimation_output(estimated_time),
+            }
+        except UndefinedTableError:
+            raise R2RException("Entity embedding table not found. Please run `create-graph` first.", 404)
+        except Exception as e:
+            logger.error(f"Error in get_deduplication_estimate: {str(e)}")
+            raise HTTPException(500, "Error fetching deduplication estimate.")
+
 class PostgresGraphHandler_v1(GraphHandler):
     """Handler for Knowledge Graph METHODS in PostgreSQL."""
 
@@ -719,7 +852,7 @@ class PostgresGraphHandler_v1(GraphHandler):
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("community_info")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            sid SERIAL PRIMARY KEY,
+            sid SERIAL,
             node TEXT NOT NULL,
             cluster INT NOT NULL,
             parent_cluster INT,
@@ -1640,243 +1773,6 @@ class PostgresGraphHandler_v1(GraphHandler):
 
     ####################### ESTIMATION METHODS #######################
 
-    async def get_creation_estimate(
-        self, collection_id: UUID, kg_creation_settings: KGCreationSettings
-    ):
-
-        # todo: harmonize the document_id and id fields: postgres table contains document_id, but other places use id.
-        document_ids = [
-            doc.id
-            for doc in (
-                await self.collection_handler.documents_in_collection(collection_id)  # type: ignore
-            )["results"]
-        ]
-
-        query = f"""
-            SELECT document_id, COUNT(*) as chunk_count
-            FROM {self._get_table_name("vectors")}
-            WHERE document_id = ANY($1)
-            GROUP BY document_id
-        """
-
-        chunk_counts = await self.connection_manager.fetch_query(
-            query, [document_ids]
-        )
-
-        total_chunks = (
-            sum(doc["chunk_count"] for doc in chunk_counts)
-            // kg_creation_settings.extraction_merge_count
-        )  # 4 chunks per llm
-        estimated_entities = (
-            total_chunks * 10,
-            total_chunks * 20,
-        )  # 25 entities per 4 chunks
-        estimated_relationships = (
-            int(estimated_entities[0] * 1.25),
-            int(estimated_entities[1] * 1.5),
-        )  # Assuming 1.25 relationships per entity on average
-
-        estimated_llm_calls = (
-            total_chunks * 2 + estimated_entities[0],
-            total_chunks * 2 + estimated_entities[1],
-        )
-
-        total_in_out_tokens = (
-            2000 * estimated_llm_calls[0] // 1000000,
-            2000 * estimated_llm_calls[1] // 1000000,
-        )  # in millions
-
-        estimated_cost = (
-            total_in_out_tokens[0]
-            * llm_cost_per_million_tokens(
-                kg_creation_settings.generation_config.model
-            ),
-            total_in_out_tokens[1]
-            * llm_cost_per_million_tokens(
-                kg_creation_settings.generation_config.model
-            ),
-        )
-
-        total_time_in_minutes = (
-            total_in_out_tokens[0] * 10 / 60,
-            total_in_out_tokens[1] * 10 / 60,
-        )  # 10 minutes per million tokens
-
-        return {
-            "message": 'Ran Graph Creation Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_type="run"` in the client.',
-            "document_count": len(document_ids),
-            "number_of_jobs_created": len(document_ids) + 1,
-            "total_chunks": total_chunks,
-            "estimated_entities": self._get_str_estimation_output(
-                estimated_entities
-            ),
-            "estimated_relationships": self._get_str_estimation_output(
-                estimated_relationships
-            ),
-            "estimated_llm_calls": self._get_str_estimation_output(
-                estimated_llm_calls
-            ),
-            "estimated_total_in_out_tokens_in_millions": self._get_str_estimation_output(
-                total_in_out_tokens
-            ),
-            "estimated_cost_in_usd": self._get_str_estimation_output(
-                estimated_cost
-            ),
-            "estimated_total_time_in_minutes": "Depends on your API key tier. Accurate estimate coming soon. Rough estimate: "
-            + self._get_str_estimation_output(total_time_in_minutes),
-        }
-
-    async def get_enrichment_estimate(
-        self, collection_id: UUID, kg_enrichment_settings: KGEnrichmentSettings
-    ):
-
-        document_ids = [
-            doc.id
-            for doc in (
-                await self.collection_handler.documents_in_collection(collection_id)  # type: ignore
-            )["results"]
-        ]
-
-        QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("document_entity")} WHERE document_id = ANY($1);
-        """
-        entity_count = (
-            await self.connection_manager.fetch_query(QUERY, [document_ids])
-        )[0]["count"]
-
-        if not entity_count:
-            raise ValueError(
-                "No entities found in the graph. Please run `create-graph` first."
-            )
-
-        QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("chunk_relationship")} WHERE document_id = ANY($1);
-        """
-        relationship_count = (
-            await self.connection_manager.fetch_query(QUERY, [document_ids])
-        )[0]["count"]
-
-        estimated_llm_calls = (entity_count // 10, entity_count // 5)
-        estimated_total_in_out_tokens_in_millions = (
-            2000 * estimated_llm_calls[0] / 1000000,
-            2000 * estimated_llm_calls[1] / 1000000,
-        )
-        cost_per_million_tokens = llm_cost_per_million_tokens(
-            kg_enrichment_settings.generation_config.model
-        )
-        estimated_cost = (
-            estimated_total_in_out_tokens_in_millions[0]
-            * cost_per_million_tokens,
-            estimated_total_in_out_tokens_in_millions[1]
-            * cost_per_million_tokens,
-        )
-
-        estimated_total_time = (
-            estimated_total_in_out_tokens_in_millions[0] * 10 / 60,
-            estimated_total_in_out_tokens_in_millions[1] * 10 / 60,
-        )
-
-        return {
-            "message": 'Ran Graph Enrichment Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG enrichment process, run `enrich-graph` with `--run` in the cli, or `run_type="run"` in the client.',
-            "total_entities": entity_count,
-            "total_relationships": relationship_count,
-            "estimated_llm_calls": self._get_str_estimation_output(
-                estimated_llm_calls
-            ),
-            "estimated_total_in_out_tokens_in_millions": self._get_str_estimation_output(
-                estimated_total_in_out_tokens_in_millions
-            ),
-            "estimated_cost_in_usd": self._get_str_estimation_output(
-                estimated_cost
-            ),
-            "estimated_total_time_in_minutes": "Depends on your API key tier. Accurate estimate coming soon. Rough estimate: "
-            + self._get_str_estimation_output(estimated_total_time),
-        }
-
-    async def get_deduplication_estimate(
-        self,
-        collection_id: UUID,
-        kg_deduplication_settings: KGEntityDeduplicationSettings,
-    ):
-        try:
-            # number of documents in collection
-            query = f"""
-                SELECT name, count(name)
-                FROM {self._get_table_name("document_entity")}
-                WHERE document_id = ANY(
-                    SELECT document_id FROM {self._get_table_name("document_info")}
-                    WHERE $1 = ANY(collection_ids)
-                )
-                GROUP BY name
-                HAVING count(name) >= 5
-            """
-            entities = await self.connection_manager.fetch_query(
-                query, [collection_id]
-            )
-            num_entities = len(entities)
-
-            estimated_llm_calls = (num_entities, num_entities)
-            estimated_total_in_out_tokens_in_millions = (
-                estimated_llm_calls[0] * 1000 / 1000000,
-                estimated_llm_calls[1] * 5000 / 1000000,
-            )
-            estimated_cost_in_usd = (
-                estimated_total_in_out_tokens_in_millions[0]
-                * llm_cost_per_million_tokens(
-                    kg_deduplication_settings.generation_config.model
-                ),
-                estimated_total_in_out_tokens_in_millions[1]
-                * llm_cost_per_million_tokens(
-                    kg_deduplication_settings.generation_config.model
-                ),
-            )
-
-            estimated_total_time_in_minutes = (
-                estimated_total_in_out_tokens_in_millions[0] * 10 / 60,
-                estimated_total_in_out_tokens_in_millions[1] * 10 / 60,
-            )
-
-            return KGDeduplicationEstimationResponse(
-                message='Ran Deduplication Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the Deduplication process, run `deduplicate-entities` with `--run` in the cli, or `run_type="run"` in the client.',
-                num_entities=num_entities,
-                estimated_llm_calls=self._get_str_estimation_output(
-                    estimated_llm_calls
-                ),
-                estimated_total_in_out_tokens_in_millions=self._get_str_estimation_output(
-                    estimated_total_in_out_tokens_in_millions
-                ),
-                estimated_cost_in_usd=self._get_str_estimation_output(
-                    estimated_cost_in_usd
-                ),
-                estimated_total_time_in_minutes=self._get_str_estimation_output(
-                    estimated_total_time_in_minutes
-                ),
-            )
-        except UndefinedTableError as e:
-            logger.error(
-                f"Entity embedding table not found. Please run `create-graph` first. {str(e)}"
-            )
-            raise R2RException(
-                message="Entity embedding table not found. Please run `create-graph` first.",
-                status_code=404,
-            )
-        except PostgresError as e:
-            logger.error(
-                f"Database error in get_deduplication_estimate: {str(e)}"
-            )
-            raise HTTPException(
-                status_code=500,
-                detail="An error occurred while fetching the deduplication estimate.",
-            )
-        except Exception as e:
-            logger.error(
-                f"Unexpected error in get_deduplication_estimate: {str(e)}"
-            )
-            raise HTTPException(
-                status_code=500,
-                detail="An unexpected error occurred while fetching the deduplication estimate.",
-            )
-
     ####################### GRAPH SEARCH METHODS #######################
 
     async def graph_search(  # type: ignore
@@ -2225,11 +2121,6 @@ class PostgresGraphHandler_v1(GraphHandler):
 
     ####################### UTILITY METHODS #######################
 
-    def _get_str_estimation_output(self, x: tuple[Any, Any]) -> str:
-        if isinstance(x[0], int) and isinstance(x[1], int):
-            return " - ".join(map(str, x))
-        else:
-            return " - ".join(f"{round(a, 2)}" for a in x)
 
     async def get_existing_entity_chunk_ids(
         self, document_id: UUID

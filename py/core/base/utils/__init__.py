@@ -18,6 +18,7 @@ from shared.utils import (
     run_pipeline,
     to_async_generator,
     validate_uuid,
+    _get_str_estimation_output,
 )
 
 __all__ = [
@@ -40,4 +41,5 @@ __all__ = [
     "llm_cost_per_million_tokens",
     "validate_uuid",
     "_decorate_vector_type",
+    "_get_str_estimation_output",
 ]
