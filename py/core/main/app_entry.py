@@ -1,6 +1,5 @@
 import logging
 import os
-import warnings
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -50,7 +49,7 @@ async def create_r2r_app(
     config_name: Optional[str] = "default",
     config_path: Optional[str] = None,
 ):
-    config = R2RConfig.load(config_name, config_path)
+    config = R2RConfig.load(config_name=config_name, config_path=config_path)
 
     if (
         config.embedding.provider == "openai"
@@ -67,35 +66,13 @@ async def create_r2r_app(
 
 logging.basicConfig(level=logging.INFO)
 
-config_name = os.getenv("R2R_CONFIG_NAME", os.getenv("CONFIG_NAME", None))
-config_path = os.getenv("R2R_CONFIG_PATH", os.getenv("CONFIG_PATH", None))
-
-# TODO: Remove this check in a future release
-# Check if the user is setting deprecated environment variables of CONFIG_NAME and CONFIG_PATH
-if os.getenv("CONFIG_NAME"):
-    warnings.warn(
-        "Environment variable CONFIG_NAME is deprecated and support for it will be removed in release 3.5.0. Please use R2R_CONFIG_NAME instead."
-    )
-if os.getenv("CONFIG_PATH"):
-    warnings.warn(
-        "Environment variable CONFIG_PATH is deprecated and support for it will be removed in release 3.5.0. Please use R2R_CONFIG_PATH instead."
-    )
+config_name = os.getenv("R2R_CONFIG_NAME", None)
+config_path = os.getenv("R2R_CONFIG_PATH", None)
 
 if not config_path and not config_name:
     config_name = "default"
 host = os.getenv("R2R_HOST", os.getenv("HOST", "0.0.0.0"))
-port = int(os.getenv("R2R_PORT", (os.getenv("PORT", "7272"))))
-
-# TODO: Remove this check in a future release
-# Check if the user is setting deprecated environment variables of HOST and PORT
-if os.getenv("HOST"):
-    warnings.warn(
-        "Environment variable HOST is deprecated and support for it will be removed in release 3.5.0. Please use R2R_HOST instead."
-    )
-if os.getenv("PORT"):
-    warnings.warn(
-        "Environment variable PORT is deprecated and support for it will be removed in release 3.5.0. Please use R2R_PORT instead."
-    )
+port = int(os.getenv("R2R_PORT", "7272"))
 
 logger.info(
     f"Environment R2R_CONFIG_NAME: {'None' if config_name is None else config_name}"

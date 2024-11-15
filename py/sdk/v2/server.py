@@ -17,6 +17,7 @@ class ServerMixins:
         """
         return await self._make_request("GET", "server_stats")  # type: ignore
 
+    @deprecated("Use client.system.logs() instead")
     async def logs(
         self,
         offset: Optional[int] = None,

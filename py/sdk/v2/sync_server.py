@@ -1,3 +1,6 @@
+from __future__ import annotations  # for Python 3.10+
+from typing_extensions import deprecated
+
 from typing import Optional
 
 
@@ -14,6 +17,7 @@ class SyncServerMixins:
         """
         return self._make_request("GET", "server_stats")  # type: ignore
 
+    @deprecated("Use client.system.logs() instead")
     def logs(
         self,
         offset: Optional[int] = None,

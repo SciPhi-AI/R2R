@@ -6,18 +6,10 @@ class SystemSDK:
         self.client = client
 
     async def health(self) -> dict:
+        """
+        Check the health of the R2R server.
+        """
         return await self.client._make_request("GET", "health", version="v3")
-
-    async def status(self) -> dict:
-        """
-        Get statistics about the server, including the start time, uptime, CPU usage, and memory usage.
-
-        Returns:
-            dict: The server statistics.
-        """
-        return await self.client._make_request(
-            "GET", "system/status", version="v3"
-        )
 
     async def logs(
         self,
@@ -31,7 +23,7 @@ class SystemSDK:
         Args:
             run_type_filter (Optional[str]): The run type to filter by.
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
-            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100..
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
             dict: The logs from the server.
@@ -47,4 +39,26 @@ class SystemSDK:
         }
         return await self.client._make_request(
             "GET", "system/logs", params=params, version="v3"
+        )
+
+    async def settings(self) -> dict:
+        """
+        Get the configuration settings for the R2R server.
+
+        Returns:
+            dict: The server settings.
+        """
+        return await self.client._make_request(
+            "GET", "system/settings", version="v3"
+        )
+
+    async def status(self) -> dict:
+        """
+        Get statistics about the server, including the start time, uptime, CPU usage, and memory usage.
+
+        Returns:
+            dict: The server statistics.
+        """
+        return await self.client._make_request(
+            "GET", "system/status", version="v3"
         )

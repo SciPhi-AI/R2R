@@ -36,7 +36,7 @@ services:
       -c max_connections=${R2R_POSTGRES_MAX_CONNECTIONS:-1024}
 
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    image: r2r/test
     build:
       context: .
       args:
@@ -52,8 +52,8 @@ services:
       - R2R_HOST=${R2R_HOST:-0.0.0.0}
 
       # R2R
-      - R2R_CONFIG_NAME=${R2R_CONFIG_NAME:--}
-      - R2R_CONFIG_PATH=${R2R_CONFIG_PATH:--}
+      - R2R_CONFIG_NAME=${R2R_CONFIG_NAME:-}
+      - R2R_CONFIG_PATH=${R2R_CONFIG_PATH:-}
       - R2R_PROJECT_NAME=${R2R_PROJECT_NAME:-r2r_default}
 
       # Postgres

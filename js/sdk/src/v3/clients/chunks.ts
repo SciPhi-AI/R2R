@@ -58,8 +58,8 @@ export class ChunksClient {
    * @param id ID of the chunk to delete
    * @returns
    */
-  async delete(id: string): Promise<any> {
-    return this.client.makeRequest("DELETE", `chunks/${id}`);
+  async delete(options: { id: string }): Promise<any> {
+    return this.client.makeRequest("DELETE", `chunks/${options.id}`);
   }
 
   /**

@@ -14,7 +14,7 @@ from core.base import Message, R2RException
 from core.base.api.models import (
     GenericMessageResponse,
     WrappedAnalyticsResponse,
-    WrappedAppSettingsResponse,
+    WrappedSettingsResponse,
     WrappedBooleanResponse,
     WrappedChunksResponse,
     WrappedCollectionResponse,
@@ -219,7 +219,7 @@ class ManagementRouter(BaseRouter):
         @self.base_endpoint
         async def app_settings(
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedAppSettingsResponse:
+        ) -> WrappedSettingsResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `app_settings` endpoint.",

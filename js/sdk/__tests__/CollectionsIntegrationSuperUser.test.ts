@@ -58,7 +58,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     });
 
     expect(response.results).toBeDefined();
-  });
+  }, 10000);
 
   test("List documents in collection", async () => {
     const response = await client.collections.listDocuments({

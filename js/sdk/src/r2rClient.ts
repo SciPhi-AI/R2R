@@ -10,6 +10,7 @@ import { DocumentsClient } from "./v3/clients/documents";
 import { IndiciesClient } from "./v3/clients/indices";
 import { PromptsClient } from "./v3/clients/prompts";
 import { RetrievalClient } from "./v3/clients/retrieval";
+import { SystemClient } from "./v3/clients/system";
 import { UsersClient } from "./v3/clients/users";
 
 let fs: any;
@@ -43,6 +44,7 @@ export class r2rClient extends BaseClient {
   public readonly indices: IndiciesClient;
   public readonly prompts: PromptsClient;
   public readonly retrieval: RetrievalClient;
+  public readonly system: SystemClient;
   public readonly users: UsersClient;
 
   constructor(baseURL: string, anonymousTelemetry = true) {
@@ -55,6 +57,7 @@ export class r2rClient extends BaseClient {
     this.indices = new IndiciesClient(this);
     this.prompts = new PromptsClient(this);
     this.retrieval = new RetrievalClient(this);
+    this.system = new SystemClient(this);
     this.users = new UsersClient(this);
 
     initializeTelemetry(this.anonymousTelemetry);
@@ -619,6 +622,17 @@ export class r2rClient extends BaseClient {
     });
   }
 
+  /**
+   * Update the content of an existing chunk.
+   *
+   * @param documentId - The ID of the document containing the chunk.
+   * @param extractionId - The ID of the chunk to update.
+   * @param text - The new text content of the chunk.
+   * @param metadata - Optional metadata dictionary for the chunk.
+   * @param runWithOrchestration - Whether to run the update through orchestration.
+   * @returns Update results containing processed, failed, and skipped documents.
+   * @deprecated Use `client.chunks.update` instead.
+   */
   @feature("updateChunk")
   async updateChunk(
     documentId: string,
@@ -627,16 +641,6 @@ export class r2rClient extends BaseClient {
     metadata?: Record<string, any>,
     runWithOrchestration?: boolean,
   ): Promise<Record<string, any>> {
-    /**
-     * Update the content of an existing chunk.
-     *
-     * @param documentId - The ID of the document containing the chunk.
-     * @param extractionId - The ID of the chunk to update.
-     * @param text - The new text content of the chunk.
-     * @param metadata - Optional metadata dictionary for the chunk.
-     * @param runWithOrchestration - Whether to run the update through orchestration.
-     * @returns Update results containing processed, failed, and skipped documents.
-     */
     this._ensureAuthenticated();
 
     const data: Record<string, any> = {
@@ -753,6 +757,7 @@ export class r2rClient extends BaseClient {
   /**
    * Check the health of the R2R deployment.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.system.health` instead.
    */
   async health(): Promise<any> {
     return await this._makeRequest("GET", "health");
@@ -761,6 +766,7 @@ export class r2rClient extends BaseClient {
   /**
    * Get statistics about the server, including the start time, uptime, CPU usage, and memory usage.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.system.status` instead.
    */
   @feature("serverStats")
   async serverStats(): Promise<any> {
@@ -881,6 +887,7 @@ export class r2rClient extends BaseClient {
    * @param filter_criteria The filter criteria to use.
    * @param analysis_types The types of analysis to perform.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated This method is deprecated. New, improved analytics features will be added in a future release.
    */
   @feature("analytics")
   async analytics(
@@ -913,6 +920,7 @@ export class r2rClient extends BaseClient {
    * @param run_type_filter The run type to filter by.
    * @param max_runs Specifies the maximum number of runs to return. Values outside the range of 1 to 1000 will be adjusted to the nearest valid value with a default of 100.
    * @returns
+   * @deprecated Use `client.system.logs` instead.
    */
   @feature("logs")
   async logs(run_type_filter?: string, max_runs?: number): Promise<any> {
@@ -934,6 +942,7 @@ export class r2rClient extends BaseClient {
   /**
    * Get the configuration settings for the app.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.system.settings` instead.
    */
   @feature("appSettings")
   async appSettings(): Promise<any> {
@@ -948,6 +957,7 @@ export class r2rClient extends BaseClient {
    * * @param offset The offset to start listing users from.
    * @param limit The maximum number of users to return.
    * @returns
+   * @deprecated Use `client.users.list` instead.
    */
   @feature("usersOverview")
   async usersOverview(
@@ -979,6 +989,7 @@ export class r2rClient extends BaseClient {
    * Delete data from the database given a set of filters.
    * @param filters The filters to delete by.
    * @returns The results of the deletion.
+   * @deprecated Use `client.<object>.delete` instead for the specific object you want to delete.
    */
   @feature("delete")
   async delete(filters: { [key: string]: any }): Promise<any> {
@@ -1272,6 +1283,7 @@ export class r2rClient extends BaseClient {
    * Get all collections that a user is a member of.
    * @param userId The ID of the user to get collections for.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated use `client.users.listCollections` instead
    */
   @feature("getCollectionsForUser")
   async getCollectionsForUser(

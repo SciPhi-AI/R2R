@@ -15,7 +15,7 @@ from core.base import (
 )
 from core.base.api.models import (
     WrappedCompletionResponse,
-    WrappedRAGAgentResponse,
+    WrappedAgentResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
@@ -603,7 +603,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 description="ID of the conversation branch",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedRAGAgentResponse:  # type: ignore
+        ) -> WrappedAgentResponse:
             """
             Engage with an intelligent RAG-powered conversational agent for complex information retrieval and analysis.
 
