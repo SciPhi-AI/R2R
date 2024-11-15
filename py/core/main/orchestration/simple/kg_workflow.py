@@ -62,6 +62,7 @@ def simple_kg_factory(service: KgService):
                 logger.error(
                     f"Error in creating graph for document {document_id}: {e}"
                 )
+                raise e
 
     async def enrich_graph(input_data):
 

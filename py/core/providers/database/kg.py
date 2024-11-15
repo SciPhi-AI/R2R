@@ -36,7 +36,11 @@ from core.base.abstractions import (
     VectorQuantizationType,
 )
 
-from core.base.utils import _decorate_vector_type, llm_cost_per_million_tokens, _get_str_estimation_output
+from core.base.utils import (
+    _decorate_vector_type,
+    llm_cost_per_million_tokens,
+    _get_str_estimation_output,
+)
 
 from .base import PostgresConnectionManager
 from .collection import PostgresCollectionHandler
@@ -522,6 +526,10 @@ class PostgresGraphHandler(GraphHandler):
             self.communities,
         ]
 
+        import networkx as nx
+
+        self.nx = nx
+
     async def create_tables(self) -> None:
         QUERY = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("graph")} (
@@ -608,11 +616,10 @@ class PostgresGraphHandler(GraphHandler):
             QUERY, graph_id, collection_id
         )
 
-
     ###### ESTIMATION METHODS ######
-    
+
     async def get_creation_estimate(
-        self, 
+        self,
         kg_creation_settings: KGCreationSettings,
         document_id: Optional[UUID] = None,
         collection_id: Optional[UUID] = None,
@@ -620,39 +627,74 @@ class PostgresGraphHandler(GraphHandler):
         """Get the estimated cost and time for creating a KG."""
 
         if bool(document_id) ^ bool(collection_id) is False:
-            raise ValueError("Exactly one of document_id or collection_id must be provided.")
+            raise ValueError(
+                "Exactly one of document_id or collection_id must be provided."
+            )
 
         # todo: harmonize the document_id and id fields: postgres table contains document_id, but other places use id.
 
-        document_ids = [document_id] if document_id else [
-            doc.id for doc in (await self.collection_handler.documents_in_collection(collection_id, offset=0, limit=-1))["results"]  # type: ignore
-        ]
+        document_ids = (
+            [document_id]
+            if document_id
+            else [
+                doc.id for doc in (await self.collection_handler.documents_in_collection(collection_id, offset=0, limit=-1))["results"]  # type: ignore
+            ]
+        )
 
         chunk_counts = await self.connection_manager.fetch_query(
             f"SELECT document_id, COUNT(*) as chunk_count FROM {self._get_table_name('vectors')} "
-            f"WHERE document_id = ANY($1) GROUP BY document_id", [document_ids]
+            f"WHERE document_id = ANY($1) GROUP BY document_id",
+            [document_ids],
         )
 
-        total_chunks = sum(doc["chunk_count"] for doc in chunk_counts) // kg_creation_settings.extraction_merge_count
+        total_chunks = (
+            sum(doc["chunk_count"] for doc in chunk_counts)
+            // kg_creation_settings.extraction_merge_count
+        )
         estimated_entities = (total_chunks * 10, total_chunks * 20)
-        estimated_relationships = (int(estimated_entities[0] * 1.25), int(estimated_entities[1] * 1.5))
-        estimated_llm_calls = (total_chunks * 2 + estimated_entities[0], total_chunks * 2 + estimated_entities[1])
-        total_in_out_tokens = tuple(2000 * calls // 1000000 for calls in estimated_llm_calls)
-        cost_per_million = llm_cost_per_million_tokens(kg_creation_settings.generation_config.model)
-        estimated_cost = tuple(tokens * cost_per_million for tokens in total_in_out_tokens)
-        total_time_in_minutes = tuple(tokens * 10 / 60 for tokens in total_in_out_tokens)
+        estimated_relationships = (
+            int(estimated_entities[0] * 1.25),
+            int(estimated_entities[1] * 1.5),
+        )
+        estimated_llm_calls = (
+            total_chunks * 2 + estimated_entities[0],
+            total_chunks * 2 + estimated_entities[1],
+        )
+        total_in_out_tokens = tuple(
+            2000 * calls // 1000000 for calls in estimated_llm_calls
+        )
+        cost_per_million = llm_cost_per_million_tokens(
+            kg_creation_settings.generation_config.model
+        )
+        estimated_cost = tuple(
+            tokens * cost_per_million for tokens in total_in_out_tokens
+        )
+        total_time_in_minutes = tuple(
+            tokens * 10 / 60 for tokens in total_in_out_tokens
+        )
 
         return {
             "message": 'Ran Graph Creation Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_type="run"` in the client.',
             "document_count": len(document_ids),
             "number_of_jobs_created": len(document_ids) + 1,
             "total_chunks": total_chunks,
-            "estimated_entities": _get_str_estimation_output(estimated_entities),
-            "estimated_relationships": _get_str_estimation_output(estimated_relationships),
-            "estimated_llm_calls": _get_str_estimation_output(estimated_llm_calls),
-            "estimated_total_in_out_tokens_in_millions": _get_str_estimation_output(total_in_out_tokens),
-            "estimated_cost_in_usd": _get_str_estimation_output(estimated_cost),
-            "estimated_total_time_in_minutes": "Depends on your API key tier. Accurate estimate coming soon. Rough estimate: " + _get_str_estimation_output(total_time_in_minutes),
+            "estimated_entities": _get_str_estimation_output(
+                estimated_entities
+            ),
+            "estimated_relationships": _get_str_estimation_output(
+                estimated_relationships
+            ),
+            "estimated_llm_calls": _get_str_estimation_output(
+                estimated_llm_calls
+            ),
+            "estimated_total_in_out_tokens_in_millions": _get_str_estimation_output(
+                total_in_out_tokens
+            ),
+            "estimated_cost_in_usd": _get_str_estimation_output(
+                estimated_cost
+            ),
+            "estimated_total_time_in_minutes": "Depends on your API key tier. Accurate estimate coming soon. Rough estimate: "
+            + _get_str_estimation_output(total_time_in_minutes),
         }
 
     async def get_enrichment_estimate(
@@ -668,33 +710,53 @@ class PostgresGraphHandler(GraphHandler):
         ]
 
         # Get entity and relationship counts
-        entity_count = (await self.connection_manager.fetch_query(
-            f"SELECT COUNT(*) FROM {self._get_table_name('document_entity')} WHERE document_id = ANY($1);",
-            [document_ids]
-        ))[0]["count"]
+        entity_count = (
+            await self.connection_manager.fetch_query(
+                f"SELECT COUNT(*) FROM {self._get_table_name('document_entity')} WHERE document_id = ANY($1);",
+                [document_ids],
+            )
+        )[0]["count"]
 
         if not entity_count:
-            raise ValueError("No entities found in the graph. Please run `create-graph` first.")
+            raise ValueError(
+                "No entities found in the graph. Please run `create-graph` first."
+            )
 
-        relationship_count = (await self.connection_manager.fetch_query(
-            f"SELECT COUNT(*) FROM {self._get_table_name('chunk_relationship')} WHERE document_id = ANY($1);",
-            [document_ids]
-        ))[0]["count"]
+        relationship_count = (
+            await self.connection_manager.fetch_query(
+                f"SELECT COUNT(*) FROM {self._get_table_name('chunk_relationship')} WHERE document_id = ANY($1);",
+                [document_ids],
+            )
+        )[0]["count"]
 
         # Calculate estimates
         estimated_llm_calls = (entity_count // 10, entity_count // 5)
-        tokens_in_millions = tuple(2000 * calls / 1000000 for calls in estimated_llm_calls)
-        cost_per_million = llm_cost_per_million_tokens(kg_enrichment_settings.generation_config.model)
-        estimated_cost = tuple(tokens * cost_per_million for tokens in tokens_in_millions)
-        estimated_time = tuple(tokens * 10 / 60 for tokens in tokens_in_millions)
+        tokens_in_millions = tuple(
+            2000 * calls / 1000000 for calls in estimated_llm_calls
+        )
+        cost_per_million = llm_cost_per_million_tokens(
+            kg_enrichment_settings.generation_config.model
+        )
+        estimated_cost = tuple(
+            tokens * cost_per_million for tokens in tokens_in_millions
+        )
+        estimated_time = tuple(
+            tokens * 10 / 60 for tokens in tokens_in_millions
+        )
 
         return {
             "message": 'Ran Graph Enrichment Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG enrichment process, run `enrich-graph` with `--run` in the cli, or `run_type="run"` in the client.',
             "total_entities": entity_count,
             "total_relationships": relationship_count,
-            "estimated_llm_calls": _get_str_estimation_output(estimated_llm_calls),
-            "estimated_total_in_out_tokens_in_millions": _get_str_estimation_output(tokens_in_millions),
-            "estimated_cost_in_usd": _get_str_estimation_output(estimated_cost),
+            "estimated_llm_calls": _get_str_estimation_output(
+                estimated_llm_calls
+            ),
+            "estimated_total_in_out_tokens_in_millions": _get_str_estimation_output(
+                tokens_in_millions
+            ),
+            "estimated_cost_in_usd": _get_str_estimation_output(
+                estimated_cost
+            ),
             "estimated_total_time_in_minutes": "Depends on your API key tier. Accurate estimate coming soon. Rough estimate: "
             + _get_str_estimation_output(estimated_time),
         }
@@ -716,7 +778,9 @@ class PostgresGraphHandler(GraphHandler):
                 GROUP BY name
                 HAVING count(name) >= 5
             """
-            entities = await self.connection_manager.fetch_query(query, [collection_id])
+            entities = await self.connection_manager.fetch_query(
+                query, [collection_id]
+            )
             num_entities = len(entities)
 
             estimated_llm_calls = (num_entities, num_entities)
@@ -724,215 +788,42 @@ class PostgresGraphHandler(GraphHandler):
                 estimated_llm_calls[0] * 1000 / 1000000,
                 estimated_llm_calls[1] * 5000 / 1000000,
             )
-            cost_per_million = llm_cost_per_million_tokens(kg_deduplication_settings.generation_config.model)
-            estimated_cost = (tokens_in_millions[0] * cost_per_million, tokens_in_millions[1] * cost_per_million)
-            estimated_time = (tokens_in_millions[0] * 10 / 60, tokens_in_millions[1] * 10 / 60)
+            cost_per_million = llm_cost_per_million_tokens(
+                kg_deduplication_settings.generation_config.model
+            )
+            estimated_cost = (
+                tokens_in_millions[0] * cost_per_million,
+                tokens_in_millions[1] * cost_per_million,
+            )
+            estimated_time = (
+                tokens_in_millions[0] * 10 / 60,
+                tokens_in_millions[1] * 10 / 60,
+            )
 
             return {
-                "message": 'Ran Deduplication Estimate (not the actual run). Note that these are estimated ranges.',
+                "message": "Ran Deduplication Estimate (not the actual run). Note that these are estimated ranges.",
                 "num_entities": num_entities,
-                "estimated_llm_calls": _get_str_estimation_output(estimated_llm_calls),
-                "estimated_total_in_out_tokens_in_millions": _get_str_estimation_output(tokens_in_millions),
-                "estimated_cost_in_usd": _get_str_estimation_output(estimated_cost),
-                "estimated_total_time_in_minutes": _get_str_estimation_output(estimated_time),
+                "estimated_llm_calls": _get_str_estimation_output(
+                    estimated_llm_calls
+                ),
+                "estimated_total_in_out_tokens_in_millions": _get_str_estimation_output(
+                    tokens_in_millions
+                ),
+                "estimated_cost_in_usd": _get_str_estimation_output(
+                    estimated_cost
+                ),
+                "estimated_total_time_in_minutes": _get_str_estimation_output(
+                    estimated_time
+                ),
             }
         except UndefinedTableError:
-            raise R2RException("Entity embedding table not found. Please run `create-graph` first.", 404)
+            raise R2RException(
+                "Entity embedding table not found. Please run `create-graph` first.",
+                404,
+            )
         except Exception as e:
             logger.error(f"Error in get_deduplication_estimate: {str(e)}")
             raise HTTPException(500, "Error fetching deduplication estimate.")
-
-class PostgresGraphHandler_v1(GraphHandler):
-    """Handler for Knowledge Graph METHODS in PostgreSQL."""
-
-    def __init__(
-        self,
-        project_name: str,
-        connection_manager: PostgresConnectionManager,
-        collection_handler: PostgresCollectionHandler,
-        dimension: int,
-        quantization_type: VectorQuantizationType,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        """Initialize the handler with the same signature as the original provider."""
-        super().__init__(project_name, connection_manager)
-        self.collection_handler = collection_handler
-        self.dimension = dimension
-        self.quantization_type = quantization_type
-        try:
-            import networkx as nx
-
-            self.nx = nx
-        except ImportError as exc:
-            raise ImportError(
-                "NetworkX is not installed. Please install it to use this module."
-            ) from exc
-
-    def _get_table_name(self, base_name: str) -> str:
-        """Get the fully qualified table name."""
-        return f"{self.project_name}.{base_name}"
-
-    ####################### TABLE CREATION METHODS #######################
-
-    async def create_tables(self):
-        # raw entities table
-        # create schema
-
-        vector_column_str = _decorate_vector_type(
-            f"({self.dimension})", self.quantization_type
-        )
-
-        query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("chunk_entity")} (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            sid SERIAL PRIMARY KEY,
-            category TEXT NOT NULL,
-            name TEXT NOT NULL,
-            description TEXT NOT NULL,
-            chunk_ids UUID[] NOT NULL,
-            document_id UUID NOT NULL,
-            attributes JSONB
-        );
-        """
-        await self.connection_manager.execute_query(query)
-
-        # raw relationships table, also the final table. this will have embeddings.
-        query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("chunk_relationship")} (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            sid SERIAL PRIMARY KEY,
-            subject TEXT NOT NULL,
-            predicate TEXT NOT NULL,
-            object TEXT NOT NULL,
-            weight FLOAT NOT NULL,
-            description TEXT NOT NULL,
-            embedding {vector_column_str},
-            chunk_ids UUID[] NOT NULL,
-            document_id UUID NOT NULL,
-            attributes JSONB NOT NULL
-        );
-        """
-        await self.connection_manager.execute_query(query)
-
-        # embeddings tables
-        query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("document_entity")} (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            sid SERIAL PRIMARY KEY,
-            name TEXT NOT NULL,
-            description TEXT NOT NULL,
-            chunk_ids UUID[] NOT NULL,
-            description_embedding {vector_column_str} NOT NULL,
-            document_id UUID NOT NULL,
-            UNIQUE (name, document_id)
-            );
-        """
-
-        await self.connection_manager.execute_query(query)
-
-        # deduplicated entities table
-        query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("collection_entity")} (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            sid SERIAL PRIMARY KEY,
-            name TEXT NOT NULL,
-            description TEXT,
-            chunk_ids UUID[] NOT NULL,
-            document_ids UUID[] NOT NULL,
-            collection_id UUID NOT NULL,
-            description_embedding {vector_column_str},
-            attributes JSONB,
-            UNIQUE (name, collection_id, attributes)
-        );"""
-
-        await self.connection_manager.execute_query(query)
-
-        # communities table, result of the Leiden algorithm
-        query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("community_info")} (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            sid SERIAL,
-            node TEXT NOT NULL,
-            cluster INT NOT NULL,
-            parent_cluster INT,
-            level INT NOT NULL,
-            is_final_cluster BOOLEAN NOT NULL,
-            relationship_ids INT[] NOT NULL,
-            collection_id UUID NOT NULL
-        );"""
-
-        await self.connection_manager.execute_query(query)
-
-        # communities_report table
-        query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("community")} (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            sid SERIAL PRIMARY KEY,
-            community_number INT NOT NULL,
-            collection_id UUID NOT NULL,
-            level INT NOT NULL,
-            name TEXT NOT NULL,
-            summary TEXT NOT NULL,
-            findings TEXT[] NOT NULL,
-            rating FLOAT NOT NULL,
-            rating_explanation TEXT NOT NULL,
-            embedding {vector_column_str} NOT NULL,
-            attributes JSONB,
-            UNIQUE (community_number, level, collection_id)
-        );"""
-
-        await self.connection_manager.execute_query(query)
-
-    ################### ENTITY METHODS ###################
-
-    # async def get_entities_v3(
-    #     self,
-    #     level: EntityLevel,
-    #     id: Optional[UUID] = None,
-    #     entity_names: Optional[list[str]] = None,
-    #     entity_categories: Optional[list[str]] = None,
-    #     attributes: Optional[list[str]] = None,
-    #     offset: int = 0,
-    #     limit: int = -1,
-    # ):
-
-    #     params: list = [id]
-
-    #     if level != EntityLevel.CHUNK and entity_categories:
-    #         raise ValueError(
-    #             "entity_categories are only supported for chunk level entities"
-    #         )
-
-    #     filter = {
-    #         EntityLevel.CHUNK: "chunk_ids = ANY($1)",
-    #         EntityLevel.DOCUMENT: "document_id = $1",
-    #         EntityLevel.COLLECTION: "collection_id = $1",
-    #     }[level]
-
-    #     if entity_names:
-    #         filter += " AND name = ANY($2)"
-    #         params.append(entity_names)
-
-    #     if entity_categories:
-    #         filter += " AND category = ANY($3)"
-    #         params.append(entity_categories)
-
-    #     QUERY = f"""
-    #         SELECT * from {self._get_table_name(level.table_name)} WHERE {filter}
-    #         OFFSET ${len(params)} LIMIT ${len(params) + 1}
-    #     """
-
-    #     params.extend([offset, limit])
-
-    #     output = await self.connection_manager.fetch_query(QUERY, params)
-
-    #     if attributes:
-    #         output = [
-    #             entity for entity in output if entity["name"] in attributes
-    #         ]
-
-    #     return output
 
     # TODO: deprecate this
     async def get_entities(
@@ -974,7 +865,7 @@ class PostgresGraphHandler_v1(GraphHandler):
 
         if entity_table_name == "collection_entity":
             query = f"""
-            SELECT id, name, description, chunk_ids, document_ids {", " + ", ".join(extra_columns) if extra_columns else ""}
+            SELECT sid as id, name, description, chunk_ids, document_ids {", " + ", ".join(extra_columns) if extra_columns else ""}
             FROM {self._get_table_name(entity_table_name)}
             WHERE collection_id = $1
             {" AND " + " AND ".join(conditions) if conditions else ""}
@@ -983,7 +874,7 @@ class PostgresGraphHandler_v1(GraphHandler):
             """
         else:
             query = f"""
-            SELECT id, name, description, chunk_ids, document_id {", " + ", ".join(extra_columns) if extra_columns else ""}
+            SELECT sid as id, name, description, chunk_ids, document_id {", " + ", ".join(extra_columns) if extra_columns else ""}
             FROM {self._get_table_name(entity_table_name)}
             WHERE document_id = ANY(
                 SELECT document_id FROM {self._get_table_name("document_info")}
@@ -1034,44 +925,12 @@ class PostgresGraphHandler_v1(GraphHandler):
             )
             cleaned_entities.append(entity_dict)
 
-        return await self._add_objects(
-            cleaned_entities, table_name, conflict_columns
+        return await _add_objects(
+            objects=cleaned_entities,
+            full_table_name=self._get_table_name(table_name),
+            connection_manager=self.connection_manager,
+            conflict_columns=conflict_columns,
         )
-
-    async def create_entities_v3(
-        self, level: EntityLevel, id: UUID, entities: list[Entity]
-    ) -> None:
-
-        # TODO: check if already exists
-        await self._add_objects(entities, level.table_name)
-
-    # async def update_entity(self, collection_id: UUID, entity: Entity) -> None:
-    #     table_name = entity.level.value + "_entity"
-
-    #     # check if the entity already exists
-    #     QUERY = f"""
-    #         SELECT COUNT(*) FROM {self._get_table_name(table_name)} WHERE id = $1 AND collection_id = $2
-    #     """
-    #     count = (
-    #         await self.connection_manager.fetch_query(
-    #             QUERY, [entity.id, collection_id]
-    #         )
-    #     )[0]["count"]
-
-    #     if count == 0:
-    #         raise R2RException("Entity does not exist", 404)
-
-    #     await self._add_objects([entity], table_name)
-
-    # async def delete_entity(self, collection_id: UUID, entity: Entity) -> None:
-
-    #     table_name = entity.level.value + "_entity"
-    #     QUERY = f"""
-    #         DELETE FROM {self._get_table_name(table_name)} WHERE id = $1 AND collection_id = $2
-    #     """
-    #     await self.connection_manager.execute_query(
-    #         QUERY, [entity.id, collection_id]
-    #     )
 
     async def delete_node_via_document_id(
         self, document_id: UUID, collection_id: UUID
@@ -1128,6 +987,7 @@ class PostgresGraphHandler_v1(GraphHandler):
 
     ##################### RELATIONSHIP METHODS #####################
 
+    # DEPRECATED
     async def add_relationships(
         self,
         relationships: list[Relationship],
@@ -1143,59 +1003,14 @@ class PostgresGraphHandler_v1(GraphHandler):
         Returns:
             result: asyncpg.Record: result of the upsert operation
         """
-        return await self._add_objects(
-            [ele.to_dict() for ele in relationships], table_name
+        return await _add_objects(
+            objects=[ele.to_dict() for ele in relationships],
+            full_table_name=self._get_table_name(table_name),
+            connection_manager=self.connection_manager,
         )
-
-    async def list_relationships_v3(
-        self,
-        level: EntityLevel,
-        id: UUID,
-        entity_names: Optional[list[str]] = None,
-        relationship_types: Optional[list[str]] = None,
-        attributes: Optional[list[str]] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-    ):
-        filter_query = ""
-        if entity_names:
-            filter_query += "AND (subject IN ($2) OR object IN ($2))"
-        if relationship_types:
-            filter_query += "AND predicate IN ($3)"
-
-        if level == EntityLevel.CHUNK:
-            QUERY = f"""
-                SELECT * FROM {self._get_table_name("chunk_relationship")} WHERE $1 = ANY(chunk_ids)
-                {filter_query}
-            """
-        elif level == EntityLevel.DOCUMENT:
-            QUERY = f"""
-                SELECT * FROM {self._get_table_name("chunk_relationship")} WHERE $1 = document_id
-                {filter_query}
-            """
-        elif level == EntityLevel.COLLECTION:
-            QUERY = f"""
-                WITH document_ids AS (
-                    SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids)
-                )
-                SELECT * FROM {self._get_table_name("chunk_relationship")} WHERE document_id IN (SELECT document_id FROM document_ids)
-                {filter_query}
-            """
-
-        results = await self.connection_manager.fetch_query(
-            QUERY, [id, entity_names, relationship_types]
-        )
-
-        if attributes:
-            results = [
-                {k: v for k, v in result.items() if k in attributes}
-                for result in results
-            ]
-
-        return results
 
     async def get_all_relationships(
-        self, collection_id: UUID
+        self, collection_id: UUID, document_ids: Optional[list[UUID]] = None
     ) -> list[Relationship]:
 
         # getting all documents for a collection
@@ -1211,61 +1026,14 @@ class PostgresGraphHandler_v1(GraphHandler):
             ]
 
         QUERY = f"""
-            SELECT id, subject, predicate, weight, object, document_id FROM {self._get_table_name("chunk_relationship")} WHERE document_id = ANY($1)
+            SELECT sid as id, subject, predicate, weight, object, document_id FROM {self._get_table_name("chunk_relationship")} WHERE document_id = ANY($1)
         """
         relationships = await self.connection_manager.fetch_query(
             QUERY, [document_ids]
         )
         return [Relationship(**relationship) for relationship in relationships]
 
-    async def create_relationship(
-        self, collection_id: UUID, relationship: Relationship
-    ) -> None:
-
-        # check if the relationship already exists
-        QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("chunk_relationship")} WHERE subject = $1 AND predicate = $2 AND object = $3 AND collection_id = $4
-        """
-        count = (
-            await self.connection_manager.fetch_query(
-                QUERY,
-                [
-                    relationship.subject,
-                    relationship.predicate,
-                    relationship.object,
-                    collection_id,
-                ],
-            )
-        )[0]["count"]
-
-        if count > 0:
-            raise R2RException("Relationship already exists", 400)
-
-        await self._add_objects([relationship], "chunk_relationship")
-
-    async def update_relationship(
-        self, relationship_id: UUID, relationship: Relationship
-    ) -> None:
-
-        # check if relationship_id exists
-        QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("chunk_relationship")} WHERE id = $1
-        """
-        count = (
-            await self.connection_manager.fetch_query(QUERY, [relationship.id])
-        )[0]["count"]
-
-        if count == 0:
-            raise R2RException("Relationship does not exist", 404)
-
-        await self._add_objects([relationship], "chunk_relationship")
-
-    async def delete_relationship(self, relationship_id: UUID) -> None:
-        QUERY = f"""
-            DELETE FROM {self._get_table_name("chunk_relationship")} WHERE id = $1
-        """
-        await self.connection_manager.execute_query(QUERY, [relationship_id])
-
+    # DEPRECATED
     async def get_relationships(
         self,
         offset: int,
@@ -1304,7 +1072,7 @@ class PostgresGraphHandler_v1(GraphHandler):
         pagination_clause = " ".join(pagination_params)
 
         query = f"""
-            SELECT id, subject, predicate, object, description
+            SELECT sid as id, subject, predicate, object, description, chunk_ids, document_id
             FROM {self._get_table_name("chunk_relationship")}
             WHERE document_id = ANY(
                 SELECT document_id FROM {self._get_table_name("document_info")}
@@ -1477,7 +1245,7 @@ class PostgresGraphHandler_v1(GraphHandler):
             SELECT DISTINCT
                 t.id, t.subject, t.predicate, t.object, t.weight, t.description
             FROM node_relationship_ids nti
-            JOIN {self._get_table_name("chunk_relationship")} t ON t.id = ANY(nti.relationship_ids);
+            JOIN {self._get_table_name("chunk_relationship")} t ON t.sid = ANY(nti.relationship_ids);
         """
         relationships = await self.connection_manager.fetch_query(
             QUERY, [community_number, collection_id]
@@ -1614,8 +1382,11 @@ class PostgresGraphHandler_v1(GraphHandler):
             relationships
         )
 
-        if await self._use_community_cache(
-            collection_id, relationship_ids_cache
+        if (
+            await self._use_community_cache(
+                collection_id, relationship_ids_cache
+            )
+            and False
         ):
             num_communities = await self._incremental_clustering(
                 relationship_ids_cache, leiden_params, collection_id
@@ -2121,7 +1892,6 @@ class PostgresGraphHandler_v1(GraphHandler):
 
     ####################### UTILITY METHODS #######################
 
-
     async def get_existing_entity_chunk_ids(
         self, document_id: UUID
     ) -> list[str]:
@@ -2359,9 +2129,7 @@ async def _update_object(
     params.append(object[id_column])
 
     ret = await connection_manager.execute_many(QUERY, [tuple(params)])  # type: ignore
-    import pdb
 
-    pdb.set_trace()
     return ret
 
 

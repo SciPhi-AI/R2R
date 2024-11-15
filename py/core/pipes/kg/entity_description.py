@@ -94,7 +94,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
             out_entity = Entity(
                 name=entities[0].name,
                 chunk_ids=list(unique_chunk_ids),
-                document_ids=[document_id],
+                document_id=document_id,
             )
 
             out_entity.description = (
@@ -131,17 +131,9 @@ class KGEntityDescriptionPipe(AsyncPipe):
             )[0]
 
             # upsert the entity and its embedding
-            await self.database_provider.upsert_embeddings(
-                [
-                    (
-                        out_entity.name,
-                        out_entity.description,
-                        str(out_entity.description_embedding),
-                        out_entity.chunk_ids,
-                        document_id,
-                    )
-                ],
-                "document_entity",
+            await self.database_provider.add_entities(
+                [out_entity],
+                table_name="document_entity",
             )
 
             return out_entity.name

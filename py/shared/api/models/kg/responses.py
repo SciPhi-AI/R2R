@@ -300,6 +300,27 @@ class KGTunePromptResponse(R2RSerializable):
         json_schema_extra = {"example": {"tuned_prompt": "The updated prompt"}}
 
 
+class KGDeletionResponse(BaseModel):
+    """Response for knowledge graph deletion."""
+
+    message: str = Field(
+        ...,
+        description="The message to display to the user.",
+    )
+    id: UUID = Field(
+        ...,
+        description="The ID of the deleted graph.",
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message": "Entity deleted successfully.",
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+            }
+        }
+
+
 WrappedKGCreationResponse = ResultsWrapper[
     Union[KGCreationResponse, KGCreationEstimationResponse]
 ]
@@ -308,14 +329,12 @@ WrappedKGEnrichmentResponse = ResultsWrapper[
 ]
 
 # KG Entities
-WrappedKGEntityResponse = ResultsWrapper[KGEntitiesResponse]
-WrappedKGEntitiesResponse = PaginatedResultsWrapper[KGEntitiesResponse]
-WrappedKGRelationshipsResponse = PaginatedResultsWrapper[
-    KGRelationshipsResponse
-]
+WrappedKGEntitiesResponse = ResultsWrapper[KGEntitiesResponse]
+WrappedKGRelationshipsResponse = ResultsWrapper[KGRelationshipsResponse]
 
 WrappedKGTunePromptResponse = ResultsWrapper[KGTunePromptResponse]
 WrappedKGCommunitiesResponse = ResultsWrapper[KGCommunitiesResponse]
 WrappedKGEntityDeduplicationResponse = ResultsWrapper[
     Union[KGEntityDeduplicationResponse, KGDeduplicationEstimationResponse]
 ]
+WrappedKGDeletionResponse = ResultsWrapper[KGDeletionResponse]

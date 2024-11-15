@@ -257,7 +257,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             f"KGCommunitySummaryPipe: Checking if community summaries exist for communities {offset} to {offset + limit}"
         )
         community_numbers_exist = (
-            await self.database_provider.check_communities_exist(
+            await self.database_provider.graph_handler.check_communities_exist(
                 collection_id=collection_id, offset=offset, limit=limit
             )
         )

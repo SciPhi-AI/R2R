@@ -58,7 +58,7 @@ class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
     name: Optional[str] = None
-    id: Optional[UUID] = None
+    id: Optional[Union[UUID, int]] = None
     sid: Optional[int] = None  # serial ID
     level: Optional[EntityLevel] = None
     category: Optional[str] = None
@@ -94,7 +94,7 @@ class Entity(R2RSerializable):
 class Relationship(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
-    id: Optional[UUID] = None
+    id: Optional[Union[UUID, int]] = None
     sid: Optional[int] = None  # serial ID
 
     subject: Optional[str] = None

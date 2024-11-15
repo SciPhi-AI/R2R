@@ -115,13 +115,13 @@ class KGRouter(BaseRouter):
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
 
-            logger.info(f"Running create-graph on collection {collection_id}")
-
             # If no collection ID is provided, use the default user collection
             if not collection_id:
                 collection_id = generate_default_user_collection_id(
                     auth_user.id
                 )
+
+            logger.info(f"Running create-graph on collection {collection_id}")
 
             # If no run type is provided, default to estimate
             if not run_type:
@@ -281,13 +281,15 @@ class KGRouter(BaseRouter):
             else:
                 entity_table_name = "collection_entity"
 
-            return await self.service.get_entities(
+            entities = await self.service.get_entities(
                 collection_id=collection_id,
                 entity_ids=entity_ids,
                 entity_table_name=entity_table_name,
                 offset=offset,
                 limit=limit,
             )
+
+            return entities
 
         @self.router.get("/triples")
         @self.base_endpoint
@@ -299,7 +301,7 @@ class KGRouter(BaseRouter):
             entity_names: Optional[list[str]] = Query(
                 None, description="Entity names to filter by."
             ),
-            relationship_ids: Optional[list[str]] = Query(
+            triple_ids: Optional[list[str]] = Query(
                 None, description="Relationship IDs to filter by."
             ),
             offset: int = Query(0, ge=0, description="Offset for pagination."),
@@ -326,7 +328,7 @@ class KGRouter(BaseRouter):
                 limit=limit,
                 collection_id=collection_id,
                 entity_names=entity_names,
-                relationship_ids=relationship_ids,
+                relationship_ids=triple_ids,
             )
 
         @self.router.get("/communities")
