@@ -15,7 +15,7 @@ from core.providers.database.base import PostgresConnectionManager
 from core.providers.database.collection import PostgresCollectionHandler
 from core.providers.database.document import PostgresDocumentHandler
 from core.providers.database.file import PostgresFileHandler
-from core.providers.database.kg import PostgresKGHandler
+from core.providers.database.kg import PostgresGraphHandler
 from core.providers.database.logging import PostgresLoggingHandler
 from core.providers.database.prompt import PostgresPromptHandler
 from core.providers.database.tokens import PostgresTokenHandler
@@ -62,7 +62,7 @@ class PostgresDBProvider(DatabaseProvider):
     token_handler: PostgresTokenHandler
     user_handler: PostgresUserHandler
     vector_handler: PostgresVectorHandler
-    kg_handler: PostgresKGHandler
+    graph_handler: PostgresGraphHandler
     prompt_handler: PostgresPromptHandler
     file_handler: PostgresFileHandler
     logging_handler: PostgresLoggingHandler
@@ -154,13 +154,15 @@ class PostgresDBProvider(DatabaseProvider):
             self.quantization_type,
             self.enable_fts,
         )
-        self.kg_handler = PostgresKGHandler(
-            self.project_name,
-            self.connection_manager,
-            self.collection_handler,
-            self.dimension,
-            self.quantization_type,
+
+        self.graph_handler = PostgresGraphHandler(
+            project_name=self.project_name,
+            connection_manager=self.connection_manager,
+            collection_handler=self.collection_handler,
+            dimension=self.dimension,
+            quantization_type=self.quantization_type,
         )
+
         self.prompt_handler = PostgresPromptHandler(
             self.project_name, self.connection_manager
         )
@@ -197,7 +199,7 @@ class PostgresDBProvider(DatabaseProvider):
         await self.vector_handler.create_tables()
         await self.prompt_handler.create_tables()
         await self.file_handler.create_tables()
-        await self.kg_handler.create_tables()
+        await self.graph_handler.create_tables()
         await self.logging_handler.create_tables()
 
     def _get_postgres_configuration_settings(

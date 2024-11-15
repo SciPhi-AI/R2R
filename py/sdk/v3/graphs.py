@@ -545,13 +545,13 @@ class GraphsSDK:
         Tune a graph-related prompt using collection data.
 
         Args:
-            collection_id (str | UUID): Collection ID to tune prompt for
-            prompt_name (str): Name of prompt to tune (graphrag_triples_extraction_few_shot,
-                             graphrag_entity_description, or graphrag_community_reports)
-            documents_offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
-            documents_limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
-            chunks_offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
-            chunks_limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+            collection_id (Union[str, UUID]): Collection ID to tune prompt for
+            prompt_name (str): Name of prompt to tune (graphrag_relationships_extraction_few_shot,
+                             graphrag_entity_description, or graphrag_communities)
+            documents_offset (int): Document pagination offset
+            documents_limit (int): Maximum number of documents to use
+            chunks_offset (int): Chunk pagination offset
+            chunks_limit (int): Maximum number of chunks to use
 
         Returns:
             WrappedKGTunePromptResponse: Tuned prompt results

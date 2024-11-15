@@ -1,4 +1,4 @@
-graphrag_community_reports:
+graphrag_communities:
   template: |
       You are an AI assistant that helps a human analyst to perform general information discovery. Information discovery is the process of identifying and assessing relevant information associated with certain entities (e.g., organizations and individuals) within a network.
 
@@ -55,14 +55,14 @@ graphrag_community_reports:
       Entity: OpenAI
       descriptions:
         101,OpenAI is an AI research and deployment company.
-      triples:
+      relationships:
         201,OpenAI,Stripe,OpenAI partnered with Stripe to integrate payment solutions.
         203,Airbnb,OpenAI,Airbnb utilizes OpenAI's AI tools for customer service.
         204,Stripe,OpenAI,Stripe invested in OpenAI's latest funding round.
       Entity: Stripe
       descriptions:
         102,Stripe is a technology company that builds economic infrastructure for the internet.
-      triples:
+      relationships:
         201,OpenAI,Stripe,OpenAI partnered with Stripe to integrate payment solutions.
         202,Stripe,Airbnb,Stripe provides payment processing services to Airbnb.
         204,Stripe,OpenAI,Stripe invested in OpenAI's latest funding round.
@@ -70,7 +70,7 @@ graphrag_community_reports:
       Entity: Airbnb
       descriptions:
         103,Airbnb is an online marketplace for lodging and tourism experiences.
-      triples:
+      relationships:
         203,Airbnb,OpenAI,Airbnb utilizes OpenAI's AI tools for customer service.
         205,Airbnb,Stripe,Airbnb and Stripe collaborate on expanding global payment options.
 

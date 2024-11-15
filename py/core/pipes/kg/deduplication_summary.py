@@ -120,7 +120,9 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             f"Upserting {len(entities_batch)} entities for collection {collection_id}"
         )
 
-        await self.database_provider.update_entity_descriptions(entities_batch)
+        await self.database_provider.graph_handler.update_entity_descriptions(
+            entities_batch
+        )
 
         logger.info(
             f"Upserted {len(entities_batch)} entities for collection {collection_id}"
@@ -155,7 +157,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         )
 
         entities = (
-            await self.database_provider.get_entities(
+            await self.database_provider.graph_handler.get_entities(
                 collection_id=collection_id,
                 entity_table_name="collection_entity",
                 offset=offset,
@@ -166,7 +168,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         entity_names = [entity.name for entity in entities]
 
         entity_descriptions = (
-            await self.database_provider.get_entities(
+            await self.database_provider.graph_handler.get_entities(
                 collection_id=collection_id,
                 entity_names=entity_names,
                 entity_table_name="document_entity",

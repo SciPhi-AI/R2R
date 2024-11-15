@@ -158,7 +158,7 @@ def test_graph_operations(collection_id):
     print("\n--- Test 8: Tune Prompt ---")
     tune_result = client.graphs.tune_prompt(
         collection_id=collection_id,
-        prompt_name="graphrag_triples_extraction_few_shot",
+        prompt_name="graphrag_relationships_extraction_few_shot",
         documents_limit=100,
         chunks_limit=1000,
     )

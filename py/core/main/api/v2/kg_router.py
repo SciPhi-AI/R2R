@@ -14,7 +14,7 @@ from core.base.api.models import (
     WrappedKGEnrichmentResponse,
     WrappedKGEntitiesResponse,
     WrappedKGEntityDeduplicationResponse,
-    WrappedKGTriplesResponse,
+    WrappedKGRelationshipsResponse,
     WrappedKGTunePromptResponse,
 )
 
@@ -115,13 +115,13 @@ class KGRouter(BaseRouter):
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
 
-            logger.info(f"Running create-graph on collection {collection_id}")
-
             # If no collection ID is provided, use the default user collection
             if not collection_id:
                 collection_id = generate_default_user_collection_id(
                     auth_user.id
                 )
+
+            logger.info(f"Running create-graph on collection {collection_id}")
 
             # If no run type is provided, default to estimate
             if not run_type:
@@ -281,7 +281,7 @@ class KGRouter(BaseRouter):
             else:
                 entity_table_name = "collection_entity"
 
-            return await self.service.get_entities(
+            entities = await self.service.get_entities(
                 collection_id=collection_id,
                 entity_ids=entity_ids,
                 entity_table_name=entity_table_name,
@@ -289,17 +289,20 @@ class KGRouter(BaseRouter):
                 limit=limit,
             )
 
+            return entities
+
         @self.router.get("/triples")
         @self.base_endpoint
-        async def get_triples(
+        async def get_relationships(
             collection_id: Optional[UUID] = Query(
-                None, description="Collection ID to retrieve triples from."
+                None,
+                description="Collection ID to retrieve relationships from.",
             ),
             entity_names: Optional[list[str]] = Query(
                 None, description="Entity names to filter by."
             ),
             triple_ids: Optional[list[str]] = Query(
-                None, description="Triple IDs to filter by."
+                None, description="Relationship IDs to filter by."
             ),
             offset: int = Query(0, ge=0, description="Offset for pagination."),
             limit: int = Query(
@@ -308,9 +311,9 @@ class KGRouter(BaseRouter):
                 description="Number of items to return. Use -1 to return all items.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGTriplesResponse:
+        ) -> WrappedKGRelationshipsResponse:
             """
-            Retrieve triples from the knowledge graph.
+            Retrieve relationships from the knowledge graph.
             """
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
@@ -320,12 +323,12 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
-            return await self.service.get_triples(
+            return await self.service.get_relationships(
                 offset=offset,
                 limit=limit,
                 collection_id=collection_id,
                 entity_names=entity_names,
-                triple_ids=triple_ids,
+                relationship_ids=triple_ids,
             )
 
         @self.router.get("/communities")
@@ -434,7 +437,7 @@ class KGRouter(BaseRouter):
         async def get_tuned_prompt(
             prompt_name: str = Query(
                 ...,
-                description="The name of the prompt to tune. Valid options are 'graphrag_triples_extraction_few_shot', 'graphrag_entity_description' and 'graphrag_community_reports'.",
+                description="The name of the prompt to tune. Valid options are 'graphrag_relationships_extraction_few_shot', 'graphrag_entity_description' and 'graphrag_communities'.",
             ),
             collection_id: Optional[UUID] = Query(
                 None, description="Collection ID to retrieve communities from."
@@ -481,7 +484,7 @@ class KGRouter(BaseRouter):
             ),
             cascade: bool = Body(  # FIXME: This should be a query parameter
                 default=False,
-                description="Whether to cascade the deletion, and delete entities and triples belonging to the collection.",
+                description="Whether to cascade the deletion, and delete entities and relationships belonging to the collection.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ):
@@ -489,9 +492,9 @@ class KGRouter(BaseRouter):
             Delete the graph for a given collection. Note that this endpoint may delete a large amount of data created by the KG pipeline, this deletion is irreversible, and recreating the graph may be an expensive operation.
 
             Notes:
-            The endpoint deletes all communities for a given collection. If the cascade flag is set to true, the endpoint also deletes all the entities and triples associated with the collection.
+            The endpoint deletes all communities for a given collection. If the cascade flag is set to true, the endpoint also deletes all the entities and relationships associated with the collection.
 
-            WARNING: Setting this flag to true will delete entities and triples for documents that are shared across multiple collections. Do not set this flag unless you are absolutely sure that you want to delete the entities and triples for all documents in the collection.
+            WARNING: Setting this flag to true will delete entities and relationships for documents that are shared across multiple collections. Do not set this flag unless you are absolutely sure that you want to delete the entities and relationships for all documents in the collection.
 
             """
             if not auth_user.is_superuser:

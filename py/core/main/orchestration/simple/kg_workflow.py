@@ -45,10 +45,10 @@ def simple_kg_factory(service: KgService):
         )
 
         for _, document_id in enumerate(document_ids):
-            # Extract triples from the document
+            # Extract relationships from the document
 
             try:
-                await service.kg_triples_extraction(
+                await service.kg_relationships_extraction(
                     document_id=document_id,
                     **input_data["kg_creation_settings"],
                 )
@@ -62,6 +62,7 @@ def simple_kg_factory(service: KgService):
                 logger.error(
                     f"Error in creating graph for document {document_id}: {e}"
                 )
+                raise e
 
     async def enrich_graph(input_data):
 

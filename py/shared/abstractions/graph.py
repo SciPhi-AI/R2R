@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional, Union
 from uuid import UUID
+from datetime import datetime
 
 from pydantic import BaseModel
 
@@ -22,14 +23,6 @@ class Identified:
 
     short_id: str | None
     """Human readable ID used to refer to this community in prompts or texts displayed to users, such as in a report text (optional)."""
-
-
-@dataclass
-class Named(Identified):
-    """A protocol for an item with a name/title."""
-
-    title: str
-    """The name/title of the item."""
 
 
 class EntityType(R2RSerializable):
@@ -56,13 +49,15 @@ class EntityLevel(str, Enum):
 class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
-    name: str
-    id: Optional[int] = None
+    name: Optional[str] = None
+    id: Optional[Union[UUID, int]] = None
+    sid: Optional[int] = None  # serial ID
+    level: Optional[EntityLevel] = None
     category: Optional[str] = None
     description: Optional[str] = None
     description_embedding: Optional[Union[list[float], str]] = None
     community_numbers: Optional[list[str]] = None
-    extraction_ids: Optional[list[UUID]] = None
+    chunk_ids: Optional[list[UUID]] = None
     collection_id: Optional[UUID] = None
     document_id: Optional[UUID] = None
     document_ids: Optional[list[UUID]] = None
@@ -88,37 +83,24 @@ class Entity(R2RSerializable):
                 self.attributes = self.attributes
 
 
-class Triple(R2RSerializable):
+class Relationship(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
-    id: Optional[int] = None
+    id: Optional[Union[UUID, int]] = None
+    sid: Optional[int] = None  # serial ID
 
-    subject: str
-    """The source entity name."""
-
-    predicate: str
-    """A description of the relationship (optional)."""
-
-    object: str
-    """The target entity name."""
-
+    subject: Optional[str] = None
+    predicate: Optional[str] = None
+    subject_id: Optional[UUID] = None
+    object_id: Optional[UUID] = None
+    object: Optional[str] = None
     weight: float | None = 1.0
-    """The edge weight."""
-
     description: str | None = None
-    """A description of the relationship (optional)."""
-
+    description_embedding: list[float] | None = None
     predicate_embedding: list[float] | None = None
-    """The semantic embedding for the relationship description (optional)."""
-
-    extraction_ids: list[UUID] = []
-    """List of text unit IDs in which the relationship appears (optional)."""
-
-    document_id: UUID | None = None
-    """Document ID in which the relationship appears (optional)."""
-
+    chunk_ids: list[UUID] = []
+    document_id: Optional[UUID] = None
     attributes: dict[str, Any] | str = {}
-    """Additional attributes associated with the relationship (optional). To be included in the search prompt"""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -128,107 +110,9 @@ class Triple(R2RSerializable):
             except json.JSONDecodeError:
                 self.attributes = self.attributes
 
-    @classmethod
-    def from_dict(  # type: ignore
-        cls,
-        d: dict[str, Any],
-        id_key: str = "id",
-        short_id_key: str = "short_id",
-        source_key: str = "subject",
-        target_key: str = "object",
-        predicate_key: str = "predicate",
-        description_key: str = "description",
-        weight_key: str = "weight",
-        extraction_ids_key: str = "extraction_ids",
-        document_id_key: str = "document_id",
-        attributes_key: str = "attributes",
-    ) -> "Triple":
-        """Create a new relationship from the dict data."""
-
-        return Triple(
-            id=d[id_key],
-            short_id=d.get(short_id_key),
-            subject=d[source_key],
-            object=d[target_key],
-            predicate=d.get(predicate_key),
-            description=d.get(description_key),
-            weight=d.get(weight_key, 1.0),
-            extraction_ids=d.get(extraction_ids_key),
-            document_id=d.get(document_id_key),
-            attributes=d.get(attributes_key, {}),
-        )
-
 
 @dataclass
-class Community(BaseModel):
-    """A protocol for a community in the system."""
-
-    id: int | None = None
-    """The ID of the community."""
-
-    community_number: int | None = None
-    """The community number."""
-
-    collection_id: uuid.UUID | None = None
-    """The ID of the collection this community is associated with."""
-
-    level: int | None = None
-    """Community level."""
-
-    name: str = ""
-    """The name of the community."""
-
-    summary: str = ""
-    """Summary of the report."""
-
-    findings: list[str] = []
-    """Findings of the report."""
-
-    rating: float | None = None
-    """Rating of the report."""
-
-    rating_explanation: str | None = None
-    """Explanation of the rating."""
-
-    embedding: list[float] | None = None
-    """Embedding of summary and findings."""
-
-    attributes: dict[str, Any] | None = None
-    """A dictionary of additional attributes associated with the community (optional). To be included in the search prompt."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        if isinstance(self.attributes, str):
-            self.attributes = json.loads(self.attributes)
-
-    @classmethod
-    def from_dict(
-        cls,
-        d: dict[str, Any],
-        id_key: str = "id",
-        title_key: str = "title",
-        short_id_key: str = "short_id",
-        level_key: str = "level",
-        entities_key: str = "entity_ids",
-        relationships_key: str = "relationship_ids",
-        covariates_key: str = "covariate_ids",
-        attributes_key: str = "attributes",
-    ) -> "Community":
-        """Create a new community from the dict data."""
-        return Community(
-            id=d[id_key],
-            title=d[title_key],
-            short_id=d.get(short_id_key),
-            level=d[level_key],
-            entity_ids=d.get(entities_key),
-            relationship_ids=d.get(relationships_key),
-            covariate_ids=d.get(covariates_key),
-            attributes=d.get(attributes_key),
-        )
-
-
-@dataclass
-class CommunityInfo(BaseModel):
+class CommunityInfo(R2RSerializable):
     """A protocol for a community in the system."""
 
     node: str
@@ -237,97 +121,54 @@ class CommunityInfo(BaseModel):
     level: int
     is_final_cluster: bool
     collection_id: uuid.UUID
-    triple_ids: Optional[list[int]] = None
+    relationship_ids: Optional[list[int]] = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "CommunityInfo":
-        return CommunityInfo(
-            node=d["node"],
-            cluster=d["cluster"],
-            parent_cluster=d["parent_cluster"],
-            level=d["level"],
-            is_final_cluster=d["is_final_cluster"],
-            triple_ids=d["triple_ids"],
-            collection_id=d["collection_id"],
-        )
-
 
 @dataclass
-class CommunityReport(BaseModel):
-    """Defines an LLM-generated summary report of a community."""
+class Community(R2RSerializable):
 
     community_number: int
-    """The ID of the community this report is associated with."""
-
     level: int
-    """The level of the community this report is associated with."""
-
     collection_id: uuid.UUID
-    """The ID of the collection this report is associated with."""
-
     name: str = ""
-    """Name of the report."""
-
     summary: str = ""
-    """Summary of the report."""
-
     findings: list[str] = []
-    """Findings of the report."""
-
+    id: Optional[Union[int, UUID]] = None
     rating: float | None = None
-    """Rating of the report."""
-
     rating_explanation: str | None = None
-    """Explanation of the rating."""
-
     embedding: list[float] | None = None
-    """Embedding of summary and findings."""
-
     attributes: dict[str, Any] | None = None
-    """A dictionary of additional attributes associated with the report (optional)."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if isinstance(self.attributes, str):
             self.attributes = json.loads(self.attributes)
 
-    @classmethod
-    def from_dict(
-        cls,
-        d: dict[str, Any],
-        id_key: str = "id",
-        title_key: str = "title",
-        community_number_key: str = "community_number",
-        short_id_key: str = "short_id",
-        summary_key: str = "summary",
-        findings_key: str = "findings",
-        rank_key: str = "rank",
-        summary_embedding_key: str = "summary_embedding",
-        embedding_key: str = "embedding",
-        attributes_key: str = "attributes",
-    ) -> "CommunityReport":
-        """Create a new community report from the dict data."""
-        return CommunityReport(
-            id=d[id_key],
-            title=d[title_key],
-            community_number=d[community_number_key],
-            short_id=d.get(short_id_key),
-            summary=d[summary_key],
-            findings=d[findings_key],
-            rank=d[rank_key],
-            summary_embedding=d.get(summary_embedding_key),
-            embedding=d.get(embedding_key),
-            attributes=d.get(attributes_key),
-        )
-
 
 class KGExtraction(R2RSerializable):
-    """An extraction from a document that is part of a knowledge graph."""
+    """A protocol for a knowledge graph extraction."""
 
-    extraction_ids: list[uuid.UUID]
+    chunk_ids: list[uuid.UUID]
     document_id: uuid.UUID
     entities: list[Entity]
-    triples: list[Triple]
+    relationships: list[Relationship]
+
+
+class Graph(R2RSerializable):
+    """A request to create a graph."""
+
+    id: Optional[uuid.UUID] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    document_ids: list[uuid.UUID] = []
+    collection_ids: list[uuid.UUID] = []
+    statistics: dict[str, Any] = {}
+    created_at: datetime
+    updated_at: datetime  # Implemntation is not yet complete
+    status: str = "pending"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)

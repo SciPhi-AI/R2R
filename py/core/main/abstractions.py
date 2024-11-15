@@ -48,7 +48,7 @@ class R2RPipes(BaseModel):
     parsing_pipe: AsyncPipe
     embedding_pipe: AsyncPipe
     kg_search_pipe: AsyncPipe
-    kg_triples_extraction_pipe: AsyncPipe
+    kg_relationships_extraction_pipe: AsyncPipe
     kg_storage_pipe: AsyncPipe
     kg_entity_description_pipe: AsyncPipe
     kg_clustering_pipe: AsyncPipe

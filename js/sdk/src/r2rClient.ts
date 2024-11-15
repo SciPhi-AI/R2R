@@ -1697,13 +1697,13 @@ export class r2rClient extends BaseClient {
   }
 
   /**
-   * Retrieve triples from the knowledge graph.
+   * Retrieve relationships from the knowledge graph.
    * @returns A promise that resolves to the response from the server.
    * @param collection_id The ID of the collection to retrieve entities for.
    * @param offset The offset for pagination.
    * @param limit The limit for pagination.
    * @param entity_level The level of entity to filter by.
-   * @param triple_ids Triple IDs to filter by.
+   * @param relationship_ids Relationship IDs to filter by.
    */
   @feature("getTriples")
   async getTriples(
@@ -1711,7 +1711,7 @@ export class r2rClient extends BaseClient {
     offset?: number,
     limit?: number,
     entity_level?: string,
-    triple_ids?: string[],
+    relationship_ids?: string[],
   ): Promise<any> {
     this._ensureAuthenticated();
 
@@ -1728,11 +1728,11 @@ export class r2rClient extends BaseClient {
     if (entity_level !== undefined) {
       params.entity_level = entity_level;
     }
-    if (triple_ids !== undefined) {
-      params.entity_ids = triple_ids;
+    if (relationship_ids !== undefined) {
+      params.entity_ids = relationship_ids;
     }
 
-    return this._makeRequest("GET", `triples`, { params });
+    return this._makeRequest("GET", `relationships`, { params });
   }
 
   /**

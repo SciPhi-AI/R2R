@@ -186,7 +186,7 @@ def downgrade() -> None:
         f"ALTER TABLE IF EXISTS {project_name}.chunk_entity RENAME TO entity_raw"
     )
     op.execute(
-        f"ALTER TABLE IF EXISTS {project_name}.chunk_triple RENAME TO triple_raw"
+        f"ALTER TABLE IF EXISTS {project_name}.chunk_relationship RENAME TO relationship_raw"
     )
     op.execute(
         f"ALTER TABLE IF EXISTS {project_name}.document_entity RENAME TO entity_embedding"

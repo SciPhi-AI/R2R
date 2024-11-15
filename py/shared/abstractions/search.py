@@ -129,7 +129,7 @@ class KGSearchResult(R2RSerializable):
         KGEntityResult, KGRelationshipResult, KGCommunityResult, KGGlobalResult
     ]
     result_type: Optional[KGSearchResultType] = None
-    extraction_ids: Optional[list[UUID]] = None
+    chunk_ids: Optional[list[UUID]] = None
     metadata: dict[str, Any] = {}
 
     class Config:
@@ -137,7 +137,7 @@ class KGSearchResult(R2RSerializable):
             "method": "local",
             "content": KGEntityResult.Config.json_schema_extra,
             "result_type": "entity",
-            "extraction_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
+            "chunk_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
             "metadata": {"associated_query": "What is the capital of France?"},
         }
 

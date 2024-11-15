@@ -50,8 +50,10 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         self, collection_id: UUID, **kwargs
     ):
         try:
-            entity_count = await self.database_provider.get_entity_count(
-                collection_id=collection_id, distinct=True
+            entity_count = (
+                await self.database_provider.graph_handler.get_entity_count(
+                    collection_id=collection_id, distinct=True
+                )
             )
 
             logger.info(
@@ -62,7 +64,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             )
 
             entities = (
-                await self.database_provider.get_entities(
+                await self.database_provider.graph_handler.get_entities(
                     collection_id=collection_id, offset=0, limit=-1
                 )
             )["entities"]
@@ -74,12 +76,12 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             # deduplicate entities by name
             deduplicated_entities: dict[str, dict[str, list[str]]] = {}
             deduplication_source_keys = [
-                "extraction_ids",
+                "chunk_ids",
                 "document_id",
                 "attributes",
             ]
             deduplication_target_keys = [
-                "extraction_ids",
+                "chunk_ids",
                 "document_ids",
                 "attributes",
             ]
@@ -111,7 +113,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
                 Entity(
                     name=name,
                     collection_id=collection_id,
-                    extraction_ids=entity["extraction_ids"],
+                    chunk_ids=entity["chunk_ids"],
                     document_ids=entity["document_ids"],
                     attributes={},
                 )
@@ -121,7 +123,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             logger.info(
                 f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {collection_id}"
             )
-            await self.database_provider.add_entities(
+            await self.database_provider.graph_handler.add_entities(
                 deduplicated_entities_list,
                 table_name="collection_entity",
                 conflict_columns=["name", "collection_id", "attributes"],
@@ -146,7 +148,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         from sklearn.cluster import DBSCAN
 
         entities = (
-            await self.database_provider.get_entities(
+            await self.database_provider.graph_handler.get_entities(
                 collection_id=collection_id,
                 offset=0,
                 limit=-1,
@@ -164,12 +166,12 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         )
 
         deduplication_source_keys = [
-            "extraction_ids",
+            "chunk_ids",
             "document_id",
             "attributes",
         ]
         deduplication_target_keys = [
-            "extraction_ids",
+            "chunk_ids",
             "document_ids",
             "attributes",
         ]
@@ -220,15 +222,15 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             description = "\n".join(descriptions[:5])
 
             # Collect all extraction IDs from entities in the cluster
-            extraction_ids = set()
+            chunk_ids = set()
             document_ids = set()
             for entity in entities:
-                if entity.extraction_ids:
-                    extraction_ids.update(entity.extraction_ids)
+                if entity.chunk_ids:
+                    chunk_ids.update(entity.chunk_ids)
                 if entity.document_id:
                     document_ids.add(entity.document_id)
 
-            extraction_ids_list = list(extraction_ids)
+            chunk_ids_list = list(chunk_ids)
             document_ids_list = list(document_ids)
 
             deduplicated_entities_list.append(
@@ -236,7 +238,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
                     name=longest_name,
                     description=description,
                     collection_id=collection_id,
-                    extraction_ids=extraction_ids_list,
+                    chunk_ids=chunk_ids_list,
                     document_ids=document_ids_list,
                     attributes={
                         "aliases": list(aliases),
@@ -247,7 +249,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         logger.info(
             f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {collection_id}"
         )
-        await self.database_provider.add_entities(
+        await self.database_provider.graph_handler.add_entities(
             deduplicated_entities_list,
             table_name="collection_entity",
             conflict_columns=["name", "collection_id", "attributes"],

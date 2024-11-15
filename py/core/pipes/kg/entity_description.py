@@ -1,4 +1,4 @@
-# pipe to extract nodes/triples etc
+# pipe to extract nodes/relationships etc
 
 import asyncio
 import logging
@@ -15,6 +15,7 @@ from core.base import (
 )
 from core.base.abstractions import Entity
 from core.base.pipes.base_pipe import AsyncPipe
+from core.providers.database import PostgresDBProvider
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
@@ -30,7 +31,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
 
     def __init__(
         self,
-        database_provider: DatabaseProvider,
+        database_provider: PostgresDBProvider,
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
@@ -73,28 +74,28 @@ class KGEntityDescriptionPipe(AsyncPipe):
             return truncated_info
 
         async def process_entity(
-            entities, triples, max_description_input_length, document_id
+            entities, relationships, max_description_input_length, document_id
         ):
 
             entity_info = [
                 f"{entity.name}, {entity.description}" for entity in entities
             ]
 
-            triples_txt = [
-                f"{i+1}: {triple.subject}, {triple.object}, {triple.predicate} - Summary: {triple.description}"
-                for i, triple in enumerate(triples)
+            relationships_txt = [
+                f"{i+1}: {relationship.subject}, {relationship.object}, {relationship.predicate} - Summary: {relationship.description}"
+                for i, relationship in enumerate(relationships)
             ]
 
             # potentially slow at scale, but set to avoid duplicates
-            unique_extraction_ids = set()
+            unique_chunk_ids = set()
             for entity in entities:
-                for chunk_id in entity.extraction_ids:
-                    unique_extraction_ids.add(chunk_id)
+                for chunk_id in entity.chunk_ids:
+                    unique_chunk_ids.add(chunk_id)
 
             out_entity = Entity(
                 name=entities[0].name,
-                extraction_ids=list(unique_extraction_ids),
-                document_ids=[document_id],
+                chunk_ids=list(unique_chunk_ids),
+                document_id=document_id,
             )
 
             out_entity.description = (
@@ -107,8 +108,8 @@ class KGEntityDescriptionPipe(AsyncPipe):
                                     entity_info,
                                     max_description_input_length,
                                 ),
-                                "triples_txt": truncate_info(
-                                    triples_txt,
+                                "relationships_txt": truncate_info(
+                                    relationships_txt,
                                     max_description_input_length,
                                 ),
                             },
@@ -131,17 +132,9 @@ class KGEntityDescriptionPipe(AsyncPipe):
             )[0]
 
             # upsert the entity and its embedding
-            await self.database_provider.upsert_embeddings(
-                [
-                    (
-                        out_entity.name,
-                        out_entity.description,
-                        str(out_entity.description_embedding),
-                        out_entity.extraction_ids,
-                        document_id,
-                    )
-                ],
-                "document_entity",
+            await self.database_provider.graph_handler.add_entities(
+                [out_entity],
+                table_name="document_entity",
             )
 
             return out_entity.name
@@ -155,7 +148,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
             f"KGEntityDescriptionPipe: Getting entity map for document {document_id}",
         )
 
-        entity_map = await self.database_provider.get_entity_map(
+        entity_map = await self.database_provider.graph_handler.get_entity_map(
             offset, limit, document_id
         )
         total_entities = len(entity_map)
@@ -171,7 +164,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                 workflows.append(
                     process_entity(
                         entity_info["entities"],
-                        entity_info["triples"],
+                        entity_info["relationships"],
                         input.message["max_description_input_length"],
                         document_id,
                     )

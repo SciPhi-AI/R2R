@@ -63,7 +63,7 @@ __all__ = [
     # KG abstractions
     "Entity",
     "KGExtraction",
-    "Triple",
+    "Relationship",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",
@@ -213,7 +213,7 @@ __all__ = [
     ## PIPES
     "SearchPipe",
     "EmbeddingPipe",
-    "KGTriplesExtractionPipe",
+    "KGRelationshipsExtractionPipe",
     "ParsingPipe",
     "QueryTransformPipe",
     "SearchRAGPipe",

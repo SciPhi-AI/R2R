@@ -4,8 +4,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from shared.abstractions.base import R2RSerializable
-from shared.abstractions.graph import CommunityReport, Entity, Triple
-from shared.api.models.base import ResultsWrapper
+from shared.abstractions.graph import Community, Entity, Relationship
+from shared.api.models.base import ResultsWrapper, PaginatedResultsWrapper
 
 
 class KGCreationResponse(BaseModel):
@@ -75,9 +75,9 @@ class KGCreationEstimationResponse(R2RSerializable):
         description="The estimated number of entities in the graph.",
     )
 
-    estimated_triples: Optional[str] = Field(
+    estimated_relationships: Optional[str] = Field(
         default=None,
-        description="The estimated number of triples in the graph.",
+        description="The estimated number of relationships in the graph.",
     )
 
     estimated_llm_calls: Optional[str] = Field(
@@ -148,9 +148,9 @@ class KGEnrichmentEstimationResponse(R2RSerializable):
         description="The total number of entities in the graph.",
     )
 
-    total_triples: Optional[int] = Field(
+    total_relationships: Optional[int] = Field(
         default=None,
-        description="The total number of triples in the graph.",
+        description="The total number of relationships in the graph.",
     )
 
     estimated_llm_calls: Optional[str] = Field(
@@ -207,23 +207,23 @@ class KGEntitiesResponse(R2RSerializable):
         }
 
 
-class KGTriplesResponse(R2RSerializable):
-    """Response for knowledge graph triples."""
+class KGRelationshipsResponse(R2RSerializable):
+    """Response for knowledge graph relationships."""
 
-    triples: list[Triple] = Field(
+    relationships: list[Relationship] = Field(
         ...,
-        description="The list of triples in the graph.",
+        description="The list of relationships in the graph.",
     )
 
     total_entries: int = Field(
         ...,
-        description="The total number of triples in the graph for the collection or document.",
+        description="The total number of relationships in the graph for the collection or document.",
     )
 
     class Config:
         json_schema_extra = {
             "example": {
-                "triples": [
+                "relationships": [
                     {
                         "subject": "Paris",
                         "predicate": "is capital of",
@@ -239,7 +239,7 @@ class KGTriplesResponse(R2RSerializable):
 class KGCommunitiesResponse(R2RSerializable):
     """Response for knowledge graph communities."""
 
-    communities: list[CommunityReport] = Field(
+    communities: list[Community] = Field(
         ...,
         description="The list of communities in the graph for the collection.",
     )
@@ -300,16 +300,41 @@ class KGTunePromptResponse(R2RSerializable):
         json_schema_extra = {"example": {"tuned_prompt": "The updated prompt"}}
 
 
+class KGDeletionResponse(BaseModel):
+    """Response for knowledge graph deletion."""
+
+    message: str = Field(
+        ...,
+        description="The message to display to the user.",
+    )
+    id: UUID = Field(
+        ...,
+        description="The ID of the deleted graph.",
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message": "Entity deleted successfully.",
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+            }
+        }
+
+
 WrappedKGCreationResponse = ResultsWrapper[
     Union[KGCreationResponse, KGCreationEstimationResponse]
 ]
 WrappedKGEnrichmentResponse = ResultsWrapper[
     Union[KGEnrichmentResponse, KGEnrichmentEstimationResponse]
 ]
+
+# KG Entities
 WrappedKGEntitiesResponse = ResultsWrapper[KGEntitiesResponse]
-WrappedKGTriplesResponse = ResultsWrapper[KGTriplesResponse]
+WrappedKGRelationshipsResponse = ResultsWrapper[KGRelationshipsResponse]
+
 WrappedKGTunePromptResponse = ResultsWrapper[KGTunePromptResponse]
 WrappedKGCommunitiesResponse = ResultsWrapper[KGCommunitiesResponse]
 WrappedKGEntityDeduplicationResponse = ResultsWrapper[
     Union[KGEntityDeduplicationResponse, KGDeduplicationEstimationResponse]
 ]
+WrappedKGDeletionResponse = ResultsWrapper[KGDeletionResponse]

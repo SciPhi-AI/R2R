@@ -110,7 +110,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # entity search
             search_type = "__Entity__"
-            async for search_result in await self.database_provider.vector_query(  # type: ignore
+            async for search_result in await self.database_provider.graph_handler.graph_search(  # type: ignore
                 message,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[
@@ -120,7 +120,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                 property_names=[
                     "name",
                     "description",
-                    "extraction_ids",
+                    "chunk_ids",
                 ],
                 filters=kg_search_settings.filters,
                 entities_level=kg_search_settings.entities_level,
@@ -132,14 +132,14 @@ class KGSearchSearchPipe(GeneratorPipe):
                     ),
                     method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.ENTITY,
-                    extraction_ids=search_result["extraction_ids"],
+                    chunk_ids=search_result["chunk_ids"],
                     metadata={"associated_query": message},
                 )
 
             # relationship search
             # disabled for now. We will check evaluations and see if we need it
             # search_type = "__Relationship__"
-            # async for search_result in self.database_provider.vector_query(  # type: ignore
+            # async for search_result in self.database_provider.graph_search(  # type: ignore
             #     input,
             #     search_type=search_type,
             #     search_type_limits=kg_search_settings.local_search_limits[
@@ -149,7 +149,7 @@ class KGSearchSearchPipe(GeneratorPipe):
             #     property_names=[
             #         "name",
             #         "description",
-            #         "extraction_ids",
+            #         "chunk_ids",
             #         "document_ids",
             #     ],
             # ):
@@ -160,14 +160,14 @@ class KGSearchSearchPipe(GeneratorPipe):
             #         ),
             #         method=KGSearchMethod.LOCAL,
             #         result_type=KGSearchResultType.RELATIONSHIP,
-            #         # extraction_ids=search_result["extraction_ids"],
+            #         # chunk_ids=search_result["chunk_ids"],
             #         # document_ids=search_result["document_ids"],
             #         metadata={"associated_query": message},
             #     )
 
             # community search
             search_type = "__Community__"
-            async for search_result in await self.database_provider.vector_query(  # type: ignore
+            async for search_result in await self.database_provider.graph_handler.graph_search(  # type: ignore
                 message,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[

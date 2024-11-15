@@ -8,12 +8,16 @@ from fastapi import HTTPException
 
 from core.base import KGExtractionStatus, RunManager
 from core.base.abstractions import (
+    EntityLevel,
     GenerationConfig,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
     KGEntityDeduplicationType,
     R2RException,
+    Entity,
+    Relationship,
+    Community,
 )
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -21,6 +25,7 @@ from core.telemetry.telemetry_decorator import telemetry_event
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
+
 
 logger = logging.getLogger()
 
@@ -55,13 +60,15 @@ class KgService(Service):
             logging_connection,
         )
 
-    @telemetry_event("kg_triples_extraction")
-    async def kg_triples_extraction(
+    ################### EXTRACTION ###################
+
+    @telemetry_event("kg_relationships_extraction")
+    async def kg_relationships_extraction(
         self,
         document_id: UUID,
         generation_config: GenerationConfig,
         extraction_merge_count: int,
-        max_knowledge_triples: int,
+        max_knowledge_relationships: int,
         entity_types: list[str],
         relation_types: list[str],
         **kwargs,
@@ -78,13 +85,13 @@ class KgService(Service):
                 status=KGExtractionStatus.PROCESSING,
             )
 
-            triples = await self.pipes.kg_triples_extraction_pipe.run(
-                input=self.pipes.kg_triples_extraction_pipe.Input(
+            relationships = await self.pipes.kg_relationships_extraction_pipe.run(
+                input=self.pipes.kg_relationships_extraction_pipe.Input(
                     message={
                         "document_id": document_id,
                         "generation_config": generation_config,
                         "extraction_merge_count": extraction_merge_count,
-                        "max_knowledge_triples": max_knowledge_triples,
+                        "max_knowledge_relationships": max_knowledge_relationships,
                         "entity_types": entity_types,
                         "relation_types": relation_types,
                         "logger": logger,
@@ -99,7 +106,7 @@ class KgService(Service):
             )
 
             result_gen = await self.pipes.kg_storage_pipe.run(
-                input=self.pipes.kg_storage_pipe.Input(message=triples),
+                input=self.pipes.kg_storage_pipe.Input(message=relationships),
                 state=None,
                 run_manager=self.run_manager,
             )
@@ -114,6 +121,224 @@ class KgService(Service):
             raise e
 
         return await _collect_results(result_gen)
+
+    ################### ENTITIES ###################
+
+    @telemetry_event("create_entities_v3")
+    async def create_entities_v3(
+        self,
+        entities: list[Entity],
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.entities.create(
+            entities, **kwargs
+        )
+
+    @telemetry_event("list_entities_v3")
+    async def list_entities_v3(
+        self,
+        level: EntityLevel,
+        id: UUID,
+        offset: int,
+        limit: int,
+        entity_names: Optional[list[str]] = None,
+        entity_categories: Optional[list[str]] = None,
+        attributes: Optional[list[str]] = None,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.entities.get(
+            level=level,
+            id=id,
+            entity_names=entity_names,
+            entity_categories=entity_categories,
+            attributes=attributes,
+            offset=offset,
+            limit=limit,
+        )
+
+    @telemetry_event("update_entity_v3")
+    async def update_entity_v3(
+        self,
+        entity: Entity,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.entities.update(
+            entity
+        )
+
+    @telemetry_event("delete_entity_v3")
+    async def delete_entity_v3(
+        self,
+        entity: Entity,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.entities.delete(
+            entity
+        )
+
+    # TODO: deprecate this
+    @telemetry_event("get_entities")
+    async def get_entities(
+        self,
+        collection_id: Optional[UUID] = None,
+        entity_ids: Optional[list[str]] = None,
+        entity_table_name: str = "document_entity",
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.get_entities(
+            collection_id=collection_id,
+            entity_ids=entity_ids,
+            entity_table_name=entity_table_name,
+            offset=offset or 0,
+            limit=limit or -1,
+        )
+
+    ################### RELATIONSHIPS ###################
+
+    @telemetry_event("list_relationships_v3")
+    async def list_relationships_v3(
+        self,
+        id: UUID,
+        level: EntityLevel,
+        offset: int,
+        limit: int,
+        entity_names: Optional[list[str]] = None,
+        relationship_types: Optional[list[str]] = None,
+        attributes: Optional[list[str]] = None,
+    ):
+        return await self.providers.database.graph_handler.relationships.get(
+            id=id,
+            level=level,
+            entity_names=entity_names,
+            relationship_types=relationship_types,
+            attributes=attributes,
+            offset=offset,
+            limit=limit,
+        )
+
+    @telemetry_event("create_relationships_v3")
+    async def create_relationships_v3(
+        self,
+        relationships: list[Relationship],
+        **kwargs,
+    ):
+        return (
+            await self.providers.database.graph_handler.relationships.create(
+                relationships
+            )
+        )
+
+    @telemetry_event("delete_relationship_v3")
+    async def delete_relationship_v3(
+        self,
+        relationship: Relationship,
+        **kwargs,
+    ):
+        return (
+            await self.providers.database.graph_handler.relationships.delete(
+                relationship
+            )
+        )
+
+    @telemetry_event("update_relationship_v3")
+    async def update_relationship_v3(
+        self,
+        relationship: Relationship,
+        **kwargs,
+    ):
+        return (
+            await self.providers.database.graph_handler.relationships.update(
+                relationship
+            )
+        )
+
+    # TODO: deprecate this
+    @telemetry_event("get_triples")
+    async def get_relationships(
+        self,
+        collection_id: Optional[UUID] = None,
+        entity_names: Optional[list[str]] = None,
+        relationship_ids: Optional[list[str]] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.get_relationships(
+            collection_id=collection_id,
+            entity_names=entity_names,
+            relationship_ids=relationship_ids,
+            offset=offset or 0,
+            limit=limit or -1,
+        )
+
+    ################### COMMUNITIES ###################
+
+    @telemetry_event("create_communities_v3")
+    async def create_communities_v3(
+        self,
+        communities: list[Community],
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.communities.create(
+            communities
+        )
+
+    @telemetry_event("update_community_v3")
+    async def update_community_v3(
+        self,
+        community: Community,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.communities.update(
+            community
+        )
+
+    @telemetry_event("delete_community_v3")
+    async def delete_community_v3(
+        self,
+        community: Community,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.communities.delete(
+            community
+        )
+
+    @telemetry_event("list_communities_v3")
+    async def list_communities_v3(
+        self,
+        id: UUID,
+        offset: int,
+        limit: int,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.communities.get(
+            collection_id=id,
+            offset=offset,
+            limit=limit,
+        )
+
+    # TODO: deprecate this
+    @telemetry_event("get_communities")
+    async def get_communities(
+        self,
+        collection_id: Optional[UUID] = None,
+        levels: Optional[list[int]] = None,
+        community_numbers: Optional[list[int]] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        **kwargs,
+    ):
+        return await self.providers.database.graph_handler.get_communities(
+            collection_id=collection_id,
+            levels=levels,
+            community_numbers=community_numbers,
+            offset=offset or 0,
+            limit=limit or -1,
+        )
+
+    ################### GRAPH ###################
 
     @telemetry_event("get_document_ids_for_create_graph")
     async def get_document_ids_for_create_graph(
@@ -156,10 +381,12 @@ class KgService(Service):
             f"KGService: Running kg_entity_description for document {document_id}"
         )
 
-        entity_count = await self.providers.database.get_entity_count(
-            document_id=document_id,
-            distinct=True,
-            entity_table_name="chunk_entity",
+        entity_count = (
+            await self.providers.database.graph_handler.get_entity_count(
+                document_id=document_id,
+                distinct=True,
+                entity_table_name="chunk_entity",
+            )
         )
 
         logger.info(
@@ -211,6 +438,14 @@ class KgService(Service):
         )
 
         return all_results
+
+    @telemetry_event("get_graph_status")
+    async def get_graph_status(
+        self,
+        collection_id: UUID,
+        **kwargs,
+    ):
+        raise NotImplementedError("Not implemented")
 
     @telemetry_event("kg_clustering")
     async def kg_clustering(
@@ -273,6 +508,15 @@ class KgService(Service):
         # TODO: Implement this, as it needs some checks.
         raise NotImplementedError
 
+    @telemetry_event("delete_graph")
+    async def delete_graph(
+        self,
+        collection_id: UUID,
+        cascade: bool,
+        **kwargs,
+    ):
+        return await self.delete_graph_for_collection(collection_id, cascade)
+
     @telemetry_event("delete_graph_for_collection")
     async def delete_graph_for_collection(
         self,
@@ -280,7 +524,7 @@ class KgService(Service):
         cascade: bool,
         **kwargs,
     ):
-        return await self.providers.database.delete_graph_for_collection(
+        return await self.providers.database.graph_handler.delete_graph_for_collection(
             collection_id, cascade
         )
 
@@ -291,7 +535,7 @@ class KgService(Service):
         collection_id: UUID,
         **kwargs,
     ):
-        return await self.providers.database.delete_node_via_document_id(
+        return await self.providers.database.graph_handler.delete_node_via_document_id(
             collection_id, document_id
         )
 
@@ -302,8 +546,11 @@ class KgService(Service):
         kg_creation_settings: KGCreationSettings,
         **kwargs,
     ):
-        return await self.providers.database.get_creation_estimate(
-            collection_id, kg_creation_settings
+        return (
+            await self.providers.database.graph_handler.get_creation_estimate(
+                collection_id=collection_id,
+                kg_creation_settings=kg_creation_settings,
+            )
         )
 
     @telemetry_event("get_enrichment_estimate")
@@ -314,115 +561,8 @@ class KgService(Service):
         **kwargs,
     ):
 
-        return await self.providers.database.get_enrichment_estimate(
+        return await self.providers.database.graph_handler.get_enrichment_estimate(
             collection_id, kg_enrichment_settings
-        )
-
-    @telemetry_event("list_entities")
-    async def list_entities(
-        self,
-        offset: int,
-        limit: int,
-        collection_id: Optional[UUID] = None,
-        entity_ids: Optional[list[str]] = None,
-        entity_table_name: str = "document_entity",
-        **kwargs,
-    ):
-        return await self.providers.database.get_entities(
-            collection_id=collection_id,
-            entity_ids=entity_ids,
-            entity_table_name=entity_table_name,
-            offset=offset,
-            limit=limit,
-        )
-
-    @telemetry_event("get_entities")
-    async def get_entities(
-        self,
-        offset: int,
-        limit: int,
-        collection_id: Optional[UUID] = None,
-        entity_ids: Optional[list[str]] = None,
-        entity_table_name: str = "document_entity",
-    ):
-        return await self.providers.database.get_entities(
-            offset=offset,
-            limit=limit,
-            collection_id=collection_id,
-            entity_ids=entity_ids,
-            entity_table_name=entity_table_name,
-        )
-
-    @telemetry_event("get_triples")
-    async def get_triples(
-        self,
-        offset: int,
-        limit: int,
-        collection_id: Optional[UUID] = None,
-        entity_names: Optional[list[str]] = None,
-        triple_ids: Optional[list[str]] = None,
-        **kwargs,
-    ):
-        return await self.providers.database.get_triples(
-            offset=offset,
-            limit=limit,
-            collection_id=collection_id,
-            entity_names=entity_names,
-            triple_ids=triple_ids,
-        )
-
-    @telemetry_event("list_triples")
-    async def list_triples(
-        self,
-        offset: int,
-        limit: int,
-        collection_id: Optional[UUID] = None,
-        entity_names: Optional[list[str]] = None,
-        triple_ids: Optional[list[str]] = None,
-        **kwargs,
-    ):
-        return await self.providers.database.get_triples(
-            offset=offset,
-            limit=limit,
-            collection_id=collection_id,
-            entity_names=entity_names,
-            triple_ids=triple_ids,
-        )
-
-    @telemetry_event("get_communities")
-    async def get_communities(
-        self,
-        offset: int,
-        limit: int,
-        collection_id: Optional[UUID] = None,
-        levels: Optional[list[int]] = None,
-        community_numbers: Optional[list[int]] = None,
-        **kwargs,
-    ):
-        return await self.providers.database.get_communities(
-            offset=offset,
-            limit=limit,
-            collection_id=collection_id,
-            levels=levels,
-            community_numbers=community_numbers,
-        )
-
-    @telemetry_event("list_communities")
-    async def list_communities(
-        self,
-        offset: int,
-        limit: int,
-        collection_id: Optional[UUID] = None,
-        levels: Optional[list[int]] = None,
-        community_numbers: Optional[list[int]] = None,
-        **kwargs,
-    ):
-        return await self.providers.database.get_communities(
-            offset=offset,
-            limit=limit,
-            collection_id=collection_id,
-            levels=levels,
-            community_numbers=community_numbers,
         )
 
     @telemetry_event("get_deduplication_estimate")
@@ -432,7 +572,7 @@ class KgService(Service):
         kg_deduplication_settings: KGEntityDeduplicationSettings,
         **kwargs,
     ):
-        return await self.providers.database.get_deduplication_estimate(
+        return await self.providers.database.graph_handler.get_deduplication_estimate(
             collection_id, kg_deduplication_settings
         )
 

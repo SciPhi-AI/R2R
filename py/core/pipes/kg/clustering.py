@@ -6,22 +6,22 @@ from core.base import (
     AsyncPipe,
     AsyncState,
     CompletionProvider,
-    DatabaseProvider,
     EmbeddingProvider,
 )
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
+from core.providers.database import PostgresDBProvider
 
 logger = logging.getLogger()
 
 
 class KGClusteringPipe(AsyncPipe):
     """
-    Clusters entities and triples into communities within the knowledge graph using hierarchical Leiden algorithm.
+    Clusters entities and relationships into communities within the knowledge graph using hierarchical Leiden algorithm.
     """
 
     def __init__(
         self,
-        database_provider: DatabaseProvider,
+        database_provider: PostgresDBProvider,
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
@@ -46,14 +46,12 @@ class KGClusteringPipe(AsyncPipe):
         leiden_params: dict,
     ):
         """
-        Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses graspologic library.
+        Clusters the knowledge graph relationships into communities using hierarchical Leiden algorithm. Uses graspologic library.
         """
 
-        num_communities = (
-            await self.database_provider.perform_graph_clustering(
-                collection_id,
-                leiden_params,
-            )
+        num_communities = await self.database_provider.graph_handler.perform_graph_clustering(
+            collection_id,
+            leiden_params,
         )  # type: ignore
 
         logger.info(
@@ -73,7 +71,7 @@ class KGClusteringPipe(AsyncPipe):
         **kwargs: Any,
     ) -> AsyncGenerator[dict, None]:
         """
-        Executes the KG clustering pipe: clustering entities and triples into communities.
+        Executes the KG clustering pipe: clustering entities and relationships into communities.
         """
 
         collection_id = input.message["collection_id"]

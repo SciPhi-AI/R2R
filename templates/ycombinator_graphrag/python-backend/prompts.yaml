@@ -1,8 +1,8 @@
-graphrag_triples_extraction_few_shot:
+graphrag_relationships_extraction_few_shot:
   template: >
     -Goal-
     Given a text document, identify all entities and their entity types from the text and all relationships among the identified entities.
-    Given the text, extract up to {max_knowledge_triples} entity-relation triplets.
+    Given the text, extract up to {max_knowledge_relationships} entity-relation relationshipts.
     -Steps-
     1. Identify all entities. For each identified entity, extract the following information:
     - entity_name: Name of the entity, capitalized
@@ -117,7 +117,7 @@ graphrag_triples_extraction_few_shot:
     Output:
 
   input_types:
-    max_knowledge_triples: int
+    max_knowledge_relationships: int
     input: str
     entity_types: list[str]
     relation_types: list[str]

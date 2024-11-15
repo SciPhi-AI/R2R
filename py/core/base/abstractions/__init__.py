@@ -22,13 +22,14 @@ from shared.abstractions.exception import (
 from shared.abstractions.graph import (
     Community,
     CommunityInfo,
-    CommunityReport,
+    Community,
     Entity,
     EntityLevel,
     EntityType,
+    Graph,
     KGExtraction,
     RelationshipType,
-    Triple,
+    Relationship,
 )
 from shared.abstractions.ingestion import (
     ChunkEnrichmentSettings,
@@ -109,9 +110,9 @@ __all__ = [
     "EntityType",
     "RelationshipType",
     "Community",
-    "CommunityReport",
+    "CommunityInfo",
     "KGExtraction",
-    "Triple",
+    "Relationship",
     "EntityLevel",
     # Index abstractions
     "IndexConfig",

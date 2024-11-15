@@ -45,7 +45,7 @@ def collection_ids():
 
 
 @pytest.fixture
-def extraction_ids():
+def chunk_ids():
     return [
         UUID("fce959df-46a2-4983-aa8b-dd1f93777e02"),
         UUID("9a85269c-84cd-4dff-bf21-7bd09974f668"),
@@ -54,12 +54,10 @@ def extraction_ids():
 
 
 @pytest.fixture
-def sample_chunks(
-    sample_document_id, sample_user, collection_ids, extraction_ids
-):
+def sample_chunks(sample_document_id, sample_user, collection_ids, chunk_ids):
     return [
         VectorEntry(
-            chunk_id=extraction_ids[0],
+            chunk_id=chunk_ids[0],
             document_id=sample_document_id,
             user_id=sample_user.id,
             collection_ids=collection_ids,
@@ -72,7 +70,7 @@ def sample_chunks(
             metadata={"chunk_order": 0},
         ),
         VectorEntry(
-            chunk_id=extraction_ids[1],
+            chunk_id=chunk_ids[1],
             document_id=sample_document_id,
             user_id=sample_user.id,
             collection_ids=collection_ids,
@@ -85,7 +83,7 @@ def sample_chunks(
             metadata={"chunk_order": 1},
         ),
         VectorEntry(
-            chunk_id=extraction_ids[2],
+            chunk_id=chunk_ids[2],
             document_id=sample_document_id,
             user_id=sample_user.id,
             collection_ids=collection_ids,

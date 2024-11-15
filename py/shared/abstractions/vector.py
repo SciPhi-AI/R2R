@@ -117,9 +117,9 @@ class VectorTableName(str, Enum):
     VECTORS = "vectors"
     ENTITIES_DOCUMENT = "document_entity"
     ENTITIES_COLLECTION = "collection_entity"
-    # TODO: Add support for triples
-    # TRIPLES = "chunk_triple"
-    COMMUNITIES = "community_report"
+    # TODO: Add support for relationships
+    # TRIPLES = "chunk_relationship"
+    COMMUNITIES = "community"
 
     def __str__(self) -> str:
         return self.value

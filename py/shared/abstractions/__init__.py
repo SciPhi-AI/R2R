@@ -14,12 +14,12 @@ from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import R2RDocumentProcessingError, R2RException
 from .graph import (
     Community,
-    CommunityReport,
+    Community,
     Entity,
     EntityType,
     KGExtraction,
     RelationshipType,
-    Triple,
+    Relationship,
 )
 from .kg import (
     KGCreationSettings,
@@ -92,9 +92,9 @@ __all__ = [
     "EntityType",
     "RelationshipType",
     "Community",
-    "CommunityReport",
+    "Community",
     "KGExtraction",
-    "Triple",
+    "Relationship",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",
