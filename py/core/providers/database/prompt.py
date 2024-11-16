@@ -142,32 +142,24 @@ class CacheablePromptHandler(PromptHandler):
     ) -> str:
         """Get a prompt with caching support"""
         if prompt_override:
-            template = prompt_override
-        else:
-            cache_key = self._cache_key(prompt_name, inputs)
-            if not bypass_cache:
-                cached = self._prompt_cache.get(cache_key)
-                if cached is not None:
-                    logger.debug(f"Cache hit for prompt: {cache_key}")
-                    return cached
+            if inputs:
+                try:
+                    return prompt_override.format(**inputs)
+                except KeyError:
+                    return prompt_override
+            return prompt_override
 
-            template = await self._get_prompt_impl(prompt_name, inputs)
+        cache_key = self._cache_key(prompt_name, inputs)
 
-        if inputs:
-            try:
-                result = template.format(**inputs)
-                if not prompt_override and not bypass_cache:
-                    # Only cache if not using override and cache isn't bypassed
-                    self._prompt_cache.set(cache_key, result)
-                return result
-            except KeyError as e:
-                raise ValueError(f"Missing required input: {e}")
+        if not bypass_cache:
+            cached = self._prompt_cache.get(cache_key)
+            if cached is not None:
+                logger.debug(f"Cache hit for prompt: {cache_key}")
+                return cached
 
-        if not prompt_override and not bypass_cache:
-            # Cache the template itself if no inputs
-            self._prompt_cache.set(prompt_name, template)
-
-        return template
+        result = await self._get_prompt_impl(prompt_name, inputs)
+        self._prompt_cache.set(cache_key, result)
+        return result
 
     async def get_prompt(  # type: ignore
         self,
