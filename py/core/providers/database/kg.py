@@ -1358,7 +1358,7 @@ class PostgresGraphHandler(GraphHandler):
             random_seed: Optional[int] = None,
             weight_attribute: str = "weight",
             is_weighted: Optional[bool] = None,
-            weight_default: int, float = 1.0,
+            weight_default: int| float = 1.0,
             check_directed: bool = True,
         """
 
