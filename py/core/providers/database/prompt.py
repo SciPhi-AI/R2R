@@ -5,7 +5,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Generic, Optional, TypeVar, Union
+from typing import Any, Generic, Optional, TypeVar
 
 import yaml
 
@@ -141,20 +141,17 @@ class CacheablePromptHandler(PromptHandler):
         bypass_cache: bool = False,
     ) -> str:
         """Get a prompt with caching support"""
-        if prompt_override:
-            return prompt_override
+        template = prompt_override or await self._get_prompt_impl(
+            prompt_name, inputs
+        )
 
-        cache_key = self._cache_key(prompt_name, inputs)
+        if inputs:
+            try:
+                return template.format(**inputs)
+            except KeyError as e:
+                raise ValueError(f"Missing required input: {e}")
 
-        if not bypass_cache:
-            cached = self._prompt_cache.get(cache_key)
-            if cached is not None:
-                logger.debug(f"Cache hit for prompt: {cache_key}")
-                return cached
-
-        result = await self._get_prompt_impl(prompt_name, inputs)
-        self._prompt_cache.set(cache_key, result)
-        return result
+        return template
 
     async def get_prompt(  # type: ignore
         self,
@@ -249,7 +246,7 @@ class PostgresPromptHandler(CacheablePromptHandler):
         )
         self.connection_manager = connection_manager
         self.project_name = project_name
-        self.prompts: dict[str, dict[str, Union[str, dict[str, str]]]] = {}
+        self.prompts: dict[str, dict[str, str | dict[str, str]]] = {}
 
     async def _load_prompts(self) -> None:
         """Load prompts from both database and YAML files."""
