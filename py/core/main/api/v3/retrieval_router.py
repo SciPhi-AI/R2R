@@ -424,8 +424,6 @@ class RetrievalRouterV3(BaseRouterV3):
                 auth_user, vector_search_settings
             )
 
-            print(f"Got a task prompt override: {task_prompt_override}")
-
             response = await self.services["retrieval"].rag(
                 query=query,
                 vector_search_settings=vector_search_settings,

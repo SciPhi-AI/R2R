@@ -54,8 +54,6 @@ class LiteLLMCompletionProvider(CompletionProvider):
         args["messages"] = messages
         args = {**args, **kwargs}
 
-        print(f"Getting completion for: {args}")
-
         return await self.acompletion(**args)
 
     def _execute_task_sync(self, task: dict[str, Any]):
@@ -68,7 +66,6 @@ class LiteLLMCompletionProvider(CompletionProvider):
         args = {**args, **kwargs}
 
         try:
-            print(f"Getting completion for: {args}")
             return self.completion(**args)
         except Exception as e:
             logger.error(f"Sync LiteLLM task execution failed: {str(e)}")
