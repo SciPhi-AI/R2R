@@ -1,17 +1,16 @@
 import json
 import logging
 import time
-from typing import Any, AsyncGenerator, Optional, Tuple, Union
+from typing import Any, AsyncGenerator, Optional, Tuple
 from uuid import UUID
 
 import asyncpg
-from asyncpg.exceptions import PostgresError, UndefinedTableError
+from asyncpg.exceptions import UndefinedTableError
 from fastapi import HTTPException
 
 from core.base.abstractions import (
     Community,
     Entity,
-    KGExtraction,
     KGExtractionStatus,
     Graph,
     R2RException,
@@ -89,7 +88,6 @@ class PostgresEntityHandler(EntityHandler):
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("chunk_entity")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            sid SERIAL NOT NULL,
             category TEXT NOT NULL,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
@@ -104,7 +102,6 @@ class PostgresEntityHandler(EntityHandler):
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("document_entity")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            sid SERIAL NOT NULL,
             name TEXT NOT NULL,
             description TEXT NOT NULL,
             chunk_ids UUID[] NOT NULL,
@@ -120,7 +117,6 @@ class PostgresEntityHandler(EntityHandler):
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("collection_entity")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            sid SERIAL NOT NULL,
             name TEXT NOT NULL,
             description TEXT,
             chunk_ids UUID[] NOT NULL,
@@ -307,7 +303,6 @@ class PostgresRelationshipHandler(RelationshipHandler):
         QUERY = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("chunk_relationship")} (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                sid SERIAL NOT NULL,
                 subject TEXT NOT NULL,
                 predicate TEXT NOT NULL,
                 object TEXT NOT NULL,
@@ -424,7 +419,6 @@ class PostgresCommunityHandler(CommunityHandler):
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("community_info")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            sid SERIAL,
             node TEXT NOT NULL,
             cluster INT NOT NULL,
             parent_cluster INT,
@@ -440,7 +434,6 @@ class PostgresCommunityHandler(CommunityHandler):
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("community")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            sid SERIAL,
             community_number INT NOT NULL,
             collection_id UUID NOT NULL,
             level INT NOT NULL,
@@ -870,7 +863,7 @@ class PostgresGraphHandler(GraphHandler):
 
         if entity_table_name == "collection_entity":
             query = f"""
-            SELECT sid as id, name, description, chunk_ids, document_ids {", " + ", ".join(extra_columns) if extra_columns else ""}
+            SELECT id, name, description, chunk_ids, document_ids {", " + ", ".join(extra_columns) if extra_columns else ""}
             FROM {self._get_table_name(entity_table_name)}
             WHERE collection_id = $1
             {" AND " + " AND ".join(conditions) if conditions else ""}
@@ -879,7 +872,7 @@ class PostgresGraphHandler(GraphHandler):
             """
         else:
             query = f"""
-            SELECT sid as id, name, description, chunk_ids, document_id {", " + ", ".join(extra_columns) if extra_columns else ""}
+            SELECT id, name, description, chunk_ids, document_id {", " + ", ".join(extra_columns) if extra_columns else ""}
             FROM {self._get_table_name(entity_table_name)}
             WHERE document_id = ANY(
                 SELECT document_id FROM {self._get_table_name("document_info")}
@@ -1031,7 +1024,7 @@ class PostgresGraphHandler(GraphHandler):
             ]
 
         QUERY = f"""
-            SELECT sid as id, subject, predicate, weight, object, document_id FROM {self._get_table_name("chunk_relationship")} WHERE document_id = ANY($1)
+            SELECT id, subject, predicate, weight, object, document_id FROM {self._get_table_name("chunk_relationship")} WHERE document_id = ANY($1)
         """
         relationships = await self.connection_manager.fetch_query(
             QUERY, [document_ids]
@@ -1077,7 +1070,7 @@ class PostgresGraphHandler(GraphHandler):
         pagination_clause = " ".join(pagination_params)
 
         query = f"""
-            SELECT sid as id, subject, predicate, object, description, chunk_ids, document_id
+            SELECT id, subject, predicate, object, description, chunk_ids, document_id
             FROM {self._get_table_name("chunk_relationship")}
             WHERE document_id = ANY(
                 SELECT document_id FROM {self._get_table_name("document_info")}
@@ -1242,7 +1235,7 @@ class PostgresGraphHandler(GraphHandler):
             SELECT DISTINCT
                 t.id, t.subject, t.predicate, t.object, t.weight, t.description
             FROM node_relationship_ids nti
-            JOIN {self._get_table_name("chunk_relationship")} t ON t.sid = ANY(nti.relationship_ids);
+            JOIN {self._get_table_name("chunk_relationship")} t ON t.id = ANY(nti.relationship_ids);
         """
         relationships = await self.connection_manager.fetch_query(
             QUERY, [community_number, collection_id]
@@ -1359,13 +1352,13 @@ class PostgresGraphHandler(GraphHandler):
             max_cluster_size: int = 1000,
             starting_communities: Optional[dict[str, int]] = None,
             extra_forced_iterations: int = 0,
-            resolution: Union[int, float] = 1.0,
-            randomness: Union[int, float] = 0.001,
+            resolution: int | float = 1.0,
+            randomness: int | float = 0.001,
             use_modularity: bool = True,
             random_seed: Optional[int] = None,
             weight_attribute: str = "weight",
             is_weighted: Optional[bool] = None,
-            weight_default: Union[int, float] = 1.0,
+            weight_default: int, float = 1.0,
             check_directed: bool = True,
         """
 
@@ -1736,7 +1729,7 @@ class PostgresGraphHandler(GraphHandler):
     ) -> dict[str, list[int]]:
 
         # caching the relationship ids
-        relationship_ids_cache = dict[str, list[Union[int, UUID]]]()
+        relationship_ids_cache = dict[str, list[int | UUID]]()
         for relationship in relationships:
             if (
                 relationship.subject not in relationship_ids_cache

@@ -291,6 +291,19 @@ def upgrade() -> None:
             schema=project_name,
         )
 
+        # Add step to drop sid columns from all relevant tables
+        tables = [
+            "chunk_entity",
+            "document_entity",
+            "collection_entity",
+            "chunk_relationship",
+            "community_info",
+            "community",
+        ]
+
+        for table in tables:
+            op.drop_column(table, "sid", schema=project_name)
+
 
 def downgrade() -> None:
     # First drop any dependencies on the columns we want to remove
@@ -311,3 +324,26 @@ def downgrade() -> None:
     # Drop the summary and embedding columns
     op.drop_column("document_info", "summary_embedding", schema=project_name)
     op.drop_column("document_info", "summary", schema=project_name)
+
+    # Add step to restore sid columns
+    tables = [
+        "chunk_entity",
+        "document_entity",
+        "collection_entity",
+        "chunk_relationship",
+        "community_info",
+        "community",
+    ]
+
+    for table in tables:
+        op.add_column(
+            table,
+            sa.Column(
+                "sid",
+                sa.Integer(),
+                server_default=sa.text(
+                    "nextval('" + project_name + "." + table + "_sid_seq')"
+                ),
+            ),
+            schema=project_name,
+        )

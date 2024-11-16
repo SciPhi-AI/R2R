@@ -1,26 +1,11 @@
 import json
-import logging
-import uuid
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from uuid import UUID
 from datetime import datetime
 
 from .base import R2RSerializable
-
-logger = logging.getLogger()
-
-
-@dataclass
-class Identified:
-    """A protocol for an item with an ID."""
-
-    id: str
-    """The ID of the item."""
-
-    short_id: str | None
-    """Human readable ID used to refer to this community in prompts or texts displayed to users, such as in a report text (optional)."""
 
 
 class EntityType(R2RSerializable):
@@ -47,23 +32,24 @@ class EntityLevel(str, Enum):
 class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
-    name: Optional[str] = None
-    id: Optional[Union[UUID, int]] = None
-    sid: Optional[int] = None  # serial ID
+    id: UUID
+    document_id: UUID
+    name: str
     level: Optional[EntityLevel] = None
     category: Optional[str] = None
     description: Optional[str] = None
-    description_embedding: Optional[Union[list[float], str]] = None
+    description_embedding: Optional[list[float] | str] = None
     community_numbers: Optional[list[str]] = None
     chunk_ids: Optional[list[UUID]] = None
-    collection_id: Optional[UUID] = None
-    document_id: Optional[UUID] = None
-    document_ids: Optional[list[UUID]] = None
+    collection_id: Optional[UUID] = (
+        None  # TODO: Remove this? Make it graph id?
+    )
+    document_ids: Optional[list[UUID]] = None  # TODO: Remove this?
     # we don't use these yet
     # name_embedding: Optional[list[float]] = None
     # graph_embedding: Optional[list[float]] = None
     # rank: Optional[int] = None
-    attributes: Optional[Union[dict[str, Any], str]] = None
+    attributes: Optional[dict[str, Any] | str] = None
 
     def __str__(self):
         return (
@@ -84,9 +70,8 @@ class Entity(R2RSerializable):
 class Relationship(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
-    id: Optional[Union[UUID, int]] = None
-    sid: Optional[int] = None  # serial ID
-
+    id: UUID
+    document_id: UUID
     subject: Optional[str] = None
     predicate: Optional[str] = None
     subject_id: Optional[UUID] = None
@@ -97,7 +82,6 @@ class Relationship(R2RSerializable):
     description_embedding: list[float] | None = None
     predicate_embedding: list[float] | None = None
     chunk_ids: list[UUID] = []
-    document_id: Optional[UUID] = None
     attributes: dict[str, Any] | str = {}
 
     def __init__(self, **kwargs):
@@ -113,12 +97,13 @@ class Relationship(R2RSerializable):
 class CommunityInfo(R2RSerializable):
     """A protocol for a community in the system."""
 
+    graph_id: UUID
     node: str
     cluster: int
     parent_cluster: int | None
     level: int
     is_final_cluster: bool
-    collection_id: uuid.UUID
+    collection_id: UUID
     relationship_ids: Optional[list[int]] = None
 
     def __init__(self, **kwargs):
@@ -130,11 +115,11 @@ class Community(R2RSerializable):
 
     community_number: int
     level: int
-    collection_id: uuid.UUID
+    collection_id: UUID
     name: str = ""
     summary: str = ""
     findings: list[str] = []
-    id: Optional[Union[int, UUID]] = None
+    id: Optional[int | UUID] = None
     rating: float | None = None
     rating_explanation: str | None = None
     embedding: list[float] | None = None
@@ -149,8 +134,8 @@ class Community(R2RSerializable):
 class KGExtraction(R2RSerializable):
     """A protocol for a knowledge graph extraction."""
 
-    chunk_ids: list[uuid.UUID]
-    document_id: uuid.UUID
+    chunk_ids: list[UUID]
+    document_id: UUID
     entities: list[Entity]
     relationships: list[Relationship]
 
@@ -158,11 +143,11 @@ class KGExtraction(R2RSerializable):
 class Graph(R2RSerializable):
     """A request to create a graph."""
 
-    id: Optional[uuid.UUID] = None
+    id: Optional[UUID] = None
     name: Optional[str] = None
     description: Optional[str] = None
-    document_ids: list[uuid.UUID] = []
-    collection_ids: list[uuid.UUID] = []
+    document_ids: list[UUID] = []
+    collection_ids: list[UUID] = []
     statistics: dict[str, Any] = {}
     created_at: datetime
     updated_at: datetime  # Implemntation is not yet complete
