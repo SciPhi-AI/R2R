@@ -5,7 +5,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Generic, Optional, TypeVar, Union
+from typing import Any, Generic, Optional, TypeVar
 
 import yaml
 
@@ -142,6 +142,11 @@ class CacheablePromptHandler(PromptHandler):
     ) -> str:
         """Get a prompt with caching support"""
         if prompt_override:
+            if inputs:
+                try:
+                    return prompt_override.format(**inputs)
+                except KeyError:
+                    return prompt_override
             return prompt_override
 
         cache_key = self._cache_key(prompt_name, inputs)
@@ -249,7 +254,7 @@ class PostgresPromptHandler(CacheablePromptHandler):
         )
         self.connection_manager = connection_manager
         self.project_name = project_name
-        self.prompts: dict[str, dict[str, Union[str, dict[str, str]]]] = {}
+        self.prompts: dict[str, dict[str, str | dict[str, str]]] = {}
 
     async def _load_prompts(self) -> None:
         """Load prompts from both database and YAML files."""
