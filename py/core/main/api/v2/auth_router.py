@@ -291,7 +291,7 @@ class AuthRouter(BaseRouter):
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedResetDataResult:
             """
-            Get only the verification code for a specific user.
+            Get only the reset token for a specific user.
             Only accessible by superusers.
             """
             if not auth_user.is_superuser:
