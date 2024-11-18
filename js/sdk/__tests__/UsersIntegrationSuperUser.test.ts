@@ -64,6 +64,11 @@ describe("r2rClient V3 Users Integration Tests", () => {
     expect(login_response.results).toBeDefined();
   });
 
+  test("Retrieve the current user", async () => {
+    const response = await client.users.me();
+    expect(response.results).toBeDefined();
+  });
+
   test("Retrieve a user", async () => {
     const response = await client.users.retrieve({ id: userId });
     expect(response.results).toBeDefined();
