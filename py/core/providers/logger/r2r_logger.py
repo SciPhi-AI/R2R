@@ -655,25 +655,32 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         # Get all messages for this branch
         async with self.conn.execute(
             """
-            WITH RECURSIVE branch_messages(id, content, parent_id, depth, created_at) AS (
-                SELECT m.id, m.content, m.parent_id, 0, m.created_at
+            WITH RECURSIVE branch_messages(id, content, parent_id, depth, created_at, metadata) AS (
+                SELECT m.id, m.content, m.parent_id, 0, m.created_at, m.metadata
                 FROM messages m
                 JOIN message_branches mb ON m.id = mb.message_id
                 WHERE mb.branch_id = ? AND m.parent_id IS NULL
                 UNION
-                SELECT m.id, m.content, m.parent_id, bm.depth + 1, m.created_at
+                SELECT m.id, m.content, m.parent_id, bm.depth + 1, m.created_at, m.metadata
                 FROM messages m
                 JOIN message_branches mb ON m.id = mb.message_id
                 JOIN branch_messages bm ON m.parent_id = bm.id
                 WHERE mb.branch_id = ?
             )
-            SELECT id, content, parent_id FROM branch_messages
+            SELECT id, content, parent_id, metadata FROM branch_messages
             ORDER BY created_at ASC
-        """,
+            """,
             (branch_id, branch_id),
         ) as cursor:
             rows = await cursor.fetchall()
-            return [(row[0], Message.parse_raw(row[1])) for row in rows]
+            return [
+                (
+                    row[0],  # id
+                    Message.parse_raw(row[1]),  # message content
+                    json.loads(row[3]) if row[3] else {},  # metadata
+                )
+                for row in rows
+            ]
 
     async def get_branches_overview(self, conversation_id: str) -> list[dict]:
         if not self.conn:

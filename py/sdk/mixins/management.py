@@ -695,7 +695,7 @@ class ManagementMixins:
     async def add_message(
         self,
         conversation_id: Union[str, UUID],
-        message: Message,
+        message: dict,
         parent_id: Optional[str] = None,
         metadata: Optional[dict[str, Any]] = None,
     ) -> dict:
@@ -716,9 +716,15 @@ class ManagementMixins:
             data["parent_id"] = parent_id
         if metadata is not None:
             data["metadata"] = metadata
-        return await self._make_request(  # type: ignore
-            "POST", f"add_message/{str(conversation_id)}", data=data
-        )
+        print("len(data):", len(data))
+        if len(data) == 1:
+            return await self._make_request(  # type: ignore
+                "POST", f"add_message/{str(conversation_id)}", json=data
+            )
+        else:
+            return await self._make_request(  # type: ignore
+                "POST", f"add_message/{str(conversation_id)}", data=data
+            )
 
     async def update_message(
         self,
@@ -755,7 +761,7 @@ class ManagementMixins:
             dict: The response from the server.
         """
         return await self._make_request(  # type: ignore
-            "PATCH", f"messages/{message_id}/metadata", data=metadata
+            "PATCH", f"messages/{message_id}/metadata", json=metadata
         )
 
     async def branches_overview(

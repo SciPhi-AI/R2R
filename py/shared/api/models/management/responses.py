@@ -171,7 +171,7 @@ WrappedAppSettingsResponse = ResultsWrapper[AppSettingsResponse]
 WrappedUserOverviewResponse = PaginatedResultsWrapper[
     list[UserOverviewResponse]
 ]
-WrappedConversationResponse = ResultsWrapper[list[Tuple[str, Message]]]
+WrappedConversationResponse = ResultsWrapper[list[Tuple[str, Message, dict]]]
 WrappedDocumentOverviewResponse = PaginatedResultsWrapper[
     list[DocumentOverviewResponse]
 ]
