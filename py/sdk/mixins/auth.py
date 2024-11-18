@@ -213,6 +213,20 @@ class AuthMixins:
             "GET", f"user/{user_id}/verification_data"
         )
 
+    async def get_user_reset_token(self, user_id: Union[str, UUID]) -> dict:
+        """
+        Retrieves only the verification code for a specific user. Requires superuser access.
+
+        Args:
+            user_id (Union[str, UUID]): The ID of the user to get verification code for.
+
+        Returns:
+            dict: Contains verification code and its expiry date
+        """
+        return await self._make_request(  # type: ignore
+            "GET", f"user/{user_id}/reset_token"
+        )
+
     async def send_reset_email(self, email: str) -> dict:
         """
         Generates a new verification code and sends a reset email to the user.
