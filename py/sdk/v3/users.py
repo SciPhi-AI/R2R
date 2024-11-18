@@ -236,7 +236,6 @@ class UsersSDK:
 
     async def me(
         self,
-        id: str | UUID,
     ) -> dict:
         """
         Get detailed information about the currently authenticated user.
@@ -246,7 +245,7 @@ class UsersSDK:
         """
         return await self.client._make_request(
             "GET",
-            f"users/{str(id)}",
+            "users/me",
             version="v3",
         )
 
