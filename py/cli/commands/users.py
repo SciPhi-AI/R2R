@@ -70,6 +70,18 @@ async def retrieve(ctx, id):
 
 
 @users.command()
+@pass_context
+async def me(ctx):
+    """Retrieve the current user."""
+    client: R2RAsyncClient = ctx.obj
+
+    with timer():
+        response = await client.users.me()
+
+    click.echo(json.dumps(response, indent=2))
+
+
+@users.command()
 @click.argument("id", required=True, type=str)
 @click.option(
     "--offset",
