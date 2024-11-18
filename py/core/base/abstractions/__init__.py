@@ -39,6 +39,10 @@ from shared.abstractions.kg import (
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
+    GraphBuildSettings,
+    GraphEntitySettings,
+    GraphRelationshipSettings,
+    GraphCommunitySettings,
     KGEntityDeduplicationType,
     KGRunType,
 )
@@ -141,6 +145,10 @@ __all__ = [
     "KGCreationSettings",
     "KGEnrichmentSettings",
     "KGEntityDeduplicationSettings",
+    "GraphBuildSettings",
+    "GraphEntitySettings",
+    "GraphRelationshipSettings",
+    "GraphCommunitySettings",
     "KGEntityDeduplicationType",
     "KGRunType",
     # User abstractions

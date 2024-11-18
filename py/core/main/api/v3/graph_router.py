@@ -33,7 +33,7 @@ from core.utils import (
     update_settings_from_dict,
 )
 
-from core.base.abstractions import Entity, KGCreationSettings, Relationship
+from core.base.abstractions import Entity, KGCreationSettings, Relationship, GraphBuildSettings
 
 from core.base.abstractions import DocumentResponse, DocumentType
 
@@ -1419,15 +1419,27 @@ class GraphRouter(BaseRouterV3):
                 raise R2RException("Invalid data type", 400)
 
         @self.router.post(
-            "/graphs/{id}/build/",
+            "/graphs/{id}/build",
             summary="Build entities, relationships, and communities in the graph",
         )
         @self.base_endpoint
         async def build(
             id: UUID = Path(...),
+            settings: GraphBuildSettings = Body(GraphBuildSettings()),
         ):
-            for object_type in ["entities", "relationships", "communities"]:
-                await self.services["kg"].providers.database.graph_handler.build(id=id, object_type=object_type)
+
+            # build entities
+            logger.info(f"Building entities for graph {id}")
+            entities_result = await self.deduplicate_entities(id, settings.entity_settings, run_type=KGRunType.RUN)
+
+           # build communities
+            logger.info(f"Building communities for graph {id}")
+            communities_result = await self.enrich_graph(id, settings.community_settings, run_type=KGRunType.RUN)
+
+            return {
+                "entities": entities_result,
+                "communities": communities_result,
+            }
 
         @self.router.post(
             "/graphs/{id}/build/entities",
