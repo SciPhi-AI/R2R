@@ -2,16 +2,16 @@ import json
 import os
 import tempfile
 import uuid
+from urllib.parse import urlparse
+
 import asyncclick as click
 import requests
-
-from urllib.parse import urlparse
 from asyncclick import pass_context
 
-from r2r import R2RAsyncClient
 from cli.command_group import cli, deprecated_command
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
+from r2r import R2RAsyncClient
 from shared.abstractions import IndexMeasure, IndexMethod, VectorTableName
 
 
@@ -148,6 +148,7 @@ async def update_files(
     "--v3", is_flag=True, help="use aristotle_v3.txt (a larger file)"
 )
 @pass_context
+@deprecated_command("r2r documents create-sample")
 async def ingest_sample_file(ctx, v2=False, v3=False):
     """Ingest the first sample file into R2R."""
     sample_file_url = f"https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle{'_v2' if v2 else ''}{'_v3' if v3 else ''}.txt"

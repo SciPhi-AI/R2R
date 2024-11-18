@@ -3,10 +3,10 @@ from typing import Any
 import asyncclick as click
 from asyncclick import pass_context
 
-from r2r import R2RAsyncClient
 from cli.command_group import cli, deprecated_command
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
+from r2r import R2RAsyncClient
 
 
 # TODO
@@ -198,7 +198,7 @@ async def list_document_chunks(
     help="Should the vector be included in the response chunks",
 )
 @pass_context
-@deprecated_command("document_chunks")
+@deprecated_command("r2r documents list-chunks <document id>")
 async def document_chunks(ctx, document_id, offset, limit, include_vectors):
     """Get chunks of a specific document."""
     client: R2RAsyncClient = ctx.obj
