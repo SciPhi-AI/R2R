@@ -300,7 +300,7 @@ class ManagementService(Service):
 
         # TODO: This might be appropriate to move elsewhere and revisit filter logic in other methods
         def extract_filters(filters: dict[str, Any]) -> dict[str, list[str]]:
-            relational_filters = {}
+            relational_filters: dict = {}
 
             def process_filter(filter_dict: dict[str, Any]):
                 if "document_id" in filter_dict:
@@ -721,7 +721,7 @@ class ManagementService(Service):
         conversation_ids: Optional[list[UUID]] = None,
         user_ids: Optional[UUID | list[UUID]] = None,
         auth_user=None,
-    ) -> dict[str, list[dict], int]:
+    ) -> dict[str, list[dict] | int]:
         return await self.logging_connection.get_conversations_overview(
             offset=offset,
             limit=limit,

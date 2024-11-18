@@ -1203,7 +1203,7 @@ class DatabaseProvider(Provider):
 
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, list[UserResponse], int]:
+    ) -> dict[str, list[UserResponse] | int]:
         return await self.user_handler.get_users_in_collection(
             collection_id, offset, limit
         )
