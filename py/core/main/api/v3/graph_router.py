@@ -854,6 +854,74 @@ class GraphRouter(BaseRouterV3):
 
         ################### COMMUNITIES ###################
 
+
+        @self.router.post(
+            "/graphs/{id}/build/communities",
+            summary="Build communities in the graph",
+        )
+        @self.base_endpoint
+        async def create_communities(
+            collection_id: UUID = Path(...),
+            settings: Optional[dict] = Body(None),
+            run_type: Optional[KGRunType] = Body(
+                default=None,
+                description="Run type for the graph creation process.",
+            ),
+            run_with_orchestration: bool = Query(True),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedKGEnrichmentResponse:
+            """Creates communities in the graph by analyzing entity relationships and similarities.
+
+            Communities are created by:
+            1. Builds similarity graph between entities
+            2. Applies community detection algorithm (e.g. Leiden)
+            3. Creates hierarchical community levels
+            4. Generates summaries and insights for each community
+            """
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only superusers can create communities", 403
+                )
+
+            # Apply runtime settings overrides
+            server_kg_enrichment_settings = (
+                self.providers.database.config.kg_enrichment_settings
+            )
+            if settings:
+                server_kg_enrichment_settings = update_settings_from_dict(
+                    server_kg_enrichment_settings, settings
+                )
+
+            workflow_input = {
+                "collection_id": str(collection_id),
+                "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
+                "user": auth_user.model_dump_json(),
+            }
+
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
+
+            # If the run type is estimate, return an estimate of the enrichment cost
+            if run_type is KGRunType.ESTIMATE:
+                return await self.services["kg"].get_enrichment_estimate(
+                    collection_id, server_kg_enrichment_settings
+                )
+
+            else:
+                if run_with_orchestration:
+                    return await self.orchestration_provider.run_workflow(  # type: ignore
+                        "enrich-graph", {"request": workflow_input}, {}
+                    )
+                else:
+                    from core.main.orchestration import simple_kg_factory
+
+                    simple_kg = simple_kg_factory(self.services["kg"])
+                    await simple_kg["enrich-graph"](workflow_input)
+                    return {  # type: ignore
+                        "message": "Communities created successfully.",
+                        "task_id": None,
+                    }
+
         @self.router.post(
             "/graphs/{id}/communities",
             summary="Create communities",
@@ -903,6 +971,7 @@ class GraphRouter(BaseRouterV3):
 
             return await self.services["kg"].create_communities_v3(communities)
 
+
         @self.router.get(
             "/graphs/{id}/communities",
             summary="Get communities",
@@ -949,11 +1018,56 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can access this endpoint.", 403
                 )
 
-            return await self.services["kg"].get_communities_v3(
-                collection_id=id,
+            return await self.services["kg"].providers.database.graph_handler.communities.get(
+                id=id,
                 offset=offset,
                 limit=limit,
             )
+        
+        @self.router.get(
+            "/graphs/{id}/communities/{community_id}",
+            summary="Get a community",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.communities.get(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def get_community(
+            request: Request,
+            id: UUID = Path(
+                ...,
+                description="The ID of the collection to get communities for.",
+            ),
+            community_id: UUID = Path(
+                ...,
+                description="The ID of the community to get.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
+
+            return await self.services["kg"].providers.database.graph_handler.communities.get(
+                id = id,
+                community_id = community_id,
+            )
+
 
         @self.router.delete(
             "/graphs/{id}/communities/{community_id}",
@@ -1304,6 +1418,39 @@ class GraphRouter(BaseRouterV3):
             else:
                 raise R2RException("Invalid data type", 400)
 
+        @self.router.post(
+            "/graphs/{id}/build/",
+            summary="Build entities, relationships, and communities in the graph",
+        )
+        @self.base_endpoint
+        async def build(
+            id: UUID = Path(...),
+        ):
+            for object_type in ["entities", "relationships", "communities"]:
+                await self.services["kg"].providers.database.graph_handler.build(id=id, object_type=object_type)
+
+        @self.router.post(
+            "/graphs/{id}/build/entities",
+            summary="Build entities in the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.build_entities(
+                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                            )"""
+                        ),
+                    },
+                ]
+            },
+        )
         @self.base_endpoint
         async def deduplicate_entities(
             collection_id: UUID = Path(...),
@@ -1381,378 +1528,132 @@ class GraphRouter(BaseRouterV3):
                     "task_id": None,
                 }
 
-        # @self.base_endpoint
-        # async def create_communities(
-        #     collection_id: UUID = Path(...),
-        #     settings: Optional[dict] = Body(None),
-        #     run_type: Optional[KGRunType] = Body(
-        #         default=None,
-        #         description="Run type for the graph creation process.",
-        #     ),
-        #     run_with_orchestration: bool = Query(True),
-        #     auth_user=Depends(self.providers.auth.auth_wrapper),
-        # ) -> WrappedKGEnrichmentResponse:
-        #     """Creates communities in the graph by analyzing entity relationships and similarities.
+        @self.router.post(
+            "/graphs/{id}/communities/{community_id}",
+            summary="Update community",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-        #     Communities are created by:
-        #     1. Builds similarity graph between entities
-        #     2. Applies community detection algorithm (e.g. Leiden)
-        #     3. Creates hierarchical community levels
-        #     4. Generates summaries and insights for each community
-        #     """
-        #     if not auth_user.is_superuser:
-        #         raise R2RException(
-        #             "Only superusers can create communities", 403
-        #         )
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-        #     # Apply runtime settings overrides
-        #     server_kg_enrichment_settings = (
-        #         self.providers.database.config.kg_enrichment_settings
-        #     )
-        #     if settings:
-        #         server_kg_enrichment_settings = update_settings_from_dict(
-        #             server_kg_enrichment_settings, settings
-        #         )
+                            result = client.graphs.update_community(
+                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                community_id="5xyz789a-bc12-3def-4ghi-jk5lm6no7pq8",
+                                community_update={
+                                    "metadata": {
+                                        "topic": "Technology",
+                                        "description": "Tech companies and products"
+                                    }
+                                }
+                            )"""
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def update_community(
+            id: UUID = Path(...),
+            community_id: UUID = Path(...),
+            community: Community = Body(...),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """Updates a community's metadata."""
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can update communities", 403)
+            
+            if not community.graph_id:
+                community.graph_id = id
+            else:
+                if community.graph_id != id:
+                    raise R2RException("Community graph ID does not match path", 400)
+                
+            if not community.id:
+                community.id = community_id
+            else:
+                if community.id != community_id:
+                    raise R2RException("Community ID does not match path", 400)
+                
+            community.id = community_id
+            community.graph_id = id
+            
+            return await self.services["kg"].providers.database.graph_handler.communities.update(community)
 
-        #     workflow_input = {
-        #         "collection_id": str(collection_id),
-        #         "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
-        #         "user": auth_user.model_dump_json(),
-        #     }
+        @self.router.post(
+            "/graphs/{id}/tune-prompt",
+            summary="Tune a graph-related prompt",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-        #     if not run_type:
-        #         run_type = KGRunType.ESTIMATE
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
 
-        #     # If the run type is estimate, return an estimate of the enrichment cost
-        #     if run_type is KGRunType.ESTIMATE:
-        #         return await self.services["kg"].get_enrichment_estimate(
-        #             collection_id, server_kg_enrichment_settings
-        #         )
+                            result = client.graphs.tune_prompt(
+                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                prompt_name="graphrag_relationships_extraction_few_shot",
+                                documents_limit=100,
+                                chunks_limit=1000
+                            )"""
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/tune-prompt" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                    "prompt_name": "graphrag_relationships_extraction_few_shot",
+                                    "documents_limit": 100,
+                                    "chunks_limit": 1000
+                                }'"""
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def tune_prompt(
+            collection_id: UUID = Path(...),
+            prompt_name: str = Body(
+                ...,
+                description="The prompt to tune. Valid options: graphrag_relationships_extraction_few_shot, graphrag_entity_description, graphrag_communities",
+            ),
+            documents_offset: int = Body(0, ge=0),
+            documents_limit: int = Body(100, ge=1),
+            chunks_offset: int = Body(0, ge=0),
+            chunks_limit: int = Body(100, ge=1),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedKGTunePromptResponse:
+            """Tunes a graph operation prompt using collection data.
 
-        #     else:
-        #         if run_with_orchestration:
-        #             return await self.orchestration_provider.run_workflow(  # type: ignore
-        #                 "enrich-graph", {"request": workflow_input}, {}
-        #             )
-        #         else:
-        #             from core.main.orchestration import simple_kg_factory
+            Uses sample documents and chunks from the collection to tune prompts for:
+            - Entity and relationship extraction
+            - Entity description generation
+            - Community report generation
+            """
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can tune prompts", 403)
 
-        #             simple_kg = simple_kg_factory(self.services["kg"])
-        #             await simple_kg["enrich-graph"](workflow_input)
-        #             return {  # type: ignore
-        #                 "message": "Communities created successfully.",
-        #                 "task_id": None,
-        #             }
+            tuned_prompt = await self.services["kg"].tune_prompt(
+                prompt_name=prompt_name,
+                collection_id=collection_id,
+                documents_offset=documents_offset,
+                documents_limit=documents_limit,
+                chunks_offset=chunks_offset,
+                chunks_limit=chunks_limit,
+            )
 
-        # @self.router.post(
-        #     "/graphs/{collection_id}/communities/{community_id}",
-        #     summary="Update community",
-        #     openapi_extra={
-        #         "x-codeSamples": [
-        #             {
-        #                 "lang": "Python",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     from r2r import R2RClient
-
-        #                     client = R2RClient("http://localhost:7272")
-        #                     # when using auth, do client.login(...)
-
-        #                     result = client.graphs.update_community(
-        #                         collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-        #                         community_id="5xyz789a-bc12-3def-4ghi-jk5lm6no7pq8",
-        #                         community_update={
-        #                             "metadata": {
-        #                                 "topic": "Technology",
-        #                                 "description": "Tech companies and products"
-        #                             }
-        #                         }
-        #                     )"""
-        #                 ),
-        #             },
-        #             {
-        #                 "lang": "cURL",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     curl -X POST "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/communities/5xyz789a-bc12-3def-4ghi-jk5lm6no7pq8" \\
-        #                         -H "Content-Type: application/json" \\
-        #                         -H "Authorization: Bearer YOUR_API_KEY" \\
-        #                         -d '{
-        #                             "metadata": {
-        #                                 "topic": "Technology",
-        #                                 "description": "Tech companies and products"
-        #                             }
-        #                         }'"""
-        #                 ),
-        #             },
-        #         ]
-        #     },
-        # )
-        # @self.base_endpoint
-        # async def update_community(
-        #     collection_id: UUID = Path(...),
-        #     community_id: UUID = Path(...),
-        #     community_update: dict = Body(...),
-        #     auth_user=Depends(self.providers.auth.auth_wrapper),
-        # ) -> ResultsWrapper[Community]:
-        #     """Updates a community's metadata."""
-
-        #     raise NotImplementedError("Not implemented")
-
-        # @self.router.get(
-        #     "/graphs/{collection_id}/communities",
-        #     summary="List communities",
-        #     openapi_extra={
-        #         "x-codeSamples": [
-        #             {
-        #                 "lang": "Python",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     from r2r import R2RClient
-
-        #                     client = R2RClient("http://localhost:7272")
-        #                     # when using auth, do client.login(...)
-
-        #                     result = client.graphs.communities.list(
-        #                         collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-        #                         level=1,
-        #                         offset=0,
-        #                         limit=100
-        #                     )"""
-        #                 ),
-        #             },
-        #             {
-        #                 "lang": "cURL",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     curl -X GET "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/communities?\\
-        #                         level=1&offset=0&limit=100" \\
-        #                         -H "Authorization: Bearer YOUR_API_KEY" """
-        #                 ),
-        #             },
-        #         ]
-        #     },
-        # )
-        # @self.base_endpoint
-        # async def list_communities(
-        #     collection_id: UUID = Path(...),
-        #     offset: int = Query(0, ge=0),
-        #     limit: int = Query(100, ge=1, le=1000),
-        #     auth_user=Depends(self.providers.auth.auth_wrapper),
-        # ) -> (
-        #     WrappedKGCommunitiesResponse
-        # ):  # PaginatedResultsWrapper[list[Community]]:
-        #     """Lists communities in the graph with optional filtering and pagination.
-
-        #     Each community represents a group of related entities with:
-        #     - Community number and hierarchical level
-        #     - Member entities and relationships
-        #     - Generated name and summary
-        #     - Key findings and insights
-        #     - Impact rating and explanation
-        #     """
-        #     communities = await self.services["kg"].list_communities(
-        #         collection_id, offset, limit
-        #     )
-        #     return communities  # type: ignore
-
-        # @self.router.delete(
-        #     "/graphs/{collection_id}/communities",
-        #     summary="Delete communities",
-        #     openapi_extra={
-        #         "x-codeSamples": [
-        #             {
-        #                 "lang": "Python",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     from r2r import R2RClient
-
-        #                     client = R2RClient("http://localhost:7272")
-        #                     # when using auth, do client.login(...)
-
-        #                     # Delete all communities
-        #                     result = client.graphs.communities.delete(
-        #                         collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
-        #                     )
-
-        #                     # Delete specific level
-        #                     result = client.graphs.communities.delete(
-        #                         collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-        #                         level=1
-        #                     )"""
-        #                 ),
-        #             },
-        #             {
-        #                 "lang": "cURL",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     # Delete all communities
-        #                     curl -X DELETE "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/communities" \\
-        #                         -H "Authorization: Bearer YOUR_API_KEY"
-
-        #                     # Delete specific level
-        #                     curl -X DELETE "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/communities?level=1" \\
-        #                         -H "Authorization: Bearer YOUR_API_KEY" """
-        #                 ),
-        #             },
-        #         ]
-        #     },
-        # )
-        # @self.base_endpoint
-        # async def delete_communities(
-        #     collection_id: UUID = Path(...),
-        #     level: Optional[int] = Query(
-        #         None,
-        #         description="Specific community level to delete. If not provided, all levels will be deleted.",
-        #     ),
-        #     auth_user=Depends(self.providers.auth.auth_wrapper),
-        # ) -> ResultsWrapper[dict]:
-        #     """
-        #     Deletes communities from the graph. Can delete all communities or a specific level.
-        #     This is useful when you want to recreate communities with different parameters.
-        #     """
-        #     raise NotImplementedError("Not implemented")
-        #     # if not auth_user.is_superuser:
-        #     #     raise R2RException(
-        #     #         "Only superusers can delete communities", 403
-        #     #     )
-
-        #     # await self.services["kg"].delete_communities(collection_id, level)
-
-        #     # if level is not None:
-        #     #     return {  # type: ignore
-        #     #         "message": f"Communities at level {level} deleted successfully"
-        #     #     }
-        #     # return {"message": "All communities deleted successfully"}  # type: ignore
-
-        # @self.router.delete(
-        #     "/graphs/{collection_id}/communities/{community_id}",
-        #     summary="Delete a specific community",
-        #     openapi_extra={
-        #         "x-codeSamples": [
-        #             {
-        #                 "lang": "Python",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     from r2r import R2RClient
-
-        #                     client = R2RClient("http://localhost:7272")
-        #                     # when using auth, do client.login(...)
-
-        #                     result = client.graphs.delete_community(
-        #                         collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-        #                         community_id="5xyz789a-bc12-3def-4ghi-jk5lm6no7pq8"
-        #                     )"""
-        #                 ),
-        #             },
-        #             {
-        #                 "lang": "cURL",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     curl -X DELETE "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/communities/5xyz789a-bc12-3def-4ghi-jk5lm6no7pq8" \\
-        #                         -H "Authorization: Bearer YOUR_API_KEY" """
-        #                 ),
-        #             },
-        #         ]
-        #     },
-        # )
-        # @self.base_endpoint
-        # async def delete_community(
-        #     collection_id: UUID = Path(...),
-        #     community_id: UUID = Path(...),
-        #     auth_user=Depends(self.providers.auth.auth_wrapper),
-        # ):
-        #     """
-        #     Deletes a specific community by ID.
-        #     This operation will not affect other communities or the underlying entities.
-        #     """
-        #     raise NotImplementedError("Not implemented")
-        #     # if not auth_user.is_superuser:
-        #     #     raise R2RException(
-        #     #         "Only superusers can delete communities", 403
-        #     #     )
-
-        #     # # First check if community exists
-        #     # community = await self.services["kg"].get_community(
-        #     #     collection_id, community_id
-        #     # )
-        #     # if not community:
-        #     #     raise R2RException("Community not found", 404)
-
-        #     await self.services["kg"].delete_community(
-        #         collection_id, community_id
-        #     )
-        #     return True  # type: ignore
-
-        # @self.router.post(
-        #     "/graphs/{collection_id}/tune-prompt",
-        #     summary="Tune a graph-related prompt",
-        #     openapi_extra={
-        #         "x-codeSamples": [
-        #             {
-        #                 "lang": "Python",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     from r2r import R2RClient
-
-        #                     client = R2RClient("http://localhost:7272")
-        #                     # when using auth, do client.login(...)
-
-        #                     result = client.graphs.tune_prompt(
-        #                         collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-        #                         prompt_name="graphrag_relationships_extraction_few_shot",
-        #                         documents_limit=100,
-        #                         chunks_limit=1000
-        #                     )"""
-        #                 ),
-        #             },
-        #             {
-        #                 "lang": "cURL",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     curl -X POST "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/tune-prompt" \\
-        #                         -H "Content-Type: application/json" \\
-        #                         -H "Authorization: Bearer YOUR_API_KEY" \\
-        #                         -d '{
-        #                             "prompt_name": "graphrag_relationships_extraction_few_shot",
-        #                             "documents_limit": 100,
-        #                             "chunks_limit": 1000
-        #                         }'"""
-        #                 ),
-        #             },
-        #         ]
-        #     },
-        # )
-        # @self.base_endpoint
-        # async def tune_prompt(
-        #     collection_id: UUID = Path(...),
-        #     prompt_name: str = Body(
-        #         ...,
-        #         description="The prompt to tune. Valid options: graphrag_relationships_extraction_few_shot, graphrag_entity_description, graphrag_communities",
-        #     ),
-        #     documents_offset: int = Body(0, ge=0),
-        #     documents_limit: int = Body(100, ge=1),
-        #     chunks_offset: int = Body(0, ge=0),
-        #     chunks_limit: int = Body(100, ge=1),
-        #     auth_user=Depends(self.providers.auth.auth_wrapper),
-        # ) -> WrappedKGTunePromptResponse:
-        #     """Tunes a graph operation prompt using collection data.
-
-        #     Uses sample documents and chunks from the collection to tune prompts for:
-        #     - Entity and relationship extraction
-        #     - Entity description generation
-        #     - Community report generation
-        #     """
-        #     if not auth_user.is_superuser:
-        #         raise R2RException("Only superusers can tune prompts", 403)
-
-        #     tuned_prompt = await self.services["kg"].tune_prompt(
-        #         prompt_name=prompt_name,
-        #         collection_id=collection_id,
-        #         documents_offset=documents_offset,
-        #         documents_limit=documents_limit,
-        #         chunks_offset=chunks_offset,
-        #         chunks_limit=chunks_limit,
-        #     )
-
-        #     return tuned_prompt  # type: ignore
+            return tuned_prompt  # type: ignore

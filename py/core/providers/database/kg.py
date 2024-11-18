@@ -505,14 +505,14 @@ class PostgresCommunityHandler(CommunityHandler):
     async def create(self, communities: list[Community]) -> None:
         await _add_objects(
             objects=[community.__dict__ for community in communities],
-            full_table_name=self._get_table_name("community"),
+            full_table_name=self._get_table_name("graph_community"),
             connection_manager=self.connection_manager,
         )
 
     async def update(self, community: Community) -> None:
         return await _update_object(
             object=community.__dict__,
-            full_table_name=self._get_table_name("community"),
+            full_table_name=self._get_table_name("graph_community"),
             connection_manager=self.connection_manager,
             id_column="id",
         )
@@ -520,32 +520,40 @@ class PostgresCommunityHandler(CommunityHandler):
     async def delete(self, community: Community) -> None:
         return await _delete_object(
             object_id=community.id,  # type: ignore
-            full_table_name=self._get_table_name("community"),
+            full_table_name=self._get_table_name("graph_community"),
             connection_manager=self.connection_manager,
         )
 
-    async def get(self, collection_id: UUID, offset: int, limit: int):
-        QUERY = f"""
-            SELECT * FROM {self._get_table_name("graph_community")} WHERE collection_id = $1
-            OFFSET $2 LIMIT $3
-        """
-        params = [collection_id, offset, limit]
-        communities = [
-            Community(**row)
-            for row in await self.connection_manager.fetch_query(QUERY, params)
-        ]
+    async def get(self, id: UUID, offset: int, limit: int, community_id: Optional[UUID] = None):
+        
+        if community_id is None:
+            QUERY = f"""
+                SELECT * FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
+                OFFSET $2 LIMIT $3
+            """
+            params = [id, offset, limit]
+            communities = [
+                Community(**row)
+                for row in await self.connection_manager.fetch_query(QUERY, params)
+            ]
 
-        QUERY_COUNT = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("graph_community")} WHERE collection_id = $1
-        """
-        count = (
-            await self.connection_manager.fetch_query(
-                QUERY_COUNT, [collection_id]
-            )
-        )[0]["count"]
+            QUERY_COUNT = f"""
+                SELECT COUNT(*) FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
+            """
+            count = (
+                await self.connection_manager.fetch_query(
+                    QUERY_COUNT, [id]
+                )
+            )[0]["count"]
 
-        return communities, count
+            return communities, count
 
+        else:
+            QUERY = f"""
+                SELECT * FROM {self._get_table_name("graph_community")} WHERE graph_id = $1 AND id = $2
+            """
+            params = [id, community_id]
+            return [Community(**await self.connection_manager.fetchrow_query(QUERY, params))]
 
 class PostgresGraphHandler(GraphHandler):
     """Handler for Knowledge Graph METHODS in PostgreSQL."""
