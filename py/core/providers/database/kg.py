@@ -36,6 +36,9 @@ from core.base.abstractions import (
     VectorQuantizationType,
 )
 
+import datetime
+import json
+
 from core.base.utils import (
     _decorate_vector_type,
     llm_cost_per_million_tokens,
@@ -287,16 +290,19 @@ class PostgresEntityHandler(EntityHandler):
             id_column="id",
         )
 
-    async def delete(self, entity: Entity) -> None:
+    async def delete(self, id: UUID, entity_id: UUID, level: EntityLevel) -> None:
         """Delete an entity from the database.
 
         Args:
             entity_id: UUID of the entity to delete
             level: Level of the entity (chunk, document, or collection)
         """
-        table_name = entity.level.value + "_entity"  # type: ignore
+        table_name = level.value + "_entity"  # type: ignore
+
+        # TODO: check if the entity exists
+
         return await _delete_object(
-            object_id=entity.id,  # type: ignore
+            object_id=entity_id,  # type: ignore
             full_table_name=self._get_table_name(table_name),
             connection_manager=self.connection_manager,
         )
@@ -368,7 +374,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
         """Create a new relationship in the database."""
         await _add_objects(
             objects=[relationship.__dict__ for relationship in relationships],
-            full_table_name=self._get_table_name("graph_relationship"),
+            full_table_name=self._get_table_name("chunk_relationship"),
             connection_manager=self.connection_manager,
         )
 
@@ -429,14 +435,19 @@ class PostgresRelationshipHandler(RelationshipHandler):
             id_column="id",
         )
 
-    async def delete(self, relationship: Relationship) -> None:
+    async def delete(self, level: EntityLevel, id: UUID, relationship_id: UUID) -> None:
         """Delete a relationship from the database."""
+        
+        if level == EntityLevel.DOCUMENT:
+            level = EntityLevel.CHUNK
+
         QUERY = f"""
-            DELETE FROM {self._get_table_name(relationship.level.value + "_relationship")}
+            DELETE FROM {self._get_table_name(level.value + "_relationship")}
             WHERE id = $1
+            RETURNING id
         """
-        return await self.connection_manager.execute_query(
-            QUERY, [relationship.id]
+        return await self.connection_manager.fetchrow_query(
+            QUERY, [relationship_id]
         )
 
 
@@ -595,7 +606,7 @@ class PostgresGraphHandler(GraphHandler):
             objects=[graph.__dict__],
             full_table_name=self._get_table_name("graph"),
             connection_manager=self.connection_manager,
-        ))[0]['id']
+        ))[0]
 
     async def delete(self, graph_id: UUID, cascade: bool = False) -> None:
 
@@ -663,107 +674,140 @@ class PostgresGraphHandler(GraphHandler):
             return {'results': [Graph(**await self.connection_manager.fetchrow_query(QUERY, params))]}
 
 
-    async def add_document(self, graph_id: UUID, document_id: UUID) -> None:
+    async def add_documents(self, id: UUID, document_ids: list[UUID]) -> None:
         # add all entities and relationships for this document in the graph. look at the document_entity and chunk_relationship tables
         # also, don't add if the ID already exists
         
-        for table in ["document_entity", "chunk_relationship"]:
-            QUERY = f"""
-                UPDATE {self._get_table_name(table)} 
-                SET graph_ids = CASE 
-                    WHEN $2 = ANY(graph_ids) THEN graph_ids
-                    ELSE array_append(graph_ids, $2)
-                END
-                WHERE document_id = $1
-            """
-            await self.connection_manager.execute_query(QUERY, [graph_id, document_id])
+        for document_id in document_ids:
+            for table in ["document_entity", "chunk_relationship"]:
+                QUERY = f"""
+                    UPDATE {self._get_table_name(table)} 
+                    SET graph_ids = CASE 
+                        WHEN $1 = ANY(graph_ids) THEN graph_ids
+                        ELSE array_append(graph_ids, $1)
+                    END
+                    WHERE document_id = $2
+                """
+                await self.connection_manager.execute_query(QUERY, [id, document_id])
 
-    async def remove_document(self, graph_id: UUID, document_id: UUID) -> None:
+        return True
+
+    async def remove_documents(self, id: UUID, document_ids: list[UUID]) -> None:
         """
             Remove all entities and relationships for this document from the graph.
         """
-        for table in ["document_entity", "chunk_relationship"]:
-            QUERY = f"""
-                UPDATE {self._get_table_name(table)} 
-                SET graph_ids = array_remove(graph_ids, $2)
-                WHERE document_id = $1
-            """
-            await self.connection_manager.execute_query(QUERY, [graph_id, document_id])
+        for document_id in document_ids:
+            for table in ["document_entity", "chunk_relationship"]:
+                QUERY = f"""
+                    UPDATE {self._get_table_name(table)} 
+                    SET graph_ids = array_remove(graph_ids, $1)
+                    WHERE document_id = $2
+                """
+                await self.connection_manager.execute_query(QUERY, [id, document_id])
 
-    async def add_collection(
-        self, graph_id: UUID, collection_id: UUID
+        return True
+
+    async def add_collections(
+        self, id: UUID, collection_ids: list[UUID]
     ) -> None:
         """
             Add all entities and relationships for this collection to the graph.
         """
-        for table in ["graph_entity", "graph_relationship"]:
-            QUERY = f"""
-                UPDATE {self._get_table_name(table)} 
-                SET graph_ids = array_append(graph_ids, $2)
-                WHERE document_id = ANY(
-                    SELECT document_id FROM {self._get_table_name("document_info")}
-                    WHERE $1 = ANY(collection_ids)
-                )
-            """
-            await self.connection_manager.execute_query(QUERY, [graph_id, collection_id])
+        for collection_id in collection_ids:
+            for table in ["document_entity", "chunk_relationship"]:
+                QUERY = f"""
+                    UPDATE {self._get_table_name(table)} 
+                    SET graph_ids = CASE 
+                        WHEN $1 = ANY(graph_ids) THEN graph_ids
+                        ELSE array_append(graph_ids, $1)
+                    END
+                    WHERE document_id = ANY(
+                        ARRAY(
+                            SELECT document_id FROM {self._get_table_name("document_info")}
+                            WHERE $2 = ANY(collection_ids)
+                        )
+                    );                
+                """
+                await self.connection_manager.execute_query(QUERY, [id, collection_id])
 
-    async def remove_collection(
-        self, graph_id: UUID, collection_id: UUID
+        return True
+
+    async def remove_collections(
+        self, id: UUID, collection_ids: list[UUID]
     ) -> None:
         """
             Remove all entities and relationships for this collection from the graph.
         """
-        for table in ["graph_entity", "graph_relationship"]:
-            QUERY = f"""
-                UPDATE {self._get_table_name(table)} 
-                SET graph_ids = array_remove(graph_ids, $2)
-                WHERE document_id = ANY(
-                    SELECT document_id FROM {self._get_table_name("document_info")}
-                    WHERE $1 = ANY(collection_ids)
-                )
-            """
-            await self.connection_manager.execute_query(QUERY, [graph_id, collection_id])
+        for collection_id in collection_ids:
+            for table in ["document_entity", "chunk_relationship"]:
+                QUERY = f"""
+                    UPDATE {self._get_table_name(table)} 
+                    SET graph_ids = array_remove(graph_ids, $1)
+                    WHERE document_id = ANY(
+                        ARRAY(
+                            SELECT document_id FROM {self._get_table_name("document_info")}
+                            WHERE $2 = ANY(collection_ids)
+                        )
+                    )
+                """
+                await self.connection_manager.execute_query(QUERY, [id, collection_id])
+
+        return True
             
-    async def add_entities(self, graph_id: UUID, entity_ids: list[UUID]) -> None:
+    async def add_entities_v3(self, id: UUID, entity_ids: list[UUID]) -> None:
         """
             Add entities to the graph.
         """
         QUERY = f"""
             UPDATE {self._get_table_name("document_entity")} 
             SET graph_ids = CASE 
-                WHEN $2 = ANY(graph_ids) THEN graph_ids
-                ELSE array_append(graph_ids, $2)
-            END
-            WHERE document_id = $1
+                    WHEN $1 = ANY(graph_ids) THEN graph_ids
+                    ELSE array_append(graph_ids, $1)
+                END
+            WHERE id = ANY($2)
         """
-        await self.connection_manager.execute_query(QUERY, [graph_id, entity_ids])
+        await self.connection_manager.execute_query(QUERY, [id, entity_ids])
         
-    async def remove_entities(self, graph_id: UUID, entity_ids: list[UUID]) -> None:
+        return True
+
+    async def remove_entities(self, id: UUID, entity_ids: list[UUID]) -> None:
         """
             Remove entities from the graph.
         """
         QUERY = f"""
-            UPDATE {self._get_table_name("document_entity")} SET graph_ids = array_remove(graph_ids, $2) WHERE document_id = $1
+            UPDATE {self._get_table_name("document_entity")} 
+            SET graph_ids = array_remove(graph_ids, $1)
+            WHERE id = ANY($2)
         """
-        await self.connection_manager.execute_query(QUERY, [graph_id, entity_ids])
+        await self.connection_manager.execute_query(QUERY, [id, entity_ids])
+
+        return True
         
-    async def add_relationships(self, graph_id: UUID, relationship_ids: list[UUID]) -> None:
+    async def add_relationships_v3(self, id: UUID, relationship_ids: list[UUID]) -> None:
         """
             Add relationships to the graph.
         """
         QUERY = f"""
-            UPDATE {self._get_table_name("chunk_relationship")} SET graph_ids = array_append(graph_ids, $2) WHERE document_id = $1
+            UPDATE {self._get_table_name("chunk_relationship")} 
+            SET graph_ids = array_append(graph_ids, $1)
+            WHERE id = ANY($2)
         """
-        await self.connection_manager.execute_query(QUERY, [graph_id, relationship_ids])
+        await self.connection_manager.execute_query(QUERY, [id, relationship_ids])
+
+        return True
         
-    async def remove_relationships(self, graph_id: UUID, relationship_ids: list[UUID]) -> None:
+    async def remove_relationships(self, id: UUID, relationship_ids: list[UUID]) -> None:
         """
             Remove relationships from the graph.
         """
         QUERY = f"""
-            UPDATE {self._get_table_name("chunk_relationship")} SET graph_ids = array_remove(graph_ids, $2) WHERE document_id = $1
+            UPDATE {self._get_table_name("chunk_relationship")} 
+            SET graph_ids = array_remove(graph_ids, $1)
+            WHERE id = ANY($2)
         """
-        await self.connection_manager.execute_query(QUERY, [graph_id, relationship_ids])
+        await self.connection_manager.execute_query(QUERY, [id, relationship_ids])
+
+        return True
 
     async def update(self, graph: Graph) -> None:
         return await _update_object(
@@ -2175,66 +2219,95 @@ class PostgresGraphHandler(GraphHandler):
     ####################### PRIVATE  METHODS ##########################
 
 
+def _json_serialize(obj):
+    if isinstance(obj, UUID):
+        return str(obj)
+    elif isinstance(obj, (datetime.datetime, datetime.date)):
+        return obj.isoformat()
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
 async def _add_objects(
-    objects: list,
+    objects: list[dict],
     full_table_name: str,
     connection_manager: PostgresConnectionManager,
     conflict_columns: list[str] = [],
     exclude_attributes: list[str] = [],
 ) -> list[UUID]:
     """
-    Bulk insert objects and return their IDs.
+    Bulk insert objects into the specified table using jsonb_to_recordset.
     """
-    # Get non-null attributes from the first object
-    non_null_attrs = {
-        k: v
-        for k, v in objects[0].items()
-        if v is not None and k not in exclude_attributes
-    }
-    columns = ", ".join(non_null_attrs.keys())
 
-    # Create the VALUES part using unnest
-    value_types = []
-    value_lists = []
-    for key in non_null_attrs.keys():
-        values = [
-            json.dumps(obj[key]) if isinstance(obj[key], (dict, list)) or key == "statistics" or key == "attributes"  # Added statistics check
-            else str(obj[key]) if "embedding" in key
-            else obj[key]
-            for obj in objects
-        ]
-        value_lists.append(values)
-        # Determine PostgreSQL type based on the first non-null value and column name
-        sample_value = next((v for v in values if v is not None), None)
-        pg_type = (
-            "jsonb" if isinstance(sample_value, (dict, list)) or key == "statistics" or key == "attributes"
-            else "text" if isinstance(sample_value, str)
-            else "uuid[]" if isinstance(sample_value, list)
-            else "timestamp" if key == "created_at" or key == "updated_at"
-            else "float8"
-        )
-        value_types.append(pg_type)
+    # Exclude specified attributes and prepare data
+    cleaned_objects = []
+    for obj in objects:
+        cleaned_obj = {
+            k: v for k, v in obj.items() if k not in exclude_attributes and v is not None
+        }
+        cleaned_objects.append(cleaned_obj)
 
-    unnest_expr = ", ".join(f"unnest(${i+1}::{pg_type}[])" for i, pg_type in enumerate(value_types))
+    # Serialize the list of objects to JSON
+    json_data = json.dumps(cleaned_objects, default=_json_serialize)
+
+    # Prepare the column definitions for jsonb_to_recordset
+
+    columns = cleaned_objects[0].keys()
+    column_defs = []
+    for col in columns:
+        # Map Python types to PostgreSQL types
+        sample_value = cleaned_objects[0][col]
+        if "embedding" in col:
+            pg_type = "vector"
+        elif "chunk_ids" in col:
+            pg_type = "uuid[]"
+        elif col == "id" or "_id" in col:
+            pg_type = "uuid"
+        elif isinstance(sample_value, str):
+            pg_type = "text"
+        elif isinstance(sample_value, UUID):
+            pg_type = "uuid"
+        elif isinstance(sample_value, (int, float)):
+            pg_type = "numeric"
+        elif isinstance(sample_value, list) and all(isinstance(x, UUID) for x in sample_value):
+            pg_type = "uuid[]"
+        elif isinstance(sample_value, list):
+            pg_type = "jsonb"
+        elif isinstance(sample_value, dict):
+            pg_type = "jsonb"
+        elif isinstance(sample_value, bool):
+            pg_type = "boolean"
+        elif isinstance(sample_value, (datetime.datetime, datetime.date)):
+            pg_type = "timestamp"
+        else:
+           raise TypeError(f"Unsupported data type for column '{col}': {type(sample_value)}")
+
+        print(col, pg_type)
+
+        column_defs.append(f"{col} {pg_type}")
+
+    columns_str = ", ".join(columns)
+    column_defs_str = ", ".join(column_defs)
 
     if conflict_columns:
         conflict_columns_str = ", ".join(conflict_columns)
-        replace_columns_str = ", ".join(
-            f"{column} = EXCLUDED.{column}" for column in non_null_attrs
-        )
-        on_conflict_query = f"ON CONFLICT ({conflict_columns_str}) DO UPDATE SET {replace_columns_str}"
+        update_columns_str = ", ".join(f"{col}=EXCLUDED.{col}" for col in columns if col not in conflict_columns)
+        on_conflict_clause = f"ON CONFLICT ({conflict_columns_str}) DO UPDATE SET {update_columns_str}"
     else:
-        on_conflict_query = ""
+        on_conflict_clause = ""
 
     QUERY = f"""
-        INSERT INTO {full_table_name} ({columns})
-        SELECT {unnest_expr}
-        {on_conflict_query}
+        INSERT INTO {full_table_name} ({columns_str})
+        SELECT {columns_str}
+        FROM jsonb_to_recordset($1::jsonb)
+        AS x({column_defs_str})
+        {on_conflict_clause}
         RETURNING id;
     """
 
-    # Execute single query and return list of IDs
-    return await connection_manager.fetch_query(QUERY, value_lists)
+    # Execute the query
+    result = await connection_manager.fetch_query(QUERY, [json_data])
+
+    # Extract and return the IDs
+    return [record["id"] for record in result]
 
 async def _update_object(
     object: dict[str, Any],
@@ -2295,5 +2368,6 @@ async def _delete_object(
 ):
     QUERY = f"""
         DELETE FROM {full_table_name} WHERE id = $1
+        RETURNING id
     """
-    return await connection_manager.execute_query(QUERY, [object_id])
+    return await connection_manager.fetchrow_query(QUERY, [object_id])

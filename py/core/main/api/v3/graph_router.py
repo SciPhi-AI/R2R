@@ -117,9 +117,15 @@ class GraphRouter(BaseRouterV3):
 
             # If the run type is estimate, return an estimate of the creation cost
             if run_type is KGRunType.ESTIMATE:
-                return await self.services["kg"].get_creation_estimate(
-                    document_id = id, settings=server_kg_creation_settings
-                )
+                return { 
+                    "message": "Estimate retrieved successfully",
+                    "task_id": None,
+                    "id": id,
+                    "estimate": await self.services["kg"].get_creation_estimate(
+                        document_id = id,
+                        kg_creation_settings=server_kg_creation_settings
+                    )
+                }
             else:
                 # Otherwise, create the graph
                 if run_with_orchestration:
@@ -514,7 +520,8 @@ class GraphRouter(BaseRouterV3):
 
             return await self.services["kg"].delete_entity_v3(
                 id=id,
-                path_level=self._get_path_level(request),
+                entity_id=entity_id,
+                level=self._get_path_level(request),
             )
 
         @self.router.get(
@@ -611,7 +618,7 @@ class GraphRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedRelationshipResponse:
+        ) -> WrappedRelationshipsResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
@@ -838,15 +845,11 @@ class GraphRouter(BaseRouterV3):
                 )
 
             level = self._get_path_level(request)
-            if level == EntityLevel.DOCUMENT:
-                relationship = Relationship(id=relationship_id, document_id=id)
-            else:
-                relationship = Relationship(
-                    id=relationship_id, graph_id=id
-                )
 
             return await self.services["kg"].delete_relationship_v3(
-                relationship=relationship,
+                level=level,
+                id=id,
+                relationship_id=relationship_id,
             )
 
         ################### COMMUNITIES ###################
@@ -1234,6 +1237,72 @@ class GraphRouter(BaseRouterV3):
                 "id": (await self.services["kg"].update_graph(graph))['id'],
                 "message": "Graph updated successfully"
             }
+
+        @self.router.post(
+            "/graphs/{id}/add/{object_type}",
+            summary="Add data to a graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.add(
+                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                data_type="entities"
+                            )"""
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def add_data(
+            id: UUID = Path(...),
+            object_type: str = Path(...),
+            object_ids: list[UUID] = Body(...),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can add data to graphs", 403)
+
+            if object_type == "documents":
+                return await self.services["kg"].providers.database.graph_handler.add_documents(id=id, document_ids=object_ids)
+            elif object_type == "collections":
+                return await self.services["kg"].providers.database.graph_handler.add_collections(id=id, collection_ids=object_ids)
+            elif object_type == "entities":
+                return await self.services["kg"].providers.database.graph_handler.add_entities_v3(id=id, entity_ids=object_ids)
+            elif object_type == "relationships":
+                return await self.services["kg"].providers.database.graph_handler.add_relationships_v3(id=id, relationship_ids=object_ids)
+            else:
+                raise R2RException("Invalid data type", 400)
+            
+        # remove data
+        @self.router.delete(
+            "/graphs/{id}/remove/{object_type}",
+            summary="Remove data from a graph",
+        )
+        @self.base_endpoint
+        async def remove_data(
+            id: UUID = Path(...),
+            object_type: str = Path(...),
+            object_ids: list[UUID] = Body(...),
+        ):
+            if object_type == "documents":
+                return await self.services["kg"].providers.database.graph_handler.remove_documents(id=id, document_ids=object_ids)
+            elif object_type == "collections":
+                return await self.services["kg"].providers.database.graph_handler.remove_collections(id=id, collection_ids=object_ids)
+            elif object_type == "entities":
+                return await self.services["kg"].providers.database.graph_handler.remove_entities(id=id, entity_ids=object_ids)
+            elif object_type == "relationships":
+                return await self.services["kg"].providers.database.graph_handler.remove_relationships(id=id, relationship_ids=object_ids)
+            else:
+                raise R2RException("Invalid data type", 400)
 
         @self.base_endpoint
         async def deduplicate_entities(

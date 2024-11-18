@@ -714,17 +714,6 @@ class GraphHandler(Handler):
         """Delete graph from storage."""
         pass
 
-    # add documents to the graph
-    @abstractmethod
-    async def add_document(self, *args: Any, **kwargs: Any) -> None:
-        """Add document to graph."""
-        pass
-
-    @abstractmethod
-    async def remove_document(self, *args: Any, **kwargs: Any) -> None:
-        """Delete document from graph."""
-        pass
-
 
 class PromptHandler(Handler):
     """Abstract base class for prompt handling operations."""

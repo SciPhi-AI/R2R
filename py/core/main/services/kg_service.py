@@ -163,11 +163,15 @@ class KgService(Service):
     @telemetry_event("delete_entity")
     async def delete_entity_v3(
         self,
-        entity: Entity,
+        id: UUID,
+        entity_id: UUID,
+        level: EntityLevel,
         **kwargs,
     ):
         return await self.providers.database.graph_handler.entities.delete(
-            entity=entity
+            id=id,
+            entity_id=entity_id,
+            level=level,
         )
 
     # TODO: deprecate this
@@ -227,12 +231,16 @@ class KgService(Service):
     @telemetry_event("delete_relationship_v3")
     async def delete_relationship_v3(
         self,
-        relationship: Relationship,
+        level: EntityLevel,
+        id: UUID,
+        relationship_id: UUID,
         **kwargs,
     ):
         return (
             await self.providers.database.graph_handler.relationships.delete(
-                relationship
+                level=level,
+                id=id,
+                relationship_id=relationship_id,
             )
         )
 
@@ -555,12 +563,14 @@ class KgService(Service):
     @telemetry_event("get_creation_estimate")
     async def get_creation_estimate(
         self,
-        collection_id: UUID,
         kg_creation_settings: KGCreationSettings,
+        document_id: Optional[UUID] = None,
+        collection_id: Optional[UUID] = None,
         **kwargs,
     ):
         return (
             await self.providers.database.graph_handler.get_creation_estimate(
+                document_id=document_id,
                 collection_id=collection_id,
                 kg_creation_settings=kg_creation_settings,
             )
