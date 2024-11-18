@@ -9,6 +9,7 @@ from core.base import R2RException
 from core.base.api.models import (
     GenericMessageResponse,
     WrappedGenericMessageResponse,
+    WrappedResetDataResult,
     WrappedTokenResponse,
     WrappedUserResponse,
     WrappedVerificationResult,
@@ -280,7 +281,36 @@ class AuthRouter(BaseRouter):
                 raise R2RException(
                     status_code=400, message="Invalid user ID format"
                 )
-            result = await self.service.get_user_verification_data(user_uuid)
+            result = await self.service.get_user_verification_code(user_uuid)
+            return result
+
+        @self.router.get("/user/{user_id}/reset_token")
+        @self.base_endpoint
+        async def get_user_reset_token(
+            user_id: str = Path(..., description="User ID"),
+            auth_user=Depends(self.service.providers.auth.auth_wrapper),
+        ) -> WrappedResetDataResult:
+            """
+            Get only the verification code for a specific user.
+            Only accessible by superusers.
+            """
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    status_code=403,
+                    message="Only superusers can access verification codes",
+                )
+
+            try:
+                user_uuid = UUID(user_id)
+            except ValueError:
+                raise R2RException(
+                    status_code=400, message="Invalid user ID format"
+                )
+            result = await self.service.get_user_reset_token(user_uuid)
+            if not result["reset_token"]:
+                raise R2RException(
+                    status_code=404, message="No reset token found"
+                )
             return result
 
         # Add to AuthRouter class (auth_router.py)
