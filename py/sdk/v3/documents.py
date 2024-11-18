@@ -262,7 +262,6 @@ class DocumentsSDK:
             "limit": limit,
             "include_vectors": include_vectors,
         }
-
         return await self.client._make_request(
             "GET",
             f"documents/{str(id)}/chunks",

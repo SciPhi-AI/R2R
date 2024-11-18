@@ -62,7 +62,7 @@ async def create(ctx, file_paths, ids, metadatas, run_without_orchestration):
 
 @documents.command()
 @click.argument("file_path", required=True, type=click.Path(exists=True))
-@click.option("--id", help="Existing document ID to update")
+@click.option("--id", required=True, help="Existing document ID to update")
 @click.option(
     "--metadata", type=JSON, help="Metadatas for ingestion as a JSON string"
 )
@@ -261,4 +261,28 @@ async def create_sample(ctx, v2=False, v3=False):
         response = await ingest_files_from_urls(client, [sample_file_url])
     click.echo(
         f"Sample file ingestion completed. Ingest files response:\n\n{response}"
+    )
+
+
+@documents.command()
+@pass_context
+async def create_samples(ctx):
+    """Ingest multiple sample files into R2R."""
+    client: R2RAsyncClient = ctx.obj
+    urls = [
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_3.html",
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_4.html",
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_5.html",
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/lyft_2021.pdf",
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/uber_2021.pdf",
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle.txt",
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/got.txt",
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_1.html",
+        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_2.html",
+    ]
+    with timer():
+        response = await ingest_files_from_urls(client, urls)
+
+    click.echo(
+        f"Sample files ingestion completed. Ingest files response:\n\n{response}"
     )
