@@ -60,6 +60,7 @@ from shared.api.models.management.responses import (
     WrappedGetPromptsResponse,
     WrappedLogResponse,
     WrappedPromptMessageResponse,
+    WrappedResetDataResult,
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
@@ -86,6 +87,7 @@ __all__ = [
     "WrappedUserResponse",
     "WrappedVerificationResult",
     "WrappedGenericMessageResponse",
+    "WrappedResetDataResult",
     # Ingestion Responses
     "IngestionResponse",
     "WrappedIngestionResponse",

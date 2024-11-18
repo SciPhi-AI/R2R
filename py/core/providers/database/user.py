@@ -580,7 +580,7 @@ class PostgresUserHandler(UserHandler):
         )
         return result is not None
 
-    async def get_user_verification_data(
+    async def get_user_validation_data(
         self, user_id: UUID, *args, **kwargs
     ) -> dict:
         """

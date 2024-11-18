@@ -145,6 +145,18 @@ class VerificationResult(BaseModel):
     message: Optional[str] = None
 
 
+class VerificationResult(BaseModel):
+    verification_code: str
+    expiry: datetime
+    message: Optional[str] = None
+
+
+class ResetDataResult(BaseModel):
+    reset_token: str
+    expiry: datetime
+    message: Optional[str] = None
+
+
 class AddUserResponse(BaseModel):
     result: bool
 
@@ -178,6 +190,7 @@ WrappedDocumentChunkResponse = PaginatedResultsWrapper[
 ]
 WrappedDeleteResponse = ResultsWrapper[None]
 WrappedVerificationResult = ResultsWrapper[VerificationResult]
+WrappedResetDataResult = ResultsWrapper[ResetDataResult]
 WrappedConversationsOverviewResponse = PaginatedResultsWrapper[
     list[ConversationOverviewResponse]
 ]
