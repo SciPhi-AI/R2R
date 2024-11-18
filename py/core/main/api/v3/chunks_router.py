@@ -598,7 +598,7 @@ class ChunksRouter(BaseRouterV3):
                 ]
             }
             await self.services["management"].delete(filters=filters)
-            return GenericBooleanResponse(success=True)
+            return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.get(
             "/chunks",

@@ -252,7 +252,7 @@ class DocumentHandler(Handler):
     async def get_document_ids_by_status(
         self,
         status_type: str,
-        status: Union[str, list[str]],
+        status: str | list[str],
         collection_id: Optional[UUID] = None,
     ):
         pass
@@ -298,7 +298,7 @@ class CollectionHandler(Handler):
     @abstractmethod
     async def documents_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, Union[list[DocumentResponse], int]]:
+    ) -> dict[str, list[DocumentResponse] | int]:
         pass
 
     @abstractmethod
@@ -309,7 +309,7 @@ class CollectionHandler(Handler):
         filter_user_ids: Optional[list[UUID]] = None,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, Union[list[CollectionResponse], int]]:
+    ) -> dict[str, list[CollectionResponse] | int]:
         pass
 
     @abstractmethod
@@ -461,7 +461,7 @@ class UserHandler(Handler):
         offset: int,
         limit: int,
         user_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, Union[list[UserStats], int]]:
+    ) -> dict[str, list[UserStats] | int]:
         pass
 
     @abstractmethod
@@ -887,7 +887,7 @@ class LoggingHandler(Handler):
         offset: int,
         limit: int,
         conversation_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, Union[list[dict], int]]:
+    ) -> dict[str, list[dict] | int]:
         """Get an overview of conversations with pagination."""
         pass
 
@@ -968,7 +968,7 @@ class DatabaseProvider(Provider):
     # Document handler methods
     async def upsert_documents_overview(
         self,
-        documents_overview: Union[DocumentResponse, list[DocumentResponse]],
+        documents_overview: DocumentResponse | list[DocumentResponse],
     ) -> None:
         return await self.document_handler.upsert_documents_overview(
             documents_overview
@@ -998,13 +998,13 @@ class DatabaseProvider(Provider):
         )
 
     async def get_workflow_status(
-        self, id: Union[UUID, list[UUID]], status_type: str
+        self, id: UUID | list[UUID], status_type: str
     ):
         return await self.document_handler.get_workflow_status(id, status_type)
 
     async def set_workflow_status(
         self,
-        id: Union[UUID, list[UUID]],
+        id: UUID | list[UUID],
         status_type: str,
         status: str,
     ):
@@ -1015,7 +1015,7 @@ class DatabaseProvider(Provider):
     async def get_document_ids_by_status(
         self,
         status_type: str,
-        status: Union[str, list[str]],
+        status: str | list[str],
         collection_id: Optional[UUID] = None,
     ):
         return await self.document_handler.get_document_ids_by_status(
@@ -1057,7 +1057,7 @@ class DatabaseProvider(Provider):
 
     async def documents_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, Union[list[DocumentResponse], int]]:
+    ) -> dict[str, list[DocumentResponse] | int]:
         return await self.collection_handler.documents_in_collection(
             collection_id, offset, limit
         )
@@ -1069,7 +1069,7 @@ class DatabaseProvider(Provider):
         filter_user_ids: Optional[list[UUID]] = None,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, Union[list[CollectionResponse], int]]:
+    ) -> dict[str, list[CollectionResponse] | int]:
         return await self.collection_handler.get_collections_overview(
             offset=offset,
             limit=limit,
@@ -1193,7 +1193,7 @@ class DatabaseProvider(Provider):
 
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, Union[list[UserResponse], int]]:
+    ) -> dict[str, list[UserResponse] | int]:
         return await self.user_handler.get_users_in_collection(
             collection_id, offset, limit
         )
@@ -1216,7 +1216,7 @@ class DatabaseProvider(Provider):
         offset: int,
         limit: int,
         user_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, Union[list[UserStats], int]]:
+    ) -> dict[str, list[UserStats] | int]:
         return await self.user_handler.get_users_overview(
             offset=offset,
             limit=limit,
@@ -1297,14 +1297,6 @@ class DatabaseProvider(Provider):
             )
         )
 
-    async def delete_node_via_document_id(
-        self,
-        document_id: UUID,
-    ) -> None:
-        return await self.vector_handler.delete_node_via_document_id(
-            document_id=document_id,
-        )
-
     async def delete_user_vector(self, user_id: UUID) -> None:
         return await self.vector_handler.delete_user_vector(user_id)
 
@@ -1335,9 +1327,7 @@ class DatabaseProvider(Provider):
         table_name: Optional[VectorTableName] = None,
         index_measure: IndexMeasure = IndexMeasure.cosine_distance,
         index_method: IndexMethod = IndexMethod.auto,
-        index_arguments: Optional[
-            Union[IndexArgsIVFFlat, IndexArgsHNSW]
-        ] = None,
+        index_arguments: Optional[IndexArgsIVFFlat | IndexArgsHNSW] = None,
         index_name: Optional[str] = None,
         index_column: Optional[str] = None,
         concurrently: bool = True,
@@ -1522,7 +1512,7 @@ class DatabaseProvider(Provider):
         offset: int,
         limit: int,
         conversation_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, Union[list[dict], int]]:
+    ) -> dict[str, list[dict] | int]:
         """Get an overview of conversations with pagination."""
         return await self.logging_handler.get_conversations(
             offset=offset,

@@ -300,7 +300,7 @@ class ManagementService(Service):
 
         # TODO: This might be appropriate to move elsewhere and revisit filter logic in other methods
         def extract_filters(filters: dict[str, Any]) -> dict[str, list[str]]:
-            relational_filters = {}
+            relational_filters: dict = {}
 
             def process_filter(filter_dict: dict[str, Any]):
                 if "document_id" in filter_dict:
@@ -441,7 +441,7 @@ class ManagementService(Service):
         await self.providers.database.remove_document_from_collection_vector(
             document_id, collection_id
         )
-        await self.providers.database.delete_node_via_document_id(
+        await self.providers.database.graph_handler.delete_node_via_document_id(
             document_id, collection_id
         )
         return None
@@ -721,7 +721,7 @@ class ManagementService(Service):
         conversation_ids: Optional[list[UUID]] = None,
         user_ids: Optional[UUID | list[UUID]] = None,
         auth_user=None,
-    ) -> dict[str, list[dict], int]:
+    ) -> dict[str, list[dict] | int]:
         return await self.logging_connection.get_conversations_overview(
             offset=offset,
             limit=limit,
