@@ -340,6 +340,18 @@ class KgService(Service):
             graph
         )
 
+    @telemetry_event("get_graphs")
+    async def get_graphs(self, offset: int, limit: int, graph_id: Optional[UUID] = None) -> Graph:
+        return await self.providers.database.graph_handler.get(offset = offset, limit = limit, graph_id = graph_id)
+
+    @telemetry_event("update_graph")
+    async def update_graph(self, graph: Graph) -> None:
+        return await self.providers.database.graph_handler.update(graph)
+
+    @telemetry_event("delete_graph_v3")
+    async def delete_graph_v3(self, id: UUID, cascade: Optional[bool] = False) -> None:
+        return await self.providers.database.graph_handler.delete(id, cascade)
+
     @telemetry_event("get_document_ids_for_create_graph")
     async def get_document_ids_for_create_graph(
         self,
@@ -514,6 +526,7 @@ class KgService(Service):
         return await self.delete_graph_for_collection(
             collection_id=collection_id, cascade=cascade
         )
+
 
     @telemetry_event("delete_graph_for_collection")
     async def delete_graph_for_collection(

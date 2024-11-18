@@ -134,11 +134,14 @@ class PostgresConnectionManager(DatabaseConnectionManager):
         async with self.pool.get_connection() as conn:
             async with conn.transaction():
                 if params:
+                    results = []
                     for i in range(0, len(params), batch_size):
                         param_batch = params[i : i + batch_size]
-                        await conn.executemany(query, param_batch)
+                        result = await conn.executemany(query, param_batch)
+                        results.append(result)
+                    return results
                 else:
-                    await conn.executemany(query)
+                    return await conn.executemany(query)
 
     async def fetch_query(self, query, params=None):
         if not self.pool:

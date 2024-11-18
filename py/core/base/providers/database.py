@@ -8,6 +8,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    Union,
 )
 from uuid import UUID
 
@@ -525,10 +526,6 @@ class VectorHandler(Handler):
     async def remove_document_from_collection_vector(
         self, document_id: UUID, collection_id: UUID
     ) -> None:
-        pass
-
-    @abstractmethod
-    async def delete_node_via_document_id(self, document_id: UUID) -> None:
         pass
 
     @abstractmethod

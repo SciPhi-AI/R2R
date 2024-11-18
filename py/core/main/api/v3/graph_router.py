@@ -266,27 +266,6 @@ class GraphRouter(BaseRouterV3):
             }
 
         @self.router.post(
-            "/chunks/{id}/graphs/entities",
-            summary="Create entities for a chunk",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.chunks.graphs.entities.create(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.router.post(
             "/documents/{id}/graphs/entities",
             summary="Create entities for a document",
             openapi_extra={
@@ -363,16 +342,7 @@ class GraphRouter(BaseRouterV3):
                 else:
                     entity.level = level
 
-            # depending on the level, perform validation
-            if level == EntityLevel.CHUNK:
-                for entity in entities:
-                    if entity.chunk_ids and id not in entity.chunk_ids:
-                        raise R2RException(
-                            "Entity extraction IDs must include the chunk ID or should be empty.",
-                            400,
-                        )
-
-            elif level == EntityLevel.DOCUMENT:
+            if level == EntityLevel.DOCUMENT:
                 for entity in entities:
                     if entity.document_id:
                         if entity.document_id != id:
@@ -384,50 +354,18 @@ class GraphRouter(BaseRouterV3):
                         entity.document_id = id
 
             elif level == EntityLevel.GRAPH:
-
-                if not any(entity.document_id for entity in entities):
-                    document_id = generate_entity_document_id()
-                    for entity in entities:
-                        entity.document_id = document_id
+                for entity in entities:
+                    entity.graph_id = id
+                    entity.attributes = {
+                        'manual_creation': True,
+                    }
 
             res = await self.services["kg"].create_entities(
                 entities=entities,
             )
 
-            if level == EntityLevel.GRAPH:
-                await self.services['document'].upsert_documents_overview(
-                    documents_overview=[DocumentResponse(
-                        id=document_id,
-                        user_id=auth_user.id,
-                        metadata= {},
-                        document_type=DocumentType.GRAPH,
-                        version="1",
-                    )]
-                )
-
             return res
 
-        @self.router.post(
-            "/chunks/{id}/graphs/entities/{entity_id}",
-            summary="Update an entity for a chunk",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.chunks.graphs.entities.update(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000", entity=entity)
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
         @self.router.post(
             "/documents/{id}/entities/{entity_id}",
             summary="Update an entity for a document",
@@ -496,11 +434,7 @@ class GraphRouter(BaseRouterV3):
                         "Entity level must match the path level.", 400
                     )
 
-            if entity.level == EntityLevel.CHUNK:
-                # don't override the chunk_ids
-                entity.chunk_ids = None
-
-            elif entity.level == EntityLevel.DOCUMENT:
+            if entity.level == EntityLevel.DOCUMENT:
                 entity.document_id = id
 
             elif entity.level == EntityLevel.GRAPH:
@@ -519,27 +453,6 @@ class GraphRouter(BaseRouterV3):
                 entity=entity,
             )
 
-        @self.router.delete(
-            "/chunks/{id}/graphs/entities/{entity_id}",
-            summary="Delete an entity for a chunk",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.chunks.graphs.entities.delete(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000")
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
         @self.router.delete(
             "/documents/{id}/graphs/entities/{entity_id}",
             summary="Delete an entity for a document",
@@ -575,7 +488,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.entities.delete(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000")
+                            result = client.gra phs.entities.delete(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000")
                             """
                         ),
                     },
@@ -599,10 +512,9 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can access this endpoint.", 403
                 )
 
-            entity = Entity(id=entity_id, level=self._get_path_level(request))
-
             return await self.services["kg"].delete_entity_v3(
-                entity=entity,
+                id=id,
+                path_level=self._get_path_level(request),
             )
 
         @self.router.get(
@@ -722,27 +634,6 @@ class GraphRouter(BaseRouterV3):
             }
 
         @self.router.post(
-            "/chunks/{id}/graphs/relationships",
-            summary="Create relationships for a chunk",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.chunks.graphs.relationships.create(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationships=[relationship1, relationship2])
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.router.post(
             "/documents/{id}/graphs/relationships",
             summary="Create relationships for a document",
             openapi_extra={
@@ -757,6 +648,27 @@ class GraphRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.documents.graphs.relationships.create(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationships=[relationship1, relationship2])
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.router.post(
+            "/graphs/{id}/relationships",
+            summary="Create relationships for a graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.relationships.create(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationships=[relationship1, relationship2])
                             """
                         ),
                     },
@@ -779,13 +691,15 @@ class GraphRouter(BaseRouterV3):
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
                 )
+            
+            relationships = await self.services["kg"].create_relationships_v3(
+                    id=id,
+                relationships=relationships,
+            )
 
             return {  # type: ignore
                 "message": "Relationships created successfully.",
-                "count": await self.services["kg"].create_relationships_v3(
-                    id=id,
-                    relationships=relationships,
-                ),
+                "count": relationships,
             }
 
         @self.router.post(
@@ -803,6 +717,27 @@ class GraphRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.documents.relationships.update(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_id="123e4567-e89b-12d3-a456-426614174000", relationship=relationship)
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.router.post(
+            "/graphs/{id}/relationships/{relationship_id}",
+            summary="Update a relationship for a graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.relationships.update(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_id="123e4567-e89b-12d3-a456-426614174000", relationship=relationship)
                             """
                         ),
                     },
@@ -844,8 +779,8 @@ class GraphRouter(BaseRouterV3):
             )
 
         @self.router.delete(
-            "/chunks/{id}/graphs/relationships/{relationship_id}",
-            summary="Delete a relationship for a chunk",
+            "/documents/{id}/graphs/relationships/{relationship_id}",
+            summary="Delete a relationship for a document",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -857,7 +792,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.chunks.graphs.relationships.delete(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_id="123e4567-e89b-12d3-a456-426614174000")
+                            result = client.documents.graphs.relationships.delete(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_id="123e4567-e89b-12d3-a456-426614174000")
                             """
                         ),
                     },
@@ -865,8 +800,8 @@ class GraphRouter(BaseRouterV3):
             },
         )
         @self.router.delete(
-            "/documents/{id}/graphs/relationships/{relationship_id}",
-            summary="Delete a relationship for a document",
+            "/graphs/{id}/relationships/{relationship_id}",
+            summary="Delete a relationship for a graph",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -903,12 +838,7 @@ class GraphRouter(BaseRouterV3):
                 )
 
             level = self._get_path_level(request)
-            if level == EntityLevel.CHUNK:
-                chunk_ids = [id]
-                relationship = Relationship(
-                    id=relationship_id, chunk_ids=chunk_ids
-                )
-            elif level == EntityLevel.DOCUMENT:
+            if level == EntityLevel.DOCUMENT:
                 relationship = Relationship(id=relationship_id, document_id=id)
             else:
                 relationship = Relationship(
@@ -924,6 +854,23 @@ class GraphRouter(BaseRouterV3):
         @self.router.post(
             "/graphs/{id}/communities",
             summary="Create communities",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.communities.create(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", communities=[community1, community2])
+                            """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def create_communities(
@@ -956,6 +903,23 @@ class GraphRouter(BaseRouterV3):
         @self.router.get(
             "/graphs/{id}/communities",
             summary="Get communities",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.communities.get(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def get_communities(
@@ -1017,7 +981,7 @@ class GraphRouter(BaseRouterV3):
 
         # Graph-level operations
         @self.router.post(
-            "/graphs/",
+            "/graphs",
             summary="Create a new graph",
             openapi_extra={
                 "x-codeSamples": [
@@ -1064,12 +1028,14 @@ class GraphRouter(BaseRouterV3):
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can create graphs", 403)
 
-            return await self.services["kg"].create_new_graph(
+            graph_id = await self.services["kg"].create_new_graph(
                 graph
             )
 
+            return {"id": graph_id, "message": "An empty graph object created successfully"}
+
         @self.router.get(
-            "/graphs/",
+            "/graphs/{id}",
             summary="Get graph information",
             openapi_extra={
                 "x-codeSamples": [
@@ -1118,10 +1084,10 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can view graph status", 403
                 )
 
-            return (await self.services["kg"].get_graphs([id], 0, 1))['results'][0]
+            return (await self.services["kg"].get_graphs(graph_id=id, offset=0, limit=1))['results'][0]
 
         @self.router.get(
-            "/graphs/",
+            "/graphs",
             summary="Get graph information",
             openapi_extra={
                 "x-codeSamples": [
@@ -1171,8 +1137,8 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can view graph status", 403
                 )
 
-            results = await self.services["kg"].get_graphs(id, offset, limit)
-            return results, {"total_results": results["total_entries"]}
+            results = await self.services["kg"].get_graphs(offset = offset, limit = limit, graph_id = None)
+            return results['results'], {"total_entries": results["total_entries"]}
 
         @self.router.delete(
             "/graphs/{id}",
@@ -1207,17 +1173,67 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def delete_graph(
-            collection_id: UUID = Path(...),
+            id: UUID = Path(...),
             cascade: bool = Query(False),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedGenericMessageResponse:
+        ):
             """Deletes a graph and optionally its associated entities and relationships."""
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can delete graphs", 403)
+            
+            if cascade:
+                raise NotImplementedError("Cascade deletion not implemented. Please delete document level entities and relationships using the document delete endpoints.")
 
-            await self.services["kg"].delete_graph(collection_id, cascade)
+            id = await self.services["kg"].delete_graph_v3(id=id, cascade=cascade)
             # FIXME: Can we sync this with the deletion response from other routes? Those return a boolean.
-            return GenericMessageResponse(message="Graph deleted successfully")  # type: ignore
+            return {"message": "Graph deleted successfully", "id": id}  # type: ignore
+
+        # update graph
+        @self.router.post(
+            "/graphs/{id}",
+            summary="Update graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.update(
+                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                graph={
+                                    "name": "New Name",
+                                    "description": "New Description"
+                                }
+                            )"""
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def update_graph(
+            id: UUID = Path(...),
+            graph: Graph = Body(...),
+            auth_user=Depends(self.providers.auth.auth_wrapper),    
+        ):
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can update graphs", 403)
+
+            if graph.id is None:
+                graph.id = id
+            else:
+                if graph.id != id:
+                    raise R2RException("Graph ID in path and body do not match", 400)
+
+            return {
+                "id": (await self.services["kg"].update_graph(graph))['id'],
+                "message": "Graph updated successfully"
+            }
 
         @self.base_endpoint
         async def deduplicate_entities(

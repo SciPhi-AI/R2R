@@ -110,8 +110,7 @@ class PostgresEntityHandler(EntityHandler):
             chunk_ids UUID[] NOT NULL,
             description_embedding {vector_column_str} NOT NULL,
             document_id UUID NOT NULL,
-            graph_ids UUID[] NOT NULL,
-            UNIQUE (name, document_id)
+            graph_ids UUID[]
             );
         """
 
@@ -128,8 +127,7 @@ class PostgresEntityHandler(EntityHandler):
             document_ids UUID[] NOT NULL,
             graph_id UUID NOT NULL,
             description_embedding {vector_column_str},
-            attributes JSONB,
-            UNIQUE (name, graph_ids, attributes)
+            attributes JSONB
         );"""
 
         await self.connection_manager.execute_query(query)
@@ -325,7 +323,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 chunk_ids UUID[],
                 document_id UUID,
                 graph_ids UUID[],
-                attributes JSONB DEFAULT '{{}}'::jsonb,
+                attributes JSONB,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
@@ -350,7 +348,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 predicate_embedding FLOAT[],
                 chunk_ids UUID[],
                 document_id UUID,
-                attributes JSONB DEFAULT '{{}}'::jsonb,
+                attributes JSONB,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
@@ -467,7 +465,8 @@ class PostgresCommunityHandler(CommunityHandler):
             level INT NOT NULL,
             is_final_cluster BOOLEAN NOT NULL,
             relationship_ids INT[] NOT NULL,
-            graph_id UUID NOT NULL
+            graph_id UUID NOT NULL,
+            UNIQUE (graph_id, cluster)
         );"""
 
         await self.connection_manager.execute_query(query)
@@ -476,6 +475,7 @@ class PostgresCommunityHandler(CommunityHandler):
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("graph_community")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            graph_id UUID NOT NULL,
             sid SERIAL,
             community_number INT NOT NULL,
             level INT NOT NULL,
@@ -573,11 +573,14 @@ class PostgresGraphHandler(GraphHandler):
     async def create_tables(self) -> None:
         QUERY = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("graph")} (
-                id UUID PRIMARY KEY,
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                name TEXT NOT NULL,
+                description TEXT NOT NULL,
                 status TEXT NOT NULL,
                 created_at TIMESTAMP NOT NULL,
                 updated_at TIMESTAMP NOT NULL,
-                attributes JSONB NOT NULL
+                statistics JSONB,
+                attributes JSONB
             );
         """
 
@@ -588,19 +591,47 @@ class PostgresGraphHandler(GraphHandler):
             await handler.create_tables()
 
     async def create(self, graph: Graph) -> None:
-        await _add_objects(
+        return (await _add_objects(
             objects=[graph.__dict__],
             full_table_name=self._get_table_name("graph"),
             connection_manager=self.connection_manager,
-        )
+        ))[0]['id']
 
-    async def delete(self, graph_id: UUID) -> None:
+    async def delete(self, graph_id: UUID, cascade: bool = False) -> None:
+
+        if cascade:
+            raise NotImplementedError("Cascade deletion not implemented. Please delete document level entities and relationships using the document delete endpoints.")
+
         QUERY = f"""
             DELETE FROM {self._get_table_name("graph")} WHERE id = $1
         """
         await self.connection_manager.execute_query(QUERY, [graph_id])
 
-    async def get(self, offset: int, limit: int, graph_id: Optional[UUID]):
+        # delete all entities and relationships mapping for this graph
+        QUERY = f"""
+            DELETE FROM {self._get_table_name("graph_entity")} WHERE graph_id = $1
+        """
+        await self.connection_manager.execute_query(QUERY, [graph_id])
+
+        QUERY = f"""
+            DELETE FROM {self._get_table_name("graph_relationship")} WHERE graph_id = $1
+        """
+        await self.connection_manager.execute_query(QUERY, [graph_id])
+
+        # finally update the document entity and chunk relationship tables to remove the graph_id
+        QUERY = f"""
+            UPDATE {self._get_table_name("document_entity")} SET graph_ids = array_remove(graph_ids, $1) WHERE $1 = ANY(graph_ids)
+        """
+        await self.connection_manager.execute_query(QUERY, [graph_id])
+
+        QUERY = f"""
+            UPDATE {self._get_table_name("chunk_relationship")} SET graph_ids = array_remove(graph_ids, $1) WHERE $1 = ANY(graph_ids)
+        """
+        await self.connection_manager.execute_query(QUERY, [graph_id])
+
+        return graph_id
+
+    async def get(self, offset: int, limit: int, graph_id: Optional[UUID] = None):
 
         if graph_id is None:
 
@@ -617,7 +648,7 @@ class PostgresGraphHandler(GraphHandler):
                 SELECT COUNT(*) FROM {self._get_table_name("graph")}
             """
             count = (
-                await self.connection_manager.fetch_query(COUNT_QUERY, params[:-1])
+                await self.connection_manager.fetch_query(COUNT_QUERY)
             )[0]["count"]
 
             return {'results': [Graph(**row) for row in ret], 'total_entries': count}
@@ -733,6 +764,14 @@ class PostgresGraphHandler(GraphHandler):
             UPDATE {self._get_table_name("chunk_relationship")} SET graph_ids = array_remove(graph_ids, $2) WHERE document_id = $1
         """
         await self.connection_manager.execute_query(QUERY, [graph_id, relationship_ids])
+
+    async def update(self, graph: Graph) -> None:
+        return await _update_object(
+            object=graph.__dict__,
+            full_table_name=self._get_table_name("graph"),
+            connection_manager=self.connection_manager,
+            id_column="id",
+        )
 
     ###### ESTIMATION METHODS ######
 
@@ -2137,14 +2176,14 @@ class PostgresGraphHandler(GraphHandler):
 
 
 async def _add_objects(
-    objects: list[Any],
+    objects: list,
     full_table_name: str,
     connection_manager: PostgresConnectionManager,
     conflict_columns: list[str] = [],
     exclude_attributes: list[str] = [],
-) -> asyncpg.Record:
+) -> list[UUID]:
     """
-    Upsert objects into the specified table.
+    Bulk insert objects and return their IDs.
     """
     # Get non-null attributes from the first object
     non_null_attrs = {
@@ -2154,7 +2193,29 @@ async def _add_objects(
     }
     columns = ", ".join(non_null_attrs.keys())
 
-    placeholders = ", ".join(f"${i+1}" for i in range(len(non_null_attrs)))
+    # Create the VALUES part using unnest
+    value_types = []
+    value_lists = []
+    for key in non_null_attrs.keys():
+        values = [
+            json.dumps(obj[key]) if isinstance(obj[key], (dict, list)) or key == "statistics" or key == "attributes"  # Added statistics check
+            else str(obj[key]) if "embedding" in key
+            else obj[key]
+            for obj in objects
+        ]
+        value_lists.append(values)
+        # Determine PostgreSQL type based on the first non-null value and column name
+        sample_value = next((v for v in values if v is not None), None)
+        pg_type = (
+            "jsonb" if isinstance(sample_value, (dict, list)) or key == "statistics" or key == "attributes"
+            else "text" if isinstance(sample_value, str)
+            else "uuid[]" if isinstance(sample_value, list)
+            else "timestamp" if key == "created_at" or key == "updated_at"
+            else "float8"
+        )
+        value_types.append(pg_type)
+
+    unnest_expr = ", ".join(f"unnest(${i+1}::{pg_type}[])" for i, pg_type in enumerate(value_types))
 
     if conflict_columns:
         conflict_columns_str = ", ".join(conflict_columns)
@@ -2167,29 +2228,13 @@ async def _add_objects(
 
     QUERY = f"""
         INSERT INTO {full_table_name} ({columns})
-        VALUES ({placeholders})
+        SELECT {unnest_expr}
         {on_conflict_query}
+        RETURNING id;
     """
 
-    # Filter out null values for each object
-    params = [
-        tuple(
-            (
-                json.dumps(v)
-                if isinstance(v, dict)
-                else str(v) if "embedding" in k else v
-            )
-            for k, v in (
-                (k, v)
-                for k, v in obj.items()
-                if v is not None and k not in exclude_attributes
-            )
-        )
-        for obj in objects
-    ]
-
-    return await connection_manager.execute_many(QUERY, params)  # type: ignore
-
+    # Execute single query and return list of IDs
+    return await connection_manager.fetch_query(QUERY, value_lists)
 
 async def _update_object(
     object: dict[str, Any],
@@ -2238,7 +2283,7 @@ async def _update_object(
     ]
     params.append(object[id_column])
 
-    ret = await connection_manager.execute_many(QUERY, [tuple(params)])  # type: ignore
+    ret = await connection_manager.fetchrow_query(QUERY, tuple(params))  # type: ignore
 
     return ret
 

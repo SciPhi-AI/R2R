@@ -58,6 +58,7 @@ class Entity(R2RSerializable):
     community_numbers: Optional[list[str]] = None
     chunk_ids: Optional[list[UUID]] = None
     graph_id: Optional[UUID] = None
+    graph_ids: Optional[list[UUID]] = None
     document_id: Optional[UUID] = None
     document_ids: Optional[list[UUID]] = None
 
@@ -163,12 +164,27 @@ class Graph(R2RSerializable):
 
     name: str
     description: str
-    document_ids: list[uuid.UUID] = []
     statistics: dict[str, Any] = {}
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()
+    attributes: dict[str, Any] = {}
     status: str = "pending"
     id: Optional[uuid.UUID] = None
 
+    @classmethod
+    def from_dict(cls, data: dict) -> 'Graph':
+        """Create a Graph instance from a dictionary."""
+        # Convert string representations to dicts before validation
+        if isinstance(data.get('attributes', {}), str):
+            data['attributes'] = json.loads(data['attributes'])
+        if isinstance(data.get('statistics', {}), str):
+            data['statistics'] = json.loads(data['statistics'])
+        return cls(**data)
+
     def __init__(self, **kwargs):
+        # Convert string representations to dicts before calling super().__init__
+        if isinstance(kwargs.get('attributes', {}), str):
+            kwargs['attributes'] = json.loads(kwargs['attributes'])
+        if isinstance(kwargs.get('statistics', {}), str):
+            kwargs['statistics'] = json.loads(kwargs['statistics'])
         super().__init__(**kwargs)
