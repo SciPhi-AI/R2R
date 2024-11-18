@@ -256,7 +256,9 @@ class IngestionService(Service):
             # FIXME: Why are we hardcoding the model here?
             response = await self.providers.llm.aget_completion(
                 messages=messages,
-                generation_config=GenerationConfig(model="openai/gpt-4o-mini"),
+                generation_config=GenerationConfig(
+                    model=self.config.ingestion.document_summary_model
+                ),
             )
 
             document_info.summary = response.choices[0].message.content  # type: ignore
