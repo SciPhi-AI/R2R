@@ -716,7 +716,6 @@ class ManagementMixins:
             data["parent_id"] = parent_id
         if metadata is not None:
             data["metadata"] = metadata
-        print("len(data):", len(data))
         if len(data) == 1:
             return await self._make_request(  # type: ignore
                 "POST", f"add_message/{str(conversation_id)}", json=data
