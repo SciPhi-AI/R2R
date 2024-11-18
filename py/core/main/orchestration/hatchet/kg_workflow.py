@@ -454,7 +454,7 @@ def hatchet_kg_factory(
             document_ids = await self.kg_service.providers.database.get_document_ids_by_status(
                 status_type="kg_extraction_status",
                 status=KGExtractionStatus.SUCCESS,
-                graph_id=graph_id,
+                collection_id=graph_id,
             )
 
             await self.kg_service.providers.database.set_workflow_status(

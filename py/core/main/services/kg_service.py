@@ -359,9 +359,7 @@ class KgService(Service):
         return await self.providers.database.graph_handler.update(graph)
 
     @telemetry_event("delete_graph_v3")
-    async def delete_graph_v3(
-        self, id: UUID, cascade: Optional[bool] = False
-    ) -> UUID:
+    async def delete_graph_v3(self, id: UUID, cascade: bool = False) -> UUID:
         return await self.providers.database.graph_handler.delete(id, cascade)
 
     @telemetry_event("get_document_ids_for_create_graph")

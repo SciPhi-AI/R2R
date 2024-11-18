@@ -143,7 +143,7 @@ class GraphRouter(BaseRouterV3):
                 "message": "Entity deduplication completed successfully.",
                 "task_id": None,
             }
-   
+
     async def _create_communities(
         self,
         graph_id: UUID,
@@ -161,9 +161,7 @@ class GraphRouter(BaseRouterV3):
         4. Generates summaries and insights for each community
         """
         if not auth_user.is_superuser:
-            raise R2RException(
-                "Only superusers can create communities", 403
-            )
+            raise R2RException("Only superusers can create communities", 403)
 
         # Apply runtime settings overrides
         server_kg_enrichment_settings = (
@@ -254,7 +252,7 @@ class GraphRouter(BaseRouterV3):
 
             # If the run type is estimate, return an estimate of the creation cost
             if run_type is KGRunType.ESTIMATE:
-                return {
+                return {  # type: ignore
                     "message": "Estimate retrieved successfully",
                     "task_id": None,
                     "id": id,
@@ -1008,7 +1006,7 @@ class GraphRouter(BaseRouterV3):
             run_with_orchestration: bool = Query(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedKGEnrichmentResponse:
-            
+
             return await self._create_communities(
                 id=id,
                 settings=settings,

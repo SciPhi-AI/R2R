@@ -33,8 +33,9 @@ class DataLevel(str, Enum):
 class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
-    id: UUID
     name: str
+    id: Optional[UUID] = None
+    sid: Optional[str] = None
     level: Optional[DataLevel] = None
     category: Optional[str] = None
     description: Optional[str] = None
@@ -71,7 +72,8 @@ class Entity(R2RSerializable):
 class Relationship(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
-    id: UUID
+    id: Optional[UUID | int] = None
+    sid: Optional[str] = None
     level: Optional[DataLevel] = None
     subject: Optional[str] = None
     predicate: Optional[str] = None
@@ -100,12 +102,13 @@ class Relationship(R2RSerializable):
 class CommunityInfo(R2RSerializable):
     """A protocol for a community in the system."""
 
-    graph_id: UUID
     node: str
     cluster: int
     parent_cluster: int | None
     level: int
     is_final_cluster: bool
+    graph_id: Optional[UUID] = None
+    collection_id: Optional[UUID] = None  # for backwards compatibility
     relationship_ids: Optional[list[int]] = None
 
     def __init__(self, **kwargs):
@@ -117,11 +120,13 @@ class Community(R2RSerializable):
 
     community_number: int
     level: int
-    graph_id: UUID
     name: str = ""
     summary: str = ""
+
     findings: list[str] = []
     id: Optional[int | UUID] = None
+    graph_id: Optional[UUID] = None
+    collection_id: Optional[UUID] = None
     rating: float | None = None
     rating_explanation: str | None = None
     embedding: list[float] | None = None

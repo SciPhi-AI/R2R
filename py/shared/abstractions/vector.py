@@ -116,7 +116,7 @@ class VectorTableName(str, Enum):
 
     VECTORS = "vectors"
     ENTITIES_DOCUMENT = "document_entity"
-    ENTITIES_COLLECTION = "collection_entity"
+    ENTITIES_COLLECTION = "graph_entity"
     # TODO: Add support for relationships
     # TRIPLES = "chunk_relationship"
     COMMUNITIES = "community"
