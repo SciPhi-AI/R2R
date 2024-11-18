@@ -143,6 +143,7 @@ class GraphRouter(BaseRouterV3):
                         "task_id": None,
                     }
 
+        # list entities
         @self.router.get(
             "/chunks/{id}/graphs/entities",
             summary="List entities for a chunk",
