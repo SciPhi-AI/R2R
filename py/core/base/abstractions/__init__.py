@@ -24,7 +24,7 @@ from shared.abstractions.graph import (
     CommunityInfo,
     Community,
     Entity,
-    EntityLevel,
+    DataLevel,
     EntityType,
     Graph,
     KGExtraction,
@@ -117,7 +117,7 @@ __all__ = [
     "CommunityInfo",
     "KGExtraction",
     "Relationship",
-    "EntityLevel",
+    "DataLevel",
     # Index abstractions
     "IndexConfig",
     # LLM abstractions

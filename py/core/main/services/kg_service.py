@@ -8,7 +8,7 @@ from fastapi import HTTPException
 
 from core.base import KGExtractionStatus, RunManager
 from core.base.abstractions import (
-    EntityLevel,
+    DataLevel,
     GenerationConfig,
     KGCreationSettings,
     KGEnrichmentSettings,
@@ -133,7 +133,7 @@ class KgService(Service):
     @telemetry_event("list_entities")
     async def list_entities(
         self,
-        level: EntityLevel,
+        level: DataLevel,
         id: UUID,
         offset: int,
         limit: int,
@@ -165,7 +165,7 @@ class KgService(Service):
         self,
         id: UUID,
         entity_id: UUID,
-        level: EntityLevel,
+        level: DataLevel,
         **kwargs,
     ):
         return await self.providers.database.graph_handler.entities.delete(
@@ -199,7 +199,7 @@ class KgService(Service):
     async def list_relationships_v3(
         self,
         id: UUID,
-        level: EntityLevel,
+        level: DataLevel,
         offset: int,
         limit: int,
         entity_names: Optional[list[str]] = None,
@@ -231,7 +231,7 @@ class KgService(Service):
     @telemetry_event("delete_relationship_v3")
     async def delete_relationship_v3(
         self,
-        level: EntityLevel,
+        level: DataLevel,
         id: UUID,
         relationship_id: UUID,
         **kwargs,
@@ -343,21 +343,25 @@ class KgService(Service):
     ################### GRAPHS ###################
 
     @telemetry_event("create_new_graph")
-    async def create_new_graph(self, graph: Graph) -> None:
-        return await self.providers.database.graph_handler.create(
-            graph
-        )
+    async def create_new_graph(self, graph: Graph) -> UUID:
+        return await self.providers.database.graph_handler.create(graph)
 
     @telemetry_event("get_graphs")
-    async def get_graphs(self, offset: int, limit: int, graph_id: Optional[UUID] = None) -> Graph:
-        return await self.providers.database.graph_handler.get(offset = offset, limit = limit, graph_id = graph_id)
+    async def get_graphs(
+        self, offset: int, limit: int, graph_id: Optional[UUID] = None
+    ) -> Graph:
+        return await self.providers.database.graph_handler.get(
+            offset=offset, limit=limit, graph_id=graph_id
+        )
 
     @telemetry_event("update_graph")
-    async def update_graph(self, graph: Graph) -> None:
+    async def update_graph(self, graph: Graph) -> UUID:
         return await self.providers.database.graph_handler.update(graph)
 
     @telemetry_event("delete_graph_v3")
-    async def delete_graph_v3(self, id: UUID, cascade: Optional[bool] = False) -> None:
+    async def delete_graph_v3(
+        self, id: UUID, cascade: Optional[bool] = False
+    ) -> UUID:
         return await self.providers.database.graph_handler.delete(id, cascade)
 
     @telemetry_event("get_document_ids_for_create_graph")
@@ -535,7 +539,6 @@ class KgService(Service):
             collection_id=collection_id, cascade=cascade
         )
 
-
     @telemetry_event("delete_graph_for_collection")
     async def delete_graph_for_collection(
         self,
@@ -602,7 +605,7 @@ class KgService(Service):
     @telemetry_event("kg_entity_deduplication")
     async def kg_entity_deduplication(
         self,
-        collection_id: UUID,
+        id: UUID,
         kg_entity_deduplication_type: KGEntityDeduplicationType,
         kg_entity_deduplication_prompt: str,
         generation_config: GenerationConfig,
@@ -611,7 +614,7 @@ class KgService(Service):
         deduplication_results = await self.pipes.kg_entity_deduplication_pipe.run(
             input=self.pipes.kg_entity_deduplication_pipe.Input(
                 message={
-                    "collection_id": collection_id,
+                    "id": id,
                     "kg_entity_deduplication_type": kg_entity_deduplication_type,
                     "kg_entity_deduplication_prompt": kg_entity_deduplication_prompt,
                     "generation_config": generation_config,

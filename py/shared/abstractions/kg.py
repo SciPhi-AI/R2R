@@ -132,6 +132,7 @@ class KGEnrichmentSettings(R2RSerializable):
         description="Parameters for the Leiden algorithm.",
     )
 
+
 class GraphEntitySettings(R2RSerializable):
     """Settings for knowledge graph entity creation."""
 
@@ -158,7 +159,9 @@ class GraphEntitySettings(R2RSerializable):
 
 class GraphRelationshipSettings(R2RSerializable):
     """Settings for knowledge graph relationship creation."""
+
     pass
+
 
 class GraphCommunitySettings(R2RSerializable):
     """Settings for knowledge graph community enrichment."""
@@ -189,6 +192,7 @@ class GraphCommunitySettings(R2RSerializable):
         description="Parameters for the Leiden algorithm.",
     )
 
+
 class GraphBuildSettings(R2RSerializable):
     """Settings for knowledge graph build."""
 
@@ -206,5 +210,3 @@ class GraphBuildSettings(R2RSerializable):
         default=GraphCommunitySettings(),
         description="Settings for knowledge graph community enrichment.",
     )
-
-

@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from core.base.abstractions import EntityLevel, KGRunType
+from core.base.abstractions import DataLevel, KGRunType
 
 from ..models import KGCreationSettings, KGRunType
 
@@ -178,7 +178,7 @@ class GraphsSDK:
     async def list_entities(
         self,
         collection_id: str | UUID,
-        level=EntityLevel.DOCUMENT,
+        level=DataLevel.DOCUMENT,
         include_embeddings: bool = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
@@ -188,7 +188,7 @@ class GraphsSDK:
 
         Args:
             collection_id (str | UUID): Collection ID to list entities from
-            level (EntityLevel): Entity level filter
+            level (DataLevel): Entity level filter
             include_embeddings (bool): Whether to include vector embeddings
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.

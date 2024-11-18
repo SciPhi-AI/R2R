@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import Body, Depends, Path, Query
 
 from core.base import R2RException, RunType
-from core.base.abstractions import EntityLevel, KGRunType
+from core.base.abstractions import DataLevel, KGRunType
 from core.base.abstractions import Community, Entity, Relationship, Graph
 
 from core.base.api.models import (
@@ -33,7 +33,12 @@ from core.utils import (
     update_settings_from_dict,
 )
 
-from core.base.abstractions import Entity, KGCreationSettings, Relationship, GraphBuildSettings
+from core.base.abstractions import (
+    Entity,
+    KGCreationSettings,
+    Relationship,
+    GraphBuildSettings,
+)
 
 from core.base.abstractions import DocumentResponse, DocumentType
 
@@ -58,14 +63,146 @@ class GraphRouter(BaseRouterV3):
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
 
-    def _get_path_level(self, request: Request) -> EntityLevel:
+    def _get_path_level(self, request: Request) -> DataLevel:
         path = request.url.path
         if "/chunks/" in path:
-            return EntityLevel.CHUNK
+            return DataLevel.CHUNK
         elif "/documents/" in path:
-            return EntityLevel.DOCUMENT
+            return DataLevel.DOCUMENT
         else:
-            return EntityLevel.GRAPH
+            return DataLevel.GRAPH
+
+    async def _deduplicate_entities(
+        self,
+        id: UUID,
+        settings,
+        run_type: Optional[KGRunType] = KGRunType.ESTIMATE,
+        run_with_orchestration: bool = True,
+        auth_user=None,
+    ) -> WrappedKGEntityDeduplicationResponse:
+        """Deduplicates entities in the knowledge graph using LLM-based analysis.
+
+        The deduplication process:
+        1. Groups potentially duplicate entities by name/type
+        2. Uses LLM analysis to determine if entities refer to same thing
+        3. Merges duplicate entities while preserving relationships
+        4. Updates all references to use canonical entity IDs
+
+        Args:
+            id (UUID): Graph containing the entities
+            settings (dict, optional): Deduplication settings including:
+                - kg_entity_deduplication_type (str): Deduplication method (e.g. "by_name")
+                - kg_entity_deduplication_prompt (str): Custom prompt for analysis
+                - max_description_input_length (int): Max chars for entity descriptions
+                - generation_config (dict): LLM generation parameters
+            run_type (KGRunType): Whether to estimate cost or run deduplication
+            run_with_orchestration (bool): Whether to run async with task queue
+            auth_user: Authenticated user making request
+
+        Returns:
+            Result containing:
+                message (str): Status message
+                task_id (UUID): Async task ID if run with orchestration
+
+        Raises:
+            R2RException: If user unauthorized or deduplication fails
+        """
+        if not auth_user.is_superuser:
+            raise R2RException("Only superusers can deduplicate entities", 403)
+
+        server_settings = (
+            self.providers.database.config.kg_entity_deduplication_settings
+        )
+        if settings:
+            server_settings = update_settings_from_dict(
+                server_settings, settings
+            )
+
+        # Return cost estimate if requested
+        if run_type == KGRunType.ESTIMATE:
+            return await self.services["kg"].get_deduplication_estimate(
+                id, server_settings
+            )
+
+        workflow_input = {
+            "id": str(id),
+            "kg_entity_deduplication_settings": server_settings.model_dump_json(),
+            "user": auth_user.model_dump_json(),
+        }
+
+        if run_with_orchestration:
+            return await self.orchestration_provider.run_workflow(  # type: ignore
+                "entity-deduplication", {"request": workflow_input}, {}
+            )
+        else:
+            from core.main.orchestration import simple_kg_factory
+
+            simple_kg = simple_kg_factory(self.services["kg"])
+            await simple_kg["entity-deduplication"](workflow_input)
+            return {  # type: ignore
+                "message": "Entity deduplication completed successfully.",
+                "task_id": None,
+            }
+   
+    async def _create_communities(
+        self,
+        graph_id: UUID,
+        settings,
+        run_type: Optional[KGRunType] = KGRunType.ESTIMATE,
+        run_with_orchestration: bool = True,
+        auth_user=None,
+    ) -> WrappedKGEnrichmentResponse:
+        """Creates communities in the graph by analyzing entity relationships and similarities.
+
+        Communities are created by:
+        1. Builds similarity graph between entities
+        2. Applies community detection algorithm (e.g. Leiden)
+        3. Creates hierarchical community levels
+        4. Generates summaries and insights for each community
+        """
+        if not auth_user.is_superuser:
+            raise R2RException(
+                "Only superusers can create communities", 403
+            )
+
+        # Apply runtime settings overrides
+        server_kg_enrichment_settings = (
+            self.providers.database.config.kg_enrichment_settings
+        )
+        if settings:
+            server_kg_enrichment_settings = update_settings_from_dict(
+                server_kg_enrichment_settings, settings
+            )
+
+        workflow_input = {
+            "graph_id": str(graph_id),
+            "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
+            "user": auth_user.model_dump_json(),
+        }
+
+        if not run_type:
+            run_type = KGRunType.ESTIMATE
+
+        # If the run type is estimate, return an estimate of the enrichment cost
+        if run_type is KGRunType.ESTIMATE:
+            return await self.services["kg"].get_enrichment_estimate(
+                id, server_kg_enrichment_settings
+            )
+
+        else:
+            if run_with_orchestration:
+                return await self.orchestration_provider.run_workflow(  # type: ignore
+                    "enrich-graph", {"request": workflow_input}, {}
+                )
+            else:
+                from core.main.orchestration import simple_kg_factory
+
+                simple_kg = simple_kg_factory(self.services["kg"])
+                await simple_kg["enrich-graph"](workflow_input)
+                return {  # type: ignore
+                    "message": "Communities created successfully.",
+                    "task_id": None,
+                }
 
     def _setup_routes(self):
 
@@ -88,7 +225,7 @@ class GraphRouter(BaseRouterV3):
             ),
             run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGCreationResponse:
+        ) -> WrappedKGCreationResponse:  # type: ignore
             """
             Creates a new knowledge graph by extracting entities and relationships from a document.
                 The graph creation process involves:
@@ -117,14 +254,16 @@ class GraphRouter(BaseRouterV3):
 
             # If the run type is estimate, return an estimate of the creation cost
             if run_type is KGRunType.ESTIMATE:
-                return { 
+                return {
                     "message": "Estimate retrieved successfully",
                     "task_id": None,
                     "id": id,
-                    "estimate": await self.services["kg"].get_creation_estimate(
-                        document_id = id,
-                        kg_creation_settings=server_kg_creation_settings
-                    )
+                    "estimate": await self.services[
+                        "kg"
+                    ].get_creation_estimate(
+                        document_id=id,
+                        kg_creation_settings=server_kg_creation_settings,
+                    ),
                 }
             else:
                 # Otherwise, create the graph
@@ -332,11 +471,11 @@ class GraphRouter(BaseRouterV3):
             # get entity level from path
             path = request.url.path
             if "/chunks/" in path:
-                level = EntityLevel.CHUNK
+                level = DataLevel.CHUNK
             elif "/documents/" in path:
-                level = EntityLevel.DOCUMENT
+                level = DataLevel.DOCUMENT
             else:
-                level = EntityLevel.GRAPH
+                level = DataLevel.GRAPH
 
             # set entity level if not set
             for entity in entities:
@@ -348,7 +487,7 @@ class GraphRouter(BaseRouterV3):
                 else:
                     entity.level = level
 
-            if level == EntityLevel.DOCUMENT:
+            if level == DataLevel.DOCUMENT:
                 for entity in entities:
                     if entity.document_id:
                         if entity.document_id != id:
@@ -359,11 +498,11 @@ class GraphRouter(BaseRouterV3):
                     else:
                         entity.document_id = id
 
-            elif level == EntityLevel.GRAPH:
+            elif level == DataLevel.GRAPH:
                 for entity in entities:
                     entity.graph_id = id
                     entity.attributes = {
-                        'manual_creation': True,
+                        "manual_creation": True,
                     }
 
             res = await self.services["kg"].create_entities(
@@ -399,7 +538,7 @@ class GraphRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",   
+                        "lang": "Python",
                         "source": textwrap.dedent(
                             """
                             from r2r import R2RClient
@@ -440,10 +579,10 @@ class GraphRouter(BaseRouterV3):
                         "Entity level must match the path level.", 400
                     )
 
-            if entity.level == EntityLevel.DOCUMENT:
+            if entity.level == DataLevel.DOCUMENT:
                 entity.document_id = id
 
-            elif entity.level == EntityLevel.GRAPH:
+            elif entity.level == DataLevel.GRAPH:
                 entity.graph_id = id
 
             if not entity.id:
@@ -698,9 +837,9 @@ class GraphRouter(BaseRouterV3):
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
                 )
-            
+
             relationships = await self.services["kg"].create_relationships_v3(
-                    id=id,
+                id=id,
                 relationships=relationships,
             )
 
@@ -854,14 +993,13 @@ class GraphRouter(BaseRouterV3):
 
         ################### COMMUNITIES ###################
 
-
         @self.router.post(
             "/graphs/{id}/build/communities",
             summary="Build communities in the graph",
         )
         @self.base_endpoint
         async def create_communities(
-            collection_id: UUID = Path(...),
+            id: UUID = Path(...),
             settings: Optional[dict] = Body(None),
             run_type: Optional[KGRunType] = Body(
                 default=None,
@@ -870,57 +1008,13 @@ class GraphRouter(BaseRouterV3):
             run_with_orchestration: bool = Query(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedKGEnrichmentResponse:
-            """Creates communities in the graph by analyzing entity relationships and similarities.
-
-            Communities are created by:
-            1. Builds similarity graph between entities
-            2. Applies community detection algorithm (e.g. Leiden)
-            3. Creates hierarchical community levels
-            4. Generates summaries and insights for each community
-            """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can create communities", 403
-                )
-
-            # Apply runtime settings overrides
-            server_kg_enrichment_settings = (
-                self.providers.database.config.kg_enrichment_settings
+            
+            return await self._create_communities(
+                id=id,
+                settings=settings,
+                run_type=run_type,
+                run_with_orchestration=run_with_orchestration,
             )
-            if settings:
-                server_kg_enrichment_settings = update_settings_from_dict(
-                    server_kg_enrichment_settings, settings
-                )
-
-            workflow_input = {
-                "collection_id": str(collection_id),
-                "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
-                "user": auth_user.model_dump_json(),
-            }
-
-            if not run_type:
-                run_type = KGRunType.ESTIMATE
-
-            # If the run type is estimate, return an estimate of the enrichment cost
-            if run_type is KGRunType.ESTIMATE:
-                return await self.services["kg"].get_enrichment_estimate(
-                    collection_id, server_kg_enrichment_settings
-                )
-
-            else:
-                if run_with_orchestration:
-                    return await self.orchestration_provider.run_workflow(  # type: ignore
-                        "enrich-graph", {"request": workflow_input}, {}
-                    )
-                else:
-                    from core.main.orchestration import simple_kg_factory
-
-                    simple_kg = simple_kg_factory(self.services["kg"])
-                    await simple_kg["enrich-graph"](workflow_input)
-                    return {  # type: ignore
-                        "message": "Communities created successfully.",
-                        "task_id": None,
-                    }
 
         @self.router.post(
             "/graphs/{id}/communities",
@@ -971,7 +1065,6 @@ class GraphRouter(BaseRouterV3):
 
             return await self.services["kg"].create_communities_v3(communities)
 
-
         @self.router.get(
             "/graphs/{id}/communities",
             summary="Get communities",
@@ -1018,12 +1111,14 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can access this endpoint.", 403
                 )
 
-            return await self.services["kg"].providers.database.graph_handler.communities.get(
+            return await self.services[
+                "kg"
+            ].providers.database.graph_handler.communities.get(
                 id=id,
                 offset=offset,
                 limit=limit,
             )
-        
+
         @self.router.get(
             "/graphs/{id}/communities/{community_id}",
             summary="Get a community",
@@ -1063,11 +1158,12 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can access this endpoint.", 403
                 )
 
-            return await self.services["kg"].providers.database.graph_handler.communities.get(
-                id = id,
-                community_id = community_id,
+            return await self.services[
+                "kg"
+            ].providers.database.graph_handler.communities.get(
+                id=id,
+                community_id=community_id,
             )
-
 
         @self.router.delete(
             "/graphs/{id}/communities/{community_id}",
@@ -1112,25 +1208,11 @@ class GraphRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.graphs.create(
-                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                settings={
-                                    "entity_types": ["PERSON", "ORG", "GPE"]
+                                graph={
+                                    "name": "New Graph",
+                                    "description": "New Description"
                                 }
                             )"""
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X POST "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7" \\
-                                -H "Content-Type: application/json" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" \\
-                                -d '{
-                                    "settings": {
-                                        "entity_types": ["PERSON", "ORG", "GPE"]
-                                    }
-                                }'"""
                         ),
                     },
                 ]
@@ -1145,11 +1227,12 @@ class GraphRouter(BaseRouterV3):
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can create graphs", 403)
 
-            graph_id = await self.services["kg"].create_new_graph(
-                graph
-            )
+            graph_id = await self.services["kg"].create_new_graph(graph)
 
-            return {"id": graph_id, "message": "An empty graph object created successfully"}
+            return {
+                "id": graph_id,
+                "message": "An empty graph object created successfully",
+            }
 
         @self.router.get(
             "/graphs/{id}",
@@ -1201,7 +1284,11 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can view graph status", 403
                 )
 
-            return (await self.services["kg"].get_graphs(graph_id=id, offset=0, limit=1))['results'][0]
+            return (
+                await self.services["kg"].get_graphs(
+                    graph_id=id, offset=0, limit=1
+                )
+            )["results"][0]
 
         @self.router.get(
             "/graphs",
@@ -1254,8 +1341,12 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can view graph status", 403
                 )
 
-            results = await self.services["kg"].get_graphs(offset = offset, limit = limit, graph_id = None)
-            return results['results'], {"total_entries": results["total_entries"]}
+            results = await self.services["kg"].get_graphs(
+                offset=offset, limit=limit, graph_id=None
+            )
+            return results["results"], {
+                "total_entries": results["total_entries"]
+            }
 
         @self.router.delete(
             "/graphs/{id}",
@@ -1272,8 +1363,7 @@ class GraphRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.graphs.delete(
-                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                cascade=True
+                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                             )"""
                         ),
                     },
@@ -1281,7 +1371,7 @@ class GraphRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X DELETE "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7?cascade=true" \\
+                            curl -X DELETE "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" """
                         ),
                     },
@@ -1297,11 +1387,15 @@ class GraphRouter(BaseRouterV3):
             """Deletes a graph and optionally its associated entities and relationships."""
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can delete graphs", 403)
-            
-            if cascade:
-                raise NotImplementedError("Cascade deletion not implemented. Please delete document level entities and relationships using the document delete endpoints.")
 
-            id = await self.services["kg"].delete_graph_v3(id=id, cascade=cascade)
+            if cascade:
+                raise NotImplementedError(
+                    "Cascade deletion not implemented. Please delete document level entities and relationships using the document delete endpoints."
+                )
+
+            id = await self.services["kg"].delete_graph_v3(
+                id=id, cascade=cascade
+            )
             # FIXME: Can we sync this with the deletion response from other routes? Those return a boolean.
             return {"message": "Graph deleted successfully", "id": id}  # type: ignore
 
@@ -1336,7 +1430,7 @@ class GraphRouter(BaseRouterV3):
         async def update_graph(
             id: UUID = Path(...),
             graph: Graph = Body(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),    
+            auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can update graphs", 403)
@@ -1345,11 +1439,13 @@ class GraphRouter(BaseRouterV3):
                 graph.id = id
             else:
                 if graph.id != id:
-                    raise R2RException("Graph ID in path and body do not match", 400)
+                    raise R2RException(
+                        "Graph ID in path and body do not match", 400
+                    )
 
             return {
-                "id": (await self.services["kg"].update_graph(graph))['id'],
-                "message": "Graph updated successfully"
+                "id": (await self.services["kg"].update_graph(graph))["id"],
+                "message": "Graph updated successfully",
             }
 
         @self.router.post(
@@ -1383,19 +1479,37 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can add data to graphs", 403)
+                raise R2RException(
+                    "Only superusers can add data to graphs", 403
+                )
 
             if object_type == "documents":
-                return await self.services["kg"].providers.database.graph_handler.add_documents(id=id, document_ids=object_ids)
+                return await self.services[
+                    "kg"
+                ].providers.database.graph_handler.add_documents(
+                    id=id, document_ids=object_ids
+                )
             elif object_type == "collections":
-                return await self.services["kg"].providers.database.graph_handler.add_collections(id=id, collection_ids=object_ids)
+                return await self.services[
+                    "kg"
+                ].providers.database.graph_handler.add_collections(
+                    id=id, collection_ids=object_ids
+                )
             elif object_type == "entities":
-                return await self.services["kg"].providers.database.graph_handler.add_entities_v3(id=id, entity_ids=object_ids)
+                return await self.services[
+                    "kg"
+                ].providers.database.graph_handler.add_entities_v3(
+                    id=id, entity_ids=object_ids
+                )
             elif object_type == "relationships":
-                return await self.services["kg"].providers.database.graph_handler.add_relationships_v3(id=id, relationship_ids=object_ids)
+                return await self.services[
+                    "kg"
+                ].providers.database.graph_handler.add_relationships_v3(
+                    id=id, relationship_ids=object_ids
+                )
             else:
                 raise R2RException("Invalid data type", 400)
-            
+
         # remove data
         @self.router.delete(
             "/graphs/{id}/remove/{object_type}",
@@ -1408,13 +1522,29 @@ class GraphRouter(BaseRouterV3):
             object_ids: list[UUID] = Body(...),
         ):
             if object_type == "documents":
-                return await self.services["kg"].providers.database.graph_handler.remove_documents(id=id, document_ids=object_ids)
+                return await self.services[
+                    "kg"
+                ].providers.database.graph_handler.remove_documents(
+                    id=id, document_ids=object_ids
+                )
             elif object_type == "collections":
-                return await self.services["kg"].providers.database.graph_handler.remove_collections(id=id, collection_ids=object_ids)
+                return await self.services[
+                    "kg"
+                ].providers.database.graph_handler.remove_collections(
+                    id=id, collection_ids=object_ids
+                )
             elif object_type == "entities":
-                return await self.services["kg"].providers.database.graph_handler.remove_entities(id=id, entity_ids=object_ids)
+                return await self.services[
+                    "kg"
+                ].providers.database.graph_handler.remove_entities(
+                    id=id, entity_ids=object_ids
+                )
             elif object_type == "relationships":
-                return await self.services["kg"].providers.database.graph_handler.remove_relationships(id=id, relationship_ids=object_ids)
+                return await self.services[
+                    "kg"
+                ].providers.database.graph_handler.remove_relationships(
+                    id=id, relationship_ids=object_ids
+                )
             else:
                 raise R2RException("Invalid data type", 400)
 
@@ -1430,11 +1560,15 @@ class GraphRouter(BaseRouterV3):
 
             # build entities
             logger.info(f"Building entities for graph {id}")
-            entities_result = await self.deduplicate_entities(id, settings.entity_settings, run_type=KGRunType.RUN)
+            entities_result = await self._deduplicate_entities(
+                id, settings.entity_settings, run_type=KGRunType.RUN
+            )
 
-           # build communities
+            # build communities
             logger.info(f"Building communities for graph {id}")
-            communities_result = await self.enrich_graph(id, settings.community_settings, run_type=KGRunType.RUN)
+            communities_result = await self._create_communities(
+                id, settings.community_settings, run_type=KGRunType.RUN
+            )
 
             return {
                 "entities": entities_result,
@@ -1465,7 +1599,7 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def deduplicate_entities(
-            collection_id: UUID = Path(...),
+            id: UUID = Path(...),
             settings: Optional[dict] = Body(None),
             run_type: Optional[KGRunType] = Query(
                 KGRunType.ESTIMATE,
@@ -1474,71 +1608,13 @@ class GraphRouter(BaseRouterV3):
             run_with_orchestration: bool = Query(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedKGEntityDeduplicationResponse:
-            """Deduplicates entities in the knowledge graph using LLM-based analysis.
-
-            The deduplication process:
-            1. Groups potentially duplicate entities by name/type
-            2. Uses LLM analysis to determine if entities refer to same thing
-            3. Merges duplicate entities while preserving relationships
-            4. Updates all references to use canonical entity IDs
-
-            Args:
-                collection_id (UUID): Collection containing the graph
-                settings (dict, optional): Deduplication settings including:
-                    - kg_entity_deduplication_type (str): Deduplication method (e.g. "by_name")
-                    - kg_entity_deduplication_prompt (str): Custom prompt for analysis
-                    - max_description_input_length (int): Max chars for entity descriptions
-                    - generation_config (dict): LLM generation parameters
-                run_type (KGRunType): Whether to estimate cost or run deduplication
-                run_with_orchestration (bool): Whether to run async with task queue
-                auth_user: Authenticated user making request
-
-            Returns:
-                Result containing:
-                    message (str): Status message
-                    task_id (UUID): Async task ID if run with orchestration
-
-            Raises:
-                R2RException: If user unauthorized or deduplication fails
-            """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can deduplicate entities", 403
-                )
-
-            server_settings = (
-                self.providers.database.config.kg_entity_deduplication_settings
+            return await self._deduplicate_entities(
+                id=id,
+                settings=settings,
+                run_type=run_type,
+                run_with_orchestration=run_with_orchestration,
+                auth_user=auth_user,
             )
-            if settings:
-                server_settings = update_settings_from_dict(
-                    server_settings, settings
-                )
-
-            # Return cost estimate if requested
-            if run_type == KGRunType.ESTIMATE:
-                return await self.services["kg"].get_deduplication_estimate(
-                    collection_id, server_settings
-                )
-
-            workflow_input = {
-                "collection_id": str(collection_id),
-                "kg_entity_deduplication_settings": server_settings.model_dump_json(),
-                "user": auth_user.model_dump_json(),
-            }
-
-            if run_with_orchestration:
-                return await self.orchestration_provider.run_workflow(  # type: ignore
-                    "entity-deduplication", {"request": workflow_input}, {}
-                )
-            else:
-                from core.main.orchestration import simple_kg_factory
-
-                simple_kg = simple_kg_factory(self.services["kg"])
-                await simple_kg["entity-deduplication"](workflow_input)
-                return {  # type: ignore
-                    "message": "Entity deduplication completed successfully.",
-                    "task_id": None,
-                }
 
         @self.router.post(
             "/graphs/{id}/communities/{community_id}",
@@ -1578,24 +1654,30 @@ class GraphRouter(BaseRouterV3):
         ):
             """Updates a community's metadata."""
             if not auth_user.is_superuser:
-                raise R2RException("Only superusers can update communities", 403)
-            
+                raise R2RException(
+                    "Only superusers can update communities", 403
+                )
+
             if not community.graph_id:
                 community.graph_id = id
             else:
                 if community.graph_id != id:
-                    raise R2RException("Community graph ID does not match path", 400)
-                
+                    raise R2RException(
+                        "Community graph ID does not match path", 400
+                    )
+
             if not community.id:
                 community.id = community_id
             else:
                 if community.id != community_id:
                     raise R2RException("Community ID does not match path", 400)
-                
+
             community.id = community_id
             community.graph_id = id
-            
-            return await self.services["kg"].providers.database.graph_handler.communities.update(community)
+
+            return await self.services[
+                "kg"
+            ].providers.database.graph_handler.communities.update(community)
 
         @self.router.post(
             "/graphs/{id}/tune-prompt",

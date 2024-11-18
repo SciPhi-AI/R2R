@@ -46,31 +46,33 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         self.llm_provider = llm_provider
         self.embedding_provider = embedding_provider
 
-    async def kg_named_entity_deduplication(
-        self, collection_id: UUID, **kwargs
-    ):
+    async def kg_named_entity_deduplication(self, graph_id: UUID, **kwargs):
         try:
             entity_count = (
                 await self.database_provider.graph_handler.get_entity_count(
-                    collection_id=collection_id, distinct=True
+                    graph_id=graph_id, collection_id=graph_id, distinct=True
                 )
             )
 
             logger.info(
-                f"KGEntityDeduplicationPipe: Getting entities for collection {collection_id}"
+                f"KGEntityDeduplicationPipe: Getting entities for collection {graph_id}"
             )
             logger.info(
                 f"KGEntityDeduplicationPipe: Entity count: {entity_count}"
             )
 
+            # TODO: FIX this method
             entities = (
                 await self.database_provider.graph_handler.get_entities(
-                    collection_id=collection_id, offset=0, limit=-1
+                    graph_id=graph_id,
+                    collection_id=graph_id,
+                    offset=0,
+                    limit=-1,
                 )
             )["entities"]
 
             logger.info(
-                f"KGEntityDeduplicationPipe: Got {len(entities)} entities for collection {collection_id}"
+                f"KGEntityDeduplicationPipe: Got {len(entities)} entities for collection {graph_id}"
             )
 
             # deduplicate entities by name
@@ -112,7 +114,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             deduplicated_entities_list = [
                 Entity(
                     name=name,
-                    collection_id=collection_id,
+                    graph_id=graph_id,
                     chunk_ids=entity["chunk_ids"],
                     document_ids=entity["document_ids"],
                     attributes={},
@@ -121,16 +123,16 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             ]
 
             logger.info(
-                f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {collection_id}"
+                f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {graph_id}"
             )
             await self.database_provider.graph_handler.add_entities(
                 deduplicated_entities_list,
                 table_name="collection_entity",
-                conflict_columns=["name", "collection_id", "attributes"],
+                conflict_columns=["name", "graph_id", "attributes"],
             )
 
             yield {
-                "result": f"successfully deduplicated {len(entities)} entities to {len(deduplicated_entities)} entities for collection {collection_id}",
+                "result": f"successfully deduplicated {len(entities)} entities to {len(deduplicated_entities)} entities for collection {graph_id}",
                 "num_entities": len(deduplicated_entities),
             }
         except Exception as e:
@@ -143,13 +145,14 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             )
 
     async def kg_description_entity_deduplication(
-        self, collection_id: UUID, **kwargs
+        self, graph_id: UUID, **kwargs
     ):
         from sklearn.cluster import DBSCAN
 
         entities = (
             await self.database_provider.graph_handler.get_entities(
-                collection_id=collection_id,
+                graph_id=graph_id,
+                collection_id=graph_id,  # deprecated
                 offset=0,
                 limit=-1,
                 extra_columns=["description_embedding"],
@@ -162,7 +165,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             )
 
         logger.info(
-            f"KGEntityDeduplicationPipe: Got {len(entities)} entities for collection {collection_id}"
+            f"KGEntityDeduplicationPipe: Got {len(entities)} entities for collection {graph_id}"
         )
 
         deduplication_source_keys = [
@@ -237,7 +240,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
                 Entity(
                     name=longest_name,
                     description=description,
-                    collection_id=collection_id,
+                    graph_id=graph_id,
                     chunk_ids=chunk_ids_list,
                     document_ids=document_ids_list,
                     attributes={
@@ -247,20 +250,20 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             )
 
         logger.info(
-            f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {collection_id}"
+            f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {graph_id}"
         )
         await self.database_provider.graph_handler.add_entities(
             deduplicated_entities_list,
             table_name="collection_entity",
-            conflict_columns=["name", "collection_id", "attributes"],
+            conflict_columns=["name", "graph_id", "attributes"],
         )
 
         yield {
-            "result": f"successfully deduplicated {len(entities)} entities to {len(deduplicated_entities)} entities for collection {collection_id}",
+            "result": f"successfully deduplicated {len(entities)} entities to {len(deduplicated_entities)} entities for collection {graph_id}",
             "num_entities": len(deduplicated_entities),
         }
 
-    async def kg_llm_entity_deduplication(self, collection_id: UUID, **kwargs):
+    async def kg_llm_entity_deduplication(self, graph_id: UUID, **kwargs):
         # TODO: implement LLM based entity deduplication
         raise NotImplementedError(
             "LLM entity deduplication is not implemented yet"
@@ -276,7 +279,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
     ):
         # TODO: figure out why the return type AsyncGenerator[dict, None] is not working
 
-        collection_id = input.message["collection_id"]
+        graph_id = input.message["graph_id"]
 
         kg_entity_deduplication_type = input.message[
             "kg_entity_deduplication_type"
@@ -284,10 +287,10 @@ class KGEntityDeduplicationPipe(AsyncPipe):
 
         if kg_entity_deduplication_type == KGEntityDeduplicationType.BY_NAME:
             logger.info(
-                f"KGEntityDeduplicationPipe: Running named entity deduplication for collection {collection_id}"
+                f"KGEntityDeduplicationPipe: Running named entity deduplication for collection {graph_id}"
             )
             async for result in self.kg_named_entity_deduplication(
-                collection_id, **kwargs
+                graph_id, **kwargs
             ):
                 yield result
 
@@ -296,19 +299,19 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             == KGEntityDeduplicationType.BY_DESCRIPTION
         ):
             logger.info(
-                f"KGEntityDeduplicationPipe: Running description entity deduplication for collection {collection_id}"
+                f"KGEntityDeduplicationPipe: Running description entity deduplication for collection {graph_id}"
             )
             async for result in self.kg_description_entity_deduplication(  # type: ignore
-                collection_id, **kwargs
+                graph_id, **kwargs
             ):
                 yield result
 
         elif kg_entity_deduplication_type == KGEntityDeduplicationType.BY_LLM:
             logger.info(
-                f"KGEntityDeduplicationPipe: Running LLM entity deduplication for collection {collection_id}"
+                f"KGEntityDeduplicationPipe: Running LLM entity deduplication for collection {graph_id}"
             )
             async for result in self.kg_llm_entity_deduplication(  # type: ignore
-                collection_id, **kwargs
+                graph_id, **kwargs
             ):
                 yield result
 

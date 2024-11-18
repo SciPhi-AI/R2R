@@ -27,7 +27,7 @@ from core.base.providers.database import (
 
 from core.base.abstractions import (
     CommunityInfo,
-    EntityLevel,
+    DataLevel,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEnrichmentStatus,
@@ -131,7 +131,7 @@ class PostgresEntityHandler(EntityHandler):
 
         await self.connection_manager.execute_query(query)
 
-    async def create(self, entities: list[Entity]) -> None:
+    async def create(self, entities: list[Entity]) -> list[UUID]:  # type: ignore
         """Create new entities in the database.
 
         Args:
@@ -159,7 +159,7 @@ class PostgresEntityHandler(EntityHandler):
 
     async def get(
         self,
-        level: EntityLevel,
+        level: DataLevel,
         id: Optional[UUID] = None,
         entity_names: Optional[list[str]] = None,
         entity_categories: Optional[list[str]] = None,
@@ -186,15 +186,15 @@ class PostgresEntityHandler(EntityHandler):
         """
         params: list = [id]
 
-        if level != EntityLevel.CHUNK and entity_categories:
+        if level != DataLevel.CHUNK and entity_categories:
             raise ValueError(
                 "entity_categories are only supported for chunk level entities"
             )
 
         filter = {
-            EntityLevel.CHUNK: "chunk_ids = ANY($1)",
-            EntityLevel.DOCUMENT: "document_id = $1",
-            EntityLevel.GRAPH: "graph_id = $1",
+            DataLevel.CHUNK: "chunk_ids = ANY($1)",
+            DataLevel.DOCUMENT: "document_id = $1",
+            DataLevel.GRAPH: "graph_id = $1",
         }[level]
 
         if entity_names:
@@ -228,7 +228,7 @@ class PostgresEntityHandler(EntityHandler):
             await self.connection_manager.fetch_query(QUERY, params[:-2])
         )[0]["count"]
 
-        if count == 0 and level == EntityLevel.GRAPH:
+        if count == 0 and level == DataLevel.GRAPH:
             raise R2RException(
                 "No entities found in the graph, please add entities and then build the graph",
                 204,
@@ -249,13 +249,13 @@ class PostgresEntityHandler(EntityHandler):
 
         filter = "id = $1"
         params: list[Any] = [entity.id]
-        if entity.level == EntityLevel.CHUNK:
+        if entity.level == DataLevel.CHUNK:
             filter += " AND chunk_ids = ANY($2)"
             params.append(entity.chunk_ids)
-        elif entity.level == EntityLevel.DOCUMENT:
+        elif entity.level == DataLevel.DOCUMENT:
             filter += " AND document_id = $2"
             params.append(entity.document_id)
-        elif entity.level == EntityLevel.GRAPH:
+        elif entity.level == DataLevel.GRAPH:
             filter += " AND graph_id = $2"
             params.append(entity.graph_id)
 
@@ -286,7 +286,9 @@ class PostgresEntityHandler(EntityHandler):
             id_column="id",
         )
 
-    async def delete(self, id: UUID, entity_id: UUID, level: EntityLevel) -> None:
+    async def delete(
+        self, id: UUID, entity_id: UUID, level: DataLevel
+    ) -> None:
         """Delete an entity from the database.
 
         Args:
@@ -335,7 +337,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
             CREATE INDEX IF NOT EXISTS relationship_document_id_idx ON {self._get_table_name("chunk_relationship")} (document_id);
         """
         await self.connection_manager.execute_query(QUERY)
-        
+
         QUERY = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("graph_relationship")} (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -361,7 +363,6 @@ class PostgresRelationshipHandler(RelationshipHandler):
         """
         await self.connection_manager.execute_query(QUERY)
 
-
     def _get_table_name(self, table: str) -> str:
         """Get the fully qualified table name."""
         return f'"{self.project_name}"."{table}"'
@@ -377,7 +378,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
     async def get(
         self,
         id: UUID,
-        level: EntityLevel,
+        level: DataLevel,
         entity_names: Optional[list[str]] = None,
         relationship_types: Optional[list[str]] = None,
         attributes: Optional[list[str]] = None,
@@ -387,13 +388,13 @@ class PostgresRelationshipHandler(RelationshipHandler):
         """Get relationships from storage by ID."""
 
         filter = {
-            EntityLevel.CHUNK: "chunk_ids = ANY($1)",
-            EntityLevel.DOCUMENT: "document_id = $1",
-            EntityLevel.GRAPH: "graph_id = $1",
+            DataLevel.CHUNK: "chunk_ids = ANY($1)",
+            DataLevel.DOCUMENT: "document_id = $1",
+            DataLevel.GRAPH: "graph_id = $1",
         }[level]
 
-        if level == EntityLevel.DOCUMENT:
-            level = EntityLevel.CHUNK # to change the table name
+        if level == DataLevel.DOCUMENT:
+            level = DataLevel.CHUNK  # to change the table name
 
         params = [id]
 
@@ -423,19 +424,23 @@ class PostgresRelationshipHandler(RelationshipHandler):
 
         return [Relationship(**row) for row in rows], count  # type: ignore
 
-    async def update(self, relationship: Relationship) -> None:
+    async def update(self, relationship: Relationship) -> UUID:  # type: ignore
         return await _update_object(
             object=relationship.__dict__,
-            full_table_name=self._get_table_name(relationship.level.value + "_relationship"),
+            full_table_name=self._get_table_name(
+                relationship.level.value + "_relationship"  # type: ignore
+            ),
             connection_manager=self.connection_manager,
             id_column="id",
         )
 
-    async def delete(self, level: EntityLevel, id: UUID, relationship_id: UUID) -> None:
+    async def delete(
+        self, level: DataLevel, id: UUID, relationship_id: UUID
+    ) -> None:
         """Delete a relationship from the database."""
-        
-        if level == EntityLevel.DOCUMENT:
-            level = EntityLevel.CHUNK
+
+        if level == DataLevel.DOCUMENT:
+            level = DataLevel.CHUNK
 
         QUERY = f"""
             DELETE FROM {self._get_table_name(level.value + "_relationship")}
@@ -518,8 +523,14 @@ class PostgresCommunityHandler(CommunityHandler):
             connection_manager=self.connection_manager,
         )
 
-    async def get(self, id: UUID, offset: int, limit: int, community_id: Optional[UUID] = None):
-        
+    async def get(
+        self,
+        id: UUID,
+        offset: int,
+        limit: int,
+        community_id: Optional[UUID] = None,
+    ):
+
         if community_id is None:
             QUERY = f"""
                 SELECT * FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
@@ -528,16 +539,16 @@ class PostgresCommunityHandler(CommunityHandler):
             params = [id, offset, limit]
             communities = [
                 Community(**row)
-                for row in await self.connection_manager.fetch_query(QUERY, params)
+                for row in await self.connection_manager.fetch_query(
+                    QUERY, params
+                )
             ]
 
             QUERY_COUNT = f"""
                 SELECT COUNT(*) FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
             """
             count = (
-                await self.connection_manager.fetch_query(
-                    QUERY_COUNT, [id]
-                )
+                await self.connection_manager.fetch_query(QUERY_COUNT, [id])
             )[0]["count"]
 
             return communities, count
@@ -547,7 +558,14 @@ class PostgresCommunityHandler(CommunityHandler):
                 SELECT * FROM {self._get_table_name("graph_community")} WHERE graph_id = $1 AND id = $2
             """
             params = [id, community_id]
-            return [Community(**await self.connection_manager.fetchrow_query(QUERY, params))]
+            return [
+                Community(
+                    **await self.connection_manager.fetchrow_query(
+                        QUERY, params
+                    )
+                )
+            ]
+
 
 class PostgresGraphHandler(GraphHandler):
     """Handler for Knowledge Graph METHODS in PostgreSQL."""
@@ -603,17 +621,21 @@ class PostgresGraphHandler(GraphHandler):
             print(f"Creating tables for {handler.__class__.__name__}")
             await handler.create_tables()
 
-    async def create(self, graph: Graph) -> None:
-        return (await _add_objects(
-            objects=[graph.__dict__],
-            full_table_name=self._get_table_name("graph"),
-            connection_manager=self.connection_manager,
-        ))[0]
+    async def create(self, graph: Graph) -> UUID:  # type: ignore
+        return (
+            await _add_objects(
+                objects=[graph.__dict__],
+                full_table_name=self._get_table_name("graph"),
+                connection_manager=self.connection_manager,
+            )
+        )[0]
 
-    async def delete(self, graph_id: UUID, cascade: bool = False) -> None:
+    async def delete(self, graph_id: UUID, cascade: bool = False) -> UUID:
 
         if cascade:
-            raise NotImplementedError("Cascade deletion not implemented. Please delete document level entities and relationships using the document delete endpoints.")
+            raise NotImplementedError(
+                "Cascade deletion not implemented. Please delete document level entities and relationships using the document delete endpoints."
+            )
 
         QUERY = f"""
             DELETE FROM {self._get_table_name("graph")} WHERE id = $1
@@ -644,7 +666,9 @@ class PostgresGraphHandler(GraphHandler):
 
         return graph_id
 
-    async def get(self, offset: int, limit: int, graph_id: Optional[UUID] = None):
+    async def get(
+        self, offset: int, limit: int, graph_id: Optional[UUID] = None
+    ):
 
         if graph_id is None:
 
@@ -660,66 +684,82 @@ class PostgresGraphHandler(GraphHandler):
             COUNT_QUERY = f"""
                 SELECT COUNT(*) FROM {self._get_table_name("graph")}
             """
-            count = (
-                await self.connection_manager.fetch_query(COUNT_QUERY)
-            )[0]["count"]
+            count = (await self.connection_manager.fetch_query(COUNT_QUERY))[
+                0
+            ]["count"]
 
-            return {'results': [Graph(**row) for row in ret], 'total_entries': count}
+            return {
+                "results": [Graph(**row) for row in ret],
+                "total_entries": count,
+            }
 
         else:
             QUERY = f"""
                 SELECT * FROM {self._get_table_name("graph")} WHERE id = $1
             """
 
-            params = [graph_id]
+            params = [graph_id]  # type: ignore
 
-            return {'results': [Graph(**await self.connection_manager.fetchrow_query(QUERY, params))]}
+            return {
+                "results": [
+                    Graph(
+                        **await self.connection_manager.fetchrow_query(
+                            QUERY, params
+                        )
+                    )
+                ]
+            }
 
-
-    async def add_documents(self, id: UUID, document_ids: list[UUID]) -> None:
+    async def add_documents(self, id: UUID, document_ids: list[UUID]) -> bool:
         # add all entities and relationships for this document in the graph. look at the document_entity and chunk_relationship tables
         # also, don't add if the ID already exists
-        
+
         for document_id in document_ids:
             for table in ["document_entity", "chunk_relationship"]:
                 QUERY = f"""
-                    UPDATE {self._get_table_name(table)} 
-                    SET graph_ids = CASE 
+                    UPDATE {self._get_table_name(table)}
+                    SET graph_ids = CASE
                         WHEN $1 = ANY(graph_ids) THEN graph_ids
                         ELSE array_append(graph_ids, $1)
                     END
                     WHERE document_id = $2
                 """
-                await self.connection_manager.execute_query(QUERY, [id, document_id])
+                await self.connection_manager.execute_query(
+                    QUERY, [id, document_id]
+                )
 
         return True
 
-    async def remove_documents(self, id: UUID, document_ids: list[UUID]) -> None:
+    async def remove_documents(
+        self, id: UUID, document_ids: list[UUID]
+    ) -> bool:
         """
-            Remove all entities and relationships for this document from the graph.
+        Remove all entities and relationships for this document from the graph.
         """
         for document_id in document_ids:
             for table in ["document_entity", "chunk_relationship"]:
                 QUERY = f"""
-                    UPDATE {self._get_table_name(table)} 
+                    UPDATE {self._get_table_name(table)}
                     SET graph_ids = array_remove(graph_ids, $1)
                     WHERE document_id = $2
                 """
-                await self.connection_manager.execute_query(QUERY, [id, document_id])
+                await self.connection_manager.execute_query(
+                    QUERY, [id, document_id]
+                )
 
         return True
 
     async def add_collections(
         self, id: UUID, collection_ids: list[UUID]
-    ) -> None:
+    ) -> bool:
         """
-            Add all entities and relationships for this collection to the graph.
+        Add all entities and relationships for this collection to the graph.
         """
         for collection_id in collection_ids:
             for table in ["document_entity", "chunk_relationship"]:
                 QUERY = f"""
-                    UPDATE {self._get_table_name(table)} 
-                    SET graph_ids = CASE 
+                    UPDATE {self._get_table_name(table)}
+                    SET graph_ids = CASE
                         WHEN $1 = ANY(graph_ids) THEN graph_ids
                         ELSE array_append(graph_ids, $1)
                     END
@@ -728,22 +768,24 @@ class PostgresGraphHandler(GraphHandler):
                             SELECT document_id FROM {self._get_table_name("document_info")}
                             WHERE $2 = ANY(collection_ids)
                         )
-                    );                
+                    );
                 """
-                await self.connection_manager.execute_query(QUERY, [id, collection_id])
+                await self.connection_manager.execute_query(
+                    QUERY, [id, collection_id]
+                )
 
         return True
 
     async def remove_collections(
         self, id: UUID, collection_ids: list[UUID]
-    ) -> None:
+    ) -> bool:
         """
-            Remove all entities and relationships for this collection from the graph.
+        Remove all entities and relationships for this collection from the graph.
         """
         for collection_id in collection_ids:
             for table in ["document_entity", "chunk_relationship"]:
                 QUERY = f"""
-                    UPDATE {self._get_table_name(table)} 
+                    UPDATE {self._get_table_name(table)}
                     SET graph_ids = array_remove(graph_ids, $1)
                     WHERE document_id = ANY(
                         ARRAY(
@@ -752,66 +794,76 @@ class PostgresGraphHandler(GraphHandler):
                         )
                     )
                 """
-                await self.connection_manager.execute_query(QUERY, [id, collection_id])
+                await self.connection_manager.execute_query(
+                    QUERY, [id, collection_id]
+                )
 
         return True
-            
-    async def add_entities_v3(self, id: UUID, entity_ids: list[UUID]) -> None:
+
+    async def add_entities_v3(self, id: UUID, entity_ids: list[UUID]) -> bool:
         """
-            Add entities to the graph.
+        Add entities to the graph.
         """
         QUERY = f"""
-            UPDATE {self._get_table_name("document_entity")} 
-            SET graph_ids = CASE 
+            UPDATE {self._get_table_name("document_entity")}
+            SET graph_ids = CASE
                     WHEN $1 = ANY(graph_ids) THEN graph_ids
                     ELSE array_append(graph_ids, $1)
                 END
             WHERE id = ANY($2)
         """
         await self.connection_manager.execute_query(QUERY, [id, entity_ids])
-        
+
         return True
 
-    async def remove_entities(self, id: UUID, entity_ids: list[UUID]) -> None:
+    async def remove_entities(self, id: UUID, entity_ids: list[UUID]) -> bool:
         """
-            Remove entities from the graph.
+        Remove entities from the graph.
         """
         QUERY = f"""
-            UPDATE {self._get_table_name("document_entity")} 
+            UPDATE {self._get_table_name("document_entity")}
             SET graph_ids = array_remove(graph_ids, $1)
             WHERE id = ANY($2)
         """
         await self.connection_manager.execute_query(QUERY, [id, entity_ids])
 
         return True
-        
-    async def add_relationships_v3(self, id: UUID, relationship_ids: list[UUID]) -> None:
+
+    async def add_relationships_v3(
+        self, id: UUID, relationship_ids: list[UUID]
+    ) -> bool:
         """
-            Add relationships to the graph.
+        Add relationships to the graph.
         """
         QUERY = f"""
-            UPDATE {self._get_table_name("chunk_relationship")} 
+            UPDATE {self._get_table_name("chunk_relationship")}
             SET graph_ids = array_append(graph_ids, $1)
             WHERE id = ANY($2)
         """
-        await self.connection_manager.execute_query(QUERY, [id, relationship_ids])
+        await self.connection_manager.execute_query(
+            QUERY, [id, relationship_ids]
+        )
 
         return True
-        
-    async def remove_relationships(self, id: UUID, relationship_ids: list[UUID]) -> None:
+
+    async def remove_relationships(
+        self, id: UUID, relationship_ids: list[UUID]
+    ) -> bool:
         """
-            Remove relationships from the graph.
+        Remove relationships from the graph.
         """
         QUERY = f"""
-            UPDATE {self._get_table_name("chunk_relationship")} 
+            UPDATE {self._get_table_name("chunk_relationship")}
             SET graph_ids = array_remove(graph_ids, $1)
             WHERE id = ANY($2)
         """
-        await self.connection_manager.execute_query(QUERY, [id, relationship_ids])
+        await self.connection_manager.execute_query(
+            QUERY, [id, relationship_ids]
+        )
 
         return True
 
-    async def update(self, graph: Graph) -> None:
+    async def update(self, graph: Graph) -> UUID:
         return await _update_object(
             object=graph.__dict__,
             full_table_name=self._get_table_name("graph"),
@@ -1034,6 +1086,7 @@ class PostgresGraphHandler(GraphHandler):
         offset: int,
         limit: int,
         collection_id: Optional[UUID] = None,
+        graph_id: Optional[UUID] = None,
         entity_ids: Optional[list[str]] = None,
         entity_names: Optional[list[str]] = None,
         entity_table_name: str = "document_entity",
@@ -1195,7 +1248,7 @@ class PostgresGraphHandler(GraphHandler):
         self,
         relationships: list[Relationship],
         table_name: str = "chunk_relationship",
-    ) -> None:
+    ):  # type: ignore
         """
         Upsert relationships into the chunk_relationship table. These are raw relationships extracted from the document.
 
@@ -1304,7 +1357,7 @@ class PostgresGraphHandler(GraphHandler):
         self, collection_id: UUID, offset: int, limit: int
     ) -> list[int]:
         QUERY = f"""
-            SELECT distinct community_number FROM {self._get_table_name("community")} WHERE collection_id = $1 AND community_number >= $2 AND community_number < $3
+            SELECT distinct community_number FROM {self._get_table_name("graph_community")} WHERE graph_id = $1 AND community_number >= $2 AND community_number < $3
         """
         community_numbers = await self.connection_manager.fetch_query(
             QUERY, [collection_id, offset, offset + limit]
@@ -1315,7 +1368,7 @@ class PostgresGraphHandler(GraphHandler):
         self, communities: list[CommunityInfo]
     ) -> None:
         QUERY = f"""
-            INSERT INTO {self._get_table_name("community_info")} (node, cluster, parent_cluster, level, is_final_cluster, relationship_ids, collection_id)
+            INSERT INTO {self._get_table_name("graph_community_info")} (node, cluster, parent_cluster, level, is_final_cluster, relationship_ids, graph_id)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             """
         communities_tuples_list = [
@@ -1326,7 +1379,7 @@ class PostgresGraphHandler(GraphHandler):
                 community.level,
                 community.is_final_cluster,
                 community.relationship_ids,
-                community.collection_id,
+                community.graph_id,
             )
             for community in communities
         ]
@@ -1750,14 +1803,14 @@ class PostgresGraphHandler(GraphHandler):
         embedding_type = kwargs.get("embedding_type", "description_embedding")
         property_names = kwargs.get("property_names", ["name", "description"])
         filters = kwargs.get("filters", {})
-        entities_level = kwargs.get("entities_level", EntityLevel.DOCUMENT)
+        entities_level = kwargs.get("entities_level", DataLevel.DOCUMENT)
         limit = kwargs.get("limit", 10)
 
         table_name = ""
         if search_type == "__Entity__":
             table_name = (
                 "collection_entity"
-                if entities_level == EntityLevel.COLLECTION
+                if entities_level == DataLevel.COLLECTION
                 else "document_entity"
             )
         elif search_type == "__Relationship__":
@@ -2120,10 +2173,12 @@ class PostgresGraphHandler(GraphHandler):
     async def get_entity_count(
         self,
         collection_id: Optional[UUID] = None,
+        graph_id: Optional[UUID] = None,
         document_id: Optional[UUID] = None,
         distinct: bool = False,
         entity_table_name: str = "document_entity",
     ) -> int:
+
         if collection_id is None and document_id is None:
             raise ValueError(
                 "Either collection_id or document_id must be provided."
@@ -2201,15 +2256,15 @@ class PostgresGraphHandler(GraphHandler):
     async def update_entity_descriptions(self, entities: list[Entity]):
 
         query = f"""
-            UPDATE {self._get_table_name("collection_entity")}
+            UPDATE {self._get_table_name("graph_entity")}
             SET description = $3, description_embedding = $4
-            WHERE name = $1 AND collection_id = $2
+            WHERE name = $1 AND graph_id = $2
         """
 
         inputs = [
             (
                 entity.name,
-                entity.collection_id,
+                entity.graph_id,
                 entity.description,
                 entity.description_embedding,
             )
@@ -2228,6 +2283,7 @@ def _json_serialize(obj):
         return obj.isoformat()
     raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
+
 async def _add_objects(
     objects: list[dict],
     full_table_name: str,
@@ -2243,7 +2299,9 @@ async def _add_objects(
     cleaned_objects = []
     for obj in objects:
         cleaned_obj = {
-            k: v for k, v in obj.items() if k not in exclude_attributes and v is not None
+            k: v
+            for k, v in obj.items()
+            if k not in exclude_attributes and v is not None
         }
         cleaned_objects.append(cleaned_obj)
 
@@ -2269,7 +2327,9 @@ async def _add_objects(
             pg_type = "uuid"
         elif isinstance(sample_value, (int, float)):
             pg_type = "numeric"
-        elif isinstance(sample_value, list) and all(isinstance(x, UUID) for x in sample_value):
+        elif isinstance(sample_value, list) and all(
+            isinstance(x, UUID) for x in sample_value
+        ):
             pg_type = "uuid[]"
         elif isinstance(sample_value, list):
             pg_type = "jsonb"
@@ -2280,7 +2340,9 @@ async def _add_objects(
         elif isinstance(sample_value, (datetime.datetime, datetime.date)):
             pg_type = "timestamp"
         else:
-           raise TypeError(f"Unsupported data type for column '{col}': {type(sample_value)}")
+            raise TypeError(
+                f"Unsupported data type for column '{col}': {type(sample_value)}"
+            )
 
         print(col, pg_type)
 
@@ -2291,7 +2353,11 @@ async def _add_objects(
 
     if conflict_columns:
         conflict_columns_str = ", ".join(conflict_columns)
-        update_columns_str = ", ".join(f"{col}=EXCLUDED.{col}" for col in columns if col not in conflict_columns)
+        update_columns_str = ", ".join(
+            f"{col}=EXCLUDED.{col}"
+            for col in columns
+            if col not in conflict_columns
+        )
         on_conflict_clause = f"ON CONFLICT ({conflict_columns_str}) DO UPDATE SET {update_columns_str}"
     else:
         on_conflict_clause = ""
@@ -2310,6 +2376,7 @@ async def _add_objects(
 
     # Extract and return the IDs
     return [record["id"] for record in result]
+
 
 async def _update_object(
     object: dict[str, Any],

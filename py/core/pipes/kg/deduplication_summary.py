@@ -105,7 +105,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             )
 
     async def _prepare_and_upsert_entities(
-        self, entities_batch: list[Entity], collection_id: UUID
+        self, entities_batch: list[Entity], graph_id: UUID
     ) -> Any:
 
         embeddings = await self.embedding_provider.async_get_embeddings(
@@ -114,10 +114,10 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
 
         for i, entity in enumerate(entities_batch):
             entity.description_embedding = str(embeddings[i])  # type: ignore
-            entity.collection_id = collection_id
+            entity.graph_id = graph_id
 
         logger.info(
-            f"Upserting {len(entities_batch)} entities for collection {collection_id}"
+            f"Upserting {len(entities_batch)} entities for graph {graph_id}"
         )
 
         await self.database_provider.graph_handler.update_entity_descriptions(
@@ -125,7 +125,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         )
 
         logger.info(
-            f"Upserted {len(entities_batch)} entities for collection {collection_id}"
+            f"Upserted {len(entities_batch)} entities for graph {graph_id}"
         )
 
         for entity in entities_batch:
@@ -141,7 +141,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
     ):
         # TODO: figure out why the return type AsyncGenerator[dict, None] is not working
 
-        collection_id = input.message["collection_id"]
+        graph_id = input.message["graph_id"]
         offset = input.message["offset"]
         limit = input.message["limit"]
         kg_entity_deduplication_type = input.message[
@@ -153,13 +153,13 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         generation_config = input.message["generation_config"]
 
         logger.info(
-            f"Running kg_entity_deduplication_summary for collection {collection_id} with settings kg_entity_deduplication_type: {kg_entity_deduplication_type}, kg_entity_deduplication_prompt: {kg_entity_deduplication_prompt}, generation_config: {generation_config}"
+            f"Running kg_entity_deduplication_summary for graph {graph_id} with settings kg_entity_deduplication_type: {kg_entity_deduplication_type}, kg_entity_deduplication_prompt: {kg_entity_deduplication_prompt}, generation_config: {generation_config}"
         )
 
         entities = (
             await self.database_provider.graph_handler.get_entities(
-                collection_id=collection_id,
-                entity_table_name="collection_entity",
+                graph_id=graph_id,
+                entity_table_name="graph_entity",
                 offset=offset,
                 limit=limit,
             )
@@ -169,7 +169,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
 
         entity_descriptions = (
             await self.database_provider.graph_handler.get_entities(
-                collection_id=collection_id,
+                graph_id=graph_id,
                 entity_names=entity_names,
                 entity_table_name="document_entity",
                 offset=offset,
@@ -186,7 +186,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             )
 
         logger.info(
-            f"Retrieved {len(entity_descriptions)} entity descriptions for collection {collection_id}"
+            f"Retrieved {len(entity_descriptions)} entity descriptions for graph {graph_id}"
         )
 
         tasks = []
@@ -205,7 +205,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
                 # prepare and upsert entities
 
                 async for result in self._prepare_and_upsert_entities(
-                    entities_batch, collection_id
+                    entities_batch, graph_id
                 ):
                     yield result
 
@@ -219,6 +219,6 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
 
             # prepare and upsert entities
             async for result in self._prepare_and_upsert_entities(
-                entities_batch, collection_id
+                entities_batch, graph_id
             ):
                 yield result

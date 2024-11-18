@@ -12,7 +12,7 @@ from core.base.pipes.base_pipe import AsyncPipe
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.providers.database.postgres import PostgresDBProvider
 
-from core.providers.database.kg import EntityLevel
+from core.providers.database.kg import DataLevel
 
 logger = logging.getLogger()
 
@@ -67,15 +67,13 @@ class KGStoragePipe(AsyncPipe):
             if extraction.entities:
                 if not extraction.entities[0].chunk_ids:
                     for i in range(len(extraction.entities)):
-                        extraction.entities[i].chunk_ids = (
-                            extraction.chunk_ids
-                        )
+                        extraction.entities[i].chunk_ids = extraction.chunk_ids
                         extraction.entities[i].document_id = (
                             extraction.document_id
                         )
 
                 for entity in extraction.entities:
-                    entity.level = EntityLevel.CHUNK
+                    entity.level = DataLevel.CHUNK
 
                 await self.database_provider.graph_handler.entities.create(
                     extraction.entities

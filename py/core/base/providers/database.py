@@ -705,12 +705,12 @@ class GraphHandler(Handler):
         pass
 
     @abstractmethod
-    async def update(self, *args: Any, **kwargs: Any) -> None:
+    async def update(self, graph: Graph) -> UUID:
         """Update graph in storage."""
         pass
 
     @abstractmethod
-    async def delete(self, *args: Any, **kwargs: Any) -> None:
+    async def delete(self, graph_id: UUID, cascade: bool = False) -> UUID:
         """Delete graph from storage."""
         pass
 

@@ -20,7 +20,7 @@ class RelationshipType(R2RSerializable):
     description: str | None = None
 
 
-class EntityLevel(str, Enum):
+class DataLevel(str, Enum):
     GRAPH = "graph"
     COLLECTION = "collection"
     DOCUMENT = "document"
@@ -34,9 +34,8 @@ class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
     id: UUID
-    document_id: UUID
     name: str
-    level: Optional[EntityLevel] = None
+    level: Optional[DataLevel] = None
     category: Optional[str] = None
     description: Optional[str] = None
     description_embedding: Optional[list[float] | str] = None
@@ -73,7 +72,7 @@ class Relationship(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
     id: UUID
-    document_id: UUID
+    level: Optional[DataLevel] = None
     subject: Optional[str] = None
     predicate: Optional[str] = None
     subject_id: Optional[UUID] = None
@@ -107,7 +106,6 @@ class CommunityInfo(R2RSerializable):
     parent_cluster: int | None
     level: int
     is_final_cluster: bool
-    graph_id: UUID
     relationship_ids: Optional[list[int]] = None
 
     def __init__(self, **kwargs):
@@ -157,19 +155,24 @@ class Graph(R2RSerializable):
     id: Optional[UUID] = None
 
     @classmethod
-    def from_dict(cls, data: dict) -> 'Graph':
+    def from_dict(cls, data: dict[str, Any] | str) -> "Graph":
         """Create a Graph instance from a dictionary."""
+        # Convert string to dict if needed
+        parsed_data: dict[str, Any] = (
+            json.loads(data) if isinstance(data, str) else data
+        )
+
         # Convert string representations to dicts before validation
-        if isinstance(data.get('attributes', {}), str):
-            data['attributes'] = json.loads(data['attributes'])
-        if isinstance(data.get('statistics', {}), str):
-            data['statistics'] = json.loads(data['statistics'])
-        return cls(**data)
+        if isinstance(parsed_data.get("attributes", {}), str):
+            parsed_data["attributes"] = json.loads(parsed_data["attributes"])
+        if isinstance(parsed_data.get("statistics", {}), str):
+            parsed_data["statistics"] = json.loads(parsed_data["statistics"])
+        return cls(**parsed_data)
 
     def __init__(self, **kwargs):
         # Convert string representations to dicts before calling super().__init__
-        if isinstance(kwargs.get('attributes', {}), str):
-            kwargs['attributes'] = json.loads(kwargs['attributes'])
-        if isinstance(kwargs.get('statistics', {}), str):
-            kwargs['statistics'] = json.loads(kwargs['statistics'])
+        if isinstance(kwargs.get("attributes", {}), str):
+            kwargs["attributes"] = json.loads(kwargs["attributes"])
+        if isinstance(kwargs.get("statistics", {}), str):
+            kwargs["statistics"] = json.loads(kwargs["statistics"])
         super().__init__(**kwargs)

@@ -7,7 +7,7 @@ import yaml
 from fastapi import Body, Depends, Query
 
 from core.base import Workflow
-from core.base.abstractions import EntityLevel, KGRunType
+from core.base.abstractions import DataLevel, KGRunType
 from core.base.api.models import (
     WrappedCommunitiesResponse,
     WrappedKGCreationResponse,
@@ -248,8 +248,8 @@ class KGRouter(BaseRouter):
             collection_id: Optional[UUID] = Query(
                 None, description="Collection ID to retrieve entities from."
             ),
-            entity_level: Optional[EntityLevel] = Query(
-                default=EntityLevel.DOCUMENT,
+            entity_level: Optional[DataLevel] = Query(
+                default=DataLevel.DOCUMENT,
                 description="Type of entities to retrieve. Options are: raw, dedup_document, dedup_collection.",
             ),
             entity_ids: Optional[list[str]] = Query(
@@ -274,9 +274,9 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
-            if entity_level == EntityLevel.CHUNK:
+            if entity_level == DataLevel.CHUNK:
                 entity_table_name = "chunk_entity"
-            elif entity_level == EntityLevel.DOCUMENT:
+            elif entity_level == DataLevel.DOCUMENT:
                 entity_table_name = "document_entity"
             else:
                 entity_table_name = "collection_entity"
