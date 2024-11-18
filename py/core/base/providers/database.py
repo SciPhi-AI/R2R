@@ -17,14 +17,9 @@ from pydantic import BaseModel
 from core.base.abstractions import (
     Community,
     CommunityInfo,
+    DocumentResponse,
     Entity,
     Graph,
-    Message,
-    Relationship,
-    VectorEntry,
-)
-from core.base.abstractions import (
-    DocumentResponse,
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
@@ -32,16 +27,15 @@ from core.base.abstractions import (
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
+    Message,
+    Relationship,
     SearchSettings,
     UserStats,
     VectorEntry,
     VectorSearchResult,
     VectorTableName,
 )
-from core.base.api.models import (
-    CollectionResponse,
-    UserResponse,
-)
+from core.base.api.models import CollectionResponse, UserResponse
 
 from ..logger import RunInfoLog
 from ..logger.base import RunType
@@ -62,8 +56,8 @@ from ..abstractions import (
     KGEntityDeduplicationSettings,
     KGExtraction,
     KGSearchSettings,
-    RelationshipType,
     Relationship,
+    RelationshipType,
 )
 from .base import ProviderConfig
 
@@ -465,7 +459,7 @@ class UserHandler(Handler):
         pass
 
     @abstractmethod
-    async def get_user_verification_data(
+    async def get_user_validation_data(
         self, user_id: UUID, *args, **kwargs
     ) -> dict:
         """
@@ -1223,10 +1217,10 @@ class DatabaseProvider(Provider):
             user_ids=user_ids,
         )
 
-    async def get_user_verification_data(
+    async def get_user_validation_data(
         self, user_id: UUID, *args, **kwargs
     ) -> dict:
-        return await self.user_handler.get_user_verification_data(user_id)
+        return await self.user_handler.get_user_validation_data(user_id)
 
     # Vector handler methods
     async def upsert(self, entry: VectorEntry) -> None:

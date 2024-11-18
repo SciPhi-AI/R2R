@@ -1,4 +1,4 @@
-from typing import Optional, Any
+from typing import Optional
 from uuid import UUID
 
 

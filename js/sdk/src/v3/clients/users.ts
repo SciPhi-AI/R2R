@@ -210,6 +210,14 @@ export class UsersClient {
   }
 
   /**
+   * Get detailed information about the currently authenticated user.
+   * @returns
+   */
+  async me(): Promise<WrappedUserResponse> {
+    return this.client.makeRequest("GET", `users/me`);
+  }
+
+  /**
    * Update a user.
    * @param id User ID to update
    * @param email Optional new email for the user

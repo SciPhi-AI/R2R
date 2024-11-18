@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 from ..models import Token, UserResponse
@@ -215,16 +215,15 @@ class UsersSDK:
             version="v3",
         )
 
-    # TODO: We should make this optional, that way they can retrieve themselves
     async def retrieve(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
     ) -> dict:
         """
         Get a specific user.
 
         Args:
-            id (Union[str, UUID]): User ID to retrieve
+            id (str | UUID): User ID to retrieve
 
         Returns:
             dict: Detailed user information
@@ -235,9 +234,24 @@ class UsersSDK:
             version="v3",
         )
 
+    async def me(
+        self,
+    ) -> dict:
+        """
+        Get detailed information about the currently authenticated user.
+
+        Returns:
+            dict: Detailed user information
+        """
+        return await self.client._make_request(
+            "GET",
+            "users/me",
+            version="v3",
+        )
+
     async def update(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
         email: Optional[str] = None,
         is_superuser: Optional[bool] = None,
         name: Optional[str] = None,
@@ -248,7 +262,7 @@ class UsersSDK:
         Update user information.
 
         Args:
-            id (Union[str, UUID]): User ID to update
+            id (str | UUID): User ID to update
             username (Optional[str]): New username
             is_superuser (Optional[bool]): Update superuser status
             metadata (Optional[Dict[str, Any]]): Update user metadata
@@ -277,7 +291,7 @@ class UsersSDK:
 
     async def list_collections(
         self,
-        id: Union[str, UUID],
+        id: str | UUID,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> dict:
@@ -285,7 +299,7 @@ class UsersSDK:
         Get all collections associated with a specific user.
 
         Args:
-            id (Union[str, UUID]): User ID to get collections for
+            id (str | UUID): User ID to get collections for
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
@@ -306,15 +320,15 @@ class UsersSDK:
 
     async def add_to_collection(
         self,
-        id: Union[str, UUID],
-        collection_id: Union[str, UUID],
+        id: str | UUID,
+        collection_id: str | UUID,
     ) -> None:
         """
         Add a user to a collection.
 
         Args:
-            id (Union[str, UUID]): User ID to add
-            collection_id (Union[str, UUID]): Collection ID to add user to
+            id (str | UUID): User ID to add
+            collection_id (str | UUID): Collection ID to add user to
         """
         await self.client._make_request(
             "POST",
@@ -324,15 +338,15 @@ class UsersSDK:
 
     async def remove_from_collection(
         self,
-        id: Union[str, UUID],
-        collection_id: Union[str, UUID],
+        id: str | UUID,
+        collection_id: str | UUID,
     ) -> bool:
         """
         Remove a user from a collection.
 
         Args:
-            id (Union[str, UUID]): User ID to remove
-            collection_id (Union[str, UUID]): Collection ID to remove user from
+            id (str | UUID): User ID to remove
+            collection_id (str | UUID): Collection ID to remove user from
 
         Returns:
             bool: True if successful
