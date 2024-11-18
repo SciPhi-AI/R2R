@@ -154,7 +154,7 @@ class Graph(R2RSerializable):
     updated_at: datetime = datetime.now()
     attributes: dict[str, Any] = {}
     status: str = "pending"
-    id: Optional[uuid.UUID] = None
+    id: Optional[UUID] = None
 
     @classmethod
     def from_dict(cls, data: dict) -> 'Graph':
