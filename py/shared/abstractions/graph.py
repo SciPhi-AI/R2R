@@ -161,15 +161,14 @@ class KGExtraction(R2RSerializable):
 class Graph(R2RSerializable):
     """A request to create a graph."""
 
-    id: Optional[uuid.UUID] = None
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str
+    description: str
     document_ids: list[uuid.UUID] = []
-    collection_ids: list[uuid.UUID] = []
     statistics: dict[str, Any] = {}
-    created_at: datetime
-    updated_at: datetime  # Implemntation is not yet complete
+    created_at: datetime = datetime.now()
+    updated_at: datetime = datetime.now()
     status: str = "pending"
+    id: Optional[uuid.UUID] = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

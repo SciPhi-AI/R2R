@@ -258,9 +258,9 @@ class PostgresEntityHandler(EntityHandler):
         elif entity.level == EntityLevel.DOCUMENT:
             filter += " AND document_id = $2"
             params.append(entity.document_id)
-        else:
-            filter += " AND collection_id = $2"
-            params.append(entity.collection_id)
+        elif entity.level == EntityLevel.GRAPH:
+            filter += " AND graph_id = $2"
+            params.append(entity.graph_id)
 
         # check if the entity already exists
         QUERY = f"""
@@ -562,20 +562,10 @@ class PostgresGraphHandler(GraphHandler):
             await handler.create_tables()
 
     async def create(self, graph: Graph) -> None:
-        QUERY = f"""
-            INSERT INTO {self._get_table_name("graph")} (id, status, created_at, updated_at, document_ids, collection_ids, attributes)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-        """
-        await self.connection_manager.execute_query(
-            QUERY, [*graph.to_dict().values()]
-        )
-
-    async def update(self, graph: Graph) -> None:
-        QUERY = f"""
-            UPDATE {self._get_table_name("graph")} SET status = $2, updated_at = $3, document_ids = $4, collection_ids = $5, attributes = $6 WHERE id = $1
-        """
-        await self.connection_manager.execute_query(
-            QUERY, [*graph.to_dict().values()]
+        await _add_objects(
+            objects=[graph.__dict__],
+            full_table_name=self._get_table_name("graph"),
+            connection_manager=self.connection_manager,
         )
 
     async def delete(self, graph_id: UUID) -> None:
@@ -584,13 +574,37 @@ class PostgresGraphHandler(GraphHandler):
         """
         await self.connection_manager.execute_query(QUERY, [graph_id])
 
-    async def get(self, graph_id: UUID):
-        QUERY = f"""
-            SELECT * FROM {self._get_table_name("graph")} WHERE id = $1
-        """
-        return Graph.from_dict(
-            await self.connection_manager.fetch_query(QUERY, [graph_id])
-        )
+    async def get(self, offset: int, limit: int, graph_id: Optional[UUID]):
+
+        if graph_id is None:
+
+            params = [offset, limit]
+
+            QUERY = f"""
+                SELECT * FROM {self._get_table_name("graph")}
+                OFFSET $1 LIMIT $2
+            """
+
+            ret = await self.connection_manager.fetch_query(QUERY, params)
+
+            COUNT_QUERY = f"""
+                SELECT COUNT(*) FROM {self._get_table_name("graph")}
+            """
+            count = (
+                await self.connection_manager.fetch_query(COUNT_QUERY, params[:-1])
+            )[0]["count"]
+
+            return {'results': [Graph(**row) for row in ret], 'total_entries': count}
+
+        else:
+            QUERY = f"""
+                SELECT * FROM {self._get_table_name("graph")} WHERE id = $1
+            """
+
+            params = [graph_id]
+
+            return {'results': [Graph(**await self.connection_manager.fetchrow_query(QUERY, params))]}
+
 
     async def add_document(self, graph_id: UUID, document_id: UUID) -> None:
         QUERY = f"""

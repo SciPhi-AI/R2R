@@ -7,7 +7,7 @@ from fastapi import Body, Depends, Path, Query
 
 from core.base import R2RException, RunType
 from core.base.abstractions import EntityLevel, KGRunType
-from core.base.abstractions import Community, Entity, Relationship
+from core.base.abstractions import Community, Entity, Relationship, Graph
 
 from core.base.api.models import (
     GenericMessageResponse,
@@ -35,9 +35,13 @@ from core.utils import (
 
 from core.base.abstractions import Entity, KGCreationSettings, Relationship
 
+from core.base.abstractions import DocumentResponse, DocumentType
+
 from .base_router import BaseRouterV3
 
 from fastapi import Request
+
+from shared.utils.base_utils import generate_entity_document_id
 
 logger = logging.getLogger()
 
@@ -246,7 +250,7 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can access this endpoint.", 403
                 )
 
-            entities, count = await self.services["kg"].list_entities_v3(
+            entities, count = await self.services["kg"].list_entities(
                 level=self._get_path_level(request),
                 id=id,
                 offset=offset,
@@ -379,19 +383,28 @@ class GraphRouter(BaseRouterV3):
                         entity.document_id = id
 
             elif level == EntityLevel.GRAPH:
-                for entity in entities:
-                    if entity.graph_id:
-                        if entity.graph_id != id:
-                            raise R2RException(
-                                "Entity graph IDs must match the graph ID or should be empty.",
-                                400,
-                            )
-                    else:
-                        entity.graph_id = id
 
-            return await self.services["kg"].create_entities_v3(
+                if not any(entity.document_id for entity in entities):
+                    document_id = generate_entity_document_id()
+                    for entity in entities:
+                        entity.document_id = document_id
+
+            res = await self.services["kg"].create_entities(
                 entities=entities,
             )
+
+            if level == EntityLevel.GRAPH:
+                await self.services['document'].upsert_documents_overview(
+                    documents_overview=[DocumentResponse(
+                        id=document_id,
+                        user_id=auth_user.id,
+                        metadata= {},
+                        document_type=DocumentType.GRAPH,
+                        version="1",
+                    )]
+                )
+
+            return res
 
         @self.router.post(
             "/chunks/{id}/graphs/entities/{entity_id}",
@@ -415,7 +428,7 @@ class GraphRouter(BaseRouterV3):
             },
         )
         @self.router.post(
-            "/documents/{id}/graphs/entities/{entity_id}",
+            "/documents/{id}/entities/{entity_id}",
             summary="Update an entity for a document",
             openapi_extra={
                 "x-codeSamples": [
@@ -749,27 +762,6 @@ class GraphRouter(BaseRouterV3):
                 ]
             },
         )
-        @self.router.post(
-            "/collections/{id}/graphs/relationships",
-            summary="Create relationships for a collection",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.collections.graphs.relationships.create(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationships=[relationship1, relationship2])
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
         @self.base_endpoint
         async def create_relationships(
             request: Request,
@@ -796,28 +788,7 @@ class GraphRouter(BaseRouterV3):
             }
 
         @self.router.post(
-            "/chunks/{id}/graphs/relationships/{relationship_id}",
-            summary="Update a relationship for a chunk",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.chunks.graphs.relationships.update(chunk_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_id="123e4567-e89b-12d3-a456-426614174000", relationship=relationship)
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.router.post(
-            "/documents/{id}/graphs/relationships/{relationship_id}",
+            "/documents/{id}/relationships/{relationship_id}",
             summary="Update a relationship for a document",
             openapi_extra={
                 "x-codeSamples": [
@@ -831,27 +802,6 @@ class GraphRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.documents.relationships.update(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_id="123e4567-e89b-12d3-a456-426614174000", relationship=relationship)
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.router.post(
-            "/graphs/{id}/relationships/{relationship_id}",
-            summary="Update a relationship for a graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.relationships.update(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_id="123e4567-e89b-12d3-a456-426614174000", relationship=relationship)
                             """
                         ),
                     },
@@ -928,27 +878,6 @@ class GraphRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.documents.graphs.relationships.delete(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_id="123e4567-e89b-12d3-a456-426614174000")
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.router.delete(
-            "/graphs/{id}/relationships/{relationship_id}",
-            summary="Delete a relationship for a graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.relationships.delete(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_id="123e4567-e89b-12d3-a456-426614174000")
                             """
                         ),
                     },
@@ -1085,12 +1014,6 @@ class GraphRouter(BaseRouterV3):
                 community=community,
             )
 
-        @self.base_endpoint
-        async def create_entities(
-            request: Request,
-        ):
-            pass
-
         # Graph-level operations
         @self.router.post(
             "/graphs/",
@@ -1134,24 +1057,19 @@ class GraphRouter(BaseRouterV3):
         @self.base_endpoint
         async def create_empty_graph(
             auth_user=Depends(self.providers.auth.auth_wrapper),
-            name: str = Query(
-                ...,
-                description="The name of the graph to create.",
-            ),
-            description: str = Query(
-                None,
-                description="The description of the graph to create.",
-            ),
+            graph: Graph = Body(...),
         ):
             """Creates an empty graph for a collection."""
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can create graphs", 403)
 
-            return await self.services["kg"].create_empty_graph()
+            return await self.services["kg"].create_new_graph(
+                graph
+            )
 
         @self.router.get(
-            "/graphs/{collection_id}",
-            summary="Get graph status",
+            "/graphs/",
+            summary="Get graph information",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -1163,8 +1081,8 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.get_status(
-                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                            result = client.graphs.get(
+                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )"""
                         ),
                     },
@@ -1180,12 +1098,12 @@ class GraphRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def get_graph_status(
-            collection_id: UUID = Path(...),  # TODO: change to id?
+        async def get_graph(
+            id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Gets the status and metadata of a graph for a collection.
+            Gets the information about a graph.
 
             Returns information about:
             - Creation status and timestamp
@@ -1199,10 +1117,64 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can view graph status", 403
                 )
 
-            raise NotImplementedError("Not implemented")
+            return (await self.services["kg"].get_graphs([id], 0, 1))['results'][0]
+
+        @self.router.get(
+            "/graphs/",
+            summary="Get graph information",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.get(
+                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                            )"""
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def get_graphs(
+            offset: int = Query(0, ge=0),
+            limit: int = Query(100, ge=1, le=1000),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Gets the information about a graph.
+
+            Returns information about:
+            - Creation status and timestamp
+            - Enrichment status and timestamp
+            - Entity and relationship counts
+            - Community statistics
+            - Current settings
+            """
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only superusers can view graph status", 403
+                )
+
+            results = await self.services["kg"].get_graphs(id, offset, limit)
+            return results, {"total_results": results["total_entries"]}
 
         @self.router.delete(
-            "/graphs/{collection_id}",
+            "/graphs/{id}",
             summary="Delete a graph",
             openapi_extra={
                 "x-codeSamples": [

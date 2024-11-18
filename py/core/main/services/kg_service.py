@@ -18,6 +18,7 @@ from core.base.abstractions import (
     Entity,
     Relationship,
     Community,
+    Graph,
 )
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -331,7 +332,13 @@ class KgService(Service):
             limit=limit or -1,
         )
 
-    ################### GRAPH ###################
+    ################### GRAPHS ###################
+
+    @telemetry_event("create_new_graph")
+    async def create_new_graph(self, graph: Graph) -> None:
+        return await self.providers.database.graph_handler.create(
+            graph
+        )
 
     @telemetry_event("get_document_ids_for_create_graph")
     async def get_document_ids_for_create_graph(
