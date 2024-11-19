@@ -10,11 +10,13 @@ class KGRunType(str, Enum):
     """Type of KG run."""
 
     ESTIMATE = "estimate"
-    EXTRACT = "extract"
     RUN = "run"  # deprecated
 
     def __str__(self):
         return self.value
+
+
+GraphRunType = KGRunType
 
 
 class KGEntityDeduplicationType(str, Enum):
@@ -43,11 +45,6 @@ class KGCreationSettings(R2RSerializable):
         alias="graphrag_entity_description_prompt",  # TODO - mark deprecated & remove
     )
 
-    force_kg_creation: bool = Field(
-        default=False,
-        description="Force run the KG creation step even if the graph is already created.",
-    )
-
     entity_types: list[str] = Field(
         default=[],
         description="The types of entities to extract.",
@@ -58,7 +55,7 @@ class KGCreationSettings(R2RSerializable):
         description="The types of relations to extract.",
     )
 
-    extraction_merge_count: int = Field(
+    chunk_merge_count: int = Field(
         default=4,
         description="The number of extractions to merge into a single KG extraction.",
     )

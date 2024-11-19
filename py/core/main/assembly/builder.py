@@ -24,11 +24,14 @@ from ..api.v2.management_router import ManagementRouter
 from ..api.v2.retrieval_router import RetrievalRouter
 from ..api.v3.chunks_router import ChunksRouter
 from ..api.v3.collections_router import CollectionsRouter
+from ..api.v3.communities_router import CommunitiesRouter
 from ..api.v3.conversations_router import ConversationsRouter
 from ..api.v3.documents_router import DocumentsRouter
 from ..api.v3.graph_router import GraphRouter
+from ..api.v3.entities_router import EntitiesRouter
 from ..api.v3.indices_router import IndicesRouter
 from ..api.v3.prompts_router import PromptsRouter
+from ..api.v3.relationships_router import RelationshipsRouter
 from ..api.v3.retrieval_router import RetrievalRouterV3
 from ..api.v3.system_router import SystemRouter
 from ..api.v3.users_router import UsersRouter
@@ -305,6 +308,21 @@ class R2RBuilder:
                 orchestration_provider=orchestration_provider,
             ).get_router(),
             "graph_router": GraphRouter(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "entities_router": EntitiesRouter(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "relationships_router": RelationshipsRouter(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "communities_router": CommunitiesRouter(
                 providers=providers,
                 services=services,
                 orchestration_provider=orchestration_provider,
