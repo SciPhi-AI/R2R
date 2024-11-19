@@ -281,7 +281,7 @@ class KGRouter(BaseRouter):
             else:
                 entity_table_name = "collection_entity"
 
-            entities = await self.service.get_entities(
+            get_entities_response = await self.service.get_entities(
                 collection_id=collection_id,
                 entity_ids=entity_ids,
                 entity_table_name=entity_table_name,
@@ -289,7 +289,9 @@ class KGRouter(BaseRouter):
                 limit=limit,
             )
 
-            return entities
+            return get_entities_response["entities"], {  # type: ignore
+                "total_entries": get_entities_response["total_entries"]
+            }
 
         @self.router.get("/triples")
         @self.base_endpoint
@@ -323,13 +325,17 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
-            return await self.service.get_relationships(
+            get_relationships_response = await self.service.get_relationships(
                 offset=offset,
                 limit=limit,
                 collection_id=collection_id,
                 entity_names=entity_names,
                 relationship_ids=triple_ids,
             )
+
+            return get_relationships_response["relationships"], {  # type: ignore
+                "total_entries": get_relationships_response["total_entries"]
+            }
 
         @self.router.get("/communities")
         @self.base_endpoint
@@ -362,13 +368,17 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
-            return await self.service.get_communities(
+            get_communities_response = await self.service.get_communities(
                 offset=offset,
                 limit=limit,
                 collection_id=collection_id,
                 levels=levels,
                 community_numbers=community_numbers,
             )
+
+            return get_communities_response["communities"], {  # type: ignore
+                "total_entries": get_communities_response["total_entries"]
+            }
 
         @self.router.post("/deduplicate_entities")
         @self.base_endpoint

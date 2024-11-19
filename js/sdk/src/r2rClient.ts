@@ -1733,7 +1733,7 @@ export class r2rClient extends BaseClient {
       params.entity_ids = relationship_ids;
     }
 
-    return this._makeRequest("GET", `relationships`, { params });
+    return this._makeRequest("GET", `triples`, { params });
   }
 
   /**

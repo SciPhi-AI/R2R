@@ -50,7 +50,7 @@ class DocumentsSDK:
             data["ingestion_config"] = json.dumps(ingestion_config)
         if collection_ids:
             for cid in collection_ids:
-                data["collection_ids"] = cid
+                data["collection_ids"] = str(cid)
 
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)

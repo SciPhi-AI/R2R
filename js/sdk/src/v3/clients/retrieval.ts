@@ -32,9 +32,9 @@ export class RetrievalClient {
 
   async rag(options: {
     query: string;
+    ragGenerationConfig?: GenerationConfig | Record<string, any>;
     vectorSearchSettings?: VectorSearchSettings | Record<string, any>;
     kgSearchSettings?: KGSearchSettings | Record<string, any>;
-    generationConfig?: GenerationConfig | Record<string, any>;
     taskPromptOverride?: string;
     includeTitleIfAvailable?: boolean;
   }): Promise<any | AsyncGenerator<string, void, unknown>> {
@@ -43,11 +43,11 @@ export class RetrievalClient {
       ...(options.vectorSearchSettings && {
         vectorSearchSettings: options.vectorSearchSettings,
       }),
+      ...(options.ragGenerationConfig && {
+        ragGenerationConfig: options.ragGenerationConfig,
+      }),
       ...(options.kgSearchSettings && {
         kgSearchSettings: options.kgSearchSettings,
-      }),
-      ...(options.generationConfig && {
-        generationConfig: options.generationConfig,
       }),
       ...(options.taskPromptOverride && {
         taskPromptOverride: options.taskPromptOverride,
@@ -57,7 +57,7 @@ export class RetrievalClient {
       }),
     };
 
-    if (options.generationConfig && options.generationConfig.stream) {
+    if (options.ragGenerationConfig && options.ragGenerationConfig.stream) {
       return this.streamRag(data);
     } else {
       return await this.client.makeRequest("POST", "retrieval/rag", {
@@ -84,7 +84,7 @@ export class RetrievalClient {
 
   async agent(options: {
     messages: Message[];
-    generationConfig?: GenerationConfig | Record<string, any>;
+    ragGenerationConfig?: GenerationConfig | Record<string, any>;
     vectorSearchSettings?: VectorSearchSettings | Record<string, any>;
     kgSearchSettings?: KGSearchSettings | Record<string, any>;
     taskPromptOverride?: string;
@@ -100,8 +100,8 @@ export class RetrievalClient {
       ...(options.kgSearchSettings && {
         kgSearchSettings: options.kgSearchSettings,
       }),
-      ...(options.generationConfig && {
-        generationConfig: options.generationConfig,
+      ...(options.ragGenerationConfig && {
+        ragGenerationConfig: options.ragGenerationConfig,
       }),
       ...(options.taskPromptOverride && {
         taskPromptOverride: options.taskPromptOverride,
@@ -117,7 +117,7 @@ export class RetrievalClient {
       }),
     };
 
-    if (options.generationConfig && options.generationConfig.stream) {
+    if (options.ragGenerationConfig && options.ragGenerationConfig.stream) {
       return this.streamAgent(data);
     } else {
       return await this.client.makeRequest("POST", "retrieval/agent", {

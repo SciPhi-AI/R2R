@@ -12,6 +12,7 @@ class Tool(R2RSerializable):
     parameters: Optional[dict[str, Any]] = None
 
     class Config:
+        populate_by_name = True
         arbitrary_types_allowed = True
 
 

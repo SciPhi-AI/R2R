@@ -1,5 +1,6 @@
 import { r2rClient } from "../../r2rClient";
 import {
+  WrappedBooleanResponse,
   WrappedCollectionResponse,
   WrappedCollectionsResponse,
 } from "../../types";
@@ -68,7 +69,7 @@ export class CollectionsClient {
     id: string;
     name?: string;
     description?: string;
-  }): Promise<any> {
+  }): Promise<WrappedCollectionResponse> {
     const data = {
       ...(options.name && { name: options.name }),
       ...(options.description && { description: options.description }),
@@ -84,7 +85,7 @@ export class CollectionsClient {
    * @param id Collection ID to delete
    * @returns
    */
-  async delete(options: { id: string }): Promise<any> {
+  async delete(options: { id: string }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", `collections/${options.id}`);
   }
 

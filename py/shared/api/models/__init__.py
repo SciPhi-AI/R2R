@@ -38,6 +38,7 @@ from shared.api.models.management.responses import (
     WrappedChunkResponse,
     WrappedChunksResponse,
     # Conversation Responses
+    WrappedConversationMessagesResponse,
     WrappedConversationResponse,
     WrappedConversationsResponse,
     # Document Responses
@@ -113,6 +114,7 @@ __all__ = [
     "WrappedChunkResponse",
     "WrappedChunksResponse",
     # Conversation Responses
+    "WrappedConversationMessagesResponse",
     "WrappedConversationResponse",
     "WrappedConversationsResponse",
     # User Responses

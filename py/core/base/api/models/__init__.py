@@ -54,6 +54,7 @@ from shared.api.models.management.responses import (  # Document Responses; Prom
     WrappedChunksResponse,
     WrappedCollectionResponse,
     WrappedCollectionsResponse,
+    WrappedConversationMessagesResponse,
     WrappedConversationResponse,
     WrappedConversationsResponse,
     WrappedDocumentResponse,
@@ -132,6 +133,7 @@ __all__ = [
     "WrappedCollectionsResponse",
     # Conversation Responses
     "ConversationResponse",
+    "WrappedConversationMessagesResponse",
     "WrappedConversationResponse",
     "WrappedConversationsResponse",
     # Prompt Responses

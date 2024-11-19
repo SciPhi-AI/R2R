@@ -1,5 +1,13 @@
 import { r2rClient } from "../../r2rClient";
 import FormData from "form-data";
+import {
+  WrappedBooleanResponse,
+  WrappedChunksResponse,
+  WrappedCollectionsResponse,
+  WrappedDocumentResponse,
+  WrappedDocumentsResponse,
+  WrappedIngestionResponse,
+} from "../../types";
 
 let fs: any;
 if (typeof window === "undefined") {
@@ -32,7 +40,7 @@ export class DocumentsClient {
     ingestionConfig?: Record<string, any>;
     collectionIds?: string[];
     runWithOrchestration?: boolean;
-  }): Promise<any> {
+  }): Promise<WrappedIngestionResponse> {
     if (!options.file && !options.content) {
       throw new Error("Either file or content must be provided");
     }
@@ -143,7 +151,7 @@ export class DocumentsClient {
     metadata?: Record<string, any>;
     ingestionConfig?: Record<string, any>;
     runWithOrchestration?: boolean;
-  }): Promise<any> {
+  }): Promise<WrappedIngestionResponse> {
     const formData = new FormData();
     const processedFiles: string[] = [];
 
@@ -228,7 +236,7 @@ export class DocumentsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
-  async retrieve(options: { id: string }): Promise<any> {
+  async retrieve(options: { id: string }): Promise<WrappedDocumentResponse> {
     return this.client.makeRequest("GET", `documents/${options.id}`);
   }
 
@@ -243,7 +251,7 @@ export class DocumentsClient {
     ids?: string[];
     offset?: number;
     limit?: number;
-  }): Promise<any> {
+  }): Promise<WrappedDocumentsResponse> {
     const params: Record<string, any> = {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? 100,
@@ -274,7 +282,7 @@ export class DocumentsClient {
    * @param id ID of document to delete
    * @returns
    */
-  async delete(options: { id: string }): Promise<any> {
+  async delete(options: { id: string }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", `documents/${options.id}`);
   }
 
@@ -291,7 +299,7 @@ export class DocumentsClient {
     includeVectors?: boolean;
     offset?: number;
     limit?: number;
-  }): Promise<any> {
+  }): Promise<WrappedChunksResponse> {
     const params: Record<string, any> = {
       includeVectors: options.includeVectors ?? false,
       offset: options.offset ?? 0,
@@ -314,7 +322,7 @@ export class DocumentsClient {
     id: string;
     offset?: number;
     limit?: number;
-  }): Promise<any> {
+  }): Promise<WrappedCollectionsResponse> {
     const params: Record<string, any> = {
       offset: options.offset ?? 0,
       limit: options.limit ?? 100,
@@ -331,7 +339,7 @@ export class DocumentsClient {
 
   async deleteByFilter(options: {
     filters: Record<string, any>;
-  }): Promise<any> {
+  }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", "documents/by-filter", {
       data: options.filters,
     });

@@ -1,3 +1,7 @@
+"""
+FIXME: We should migrate away from having prompt_id, and just have it use id.
+"""
+
 import json
 import logging
 import os
@@ -182,7 +186,7 @@ class CacheablePromptHandler(PromptHandler):
             input_types = json.loads(input_types)
 
         return {
-            "prompt_id": result["prompt_id"],
+            "id": result["prompt_id"],
             "name": result["name"],
             "template": result["template"],
             "input_types": input_types,
@@ -567,7 +571,7 @@ class PostgresPromptHandler(CacheablePromptHandler):
         prompts = [
             {
                 "name": row["name"],
-                "prompt_id": row["prompt_id"],
+                "id": row["prompt_id"],
                 "template": row["template"],
                 "input_types": (
                     json.loads(row["input_types"])

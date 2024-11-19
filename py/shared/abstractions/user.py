@@ -11,10 +11,17 @@ class Collection(BaseModel):
     id: UUID = Field(default=None)
     name: str
     description: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(
+        alias="createdAt",
+        default_factory=datetime.utcnow,
+    )
+    updated_at: datetime = Field(
+        alias="updatedAt",
+        default_factory=datetime.utcnow,
+    )
 
     class Config:
+        populate_by_name = True
         from_attributes = True
 
     def __init__(self, **data):

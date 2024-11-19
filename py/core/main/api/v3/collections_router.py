@@ -8,10 +8,12 @@ from fastapi import Body, Depends, Path, Query
 from core.base import R2RException, RunType
 from core.base.api.models import (
     GenericBooleanResponse,
+    GenericMessageResponse,
     WrappedBooleanResponse,
     WrappedCollectionResponse,
     WrappedCollectionsResponse,
     WrappedDocumentsResponse,
+    WrappedGenericMessageResponse,
     WrappedUsersResponse,
 )
 from core.providers import (
@@ -545,7 +547,7 @@ class CollectionsRouter(BaseRouterV3):
             id: UUID = Path(...),
             document_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> dict:  # We should make this a generic response or something
+        ) -> WrappedGenericMessageResponse:
             """
             Add a document to a collection.
             """
@@ -558,10 +560,9 @@ class CollectionsRouter(BaseRouterV3):
                     403,
                 )
 
-            result = await self.services[
+            return await self.services[
                 "management"
             ].assign_document_to_collection(document_id, id)
-            return result  # type: ignore
 
         @self.router.get(
             "/collections/{id}/documents",

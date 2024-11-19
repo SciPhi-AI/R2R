@@ -104,6 +104,7 @@ class Document(R2RSerializable):
         json_encoders = {
             UUID: str,
         }
+        populate_by_name = True
 
 
 class IngestionStatus(str, Enum):
