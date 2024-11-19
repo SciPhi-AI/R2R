@@ -21,17 +21,12 @@ function handleRequestError(response: AxiosResponse): void {
   let message: string;
   const errorContent = response.data;
 
-  if (
-    typeof errorContent === "object" &&
-    errorContent !== null &&
-    "detail" in errorContent
-  ) {
-    const { detail } = errorContent;
-    if (typeof detail === "object" && detail !== null) {
-      message = (detail as { message?: string }).message || response.statusText;
-    } else {
-      message = String(detail);
-    }
+  if (typeof errorContent === "object" && errorContent !== null) {
+    message =
+      errorContent.message ||
+      (errorContent.detail && errorContent.detail.message) ||
+      (typeof errorContent.detail === "string" && errorContent.detail) ||
+      JSON.stringify(errorContent);
   } else {
     message = String(errorContent);
   }

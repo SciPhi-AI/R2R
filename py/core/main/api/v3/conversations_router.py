@@ -386,7 +386,7 @@ class ConversationsRouter(BaseRouterV3):
                                     id: "123e4567-e89b-12d3-a456-426614174000",
                                     content: "Hello, world!",
                                     role: "user",
-                                    parent_id: "parent_message_id",
+                                    parentId: "parent_message_id",
                                 });
                             }
 
@@ -473,7 +473,7 @@ class ConversationsRouter(BaseRouterV3):
                             function main() {
                                 const response = await client.conversations.updateMessage({
                                     id: "123e4567-e89b-12d3-a456-426614174000",
-                                    message_id: "message_id_to_update",
+                                    messageId: "message_id_to_update",
                                     content: "Updated content",
                                 });
                             }

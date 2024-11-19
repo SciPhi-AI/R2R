@@ -40,12 +40,12 @@ export class ConversationsClient {
   /**
    * Get detailed information about a specific conversation.
    * @param id The ID of the conversation to retrieve
-   * @param branch_id The ID of the branch to retrieve
+   * @param branchID The ID of the branch to retrieve
    * @returns
    */
-  async retrieve(options: { id: string; branch_id?: string }): Promise<any> {
+  async retrieve(options: { id: string; branchID?: string }): Promise<any> {
     const params: Record<string, any> = {
-      branch_id: options.branch_id,
+      branchID: options.branchID,
     };
 
     return this.client.makeRequest("GET", `conversations/${options.id}`, {
@@ -67,7 +67,7 @@ export class ConversationsClient {
    * @param id The ID of the conversation to add the message to
    * @param content The content of the message
    * @param role The role of the message (e.g., "user" or "assistant")
-   * @param parent_id The ID of the parent message
+   * @param parentID The ID of the parent message
    * @param metadata Additional metadata to attach to the message
    * @returns
    */
@@ -75,13 +75,13 @@ export class ConversationsClient {
     id: string;
     content: string;
     role: string;
-    parent_id?: string;
+    parentID?: string;
     metadata?: Record<string, any>;
   }): Promise<any> {
     const data: Record<string, any> = {
       content: options.content,
       role: options.role,
-      ...(options.parent_id && { parent_id: options.parent_id }),
+      ...(options.parentID && { parentID: options.parentID }),
       ...(options.metadata && { metadata: options.metadata }),
     };
 
@@ -97,13 +97,13 @@ export class ConversationsClient {
   /**
    * Update an existing message in a conversation.
    * @param id The ID of the conversation containing the message
-   * @param message_id The ID of the message to update
+   * @param messageID The ID of the message to update
    * @param content The new content of the message
    * @returns
    */
   async updateMessage(options: {
     id: string;
-    message_id: string;
+    messageID: string;
     content: string;
   }): Promise<any> {
     const data: Record<string, any> = {
@@ -112,7 +112,7 @@ export class ConversationsClient {
 
     return this.client.makeRequest(
       "POST",
-      `conversations/${options.id}/messages/${options.message_id}`,
+      `conversations/${options.id}/messages/${options.messageID}`,
       {
         data,
       },

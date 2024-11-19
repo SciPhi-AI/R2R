@@ -7,17 +7,17 @@ export class IndiciesClient {
   /**
    * Create a new vector similarity search index in the database.
    * @param config Configuration for the vector index.
-   * @param run_with_orchestration Whether to run index creation as an orchestrated task.
+   * @param runWithOrchestration Whether to run index creation as an orchestrated task.
    * @returns
    */
   async create(options: {
     config: IndexConfig;
-    run_with_orchestration?: boolean;
+    runWithOrchestration?: boolean;
   }): Promise<any> {
     const data = {
       config: options.config,
-      ...(options.run_with_orchestration && {
-        run_with_orchestration: options.run_with_orchestration,
+      ...(options.runWithOrchestration && {
+        run_with_orchestration: options.runWithOrchestration,
       }),
     };
 
@@ -54,33 +54,33 @@ export class IndiciesClient {
 
   /**
    * Get detailed information about a specific vector index.
-   * @param index_name The name of the index to retrieve.
-   * @param table_name The name of the table where the index is stored.
+   * @param indexName The name of the index to retrieve.
+   * @param tableName The name of the table where the index is stored.
    * @returns
    */
   async retrieve(options: {
-    table_name: string;
-    index_name: string;
+    tableName: string;
+    indexName: string;
   }): Promise<any> {
     return this.client.makeRequest(
       "GET",
-      `indices/${options.index_name}/${options.table_name}`,
+      `indices/${options.indexName}/${options.tableName}`,
     );
   }
 
   /**
    * Delete an existing vector index.
-   * @param index_name The name of the index to delete.
-   * @param table_name The name of the table where the index is stored.
+   * @param indexName The name of the index to delete.
+   * @param tableName The name of the table where the index is stored.
    * @returns
    */
   async delete(options: {
-    table_name: string;
-    index_name: string;
+    tableName: string;
+    indexName: string;
   }): Promise<any> {
     return this.client.makeRequest(
       "DELETE",
-      `indices/${options.index_name}/${options.table_name}`,
+      `indices/${options.indexName}/${options.tableName}`,
     );
   }
 }

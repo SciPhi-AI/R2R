@@ -2,7 +2,6 @@ import psutil
 import textwrap
 
 from datetime import datetime, timezone
-from fastapi import Depends
 
 from typing import Optional
 
@@ -156,7 +155,7 @@ class SystemRouter(BaseRouterV3):
         ) -> WrappedSettingsResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can call the `app_settings` endpoint.",
+                    "Only a superuser can call the `system/settings` endpoint.",
                     403,
                 )
             return await self.services["management"].app_settings()
@@ -221,7 +220,7 @@ class SystemRouter(BaseRouterV3):
         ) -> WrappedServerStatsResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only an authorized user can call the `server_stats` endpoint.",
+                    "Only an authorized user can call the `system/status` endpoint.",
                     403,
                 )
             return {  # type: ignore
@@ -305,7 +304,8 @@ class SystemRouter(BaseRouterV3):
         ) -> WrappedLogResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can call the `logs` endpoint.", 403
+                    "Only a superuser can call the `system/logs` endpoint.",
+                    403,
                 )
 
             return await self.services["management"].logs(

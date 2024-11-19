@@ -24,7 +24,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     const response = await client.prompts.create({
       name: "test-prompt",
       template: "Hello, {name}!",
-      input_types: { name: "string" },
+      inputTypes: { name: "string" },
     });
     expect(response.results).toBeDefined();
   });
@@ -40,7 +40,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     const response = await client.prompts.update({
       name: "test-prompt",
       template: "Hello, {name}! How are you?",
-      input_types: { name: "string" },
+      inputTypes: { name: "string" },
     });
     expect(response.results).toBeDefined();
   });

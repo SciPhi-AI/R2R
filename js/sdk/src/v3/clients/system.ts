@@ -16,7 +16,7 @@ export class SystemClient {
    * @returns
    */
   async logs(options: {
-    run_type_filter?: string;
+    runTypeFilter?: string;
     offset?: number;
     limit?: number;
   }): Promise<any> {
@@ -25,8 +25,8 @@ export class SystemClient {
       limit: options.limit ?? 100,
     };
 
-    if (options.run_type_filter) {
-      params.run_type_filter = options.run_type_filter;
+    if (options.runTypeFilter) {
+      params.runTypeFilter = options.runTypeFilter;
     }
 
     return this.client.makeRequest("GET", "system/logs", { params });

@@ -27,6 +27,26 @@ class UsersSDK:
             version="v3",
         )
 
+    async def delete(self, id: str | UUID, password: str) -> dict:
+        """
+        Delete a specific user.
+        Users can only delete their own account unless they are superusers.
+
+        Args:
+            id (str | UUID): User ID to delete
+            password (str): User's password
+
+        Returns:
+            dict: Deletion result
+        """
+        data = {"password": password}
+        return await self.client._make_request(
+            "DELETE",
+            f"users/{str(id)}",
+            json=data,
+            version="v3",
+        )
+
     async def verify_email(self, email: str, verification_code: str) -> dict:
         """
         Verify a user's email address.

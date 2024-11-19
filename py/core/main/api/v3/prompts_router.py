@@ -67,7 +67,7 @@ class PromptsRouter(BaseRouterV3):
                                 const response = await client.prompts.create({
                                     name: "greeting_prompt",
                                     template: "Hello, {name}!",
-                                    input_types: { name: "string" },
+                                    inputTypes: { name: "string" },
                                 });
                             }
 
@@ -229,7 +229,7 @@ class PromptsRouter(BaseRouterV3):
                                 const response = await client.prompts.retrieve({
                                     name: "greeting_prompt",
                                     inputs: { name: "John" },
-                                    prompt_override: "Hi, {name}!",
+                                    promptOverride: "Hi, {name}!",
                                 });
                             }
 
@@ -318,7 +318,7 @@ class PromptsRouter(BaseRouterV3):
                                 const response = await client.prompts.update({
                                     name: "greeting_prompt",
                                     template: "Greetings, {name}!",
-                                    input_types: { name: "string", age: "integer" },
+                                    inputTypes: { name: "string", age: "integer" },
                                 });
                             }
 

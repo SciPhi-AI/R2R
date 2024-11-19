@@ -141,27 +141,27 @@ class RetrievalRouterV3(BaseRouterV3):
                             function main() {
                                 const response = await client.search({
                                     query: "Who is Aristotle?",
-                                    vector_search_settings: {
-                                        use_vector_search: true,
+                                    vectorSearchSettings: {
+                                        useVectorSearch: true,
                                         filters: { document_id: { $eq: "3e157b3a-8469-51db-90d9-52e7d896b49b" } },
-                                        limit: 20,
-                                        use_hybrid_search: true
+                                        searchLimit: 20,
+                                        useHybridSearch: true
                                     },
                                     kg_search_settings: {
-                                        use_kg_search: true,
-                                        kg_search_type: "local",
-                                        kg_search_level: "0",
-                                        generation_config: {
+                                        useKgSearch: true,
+                                        kgSearchType: "local",
+                                        kgSearchLevel: "0",
+                                        generationConfic: {
                                             model: "gpt-4o-mini",
                                             temperature: 0.7
                                         },
-                                        local_search_limits: {
+                                        localSearchLimits: {
                                             __Entity__: 20,
                                             __Relationship__: 20,
                                             __Community__: 20
                                         },
-                                        max_community_description_length: 65536,
-                                        max_llm_queries_for_global_search: 250
+                                        maxCommunityDescriptionLength: 65536,
+                                        maxLlmQueriesForGlobalSearch: 250
                                     }
                                 });
                             }
@@ -502,23 +502,23 @@ class RetrievalRouterV3(BaseRouterV3):
                                         content: "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
                                     },
                                     vector_search_settings: {
-                                        use_vector_search: true,
+                                        useCectorSearch: true,
                                         filters: { collection_ids: ["5e157b3a-8469-51db-90d9-52e7d896b49b"] },
-                                        limit: 20,
-                                        use_hybrid_search: true
+                                        searchLimit: 20,
+                                        useHybridSearch: true
                                     },
                                     kg_search_settings: {
-                                        use_kg_search: true,
-                                        kg_search_type: "local",
-                                        kg_search_level: "1"
+                                        useKgSearch: true,
+                                        kgSearchType: "local",
+                                        kgSearchLevel: "1"
                                     },
                                     rag_generation_config: {
                                         stream: false,
                                         temperature: 0.7,
-                                        max_tokens: 1000
+                                        maxTokens: 1000
                                     },
-                                    include_title_if_available: true,
-                                    conversation_id: "550e8400-e29b-41d4-a716-446655440000"
+                                    includeTitleIfAvailable: true,
+                                    conversationId: "550e8400-e29b-41d4-a716-446655440000"
                                 });
                             }
 
@@ -720,10 +720,10 @@ class RetrievalRouterV3(BaseRouterV3):
                                         { role: "assistant", content: "The capital of France is Paris." },
                                         { role: "user", content: "What about Italy?" }
                                     ],
-                                    generation_config: {
+                                    generationConfig: {
                                         model: "gpt-4o-mini",
                                         temperature: 0.7,
-                                        max_tokens: 150,
+                                        maxTokens: 150,
                                         stream: false
                                     }
                                 });

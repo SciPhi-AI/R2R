@@ -6,7 +6,7 @@ export class PromptsClient {
   async create(options: {
     name: string;
     template: string;
-    input_types: Record<string, string>;
+    inputTypes: Record<string, string>;
   }): Promise<any> {
     return this.client.makeRequest("POST", "prompts", {
       data: options,
@@ -20,13 +20,13 @@ export class PromptsClient {
   async retrieve(options: {
     name: string;
     inputs?: string[];
-    prompt_override?: string;
+    promptOverride?: string;
   }): Promise<any> {
     const data: Record<string, any> = {
       name: options.name,
       ...(options.inputs && { inputs: options.inputs }),
-      ...(options.prompt_override && {
-        prompt_override: options.prompt_override,
+      ...(options.promptOverride && {
+        promptOverride: options.promptOverride,
       }),
     };
 
@@ -38,7 +38,7 @@ export class PromptsClient {
   async update(options: {
     name: string;
     template?: string;
-    input_types?: Record<string, string>;
+    inputTypes?: Record<string, string>;
   }): Promise<any> {
     const params: Record<string, any> = {
       name: options.name,
@@ -46,8 +46,8 @@ export class PromptsClient {
     if (options.template) {
       params.template = options.template;
     }
-    if (options.input_types) {
-      params.input_types = options.input_types;
+    if (options.inputTypes) {
+      params.inputTypes = options.inputTypes;
     }
 
     return this.client.makeRequest("PUT", `prompts/${options.name}`, {
