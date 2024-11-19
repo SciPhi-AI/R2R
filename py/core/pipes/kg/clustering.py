@@ -43,6 +43,7 @@ class KGClusteringPipe(AsyncPipe):
     async def cluster_kg(
         self,
         collection_id: UUID,
+        graph_id: UUID,
         leiden_params: dict,
     ):
         """
@@ -50,8 +51,9 @@ class KGClusteringPipe(AsyncPipe):
         """
 
         num_communities = await self.database_provider.graph_handler.perform_graph_clustering(
-            collection_id,
-            leiden_params,
+            collection_id=collection_id,
+            graph_id=graph_id,
+            leiden_params=leiden_params,
         )  # type: ignore
 
         logger.info(
@@ -74,7 +76,12 @@ class KGClusteringPipe(AsyncPipe):
         Executes the KG clustering pipe: clustering entities and relationships into communities.
         """
 
-        collection_id = input.message["collection_id"]
+        collection_id = input.message.get("collection_id", None)
+        graph_id = input.message.get("graph_id", None)
         leiden_params = input.message["leiden_params"]
 
-        yield await self.cluster_kg(collection_id, leiden_params)
+        yield await self.cluster_kg(
+            collection_id=collection_id,
+            graph_id=graph_id,
+            leiden_params=leiden_params,
+        )

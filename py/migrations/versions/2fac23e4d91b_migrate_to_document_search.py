@@ -295,7 +295,7 @@ def upgrade() -> None:
         tables = [
             "chunk_entity",
             "document_entity",
-            "collection_entity",
+            "graph_entity",
             "chunk_relationship",
             "community_info",
             "community",
@@ -329,7 +329,7 @@ def downgrade() -> None:
     tables = [
         "chunk_entity",
         "document_entity",
-        "collection_entity",
+        "graph_entity",
         "chunk_relationship",
         "community_info",
         "community",

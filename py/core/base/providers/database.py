@@ -2,7 +2,14 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from io import BytesIO
-from typing import Any, BinaryIO, Optional, Sequence, Tuple
+from typing import (
+    Any,
+    BinaryIO,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -692,24 +699,13 @@ class GraphHandler(Handler):
         pass
 
     @abstractmethod
-    async def update(self, *args: Any, **kwargs: Any) -> None:
+    async def update(self, graph: Graph) -> UUID:
         """Update graph in storage."""
         pass
 
     @abstractmethod
-    async def delete(self, *args: Any, **kwargs: Any) -> None:
+    async def delete(self, graph_id: UUID, cascade: bool = False) -> UUID:
         """Delete graph from storage."""
-        pass
-
-    # add documents to the graph
-    @abstractmethod
-    async def add_document(self, *args: Any, **kwargs: Any) -> None:
-        """Add document to graph."""
-        pass
-
-    @abstractmethod
-    async def remove_document(self, *args: Any, **kwargs: Any) -> None:
-        """Delete document from graph."""
         pass
 
 

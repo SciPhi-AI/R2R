@@ -14,6 +14,7 @@ from ..abstractions.search import (
     KGRelationshipResult,
 )
 from ..abstractions.vector import VectorQuantizationType
+from datetime import datetime
 
 logger = logging.getLogger()
 
@@ -150,6 +151,14 @@ def generate_default_prompt_id(prompt_name: str) -> UUID:
     Generates a unique prompt id
     """
     return _generate_id_from_label(prompt_name)
+
+
+def generate_entity_document_id() -> UUID:
+    """
+    Generates a unique document id inserting entities into a graph
+    """
+    generation_time = datetime.now().isoformat()
+    return _generate_id_from_label(f"entity-{generation_time}")
 
 
 async def to_async_generator(

@@ -25,6 +25,10 @@ from .kg import (
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
+    GraphEntitySettings,
+    GraphRelationshipSettings,
+    GraphCommunitySettings,
+    GraphBuildSettings,
     KGRunType,
 )
 from .llm import (
@@ -121,6 +125,9 @@ __all__ = [
     "KGEnrichmentSettings",
     "KGExtraction",
     "KGRunType",
+    "GraphEntitySettings",
+    "GraphRelationshipSettings",
+    "GraphCommunitySettings",
     # User abstractions
     "Token",
     "TokenData",

@@ -16,7 +16,13 @@ def simple_kg_factory(service: KgService):
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
 
+            if key == "document_id":
+                input_data[key] = uuid.UUID(value)
+
             if key == "collection_id":
+                input_data[key] = uuid.UUID(value)
+
+            if key == "graph_id":
                 input_data[key] = uuid.UUID(value)
 
             if key == "kg_creation_settings":
@@ -35,10 +41,13 @@ def simple_kg_factory(service: KgService):
 
         input_data = get_input_data_dict(input_data)
 
-        document_ids = await service.get_document_ids_for_create_graph(
-            collection_id=input_data["collection_id"],
-            **input_data["kg_creation_settings"],
-        )
+        if input_data.get("document_id"):
+            document_ids = [input_data.get("document_id")]
+        else:
+            document_ids = await service.get_document_ids_for_create_graph(
+                collection_id=input_data.get("collection_id"),
+                **input_data["kg_creation_settings"],
+            )
 
         logger.info(
             f"Creating graph for {len(document_ids)} documents with IDs: {document_ids}"
@@ -70,7 +79,8 @@ def simple_kg_factory(service: KgService):
 
         try:
             num_communities = await service.kg_clustering(
-                collection_id=input_data["collection_id"],
+                collection_id=input_data.get("collection_id", None),
+                graph_id=input_data.get("graph_id", None),
                 **input_data["kg_enrichment_settings"],
             )
             num_communities = num_communities[0]["num_communities"]
@@ -99,7 +109,7 @@ def simple_kg_factory(service: KgService):
                 )
 
             await service.providers.database.set_workflow_status(
-                id=input_data["collection_id"],
+                id=input_data.get("collection_id", None),
                 status_type="kg_enrichment_status",
                 status=KGEnrichmentStatus.SUCCESS,
             )
@@ -110,7 +120,7 @@ def simple_kg_factory(service: KgService):
         except Exception as e:
 
             await service.providers.database.set_workflow_status(
-                id=input_data["collection_id"],
+                id=input_data.get("collection_id", None),
                 status_type="kg_enrichment_status",
                 status=KGEnrichmentStatus.FAILED,
             )
@@ -126,7 +136,8 @@ def simple_kg_factory(service: KgService):
         await service.kg_community_summary(
             offset=input_data["offset"],
             limit=input_data["limit"],
-            collection_id=input_data["collection_id"],
+            collection_id=input_data.get("collection_id", None),
+            graph_id=input_data.get("graph_id", None),
             **input_data["kg_enrichment_settings"],
         )
 
@@ -138,11 +149,13 @@ def simple_kg_factory(service: KgService):
                 input_data["kg_entity_deduplication_settings"]
             )
 
-        collection_id = input_data["collection_id"]
+        collection_id = input_data.get("collection_id", None)
+        graph_id = input_data.get("graph_id", None)
 
         number_of_distinct_entities = (
             await service.kg_entity_deduplication(
                 collection_id=collection_id,
+                graph_id=graph_id,
                 **input_data["kg_entity_deduplication_settings"],
             )
         )[0]["num_entities"]

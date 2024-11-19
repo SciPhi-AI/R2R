@@ -8,7 +8,7 @@ from fastapi import HTTPException
 
 from core.base import KGExtractionStatus, RunManager
 from core.base.abstractions import (
-    EntityLevel,
+    DataLevel,
     GenerationConfig,
     KGCreationSettings,
     KGEnrichmentSettings,
@@ -18,6 +18,7 @@ from core.base.abstractions import (
     Entity,
     Relationship,
     Community,
+    Graph,
 )
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -132,13 +133,14 @@ class KgService(Service):
     @telemetry_event("list_entities")
     async def list_entities(
         self,
-        level: EntityLevel,
+        level: DataLevel,
         id: UUID,
         offset: int,
         limit: int,
         entity_names: Optional[list[str]] = None,
         entity_categories: Optional[list[str]] = None,
         attributes: Optional[list[str]] = None,
+        from_built_graph: Optional[bool] = False,
     ):
         return await self.providers.database.graph_handler.entities.get(
             level=level,
@@ -148,6 +150,7 @@ class KgService(Service):
             attributes=attributes,
             offset=offset,
             limit=limit,
+            from_built_graph=from_built_graph,
         )
 
     @telemetry_event("update_entity")
@@ -162,11 +165,15 @@ class KgService(Service):
     @telemetry_event("delete_entity")
     async def delete_entity_v3(
         self,
-        entity: Entity,
+        id: UUID,
+        entity_id: UUID,
+        level: DataLevel,
         **kwargs,
     ):
         return await self.providers.database.graph_handler.entities.delete(
-            entity=entity
+            id=id,
+            entity_id=entity_id,
+            level=level,
         )
 
     # TODO: deprecate this
@@ -194,7 +201,7 @@ class KgService(Service):
     async def list_relationships_v3(
         self,
         id: UUID,
-        level: EntityLevel,
+        level: DataLevel,
         offset: int,
         limit: int,
         entity_names: Optional[list[str]] = None,
@@ -226,12 +233,16 @@ class KgService(Service):
     @telemetry_event("delete_relationship_v3")
     async def delete_relationship_v3(
         self,
-        relationship: Relationship,
+        level: DataLevel,
+        id: UUID,
+        relationship_id: UUID,
         **kwargs,
     ):
         return (
             await self.providers.database.graph_handler.relationships.delete(
-                relationship
+                level=level,
+                id=id,
+                relationship_id=relationship_id,
             )
         )
 
@@ -307,7 +318,7 @@ class KgService(Service):
         **kwargs,
     ):
         return await self.providers.database.graph_handler.communities.get(
-            collection_id=id,
+            id=id,
             offset=offset,
             limit=limit,
         )
@@ -331,7 +342,27 @@ class KgService(Service):
             limit=limit or -1,
         )
 
-    ################### GRAPH ###################
+    ################### GRAPHS ###################
+
+    @telemetry_event("create_new_graph")
+    async def create_new_graph(self, graph: Graph) -> UUID:
+        return await self.providers.database.graph_handler.create(graph)
+
+    @telemetry_event("get_graphs")
+    async def get_graphs(
+        self, offset: int, limit: int, graph_id: Optional[UUID] = None
+    ) -> Graph:
+        return await self.providers.database.graph_handler.get(
+            offset=offset, limit=limit, graph_id=graph_id
+        )
+
+    @telemetry_event("update_graph")
+    async def update_graph(self, graph: Graph) -> UUID:
+        return await self.providers.database.graph_handler.update(graph)
+
+    @telemetry_event("delete_graph_v3")
+    async def delete_graph_v3(self, id: UUID, cascade: bool = False) -> UUID:
+        return await self.providers.database.graph_handler.delete(id, cascade)
 
     @telemetry_event("get_document_ids_for_create_graph")
     async def get_document_ids_for_create_graph(
@@ -440,6 +471,7 @@ class KgService(Service):
     async def kg_clustering(
         self,
         collection_id: UUID,
+        graph_id: UUID,
         generation_config: GenerationConfig,
         leiden_params: dict,
         **kwargs,
@@ -448,10 +480,12 @@ class KgService(Service):
         logger.info(
             f"Running ClusteringPipe for collection {collection_id} with settings {leiden_params}"
         )
+
         clustering_result = await self.pipes.kg_clustering_pipe.run(
             input=self.pipes.kg_clustering_pipe.Input(
                 message={
                     "collection_id": collection_id,
+                    "graph_id": graph_id,
                     "generation_config": generation_config,
                     "leiden_params": leiden_params,
                     "logger": logger,
@@ -469,7 +503,8 @@ class KgService(Service):
         limit: int,
         max_summary_input_length: int,
         generation_config: GenerationConfig,
-        collection_id: UUID,
+        collection_id: UUID | None,
+        graph_id: UUID | None,
         **kwargs,
     ):
         summary_results = await self.pipes.kg_community_summary_pipe.run(
@@ -480,6 +515,7 @@ class KgService(Service):
                     "generation_config": generation_config,
                     "max_summary_input_length": max_summary_input_length,
                     "collection_id": collection_id,
+                    "graph_id": graph_id,
                     "logger": logger,
                 }
             ),
@@ -535,12 +571,14 @@ class KgService(Service):
     @telemetry_event("get_creation_estimate")
     async def get_creation_estimate(
         self,
-        collection_id: UUID,
         kg_creation_settings: KGCreationSettings,
+        document_id: Optional[UUID] = None,
+        collection_id: Optional[UUID] = None,
         **kwargs,
     ):
         return (
             await self.providers.database.graph_handler.get_creation_estimate(
+                document_id=document_id,
                 collection_id=collection_id,
                 kg_creation_settings=kg_creation_settings,
             )
@@ -549,13 +587,21 @@ class KgService(Service):
     @telemetry_event("get_enrichment_estimate")
     async def get_enrichment_estimate(
         self,
-        collection_id: UUID,
-        kg_enrichment_settings: KGEnrichmentSettings,
+        collection_id: Optional[UUID] = None,
+        graph_id: Optional[UUID] = None,
+        kg_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings(),
         **kwargs,
     ):
 
+        if graph_id is None and collection_id is None:
+            raise ValueError(
+                "Either graph_id or collection_id must be provided"
+            )
+
         return await self.providers.database.graph_handler.get_enrichment_estimate(
-            collection_id, kg_enrichment_settings
+            collection_id=collection_id,
+            graph_id=graph_id,
+            kg_enrichment_settings=kg_enrichment_settings,
         )
 
     @telemetry_event("get_deduplication_estimate")
@@ -566,13 +612,15 @@ class KgService(Service):
         **kwargs,
     ):
         return await self.providers.database.graph_handler.get_deduplication_estimate(
-            collection_id, kg_deduplication_settings
+            collection_id=collection_id,
+            kg_deduplication_settings=kg_deduplication_settings,
         )
 
     @telemetry_event("kg_entity_deduplication")
     async def kg_entity_deduplication(
         self,
         collection_id: UUID,
+        graph_id: UUID,
         kg_entity_deduplication_type: KGEntityDeduplicationType,
         kg_entity_deduplication_prompt: str,
         generation_config: GenerationConfig,
@@ -582,6 +630,7 @@ class KgService(Service):
             input=self.pipes.kg_entity_deduplication_pipe.Input(
                 message={
                     "collection_id": collection_id,
+                    "graph_id": graph_id,
                     "kg_entity_deduplication_type": kg_entity_deduplication_type,
                     "kg_entity_deduplication_prompt": kg_entity_deduplication_prompt,
                     "generation_config": generation_config,

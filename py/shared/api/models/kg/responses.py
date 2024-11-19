@@ -163,8 +163,12 @@ class KGEnrichmentResponse(BaseModel):
         ...,
         description="A message describing the result of the KG enrichment request.",
     )
-    task_id: UUID = Field(
-        ...,
+    id: Optional[UUID] = Field(
+        None,
+        description="The ID of the created object.",
+    )
+    task_id: Optional[UUID] = Field(
+        None,
         description="The task ID of the KG enrichment request.",
     )
     estimate: Optional[KGEnrichmentEstimate] = Field(
@@ -176,6 +180,7 @@ class KGEnrichmentResponse(BaseModel):
         json_schema_extra = {
             "example": {
                 "message": "Graph enrichment queued successfuly.",
+                "id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
                 "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
                 "estimate": {
                     "total_entities": 1000,

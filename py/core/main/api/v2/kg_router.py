@@ -7,7 +7,7 @@ import yaml
 from fastapi import Body, Depends, Query
 
 from core.base import Workflow
-from core.base.abstractions import EntityLevel, KGRunType
+from core.base.abstractions import DataLevel, KGRunType
 from core.base.api.models import (
     WrappedCommunitiesResponse,
     WrappedKGCreationResponse,
@@ -140,7 +140,8 @@ class KGRouter(BaseRouter):
             # If the run type is estimate, return an estimate of the creation cost
             if run_type is KGRunType.ESTIMATE:
                 return await self.service.get_creation_estimate(
-                    collection_id, server_kg_creation_settings
+                    collection_id=collection_id,
+                    kg_creation_settings=server_kg_creation_settings,
                 )
             else:
 
@@ -216,7 +217,8 @@ class KGRouter(BaseRouter):
             # If the run type is estimate, return an estimate of the enrichment cost
             if run_type is KGRunType.ESTIMATE:
                 return await self.service.get_enrichment_estimate(
-                    collection_id, server_kg_enrichment_settings
+                    collection_id=collection_id,
+                    kg_enrichment_settings=server_kg_enrichment_settings,
                 )
 
             # Otherwise, run the enrichment workflow
@@ -248,8 +250,8 @@ class KGRouter(BaseRouter):
             collection_id: Optional[UUID] = Query(
                 None, description="Collection ID to retrieve entities from."
             ),
-            entity_level: Optional[EntityLevel] = Query(
-                default=EntityLevel.DOCUMENT,
+            entity_level: Optional[DataLevel] = Query(
+                default=DataLevel.DOCUMENT,
                 description="Type of entities to retrieve. Options are: raw, dedup_document, dedup_collection.",
             ),
             entity_ids: Optional[list[str]] = Query(
@@ -262,7 +264,7 @@ class KGRouter(BaseRouter):
                 description="Number of items to return. Use -1 to return all items.",
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedEntitiesResponse:
+        ) -> WrappedEntitiesResponse:  # type: ignore
             """
             Retrieve entities from the knowledge graph.
             """
@@ -274,12 +276,12 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
-            if entity_level == EntityLevel.CHUNK:
+            if entity_level == DataLevel.CHUNK:
                 entity_table_name = "chunk_entity"
-            elif entity_level == EntityLevel.DOCUMENT:
+            elif entity_level == DataLevel.DOCUMENT:
                 entity_table_name = "document_entity"
             else:
-                entity_table_name = "collection_entity"
+                entity_table_name = "graph_entity"
 
             entities = await self.service.get_entities(
                 collection_id=collection_id,
@@ -289,7 +291,10 @@ class KGRouter(BaseRouter):
                 limit=limit,
             )
 
-            return entities
+            # for backwards compatibility with the old API
+            return entities["entities"], {  # type: ignore
+                "total_entries": entities["total_entries"]
+            }
 
         @self.router.get("/triples")
         @self.base_endpoint
@@ -323,13 +328,18 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
-            return await self.service.get_relationships(
+            triples = await self.service.get_relationships(
                 offset=offset,
                 limit=limit,
                 collection_id=collection_id,
                 entity_names=entity_names,
                 relationship_ids=triple_ids,
             )
+
+            # for backwards compatibility with the old API
+            return triples["relationships"], {  # type: ignore
+                "total_entries": triples["total_entries"]
+            }
 
         @self.router.get("/communities")
         @self.base_endpoint
@@ -362,13 +372,18 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
-            return await self.service.get_communities(
+            results = await self.service.get_communities(
                 offset=offset,
                 limit=limit,
                 collection_id=collection_id,
                 levels=levels,
                 community_numbers=community_numbers,
             )
+
+            # for backwards compatibility with the old API
+            return results["communities"], {  # type: ignore
+                "total_entries": results["total_entries"]
+            }
 
         @self.router.post("/deduplicate_entities")
         @self.base_endpoint
