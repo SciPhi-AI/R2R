@@ -26,14 +26,13 @@ describe("r2rClient V3 Collections Integration Tests", () => {
           text: "Hello, world!",
         },
       ],
-      run_with_orchestration: false,
+      runWithOrchestration: false,
     });
 
     expect(response.results).toEqual([
       {
         document_id: expect.any(String),
         message: "Ingestion task completed successfully.",
-        task_id: null,
       },
     ]);
   }, 10000);

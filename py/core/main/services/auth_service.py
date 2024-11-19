@@ -6,6 +6,7 @@ from core.base import R2RException, RunManager, Token
 from core.base.api.models import UserResponse
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
+from core.utils import generate_default_user_collection_id
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
@@ -151,26 +152,41 @@ class AuthService(Service):
     async def delete_user(
         self,
         user_id: UUID,
-        password: str,
+        password: Optional[str] = None,
         delete_vector_data: bool = False,
         is_superuser: bool = False,
     ) -> dict[str, str]:
         user = await self.providers.database.get_user_by_id(user_id)
         if not user:
             raise R2RException(status_code=404, message="User not found")
+        if not is_superuser and not password:
+            raise R2RException(
+                status_code=422, message="Password is required for deletion"
+            )
         if not (
             is_superuser
             or (
                 user.hashed_password is not None
-                and self.providers.auth.crypto_provider.verify_password(  # type: ignore
-                    password, user.hashed_password
+                and self.providers.auth.crypto_provider.verify_password(
+                    password, user.hashed_password  # type: ignore
                 )
             )
         ):
             raise R2RException(status_code=400, message="Incorrect password")
         await self.providers.database.delete_user_relational(user_id)
+
+        # Delete user's default collection
+        # TODO: We need to better define what happens to the user's data when they are deleted
+        collection_id = generate_default_user_collection_id(user_id)
+        await self.providers.database.delete_collection_relational(
+            collection_id
+        )
+
         if delete_vector_data:
             await self.providers.database.delete_user_vector(user_id)
+            await self.providers.database.delete_collection_vector(
+                collection_id
+            )
 
         return {"message": f"User account {user_id} deleted successfully."}
 

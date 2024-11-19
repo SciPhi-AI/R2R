@@ -105,7 +105,7 @@ excluded_parsers = ["mp4"]
 # document_summary_system_prompt = 'default_system'
 # document_summary_task_prompt = 'default_summary'
 # chunks_for_document_summary = 128
-# document_summary_model = "openai/gpt-4o-mini"
+document_summary_model = "azure/gpt-4o-mini"
 
   [ingestion.chunk_enrichment_settings]
     enable_chunk_enrichment = false # disabled by default

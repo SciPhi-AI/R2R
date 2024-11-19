@@ -73,9 +73,8 @@ class MultiSearchPipe(AsyncPipe):
         )
 
         if self.config.use_rrf:
-            vector_search_settings.search_limit = (
-                self.config.expansion_factor
-                * vector_search_settings.search_limit
+            vector_search_settings.limit = (
+                self.config.expansion_factor * vector_search_settings.limit
             )
             results = []
             async for search_result in await self.vector_search_pipe.run(
@@ -96,7 +95,7 @@ class MultiSearchPipe(AsyncPipe):
                 grouped_results[query].append(result)
 
             fused_results = self.reciprocal_rank_fusion(grouped_results)
-            for result in fused_results[: vector_search_settings.search_limit]:
+            for result in fused_results[: vector_search_settings.limit]:
                 yield result
         else:
             async for search_result in await self.vector_search_pipe.run(

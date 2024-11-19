@@ -12,16 +12,16 @@ export class RetrievalClient {
 
   async search(options: {
     query: string;
-    vector_search_settings?: VectorSearchSettings | Record<string, any>;
-    kg_search_settings?: KGSearchSettings | Record<string, any>;
+    vectorSearchSettings?: VectorSearchSettings | Record<string, any>;
+    kgSearchSettings?: KGSearchSettings | Record<string, any>;
   }): Promise<any> {
     const data = {
       query: options.query,
-      ...(options.vector_search_settings && {
-        vector_search_settings: options.vector_search_settings,
+      ...(options.vectorSearchSettings && {
+        vectorSearchSettings: options.vectorSearchSettings,
       }),
-      ...(options.kg_search_settings && {
-        kg_search_settings: options.kg_search_settings,
+      ...(options.kgSearchSettings && {
+        kgSearchSettings: options.kgSearchSettings,
       }),
     };
 
@@ -32,32 +32,32 @@ export class RetrievalClient {
 
   async rag(options: {
     query: string;
-    vector_search_settings?: VectorSearchSettings | Record<string, any>;
-    kg_search_settings?: KGSearchSettings | Record<string, any>;
-    generation_config?: GenerationConfig | Record<string, any>;
-    task_prompt_override?: string;
-    include_title_if_available?: boolean;
+    vectorSearchSettings?: VectorSearchSettings | Record<string, any>;
+    kgSearchSettings?: KGSearchSettings | Record<string, any>;
+    generationConfig?: GenerationConfig | Record<string, any>;
+    taskPromptOverride?: string;
+    includeTitleIfAvailable?: boolean;
   }): Promise<any | AsyncGenerator<string, void, unknown>> {
     const data = {
       query: options.query,
-      ...(options.vector_search_settings && {
-        vector_search_settings: options.vector_search_settings,
+      ...(options.vectorSearchSettings && {
+        vectorSearchSettings: options.vectorSearchSettings,
       }),
-      ...(options.kg_search_settings && {
-        kg_search_settings: options.kg_search_settings,
+      ...(options.kgSearchSettings && {
+        kgSearchSettings: options.kgSearchSettings,
       }),
-      ...(options.generation_config && {
-        generation_config: options.generation_config,
+      ...(options.generationConfig && {
+        generationConfig: options.generationConfig,
       }),
-      ...(options.task_prompt_override && {
-        task_prompt_override: options.task_prompt_override,
+      ...(options.taskPromptOverride && {
+        taskPromptOverride: options.taskPromptOverride,
       }),
-      ...(options.include_title_if_available && {
-        include_title_if_available: options.include_title_if_available,
+      ...(options.includeTitleIfAvailable && {
+        includeTitleIfAvailable: options.includeTitleIfAvailable,
       }),
     };
 
-    if (options.generation_config && options.generation_config.stream) {
+    if (options.generationConfig && options.generationConfig.stream) {
       return this.streamRag(data);
     } else {
       return await this.client.makeRequest("POST", "retrieval/rag", {
@@ -67,13 +67,13 @@ export class RetrievalClient {
   }
 
   private async streamRag(
-    rag_data: Record<string, any>,
+    ragData: Record<string, any>,
   ): Promise<ReadableStream<Uint8Array>> {
     return this.client.makeRequest<ReadableStream<Uint8Array>>(
       "POST",
       "retrieval/rag",
       {
-        data: rag_data,
+        data: ragData,
         headers: {
           "Content-Type": "application/json",
         },
@@ -84,40 +84,40 @@ export class RetrievalClient {
 
   async agent(options: {
     messages: Message[];
-    generation_config?: GenerationConfig | Record<string, any>;
-    vector_search_settings?: VectorSearchSettings | Record<string, any>;
-    kg_search_settings?: KGSearchSettings | Record<string, any>;
-    task_prompt_override?: string;
-    include_title_if_available?: boolean;
-    conversation_id?: string;
-    branch_id?: string;
+    generationConfig?: GenerationConfig | Record<string, any>;
+    vectorSearchSettings?: VectorSearchSettings | Record<string, any>;
+    kgSearchSettings?: KGSearchSettings | Record<string, any>;
+    taskPromptOverride?: string;
+    includeTitleIfAvailable?: boolean;
+    conversationId?: string;
+    branchId?: string;
   }): Promise<any | AsyncGenerator<string, void, unknown>> {
     const data: Record<string, any> = {
       messages: options.messages,
-      ...(options.vector_search_settings && {
-        vector_search_settings: options.vector_search_settings,
+      ...(options.vectorSearchSettings && {
+        vectorSearchSettings: options.vectorSearchSettings,
       }),
-      ...(options.kg_search_settings && {
-        kg_search_settings: options.kg_search_settings,
+      ...(options.kgSearchSettings && {
+        kgSearchSettings: options.kgSearchSettings,
       }),
-      ...(options.generation_config && {
-        generation_config: options.generation_config,
+      ...(options.generationConfig && {
+        generationConfig: options.generationConfig,
       }),
-      ...(options.task_prompt_override && {
-        task_prompt_override: options.task_prompt_override,
+      ...(options.taskPromptOverride && {
+        taskPromptOverride: options.taskPromptOverride,
       }),
-      ...(options.include_title_if_available && {
-        include_title_if_available: options.include_title_if_available,
+      ...(options.includeTitleIfAvailable && {
+        includeTitleIfAvailable: options.includeTitleIfAvailable,
       }),
-      ...(options.conversation_id && {
-        conversation_id: options.conversation_id,
+      ...(options.conversationId && {
+        conversationId: options.conversationId,
       }),
-      ...(options.branch_id && {
-        branch_id: options.branch_id,
+      ...(options.branchId && {
+        branchId: options.branchId,
       }),
     };
 
-    if (options.generation_config && options.generation_config.stream) {
+    if (options.generationConfig && options.generationConfig.stream) {
       return this.streamAgent(data);
     } else {
       return await this.client.makeRequest("POST", "retrieval/agent", {
@@ -127,13 +127,13 @@ export class RetrievalClient {
   }
 
   private async streamAgent(
-    agent_data: Record<string, any>,
+    agentData: Record<string, any>,
   ): Promise<ReadableStream<Uint8Array>> {
     return this.client.makeRequest<ReadableStream<Uint8Array>>(
       "POST",
       "retrieval/agent",
       {
-        data: agent_data,
+        data: agentData,
         headers: {
           "Content-Type": "application/json",
         },
@@ -144,16 +144,16 @@ export class RetrievalClient {
 
   async completion(options: {
     messages: Message[];
-    generation_config?: GenerationConfig | Record<string, any>;
+    generationConfig?: GenerationConfig | Record<string, any>;
   }): Promise<any | AsyncGenerator<string, void, unknown>> {
     const data = {
       messages: options.messages,
-      ...(options.generation_config && {
-        generation_config: options.generation_config,
+      ...(options.generationConfig && {
+        generationConfig: options.generationConfig,
       }),
     };
 
-    if (options.generation_config && options.generation_config.stream) {
+    if (options.generationConfig && options.generationConfig.stream) {
       return this.streamCompletion(data);
     } else {
       return await this.client.makeRequest("POST", "retrieval/completion", {
@@ -163,13 +163,13 @@ export class RetrievalClient {
   }
 
   private async streamCompletion(
-    rag_data: Record<string, any>,
+    ragData: Record<string, any>,
   ): Promise<ReadableStream<Uint8Array>> {
     return this.client.makeRequest<ReadableStream<Uint8Array>>(
       "POST",
       "retrieval/completion",
       {
-        data: rag_data,
+        data: ragData,
         headers: {
           "Content-Type": "application/json",
         },

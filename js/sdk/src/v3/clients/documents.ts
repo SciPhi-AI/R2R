@@ -281,19 +281,19 @@ export class DocumentsClient {
   /**
    * Get chunks for a specific document.
    * @param id Document ID to retrieve chunks for
-   * @param include_vectors Whether to include vectors in the response
+   * @param includeVectors Whether to include vectors in the response
    * @param offset Specifies the number of objects to skip. Defaults to 0.
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
   async listChunks(options: {
     id: string;
-    include_vectors?: boolean;
+    includeVectors?: boolean;
     offset?: number;
     limit?: number;
   }): Promise<any> {
     const params: Record<string, any> = {
-      include_vectors: options.include_vectors ?? false,
+      includeVectors: options.includeVectors ?? false,
       offset: options.offset ?? 0,
       limit: options.limit ?? 100,
     };

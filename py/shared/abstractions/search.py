@@ -191,11 +191,7 @@ class SearchSettings(R2RSerializable):
     )
     filters: dict[str, Any] = Field(
         default_factory=dict,
-        description="Alias for search_filters",
-        deprecated=True,
-    )
-    search_filters: dict[str, Any] = Field(
-        default_factory=dict,
+        alias="search_filters",
         description="""Filters to apply to the vector search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
 
       Commonly seen filters include operations include the following:
@@ -208,11 +204,24 @@ class SearchSettings(R2RSerializable):
 
         `{"$and": {"$document_id": ..., "collection_ids": ...}}`""",
     )
-    search_limit: int = Field(
+    search_filters: dict[str, Any] = Field(
+        default_factory=dict,
+        deprecated=True,
+        description="Deprecated. Use 'filters' instead.",
+    )
+    limit: int = Field(
         default=10,
         description="Maximum number of results to return",
+        alias="search_limit",
         ge=1,
         le=1_000,
+    )
+    search_limit: int = Field(
+        default=10,
+        description="Deprecated. Use 'limit' instead.",
+        ge=1,
+        le=1_000,
+        deprecated=True,
     )
     offset: int = Field(
         default=0,
@@ -305,12 +314,6 @@ class KGSearchSettings(R2RSerializable):
 
     filters: dict[str, Any] = Field(
         default_factory=dict,
-        description="Alias for search_filters",
-        deprecated=True,
-    )
-
-    search_filters: dict[str, Any] = Field(
-        default_factory=dict,
         description="""Filters to apply to the vector search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
 
       Commonly seen filters include operations include the following:
@@ -322,6 +325,11 @@ class KGSearchSettings(R2RSerializable):
         `{"collection_ids": {"$overlap": ["122fdf6a-...", "..."]}}`
 
         `{"$and": {"$document_id": ..., "collection_ids": ...}}`""",
+    )
+
+    search_filters: dict[str, Any] = Field(
+        default_factory=dict,
+        alias="search_filters",
     )
 
     selected_collection_ids: list[UUID] = Field(

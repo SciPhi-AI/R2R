@@ -12,17 +12,17 @@ export class ChunksClient {
                 - collection_ids: list UUID
                 - metadata: dict
                 - text: string
-     * @param run_with_orchestration Optional flag to run with orchestration
+     * @param runWithOrchestration Optional flag to run with orchestration
      * @returns
      */
   async create(options: {
     chunks: UnprocessedChunk[];
-    run_with_orchestration?: boolean;
+    runWithOrchestration?: boolean;
   }): Promise<any> {
     return this.client.makeRequest("POST", "chunks", {
       data: {
         raw_chunks: options.chunks,
-        run_with_orchestration: options.run_with_orchestration,
+        runWithOrchestration: options.runWithOrchestration,
       },
     });
   }
@@ -64,15 +64,15 @@ export class ChunksClient {
 
   /**
    * List chunks.
-   * @param include_vectors Include vector data in response. Defaults to False.
-   * @param metadata_filters Filter by metadata. Defaults to None.
+   * @param includeVectors Include vector data in response. Defaults to False.
+   * @param metadataFilters Filter by metadata. Defaults to None.
    * @param offset Specifies the number of objects to skip. Defaults to 0.
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
   async list(options?: {
-    include_vectors?: boolean;
-    metadata_filters?: Record<string, any>;
+    includeVectors?: boolean;
+    metadataFilters?: Record<string, any>;
     offset?: number;
     limit?: number;
   }): Promise<any> {
@@ -81,12 +81,12 @@ export class ChunksClient {
       limit: options?.limit ?? 100,
     };
 
-    if (options?.include_vectors) {
-      params.include_vectors = options.include_vectors;
+    if (options?.includeVectors) {
+      params.include_vectors = options.includeVectors;
     }
 
-    if (options?.metadata_filters) {
-      params.metadata_filters = options.metadata_filters;
+    if (options?.metadataFilters) {
+      params.metadata_filters = options.metadataFilters;
     }
 
     return this.client.makeRequest("GET", "chunks", {

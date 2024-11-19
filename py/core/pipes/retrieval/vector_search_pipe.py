@@ -51,9 +51,7 @@ class VectorSearchPipe(SearchPipe):
         search_settings.filters = (
             search_settings.filters or self.config.filters
         )
-        search_settings.search_limit = (
-            search_settings.search_limit or self.config.search_limit
-        )
+        search_settings.limit = search_settings.limit or self.config.limit
         results = []
         query_vector = await self.embedding_provider.async_get_embedding(
             message,
@@ -75,7 +73,7 @@ class VectorSearchPipe(SearchPipe):
         reranked_results = await self.embedding_provider.arerank(
             query=message,
             results=search_results,
-            limit=search_settings.search_limit,
+            limit=search_settings.limit,
         )
         if kwargs.get("include_title_if_available", False):
             for result in reranked_results:

@@ -105,19 +105,19 @@ class IndicesRouter(BaseRouterV3):
                             function main() {
                                 const response = await client.indicies.create({
                                     config: {
-                                        table_name: "vectors",
-                                        index_method: "hnsw",
-                                        index_measure: "cosine_distance",
-                                        index_arguments: {
+                                        tableName: "vectors",
+                                        indexMethod: "hnsw",
+                                        indexMeasure: "cosine_distance",
+                                        indexArguments: {
                                             m: 16,
                                             ef_construction: 64,
                                             ef: 40
                                         },
-                                        index_name: "my_document_embeddings_idx",
-                                        index_column: "embedding",
+                                        indexName: "my_document_embeddings_idx",
+                                        indexColumn: "embedding",
                                         concurrently: true
                                     },
-                                    run_with_orchestration: true
+                                    runWithOrchestration: true
                                 });
                             }
 
@@ -385,8 +385,8 @@ class IndicesRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.indicies.retrieve({
-                                    index_name: "index_1",
-                                    table_name: "vectors"
+                                    indexName: "index_1",
+                                    tableName: "vectors"
                                 });
 
                                 console.log(response);
@@ -545,8 +545,8 @@ class IndicesRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.indicies.delete({
-                                    index_name: "index_1"
-                                    table_name: "vectors"
+                                    indexName: "index_1"
+                                    tableName: "vectors"
                                 });
 
                                 console.log(response);
