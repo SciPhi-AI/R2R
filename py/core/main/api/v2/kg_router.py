@@ -217,7 +217,8 @@ class KGRouter(BaseRouter):
             # If the run type is estimate, return an estimate of the enrichment cost
             if run_type is KGRunType.ESTIMATE:
                 return await self.service.get_enrichment_estimate(
-                    collection_id, server_kg_enrichment_settings
+                    collection_id=collection_id,
+                    kg_enrichment_settings=server_kg_enrichment_settings,
                 )
 
             # Otherwise, run the enrichment workflow
@@ -291,7 +292,7 @@ class KGRouter(BaseRouter):
             )
 
             # for backwards compatibility with the old API
-            return {"entities": entities["entities"]}, {  # type: ignore
+            return entities['entities'], {  # type: ignore
                 "total_entries": entities["total_entries"]
             }
 
@@ -336,7 +337,7 @@ class KGRouter(BaseRouter):
             )
 
             # for backwards compatibility with the old API
-            return {"triples": triples["relationships"]}, {  # type: ignore
+            return triples["relationships"], {  # type: ignore
                 "total_entries": triples["total_entries"]
             }
 
@@ -380,7 +381,7 @@ class KGRouter(BaseRouter):
             )
 
             # for backwards compatibility with the old API
-            return {"communities": results["communities"]}, {  # type: ignore
+            return results["communities"], {  # type: ignore
                 "total_entries": results["total_entries"]
             }
 

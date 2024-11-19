@@ -22,6 +22,9 @@ def simple_kg_factory(service: KgService):
             if key == "collection_id":
                 input_data[key] = uuid.UUID(value)
 
+            if key == "graph_id":
+                input_data[key] = uuid.UUID(value)
+
             if key == "kg_creation_settings":
                 input_data[key] = json.loads(value)
                 input_data[key]["generation_config"] = GenerationConfig(
@@ -76,7 +79,8 @@ def simple_kg_factory(service: KgService):
 
         try:
             num_communities = await service.kg_clustering(
-                collection_id=input_data["collection_id"],
+                collection_id=input_data.get("collection_id", None),
+                graph_id=input_data.get("graph_id", None),
                 **input_data["kg_enrichment_settings"],
             )
             num_communities = num_communities[0]["num_communities"]
@@ -144,11 +148,13 @@ def simple_kg_factory(service: KgService):
                 input_data["kg_entity_deduplication_settings"]
             )
 
-        collection_id = input_data["collection_id"]
+        collection_id = input_data.get("collection_id", None)
+        graph_id = input_data.get("graph_id", None)
 
         number_of_distinct_entities = (
             await service.kg_entity_deduplication(
                 collection_id=collection_id,
+                graph_id=graph_id,
                 **input_data["kg_entity_deduplication_settings"],
             )
         )[0]["num_entities"]

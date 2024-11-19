@@ -164,12 +164,13 @@ class PostgresEntityHandler(EntityHandler):
     async def get(
         self,
         level: DataLevel,
+        offset: int,
+        limit: int,
         id: Optional[UUID] = None,
         entity_names: Optional[list[str]] = None,
         entity_categories: Optional[list[str]] = None,
         attributes: Optional[list[str]] = None,
-        offset: int = 0,
-        limit: int = -1,
+        from_built_graph: Optional[bool] = False,
     ):
         """Retrieve entities from the database based on various filters.
 
@@ -198,8 +199,11 @@ class PostgresEntityHandler(EntityHandler):
         filter = {
             DataLevel.CHUNK: "chunk_ids = ANY($1)",
             DataLevel.DOCUMENT: "document_id = $1",
-            DataLevel.GRAPH: "graph_id = $1",
+            DataLevel.GRAPH: "graph_id = $1" if from_built_graph else "$1 = ANY(graph_ids)",
         }[level]
+
+        if not from_built_graph and level == DataLevel.GRAPH:
+            level = DataLevel.DOCUMENT
 
         if entity_names:
             filter += " AND name = ANY($2)"
@@ -209,12 +213,19 @@ class PostgresEntityHandler(EntityHandler):
             filter += " AND category = ANY($3)"
             params.append(entity_categories)
 
-        QUERY = f"""
+        # Build query with conditional LIMIT
+        base_query = f"""
             SELECT * from {self._get_table_name(level + "_entity")} WHERE {filter}
-            OFFSET ${len(params)+1} LIMIT ${len(params) + 2}
+            OFFSET ${len(params)+1}
         """
-
-        params.extend([offset, limit])
+        
+        params.append(offset)
+        
+        if limit != -1:
+            base_query += f" LIMIT ${len(params)+1}"
+            params.append(limit)
+            
+        QUERY = base_query
 
         output = await self.connection_manager.fetch_query(QUERY, params)
 
@@ -229,7 +240,7 @@ class PostgresEntityHandler(EntityHandler):
             SELECT COUNT(*) from {self._get_table_name(level + "_entity")} WHERE {filter}
         """
         count = (
-            await self.connection_manager.fetch_query(QUERY, params[:-2])
+            await self.connection_manager.fetch_query(QUERY, params[:-2 + (limit == -1)])
         )[0]["count"]
 
         if count == 0 and level == DataLevel.GRAPH:
@@ -412,13 +423,21 @@ class PostgresRelationshipHandler(RelationshipHandler):
             filter += " AND predicate = ANY($3)"
             params.append(relationship_types)  # type: ignore
 
-        QUERY = f"""
+        # Build query with conditional LIMIT
+        base_query = f"""
             SELECT * FROM {self._get_table_name(level + "_relationship")}
             WHERE {filter}
-            OFFSET ${len(params)+1} LIMIT ${len(params) + 2}
+            OFFSET ${len(params)+1}
         """
+        
+        params.append(offset)
+        
+        if limit != -1:
+            base_query += f" LIMIT ${len(params)+1}"
+            params.append(limit)
+            
+        QUERY = base_query
 
-        params.extend([offset, limit])  # type: ignore
         rows = await self.connection_manager.fetch_query(QUERY, params)
 
         QUERY_COUNT = f"""
@@ -962,36 +981,57 @@ class PostgresGraphHandler(GraphHandler):
         }
 
     async def get_enrichment_estimate(
-        self, collection_id: UUID, kg_enrichment_settings: KGEnrichmentSettings
+        self, collection_id: UUID | None = None, graph_id: UUID | None = None, kg_enrichment_settings: KGEnrichmentSettings | None = None
     ):
         """Get the estimated cost and time for enriching a KG."""
+        if collection_id is not None: 
 
-        document_ids = [
-            doc.id
-            for doc in (
-                await self.collection_handler.documents_in_collection(collection_id)  # type: ignore
-            )["results"]
-        ]
+            document_ids = [
+                doc.id
+                for doc in (
+                    await self.collection_handler.documents_in_collection(collection_id, offset=0, limit=-1)  # type: ignore
+                )["results"]
+            ]
 
-        # Get entity and relationship counts
-        entity_count = (
-            await self.connection_manager.fetch_query(
-                f"SELECT COUNT(*) FROM {self._get_table_name('document_entity')} WHERE document_id = ANY($1);",
-                [document_ids],
-            )
-        )[0]["count"]
+            # Get entity and relationship counts
+            entity_count = (
+                await self.connection_manager.fetch_query(
+                    f"SELECT COUNT(*) FROM {self._get_table_name('document_entity')} WHERE document_id = ANY($1);",
+                    [document_ids],
+                )
+            )[0]["count"]
 
-        if not entity_count:
-            raise ValueError(
-                "No entities found in the graph. Please run `create-graph` first."
-            )
+            if not entity_count:
+                raise ValueError(
+                    "No entities found in the graph. Please run `create-graph` first."
+                )
+            
+            relationship_count = (
+                await self.connection_manager.fetch_query(
+                    f"SELECT COUNT(*) FROM {self._get_table_name('chunk_relationship')} WHERE document_id = ANY($1);",
+                    [document_ids],
+                )
+            )[0]["count"]
 
-        relationship_count = (
-            await self.connection_manager.fetch_query(
-                f"SELECT COUNT(*) FROM {self._get_table_name('chunk_relationship')} WHERE document_id = ANY($1);",
-                [document_ids],
-            )
-        )[0]["count"]
+        else:
+            entity_count = (
+                await self.connection_manager.fetch_query(
+                    f"SELECT COUNT(*) FROM {self._get_table_name('document_entity')} WHERE $1 = ANY(graph_ids);",
+                    [graph_id],
+                )
+            )[0]["count"]
+
+            if not entity_count:
+                raise ValueError(
+                    "No entities found in the graph. Please run `create-graph` first."
+                )
+
+            relationship_count = (
+                await self.connection_manager.fetch_query(
+                    f"SELECT COUNT(*) FROM {self._get_table_name('chunk_relationship')} WHERE $1 = ANY(graph_ids);",
+                    [graph_id],
+                )
+            )[0]["count"]    
 
         # Calculate estimates
         estimated_llm_calls = (entity_count // 10, entity_count // 5)
@@ -1130,7 +1170,7 @@ class PostgresGraphHandler(GraphHandler):
 
         if entity_table_name == "graph_entity":
             query = f"""
-            SELECT sid as id, name, description, chunk_ids, document_ids {", " + ", ".join(extra_columns) if extra_columns else ""}
+            SELECT sid as id, name, description, chunk_ids, document_ids, graph_id {", " + ", ".join(extra_columns) if extra_columns else ""}
             FROM {self._get_table_name(entity_table_name)}
             WHERE collection_id = $1
             {" AND " + " AND ".join(conditions) if conditions else ""}
@@ -1139,7 +1179,7 @@ class PostgresGraphHandler(GraphHandler):
             """
         else:
             query = f"""
-            SELECT sid as id, name, description, chunk_ids, document_id {", " + ", ".join(extra_columns) if extra_columns else ""}
+            SELECT sid as id, name, description, chunk_ids, document_id, graph_ids {", " + ", ".join(extra_columns) if extra_columns else ""}
             FROM {self._get_table_name(entity_table_name)}
             WHERE document_id = ANY(
                 SELECT document_id FROM {self._get_table_name("document_info")}
@@ -1189,6 +1229,8 @@ class PostgresGraphHandler(GraphHandler):
                 else None
             )
             cleaned_entities.append(entity_dict)
+
+        import pdb; pdb.set_trace()
 
         return await _add_objects(
             objects=cleaned_entities,
@@ -1275,27 +1317,39 @@ class PostgresGraphHandler(GraphHandler):
         )
 
     async def get_all_relationships(
-        self, collection_id: UUID, document_ids: Optional[list[UUID]] = None
+        self, collection_id: UUID | None, graph_id: UUID | None, document_ids: Optional[list[UUID]] = None
     ) -> list[Relationship]:
 
-        # getting all documents for a collection
-        if document_ids is None:
-            QUERY = f"""
-                select distinct document_id from {self._get_table_name("document_info")} where $1 = ANY(collection_ids)
-            """
-            document_ids_list = await self.connection_manager.fetch_query(
-                QUERY, [collection_id]
-            )
-            document_ids = [
-                doc_id["document_id"] for doc_id in document_ids_list
-            ]
 
-        QUERY = f"""
-            SELECT sid as id, subject, predicate, weight, object, document_id FROM {self._get_table_name("chunk_relationship")} WHERE document_id = ANY($1)
-        """
-        relationships = await self.connection_manager.fetch_query(
-            QUERY, [document_ids]
-        )
+        if collection_id is not None: 
+
+            # getting all documents for a collection
+            if document_ids is None:
+                QUERY = f"""
+                    select distinct document_id from {self._get_table_name("document_info")} where $1 = ANY(collection_ids)
+                """
+                document_ids_list = await self.connection_manager.fetch_query(
+                    QUERY, [collection_id]
+                )
+                document_ids = [
+                    doc_id["document_id"] for doc_id in document_ids_list
+                ]
+
+            QUERY = f"""
+                SELECT sid as id, subject, predicate, weight, object, document_id FROM {self._get_table_name("chunk_relationship")} WHERE document_id = ANY($1)
+            """
+            relationships = await self.connection_manager.fetch_query(
+                QUERY, [document_ids]
+            )
+
+        else:
+            QUERY = f"""
+                SELECT sid as id, subject, predicate, weight, object, document_id FROM {self._get_table_name("chunk_relationship")} WHERE $1 = ANY(graph_ids)
+            """
+            relationships = await self.connection_manager.fetch_query(
+                QUERY, [graph_id]
+            )
+
         return [Relationship(**relationship) for relationship in relationships]
 
     # DEPRECATED
@@ -1607,7 +1661,8 @@ class PostgresGraphHandler(GraphHandler):
 
     async def perform_graph_clustering(
         self,
-        collection_id: UUID,
+        collection_id: UUID | None,
+        graph_id: UUID | None,
         leiden_params: dict[str, Any],
         use_community_cache: bool = False,
     ) -> int:
@@ -1630,7 +1685,7 @@ class PostgresGraphHandler(GraphHandler):
 
         start_time = time.time()
 
-        relationships = await self.get_all_relationships(collection_id)
+        relationships = await self.get_all_relationships(collection_id, graph_id)
 
         logger.info(f"Clustering with settings: {leiden_params}")
 
@@ -1638,7 +1693,8 @@ class PostgresGraphHandler(GraphHandler):
             relationships
         )
 
-        if use_community_cache and await self._use_community_cache(
+        # incremental clustering isn't enabled for v3 yet.
+        if not graph_id and await self._use_community_cache(
             collection_id, relationship_ids_cache
         ):
             num_communities = await self._incremental_clustering(
@@ -1646,10 +1702,11 @@ class PostgresGraphHandler(GraphHandler):
             )
         else:
             num_communities = await self._cluster_and_add_community_info(
-                relationships,
-                relationship_ids_cache,
-                leiden_params,
-                collection_id,
+                relationships = relationships,
+                relationship_ids_cache = relationship_ids_cache,
+                leiden_params = leiden_params,
+                collection_id = collection_id,
+                graph_id = graph_id,
             )
 
         return num_communities
@@ -1896,23 +1953,25 @@ class PostgresGraphHandler(GraphHandler):
         relationship_ids_cache: dict[str, list[int]],
         leiden_params: dict[str, Any],
         collection_id: UUID,
+        graph_id: UUID,
     ) -> int:
 
         # clear if there is any old information
         QUERY = f"""
-            DELETE FROM {self._get_table_name("graph_community_info")} WHERE collection_id = $1
+            DELETE FROM {self._get_table_name("graph_community_info")} WHERE collection_id = $1 OR graph_id = $2
         """
-        await self.connection_manager.execute_query(QUERY, [collection_id])
+        await self.connection_manager.execute_query(QUERY, [collection_id, graph_id])
 
         QUERY = f"""
-            DELETE FROM {self._get_table_name("graph_community")} WHERE collection_id = $1
+            DELETE FROM {self._get_table_name("graph_community")} WHERE collection_id = $1 OR graph_id = $2
         """
-        await self.connection_manager.execute_query(QUERY, [collection_id])
+        await self.connection_manager.execute_query(QUERY, [collection_id, graph_id])
 
         start_time = time.time()
 
         hierarchical_communities = await self._create_graph_and_cluster(
-            relationships, leiden_params
+            relationships = relationships,
+            leiden_params = leiden_params,
         )
 
         logger.info(
@@ -1936,6 +1995,7 @@ class PostgresGraphHandler(GraphHandler):
                 is_final_cluster=item.is_final_cluster,
                 relationship_ids=relationship_ids(item.node),
                 collection_id=collection_id,
+                graph_id=graph_id,
             )
             for item in hierarchical_communities
         ]
@@ -2319,7 +2379,7 @@ async def _add_objects(
         sample_value = cleaned_objects[0][col]
         if "embedding" in col:
             pg_type = "vector"
-        elif "chunk_ids" in col:
+        elif "chunk_ids" in col or "document_ids" in col or "graph_ids" in col:
             pg_type = "uuid[]"
         elif col == "id" or "_id" in col:
             pg_type = "uuid"

@@ -140,6 +140,7 @@ class KgService(Service):
         entity_names: Optional[list[str]] = None,
         entity_categories: Optional[list[str]] = None,
         attributes: Optional[list[str]] = None,
+        from_built_graph: Optional[bool] = False,
     ):
         return await self.providers.database.graph_handler.entities.get(
             level=level,
@@ -149,6 +150,7 @@ class KgService(Service):
             attributes=attributes,
             offset=offset,
             limit=limit,
+            from_built_graph=from_built_graph,
         )
 
     @telemetry_event("update_entity")
@@ -469,6 +471,7 @@ class KgService(Service):
     async def kg_clustering(
         self,
         collection_id: UUID,
+        graph_id: UUID,
         generation_config: GenerationConfig,
         leiden_params: dict,
         **kwargs,
@@ -477,10 +480,12 @@ class KgService(Service):
         logger.info(
             f"Running ClusteringPipe for collection {collection_id} with settings {leiden_params}"
         )
+
         clustering_result = await self.pipes.kg_clustering_pipe.run(
             input=self.pipes.kg_clustering_pipe.Input(
                 message={
                     "collection_id": collection_id,
+                    "graph_id": graph_id,
                     "generation_config": generation_config,
                     "leiden_params": leiden_params,
                     "logger": logger,
@@ -580,13 +585,19 @@ class KgService(Service):
     @telemetry_event("get_enrichment_estimate")
     async def get_enrichment_estimate(
         self,
-        collection_id: UUID,
-        kg_enrichment_settings: KGEnrichmentSettings,
+        collection_id: UUID | None = None,
+        graph_id: UUID | None = None,
+        kg_enrichment_settings: KGEnrichmentSettings | None = None,
         **kwargs,
     ):
 
+        if graph_id is None and collection_id is None:
+            raise ValueError("Either graph_id or collection_id must be provided")
+
         return await self.providers.database.graph_handler.get_enrichment_estimate(
-            collection_id, kg_enrichment_settings
+            collection_id=collection_id,
+            graph_id=graph_id,
+            kg_enrichment_settings=kg_enrichment_settings,
         )
 
     @telemetry_event("get_deduplication_estimate")
@@ -597,13 +608,15 @@ class KgService(Service):
         **kwargs,
     ):
         return await self.providers.database.graph_handler.get_deduplication_estimate(
-            collection_id, kg_deduplication_settings
+            collection_id=collection_id,
+            kg_deduplication_settings=kg_deduplication_settings,
         )
 
     @telemetry_event("kg_entity_deduplication")
     async def kg_entity_deduplication(
         self,
-        id: UUID,
+        collection_id: UUID,
+        graph_id: UUID,
         kg_entity_deduplication_type: KGEntityDeduplicationType,
         kg_entity_deduplication_prompt: str,
         generation_config: GenerationConfig,
@@ -612,7 +625,8 @@ class KgService(Service):
         deduplication_results = await self.pipes.kg_entity_deduplication_pipe.run(
             input=self.pipes.kg_entity_deduplication_pipe.Input(
                 message={
-                    "id": id,
+                    "collection_id": collection_id,
+                    "graph_id": graph_id,
                     "kg_entity_deduplication_type": kg_entity_deduplication_type,
                     "kg_entity_deduplication_prompt": kg_entity_deduplication_prompt,
                     "generation_config": generation_config,

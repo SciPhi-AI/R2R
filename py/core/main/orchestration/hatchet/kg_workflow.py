@@ -30,6 +30,9 @@ def hatchet_kg_factory(
             if key == "document_id":
                 input_data[key] = uuid.UUID(value)
 
+            if key == "collection_id":
+                input_data[key] = uuid.UUID(value)
+
             if key == "graph_id":
                 input_data[key] = uuid.UUID(value)
 
@@ -411,7 +414,8 @@ def hatchet_kg_factory(
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
-            graph_id = input_data["graph_id"]
+            graph_id = input_data.get("graph_id", None)
+            collection_id = input_data.get("collection_id", None)
             num_communities = context.step_output("kg_clustering")[
                 "kg_clustering"
             ][0]["num_communities"]
@@ -437,6 +441,7 @@ def hatchet_kg_factory(
                                         num_communities - offset,
                                     ),
                                     "graph_id": str(graph_id),
+                                    "collection_id": str(collection_id),
                                     **input_data["kg_enrichment_settings"],
                                 }
                             },
@@ -454,7 +459,7 @@ def hatchet_kg_factory(
             document_ids = await self.kg_service.providers.database.get_document_ids_by_status(
                 status_type="kg_extraction_status",
                 status=KGExtractionStatus.SUCCESS,
-                collection_id=graph_id,
+                collection_id=collection_id,
             )
 
             await self.kg_service.providers.database.set_workflow_status(

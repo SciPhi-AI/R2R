@@ -125,7 +125,7 @@ class GraphRouter(BaseRouterV3):
             )
 
         workflow_input = {
-            "id": str(id),
+            "graph_id": str(id),
             "kg_entity_deduplication_settings": server_settings.model_dump_json(),
             "user": auth_user.model_dump_json(),
         }
@@ -183,9 +183,13 @@ class GraphRouter(BaseRouterV3):
 
         # If the run type is estimate, return an estimate of the enrichment cost
         if run_type is KGRunType.ESTIMATE:
-            return await self.services["kg"].get_enrichment_estimate(
-                id, server_kg_enrichment_settings
-            )
+            return {
+                "message": "Ran community build estimate.",
+                "estimate": await self.services["kg"].get_enrichment_estimate(
+                    graph_id=graph_id,
+                    kg_enrichment_settings=server_kg_enrichment_settings,
+                ),
+            }
 
         else:
             if run_with_orchestration:
@@ -369,6 +373,10 @@ class GraphRouter(BaseRouterV3):
                 None,
                 description="A list of attributes to return. By default, all attributes are returned.",
             ),
+            from_built_graph: Optional[bool] = Query(
+                False,
+                description="Whether to retrieve entities from the built graph.",
+            ),
             offset: int = Query(
                 0,
                 ge=0,
@@ -402,6 +410,7 @@ class GraphRouter(BaseRouterV3):
                 entity_names=entity_names,
                 entity_categories=entity_categories,
                 attributes=attributes,
+                from_built_graph=from_built_graph,
             )
 
             return entities, {  # type: ignore
@@ -992,15 +1001,14 @@ class GraphRouter(BaseRouterV3):
         ################### COMMUNITIES ###################
 
         @self.router.post(
-            "/graphs/{id}/build/communities",
+            "/graphs/{id}/build/communities/{run_type}",
             summary="Build communities in the graph",
         )
         @self.base_endpoint
         async def create_communities(
             id: UUID = Path(...),
             settings: Optional[dict] = Body(None),
-            run_type: Optional[KGRunType] = Body(
-                default=None,
+            run_type: Optional[KGRunType] = Path(
                 description="Run type for the graph creation process.",
             ),
             run_with_orchestration: bool = Query(True),
@@ -1008,10 +1016,11 @@ class GraphRouter(BaseRouterV3):
         ) -> WrappedKGEnrichmentResponse:
 
             return await self._create_communities(
-                id=id,
+                graph_id=id,
                 settings=settings,
                 run_type=run_type,
                 run_with_orchestration=run_with_orchestration,
+                auth_user=auth_user,
             )
 
         @self.router.post(
@@ -1547,25 +1556,32 @@ class GraphRouter(BaseRouterV3):
                 raise R2RException("Invalid data type", 400)
 
         @self.router.post(
-            "/graphs/{id}/build",
+            "/graphs/{id}/build/{run_type}",
             summary="Build entities, relationships, and communities in the graph",
         )
         @self.base_endpoint
         async def build(
             id: UUID = Path(...),
+            run_type: KGRunType = Path(...),
             settings: GraphBuildSettings = Body(GraphBuildSettings()),
+            run_with_orchestration: bool = Query(True),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
 
             # build entities
             logger.info(f"Building entities for graph {id}")
             entities_result = await self._deduplicate_entities(
-                id, settings.entity_settings, run_type=KGRunType.RUN
+                id, settings.entity_settings.__dict__, run_type=run_type,
+                run_with_orchestration=run_with_orchestration,
+                auth_user=auth_user,
             )
 
             # build communities
             logger.info(f"Building communities for graph {id}")
             communities_result = await self._create_communities(
-                id, settings.community_settings, run_type=KGRunType.RUN
+                id, settings.community_settings.__dict__, run_type=run_type,
+                run_with_orchestration=run_with_orchestration,
+                auth_user=auth_user,
             )
 
             return {

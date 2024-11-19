@@ -131,6 +131,28 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         for entity in entities_batch:
             yield entity
 
+
+    async def _get_entities(self, graph_id: UUID | None, collection_id: UUID | None, offset: int, limit: int, level):
+
+        if graph_id is not None: 
+            return await self.database_provider.graph_handler.entities.get(
+                graph_id=graph_id,
+                offset=offset,
+                limit=limit,
+                level = level,
+            )
+
+        elif collection_id is not None:
+            return await self.database_provider.graph_handler.get_entities(
+                collection_id=collection_id,
+                entity_table_name=f"{level}_entity",
+                offset=offset,
+                limit=limit,
+            )
+        
+        else:
+            raise ValueError("Either graph_id or collection_id must be provided")   
+
     async def _run_logic(
         self,
         input: AsyncPipe.Input,
@@ -141,7 +163,8 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
     ):
         # TODO: figure out why the return type AsyncGenerator[dict, None] is not working
 
-        graph_id = input.message["graph_id"]
+        graph_id = input.message.get("graph_id", None)
+        collection_id = input.message.get("collection_id", None)
         offset = input.message["offset"]
         limit = input.message["limit"]
         kg_entity_deduplication_type = input.message[
@@ -156,20 +179,14 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             f"Running kg_entity_deduplication_summary for graph {graph_id} with settings kg_entity_deduplication_type: {kg_entity_deduplication_type}, kg_entity_deduplication_prompt: {kg_entity_deduplication_prompt}, generation_config: {generation_config}"
         )
 
-        entities = (
-            await self.database_provider.graph_handler.get_entities(
-                graph_id=graph_id,
-                entity_table_name="graph_entity",
-                offset=offset,
-                limit=limit,
-            )
-        )["entities"]
+        entities = await self._get_entities(graph_id, collection_id, offset, limit, level)
 
         entity_names = [entity.name for entity in entities]
 
         entity_descriptions = (
             await self.database_provider.graph_handler.get_entities(
                 graph_id=graph_id,
+                collection_id=collection_id,
                 entity_names=entity_names,
                 entity_table_name="document_entity",
                 offset=offset,

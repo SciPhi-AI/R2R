@@ -34,13 +34,13 @@ class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
     name: str
-    id: Optional[UUID] = None
-    sid: Optional[str] = None
+    id: Optional[UUID | int] = None
+    sid: Optional[int] = None
     level: Optional[DataLevel] = None
     category: Optional[str] = None
     description: Optional[str] = None
     description_embedding: Optional[list[float] | str] = None
-    community_numbers: Optional[list[str]] = None
+    community_numbers: Optional[list[int]] = None
     chunk_ids: Optional[list[UUID]] = None
     graph_id: Optional[UUID] = None
     graph_ids: Optional[list[UUID]] = None
@@ -73,7 +73,7 @@ class Relationship(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
     id: Optional[UUID | int] = None
-    sid: Optional[str] = None
+    sid: Optional[int] = None
     level: Optional[DataLevel] = None
     subject: Optional[str] = None
     predicate: Optional[str] = None
