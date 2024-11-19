@@ -24,7 +24,7 @@ batch_size = 256
 
 [embedding]
 provider = "litellm"
-base_model = "openai/text-embedding-3-small" # continue with `openai` for embeddings, due to server rate limit on azure
+base_model = "openai/text-embedding-3-large" # continue with `openai` for embeddings, due to server rate limit on azure
 
 [file]
 provider = "postgres"
@@ -37,12 +37,17 @@ new_after_n_chars = 2_048
 max_characters = 4_096
 combine_under_n_chars = 512
 overlap = 1_024
+audio_transcription_model = "azure/whisper-1"
+vision_img_model = "azure/gpt-4o"
+vision_pdf_model = "azure/gpt-4o"
+document_summary_model = "azure/gpt-4o-mini"
+
   [ingestion.extra_parsers]
     pdf = "zerox"
 
   [ingestion.chunk_enrichment_settings]
     generation_config = { model = "azure/gpt-4o-mini" }
-document_summary_model = "azure/gpt-4o-mini"
+
 
 [orchestration]
 provider = "hatchet"

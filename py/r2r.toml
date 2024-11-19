@@ -95,12 +95,15 @@ chunk_size = 2_048
 chunk_overlap = 1_024
 excluded_parsers = ["mp4"]
 
+audio_transcription_model = "openai/whisper-1"
+vision_img_model = "openai/gpt-4o"
+vision_pdf_model = "openai/gpt-4o"
+document_summary_model = "openai/gpt-4o-mini"
 # Ingestion-time document summary parameters
 # skip_document_summary = False
 # document_summary_system_prompt = 'default_system'
 # document_summary_task_prompt = 'default_summary'
 # chunks_for_document_summary = 128
-document_summary_model = "openai/gpt-4o-mini"
 
   [ingestion.chunk_enrichment_settings]
     enable_chunk_enrichment = false # disabled by default
@@ -113,6 +116,7 @@ document_summary_model = "openai/gpt-4o-mini"
 
   [ingestion.extra_parsers]
     pdf = "zerox"
+
 
 [logging]
 provider = "r2r"
