@@ -9,20 +9,18 @@ from uuid import UUID
 
 from fastapi import Depends, File, Form, Path, Query, UploadFile
 from fastapi.responses import StreamingResponse
+from pydantic import Json
 
+from core.base import R2RException, RunType, generate_document_id
 from core.base.api.models import (
     GenericBooleanResponse,
+    WrappedBooleanResponse,
+    WrappedChunksResponse,
     WrappedCollectionsResponse,
     WrappedDocumentResponse,
     WrappedDocumentsResponse,
     WrappedIngestionResponse,
-    WrappedBooleanResponse,
-    WrappedChunksResponse,
 )
-
-from pydantic import Json
-
-from core.base import R2RException, RunType, generate_document_id
 from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
@@ -62,9 +60,9 @@ class DocumentsRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.documents.create(
-                            file_path="pg_essay_1.html",
-                            metadata={"metadata_1":"some random metadata"},
-                            id=None
+                                file_path="pg_essay_1.html",
+                                metadata={"metadata_1":"some random metadata"},
+                                id=None
                             )
                             """
                         ),
@@ -273,8 +271,8 @@ class DocumentsRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.documents.update(
-                            file_path="pg_essay_1.html",
-                            id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                                file_path="pg_essay_1.html",
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
                             )
                             """
                         ),
@@ -421,18 +419,17 @@ class DocumentsRouter(BaseRouterV3):
                         "filename": f"N/A",
                         "content_type": "text/plain",
                     }
-
-                    await self.providers.database.store_file(
-                        id,
-                        file_data["filename"],
-                        file_content,
-                        file_data["content_type"],
-                    )
                 else:
                     raise R2RException(
                         status_code=422,
                         message="Either a file or content must be provided.",
                     )
+                await self.providers.database.store_file(
+                    id,
+                    file_data["filename"],
+                    file_content,
+                    file_data["content_type"],
+                )
 
                 workflow_input = {
                     "file_datas": [file_data],
@@ -488,8 +485,8 @@ class DocumentsRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.documents.list(
-                            limit=10,
-                            offset=0
+                                limit=10,
+                                offset=0
                             )
                             """
                         ),

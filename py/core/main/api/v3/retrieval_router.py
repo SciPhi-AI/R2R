@@ -14,8 +14,8 @@ from core.base import (
     SearchSettings,
 )
 from core.base.api.models import (
-    WrappedCompletionResponse,
     WrappedAgentResponse,
+    WrappedCompletionResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
@@ -102,12 +102,12 @@ class RetrievalRouterV3(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.search(
+                            result = client.retrieval.search(
                                 query="Who is Aristotle?",
                                 vector_search_settings={
                                     "use_vector_search": True,
                                     "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    "search_limit": 20,
+                                    "limit": 20,
                                     "use_hybrid_search": True
                                 },
                                 kg_search_settings={
@@ -144,7 +144,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     vector_search_settings: {
                                         use_vector_search: true,
                                         filters: { document_id: { $eq: "3e157b3a-8469-51db-90d9-52e7d896b49b" } },
-                                        search_limit: 20,
+                                        limit: 20,
                                         use_hybrid_search: true
                                     },
                                     kg_search_settings: {
@@ -190,7 +190,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                 "vector_search_settings": {
                                     "use_vector_search": true,
                                     "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    "search_limit": 20,
+                                    "limit": 20,
                                     "use_hybrid_search": true
                                 },
                                 "kg_search_settings": {
@@ -275,7 +275,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                 vector_search_settings={
                                     "use_vector_search": True,
                                     "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    "search_limit": 20,
+                                    "limit": 20,
                                     "use_hybrid_search": True
                                 },
                                 kg_search_settings={
@@ -310,7 +310,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     vector_search_settings: {
                                         use_vector_search: true,
                                         filters: { document_id: { $eq: "3e157b3a-8469-51db-90d9-52e7d896b49b" } },
-                                        search_limit: 20,
+                                        limit: 20,
                                         use_hybrid_search: true
                                     },
                                     kg_search_settings: {
@@ -361,7 +361,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                 "vector_search_settings": {
                                     "use_vector_search": true,
                                     "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    "search_limit": 20,
+                                    "limit": 20,
                                     "use_hybrid_search": true
                                 },
                                 "kg_search_settings": {
@@ -468,7 +468,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             vector_search_settings={
                                 "use_vector_search": True,
                                 "filters": {"collection_ids": ["5e157b3a-8469-51db-90d9-52e7d896b49b"]},
-                                "search_limit": 20,
+                                "limit": 20,
                                 "use_hybrid_search": True
                             },
                             kg_search_settings={
@@ -504,7 +504,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     vector_search_settings: {
                                         use_vector_search: true,
                                         filters: { collection_ids: ["5e157b3a-8469-51db-90d9-52e7d896b49b"] },
-                                        search_limit: 20,
+                                        limit: 20,
                                         use_hybrid_search: true
                                     },
                                     kg_search_settings: {
@@ -541,7 +541,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                 "vector_search_settings": {
                                     "use_vector_search": true,
                                     "filters": {"collection_ids": ["5e157b3a-8469-51db-90d9-52e7d896b49b"]},
-                                    "search_limit": 20,
+                                    "limit": 20,
                                     "use_hybrid_search": true
                                 },
                                 "kg_search_settings": {

@@ -306,7 +306,7 @@ class PostgresVectorHandler(VectorHandler):
             binary_query = quantize_vector_to_binary(query_vector)
             # TODO - Put depth multiplier in config / settings
             extended_limit = (
-                search_settings.search_limit * 20
+                search_settings.limit * 20
             )  # Get 20x candidates for re-ranking
             if (
                 imeasure_obj == IndexMeasure.hamming_distance
@@ -367,7 +367,7 @@ class PostgresVectorHandler(VectorHandler):
                 [
                     extended_limit,  # First stage limit
                     search_settings.offset,
-                    search_settings.search_limit,  # Final limit
+                    search_settings.limit,  # Final limit
                     str(query_vector),  # For re-ranking
                 ]
             )
@@ -400,9 +400,7 @@ class PostgresVectorHandler(VectorHandler):
             LIMIT ${len(params) + 1}
             OFFSET ${len(params) + 2}
             """
-            params.extend(
-                [search_settings.search_limit, search_settings.offset]
-            )
+            params.extend([search_settings.limit, search_settings.offset])
 
         results = await self.connection_manager.fetch_query(query, params)
 
@@ -500,14 +498,14 @@ class PostgresVectorHandler(VectorHandler):
             )
         if (
             search_settings.hybrid_search_settings.full_text_limit
-            < search_settings.search_limit
+            < search_settings.limit
         ):
             raise ValueError(
-                "The `full_text_limit` must be greater than or equal to the `search_limit`."
+                "The `full_text_limit` must be greater than or equal to the `limit`."
             )
 
         semantic_settings = copy.deepcopy(search_settings)
-        semantic_settings.search_limit += search_settings.offset
+        semantic_settings.limit += search_settings.offset
 
         full_text_settings = copy.deepcopy(search_settings)
         full_text_settings.hybrid_search_settings.full_text_limit += (
@@ -521,7 +519,7 @@ class PostgresVectorHandler(VectorHandler):
             await self.full_text_search(query_text, full_text_settings)
         )
 
-        semantic_limit = search_settings.search_limit
+        semantic_limit = search_settings.limit
         full_text_limit = (
             search_settings.hybrid_search_settings.full_text_limit
         )
@@ -576,7 +574,7 @@ class PostgresVectorHandler(VectorHandler):
         )
         offset_results = sorted_results[
             search_settings.offset : search_settings.offset
-            + search_settings.search_limit
+            + search_settings.limit
         ]
 
         return [

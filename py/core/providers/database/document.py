@@ -546,9 +546,9 @@ class PostgresDocumentHandler(DocumentHandler):
         params: list[str | int | bytes] = [str(query_embedding)]
 
         # Handle filters
-        if search_settings.search_filters:
+        if search_settings.filters:
             filter_clause = self._build_filters(
-                search_settings.search_filters, params
+                search_settings.filters, params
             )
             where_clauses.append(filter_clause)
 
@@ -590,7 +590,7 @@ class PostgresDocumentHandler(DocumentHandler):
         FROM document_scores
         """
 
-        params.extend([search_settings.search_limit, search_settings.offset])
+        params.extend([search_settings.limit, search_settings.offset])
 
         results = await self.connection_manager.fetch_query(query, params)
 
@@ -639,9 +639,9 @@ class PostgresDocumentHandler(DocumentHandler):
         params: list[str | int | bytes] = [query_text]
 
         # Handle filters
-        if search_settings.search_filters:
+        if search_settings.filters:
             filter_clause = self._build_filters(
-                search_settings.search_filters, params
+                search_settings.filters, params
             )
             where_clauses.append(filter_clause)
 
@@ -679,7 +679,7 @@ class PostgresDocumentHandler(DocumentHandler):
         SELECT * FROM document_scores
         """
 
-        params.extend([search_settings.search_limit, search_settings.offset])
+        params.extend([search_settings.limit, search_settings.offset])
 
         results = await self.connection_manager.fetch_query(query, params)
 
@@ -731,7 +731,7 @@ class PostgresDocumentHandler(DocumentHandler):
 
         # Get more results than needed for better fusion
         extended_settings = copy.deepcopy(search_settings)
-        extended_settings.search_limit = search_settings.search_limit * 3
+        extended_settings.limit = search_settings.limit * 3
 
         # Get results from both search methods
         semantic_results = await self.semantic_document_search(
@@ -793,7 +793,7 @@ class PostgresDocumentHandler(DocumentHandler):
             doc_scores.values(), key=lambda x: x["final_score"], reverse=True
         )[
             search_settings.offset : search_settings.offset
-            + search_settings.search_limit
+            + search_settings.limit
         ]
 
         return [
