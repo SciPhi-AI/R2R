@@ -33,7 +33,7 @@ provider = "postgres"
     kg_relationships_extraction_prompt = "graphrag_relationships_extraction_few_shot"
     entity_types = [] # if empty, all entities are extracted
     relation_types = [] # if empty, all relations are extracted
-    fragment_merge_count = 4 # number of fragments to merge into a single extraction
+    fragment_merge_count = 2 # number of fragments to merge into a single extraction
     max_knowledge_relationships = 100
     max_description_input_length = 65536
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for relationshipt extraction

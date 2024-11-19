@@ -26,7 +26,7 @@ provider = "postgres"
     kg_relationships_extraction_prompt = "graphrag_relationships_extraction_few_shot"
     entity_types = [] # if empty, all entities are extracted
     relation_types = [] # if empty, all relations are extracted
-    fragment_merge_count = 4 # number of fragments to merge into a single extraction
+    fragment_merge_count = 2 # number of fragments to merge into a single extraction
     max_knowledge_relationships = 100
     max_description_input_length = 65536
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for relationshipt extraction
@@ -62,11 +62,11 @@ concurrent_request_limit = 2
 provider = "unstructured_local"
 strategy = "auto"
 chunking_strategy = "by_title"
-new_after_n_chars = 512
-max_characters = 1_024
-combine_under_n_chars = 128
-overlap = 20
-chunks_for_document_summary = 16
+new_after_n_chars = 2_048
+max_characters = 4_096
+combine_under_n_chars = 512
+overlap = 1_024
+chunks_for_document_summary = 8
 document_summary_model = "ollama/llama3.1"
 
 [orchestration]
