@@ -13,7 +13,7 @@ class SearchPipe(AsyncPipe[VectorSearchResult]):
     class SearchConfig(AsyncPipe.PipeConfig):
         name: str = "default_vector_search"
         filters: dict = {}
-        search_limit: int = 10
+        limit: int = 10
 
     class Input(AsyncPipe.Input):
         message: Union[AsyncGenerator[str, None], str]

@@ -3,9 +3,9 @@ import json
 import asyncclick as click
 from asyncclick import pass_context
 
-from r2r import R2RAsyncClient
-from cli.utils.timer import timer
 from cli.utils.param_types import JSON
+from cli.utils.timer import timer
+from r2r import R2RAsyncClient
 
 
 @click.group()
@@ -31,7 +31,7 @@ def retrieval():
     help="""Filters to apply to the vector search as a JSON, e.g. --filters='{"document_id":{"$in":["9fbe403b-c11c-5aae-8ade-ef22980c3ad1", "3e157b3a-8469-51db-90d9-52e7d896b49b"]}}'""",
 )
 @click.option(
-    "--search-limit", default=None, help="Number of search results to return"
+    "--limit", default=None, help="Number of search results to return"
 )
 @click.option(
     "--use-hybrid-search", is_flag=True, help="Perform hybrid search"
@@ -80,7 +80,7 @@ async def search(ctx, query, **kwargs):
         in [
             "use_vector_search",
             "filters",
-            "search_limit",
+            "limit",
             "use_hybrid_search",
             "selected_collection_ids",
             "search_strategy",
@@ -194,6 +194,7 @@ async def rag(ctx, query, **kwargs):
             "use_vector_search",
             "filters",
             "search_limit",
+            "limit",
             "use_hybrid_search",
             "selected_collection_ids",
             "search_strategy",
