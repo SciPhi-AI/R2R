@@ -20,6 +20,8 @@ from core.pipelines import RAGPipeline, SearchPipeline
 from core.pipes import GeneratorPipe, MultiSearchPipe, SearchPipe
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
+from core.providers.email.sendgrid import SendGridEmailProvider
+
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 
@@ -56,7 +58,7 @@ class R2RProviderFactory:
         crypto_provider: BCryptProvider,
         database_provider: PostgresDBProvider,
         email_provider: Union[
-            AsyncSMTPEmailProvider, ConsoleMockEmailProvider
+            AsyncSMTPEmailProvider, ConsoleMockEmailProvider, SendGridEmailProvider
         ],
         *args,
         **kwargs,
@@ -235,7 +237,7 @@ class R2RProviderFactory:
     @staticmethod
     async def create_email_provider(
         email_config: Optional[EmailConfig] = None, *args, **kwargs
-    ) -> Union[AsyncSMTPEmailProvider, ConsoleMockEmailProvider]:
+    ) -> Union[AsyncSMTPEmailProvider, ConsoleMockEmailProvider, SendGridEmailProvider]:
         """Creates an email provider based on configuration."""
         if not email_config:
             raise ValueError(
@@ -246,6 +248,8 @@ class R2RProviderFactory:
             return AsyncSMTPEmailProvider(email_config)
         elif email_config.provider == "console_mock":
             return ConsoleMockEmailProvider(email_config)
+        elif email_config.provider == "sendgrid":
+            return SendGridEmailProvider(email_config)
         else:
             raise ValueError(
                 f"Email provider {email_config.provider} not supported."
@@ -259,7 +263,7 @@ class R2RProviderFactory:
         crypto_provider_override: Optional[BCryptProvider] = None,
         database_provider_override: Optional[PostgresDBProvider] = None,
         email_provider_override: Optional[
-            Union[AsyncSMTPEmailProvider, ConsoleMockEmailProvider]
+            Union[AsyncSMTPEmailProvider, ConsoleMockEmailProvider, SendGridEmailProvider]
         ] = None,
         embedding_provider_override: Optional[
             Union[
