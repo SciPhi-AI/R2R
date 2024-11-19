@@ -20,6 +20,21 @@ export class UsersClient {
   }
 
   /**
+   * Delete a specific user.
+   * Users can only delete their own account unless they are superusers.
+   * @param id User ID to delete
+   * @param password User's password
+   * @returns
+   */
+  async delete(options: { id: string; password: string }): Promise<any> {
+    return this.client.makeRequest("DELETE", `users/${options.id}`, {
+      data: {
+        password: options.password,
+      },
+    });
+  }
+
+  /**
    * Verify a user's email address.
    * @param email User's email address
    * @param verificationCode Verification code sent to the user's email

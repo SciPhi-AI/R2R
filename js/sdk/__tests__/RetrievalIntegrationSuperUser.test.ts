@@ -72,7 +72,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   test("Streaming RAG", async () => {
     const stream = await client.retrieval.rag({
       query: "Sonia",
-      generation_config: {
+      generationConfig: {
         stream: true,
       },
     });
@@ -95,7 +95,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   test("Streaming RAG", async () => {
     const stream = await client.retrieval.agent({
       messages: messages,
-      generation_config: {
+      generationConfig: {
         stream: true,
       },
     });

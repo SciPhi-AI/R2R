@@ -94,10 +94,10 @@ describe("r2rClient V3 Users Integration Tests", () => {
   });
 
   test("Delete a user", async () => {
-    const response = await client.deleteUser(
-      userId,
-      "i_was_changed_immediately",
-    );
+    const response = await client.users.delete({
+      id: userId,
+      password: "i_was_changed_immediately",
+    });
     expect(response.results).toBeDefined();
   });
 });

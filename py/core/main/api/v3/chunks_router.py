@@ -136,8 +136,8 @@ class ChunksRouter(BaseRouterV3):
                                     chunks: [
                                         {
                                             id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-                                            document_id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-                                            collection_ids: ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
+                                            documentId: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                            collectionIds: ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
                                             metadata: {key: "value"},
                                             text: "Some text content"
                                         }
@@ -631,8 +631,8 @@ class ChunksRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.chunks.list({
-                                    metadata_filter: {key: "value"},
-                                    include_vectors: false,
+                                    metadataFilter: {key: "value"},
+                                    includeVectors: false,
                                     offset: 0,
                                     limit: 10,
                                 });

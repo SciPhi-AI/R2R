@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import Body, Depends, Path, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import EmailStr
+from typing import Optional
 
 from core.base import R2RException
 from core.base.api.models import (
@@ -362,8 +363,8 @@ class UsersRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.users.changePassword({
-                                    current_password: "old_password123",
-                                    new_password: "new_secure_password456"
+                                    currentPassword: "old_password123",
+                                    newPassword: "new_secure_password456"
                                 });
                             }
 
@@ -484,8 +485,8 @@ class UsersRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.users.resetPassword({
-                                    reset_token: "reset_token_received_via_email",
-                                    new_password: "new_secure_password789"
+                                    resestToken: "reset_token_received_via_email",
+                                    newPassword: "new_secure_password789"
                                 });
                             }
 
@@ -773,6 +774,79 @@ class UsersRouter(BaseRouterV3):
 
             return users_overview_response["results"][0]
 
+        @self.router.delete(
+            "/users/{id}",
+            summary="Delete User",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                        from r2r import R2RClient
+
+                        client = R2RClient("http://localhost:7272")
+                        # client.login(...)
+
+                        # Delete user
+                        client.users.delete(id="550e8400-e29b-41d4-a716-446655440000", password="secure_password123")
+                        """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                        const { r2rClient } = require("r2r-js");
+
+                        const client = new r2rClient("http://localhost:7272");
+
+                        function main() {
+                            const response = await client.users.delete({
+                                id: "550e8400-e29b-41d4-a716-446655440000",
+                                password: "secure_password123"
+                            });
+                        }
+
+                        main();
+                        """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def delete_user(
+            id: UUID = Path(
+                ..., example="550e8400-e29b-41d4-a716-446655440000"
+            ),
+            password: Optional[str] = Body(
+                None, description="User's current password"
+            ),
+            delete_vector_data: Optional[bool] = Body(
+                False,
+                description="Whether to delete the user's vector data",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedBooleanResponse:
+            """
+            Delete a specific user.
+            Users can only delete their own account unless they are superusers.
+            """
+            if not auth_user.is_superuser and auth_user.id != id:
+                raise R2RException(
+                    "Only a superuser can delete other users.",
+                    403,
+                )
+
+            await self.services["auth"].delete_user(
+                user_id=id,
+                password=password,
+                delete_vector_data=delete_vector_data,
+                is_superuser=auth_user.is_superuser,
+            )
+            return GenericBooleanResponse(success=True)  # type: ignore
+
         @self.router.get(
             "/users/{id}/collections",
             summary="Get User Collections",
@@ -908,7 +982,7 @@ class UsersRouter(BaseRouterV3):
                             function main() {
                                 const response = await client.users.addToCollection({
                                     id: "550e8400-e29b-41d4-a716-446655440000",
-                                    collection_id: "750e8400-e29b-41d4-a716-446655440000"
+                                    collectionId: "750e8400-e29b-41d4-a716-446655440000"
                                 });
                             }
 
@@ -991,7 +1065,7 @@ class UsersRouter(BaseRouterV3):
                             function main() {
                                 const response = await client.users.removeFromCollection({
                                     id: "550e8400-e29b-41d4-a716-446655440000",
-                                    collection_id: "750e8400-e29b-41d4-a716-446655440000"
+                                    collectionId: "750e8400-e29b-41d4-a716-446655440000"
                                 });
                             }
 

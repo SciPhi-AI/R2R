@@ -186,16 +186,16 @@ export class r2rClient extends BaseClient {
   @feature("loginWithToken")
   async loginWithToken(
     accessToken: string,
-  ): Promise<{ access_token: TokenInfo }> {
+  ): Promise<{ accessToken: TokenInfo }> {
     this.accessToken = accessToken;
 
     try {
       await this._makeRequest("GET", "user");
 
       return {
-        access_token: {
+        accessToken: {
           token: accessToken,
-          token_type: "access_token",
+          tokenType: "access_token",
         },
       };
     } catch (error) {
@@ -361,6 +361,7 @@ export class r2rClient extends BaseClient {
    * @param user_id The ID of the user to delete, defaults to the currently authenticated user.
    * @param password The password of the user to delete.
    * @returns A promise that resolves to the response from the server.
+   * @deprecated Use `client.users.delete` instead.
    */
   @feature("deleteUser")
   async deleteUser(userId: string, password?: string): Promise<any> {
