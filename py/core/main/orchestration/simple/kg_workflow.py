@@ -109,7 +109,7 @@ def simple_kg_factory(service: KgService):
                 )
 
             await service.providers.database.set_workflow_status(
-                id=input_data["collection_id"],
+                id=input_data.get("collection_id", None),
                 status_type="kg_enrichment_status",
                 status=KGEnrichmentStatus.SUCCESS,
             )
@@ -120,7 +120,7 @@ def simple_kg_factory(service: KgService):
         except Exception as e:
 
             await service.providers.database.set_workflow_status(
-                id=input_data["collection_id"],
+                id=input_data.get("collection_id", None),
                 status_type="kg_enrichment_status",
                 status=KGEnrichmentStatus.FAILED,
             )
@@ -136,7 +136,8 @@ def simple_kg_factory(service: KgService):
         await service.kg_community_summary(
             offset=input_data["offset"],
             limit=input_data["limit"],
-            collection_id=input_data["collection_id"],
+            collection_id=input_data.get("collection_id", None),
+            graph_id=input_data.get("graph_id", None),
             **input_data["kg_enrichment_settings"],
         )
 

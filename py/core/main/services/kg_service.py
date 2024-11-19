@@ -318,7 +318,7 @@ class KgService(Service):
         **kwargs,
     ):
         return await self.providers.database.graph_handler.communities.get(
-            collection_id=id,
+            id=id,
             offset=offset,
             limit=limit,
         )
@@ -503,7 +503,8 @@ class KgService(Service):
         limit: int,
         max_summary_input_length: int,
         generation_config: GenerationConfig,
-        collection_id: UUID,
+        collection_id: UUID | None,
+        graph_id: UUID | None,
         **kwargs,
     ):
         summary_results = await self.pipes.kg_community_summary_pipe.run(
@@ -514,6 +515,7 @@ class KgService(Service):
                     "generation_config": generation_config,
                     "max_summary_input_length": max_summary_input_length,
                     "collection_id": collection_id,
+                    "graph_id": graph_id,
                     "logger": logger,
                 }
             ),
@@ -585,14 +587,16 @@ class KgService(Service):
     @telemetry_event("get_enrichment_estimate")
     async def get_enrichment_estimate(
         self,
-        collection_id: UUID | None = None,
-        graph_id: UUID | None = None,
-        kg_enrichment_settings: KGEnrichmentSettings | None = None,
+        collection_id: Optional[UUID] = None,
+        graph_id: Optional[UUID] = None,
+        kg_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings(),
         **kwargs,
     ):
 
         if graph_id is None and collection_id is None:
-            raise ValueError("Either graph_id or collection_id must be provided")
+            raise ValueError(
+                "Either graph_id or collection_id must be provided"
+            )
 
         return await self.providers.database.graph_handler.get_enrichment_estimate(
             collection_id=collection_id,

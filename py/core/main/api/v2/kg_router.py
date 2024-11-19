@@ -292,7 +292,7 @@ class KGRouter(BaseRouter):
             )
 
             # for backwards compatibility with the old API
-            return entities['entities'], {  # type: ignore
+            return entities["entities"], {  # type: ignore
                 "total_entries": entities["total_entries"]
             }
 

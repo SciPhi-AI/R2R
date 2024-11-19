@@ -133,9 +133,22 @@ class Community(R2RSerializable):
     attributes: dict[str, Any] | None = None
 
     def __init__(self, **kwargs):
+        if isinstance(kwargs.get("attributes", None), str):
+            kwargs["attributes"] = json.loads(kwargs["attributes"])
+
+        if isinstance(kwargs.get("embedding", None), str):
+            kwargs["embedding"] = json.loads(kwargs["embedding"])
+
         super().__init__(**kwargs)
-        if isinstance(self.attributes, str):
-            self.attributes = json.loads(self.attributes)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any] | str) -> "Community":
+        parsed_data: dict[str, Any] = (
+            json.loads(data) if isinstance(data, str) else data
+        )
+        if isinstance(parsed_data.get("embedding", None), str):
+            parsed_data["embedding"] = json.loads(parsed_data["embedding"])
+        return cls(**parsed_data)
 
 
 class KGExtraction(R2RSerializable):

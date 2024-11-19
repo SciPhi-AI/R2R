@@ -183,7 +183,7 @@ class GraphRouter(BaseRouterV3):
 
         # If the run type is estimate, return an estimate of the enrichment cost
         if run_type is KGRunType.ESTIMATE:
-            return {
+            return {  # type: ignore
                 "message": "Ran community build estimate.",
                 "estimate": await self.services["kg"].get_enrichment_estimate(
                     graph_id=graph_id,
@@ -1118,13 +1118,17 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can access this endpoint.", 403
                 )
 
-            return await self.services[
+            communities, count = await self.services[
                 "kg"
             ].providers.database.graph_handler.communities.get(
                 id=id,
                 offset=offset,
                 limit=limit,
             )
+
+            return communities, {
+                "total_entries": count,
+            }
 
         @self.router.get(
             "/graphs/{id}/communities/{community_id}",
@@ -1571,7 +1575,9 @@ class GraphRouter(BaseRouterV3):
             # build entities
             logger.info(f"Building entities for graph {id}")
             entities_result = await self._deduplicate_entities(
-                id, settings.entity_settings.__dict__, run_type=run_type,
+                id,
+                settings.entity_settings.__dict__,
+                run_type=run_type,
                 run_with_orchestration=run_with_orchestration,
                 auth_user=auth_user,
             )
@@ -1579,7 +1585,9 @@ class GraphRouter(BaseRouterV3):
             # build communities
             logger.info(f"Building communities for graph {id}")
             communities_result = await self._create_communities(
-                id, settings.community_settings.__dict__, run_type=run_type,
+                id,
+                settings.community_settings.__dict__,
+                run_type=run_type,
                 run_with_orchestration=run_with_orchestration,
                 auth_user=auth_user,
             )
