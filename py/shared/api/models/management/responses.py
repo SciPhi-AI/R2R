@@ -4,12 +4,10 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
-from shared.abstractions.document import DocumentResponse
-
-from shared.abstractions.llm import Message
-
 from shared.abstractions import R2RSerializable
+from shared.abstractions.document import DocumentResponse
+from shared.abstractions.llm import Message
+from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 
 class PromptResponse(BaseModel):
@@ -107,6 +105,12 @@ class VerificationResult(BaseModel):
     message: Optional[str] = None
 
 
+class ResetDataResult(BaseModel):
+    reset_token: str
+    expiry: datetime
+    message: Optional[str] = None
+
+
 class MessageResponse(BaseModel):
     id: UUID
     message: Message
@@ -164,3 +168,4 @@ WrappedServerStatsResponse = ResultsWrapper[ServerStats]
 WrappedLogResponse = ResultsWrapper[list[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
 WrappedVerificationResult = ResultsWrapper[VerificationResult]
+WrappedResetDataResult = ResultsWrapper[ResetDataResult]

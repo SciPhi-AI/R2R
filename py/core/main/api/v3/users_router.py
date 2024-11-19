@@ -624,6 +624,70 @@ class UsersRouter(BaseRouterV3):
             }
 
         @self.router.get(
+            "/users/me",
+            summary="Get the Current User",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
+
+                            # Get user details
+                            users = client.users.me()
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.retrieve();
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r users me
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "Shell",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/users/me" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def get_current_user(
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedUserResponse:
+            """
+            Get detailed information about the currently authenticated user.
+            """
+            return auth_user
+
+        @self.router.get(
             "/users/{id}",
             summary="Get User Details",
             openapi_extra={

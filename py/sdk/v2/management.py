@@ -1,8 +1,10 @@
 from __future__ import annotations  # for Python 3.10+
-from typing_extensions import deprecated
+
 import json
 from typing import Any, Optional, Union
 from uuid import UUID
+
+from typing_extensions import deprecated
 
 from ..models import Message
 
@@ -730,7 +732,7 @@ class ManagementMixins:
     async def add_message(
         self,
         conversation_id: Union[str, UUID],
-        message: Message,
+        message: dict,
         parent_id: Optional[str] = None,
         metadata: Optional[dict[str, Any]] = None,
     ) -> dict:
@@ -751,9 +753,14 @@ class ManagementMixins:
             data["parent_id"] = parent_id
         if metadata is not None:
             data["metadata"] = metadata
-        return await self._make_request(  # type: ignore
-            "POST", f"add_message/{str(conversation_id)}", data=data
-        )
+        if len(data) == 1:
+            return await self._make_request(  # type: ignore
+                "POST", f"add_message/{str(conversation_id)}", json=data
+            )
+        else:
+            return await self._make_request(  # type: ignore
+                "POST", f"add_message/{str(conversation_id)}", data=data
+            )
 
     @deprecated("Use client.conversations.update_message() instead")
     async def update_message(
@@ -791,7 +798,7 @@ class ManagementMixins:
             dict: The response from the server.
         """
         return await self._make_request(  # type: ignore
-            "PATCH", f"messages/{message_id}/metadata", data=metadata
+            "PATCH", f"messages/{message_id}/metadata", json=metadata
         )
 
     @deprecated("Use client.conversations.list_branches() instead")
