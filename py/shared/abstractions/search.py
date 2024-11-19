@@ -7,7 +7,7 @@ from uuid import UUID
 from pydantic import Field
 
 from .base import R2RSerializable
-from .graph import EntityLevel
+from .graph import DataLevel
 from .llm import GenerationConfig
 from .vector import IndexMeasure
 
@@ -322,7 +322,7 @@ class KGSearchSettings(R2RSerializable):
 
     entities_level: EntityLevel = Field(
         alias="entitiesLevel",
-        default=EntityLevel.DOCUMENT,
+        default=DataLevel.DOCUMENT,
         description="The level of entities to search for",
     )
 

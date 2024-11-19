@@ -12,6 +12,8 @@ from core.base.pipes.base_pipe import AsyncPipe
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.providers.database.postgres import PostgresDBProvider
 
+from core.providers.database.kg import DataLevel
+
 logger = logging.getLogger()
 
 
@@ -52,54 +54,46 @@ class KGStoragePipe(AsyncPipe):
         """
         Stores a batch of knowledge graph extractions in the graph database.
         """
-        try:
-            # clean up and remove this method.
-            # make add_kg_extractions a method in the GraphHandler
 
-            total_entities, total_relationships = 0, 0
+        total_entities, total_relationships = 0, 0
 
-            for extraction in kg_extractions:
+        for extraction in kg_extractions:
 
-                total_entities, total_relationships = (
-                    total_entities + len(extraction.entities),
-                    total_relationships + len(extraction.relationships),
-                )
+            total_entities, total_relationships = (
+                total_entities + len(extraction.entities),
+                total_relationships + len(extraction.relationships),
+            )
 
-                if extraction.entities:
-                    if not extraction.entities[0].chunk_ids:
-                        for i in range(len(extraction.entities)):
-                            extraction.entities[i].chunk_ids = (
-                                extraction.chunk_ids
-                            )
-                            extraction.entities[i].document_id = (
-                                extraction.document_id
-                            )
-
-                    await self.database_provider.graph_handler.add_entities(
-                        extraction.entities, table_name=f"chunk_entity"
-                    )
-
-                if extraction.relationships:
-                    if not extraction.relationships[0].chunk_ids:
-                        for i in range(len(extraction.relationships)):
-                            extraction.relationships[i].chunk_ids = (
-                                extraction.chunk_ids
-                            )
-                        extraction.relationships[i].document_id = (
+            if extraction.entities:
+                if not extraction.entities[0].chunk_ids:
+                    for i in range(len(extraction.entities)):
+                        extraction.entities[i].chunk_ids = extraction.chunk_ids
+                        extraction.entities[i].document_id = (
                             extraction.document_id
                         )
 
-                    await self.database_provider.graph_handler.add_relationships(
-                        extraction.relationships,
-                        table_name=f"chunk_relationship",
+                for entity in extraction.entities:
+                    entity.level = DataLevel.CHUNK
+
+                await self.database_provider.graph_handler.entities.create(
+                    extraction.entities
+                )
+
+            if extraction.relationships:
+                if not extraction.relationships[0].chunk_ids:
+                    for i in range(len(extraction.relationships)):
+                        extraction.relationships[i].chunk_ids = (
+                            extraction.chunk_ids
+                        )
+                    extraction.relationships[i].document_id = (
+                        extraction.document_id
                     )
 
-                return (total_entities, total_relationships)
+                await self.database_provider.graph_handler.relationships.create(
+                    extraction.relationships,
+                )
 
-        except Exception as e:
-            error_message = f"Failed to store knowledge graph extractions in the database: {e}"
-            logger.error(error_message)
-            raise ValueError(error_message)
+            return (total_entities, total_relationships)
 
     async def _run_logic(  # type: ignore
         self,

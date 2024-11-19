@@ -24,7 +24,7 @@ from shared.abstractions.graph import (
     CommunityInfo,
     Community,
     Entity,
-    EntityLevel,
+    DataLevel,
     EntityType,
     Graph,
     KGExtraction,
@@ -39,6 +39,10 @@ from shared.abstractions.kg import (
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
+    GraphBuildSettings,
+    GraphEntitySettings,
+    GraphRelationshipSettings,
+    GraphCommunitySettings,
     KGEntityDeduplicationType,
     KGRunType,
 )
@@ -113,7 +117,7 @@ __all__ = [
     "CommunityInfo",
     "KGExtraction",
     "Relationship",
-    "EntityLevel",
+    "DataLevel",
     # Index abstractions
     "IndexConfig",
     # LLM abstractions
@@ -141,6 +145,10 @@ __all__ = [
     "KGCreationSettings",
     "KGEnrichmentSettings",
     "KGEntityDeduplicationSettings",
+    "GraphBuildSettings",
+    "GraphEntitySettings",
+    "GraphRelationshipSettings",
+    "GraphCommunitySettings",
     "KGEntityDeduplicationType",
     "KGRunType",
     # User abstractions

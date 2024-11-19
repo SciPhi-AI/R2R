@@ -33,6 +33,9 @@ def hatchet_kg_factory(
             if key == "collection_id":
                 input_data[key] = uuid.UUID(value)
 
+            if key == "graph_id":
+                input_data[key] = uuid.UUID(value)
+
             if key == "kg_creation_settings":
                 input_data[key] = json.loads(value)
                 input_data[key]["generation_config"] = GenerationConfig(
@@ -73,9 +76,7 @@ def hatchet_kg_factory(
         def concurrency(self, context: Context) -> str:
             # TODO: Possible bug in hatchet, the job can't find context.workflow_input() when rerun
             try:
-                return str(
-                    context.workflow_input()["request"]["collection_id"]
-                )
+                return str(context.workflow_input()["request"]["graph_id"])
             except Exception as e:
                 return str(uuid.uuid4())
 
@@ -89,7 +90,7 @@ def hatchet_kg_factory(
                 context.workflow_input()["request"]
             )
 
-            # context.log(f"Running KG Extraction for collection ID: {input_data['collection_id']}")
+            # context.log(f"Running KG Extraction for collection ID: {input_data['graph_id']}")
             document_id = input_data["document_id"]
 
             await self.kg_service.kg_relationships_extraction(
@@ -168,15 +169,15 @@ def hatchet_kg_factory(
                 context.workflow_input()["request"]
             )
 
-            if "collection_id" in input_data:
+            if "graph_id" in input_data:
 
-                collection_id = input_data["collection_id"]
+                graph_id = input_data["graph_id"]
 
                 return_val = {
                     "document_ids": [
                         str(doc_id)
                         for doc_id in await self.kg_service.get_document_ids_for_create_graph(
-                            collection_id=collection_id,
+                            graph_id=graph_id,
                             **input_data["kg_creation_settings"],
                         )
                     ]
@@ -220,9 +221,9 @@ def hatchet_kg_factory(
                                     ][
                                         "kg_creation_settings"
                                     ],
-                                    "collection_id": context.workflow_input()[
+                                    "graph_id": context.workflow_input()[
                                         "request"
-                                    ]["collection_id"],
+                                    ]["graph_id"],
                                 }
                             },
                             key=f"kg-extract-{cnt}/{len(document_ids)}",
@@ -250,7 +251,7 @@ def hatchet_kg_factory(
             enrichment_status = (
                 await self.kg_service.providers.database.get_workflow_status(
                     id=uuid.UUID(
-                        context.workflow_input()["request"]["collection_id"]
+                        context.workflow_input()["request"]["graph_id"]
                     ),
                     status_type="kg_enrichment_status",
                 )
@@ -259,18 +260,18 @@ def hatchet_kg_factory(
             if enrichment_status == KGEnrichmentStatus.SUCCESS:
                 await self.kg_service.providers.database.set_workflow_status(
                     id=uuid.UUID(
-                        context.workflow_input()["request"]["collection_id"]
+                        context.workflow_input()["request"]["graph_id"]
                     ),
                     status_type="kg_enrichment_status",
                     status=KGEnrichmentStatus.OUTDATED,
                 )
 
                 logger.info(
-                    f"Updated enrichment status for collection {context.workflow_input()['request']['collection_id']} to OUTDATED because an older enrichment was already successful"
+                    f"Updated enrichment status for collection {context.workflow_input()['request']['graph_id']} to OUTDATED because an older enrichment was already successful"
                 )
 
             return {
-                "result": f"updated enrichment status for collection {context.workflow_input()['request']['collection_id']} to OUTDATED because an older enrichment was already successful"
+                "result": f"updated enrichment status for collection {context.workflow_input()['request']['graph_id']} to OUTDATED because an older enrichment was already successful"
             }
 
     @orchestration_provider.workflow(
@@ -289,10 +290,10 @@ def hatchet_kg_factory(
                 context.workflow_input()["request"]
             )
 
-            collection_id = input_data["collection_id"]
+            graph_id = input_data["graph_id"]
 
             logger.info(
-                f"Running KG Entity Deduplication for collection {collection_id}"
+                f"Running KG Entity Deduplication for collection {graph_id}"
             )
             logger.info(f"Input data: {input_data}")
             logger.info(
@@ -301,7 +302,7 @@ def hatchet_kg_factory(
 
             number_of_distinct_entities = (
                 await self.kg_service.kg_entity_deduplication(
-                    collection_id=collection_id,
+                    graph_id=graph_id,
                     **input_data["kg_entity_deduplication_settings"],
                 )
             )[0]["num_entities"]
@@ -322,7 +323,7 @@ def hatchet_kg_factory(
                         "kg-entity-deduplication-summary",
                         {
                             "request": {
-                                "collection_id": collection_id,
+                                "graph_id": graph_id,
                                 "offset": offset,
                                 "limit": 100,
                                 "kg_entity_deduplication_settings": json.dumps(
@@ -338,7 +339,7 @@ def hatchet_kg_factory(
 
             await asyncio.gather(*workflows)
             return {
-                "result": f"successfully queued kg entity deduplication for collection {collection_id} with {number_of_distinct_entities} distinct entities"
+                "result": f"successfully queued kg entity deduplication for collection {graph_id} with {number_of_distinct_entities} distinct entities"
             }
 
     @orchestration_provider.workflow(
@@ -360,17 +361,17 @@ def hatchet_kg_factory(
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
-            collection_id = input_data["collection_id"]
+            graph_id = input_data["graph_id"]
 
             await self.kg_service.kg_entity_deduplication_summary(
-                collection_id=collection_id,
+                graph_id=graph_id,
                 offset=input_data["offset"],
                 limit=input_data["limit"],
                 **input_data["kg_entity_deduplication_settings"],
             )
 
             return {
-                "result": f"successfully queued kg entity deduplication summary for collection {collection_id}"
+                "result": f"successfully queued kg entity deduplication summary for collection {graph_id}"
             }
 
     @orchestration_provider.workflow(name="enrich-graph", timeout="360m")
@@ -387,23 +388,23 @@ def hatchet_kg_factory(
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
-            collection_id = input_data["collection_id"]
+            graph_id = input_data["graph_id"]
 
             logger.info(
-                f"Running KG Clustering for collection {collection_id} with settings {input_data['kg_enrichment_settings']}"
+                f"Running KG Clustering for collection {graph_id} with settings {input_data['kg_enrichment_settings']}"
             )
 
             kg_clustering_results = await self.kg_service.kg_clustering(
-                collection_id=collection_id,
+                graph_id=graph_id,
                 **input_data["kg_enrichment_settings"],
             )
 
             logger.info(
-                f"Successfully ran kg clustering for collection {collection_id}: {json.dumps(kg_clustering_results)}"
+                f"Successfully ran kg clustering for collection {graph_id}: {json.dumps(kg_clustering_results)}"
             )
 
             return {
-                "result": f"successfully ran kg clustering for collection {collection_id}",
+                "result": f"successfully ran kg clustering for collection {graph_id}",
                 "kg_clustering": kg_clustering_results,
             }
 
@@ -413,7 +414,8 @@ def hatchet_kg_factory(
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
-            collection_id = input_data["collection_id"]
+            graph_id = input_data.get("graph_id", None)
+            collection_id = input_data.get("collection_id", None)
             num_communities = context.step_output("kg_clustering")[
                 "kg_clustering"
             ][0]["num_communities"]
@@ -438,6 +440,7 @@ def hatchet_kg_factory(
                                         parallel_communities,
                                         num_communities - offset,
                                     ),
+                                    "graph_id": str(graph_id),
                                     "collection_id": str(collection_id),
                                     **input_data["kg_enrichment_settings"],
                                 }
@@ -466,22 +469,20 @@ def hatchet_kg_factory(
             )
 
             await self.kg_service.providers.database.set_workflow_status(
-                id=collection_id,
+                id=graph_id,
                 status_type="kg_enrichment_status",
                 status=KGEnrichmentStatus.SUCCESS,
             )
 
             return {
-                "result": f"Successfully completed enrichment for collection {collection_id} in {len(results)} workflows."
+                "result": f"Successfully completed enrichment for collection {graph_id} in {len(results)} workflows."
             }
 
         @orchestration_provider.failure()
         async def on_failure(self, context: Context) -> None:
-            collection_id = context.workflow_input()["request"][
-                "collection_id"
-            ]
+            graph_id = context.workflow_input()["request"]["graph_id"]
             await self.kg_service.providers.database.set_workflow_status(
-                id=collection_id,
+                id=graph_id,
                 status_type="kg_enrichment_status",
                 status=KGEnrichmentStatus.FAILED,
             )
@@ -500,9 +501,7 @@ def hatchet_kg_factory(
         def concurrency(self, context: Context) -> str:
             # TODO: Possible bug in hatchet, the job can't find context.workflow_input() when rerun
             try:
-                return str(
-                    context.workflow_input()["request"]["collection_id"]
-                )
+                return str(context.workflow_input()["request"]["graph_id"])
             except Exception as e:
                 return str(uuid.uuid4())
 
