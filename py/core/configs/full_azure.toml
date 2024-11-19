@@ -42,6 +42,7 @@ overlap = 1_024
 
   [ingestion.chunk_enrichment_settings]
     generation_config = { model = "azure/gpt-4o-mini" }
+document_summary_model = "azure/gpt-4o-mini"
 
 [orchestration]
 provider = "hatchet"
