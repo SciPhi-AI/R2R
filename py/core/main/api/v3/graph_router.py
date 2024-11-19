@@ -422,7 +422,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.post(
             "/graphs/{id}/add_objects",
-            summary="Add entities and relationships to a graph",
+            summary="Add entities and relationships to the graph",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -494,7 +494,7 @@ class GraphRouter(BaseRouterV3):
         # remove data
         @self.router.delete(
             "/graphs/{id}/remove_objects",
-            summary="Remove entities and relationships from a graph",
+            summary="Remove entities and relationships from the graph",
             openapi_extra={
                 "x-codeSamples": [
                     {

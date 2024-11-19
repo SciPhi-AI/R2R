@@ -188,7 +188,8 @@ class RelationshipsRouter(BaseRouterV3):
                             """
                         ),
                     },
-                ]
+                ],
+                "operationId": "documents_get_relationships_v3_documents__id__relationships__relationship_id__get_documents"
             },
         )
         @self.router.get(
@@ -209,7 +210,8 @@ class RelationshipsRouter(BaseRouterV3):
                             """
                         ),
                     },
-                ]
+                ],
+                "operationId": "graphs_get_relationships_v3_graphs__id__relationships__relationship_id__get_graphs"
             },
         )
         @self.base_endpoint
@@ -256,7 +258,8 @@ class RelationshipsRouter(BaseRouterV3):
                             """
                         ),
                     },
-                ]
+                ],
+                "operationId": "documents_create_relationships_v3_documents__id__relationships_post_documents"
             },
         )
         @self.router.post(
@@ -277,7 +280,8 @@ class RelationshipsRouter(BaseRouterV3):
                             """
                         ),
                     },
-                ]
+                ],
+                "operationId": "graphs_create_relationships_v3_graphs__id__relationships_post_graphs"
             },
         )
         @self.base_endpoint
@@ -325,7 +329,8 @@ class RelationshipsRouter(BaseRouterV3):
                             """
                         ),
                     },
-                ]
+                ],
+                "operationId": "documents_update_relationships_v3_documents__id__relationships__relationship_id__post_documents"
             },
         )
         @self.router.post(
@@ -346,7 +351,8 @@ class RelationshipsRouter(BaseRouterV3):
                             """
                         ),
                     },
-                ]
+                ],
+                "operationId": "graphs_update_relationships_v3_graphs__id__relationships__relationship_id__post_graphs"
             },
         )
         @self.base_endpoint
@@ -401,7 +407,8 @@ class RelationshipsRouter(BaseRouterV3):
                             """
                         ),
                     },
-                ]
+                ],
+                "operationId": "documents_delete_relationships_v3_documents__id__relationships__relationship_id__delete_documents"
             },
         )
         @self.router.delete(
@@ -422,7 +429,8 @@ class RelationshipsRouter(BaseRouterV3):
                             """
                         ),
                     },
-                ]
+                ],
+                "operationId": "documents_delete_relationships_v3_documents__id__relationships__relationship_id__delete_documents"
             },
         )
         @self.base_endpoint

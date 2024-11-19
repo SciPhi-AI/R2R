@@ -1218,6 +1218,27 @@ class DocumentsRouter(BaseRouterV3):
 
         @self.router.post(
             "/documents/{id}/entities_and_relationships",
+            summary="Extract entities and relationships from a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.extract_entities_and_relationships(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                ],
+                "operationId": "documents_extract_entities_and_relationships_v3_documents__id__entities_and_relationships_post_documents"
+            },
         )
         @self.base_endpoint
         async def extract_entities_and_relationships(
