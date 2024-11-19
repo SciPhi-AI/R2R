@@ -14,21 +14,20 @@ from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import R2RDocumentProcessingError, R2RException
 from .graph import (
     Community,
-    Community,
     Entity,
     EntityType,
     KGExtraction,
-    RelationshipType,
     Relationship,
+    RelationshipType,
 )
 from .kg import (
+    GraphBuildSettings,
+    GraphCommunitySettings,
+    GraphEntitySettings,
+    GraphRelationshipSettings,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
-    GraphEntitySettings,
-    GraphRelationshipSettings,
-    GraphCommunitySettings,
-    GraphBuildSettings,
     KGRunType,
 )
 from .llm import (

@@ -1,25 +1,24 @@
 import textwrap
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import EmailStr
-from typing import Optional
 
 from core.base import R2RException
 from core.base.api.models import (
-    GenericMessageResponse,
     GenericBooleanResponse,
-    WrappedGenericMessageResponse,
-    WrappedTokenResponse,
-    WrappedUsersResponse,
-    WrappedUserResponse,
+    GenericMessageResponse,
     WrappedBooleanResponse,
     WrappedCollectionsResponse,
+    WrappedGenericMessageResponse,
+    WrappedTokenResponse,
+    WrappedUserResponse,
+    WrappedUsersResponse,
 )
 
 from .base_router import BaseRouterV3
-
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 

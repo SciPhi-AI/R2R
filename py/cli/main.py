@@ -1,18 +1,8 @@
 from cli.command_group import cli
-
-# TODO: Remove old commands in a later release
-from cli.commands.v2 import (
-    ingestion,
-    kg,
-    management,
-    server,
-    retrieval as v2_retrieval,
-)
-from cli.commands import (
-    database,
-    # V3 methods
+from cli.commands import (  # V3 methods
     collections,
     conversations,
+    database,
     documents,
     indices,
     prompts,
@@ -20,6 +10,11 @@ from cli.commands import (
     system,
     users,
 )
+
+# TODO: Remove old commands in a later release
+from cli.commands.v2 import ingestion, kg, management
+from cli.commands.v2 import retrieval as v2_retrieval
+from cli.commands.v2 import server
 from cli.utils.telemetry import posthog, telemetry
 
 

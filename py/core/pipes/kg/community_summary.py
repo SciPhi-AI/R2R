@@ -14,7 +14,6 @@ from core.base import (
     EmbeddingProvider,
     GenerationConfig,
 )
-
 from core.base.abstractions import Entity, Relationship
 from core.providers.database import PostgresDBProvider
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider

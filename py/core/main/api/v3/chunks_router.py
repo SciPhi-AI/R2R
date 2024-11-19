@@ -1,21 +1,19 @@
+import json
 import logging
 import textwrap
-
-import json
-
 from typing import Any, Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
 from core.base import (
+    ChunkResponse,
     KGSearchSettings,
     R2RException,
     RunType,
+    SearchSettings,
     UnprocessedChunk,
     UpdateChunk,
-    SearchSettings,
-    ChunkResponse,
 )
 from core.base.api.models import (
     GenericBooleanResponse,
@@ -31,7 +29,6 @@ from core.providers import (
 from core.utils import generate_id
 
 from .base_router import BaseRouterV3
-
 
 logger = logging.getLogger()
 

@@ -22,27 +22,26 @@ from shared.abstractions.exception import (
 from shared.abstractions.graph import (
     Community,
     CommunityInfo,
-    Community,
-    Entity,
     DataLevel,
+    Entity,
     EntityType,
     Graph,
     KGExtraction,
-    RelationshipType,
     Relationship,
+    RelationshipType,
 )
 from shared.abstractions.ingestion import (
     ChunkEnrichmentSettings,
     ChunkEnrichmentStrategy,
 )
 from shared.abstractions.kg import (
+    GraphBuildSettings,
+    GraphCommunitySettings,
+    GraphEntitySettings,
+    GraphRelationshipSettings,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
-    GraphBuildSettings,
-    GraphEntitySettings,
-    GraphRelationshipSettings,
-    GraphCommunitySettings,
     KGEntityDeduplicationType,
     KGRunType,
 )

@@ -1,5 +1,6 @@
 import json
 import logging
+from copy import copy
 from typing import Any, AsyncGenerator
 from uuid import UUID
 
@@ -58,22 +59,27 @@ class VectorSearchPipe(SearchPipe):
             purpose=EmbeddingPurpose.QUERY,
         )
 
+        search_settings_copy = copy(search_settings)
+        search_settings_copy.search_limit = (
+            search_settings.search_limit * 10
+        )  # TODO - Make this a config parameter
+
         search_results = await (
             self.database_provider.hybrid_search(
                 query_vector=query_vector,
                 query_text=message,
-                search_settings=search_settings,
+                search_settings=search_settings_copy,
             )
             if search_settings.use_hybrid_search
             else self.database_provider.semantic_search(
                 query_vector=query_vector,
-                search_settings=search_settings,
+                search_settings=search_settings_copy,
             )
         )
         reranked_results = await self.embedding_provider.arerank(
             query=message,
             results=search_results,
-            limit=search_settings.limit,
+            limit=search_settings_copy.limit // 10,
         )
         if kwargs.get("include_title_if_available", False):
             for result in reranked_results:

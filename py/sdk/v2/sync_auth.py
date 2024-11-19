@@ -1,7 +1,9 @@
 from __future__ import annotations  # for Python 3.10+
-from typing_extensions import deprecated
+
 from typing import Optional, Union
 from uuid import UUID
+
+from typing_extensions import deprecated
 
 from ..models import Token, UserResponse
 

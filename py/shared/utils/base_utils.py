@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 from copy import deepcopy
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
@@ -14,7 +15,6 @@ from ..abstractions.search import (
     KGRelationshipResult,
 )
 from ..abstractions.vector import VectorQuantizationType
-from datetime import datetime
 
 logger = logging.getLogger()
 

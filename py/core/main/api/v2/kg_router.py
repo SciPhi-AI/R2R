@@ -10,15 +10,13 @@ from core.base import Workflow
 from core.base.abstractions import DataLevel, KGRunType
 from core.base.api.models import (
     WrappedCommunitiesResponse,
+    WrappedEntitiesResponse,
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
-    WrappedEntitiesResponse,
     WrappedKGEntityDeduplicationResponse,
-    WrappedRelationshipsResponse,
     WrappedKGTunePromptResponse,
+    WrappedRelationshipsResponse,
 )
-
-
 from core.base.logger.base import RunType
 from core.providers import (
     HatchetOrchestrationProvider,

@@ -1,9 +1,9 @@
 import json
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
-from datetime import datetime
 
 from .base import R2RSerializable
 

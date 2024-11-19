@@ -15,9 +15,9 @@ from core.base import (
     SearchSettings,
 )
 from core.base.api.models import (
+    WrappedAgentResponse,
     WrappedCompletionResponse,
     WrappedDocumentSearchResponse,
-    WrappedAgentResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
 )

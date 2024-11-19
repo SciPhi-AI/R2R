@@ -331,7 +331,11 @@ class PostgresDocumentHandler(DocumentHandler):
             The workflow status for the given document or list of documents.
         """
 
-        ids = [id] if isinstance(id, UUID) else id
+        ids = (
+            [str(id)]
+            if (isinstance(id, UUID) or isinstance(id, str))
+            else [str(i) for i in id]
+        )
         out_model = self._get_status_model(status_type)
         result = await self._get_status_from_table(
             ids,
@@ -354,7 +358,11 @@ class PostgresDocumentHandler(DocumentHandler):
             status_type (str): The type of status to set.
             status (str): The status to set.
         """
-        ids = [id] if isinstance(id, UUID) else id
+        ids = (
+            [str(id)]
+            if (isinstance(id, UUID) or isinstance(id, str))
+            else [str(i) for i in id]
+        )
         out_model = self._get_status_model(status_type)
 
         return await self._set_status_in_table(

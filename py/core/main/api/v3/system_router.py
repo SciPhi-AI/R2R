@@ -1,19 +1,17 @@
-import psutil
 import textwrap
-
 from datetime import datetime, timezone
-
 from typing import Optional
 
+import psutil
 from fastapi import Depends, Query
 
 from core.base import R2RException, RunType
 from core.base.api.models import (
     GenericMessageResponse,
-    WrappedSettingsResponse,
     WrappedGenericMessageResponse,
     WrappedLogResponse,
     WrappedServerStatsResponse,
+    WrappedSettingsResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,

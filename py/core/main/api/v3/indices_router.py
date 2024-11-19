@@ -4,15 +4,12 @@
 
 import logging
 import textwrap
-
 from typing import Optional
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import R2RException, RunType, IndexConfig
-from core.base.abstractions import (
-    VectorTableName,
-)
+from core.base import IndexConfig, R2RException, RunType
+from core.base.abstractions import VectorTableName
 from core.base.api.models import (
     GenericMessageResponse,
     WrappedGenericMessageResponse,

@@ -9,8 +9,8 @@ from .kg.deduplication import KGEntityDeduplicationPipe
 from .kg.deduplication_summary import KGEntityDeduplicationSummaryPipe
 from .kg.entity_description import KGEntityDescriptionPipe
 from .kg.prompt_tuning import KGPromptTuningPipe
-from .kg.storage import KGStoragePipe
 from .kg.relationships_extraction import KGRelationshipsExtractionPipe
+from .kg.storage import KGStoragePipe
 from .retrieval.kg_search_pipe import KGSearchSearchPipe
 from .retrieval.multi_search import MultiSearchPipe
 from .retrieval.query_transform_pipe import QueryTransformPipe

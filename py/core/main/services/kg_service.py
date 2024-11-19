@@ -8,17 +8,17 @@ from fastapi import HTTPException
 
 from core.base import KGExtractionStatus, RunManager
 from core.base.abstractions import (
+    Community,
     DataLevel,
+    Entity,
     GenerationConfig,
+    Graph,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
     KGEntityDeduplicationType,
     R2RException,
-    Entity,
     Relationship,
-    Community,
-    Graph,
 )
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -26,7 +26,6 @@ from core.telemetry.telemetry_decorator import telemetry_event
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
-
 
 logger = logging.getLogger()
 

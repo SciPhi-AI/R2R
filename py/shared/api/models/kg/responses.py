@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from shared.abstractions.base import R2RSerializable
 from shared.abstractions.graph import Community, Entity, Relationship
-from shared.api.models.base import ResultsWrapper, PaginatedResultsWrapper
+from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 
 class KGCreationEstimate(R2RSerializable):

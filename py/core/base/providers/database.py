@@ -2,14 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from io import BytesIO
-from typing import (
-    Any,
-    BinaryIO,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Any, BinaryIO, Optional, Sequence, Tuple, Union
 from uuid import UUID
 
 from pydantic import BaseModel

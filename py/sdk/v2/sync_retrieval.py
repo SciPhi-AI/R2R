@@ -1,7 +1,9 @@
 from __future__ import annotations  # for Python 3.10+
-from typing_extensions import deprecated
+
 import logging
 from typing import AsyncGenerator, Optional
+
+from typing_extensions import deprecated
 
 from ..models import (
     GenerationConfig,

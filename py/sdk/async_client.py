@@ -14,7 +14,6 @@ from .v2 import (
     RetrievalMixins,
     ServerMixins,
 )
-
 from .v3 import (
     ChunksSDK,
     CollectionsSDK,

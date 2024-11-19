@@ -1,6 +1,5 @@
 import logging
 import textwrap
-
 from typing import Optional
 from uuid import UUID
 

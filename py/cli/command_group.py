@@ -1,10 +1,10 @@
+from functools import wraps
+
 import asyncclick as click
 from asyncclick import pass_context
 from asyncclick.exceptions import Exit
 
 from sdk import R2RAsyncClient
-
-from functools import wraps
 
 
 def deprecated_command(new_name):
