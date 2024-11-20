@@ -319,6 +319,25 @@ class PostgresEntityHandler(EntityHandler):
             connection_manager=self.connection_manager,
         )
 
+    async def add_to_graph(self, graph_id: UUID, entity_ids: list[UUID]) -> None:
+        QUERY = f"""
+            UPDATE {self._get_table_name("graph_entity")}
+            SET graph_ids = CASE 
+                WHEN graph_ids IS NULL THEN ARRAY[$1]
+                WHEN NOT ($1 = ANY(graph_ids)) THEN array_append(graph_ids, $1)
+                ELSE graph_ids
+            END
+            WHERE id = ANY($2)
+        """
+        return await self.connection_manager.execute_query(QUERY, [graph_id, entity_ids])
+
+    async def remove_from_graph(self, graph_id: UUID, entity_ids: list[UUID]) -> None:
+        QUERY = f"""
+            UPDATE {self._get_table_name("graph_entity")}
+            SET graph_ids = array_remove(graph_ids, $1)
+            WHERE id = ANY($2)
+        """
+        return await self.connection_manager.execute_query(QUERY, [graph_id, entity_ids])
 
 class PostgresRelationshipHandler(RelationshipHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -488,6 +507,26 @@ class PostgresRelationshipHandler(RelationshipHandler):
         return await self.connection_manager.fetchrow_query(
             QUERY, [relationship_id]
         )
+    
+    async def add_to_graph(self, graph_id: UUID, relationship_ids: list[UUID]) -> None:
+        QUERY = f"""
+            UPDATE {self._get_table_name("graph_relationship")}
+            SET graph_ids = CASE 
+                WHEN graph_ids IS NULL THEN ARRAY[$1]
+                WHEN NOT ($1 = ANY(graph_ids)) THEN array_append(graph_ids, $1)
+                ELSE graph_ids
+            END
+            WHERE id = ANY($2)
+        """
+        return await self.connection_manager.execute_query(QUERY, [graph_id, relationship_ids])
+    
+    async def remove_from_graph(self, graph_id: UUID, relationship_ids: list[UUID]) -> None:
+        QUERY = f"""
+            UPDATE {self._get_table_name("graph_relationship")}
+            SET graph_ids = array_remove(graph_ids, $1)
+            WHERE id = ANY($2)
+        """
+        return await self.connection_manager.execute_query(QUERY, [graph_id, relationship_ids])
 
 
 class PostgresCommunityHandler(CommunityHandler):
@@ -607,6 +646,17 @@ class PostgresCommunityHandler(CommunityHandler):
                 )
             ]
 
+    async def add_to_graph(self, graph_id: UUID, community_ids: list[UUID]) -> None:
+        QUERY = f"""
+            UPDATE {self._get_table_name("graph_community")} SET graph_id = $1 WHERE id = ANY($2)
+        """
+        return await self.connection_manager.execute_query(QUERY, [graph_id, community_ids])
+    
+    async def remove_from_graph(self, graph_id: UUID, community_ids: list[UUID]) -> None:
+        QUERY = f"""
+            UPDATE {self._get_table_name("graph_community")} SET graph_id = NULL WHERE id = ANY($1)
+        """
+        return await self.connection_manager.execute_query(QUERY, [community_ids])
 
 class PostgresGraphHandler(GraphHandler):
     """Handler for Knowledge Graph METHODS in PostgreSQL."""

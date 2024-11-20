@@ -669,9 +669,7 @@ class GraphRouter(BaseRouterV3):
             """
             Adds a list of entities to the graph by their IDs.
             """
-            raise NotImplementedError("Not implemented")
-        
-
+            return await self.services["kg"].documents.graph_handler.entities.add_to_graph(id, entity_ids)
 
         @self.router.delete(
             "/graphs/{id}/entities/{entity_id}",
@@ -710,7 +708,7 @@ class GraphRouter(BaseRouterV3):
             """
             Removes an entity from the graph by its ID.
             """
-            raise NotImplementedError("Not implemented")
+            return await self.services["kg"].documents.graph_handler.entities.remove_from_graph(id, [entity_id])
 
 
         @self.router.post(
@@ -750,7 +748,7 @@ class GraphRouter(BaseRouterV3):
             """
             Adds a list of relationships to the graph by their IDs.
             """
-            raise NotImplementedError("Not implemented")
+            return await self.services["kg"].documents.graph_handler.relationships.add_to_graph(id, relationship_ids)
         
 
 
@@ -791,7 +789,7 @@ class GraphRouter(BaseRouterV3):
             """
             Removes a relationship from the graph by its ID.
             """
-            raise NotImplementedError("Not implemented")
+            return await self.services["kg"].documents.graph_handler.relationships.remove_from_graph(id, [relationship_id])
 
 
 
@@ -832,7 +830,7 @@ class GraphRouter(BaseRouterV3):
             """
             Adds a list of communities to the graph by their IDs.
             """
-            raise NotImplementedError("Not implemented")
+            return await self.services["kg"].documents.graph_handler.communities.add_to_graph(id, community_ids)
         
 
 
@@ -873,5 +871,5 @@ class GraphRouter(BaseRouterV3):
             """
             Removes a community from the graph by its ID.
             """
-            raise NotImplementedError("Not implemented")
+            return await self.services["kg"].documents.graph_handler.communities.remove_from_graph(id, [community_id])
 
