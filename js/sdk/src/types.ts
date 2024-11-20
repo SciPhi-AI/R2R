@@ -89,6 +89,17 @@ export interface DocumentResponse {
   summary_embedding?: string;
 }
 
+// Graph types
+export interface GraphResponse {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Ingestion types
 export interface IngestionResponse {
   message: string;
@@ -228,6 +239,10 @@ export type WrappedDocumentResponse = ResultsWrapper<DocumentResponse>;
 export type WrappedDocumentsResponse = PaginatedResultsWrapper<
   DocumentResponse[]
 >;
+
+// Graph Responses
+export type WrappedGraphResponse = ResultsWrapper<GraphResponse>;
+export type WrappedGraphsResponse = PaginatedResultsWrapper<GraphResponse[]>;
 
 // Ingestion Responses
 export type WrappedIngestionResponse = ResultsWrapper<IngestionResponse>;

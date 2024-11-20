@@ -7,6 +7,7 @@ import { ChunksClient } from "./v3/clients/chunks";
 import { CollectionsClient } from "./v3/clients/collections";
 import { ConversationsClient } from "./v3/clients/conversations";
 import { DocumentsClient } from "./v3/clients/documents";
+import { GraphsClient } from "./v3/clients/graphs";
 import { IndiciesClient } from "./v3/clients/indices";
 import { PromptsClient } from "./v3/clients/prompts";
 import { RetrievalClient } from "./v3/clients/retrieval";
@@ -41,6 +42,7 @@ export class r2rClient extends BaseClient {
   public readonly collections: CollectionsClient;
   public readonly conversations: ConversationsClient;
   public readonly documents: DocumentsClient;
+  public readonly graphs: GraphsClient;
   public readonly indices: IndiciesClient;
   public readonly prompts: PromptsClient;
   public readonly retrieval: RetrievalClient;
@@ -54,6 +56,7 @@ export class r2rClient extends BaseClient {
     this.collections = new CollectionsClient(this);
     this.conversations = new ConversationsClient(this);
     this.documents = new DocumentsClient(this);
+    this.graphs = new GraphsClient(this);
     this.indices = new IndiciesClient(this);
     this.prompts = new PromptsClient(this);
     this.retrieval = new RetrievalClient(this);

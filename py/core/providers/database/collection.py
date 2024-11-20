@@ -90,7 +90,8 @@ class PostgresCollectionHandler(CollectionHandler):
 
         try:
             result = await self.connection_manager.fetchrow_query(
-                query, params
+                query=query,
+                params=params,
             )
             if not result:
                 raise R2RException(
@@ -110,8 +111,8 @@ class PostgresCollectionHandler(CollectionHandler):
             )
         except UniqueViolationError:
             raise R2RException(
-                status_code=409,
                 message="Collection with this ID already exists",
+                status_code=409,
             )
 
     async def update_collection(

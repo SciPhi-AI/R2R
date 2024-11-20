@@ -1,12 +1,14 @@
 import asyncio
+import asyncpg
 import json
 import logging
 import time
-from typing import Any, AsyncGenerator, Optional, Tuple
-from uuid import UUID
 
-import asyncpg
-from asyncpg.exceptions import UndefinedTableError
+from typing import Any, AsyncGenerator, Optional, Tuple
+from asyncpg.exceptions import UniqueViolationError, UndefinedTableError
+from uuid import UUID, uuid4
+
+
 from fastapi import HTTPException
 
 from core.base.abstractions import (
@@ -17,7 +19,6 @@ from core.base.abstractions import (
     R2RException,
     Relationship,
 )
-
 from core.base.providers.database import (
     GraphHandler,
     EntityHandler,
@@ -25,7 +26,6 @@ from core.base.providers.database import (
     CommunityHandler,
     CommunityInfoHandler,
 )
-
 from core.base.abstractions import (
     CommunityInfo,
     DataLevel,
@@ -35,6 +35,7 @@ from core.base.abstractions import (
     KGEntityDeduplicationSettings,
     VectorQuantizationType,
 )
+from core.base.api.models import GraphResponse
 
 import datetime
 import json
@@ -611,6 +612,8 @@ class PostgresCommunityHandler(CommunityHandler):
 class PostgresGraphHandler(GraphHandler):
     """Handler for Knowledge Graph METHODS in PostgreSQL."""
 
+    TABLE_NAME = "graph"
+
     def __init__(
         self,
         # project_name: str,
@@ -646,13 +649,14 @@ class PostgresGraphHandler(GraphHandler):
         QUERY = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("graph")} (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                user_id UUID,
                 name TEXT NOT NULL,
-                description TEXT NOT NULL,
+                description TEXT,
                 status TEXT NOT NULL,
-                created_at TIMESTAMP NOT NULL,
-                updated_at TIMESTAMP NOT NULL,
                 statistics JSONB,
-                attributes JSONB
+                attributes JSONB,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
             );
         """
 
@@ -662,14 +666,49 @@ class PostgresGraphHandler(GraphHandler):
             print(f"Creating tables for {handler.__class__.__name__}")
             await handler.create_tables()
 
-    async def create(self, graph: Graph) -> UUID:  # type: ignore
-        return (
-            await _add_objects(
-                objects=[graph.__dict__],
-                full_table_name=self._get_table_name("graph"),
-                connection_manager=self.connection_manager,
+    async def create(
+        self,
+        user_id: UUID,
+        name: Optional[str] = None,
+        description: str = "",
+        graph_id: Optional[UUID] = None,
+        status: str = "pending",
+    ) -> GraphResponse:
+
+        query = f"""
+            INSERT INTO {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
+            (id, user_id, name, description, status)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id, user_id, name, description, status, created_at, updated_at
+        """
+        params = [
+            graph_id or uuid4(),
+            user_id,
+            name,
+            description,
+            status,
+        ]
+
+        try:
+            result = await self.connection_manager.fetchrow_query(
+                query=query,
+                params=params,
             )
-        )[0]
+
+            return GraphResponse(
+                id=result["id"],
+                user_id=result["user_id"],
+                name=result["name"],
+                description=result["description"],
+                status=result["status"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+            )
+        except UniqueViolationError:
+            raise R2RException(
+                message="Graph with this ID already exists",
+                status_code=409,
+            )
 
     async def delete(self, graph_id: UUID, cascade: bool = False) -> UUID:
 

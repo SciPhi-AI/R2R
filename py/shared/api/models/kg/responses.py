@@ -1,5 +1,6 @@
 from typing import Optional
 from uuid import UUID
+from datetime import datetime
 
 from pydantic import BaseModel, Field
 
@@ -255,3 +256,18 @@ WrappedKGTunePromptResponse = ResultsWrapper[KGTunePromptResponse]
 WrappedKGEntityDeduplicationResponse = ResultsWrapper[
     KGEntityDeduplicationResponse
 ]
+
+
+class GraphResponse(BaseModel):
+    id: UUID
+    user_id: Optional[UUID]
+    name: str
+    description: Optional[str]
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+# Graph Responses
+WrappedGraphResponse = ResultsWrapper[GraphResponse]
+WrappedGraphsResponse = PaginatedResultsWrapper[list[GraphResponse]]
