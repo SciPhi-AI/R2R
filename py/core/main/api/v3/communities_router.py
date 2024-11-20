@@ -183,7 +183,7 @@ class CommunitiesRouter(BaseRouterV3):
             )
 
         @self.router.post(
-            "/graphs/{id}/communities",
+            "/communities",
             summary="Create communities",
             openapi_extra={
                 "x-codeSamples": [
@@ -232,8 +232,8 @@ class CommunitiesRouter(BaseRouterV3):
             return await self.services["kg"].create_communities_v3(communities)
 
         @self.router.get(
-            "/graphs/{id}/communities",
-            summary="Get communities",
+            "/communities",
+            summary="List communities",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -255,9 +255,9 @@ class CommunitiesRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_communities(
             request: Request,
-            id: UUID = Path(
+            graph_id: UUID = Query(
                 ...,
-                description="The ID of the collection to get communities for.",
+                description="The ID of the graph to get communities for.",
             ),
             offset: int = Query(
                 0,
@@ -280,7 +280,7 @@ class CommunitiesRouter(BaseRouterV3):
             communities, count = await self.services[
                 "kg"
             ].providers.database.graph_handler.communities.get(
-                id=id,
+                graph_id=graph_id,
                 offset=offset,
                 limit=limit,
             )
@@ -290,8 +290,8 @@ class CommunitiesRouter(BaseRouterV3):
             }
 
         @self.router.get(
-            "/graphs/{id}/communities/{community_id}",
-            summary="Get a community",
+            "/communities/{id}",
+            summary="Retrieve a community",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -315,11 +315,7 @@ class CommunitiesRouter(BaseRouterV3):
             request: Request,
             id: UUID = Path(
                 ...,
-                description="The ID of the collection to get communities for.",
-            ),
-            community_id: UUID = Path(
-                ...,
-                description="The ID of the community to get.",
+                description="The ID of the graph to get communities for.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
@@ -331,12 +327,11 @@ class CommunitiesRouter(BaseRouterV3):
             return await self.services[
                 "kg"
             ].providers.database.graph_handler.communities.get(
-                id=id,
-                community_id=community_id,
+                community_id=id,
             )
 
         @self.router.delete(
-            "/graphs/{id}/communities/{community_id}",
+            "/communities/{id}",
             summary="Delete a community",
         )
         @self.base_endpoint
@@ -344,10 +339,7 @@ class CommunitiesRouter(BaseRouterV3):
             request: Request,
             id: UUID = Path(
                 ...,
-                description="The ID of the collection to delete the community from.",
-            ),
-            community_id: UUID = Path(
-                ..., description="The ID of the community to delete."
+                description="The ID of the graph to delete the community from.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
@@ -355,15 +347,12 @@ class CommunitiesRouter(BaseRouterV3):
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
                 )
-
-            community = Community(id=community_id, collection_id=id)
-
             return await self.services["kg"].delete_community_v3(
-                community=community,
+                id=id,
             )
 
         @self.router.post(
-            "/graphs/{id}/communities/{community_id}",
+            "/communities/{id}",
             summary="Update community",
             openapi_extra={
                 "x-codeSamples": [
@@ -377,8 +366,7 @@ class CommunitiesRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.graphs.update_community(
-                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                community_id="5xyz789a-bc12-3def-4ghi-jk5lm6no7pq8",
+                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 community_update={
                                     "metadata": {
                                         "topic": "Technology",
@@ -394,7 +382,6 @@ class CommunitiesRouter(BaseRouterV3):
         @self.base_endpoint
         async def update_community(
             id: UUID = Path(...),
-            community_id: UUID = Path(...),
             community: Community = Body(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
@@ -403,23 +390,6 @@ class CommunitiesRouter(BaseRouterV3):
                 raise R2RException(
                     "Only superusers can update communities", 403
                 )
-
-            if not community.graph_id:
-                community.graph_id = id
-            else:
-                if community.graph_id != id:
-                    raise R2RException(
-                        "Community graph ID does not match path", 400
-                    )
-
-            if not community.id:
-                community.id = community_id
-            else:
-                if community.id != community_id:
-                    raise R2RException("Community ID does not match path", 400)
-
-            community.id = community_id
-            community.graph_id = id
 
             return await self.services[
                 "kg"

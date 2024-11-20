@@ -201,7 +201,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{id}",
-            summary="Get graph information",
+            summary="Retrieve graph details",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -257,7 +257,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs",
-            summary="Get graph information",
+            summary="List graphs",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -292,7 +292,7 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Gets the information about a graph.
+            Lists all graphs.
 
             Returns information about:
             - Creation status and timestamp
@@ -356,8 +356,9 @@ class GraphRouter(BaseRouterV3):
                 raise R2RException("Only superusers can delete graphs", 403)
 
             if cascade:
-                raise NotImplementedError(
-                    "Cascade deletion not implemented. Please delete document level entities and relationships using the document delete endpoints."
+                raise R2RException(
+                    "Cascade deletion not implemented. Please delete document level entities and relationships using the document delete endpoints.",
+                    400,
                 )
 
             id = await self.services["kg"].delete_graph_v3(
@@ -369,7 +370,7 @@ class GraphRouter(BaseRouterV3):
         # update graph
         @self.router.post(
             "/graphs/{id}",
-            summary="Update the graph object",
+            summary="Update graph",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -421,150 +422,7 @@ class GraphRouter(BaseRouterV3):
             }
 
         @self.router.post(
-            "/graphs/{id}/add_objects",
-            summary="Add entities and relationships to the graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.add_objects(
-                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                object_type="entities",
-                                object_ids=[
-                                    "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                                    "9fbe403b-c11c-5aae-8ade-ef22980c3ad2"
-                                ]
-                            )"""
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def add_data(
-            id: UUID = Path(...),
-            object_type: GraphObjectType = Body(...),
-            object_ids: list[UUID] = Body(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
-            """
-            Adds entities and relationships to a graph.
-
-            If the object type is documents or collections, then all entities and relationships that are present in the documents or collections will be added to the graph.
-            """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can add data to graphs", 403
-                )
-
-            if object_type == GraphObjectType.DOCUMENTS:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.add_documents(
-                    id=id, document_ids=object_ids
-                )
-            elif object_type == GraphObjectType.COLLECTIONS:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.add_collections(
-                    id=id, collection_ids=object_ids
-                )
-            elif object_type == GraphObjectType.ENTITIES:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.add_entities_v3(
-                    id=id, entity_ids=object_ids
-                )
-            elif object_type == GraphObjectType.RELATIONSHIPS:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.add_relationships_v3(
-                    id=id, relationship_ids=object_ids
-                )
-            else:
-                raise R2RException("Invalid data type", 400)
-
-        # remove data
-        @self.router.delete(
-            "/graphs/{id}/remove_objects",
-            summary="Remove entities and relationships from the graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.remove_objects(
-                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                object_type="entities",
-                                object_ids=[
-                                    "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                                    "9fbe403b-c11c-5aae-8ade-ef22980c3ad2"
-                                ]
-                            )"""
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def remove_data(
-            id: UUID = Path(...),
-            object_type: GraphObjectType = Body(...),
-            object_ids: list[UUID] = Body(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
-            """
-            Removes entities and relationships from a graph.
-
-            If the object type is documents or collections, then all entities and relationships that are present in the documents or collections will be removed from the graph.
-            """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can remove data from graphs", 403
-                )
-
-            if object_type == GraphObjectType.DOCUMENTS:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.remove_documents(
-                    id=id, document_ids=object_ids
-                )
-            elif object_type == GraphObjectType.COLLECTIONS:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.remove_collections(
-                    id=id, collection_ids=object_ids
-                )
-            elif object_type == GraphObjectType.ENTITIES:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.remove_entities(
-                    id=id, entity_ids=object_ids
-                )
-            elif object_type == GraphObjectType.RELATIONSHIPS:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.remove_relationships(
-                    id=id, relationship_ids=object_ids
-                )
-            else:
-                raise R2RException("Invalid data type", 400)
-
-        @self.router.post(
-            "/graphs/{collection_id}/tune-prompt",
+            "/graphs/{id}/tune-prompt",
             summary="Tune a graph-related prompt",
             openapi_extra={
                 "x-codeSamples": [
