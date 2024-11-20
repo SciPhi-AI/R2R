@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
 from datetime import datetime
+from pydantic import Field
 
 from .base import R2RSerializable
 
@@ -161,16 +162,24 @@ class KGExtraction(R2RSerializable):
 
 
 class Graph(R2RSerializable):
-    """A request to create a graph."""
-
+    id: UUID = Field(default=None)
     name: str
-    description: str
+    description: Optional[str] = None
+    created_at: datetime = Field(
+        alias="createdAt",
+        default_factory=datetime.utcnow,
+    )
+    updated_at: datetime = Field(
+        alias="updatedAt",
+        default_factory=datetime.utcnow,
+    )
     statistics: dict[str, Any] = {}
-    created_at: datetime = datetime.now()
-    updated_at: datetime = datetime.now()
     attributes: dict[str, Any] = {}
     status: str = "pending"
-    id: Optional[UUID] = None
+
+    class Config:
+        populate_by_name = True
+        from_attributes = True
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | str) -> "Graph":

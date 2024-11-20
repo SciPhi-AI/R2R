@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, Optional, Sequence, Union
+from typing import Optional
 
 import asyncpg
 

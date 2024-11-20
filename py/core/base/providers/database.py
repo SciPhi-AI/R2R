@@ -8,7 +8,6 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    Union,
 )
 from uuid import UUID
 
@@ -35,7 +34,11 @@ from core.base.abstractions import (
     VectorSearchResult,
     VectorTableName,
 )
-from core.base.api.models import CollectionResponse, UserResponse
+from core.base.api.models import (
+    CollectionResponse,
+    GraphResponse,
+    UserResponse,
+)
 
 from ..logger import RunInfoLog
 from ..logger.base import RunType
@@ -689,7 +692,7 @@ class GraphHandler(Handler):
         super().__init__(*args, **kwargs)
 
     @abstractmethod
-    async def create(self, *args: Any, **kwargs: Any) -> None:
+    async def create(self, *args: Any, **kwargs: Any) -> GraphResponse:
         """Create graph in storage."""
         pass
 

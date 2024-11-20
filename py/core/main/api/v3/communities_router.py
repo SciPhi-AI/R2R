@@ -281,7 +281,7 @@ class CommunitiesRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_communities(
             request: Request,
-            graph_id: UUID = Query(
+            id: UUID = Query(
                 ...,
                 description="The ID of the graph to get communities for.",
             ),
@@ -315,7 +315,7 @@ class CommunitiesRouter(BaseRouterV3):
             communities, count = await self.services[
                 "kg"
             ].providers.database.graph_handler.communities.get(
-                graph_id=graph_id,
+                id=id,
                 offset=offset,
                 limit=limit,
                 attributes=attributes,

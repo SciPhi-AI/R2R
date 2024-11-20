@@ -114,11 +114,6 @@ export interface KGGlobalSearchResult {
   searchResult: string[];
 }
 
-export interface KGSearchResult {
-  localResult?: KGLocalSearchResult;
-  globalResult?: KGGlobalSearchResult;
-}
-
 export interface Message {
   role: string;
   content: string;

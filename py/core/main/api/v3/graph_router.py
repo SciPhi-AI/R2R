@@ -10,7 +10,9 @@ from core.base.abstractions import DataLevel, KGRunType
 from core.base.abstractions import Community, Entity, Relationship, Graph
 
 from core.base.api.models import (
+    GenericBooleanResponse,
     GenericMessageResponse,
+    WrappedBooleanResponse,
     WrappedGenericMessageResponse,
     WrappedKGCreationResponse,
     WrappedEntityResponse,

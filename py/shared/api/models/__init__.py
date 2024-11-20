@@ -23,6 +23,10 @@ from shared.api.models.kg.responses import (
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
     WrappedKGEntityDeduplicationResponse,
+    # TODO: Need to review anything above this
+    GraphResponse,
+    WrappedGraphResponse,
+    WrappedGraphsResponse,
 )
 from shared.api.models.management.responses import (
     AnalyticsResponse,
@@ -88,6 +92,10 @@ __all__ = [
     "WrappedKGCreationResponse",
     "WrappedKGEnrichmentResponse",
     "WrappedKGEntityDeduplicationResponse",
+    # TODO: Need to review anything above this
+    "GraphResponse",
+    "WrappedGraphResponse",
+    "WrappedGraphsResponse",
     # Management Responses
     "PromptResponse",
     "ServerStats",
