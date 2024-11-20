@@ -143,7 +143,7 @@ export interface KGSearchResult {
 }
 
 export interface CombinedSearchResponse {
-  vector_serach_results: VectorSearchResult[];
+  vector_search_results: VectorSearchResult[];
   kg_search_results?: KGSearchResult[];
 }
 
