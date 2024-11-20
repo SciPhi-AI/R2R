@@ -187,19 +187,30 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_empty_graph(
-            name: str = Body(..., description="The name of the graph"),
-            description: Optional[str] = Body(
-                None, description="An optional description of the graph"
-            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
+            graph: Graph = Body(...),
         ):
-            """Creates an empty graph for a collection."""
+            """
+            Creates a new empty graph.
 
-            graph_id = await self.services["kg"].create_new_graph(
-                user_id=auth_user.id,
-                name=name,
-                description=description,
-            )
+            This is the first step in building a knowledge graph. After creating the graph, you can:
+
+            1. Add data to the graph:
+               - Manually add entities and relationships via the /entities and /relationships endpoints
+               - Automatically extract entities and relationships from documents via the /graphs/{id}/documents endpoint
+
+            2. Build communities:
+               - Build communities of related entities via the /graphs/{id}/communities/build endpoint
+
+            3. Update graph metadata:
+               - Modify the graph name, description and settings via the /graphs/{id} endpoint
+
+            The graph ID returned by this endpoint is required for all subsequent operations on the graph.
+            """
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can create graphs", 403)
+
+            graph_id = await self.services["kg"].create_new_graph(graph)
 
             return {
                 "id": graph_id,
@@ -208,7 +219,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{id}",
-            summary="Get graph information",
+            summary="Retrieve graph details",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -242,14 +253,26 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Gets the information about a graph.
+            Retrieves detailed information about a specific graph by ID.
 
-            Returns information about:
-            - Creation status and timestamp
-            - Enrichment status and timestamp
-            - Entity and relationship counts
-            - Community statistics
-            - Current settings
+            Returns a graph object containing:
+            - Creation metadata: status, timestamp, creator
+            - Enrichment metadata: status, timestamp, last enrichment run
+            - Graph statistics:
+                - Total entity count and types
+                - Total relationship count and types
+                - Number of communities and hierarchy levels
+            - Graph settings:
+                - Entity extraction settings
+                - Relationship extraction settings
+                - Community detection settings
+                - Current prompt configurations
+
+            The graph details can be used to:
+            - Monitor graph processing status
+            - Get graph size and composition metrics
+            - View and validate graph configuration
+            - Track enrichment progress
             """
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -264,7 +287,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs",
-            summary="Get graph information",
+            summary="List graphs",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -299,14 +322,7 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Gets the information about a graph.
-
-            Returns information about:
-            - Creation status and timestamp
-            - Enrichment status and timestamp
-            - Entity and relationship counts
-            - Community statistics
-            - Current settings
+            Lists all graphs in the system with pagination support.
             """
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -352,30 +368,29 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def delete_graph(
-            id: UUID = Path(...),
-            cascade: bool = Query(False),
+            id: UUID = Path(...),   
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedBooleanResponse:
+        ):
             """
-            Deletes the graph and associated entities and relationships.
+            Deletes a graph and all its associated data.
+
+            This endpoint permanently removes the specified graph along with all entities and relationships that belong to only this graph.
+
+            Entities and relationships extracted from documents are not deleted and must be deleted separately using the /entities and /relationships endpoints.
             """
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can delete graphs", 403)
 
-            if cascade:
-                raise NotImplementedError(
-                    "Cascade deletion not implemented. Please delete document level entities and relationships using the document delete endpoints."
-                )
-
-            await self.services["kg"].delete_graph_v3(
-                id=id,
-                cascade=cascade,
+            id = await self.services["kg"].delete_graph_v3(
+                id=id
             )
-            return GenericBooleanResponse(success=True)  # type: ignore
+            # FIXME: Can we sync this with the deletion response from other routes? Those return a boolean.
+            return {"message": "Graph deleted successfully", "id": id}  # type: ignore
 
+        # update graph
         @self.router.post(
             "/graphs/{id}",
-            summary="Update the graph object",
+            summary="Update graph",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -406,9 +421,17 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Updates the graph object.
+            Updates an existing graph's metadata and settings.
 
-            The graph object can be updated to change the name, description, settings and other attributes.
+            This endpoint allows you to modify:
+            - Basic metadata: name, description, tags
+            - Graph settings:
+                - Entity extraction settings
+                - Relationship extraction settings 
+                - Community detection settings
+                - Prompt configurations
+            
+            The graph ID must match between the URL path and request body (if provided in body).
             """
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can update graphs", 403)
@@ -427,150 +450,7 @@ class GraphRouter(BaseRouterV3):
             }
 
         @self.router.post(
-            "/graphs/{id}/add_objects",
-            summary="Add entities and relationships to the graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.add_objects(
-                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                object_type="entities",
-                                object_ids=[
-                                    "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                                    "9fbe403b-c11c-5aae-8ade-ef22980c3ad2"
-                                ]
-                            )"""
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def add_data(
-            id: UUID = Path(...),
-            object_type: GraphObjectType = Body(...),
-            object_ids: list[UUID] = Body(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
-            """
-            Adds entities and relationships to a graph.
-
-            If the object type is documents or collections, then all entities and relationships that are present in the documents or collections will be added to the graph.
-            """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can add data to graphs", 403
-                )
-
-            if object_type == GraphObjectType.DOCUMENTS:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.add_documents(
-                    id=id, document_ids=object_ids
-                )
-            elif object_type == GraphObjectType.COLLECTIONS:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.add_collections(
-                    id=id, collection_ids=object_ids
-                )
-            elif object_type == GraphObjectType.ENTITIES:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.add_entities_v3(
-                    id=id, entity_ids=object_ids
-                )
-            elif object_type == GraphObjectType.RELATIONSHIPS:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.add_relationships_v3(
-                    id=id, relationship_ids=object_ids
-                )
-            else:
-                raise R2RException("Invalid data type", 400)
-
-        # remove data
-        @self.router.delete(
-            "/graphs/{id}/remove_objects",
-            summary="Remove entities and relationships from the graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.remove_objects(
-                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                object_type="entities",
-                                object_ids=[
-                                    "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                                    "9fbe403b-c11c-5aae-8ade-ef22980c3ad2"
-                                ]
-                            )"""
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def remove_data(
-            id: UUID = Path(...),
-            object_type: GraphObjectType = Body(...),
-            object_ids: list[UUID] = Body(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
-            """
-            Removes entities and relationships from a graph.
-
-            If the object type is documents or collections, then all entities and relationships that are present in the documents or collections will be removed from the graph.
-            """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can remove data from graphs", 403
-                )
-
-            if object_type == GraphObjectType.DOCUMENTS:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.remove_documents(
-                    id=id, document_ids=object_ids
-                )
-            elif object_type == GraphObjectType.COLLECTIONS:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.remove_collections(
-                    id=id, collection_ids=object_ids
-                )
-            elif object_type == GraphObjectType.ENTITIES:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.remove_entities(
-                    id=id, entity_ids=object_ids
-                )
-            elif object_type == GraphObjectType.RELATIONSHIPS:
-                return await self.services[
-                    "kg"
-                ].providers.database.graph_handler.remove_relationships(
-                    id=id, relationship_ids=object_ids
-                )
-            else:
-                raise R2RException("Invalid data type", 400)
-
-        @self.router.post(
-            "/graphs/{collection_id}/tune-prompt",
+            "/graphs/{id}/tune-prompt",
             summary="Tune a graph-related prompt",
             openapi_extra={
                 "x-codeSamples": [
@@ -610,7 +490,7 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def tune_prompt(
-            collection_id: UUID = Path(...),
+            id: UUID = Path(...),
             prompt_name: str = Body(
                 ...,
                 description="The prompt to tune. Valid options: graphrag_relationships_extraction_few_shot, graphrag_entity_description, graphrag_communities",
@@ -633,7 +513,7 @@ class GraphRouter(BaseRouterV3):
 
             tuned_prompt = await self.services["kg"].tune_prompt(
                 prompt_name=prompt_name,
-                collection_id=collection_id,
+                collection_id=id,
                 documents_offset=documents_offset,
                 documents_limit=documents_limit,
                 chunks_offset=chunks_offset,
@@ -641,3 +521,357 @@ class GraphRouter(BaseRouterV3):
             )
 
             return tuned_prompt  # type: ignore
+
+
+        @self.router.post(
+            "/graphs/{id}/documents",
+            summary="Extract entities and relationships from a document and add them to the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.extract_entities_and_relationships(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                ],
+                "operationId": "documents_extract_entities_and_relationships_v3_documents__id__entities_and_relationships_post_documents",
+            },
+        )
+        @self.base_endpoint
+        async def extract_entities_and_relationships(
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to extract entities and relationships from.",
+            ),
+            run_type: KGRunType = Query(
+                default=KGRunType.ESTIMATE,
+                description="Whether to return an estimate of the creation cost or to actually extract the entities and relationships.",
+            ),
+            settings: Optional[KGCreationSettings] = Body(
+                default=None,
+                description="Settings for the entities and relationships extraction process.",
+            ),
+            run_with_orchestration: Optional[bool] = Query(
+                default=True,
+                description="Whether to run the entities and relationships extraction process with orchestration.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedKGCreationResponse:  # type: ignore
+            """
+            Extracts entities and relationships from a document and adds them to the graph.
+
+            The entities and relationships extraction process involves:
+            1. Parsing documents into semantic chunks
+            2. Extracting entities and relationships using LLMs
+
+            If the entities and relationships were already extracted for the document, they will not be extracted again and the existing entities and relationships will be added to the graph.
+            """
+
+            settings = settings.dict() if settings else None  # type: ignore
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            # If no run type is provided, default to estimate
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
+
+            # Apply runtime settings overrides
+            server_kg_creation_settings = (
+                self.providers.database.config.kg_creation_settings
+            )
+
+            if settings:
+                server_kg_creation_settings = update_settings_from_dict(
+                    server_settings=server_kg_creation_settings,
+                    settings_dict=settings,  # type: ignore
+                )
+
+            # If the run type is estimate, return an estimate of the creation cost
+            if run_type is KGRunType.ESTIMATE:
+                return {  # type: ignore
+                    "message": "Estimate retrieved successfully",
+                    "task_id": None,
+                    "id": id,
+                    "estimate": await self.services[
+                        "kg"
+                    ].get_creation_estimate(
+                        document_id=id,
+                        kg_creation_settings=server_kg_creation_settings,
+                    ),
+                }
+            else:
+                # Otherwise, create the graph
+                if run_with_orchestration:
+                    workflow_input = {
+                        "document_id": str(id),
+                        "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
+                        "user": auth_user.json(),
+                    }
+
+                    return await self.orchestration_provider.run_workflow(  # type: ignore
+                        "create-graph", {"request": workflow_input}, {}
+                    )
+                else:
+                    from core.main.orchestration import simple_kg_factory
+
+                    logger.info("Running create-graph without orchestration.")
+                    simple_kg = simple_kg_factory(self.services["kg"])
+                    await simple_kg["create-graph"](workflow_input)  # type: ignore
+                    return {  # type: ignore
+                        "message": "Graph created successfully.",
+                        "task_id": None,
+                    }
+
+        
+
+        @self.router.post(
+            "/graphs/{id}/entities",
+            summary="Add entities to the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.graphs.add_entity(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_ids=[
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                "123e4567-e89b-12d3-a456-426614174001",
+                            ])
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def add_entity_to_graph(
+            request: Request,
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to add the entity to.",
+            ),
+            entity_ids: list[UUID] = Body(
+                ..., description="The IDs of the entities to add to the graph."
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Adds a list of entities to the graph by their IDs.
+            """
+            return await self.services["kg"].documents.graph_handler.entities.add_to_graph(id, entity_ids)
+
+        @self.router.delete(
+            "/graphs/{id}/entities/{entity_id}",
+            summary="Remove an entity from the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.graphs.remove_entities(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_ids=[
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                "123e4567-e89b-12d3-a456-426614174001",
+                            ])
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def remove_entity_from_graph(
+            request: Request,
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to remove the entity from.",
+            ),
+            entity_id: UUID = Path(
+                ..., description="The ID of the entity to remove from the graph."
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Removes an entity from the graph by its ID.
+            """
+            return await self.services["kg"].documents.graph_handler.entities.remove_from_graph(id, [entity_id])
+
+
+        @self.router.post(
+            "/graphs/{id}/relationships",
+            summary="Add relationships to the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.graphs.add_relationship(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_ids=[
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                "123e4567-e89b-12d3-a456-426614174001",
+                            ])
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def add_relationship_to_graph(
+            request: Request,
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to add the relationship to.",
+            ),
+            relationship_ids: list[UUID] = Body(
+                ..., description="The IDs of the relationships to add to the graph."
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Adds a list of relationships to the graph by their IDs.
+            """
+            return await self.services["kg"].documents.graph_handler.relationships.add_to_graph(id, relationship_ids)
+        
+
+
+        @self.router.delete(
+            "/graphs/{id}/relationships/{relationship_id}",
+            summary="Remove a relationship from the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.graphs.remove_relationships(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_ids=[
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                "123e4567-e89b-12d3-a456-426614174001",
+                            ])
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def remove_relationship_from_graph(
+            request: Request,
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to remove the relationship from.",
+            ),
+            relationship_id: UUID = Path(
+                ..., description="The ID of the relationship to remove from the graph."
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Removes a relationship from the graph by its ID.
+            """
+            return await self.services["kg"].documents.graph_handler.relationships.remove_from_graph(id, [relationship_id])
+
+
+
+        @self.router.post(
+            "/graphs/{id}/communities",
+            summary="Add communities to the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.graphs.add_communities(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", community_ids=[
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                "123e4567-e89b-12d3-a456-426614174001",
+                            ])
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def add_communities_to_graph(
+            request: Request,
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to add the communities to.",
+            ),
+            community_ids: list[UUID] = Body(
+                ..., description="The IDs of the communities to add to the graph."
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Adds a list of communities to the graph by their IDs.
+            """
+            return await self.services["kg"].documents.graph_handler.communities.add_to_graph(id, community_ids)
+        
+
+
+        @self.router.delete(
+            "/graphs/{id}/communities/{community_id}",
+            summary="Remove a community from the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.graphs.remove_communities(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", community_ids=[
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                "123e4567-e89b-12d3-a456-426614174001",
+                            ])
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def remove_community_from_graph(
+            request: Request,
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to remove the community from.",
+            ),
+            community_id: UUID = Path(
+                ..., description="The ID of the community to remove from the graph."
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Removes a community from the graph by its ID.
+            """
+            return await self.services["kg"].documents.graph_handler.communities.remove_from_graph(id, [community_id])
+

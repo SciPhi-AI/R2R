@@ -75,8 +75,8 @@ class EntitiesRouter(BaseRouterV3):
     def _setup_routes(self):
 
         @self.router.get(
-            "/documents/{id}/entities",
-            summary="List entities for a document",
+            "/entities",
+            summary="List entities",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -93,37 +93,18 @@ class EntitiesRouter(BaseRouterV3):
                         ),
                     },
                 ],
-                "operationId": "documents_list_entities_v3_documents__id__entities_get_documents",
-            },
-        )
-        @self.router.get(
-            "/graphs/{id}/entities",
-            summary="List entities for a graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.entities.list(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
-                            """
-                        ),
-                    },
-                ],
-                "operationId": "graphs_list_entities_v3_graphs__id__entities_get_graphs",
             },
         )
         @self.base_endpoint
         async def list_entities(
             request: Request,
-            id: UUID = Path(
-                ...,
+            graph_id: Optional[UUID] = Query(
+                None,
                 description="The ID of the graph to retrieve entities for.",
+            ),
+            document_id: Optional[UUID] = Query(
+                None,
+                description="The ID of the document to retrieve entities for.",
             ),
             entity_names: Optional[list[str]] = Query(
                 None,
@@ -147,11 +128,17 @@ class EntitiesRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntitiesResponse:
             """
-            This endpoint returns a paginated list of entities associated for the specified object.
+            Returns a paginated list of entities from a knowledge graph or document.
 
-            Results can be filtered by the optional query parameters like entity_names.
+            The entities can be filtered by:
+            - Graph ID: Get entities from a specific graph
+            - Document ID: Get entities from a specific document 
+            - Entity names: Filter by specific entity names
+            - Attributes: Select which entity attributes to return
 
-            By default, all attributes are returned, but they can be filtered by the optional query parameter attributes.
+            The response includes:
+            - List of entity objects with their attributes
+            - Total count of matching entities
             """
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -161,6 +148,8 @@ class EntitiesRouter(BaseRouterV3):
             entities, count = await self.services["kg"].list_entities(
                 level=self._get_path_level(request),
                 id=id,
+                graph_id=graph_id,
+                document_id=document_id,
                 offset=offset,
                 limit=limit,
                 entity_names=entity_names,
@@ -172,8 +161,8 @@ class EntitiesRouter(BaseRouterV3):
             }
 
         @self.router.get(
-            "/documents/{id}/entities/{entity_id}",
-            summary="Get an entity for a document",
+            "/entities/{id}",
+            summary="Retrieve an entity",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -185,28 +174,7 @@ class EntitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.graphs.entities.list(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.router.get(
-            "/graphs/{id}/entities/{entity_id}",
-            summary="Get an entity for a graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.entities.list(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
+                            result = client.entities.get(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
                             """
                         ),
                     },
@@ -218,24 +186,30 @@ class EntitiesRouter(BaseRouterV3):
             request: Request,
             id: UUID = Path(
                 ...,
-                description="The ID of the object to retrieve the entity for.",
+                description="The ID of the entity to retrieve.",
             ),
-            entity_id: UUID = Path(
-                ..., description="The ID of the entity to retrieve."
+            attributes: Optional[list[str]] = Query(
+                None,
+                description="A list of attributes to return. By default, all attributes are returned.",
             ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntityResponse:
+            """
+            Retrieves detailed information about a specific entity by its unique identifier.
+
+            The attributes parameter allows selective retrieval of specific entity properties to optimize response size and processing.
+            """
 
             entity = await self.services["kg"].get_entity(
                 level=self._get_path_level(request),
                 id=id,
-                entity_id=entity_id,
             )
 
             return entity
 
         @self.router.post(
-            "/documents/{id}/entities",
-            summary="Create entities for a document",
+            "/entities",
+            summary="Create entities",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -247,93 +221,36 @@ class EntitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.entities.create(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
+                            result = client.entities.create([entity1, entity2])
                             """
                         ),
                     },
                 ],
-                "operationId": "documents_create_entities_v3_documents__id__entities_post_documents",
-            },
-        )
-        @self.router.post(
-            "/graphs/{id}/entities",
-            summary="Create entities for a graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.entities.create(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entities=[entity1, entity2])
-                            """
-                        ),
-                    },
-                ],
-                "operationId": "graphs_create_entities_v3_graphs__id__entities_post_graphs",
             },
         )
         @self.base_endpoint
         async def create_entities_v3(
             request: Request,
-            id: UUID = Path(
-                ..., description="The ID of the object to create entities for."
-            ),
             entities: list[Entity] = Body(
                 ..., description="The entities to create."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            This endpoint creates entities for the specified object.
+            Creates new entities.
 
-            The endpoint expects a list of entities to be provided in the request body.
+            This endpoint allows you to:
+            1. Create multiple entities in a single request by providing a list of entity objects
+            2. Define entity attributes, types, and metadata
+            3. Automatically generate unique IDs for each entity
+            4. Link entities to existing graphs or documents
+
+            Entity IDs are automatically generated by the server and returned in the response.
             """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
                 )
-
-            # get entity level from path
-            path = request.url.path
-            if "/chunks/" in path:
-                level = DataLevel.CHUNK
-            elif "/documents/" in path:
-                level = DataLevel.DOCUMENT
-            else:
-                level = DataLevel.GRAPH
-
-            # set entity level if not set
-            for entity in entities:
-                if entity.level:
-                    if entity.level != level:
-                        raise R2RException(
-                            "Entity level must match the path level.", 400
-                        )
-                else:
-                    entity.level = level
-
-            if level == DataLevel.DOCUMENT:
-                for entity in entities:
-                    if entity.document_id:
-                        if entity.document_id != id:
-                            raise R2RException(
-                                "Entity document IDs must match the document ID or should be empty.",
-                                400,
-                            )
-                    else:
-                        entity.document_id = id
-
-            elif level == DataLevel.GRAPH:
-                for entity in entities:
-                    entity.graph_id = id
-                    entity.attributes = {
-                        "manual_creation": True,
-                    }
 
             res = await self.services["kg"].create_entities(
                 entities=entities,
@@ -342,8 +259,8 @@ class EntitiesRouter(BaseRouterV3):
             return res
 
         @self.router.post(
-            "/documents/{id}/entities/{entity_id}",
-            summary="Update an entity for a document",
+            "/entities/{id}",
+            summary="Update an entity",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -355,34 +272,11 @@ class EntitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.graphs.entities.update(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000", entity=entity)
+                            result = client.entities.update(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity=entity)
                             """
                         ),
                     },
                 ],
-                "operationId": "documents_update_entities_v3_documents__id__entities__entity_id__post_documents",
-            },
-        )
-        @self.router.post(
-            "/graphs/{id}/entities/{entity_id}",
-            summary="Update an entity for a graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.entities.update(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000", entity=entity)
-                            """
-                        ),
-                    },
-                ],
-                "operationId": "graphs_update_entities_v3_graphs__id__entities__entity_id__post_graphs",
             },
         )
         @self.base_endpoint
@@ -390,10 +284,7 @@ class EntitiesRouter(BaseRouterV3):
             request: Request,
             id: UUID = Path(
                 ...,
-                description="The ID of the chunk to update the entity for.",
-            ),
-            entity_id: UUID = Path(
-                ..., description="The ID of the entity to update."
+                description="The ID of the entity to update.",
             ),
             entity: Entity = Body(..., description="The updated entity."),
             auth_user=Depends(self.providers.auth.auth_wrapper),
@@ -401,43 +292,28 @@ class EntitiesRouter(BaseRouterV3):
             """
             Updates an existing entity in the database.
 
-            The entity can be updated by providing the entity ID and the updated entity object in the request body.
+            This endpoint allows you to modify:
+            - Entity attributes and properties
+            - Entity type and classification
+            - Entity metadata and tags
+            - Graph and document associations
+
+            Any fields not included in the update request will retain their existing values.
             """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
                 )
 
-            if not entity.level:
-                entity.level = self._get_path_level(request)
-            else:
-                if entity.level != self._get_path_level(request):
-                    raise R2RException(
-                        "Entity level must match the path level.", 400
-                    )
-
-            if entity.level == DataLevel.DOCUMENT:
-                entity.document_id = id
-
-            elif entity.level == DataLevel.GRAPH:
-                entity.graph_id = id
-
-            if not entity.id:
-                entity.id = entity_id
-            else:
-                if entity.id != entity_id:
-                    raise R2RException(
-                        "Entity ID must match the entity ID or should be empty.",
-                        400,
-                    )
+            entity.id = id
 
             return await self.services["kg"].update_entity_v3(
                 entity=entity,
             )
 
         @self.router.delete(
-            "/documents/{id}/entities/{entity_id}",
-            summary="Delete an entity for a document",
+            "/entities/{id}",
+            summary="Delete an entity",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -449,34 +325,11 @@ class EntitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.graphs.entities.delete(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000")
+                            result = client.entities.delete(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
                             """
                         ),
                     },
                 ],
-                "operationId": "documents_delete_entities_v3_documents__id__entities__entity_id__delete_documents",
-            },
-        )
-        @self.router.delete(
-            "/graphs/{id}/entities/{entity_id}",
-            summary="Delete an entity for a graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.gra phs.entities.delete(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_id="123e4567-e89b-12d3-a456-426614174000")
-                            """
-                        ),
-                    },
-                ],
-                "operationId": "graphs_delete_entities_v3_graphs__id__entities__entity_id__delete_graphs",
             },
         )
         @self.base_endpoint
@@ -486,11 +339,16 @@ class EntitiesRouter(BaseRouterV3):
                 ...,
                 description="The ID of the graph to delete the entity for.",
             ),
-            entity_id: UUID = Path(
-                ..., description="The ID of the entity to delete."
-            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
+            """
+                Deletes an entity and all its associated data.
+
+                This endpoint permanently removes:
+                - The entity itself and all its attributes
+
+                However, this will not remove any relationships or communities that the entity is part of.
+            """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
@@ -498,6 +356,5 @@ class EntitiesRouter(BaseRouterV3):
 
             return await self.services["kg"].delete_entity_v3(
                 id=id,
-                entity_id=entity_id,
                 level=self._get_path_level(request),
             )
