@@ -629,3 +629,249 @@ class GraphRouter(BaseRouterV3):
                         "message": "Graph created successfully.",
                         "task_id": None,
                     }
+
+        
+
+        @self.router.post(
+            "/graphs/{id}/entities",
+            summary="Add entities to the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.graphs.add_entity(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_ids=[
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                "123e4567-e89b-12d3-a456-426614174001",
+                            ])
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def add_entity_to_graph(
+            request: Request,
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to add the entity to.",
+            ),
+            entity_ids: list[UUID] = Body(
+                ..., description="The IDs of the entities to add to the graph."
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Adds a list of entities to the graph by their IDs.
+            """
+            raise NotImplementedError("Not implemented")
+        
+
+
+        @self.router.delete(
+            "/graphs/{id}/entities/{entity_id}",
+            summary="Remove an entity from the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.graphs.remove_entities(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_ids=[
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                "123e4567-e89b-12d3-a456-426614174001",
+                            ])
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def remove_entity_from_graph(
+            request: Request,
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to remove the entity from.",
+            ),
+            entity_id: UUID = Path(
+                ..., description="The ID of the entity to remove from the graph."
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Removes an entity from the graph by its ID.
+            """
+            raise NotImplementedError("Not implemented")
+
+
+        @self.router.post(
+            "/graphs/{id}/relationships",
+            summary="Add relationships to the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.graphs.add_relationship(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_ids=[
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                "123e4567-e89b-12d3-a456-426614174001",
+                            ])
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def add_relationship_to_graph(
+            request: Request,
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to add the relationship to.",
+            ),
+            relationship_ids: list[UUID] = Body(
+                ..., description="The IDs of the relationships to add to the graph."
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Adds a list of relationships to the graph by their IDs.
+            """
+            raise NotImplementedError("Not implemented")
+        
+
+
+        @self.router.delete(
+            "/graphs/{id}/relationships/{relationship_id}",
+            summary="Remove a relationship from the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.graphs.remove_relationships(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_ids=[
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                "123e4567-e89b-12d3-a456-426614174001",
+                            ])
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def remove_relationship_from_graph(
+            request: Request,
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to remove the relationship from.",
+            ),
+            relationship_id: UUID = Path(
+                ..., description="The ID of the relationship to remove from the graph."
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Removes a relationship from the graph by its ID.
+            """
+            raise NotImplementedError("Not implemented")
+
+
+
+        @self.router.post(
+            "/graphs/{id}/communities",
+            summary="Add communities to the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.graphs.add_communities(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", community_ids=[
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                "123e4567-e89b-12d3-a456-426614174001",
+                            ])
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def add_communities_to_graph(
+            request: Request,
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to add the communities to.",
+            ),
+            community_ids: list[UUID] = Body(
+                ..., description="The IDs of the communities to add to the graph."
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Adds a list of communities to the graph by their IDs.
+            """
+            raise NotImplementedError("Not implemented")
+        
+
+
+        @self.router.delete(
+            "/graphs/{id}/communities/{community_id}",
+            summary="Remove a community from the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.graphs.remove_communities(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", community_ids=[
+                                "123e4567-e89b-12d3-a456-426614174000",
+                                "123e4567-e89b-12d3-a456-426614174001",
+                            ])
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def remove_community_from_graph(
+            request: Request,
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to remove the community from.",
+            ),
+            community_id: UUID = Path(
+                ..., description="The ID of the community to remove from the graph."
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Removes a community from the graph by its ID.
+            """
+            raise NotImplementedError("Not implemented")
+

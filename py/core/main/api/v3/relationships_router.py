@@ -107,15 +107,15 @@ class RelationshipsRouter(BaseRouterV3):
                 None,
                 description="The ID of the document to retrieve relationships for.",
             ),
-            entity_names: Optional[list[str]] = Body(
+            entity_names: Optional[list[str]] = Query(
                 None,
                 description="A list of subject or object entity names to filter the relationships by.",
             ),
-            relationship_types: Optional[list[str]] = Body(
+            relationship_types: Optional[list[str]] = Query(
                 None,
                 description="A list of relationship types to filter the relationships by.",
             ),
-            attributes: Optional[list[str]] = Body(
+            attributes: Optional[list[str]] = Query(
                 None,
                 description="A list of attributes to return. By default, all attributes are returned.",
             ),
@@ -185,7 +185,6 @@ class RelationshipsRouter(BaseRouterV3):
                         ),
                     },
                 ],
-                "operationId": "graphs_get_relationships_v3_graphs__id__relationships__relationship_id__get_graphs",
             },
         )
         @self.base_endpoint
@@ -195,7 +194,7 @@ class RelationshipsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the relationship to retrieve.",
             ),
-            attributes: Optional[list[str]] = Body(
+            attributes: Optional[list[str]] = Query(
                 None,
                 description="A list of attributes to return. By default, all attributes are returned.",
             ),

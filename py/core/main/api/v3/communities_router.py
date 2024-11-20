@@ -296,7 +296,7 @@ class CommunitiesRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            attributes: Optional[list[str]] = Body(
+            attributes: Optional[list[str]] = Query(
                 None,
                 description="A list of attributes to return. By default, all attributes are returned.",
             ),
@@ -353,7 +353,7 @@ class CommunitiesRouter(BaseRouterV3):
                 ...,
                 description="The ID of the graph to get communities for.",
                 ),
-            attributes: Optional[list[str]] = Body(
+            attributes: Optional[list[str]] = Query(
                 None,
                 description="A list of attributes to return. By default, all attributes are returned.",
             ),
