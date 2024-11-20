@@ -23,7 +23,7 @@ class SyncAuthMixins:
         return self._make_request("POST", "register", json=data)  # type: ignore
 
     @deprecated("Use client.users.verify_email() instead")
-    def verify_email(self, verification_code: str) -> dict:
+    def verify_email(self, email: str, verification_code: str) -> dict:
         """
         Verifies the email of a user with the given verification code.
 
@@ -31,10 +31,11 @@ class SyncAuthMixins:
             verification_code (str): The verification code to verify the email with.
 
         """
+        data = {"email": email, "verification_code": verification_code}
         return self._make_request(  # type: ignore
             "POST",
             "verify_email",
-            json=verification_code,
+            json=data,
         )
 
     @deprecated("Use client.users.login() instead")

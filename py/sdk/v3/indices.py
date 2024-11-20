@@ -1,6 +1,11 @@
 import json
 from typing import Optional
 
+from shared.api.models.base import WrappedGenericMessageResponse
+from shared.api.models.ingestion.responses import (
+    WrappedListVectorIndicesResponse,
+)
+
 
 class IndicesSDK:
     def __init__(self, client):
@@ -10,7 +15,7 @@ class IndicesSDK:
         self,
         config: dict,
         run_with_orchestration: Optional[bool] = True,
-    ) -> dict:
+    ) -> WrappedGenericMessageResponse:
         """
         Create a new vector similarity search index in the database.
 
@@ -37,7 +42,7 @@ class IndicesSDK:
         filters: Optional[dict] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 10,
-    ) -> dict:
+    ) -> WrappedListVectorIndicesResponse:
         """
         List existing vector similarity search indices with pagination support.
 
@@ -113,7 +118,7 @@ class IndicesSDK:
         self,
         index_name: str,
         table_name: str = "vectors",
-    ) -> dict:
+    ) -> WrappedGenericMessageResponse:
         """
         Delete an existing vector index.
 

@@ -1,7 +1,11 @@
 import { r2rClient } from "../../r2rClient";
 import {
+  WrappedBooleanResponse,
+  WrappedGenericMessageResponse,
   WrappedCollectionResponse,
   WrappedCollectionsResponse,
+  WrappedDocumentsResponse,
+  WrappedUsersResponse,
 } from "../../types";
 
 export class CollectionsClient {
@@ -68,7 +72,7 @@ export class CollectionsClient {
     id: string;
     name?: string;
     description?: string;
-  }): Promise<any> {
+  }): Promise<WrappedCollectionResponse> {
     const data = {
       ...(options.name && { name: options.name }),
       ...(options.description && { description: options.description }),
@@ -84,7 +88,7 @@ export class CollectionsClient {
    * @param id Collection ID to delete
    * @returns
    */
-  async delete(options: { id: string }): Promise<any> {
+  async delete(options: { id: string }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", `collections/${options.id}`);
   }
 
@@ -99,7 +103,7 @@ export class CollectionsClient {
     id: string;
     offset?: number;
     limit?: number;
-  }): Promise<any> {
+  }): Promise<WrappedDocumentsResponse> {
     const params: Record<string, any> = {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? 100,
@@ -120,7 +124,10 @@ export class CollectionsClient {
    * @param documentId Document ID to add
    * @returns
    */
-  async addDocument(options: { id: string; documentId: string }): Promise<any> {
+  async addDocument(options: {
+    id: string;
+    documentId: string;
+  }): Promise<WrappedGenericMessageResponse> {
     return this.client.makeRequest(
       "POST",
       `collections/${options.id}/documents/${options.documentId}`,
@@ -136,7 +143,7 @@ export class CollectionsClient {
   async removeDocument(options: {
     id: string;
     documentId: string;
-  }): Promise<any> {
+  }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest(
       "DELETE",
       `collections/${options.id}/documents/${options.documentId}`,
@@ -154,7 +161,7 @@ export class CollectionsClient {
     id: string;
     offset?: number;
     limit?: number;
-  }): Promise<any> {
+  }): Promise<WrappedUsersResponse> {
     const params: Record<string, any> = {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? 100,
@@ -171,7 +178,10 @@ export class CollectionsClient {
    * @param userId User ID to add
    * @returns
    */
-  async addUser(options: { id: string; userId: string }): Promise<any> {
+  async addUser(options: {
+    id: string;
+    userId: string;
+  }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest(
       "POST",
       `collections/${options.id}/users/${options.userId}`,
@@ -184,7 +194,10 @@ export class CollectionsClient {
    * @param userId User ID to remove
    * @returns
    */
-  async removeUser(options: { id: string; userId: string }): Promise<any> {
+  async removeUser(options: {
+    id: string;
+    userId: string;
+  }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest(
       "DELETE",
       `collections/${options.id}/users/${options.userId}`,

@@ -1,11 +1,18 @@
 from typing import Optional
 
+from shared.api.models.base import WrappedGenericMessageResponse
+from shared.api.models.management.responses import (
+    WrappedLogsResponse,
+    WrappedServerStatsResponse,
+    WrappedSettingsResponse,
+)
+
 
 class SystemSDK:
     def __init__(self, client):
         self.client = client
 
-    async def health(self) -> dict:
+    async def health(self) -> WrappedGenericMessageResponse:
         """
         Check the health of the R2R server.
         """
@@ -16,7 +23,7 @@ class SystemSDK:
         run_type_filter: Optional[str] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> dict:
+    ) -> WrappedLogsResponse:
         """
         Get logs from the server.
 
@@ -41,7 +48,7 @@ class SystemSDK:
             "GET", "system/logs", params=params, version="v3"
         )
 
-    async def settings(self) -> dict:
+    async def settings(self) -> WrappedSettingsResponse:
         """
         Get the configuration settings for the R2R server.
 
@@ -52,7 +59,7 @@ class SystemSDK:
             "GET", "system/settings", version="v3"
         )
 
-    async def status(self) -> dict:
+    async def status(self) -> WrappedServerStatsResponse:
         """
         Get statistics about the server, including the start time, uptime, CPU usage, and memory usage.
 

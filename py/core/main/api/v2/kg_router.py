@@ -283,7 +283,7 @@ class KGRouter(BaseRouter):
             else:
                 entity_table_name = "graph_entity"
 
-            entities = await self.service.get_entities(
+            get_entities_response = await self.service.get_entities(
                 collection_id=collection_id,
                 entity_ids=entity_ids,
                 entity_table_name=entity_table_name,
@@ -291,9 +291,8 @@ class KGRouter(BaseRouter):
                 limit=limit,
             )
 
-            # for backwards compatibility with the old API
-            return entities["entities"], {  # type: ignore
-                "total_entries": entities["total_entries"]
+            return get_entities_response["entities"], {  # type: ignore
+                "total_entries": get_entities_response["total_entries"]
             }
 
         @self.router.get("/triples")
@@ -328,7 +327,7 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
-            triples = await self.service.get_relationships(
+            get_relationships_response = await self.service.get_relationships(
                 offset=offset,
                 limit=limit,
                 collection_id=collection_id,
@@ -336,9 +335,8 @@ class KGRouter(BaseRouter):
                 relationship_ids=triple_ids,
             )
 
-            # for backwards compatibility with the old API
-            return triples["relationships"], {  # type: ignore
-                "total_entries": triples["total_entries"]
+            return get_relationships_response["relationships"], {  # type: ignore
+                "total_entries": get_relationships_response["total_entries"]
             }
 
         @self.router.get("/communities")
@@ -372,7 +370,7 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
-            results = await self.service.get_communities(
+            get_communities_response = await self.service.get_communities(
                 offset=offset,
                 limit=limit,
                 collection_id=collection_id,
@@ -380,9 +378,8 @@ class KGRouter(BaseRouter):
                 community_numbers=community_numbers,
             )
 
-            # for backwards compatibility with the old API
-            return results["communities"], {  # type: ignore
-                "total_entries": results["total_entries"]
+            return get_communities_response["communities"], {  # type: ignore
+                "total_entries": get_communities_response["total_entries"]
             }
 
         @self.router.post("/deduplicate_entities")

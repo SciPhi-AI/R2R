@@ -1,4 +1,10 @@
 import { r2rClient } from "../../r2rClient";
+import {
+  WrappedGenericMessageResponse,
+  WrappedLogsResponse,
+  WrappedServerStatsResponse,
+  WrappedSettingsResponse,
+} from "../../types";
 
 export class SystemClient {
   constructor(private client: r2rClient) {}
@@ -6,7 +12,7 @@ export class SystemClient {
   /**
    * Check the health of the R2R server.
    */
-  async health(): Promise<any> {
+  async health(): Promise<WrappedGenericMessageResponse> {
     return await this.client.makeRequest("GET", "health");
   }
 
@@ -19,7 +25,7 @@ export class SystemClient {
     runTypeFilter?: string;
     offset?: number;
     limit?: number;
-  }): Promise<any> {
+  }): Promise<WrappedLogsResponse> {
     const params: Record<string, any> = {
       offset: options.offset ?? 0,
       limit: options.limit ?? 100,
@@ -36,7 +42,7 @@ export class SystemClient {
    * Get the configuration settings for the R2R server.
    * @returns
    */
-  async settings(): Promise<any> {
+  async settings(): Promise<WrappedSettingsResponse> {
     return await this.client.makeRequest("GET", "system/settings");
   }
 
@@ -44,7 +50,7 @@ export class SystemClient {
    * Get statistics about the server, including the start time, uptime, CPU usage, and memory usage.
    * @returns
    */
-  async status(): Promise<any> {
+  async status(): Promise<WrappedServerStatsResponse> {
     return await this.client.makeRequest("GET", "system/status");
   }
 }

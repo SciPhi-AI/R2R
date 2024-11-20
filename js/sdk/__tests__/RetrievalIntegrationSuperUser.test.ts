@@ -1,5 +1,4 @@
 import { r2rClient } from "../src/index";
-const fs = require("fs");
 import { describe, test, beforeAll, expect } from "@jest/globals";
 
 const baseUrl = "http://localhost:7272";
@@ -72,7 +71,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   test("Streaming RAG", async () => {
     const stream = await client.retrieval.rag({
       query: "Sonia",
-      generationConfig: {
+      ragGenerationConfig: {
         stream: true,
       },
     });
@@ -95,7 +94,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   test("Streaming RAG", async () => {
     const stream = await client.retrieval.agent({
       messages: messages,
-      generationConfig: {
+      ragGenerationConfig: {
         stream: true,
       },
     });

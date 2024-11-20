@@ -1,5 +1,10 @@
 import { r2rClient } from "../../r2rClient";
-import { UnprocessedChunk } from "../../types";
+import {
+  UnprocessedChunk,
+  WrappedBooleanResponse,
+  WrappedChunkResponse,
+  WrappedChunksResponse,
+} from "../../types";
 
 export class ChunksClient {
   constructor(private client: r2rClient) {}
@@ -38,7 +43,7 @@ export class ChunksClient {
     id: string;
     text?: string;
     metadata?: any;
-  }): Promise<any> {
+  }): Promise<WrappedChunkResponse> {
     return this.client.makeRequest("POST", `chunks/${options.id}`, {
       data: options,
     });
@@ -49,7 +54,7 @@ export class ChunksClient {
    * @param id ID of the chunk to retrieve
    * @returns
    */
-  async retrieve(options: { id: string }): Promise<any> {
+  async retrieve(options: { id: string }): Promise<WrappedChunkResponse> {
     return this.client.makeRequest("GET", `chunks/${options.id}`);
   }
 
@@ -58,7 +63,7 @@ export class ChunksClient {
    * @param id ID of the chunk to delete
    * @returns
    */
-  async delete(options: { id: string }): Promise<any> {
+  async delete(options: { id: string }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", `chunks/${options.id}`);
   }
 
@@ -75,7 +80,7 @@ export class ChunksClient {
     metadataFilters?: Record<string, any>;
     offset?: number;
     limit?: number;
-  }): Promise<any> {
+  }): Promise<WrappedChunksResponse> {
     const params: Record<string, any> = {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? 100,
