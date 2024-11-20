@@ -57,7 +57,6 @@ class TestSendGridEmailProvider:
         await sendgrid_provider.send_verification_email(
             to_email="example@example.com",  # Replace with your email address
             verification_code="123456",
-            template_id="123456",      # Replace with your SendGrid template ID
             dynamic_template_data={"name": "User"},
             frontend_url="http://localhost:3000/auth"
         )
