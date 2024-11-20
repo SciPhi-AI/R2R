@@ -1464,6 +1464,8 @@ class PostgresGraphHandler(GraphHandler):
         graph_id: UUID | None,
         document_ids: Optional[list[UUID]] = None,
     ) -> list[Relationship]:
+        
+        logger.info(f"Getting all relationships for {collection_id} and {graph_id}")
 
         if collection_id is not None:
 
@@ -1486,6 +1488,8 @@ class PostgresGraphHandler(GraphHandler):
                 QUERY, [document_ids]
             )
 
+            logger.info(f"Got {len(relationships)} relationships for {collection_id}")
+
         else:
             QUERY = f"""
                 SELECT sid as id, subject, predicate, weight, object, document_id FROM {self._get_table_name("chunk_relationship")} WHERE $1 = ANY(graph_ids)
@@ -1493,6 +1497,8 @@ class PostgresGraphHandler(GraphHandler):
             relationships = await self.connection_manager.fetch_query(
                 QUERY, [graph_id]
             )
+
+        logger.info(f"Got {len(relationships)} relationships for {collection_id or graph_id}")
 
         return [Relationship(**relationship) for relationship in relationships]
 
@@ -1839,6 +1845,8 @@ class PostgresGraphHandler(GraphHandler):
             collection_id, graph_id
         )
 
+        logger.info(f"Got {len(relationships)} relationships for {collection_id or graph_id}")
+
         logger.info(f"Clustering with settings: {leiden_params}")
 
         relationship_ids_cache = await self._get_relationship_ids_cache(
@@ -1847,20 +1855,20 @@ class PostgresGraphHandler(GraphHandler):
 
         # incremental clustering isn't enabled for v3 yet.
         # collection ID will not be null for v2
-        if not graph_id and await self._use_community_cache(  # type: ignore
-            collection_id, relationship_ids_cache
-        ):
-            num_communities = await self._incremental_clustering(  # type: ignore
-                relationship_ids_cache, leiden_params, collection_id
-            )
-        else:
-            num_communities = await self._cluster_and_add_community_info(
-                relationships=relationships,
-                relationship_ids_cache=relationship_ids_cache,
-                leiden_params=leiden_params,
-                collection_id=collection_id,
-                graph_id=graph_id,
-            )
+        # if not graph_id and await self._use_community_cache(  # type: ignore
+        #     collection_id, relationship_ids_cache
+        # ):
+        #     num_communities = await self._incremental_clustering(  # type: ignore
+        #         relationship_ids_cache, leiden_params, collection_id
+        #     )
+        # else:
+        num_communities = await self._cluster_and_add_community_info(
+            relationships=relationships,
+            relationship_ids_cache=relationship_ids_cache,
+            leiden_params=leiden_params,
+            collection_id=collection_id,
+            graph_id=graph_id,
+        )
 
         return num_communities
 
@@ -2094,6 +2102,8 @@ class PostgresGraphHandler(GraphHandler):
                 id=relationship.id,
             )
 
+        logger.info(f"Graph has {len(G.nodes)} nodes and {len(G.edges)} edges")
+
         hierarchical_communities = await self._compute_leiden_communities(
             G, leiden_params
         )
@@ -2110,23 +2120,33 @@ class PostgresGraphHandler(GraphHandler):
     ) -> int:
 
         # clear if there is any old information
-        QUERY = f"""
-            DELETE FROM {self._get_table_name("graph_community_info")} WHERE collection_id = $1 OR graph_id = $2
-        """
-        await self.connection_manager.execute_query(
-            QUERY, [collection_id, graph_id]
-        )
+        conditions = []
+        if collection_id is not None:
+            conditions.append("collection_id = $1")
+        if graph_id is not None:
+            conditions.append("graph_id = $2")
 
-        QUERY = f"""
-            DELETE FROM {self._get_table_name("graph_community")} WHERE collection_id = $1 OR graph_id = $2
-        """
-        await self.connection_manager.execute_query(
-            QUERY, [collection_id, graph_id]
-        )
+        if conditions:
+            where_clause = " OR ".join(conditions)
+            QUERY = f"""
+                DELETE FROM {self._get_table_name("graph_community_info")} WHERE {where_clause}
+            """
+            await self.connection_manager.execute_query(
+                QUERY, [collection_id or graph_id]
+            )
+
+            QUERY = f"""
+                DELETE FROM {self._get_table_name("graph_community")} WHERE {where_clause}
+            """
+            await self.connection_manager.execute_query(
+                QUERY, [collection_id or graph_id]
+            )
 
         await asyncio.sleep(0.1)
 
         start_time = time.time()
+
+        logger.info(f"Creating graph and clustering for {collection_id or graph_id}")
 
         hierarchical_communities = await self._create_graph_and_cluster(
             relationships=relationships,

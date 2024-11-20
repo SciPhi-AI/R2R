@@ -370,7 +370,7 @@ class KgService(Service):
     async def get_document_ids_for_create_graph(
         self,
         collection_id: UUID,
-        force_kg_creation: bool,
+        force_kg_creation: bool = False,
         **kwargs,
     ):
 
