@@ -10,7 +10,9 @@ from core.base.abstractions import DataLevel, KGRunType
 from core.base.abstractions import Community, Entity, Relationship, Graph
 
 from core.base.api.models import (
+    GenericBooleanResponse,
     GenericMessageResponse,
+    WrappedBooleanResponse,
     WrappedGenericMessageResponse,
     WrappedKGCreationResponse,
     WrappedEntityResponse,
@@ -185,14 +187,19 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_empty_graph(
+            name: str = Body(..., description="The name of the graph"),
+            description: Optional[str] = Body(
+                None, description="An optional description of the graph"
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-            graph: Graph = Body(...),
         ):
             """Creates an empty graph for a collection."""
-            if not auth_user.is_superuser:
-                raise R2RException("Only superusers can create graphs", 403)
 
-            graph_id = await self.services["kg"].create_new_graph(graph)
+            graph_id = await self.services["kg"].create_new_graph(
+                user_id=auth_user.id,
+                name=name,
+                description=description,
+            )
 
             return {
                 "id": graph_id,
@@ -348,7 +355,7 @@ class GraphRouter(BaseRouterV3):
             id: UUID = Path(...),
             cascade: bool = Query(False),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedBooleanResponse:
             """
             Deletes the graph and associated entities and relationships.
             """
@@ -360,13 +367,12 @@ class GraphRouter(BaseRouterV3):
                     "Cascade deletion not implemented. Please delete document level entities and relationships using the document delete endpoints."
                 )
 
-            id = await self.services["kg"].delete_graph_v3(
-                id=id, cascade=cascade
+            await self.services["kg"].delete_graph_v3(
+                id=id,
+                cascade=cascade,
             )
-            # FIXME: Can we sync this with the deletion response from other routes? Those return a boolean.
-            return {"message": "Graph deleted successfully", "id": id}  # type: ignore
+            return GenericBooleanResponse(success=True)  # type: ignore
 
-        # update graph
         @self.router.post(
             "/graphs/{id}",
             summary="Update the graph object",

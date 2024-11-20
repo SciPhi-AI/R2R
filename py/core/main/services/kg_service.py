@@ -20,6 +20,7 @@ from core.base.abstractions import (
     Community,
     Graph,
 )
+from core.base.api.models import GraphResponse
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 
@@ -347,8 +348,17 @@ class KgService(Service):
     ################### GRAPHS ###################
 
     @telemetry_event("create_new_graph")
-    async def create_new_graph(self, graph: Graph) -> UUID:
-        return await self.providers.database.graph_handler.create(graph)
+    async def create_new_graph(
+        self,
+        user_id: UUID,
+        name: Optional[str],
+        description: str = "",
+    ) -> GraphResponse:
+        return await self.providers.database.graph_handler.create(
+            user_id=user_id,
+            name=name,
+            description=description,
+        )
 
     @telemetry_event("get_graphs")
     async def get_graphs(
