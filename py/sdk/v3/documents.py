@@ -3,6 +3,15 @@ from io import BytesIO
 from typing import Optional
 from uuid import UUID
 
+from shared.api.models.base import WrappedBooleanResponse
+from shared.api.models.management.responses import (
+    WrappedChunksResponse,
+    WrappedCollectionsResponse,
+    WrappedDocumentResponse,
+    WrappedDocumentsResponse,
+)
+from shared.api.models.ingestion.responses import WrappedIngestionResponse
+
 
 class DocumentsSDK:
     """
@@ -21,7 +30,7 @@ class DocumentsSDK:
         metadata: Optional[dict] = None,
         ingestion_config: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
-    ) -> dict:
+    ) -> WrappedIngestionResponse:
         """
         Create a new document from either a file or content.
 
@@ -50,7 +59,7 @@ class DocumentsSDK:
             data["ingestion_config"] = json.dumps(ingestion_config)
         if collection_ids:
             for cid in collection_ids:
-                data["collection_ids"] = cid
+                data["collection_ids"] = str(cid)
 
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
@@ -93,7 +102,7 @@ class DocumentsSDK:
         metadata: Optional[dict] = None,
         ingestion_config: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
-    ) -> dict:
+    ) -> WrappedIngestionResponse:
         """
         Update an existing document.
 
@@ -156,7 +165,7 @@ class DocumentsSDK:
     async def retrieve(
         self,
         id: str | UUID,
-    ) -> dict:
+    ) -> WrappedDocumentResponse:
         """
         Get a specific document by ID.
 
@@ -177,7 +186,7 @@ class DocumentsSDK:
         ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> dict:
+    ) -> WrappedDocumentsResponse:
         """
         List documents with pagination.
 
@@ -225,7 +234,7 @@ class DocumentsSDK:
     async def delete(
         self,
         id: str | UUID,
-    ) -> None:
+    ) -> WrappedBooleanResponse:
         """
         Delete a specific document.
 
@@ -244,7 +253,7 @@ class DocumentsSDK:
         include_vectors: Optional[bool] = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> dict:
+    ) -> WrappedChunksResponse:
         """
         Get chunks for a specific document.
 
@@ -275,7 +284,7 @@ class DocumentsSDK:
         include_vectors: Optional[bool] = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> dict:
+    ) -> WrappedCollectionsResponse:
         """
         List collections for a specific document.
 
@@ -302,7 +311,7 @@ class DocumentsSDK:
     async def delete_by_filter(
         self,
         filters: dict,
-    ) -> None:
+    ) -> WrappedBooleanResponse:
         """
         Delete documents based on filters.
 

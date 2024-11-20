@@ -1,6 +1,17 @@
 from typing import Optional
 from uuid import UUID
 
+from shared.api.models.base import (
+    WrappedBooleanResponse,
+    WrappedGenericMessageResponse,
+)
+from shared.api.models.management.responses import (
+    WrappedCollectionResponse,
+    WrappedCollectionsResponse,
+    WrappedDocumentResponse,
+    WrappedUsersResponse,
+)
+
 
 class CollectionsSDK:
     def __init__(self, client):
@@ -10,7 +21,7 @@ class CollectionsSDK:
         self,
         name: str,
         description: Optional[str] = None,
-    ) -> dict:
+    ) -> WrappedCollectionResponse:
         """
         Create a new collection.
 
@@ -34,7 +45,7 @@ class CollectionsSDK:
         ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> dict:
+    ) -> WrappedCollectionsResponse:
         """
         List collections with pagination and filtering options.
 
@@ -60,7 +71,7 @@ class CollectionsSDK:
     async def retrieve(
         self,
         id: str | UUID,
-    ) -> dict:
+    ) -> WrappedCollectionResponse:
         """
         Get detailed information about a specific collection.
 
@@ -79,7 +90,7 @@ class CollectionsSDK:
         id: str | UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
-    ) -> dict:
+    ) -> WrappedCollectionResponse:
         """
         Update collection information.
 
@@ -107,7 +118,7 @@ class CollectionsSDK:
     async def delete(
         self,
         id: str | UUID,
-    ) -> bool:
+    ) -> WrappedBooleanResponse:
         """
         Delete a collection.
 
@@ -127,7 +138,7 @@ class CollectionsSDK:
         id: str | UUID,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> dict:
+    ) -> WrappedDocumentResponse:
         """
         List all documents in a collection.
 
@@ -155,7 +166,7 @@ class CollectionsSDK:
         self,
         id: str | UUID,
         document_id: str | UUID,
-    ) -> dict:
+    ) -> WrappedGenericMessageResponse:
         """
         Add a document to a collection.
 
@@ -176,7 +187,7 @@ class CollectionsSDK:
         self,
         id: str | UUID,
         document_id: str | UUID,
-    ) -> bool:
+    ) -> WrappedBooleanResponse:
         """
         Remove a document from a collection.
 
@@ -199,7 +210,7 @@ class CollectionsSDK:
         id: str | UUID,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> dict:
+    ) -> WrappedUsersResponse:
         """
         List all users in a collection.
 
@@ -224,7 +235,7 @@ class CollectionsSDK:
         self,
         id: str | UUID,
         user_id: str | UUID,
-    ) -> dict:
+    ) -> WrappedBooleanResponse:
         """
         Add a user to a collection.
 
@@ -243,7 +254,7 @@ class CollectionsSDK:
         self,
         id: str | UUID,
         user_id: str | UUID,
-    ) -> bool:
+    ) -> WrappedBooleanResponse:
         """
         Remove a user from a collection.
 

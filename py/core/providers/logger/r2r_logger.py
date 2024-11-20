@@ -12,6 +12,7 @@ from uuid import UUID
 from fastapi.responses import StreamingResponse
 
 from core.base import Message
+from shared.api.models.management.responses import MessageResponse
 from core.base.logger.base import (
     PersistentLoggingConfig,
     PersistentLoggingProvider,
@@ -660,7 +661,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
 
     async def get_conversation(
         self, conversation_id: str, branch_id: Optional[str] = None
-    ) -> dict:
+    ) -> list[MessageResponse]:
         if not self.conn:
             raise ValueError(
                 "Initialize the connection pool before attempting to log."
@@ -673,7 +674,9 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         ) as cursor:
             row = await cursor.fetchone()
             if row is None:
-                raise ValueError(f"Conversation {conversation_id} not found")
+                raise ValueError(
+                    Message=f"Conversation {conversation_id} not found"
+                )
             conversation_created_at = row[0]
 
         if branch_id is None:
@@ -719,10 +722,10 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         ) as cursor:
             rows = await cursor.fetchall()
             return [
-                (
-                    row[0],  # id
-                    Message.parse_raw(row[1]),  # message content
-                    json.loads(row[3]) if row[3] else {},  # metadata
+                MessageResponse(
+                    id=row[0],
+                    message=Message.parse_raw(row[1]),
+                    metadata=json.loads(row[3]) if row[3] else {},
                 )
                 for row in rows
             ]

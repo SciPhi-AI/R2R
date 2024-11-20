@@ -2,6 +2,12 @@ import json
 from typing import Optional
 from uuid import UUID
 
+from shared.api.models.base import WrappedBooleanResponse
+from shared.api.models.management.responses import (
+    WrappedChunkResponse,
+    WrappedChunksResponse,
+)
+
 
 class ChunksSDK:
     """
@@ -45,7 +51,7 @@ class ChunksSDK:
     async def update(
         self,
         chunk: dict[str, str],
-    ) -> dict:
+    ) -> WrappedChunkResponse:
         """
         Update an existing chunk.
 
@@ -66,7 +72,7 @@ class ChunksSDK:
     async def retrieve(
         self,
         id: str | UUID,
-    ) -> dict:
+    ) -> WrappedChunkResponse:
         """
         Get a specific chunk.
 
@@ -90,7 +96,7 @@ class ChunksSDK:
         metadata_filter: Optional[dict] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> dict:
+    ) -> WrappedChunksResponse:
         """
         List chunks for a specific document.
 
@@ -120,14 +126,14 @@ class ChunksSDK:
     async def delete(
         self,
         id: str | UUID,
-    ) -> None:
+    ) -> WrappedBooleanResponse:
         """
         Delete a specific chunk.
 
         Args:
             id (Union[str, UUID]): ID of chunk to delete
         """
-        await self.client._make_request(
+        return await self.client._make_request(
             "DELETE",
             f"chunks/{str(id)}",
             version="v3",
@@ -139,7 +145,7 @@ class ChunksSDK:
         metadata_filter: Optional[dict] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> dict:
+    ) -> WrappedChunksResponse:
         """
         List chunks with pagination support.
 

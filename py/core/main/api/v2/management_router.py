@@ -19,11 +19,11 @@ from core.base.api.models import (
     WrappedChunksResponse,
     WrappedCollectionResponse,
     WrappedCollectionsResponse,
-    WrappedConversationResponse,
+    WrappedConversationMessagesResponse,
     WrappedConversationsResponse,
     WrappedDocumentsResponse,
     WrappedGenericMessageResponse,
-    WrappedLogResponse,
+    WrappedLogsResponse,
     WrappedPromptsResponse,
     WrappedServerStatsResponse,
     WrappedUsersResponse,
@@ -203,7 +203,7 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedLogResponse:
+        ) -> WrappedLogsResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `logs` endpoint.", 403
@@ -867,7 +867,7 @@ class ManagementRouter(BaseRouter):
             conversation_id: str = Path(..., description="Conversation ID"),
             branch_id: str = Query(None, description="Branch ID"),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedConversationResponse:
+        ):
 
             if not auth_user.is_superuser:
                 has_access = await self.service.verify_conversation_access(
@@ -879,11 +879,10 @@ class ManagementRouter(BaseRouter):
                         status_code=403,
                     )
 
-            result = await self.service.get_conversation(
+            return await self.service.get_conversation(
                 conversation_id,
                 branch_id,
             )
-            return result
 
         @self.router.post("/create_conversation")
         @self.base_endpoint

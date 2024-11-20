@@ -1,5 +1,9 @@
 import { r2rClient } from "../../r2rClient";
-import { IndexConfig } from "../../types";
+import {
+  IndexConfig,
+  WrappedGenericMessageResponse,
+  WrappedListVectorIndicesResponse,
+} from "../../types";
 
 export class IndiciesClient {
   constructor(private client: r2rClient) {}
@@ -13,7 +17,7 @@ export class IndiciesClient {
   async create(options: {
     config: IndexConfig;
     runWithOrchestration?: boolean;
-  }): Promise<any> {
+  }): Promise<WrappedGenericMessageResponse> {
     const data = {
       config: options.config,
       ...(options.runWithOrchestration && {
@@ -37,7 +41,7 @@ export class IndiciesClient {
     filters?: Record<string, any>;
     offset?: number;
     limit?: number;
-  }): Promise<any> {
+  }): Promise<WrappedListVectorIndicesResponse> {
     const params: Record<string, any> = {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? 100,
@@ -77,7 +81,7 @@ export class IndiciesClient {
   async delete(options: {
     tableName: string;
     indexName: string;
-  }): Promise<any> {
+  }): Promise<WrappedGenericMessageResponse> {
     return this.client.makeRequest(
       "DELETE",
       `indices/${options.indexName}/${options.tableName}`,

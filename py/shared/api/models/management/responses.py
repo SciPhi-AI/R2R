@@ -11,7 +11,7 @@ from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 
 class PromptResponse(BaseModel):
-    prompt_id: UUID
+    id: UUID
     name: str
     template: str
     created_at: datetime
@@ -114,6 +114,7 @@ class ResetDataResult(BaseModel):
 class MessageResponse(BaseModel):
     id: UUID
     message: Message
+    metadata: dict[str, Any] = {}
 
 
 class BranchResponse(BaseModel):
@@ -123,10 +124,6 @@ class BranchResponse(BaseModel):
     created_at: datetime
     user_id: Optional[UUID] = None
     name: Optional[str] = None
-
-
-class AddUserResponse(BaseModel):
-    result: bool
 
 
 # Chunk Responses
@@ -139,6 +136,7 @@ WrappedCollectionsResponse = PaginatedResultsWrapper[list[CollectionResponse]]
 
 
 # Conversation Responses
+WrappedConversationMessagesResponse = ResultsWrapper[list[MessageResponse]]
 WrappedConversationResponse = ResultsWrapper[ConversationResponse]
 WrappedConversationsResponse = PaginatedResultsWrapper[
     list[ConversationResponse]
@@ -158,14 +156,14 @@ WrappedPromptsResponse = PaginatedResultsWrapper[list[PromptResponse]]
 
 # System Responses
 WrappedSettingsResponse = ResultsWrapper[SettingsResponse]
+WrappedServerStatsResponse = ResultsWrapper[ServerStats]
 
 # User Responses
 WrappedUserResponse = ResultsWrapper[UserResponse]
 WrappedUsersResponse = PaginatedResultsWrapper[list[UserResponse]]
 
 # TODO: anything below this hasn't been reviewed
-WrappedServerStatsResponse = ResultsWrapper[ServerStats]
-WrappedLogResponse = ResultsWrapper[list[LogResponse]]
+WrappedLogsResponse = ResultsWrapper[list[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
 WrappedVerificationResult = ResultsWrapper[VerificationResult]
 WrappedResetDataResult = ResultsWrapper[ResetDataResult]

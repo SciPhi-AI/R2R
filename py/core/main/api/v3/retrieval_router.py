@@ -223,10 +223,12 @@ class RetrievalRouterV3(BaseRouterV3):
                 description="Search query to find relevant documents",
             ),
             vector_search_settings: SearchSettings = Body(
+                alias="vectorSearchSettings",
                 default_factory=SearchSettings,
                 description="Settings for vector-based search",
             ),
             kg_search_settings: KGSearchSettings = Body(
+                alias="kgSearchSettings",
                 default_factory=KGSearchSettings,
                 description="Settings for knowledge graph search",
             ),
@@ -259,6 +261,7 @@ class RetrievalRouterV3(BaseRouterV3):
         @self.router.post(
             "/retrieval/rag",
             summary="RAG Query",
+            response_model=None,
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -389,27 +392,32 @@ class RetrievalRouterV3(BaseRouterV3):
         async def rag_app(
             query: str = Body(...),
             vector_search_settings: SearchSettings = Body(
+                alias="vectorSearchSettings",
                 default_factory=SearchSettings,
                 description="Settings for vector-based search",
             ),
             kg_search_settings: KGSearchSettings = Body(
+                alias="kgSearchSettings",
                 default_factory=KGSearchSettings,
                 description="Settings for knowledge graph search",
             ),
             rag_generation_config: GenerationConfig = Body(
+                alias="ragGenerationConfig",
                 default_factory=GenerationConfig,
                 description="Configuration for RAG generation",
             ),
             task_prompt_override: Optional[str] = Body(
-                None,
+                alias="taskPromptOverride",
+                default=None,
                 description="Optional custom prompt to override default",
             ),
             include_title_if_available: bool = Body(
-                False,
+                alias="includeTitleIfAvailable",
+                default=False,
                 description="Include document titles in responses when available",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedRAGResponse:  # type: ignore
+        ) -> WrappedRAGResponse:
             """
             Execute a RAG (Retrieval-Augmented Generation) query.
 
@@ -575,31 +583,38 @@ class RetrievalRouterV3(BaseRouterV3):
                 description="List of messages (deprecated, use message instead)",
             ),
             vector_search_settings: SearchSettings = Body(
+                alias="vectorSearchSettings",
                 default_factory=SearchSettings,
                 description="Settings for vector-based search",
             ),
             kg_search_settings: KGSearchSettings = Body(
+                alias="kgSearchSettings",
                 default_factory=KGSearchSettings,
                 description="Settings for knowledge graph search",
             ),
             rag_generation_config: GenerationConfig = Body(
+                alias="ragGenerationConfig",
                 default_factory=GenerationConfig,
                 description="Configuration for RAG generation",
             ),
             task_prompt_override: Optional[str] = Body(
-                None,
+                alias="taskPromptOverride",
+                default=None,
                 description="Optional custom prompt to override default",
             ),
             include_title_if_available: bool = Body(
-                True,
+                alias="includeTitleIfAvailable",
+                default=True,
                 description="Include document titles in responses when available",
             ),
             conversation_id: Optional[UUID] = Body(
-                None,
+                alias="conversationId",
+                default=None,
                 description="ID of the conversation",
             ),
             branch_id: Optional[UUID] = Body(
-                None,
+                alias="branchId",
+                default=None,
                 description="ID of the conversation branch",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
@@ -637,7 +652,8 @@ class RetrievalRouterV3(BaseRouterV3):
             """
 
             vector_search_settings.filters = self._select_filters(
-                auth_user, vector_search_settings
+                auth_user=auth_user,
+                search_settings=vector_search_settings,
             )
 
             kg_search_settings.filters = vector_search_settings.filters
@@ -659,10 +675,8 @@ class RetrievalRouterV3(BaseRouterV3):
                 if rag_generation_config.stream:
 
                     async def stream_generator():
-                        content = ""
                         async for chunk in response:
                             yield chunk
-                            content += chunk
                             await asyncio.sleep(0)
 
                     return StreamingResponse(
@@ -782,6 +796,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 ],
             ),
             generation_config: GenerationConfig = Body(
+                alias="generationConfig",
                 default_factory=GenerationConfig,
                 description="Configuration for text generation",
                 example={

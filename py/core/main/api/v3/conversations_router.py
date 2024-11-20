@@ -11,6 +11,7 @@ from core.base.api.models import (
     GenericBooleanResponse,
     WrappedBooleanResponse,
     WrappedBranchesResponse,
+    WrappedConversationMessagesResponse,
     WrappedConversationResponse,
     WrappedConversationsResponse,
     WrappedMessageResponse,
@@ -266,7 +267,7 @@ class ConversationsRouter(BaseRouterV3):
                 None, description="The ID of the specific branch to retrieve"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedConversationResponse:
+        ) -> WrappedConversationMessagesResponse:
             """
             Get details of a specific conversation.
 

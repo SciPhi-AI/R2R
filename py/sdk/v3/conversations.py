@@ -1,12 +1,21 @@
 from typing import Optional
 from uuid import UUID
 
+from shared.api.models.base import WrappedBooleanResponse
+from shared.api.models.management.responses import (
+    WrappedBranchesResponse,
+    WrappedConversationMessagesResponse,
+    WrappedConversationResponse,
+    WrappedConversationsResponse,
+    WrappedMessageResponse,
+)
+
 
 class ConversationsSDK:
     def __init__(self, client):
         self.client = client
 
-    async def create(self) -> dict:
+    async def create(self) -> WrappedConversationResponse:
         """
         Create a new conversation.
 
@@ -24,7 +33,7 @@ class ConversationsSDK:
         ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> dict:
+    ) -> WrappedConversationsResponse:
         """
         List conversations with pagination and sorting options.
 
@@ -54,7 +63,7 @@ class ConversationsSDK:
         self,
         id: str | UUID,
         branch_id: Optional[str] = None,
-    ) -> dict:
+    ) -> WrappedConversationMessagesResponse:
         """
         Get detailed information about a specific conversation.
 
@@ -79,7 +88,7 @@ class ConversationsSDK:
     async def delete(
         self,
         id: str | UUID,
-    ) -> bool:
+    ) -> WrappedBooleanResponse:
         """
         Delete a conversation.
 
@@ -102,7 +111,7 @@ class ConversationsSDK:
         role: str,
         parent_id: Optional[str] = None,
         metadata: Optional[dict] = None,
-    ) -> dict:
+    ) -> WrappedMessageResponse:
         """
         Add a new message to a conversation.
 
@@ -160,7 +169,7 @@ class ConversationsSDK:
     async def list_branches(
         self,
         id: str | UUID,
-    ) -> dict:
+    ) -> WrappedBranchesResponse:
         """
         List all branches in a conversation.
 

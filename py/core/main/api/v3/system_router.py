@@ -12,7 +12,7 @@ from core.base.api.models import (
     GenericMessageResponse,
     WrappedSettingsResponse,
     WrappedGenericMessageResponse,
-    WrappedLogResponse,
+    WrappedLogsResponse,
     WrappedServerStatsResponse,
 )
 from core.providers import (
@@ -301,7 +301,7 @@ class SystemRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedLogResponse:
+        ) -> WrappedLogsResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `system/logs` endpoint.",

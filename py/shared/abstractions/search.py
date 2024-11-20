@@ -1,7 +1,7 @@
 """Abstractions for search functionality."""
 
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import Field
@@ -41,6 +41,7 @@ class VectorSearchResult(R2RSerializable):
         }
 
     class Config:
+        populate_by_name = True
         json_schema_extra = {
             "chunk_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
@@ -125,9 +126,12 @@ class KGGlobalResult(R2RSerializable):
 
 class KGSearchResult(R2RSerializable):
     method: KGSearchMethod
-    content: Union[
-        KGEntityResult, KGRelationshipResult, KGCommunityResult, KGGlobalResult
-    ]
+    content: (
+        KGEntityResult
+        | KGRelationshipResult
+        | KGCommunityResult
+        | KGGlobalResult
+    )
     result_type: Optional[KGSearchResultType] = None
     chunk_ids: Optional[list[UUID]] = None
     metadata: dict[str, Any] = {}
@@ -183,11 +187,14 @@ class HybridSearchSettings(R2RSerializable):
 
 class SearchSettings(R2RSerializable):
     use_vector_search: bool = Field(
-        default=True, description="Whether to use vector search"
+        default=True,
+        description="Whether to use vector search",
+        alias="useVectorSearch",
     )
     use_hybrid_search: bool = Field(
         default=False,
         description="Whether to perform a hybrid search (combining vector and keyword search)",
+        alias="useHybridSearch",
     )
     filters: dict[str, Any] = Field(
         default_factory=dict,
@@ -217,6 +224,7 @@ class SearchSettings(R2RSerializable):
         le=1_000,
     )
     search_limit: int = Field(
+        alias="searchLimit",
         default=10,
         description="Deprecated. Use 'limit' instead.",
         ge=1,
@@ -229,18 +237,22 @@ class SearchSettings(R2RSerializable):
         description="Offset to paginate search results",
     )
     selected_collection_ids: list[UUID] = Field(
+        alias="selectedCollectionIds",
         default_factory=list,
         description="Collection IDs to search for",
     )
     index_measure: IndexMeasure = Field(
+        alias="indexMeasure",
         default=IndexMeasure.cosine_distance,
         description="The distance measure to use for indexing",
     )
     include_values: bool = Field(
+        alias="includeValues",
         default=True,
         description="Whether to include search score values in the search results",
     )
     include_metadatas: bool = Field(
+        alias="includeMetadatas",
         default=True,
         description="Whether to include element metadata in the search results",
     )
@@ -249,19 +261,23 @@ class SearchSettings(R2RSerializable):
         description="Number of ivfflat index lists to query. Higher increases accuracy but decreases speed.",
     )
     ef_search: int = Field(
+        alias="efSearch",
         default=40,
         description="Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed.",
     )
     hybrid_search_settings: HybridSearchSettings = Field(
+        alias="hybridSearchSettings",
         default=HybridSearchSettings(),
         description="Settings for hybrid search",
     )
     search_strategy: str = Field(
+        alias="searchStrategy",
         default="vanilla",
         description="Search strategy to use (e.g., 'default', 'query_fusion', 'hyde')",
     )
 
     class Config:
+        populate_by_name = True
         json_encoders = {UUID: str}
         json_schema_extra = {
             "use_vector_search": True,
@@ -308,6 +324,7 @@ class SearchSettings(R2RSerializable):
 class KGSearchSettings(R2RSerializable):
 
     entities_level: DataLevel = Field(
+        alias="dataLevel",
         default=DataLevel.DOCUMENT,
         description="The level of entities to search for",
     )
@@ -333,30 +350,40 @@ class KGSearchSettings(R2RSerializable):
     )
 
     selected_collection_ids: list[UUID] = Field(
+        alias="selectedCollectionIds",
         default_factory=list,
         description="Collection IDs to search for",
     )
 
     graphrag_map_system: str = Field(
+        alias="graphragMapSystem",
         default="graphrag_map_system",
         description="The system prompt for the graphrag map prompt.",
     )
 
     graphrag_reduce_system: str = Field(
+        alias="graphragReduceSystem",
         default="graphrag_reduce_system",
         description="The system prompt for the graphrag reduce prompt.",
     )
 
     use_kg_search: bool = Field(
-        default=False, description="Whether to use KG search"
+        alias="useKGSearch",
+        default=False,
+        description="Whether to use KG search",
     )
     kg_search_type: str = Field(
-        default="local", description="KG search type"
+        alias="kgSearchType",
+        default="local",
+        description="KG search type",
     )  # 'global' or 'local'
     kg_search_level: Optional[str] = Field(
-        default=None, description="KG search level"
+        alias="kgSearchLevel",
+        default=None,
+        description="KG search level",
     )
     generation_config: GenerationConfig = Field(
+        alias="generationConfig",
         default_factory=GenerationConfig,
         description="Configuration for text generation during graph search.",
     )
@@ -364,15 +391,25 @@ class KGSearchSettings(R2RSerializable):
     # TODO: add these back in
     # entity_types: list = []
     # relationships: list = []
-    max_community_description_length: int = 65536
-    max_llm_queries_for_global_search: int = 250
-    local_search_limits: dict[str, int] = {
-        "__Entity__": 20,
-        "__Relationship__": 20,
-        "__Community__": 20,
-    }
+    max_community_description_length: int = Field(
+        alias="maxCommunityDescriptionLength",
+        default=65536,
+    )
+    max_llm_queries_for_global_search: int = Field(
+        alias="maxLLMQueriesForGlobalSearch",
+        default=250,
+    )
+    local_search_limits: dict[str, int] = Field(
+        alias="localSearchLimits",
+        default={
+            "__Entity__": 20,
+            "__Relationship__": 20,
+            "__Community__": 20,
+        },
+    )
 
     class Config:
+        populate_by_name = True
         json_encoders = {UUID: str}
         json_schema_extra = {
             "use_kg_search": True,

@@ -1,6 +1,15 @@
 import json
 from typing import Optional
 
+from shared.api.models.base import (
+    WrappedBooleanResponse,
+    WrappedGenericMessageResponse,
+)
+from shared.api.models.management.responses import (
+    WrappedPromptResponse,
+    WrappedPromptsResponse,
+)
+
 
 class PromptsSDK:
     def __init__(self, client):
@@ -8,7 +17,7 @@ class PromptsSDK:
 
     async def create(
         self, name: str, template: str, input_types: dict
-    ) -> dict:
+    ) -> WrappedGenericMessageResponse:
         """
         Create a new prompt.
         Args:
@@ -26,7 +35,7 @@ class PromptsSDK:
             version="v3",
         )
 
-    async def list(self) -> dict:
+    async def list(self) -> WrappedPromptsResponse:
         """
         List all available prompts.
         Returns:
@@ -43,7 +52,7 @@ class PromptsSDK:
         name: str,
         inputs: Optional[dict] = None,
         prompt_override: Optional[str] = None,
-    ) -> dict:
+    ) -> WrappedPromptResponse:
         """
         Get a specific prompt by name, optionally with inputs and override.
         Args:
@@ -70,7 +79,7 @@ class PromptsSDK:
         name: str,
         template: Optional[str] = None,
         input_types: Optional[dict] = None,
-    ) -> dict:
+    ) -> WrappedGenericMessageResponse:
         """
         Update an existing prompt's template and/or input types.
         Args:
@@ -92,7 +101,7 @@ class PromptsSDK:
             version="v3",
         )
 
-    async def delete(self, name: str) -> bool:
+    async def delete(self, name: str) -> WrappedBooleanResponse:
         """
         Delete a prompt by name.
         Args:
