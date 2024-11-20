@@ -66,7 +66,7 @@ class KgService(Service):
         self,
         document_id: UUID,
         generation_config: GenerationConfig,
-        extraction_merge_count: int,
+        chunk_merge_count: int,
         max_knowledge_relationships: int,
         entity_types: list[str],
         relation_types: list[str],
@@ -89,7 +89,7 @@ class KgService(Service):
                     message={
                         "document_id": document_id,
                         "generation_config": generation_config,
-                        "extraction_merge_count": extraction_merge_count,
+                        "chunk_merge_count": chunk_merge_count,
                         "max_knowledge_relationships": max_knowledge_relationships,
                         "entity_types": entity_types,
                         "relation_types": relation_types,
@@ -207,6 +207,7 @@ class KgService(Service):
         entity_names: Optional[list[str]] = None,
         relationship_types: Optional[list[str]] = None,
         attributes: Optional[list[str]] = None,
+        relationship_id: Optional[UUID] = None,
     ):
         return await self.providers.database.graph_handler.relationships.get(
             id=id,
@@ -216,6 +217,7 @@ class KgService(Service):
             attributes=attributes,
             offset=offset,
             limit=limit,
+            relationship_id=relationship_id,
         )
 
     @telemetry_event("create_relationships_v3")
@@ -368,7 +370,7 @@ class KgService(Service):
     async def get_document_ids_for_create_graph(
         self,
         collection_id: UUID,
-        force_kg_creation: bool,
+        force_kg_creation: bool = False,
         **kwargs,
     ):
 

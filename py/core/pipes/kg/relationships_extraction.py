@@ -225,7 +225,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
 
         document_id = input.message["document_id"]
         generation_config = input.message["generation_config"]
-        extraction_merge_count = input.message["extraction_merge_count"]
+        chunk_merge_count = input.message["chunk_merge_count"]
         max_knowledge_relationships = input.message[
             "max_knowledge_relationships"
         ]
@@ -292,10 +292,10 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
             key=lambda x: x.metadata.get("chunk_order", float("inf")),
         )
 
-        # group these extractions into groups of extraction_merge_count
+        # group these extractions into groups of chunk_merge_count
         extractions_groups = [
-            extractions[i : i + extraction_merge_count]
-            for i in range(0, len(extractions), extraction_merge_count)
+            extractions[i : i + chunk_merge_count]
+            for i in range(0, len(extractions), chunk_merge_count)
         ]
 
         logger.info(

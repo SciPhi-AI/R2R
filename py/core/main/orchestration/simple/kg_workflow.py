@@ -16,6 +16,9 @@ def simple_kg_factory(service: KgService):
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
 
+            if type(value) == uuid.UUID:
+                continue
+
             if key == "document_id":
                 input_data[key] = uuid.UUID(value)
 
