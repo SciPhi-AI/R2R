@@ -93,7 +93,7 @@ class EntitiesRouter(BaseRouterV3):
                         ),
                     },
                 ],
-                "operationId": "documents_list_entities_v3_documents__id__entities_get_documents"
+                "operationId": "documents_list_entities_v3_documents__id__entities_get_documents",
             },
         )
         @self.router.get(
@@ -115,7 +115,7 @@ class EntitiesRouter(BaseRouterV3):
                         ),
                     },
                 ],
-                "operationId": "graphs_list_entities_v3_graphs__id__entities_get_graphs"
+                "operationId": "graphs_list_entities_v3_graphs__id__entities_get_graphs",
             },
         )
         @self.base_endpoint
@@ -211,7 +211,6 @@ class EntitiesRouter(BaseRouterV3):
                         ),
                     },
                 ]
-            
             },
         )
         @self.base_endpoint
@@ -253,7 +252,7 @@ class EntitiesRouter(BaseRouterV3):
                         ),
                     },
                 ],
-                "operationId": "documents_create_entities_v3_documents__id__entities_post_documents"
+                "operationId": "documents_create_entities_v3_documents__id__entities_post_documents",
             },
         )
         @self.router.post(
@@ -275,7 +274,7 @@ class EntitiesRouter(BaseRouterV3):
                         ),
                     },
                 ],
-                "operationId": "graphs_create_entities_v3_graphs__id__entities_post_graphs"
+                "operationId": "graphs_create_entities_v3_graphs__id__entities_post_graphs",
             },
         )
         @self.base_endpoint
@@ -361,7 +360,7 @@ class EntitiesRouter(BaseRouterV3):
                         ),
                     },
                 ],
-                "operationId": "documents_update_entities_v3_documents__id__entities__entity_id__post_documents"
+                "operationId": "documents_update_entities_v3_documents__id__entities__entity_id__post_documents",
             },
         )
         @self.router.post(
@@ -383,7 +382,7 @@ class EntitiesRouter(BaseRouterV3):
                         ),
                     },
                 ],
-                "operationId": "graphs_update_entities_v3_graphs__id__entities__entity_id__post_graphs"
+                "operationId": "graphs_update_entities_v3_graphs__id__entities__entity_id__post_graphs",
             },
         )
         @self.base_endpoint
@@ -455,7 +454,7 @@ class EntitiesRouter(BaseRouterV3):
                         ),
                     },
                 ],
-                "operationId": "documents_delete_entities_v3_documents__id__entities__entity_id__delete_documents"
+                "operationId": "documents_delete_entities_v3_documents__id__entities__entity_id__delete_documents",
             },
         )
         @self.router.delete(
@@ -477,7 +476,7 @@ class EntitiesRouter(BaseRouterV3):
                         ),
                     },
                 ],
-                "operationId": "graphs_delete_entities_v3_graphs__id__entities__entity_id__delete_graphs"
+                "operationId": "graphs_delete_entities_v3_graphs__id__entities__entity_id__delete_graphs",
             },
         )
         @self.base_endpoint

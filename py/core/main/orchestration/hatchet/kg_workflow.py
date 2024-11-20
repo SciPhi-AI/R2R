@@ -249,14 +249,18 @@ def hatchet_kg_factory(
 
             enrichment_status = (
                 await self.kg_service.providers.database.get_workflow_status(
-                    id=uuid.UUID(context.workflow_input()["request"]["collection_id"]),
+                    id=uuid.UUID(
+                        context.workflow_input()["request"]["collection_id"]
+                    ),
                     status_type="kg_enrichment_status",
                 )
             )
 
             if enrichment_status == KGEnrichmentStatus.SUCCESS:
                 await self.kg_service.providers.database.set_workflow_status(
-                    id=uuid.UUID(context.workflow_input()["request"]["collection_id"]),
+                    id=uuid.UUID(
+                        context.workflow_input()["request"]["collection_id"]
+                    ),
                     status_type="kg_enrichment_status",
                     status=KGEnrichmentStatus.OUTDATED,
                 )
@@ -437,8 +441,14 @@ def hatchet_kg_factory(
                                         parallel_communities,
                                         num_communities - offset,
                                     ),
-                                    "graph_id": str(graph_id) if graph_id else None,
-                                    "collection_id": str(collection_id) if collection_id else None,
+                                    "graph_id": (
+                                        str(graph_id) if graph_id else None
+                                    ),
+                                    "collection_id": (
+                                        str(collection_id)
+                                        if collection_id
+                                        else None
+                                    ),
                                     **input_data["kg_enrichment_settings"],
                                 }
                             },
@@ -477,7 +487,9 @@ def hatchet_kg_factory(
 
         @orchestration_provider.failure()
         async def on_failure(self, context: Context) -> None:
-            collection_id = context.workflow_input()["request"].get("collection_id", None)
+            collection_id = context.workflow_input()["request"].get(
+                "collection_id", None
+            )
             await self.kg_service.providers.database.set_workflow_status(
                 id=uuid.UUID(collection_id),
                 status_type="kg_enrichment_status",
@@ -498,7 +510,9 @@ def hatchet_kg_factory(
         def concurrency(self, context: Context) -> str:
             # TODO: Possible bug in hatchet, the job can't find context.workflow_input() when rerun
             try:
-                return str(context.workflow_input()["request"]["collection_id"])
+                return str(
+                    context.workflow_input()["request"]["collection_id"]
+                )
             except Exception as e:
                 return str(uuid.uuid4())
 
@@ -507,7 +521,7 @@ def hatchet_kg_factory(
 
             start_time = time.time()
 
-            logger.info 
+            logger.info
 
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]

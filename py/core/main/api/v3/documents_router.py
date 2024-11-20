@@ -1237,7 +1237,7 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                 ],
-                "operationId": "documents_extract_entities_and_relationships_v3_documents__id__entities_and_relationships_post_documents"
+                "operationId": "documents_extract_entities_and_relationships_v3_documents__id__entities_and_relationships_post_documents",
             },
         )
         @self.base_endpoint

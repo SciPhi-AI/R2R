@@ -155,7 +155,7 @@ class CommunitiesRouter(BaseRouterV3):
                         ),
                     },
                 ],
-                "operationId": "graphs_build_communities_v3_graphs__id__communities_build_graphs"
+                "operationId": "graphs_build_communities_v3_graphs__id__communities_build_graphs",
             },
         )
         @self.base_endpoint

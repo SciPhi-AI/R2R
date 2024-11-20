@@ -1464,8 +1464,10 @@ class PostgresGraphHandler(GraphHandler):
         graph_id: UUID | None,
         document_ids: Optional[list[UUID]] = None,
     ) -> list[Relationship]:
-        
-        logger.info(f"Getting all relationships for {collection_id} and {graph_id}")
+
+        logger.info(
+            f"Getting all relationships for {collection_id} and {graph_id}"
+        )
 
         if collection_id is not None:
 
@@ -1488,7 +1490,9 @@ class PostgresGraphHandler(GraphHandler):
                 QUERY, [document_ids]
             )
 
-            logger.info(f"Got {len(relationships)} relationships for {collection_id}")
+            logger.info(
+                f"Got {len(relationships)} relationships for {collection_id}"
+            )
 
         else:
             QUERY = f"""
@@ -1498,7 +1502,9 @@ class PostgresGraphHandler(GraphHandler):
                 QUERY, [graph_id]
             )
 
-        logger.info(f"Got {len(relationships)} relationships for {collection_id or graph_id}")
+        logger.info(
+            f"Got {len(relationships)} relationships for {collection_id or graph_id}"
+        )
 
         return [Relationship(**relationship) for relationship in relationships]
 
@@ -1845,7 +1851,9 @@ class PostgresGraphHandler(GraphHandler):
             collection_id, graph_id
         )
 
-        logger.info(f"Got {len(relationships)} relationships for {collection_id or graph_id}")
+        logger.info(
+            f"Got {len(relationships)} relationships for {collection_id or graph_id}"
+        )
 
         logger.info(f"Clustering with settings: {leiden_params}")
 
@@ -2146,7 +2154,9 @@ class PostgresGraphHandler(GraphHandler):
 
         start_time = time.time()
 
-        logger.info(f"Creating graph and clustering for {collection_id or graph_id}")
+        logger.info(
+            f"Creating graph and clustering for {collection_id or graph_id}"
+        )
 
         hierarchical_communities = await self._create_graph_and_cluster(
             relationships=relationships,
