@@ -56,7 +56,7 @@ from shared.api.models.management.responses import (
     # User Responses
     WrappedUserResponse,
     WrappedUsersResponse,
-    WrappedLogResponse,
+    WrappedLogsResponse,
     WrappedServerStatsResponse,
 )
 from shared.api.models.retrieval.responses import (
@@ -98,7 +98,7 @@ __all__ = [
     "CollectionResponse",
     "ConversationResponse",
     "WrappedServerStatsResponse",
-    "WrappedLogResponse",
+    "WrappedLogsResponse",
     "WrappedAnalyticsResponse",
     "WrappedSettingsResponse",
     # Document Responses

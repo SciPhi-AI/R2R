@@ -157,12 +157,12 @@ class UsersRouter(BaseRouterV3):
             verification_code: str = Body(
                 ..., description="Email verification code"
             ),
-        ):
+        ) -> WrappedGenericMessageResponse:
             """Verify a user's email address."""
             result = await self.services["auth"].verify_email(
                 email, verification_code
             )
-            return GenericMessageResponse(message=result["message"])
+            return GenericMessageResponse(message=result["message"])  # type: ignore
 
         @self.router.post(
             "/users/login",
@@ -271,10 +271,10 @@ class UsersRouter(BaseRouterV3):
         async def logout(
             token: str = Depends(oauth2_scheme),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedGenericMessageResponse:
             """Log out the current user."""
             result = await self.services["auth"].logout(token)
-            return GenericMessageResponse(message=result["message"])
+            return GenericMessageResponse(message=result["message"])  # type: ignore
 
         @self.router.post(
             "/users/refresh-token",
@@ -393,12 +393,12 @@ class UsersRouter(BaseRouterV3):
             current_password: str = Body(..., description="Current password"),
             new_password: str = Body(..., description="New password"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> GenericMessageResponse:
             """Change the authenticated user's password."""
             result = await self.services["auth"].change_password(
                 auth_user, current_password, new_password
             )
-            return GenericMessageResponse(message=result["message"])
+            return GenericMessageResponse(message=result["message"])  # type: ignore
 
         @self.router.post(
             "/users/request-password-reset",
@@ -452,10 +452,10 @@ class UsersRouter(BaseRouterV3):
         @self.base_endpoint
         async def request_password_reset(
             email: EmailStr = Body(..., description="User's email address")
-        ):
+        ) -> WrappedGenericMessageResponse:
             """Request a password reset for a user."""
             result = await self.services["auth"].request_password_reset(email)
-            return GenericMessageResponse(message=result["message"])
+            return GenericMessageResponse(message=result["message"])  # type: ignore
 
         @self.router.post(
             "/users/reset-password",
@@ -513,12 +513,12 @@ class UsersRouter(BaseRouterV3):
         async def reset_password(
             reset_token: str = Body(..., description="Password reset token"),
             new_password: str = Body(..., description="New password"),
-        ):
+        ) -> WrappedGenericMessageResponse:
             """Reset a user's password using a reset token."""
             result = await self.services["auth"].confirm_password_reset(
                 reset_token, new_password
             )
-            return GenericMessageResponse(message=result["message"])
+            return GenericMessageResponse(message=result["message"])  # type: ignore
 
         @self.router.get(
             "/users",

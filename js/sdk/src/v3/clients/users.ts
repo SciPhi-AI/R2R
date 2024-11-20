@@ -1,5 +1,12 @@
 import { r2rClient } from "../../r2rClient";
-import { WrappedUserResponse } from "../../types";
+import {
+  WrappedBooleanResponse,
+  WrappedCollectionsResponse,
+  WrappedGenericMessageResponse,
+  WrappedTokenResponse,
+  WrappedUserResponse,
+  WrappedUsersResponse,
+} from "../../types";
 
 export class UsersClient {
   constructor(private client: r2rClient) {}
@@ -26,7 +33,10 @@ export class UsersClient {
    * @param password User's password
    * @returns
    */
-  async delete(options: { id: string; password: string }): Promise<any> {
+  async delete(options: {
+    id: string;
+    password: string;
+  }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", `users/${options.id}`, {
       data: {
         password: options.password,
@@ -42,7 +52,7 @@ export class UsersClient {
   async verifyEmail(options: {
     email: string;
     verificationCode: string;
-  }): Promise<any> {
+  }): Promise<WrappedGenericMessageResponse> {
     return this.client.makeRequest("POST", "users/verify-email", {
       data: options,
     });
@@ -105,7 +115,7 @@ export class UsersClient {
    * Log out the current user.
    * @returns
    */
-  async logout(): Promise<any> {
+  async logout(): Promise<WrappedGenericMessageResponse> {
     const response = await this.client.makeRequest("POST", "users/logout");
     this.client.setTokens(null, null);
     return response;
@@ -115,7 +125,7 @@ export class UsersClient {
    * Refresh the access token using the refresh token.
    * @returns
    */
-  async refreshAccessToken(): Promise<any> {
+  async refreshAccessToken(): Promise<WrappedTokenResponse> {
     const refreshToken = this.client.getRefreshToken();
     if (!refreshToken) {
       throw new Error("No refresh token available. Please login again.");
@@ -153,7 +163,7 @@ export class UsersClient {
   async changePassword(options: {
     current_password: string;
     new_password: string;
-  }): Promise<any> {
+  }): Promise<WrappedGenericMessageResponse> {
     return this.client.makeRequest("POST", "users/change-password", {
       data: options,
     });
@@ -164,7 +174,9 @@ export class UsersClient {
    * @param email User's email address
    * @returns
    */
-  async requestPasswordReset(options: { email: string }): Promise<any> {
+  async requestPasswordReset(options: {
+    email: string;
+  }): Promise<WrappedGenericMessageResponse> {
     return this.client.makeRequest("POST", "users/request-password-reset", {
       data: options,
     });
@@ -173,7 +185,7 @@ export class UsersClient {
   async resetPassword(options: {
     reset_token: string;
     new_password: string;
-  }): Promise<any> {
+  }): Promise<WrappedGenericMessageResponse> {
     return this.client.makeRequest("POST", "users/reset-password", {
       data: options,
     });
@@ -194,7 +206,7 @@ export class UsersClient {
     is_superuser?: boolean;
     offset?: number;
     limit?: number;
-  }): Promise<any> {
+  }): Promise<WrappedUsersResponse> {
     const params: Record<string, any> = {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? 100,
@@ -249,7 +261,7 @@ export class UsersClient {
     name?: string;
     bio?: string;
     profilePicture?: string;
-  }): Promise<any> {
+  }): Promise<WrappedUserResponse> {
     const data = {
       ...(options.email && { email: options.email }),
       ...(options.is_superuser && { is_superuser: options.is_superuser }),
@@ -276,7 +288,7 @@ export class UsersClient {
     id: string;
     offset?: number;
     limit?: number;
-  }): Promise<any> {
+  }): Promise<WrappedCollectionsResponse> {
     const params: Record<string, any> = {
       offset: options.offset ?? 0,
       limit: options.limit ?? 100,
@@ -296,7 +308,7 @@ export class UsersClient {
   async addToCollection(options: {
     id: string;
     collectionId: string;
-  }): Promise<any> {
+  }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest(
       "POST",
       `users/${options.id}/collections/${options.collectionId}`,
@@ -312,7 +324,7 @@ export class UsersClient {
   async removeFromCollection(options: {
     id: string;
     collectionId: string;
-  }): Promise<any> {
+  }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest(
       "DELETE",
       `users/${options.id}/collections/${options.collectionId}`,

@@ -23,7 +23,7 @@ from core.base.api.models import (
     WrappedConversationsResponse,
     WrappedDocumentsResponse,
     WrappedGenericMessageResponse,
-    WrappedLogResponse,
+    WrappedLogsResponse,
     WrappedPromptsResponse,
     WrappedServerStatsResponse,
     WrappedUsersResponse,
@@ -203,7 +203,7 @@ class ManagementRouter(BaseRouter):
             offset: int = Query(0, ge=0),
             limit: int = Query(100, ge=1, le=1000),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedLogResponse:
+        ) -> WrappedLogsResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can call the `logs` endpoint.", 403

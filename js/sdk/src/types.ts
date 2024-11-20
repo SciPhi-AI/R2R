@@ -123,7 +123,46 @@ export interface PromptResponse {
   input_types: string[];
 }
 
+// Retrieval types
+export interface VectorSearchResult {
+  chunk_id: string;
+  document_id: string;
+  user_id: string;
+  collection_ids: string[];
+  score: number;
+  text: string;
+  metadata?: Record<string, any>;
+}
+
+export interface KGSearchResult {
+  method: string;
+  content: string;
+  result_type?: string;
+  chunks_ids?: string[];
+  metadata?: Record<string, any>;
+}
+
+export interface CombinedSearchResponse {
+  vector_serach_results: VectorSearchResult[];
+  kg_search_results?: KGSearchResult[];
+}
+
 // System types
+export interface LogsResponse {
+  run_id: string;
+  run_type: string;
+  entries: Record<string, any>[];
+  timestamp?: string;
+  user_id?: string;
+}
+
+export interface ServerStats {
+  start_time: string;
+  uptime_seconds: number;
+  cpu_usage: number;
+  memory_usage: number;
+}
+
 export interface SettingsResponse {
   config: Record<string, any>;
   prompts: Record<string, any>;
@@ -131,6 +170,12 @@ export interface SettingsResponse {
 }
 
 // User types
+
+export interface TokenResponse {
+  access_token: string;
+  refresh_token: string;
+}
+
 export interface UserResponse {
   id: string;
   email: string;
@@ -194,9 +239,16 @@ export type WrappedListVectorIndicesResponse = ResultsWrapper<IndexConfig[]>;
 export type WrappedPromptResponse = ResultsWrapper<PromptResponse>;
 export type WrappedPromptsResponse = PaginatedResultsWrapper<PromptResponse[]>;
 
+// Retrieval Responses
+export type WrappedVectorSearchResponse = ResultsWrapper<VectorSearchResult[]>;
+export type WrappedSearchResponse = ResultsWrapper<CombinedSearchResponse>;
+
 // System Responses
 export type WrappedSettingsResponse = ResultsWrapper<SettingsResponse>;
+export type WrappedLogsResponse = PaginatedResultsWrapper<LogsResponse[]>;
+export type WrappedServerStatsResponse = ResultsWrapper<ServerStats>;
 
 // User Responses
+export type WrappedTokenResponse = ResultsWrapper<TokenResponse>;
 export type WrappedUserResponse = ResultsWrapper<UserResponse>;
 export type WrappedUsersResponse = PaginatedResultsWrapper<UserResponse[]>;

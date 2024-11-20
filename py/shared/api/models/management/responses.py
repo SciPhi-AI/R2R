@@ -156,14 +156,14 @@ WrappedPromptsResponse = PaginatedResultsWrapper[list[PromptResponse]]
 
 # System Responses
 WrappedSettingsResponse = ResultsWrapper[SettingsResponse]
+WrappedServerStatsResponse = ResultsWrapper[ServerStats]
 
 # User Responses
 WrappedUserResponse = ResultsWrapper[UserResponse]
 WrappedUsersResponse = PaginatedResultsWrapper[list[UserResponse]]
 
 # TODO: anything below this hasn't been reviewed
-WrappedServerStatsResponse = ResultsWrapper[ServerStats]
-WrappedLogResponse = ResultsWrapper[list[LogResponse]]
+WrappedLogsResponse = ResultsWrapper[list[LogResponse]]
 WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
 WrappedVerificationResult = ResultsWrapper[VerificationResult]
 WrappedResetDataResult = ResultsWrapper[ResetDataResult]

@@ -1,7 +1,7 @@
 """Abstractions for search functionality."""
 
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import Field
@@ -126,9 +126,12 @@ class KGGlobalResult(R2RSerializable):
 
 class KGSearchResult(R2RSerializable):
     method: KGSearchMethod
-    content: Union[
-        KGEntityResult, KGRelationshipResult, KGCommunityResult, KGGlobalResult
-    ]
+    content: (
+        KGEntityResult
+        | KGRelationshipResult
+        | KGCommunityResult
+        | KGGlobalResult
+    )
     result_type: Optional[KGSearchResultType] = None
     chunk_ids: Optional[list[UUID]] = None
     metadata: dict[str, Any] = {}
@@ -320,8 +323,8 @@ class SearchSettings(R2RSerializable):
 
 class KGSearchSettings(R2RSerializable):
 
-    entities_level: EntityLevel = Field(
-        alias="entitiesLevel",
+    entities_level: DataLevel = Field(
+        alias="dataLevel",
         default=DataLevel.DOCUMENT,
         description="The level of entities to search for",
     )

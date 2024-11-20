@@ -1,4 +1,12 @@
 import { r2rClient } from "../../r2rClient";
+import {
+  WrappedBooleanResponse,
+  WrappedBranchesResponse,
+  WrappedConversationMessagesResponse,
+  WrappedConversationResponse,
+  WrappedConversationsResponse,
+  WrappedMessageResponse,
+} from "../../types";
 
 export class ConversationsClient {
   constructor(private client: r2rClient) {}
@@ -7,7 +15,7 @@ export class ConversationsClient {
    * Create a new conversation.
    * @returns
    */
-  async create(): Promise<any> {
+  async create(): Promise<WrappedConversationResponse> {
     return this.client.makeRequest("POST", "conversations");
   }
 
@@ -22,7 +30,7 @@ export class ConversationsClient {
     ids?: string[];
     offset?: number;
     limit?: number;
-  }): Promise<any> {
+  }): Promise<WrappedConversationsResponse> {
     const params: Record<string, any> = {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? 100,
@@ -43,7 +51,10 @@ export class ConversationsClient {
    * @param branchID The ID of the branch to retrieve
    * @returns
    */
-  async retrieve(options: { id: string; branchID?: string }): Promise<any> {
+  async retrieve(options: {
+    id: string;
+    branchID?: string;
+  }): Promise<WrappedConversationMessagesResponse> {
     const params: Record<string, any> = {
       branchID: options.branchID,
     };
@@ -58,7 +69,7 @@ export class ConversationsClient {
    * @param id The ID of the conversation to delete
    * @returns
    */
-  async delete(options: { id: string }): Promise<any> {
+  async delete(options: { id: string }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", `conversations/${options.id}`);
   }
 
@@ -77,7 +88,7 @@ export class ConversationsClient {
     role: string;
     parentID?: string;
     metadata?: Record<string, any>;
-  }): Promise<any> {
+  }): Promise<WrappedMessageResponse> {
     const data: Record<string, any> = {
       content: options.content,
       role: options.role,
@@ -128,7 +139,7 @@ export class ConversationsClient {
     id: string;
     offset?: number;
     limit?: number;
-  }): Promise<any> {
+  }): Promise<WrappedBranchesResponse> {
     const params: Record<string, any> = {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? 100,
