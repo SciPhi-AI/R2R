@@ -307,7 +307,7 @@ def test_kg_create_graph_sample_file_cli():
         print("KG create graph test failed: Graph not created")
         sys.exit(1)
 
-    entities_list = [ele["name"] for ele in response.json()["results"]]
+    entities_list = [ele["name"] for ele in response.json()["results"]]["entities"]
 
     print(entities_list)
 
@@ -341,7 +341,7 @@ def test_kg_deduplicate_entities_sample_file_cli():
         print("KG deduplicate entities test failed: Communities not created")
         sys.exit(1)
 
-    entities = response.json()["results"]
+    entities = response.json()["results"]["entities"]
     assert len(entities) >= 1
 
     entities_list = [ele["name"] for ele in entities]
@@ -367,7 +367,7 @@ def test_kg_enrich_graph_sample_file_cli():
         print("KG enrichment test failed: Communities not created")
         sys.exit(1)
 
-    communities = response.json()["results"]
+    communities = response.json()["results"]["communities"]
     assert len(communities) >= 1
 
     for community in communities:
@@ -437,14 +437,14 @@ def test_kg_delete_graph_sample_file_cli():
         params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
     )
 
-    assert response.json()["results"] == []
+    assert response.json()["results"]["communities"] == []
 
     response = requests.get(
         "http://localhost:7272/v2/entities",
         params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
     )
 
-    assert response.json()["results"] != []
+    assert response.json()["results"]["entities"] == []
 
     print("KG delete graph test passed")
     print("~" * 100)
@@ -462,14 +462,14 @@ def test_kg_delete_graph_with_cascading_sample_file_cli():
         params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
     )
 
-    assert response.json()["results"] == []
+    assert response.json()["results"]["entities"] == []
 
     response = requests.get(
         "http://localhost:7272/v2/relationships",
         params={"collection_id": "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"},
     )
 
-    assert response.json()["results"] == []
+    assert response.json()["results"]["relationships"] == []
 
     print("KG delete graph with cascading test passed")
     print("~" * 100)
