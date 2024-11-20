@@ -7,7 +7,7 @@ from fastapi import Body, Depends, Path, Query
 
 from core.base import R2RException, RunType
 from core.base.abstractions import DataLevel, KGRunType
-from core.base.abstractions import Community, Entity, Relationship, Graph
+from core.base.abstractions import Community, Entity, Relationship, Graph, KGEnrichmentSettings
 
 from core.base.api.models import (
     GenericMessageResponse,
@@ -82,11 +82,21 @@ class CommunitiesRouter(BaseRouterV3):
     ) -> WrappedKGEnrichmentResponse:
         """Creates communities in the graph by analyzing entity relationships and similarities.
 
-        Communities are created by:
-        1. Builds similarity graph between entities
-        2. Applies community detection algorithm (e.g. Leiden)
-        3. Creates hierarchical community levels
-        4. Generates summaries and insights for each community
+        Communities are created through the following process:
+        1. Analyzes entity relationships and attributes to build a similarity graph
+        2. Applies advanced community detection algorithms (e.g. Leiden) to identify densely connected groups
+        3. Creates hierarchical community structure with multiple granularity levels
+        4. Generates natural language summaries and statistical insights for each community
+
+        The resulting communities can be used to:
+        - Understand high-level graph structure and organization
+        - Identify key entity groupings and their relationships
+        - Navigate and explore the graph at different levels of detail
+        - Generate insights about entity clusters and their characteristics
+
+        The community detection process is configurable through settings like:
+            - Community detection algorithm parameters
+            - Summary generation prompt
         """
         if not auth_user.is_superuser:
             raise R2RException("Only superusers can create communities", 403)
@@ -161,17 +171,32 @@ class CommunitiesRouter(BaseRouterV3):
         @self.base_endpoint
         async def create_communities(
             id: UUID = Path(...),
-            settings: Optional[dict] = Body(None),
+            settings: Optional[KGEnrichmentSettings] = Body(None, 
+                description="Optional settings for the community build process."
+                ),
             run_type: Optional[KGRunType] = Query(
                 description="Run type for the graph creation process.",
             ),
             run_with_orchestration: bool = Query(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedKGEnrichmentResponse:
-            """
-            Builds communities for the graph.
+            """Creates communities in the graph by analyzing entity relationships and similarities.
 
-            This endpoint takes in the entities and relationships present in the graph, performs hierarchical leiden clustering, and creates communities. Communities are then summarized based on the community's entities and relationships.
+            Communities are created through the following process:
+            1. Analyzes entity relationships and attributes to build a similarity graph
+            2. Applies advanced community detection algorithms (e.g. Leiden) to identify densely connected groups
+            3. Creates hierarchical community structure with multiple granularity levels
+            4. Generates natural language summaries and statistical insights for each community
+
+            The resulting communities can be used to:
+            - Understand high-level graph structure and organization
+            - Identify key entity groupings and their relationships
+            - Navigate and explore the graph at different levels of detail
+            - Generate insights about entity clusters and their characteristics
+
+            The community detection process is configurable through settings like:
+                - Community detection algorithm parameters
+                - Summary generation prompt
             """
 
             return await self._create_communities(
@@ -206,28 +231,29 @@ class CommunitiesRouter(BaseRouterV3):
         @self.base_endpoint
         async def create_communities(
             request: Request,
-            id: UUID = Path(
-                ...,
-                description="The ID of the collection to create communities for.",
-            ),
             communities: list[Community] = Body(
                 ..., description="The communities to create."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
+            """
+            Creates custom communities in the graph.
+
+            While communities are typically built automatically via the /graphs/{id}/communities/build endpoint,
+            this endpoint allows you to manually create your own communities. This can be useful when you want to:
+
+            - Define custom groupings of entities based on domain knowledge
+            - Add communities that weren't detected by the automatic process
+            - Create hierarchical organization structures
+            - Tag groups of entities with specific metadata
+
+            The created communities will be integrated with any existing automatically detected communities
+            in the graph's community structure.
+            """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
                 )
-
-            for community in communities:
-                if not community.collection_id:
-                    community.collection_id = id
-                else:
-                    if community.collection_id != id:
-                        raise ValueError(
-                            "Collection ID in path and body do not match"
-                        )
 
             return await self.services["kg"].create_communities_v3(communities)
 
@@ -270,8 +296,17 @@ class CommunitiesRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
+            attributes: Optional[list[str]] = Body(
+                None,
+                description="A list of attributes to return. By default, all attributes are returned.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
+            """
+            Lists all communities in the graph with pagination support.
+
+            By default, all attributes are returned, but this can be limited using the `attributes` parameter.
+            """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
@@ -283,6 +318,7 @@ class CommunitiesRouter(BaseRouterV3):
                 graph_id=graph_id,
                 offset=offset,
                 limit=limit,
+                attributes=attributes,
             )
 
             return communities, {
@@ -316,9 +352,18 @@ class CommunitiesRouter(BaseRouterV3):
             id: UUID = Path(
                 ...,
                 description="The ID of the graph to get communities for.",
+                ),
+            attributes: Optional[list[str]] = Body(
+                None,
+                description="A list of attributes to return. By default, all attributes are returned.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
+            """
+            Retrieves a specific community by its ID.
+
+            By default, all attributes are returned, but this can be limited using the `attributes` parameter.
+            """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
@@ -328,6 +373,7 @@ class CommunitiesRouter(BaseRouterV3):
                 "kg"
             ].providers.database.graph_handler.communities.get(
                 community_id=id,
+                attributes=attributes,
             )
 
         @self.router.delete(
@@ -385,7 +431,9 @@ class CommunitiesRouter(BaseRouterV3):
             community: Community = Body(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
-            """Updates a community's metadata."""
+            """
+            Updates an existing community's metadata and properties.
+            """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can update communities", 403

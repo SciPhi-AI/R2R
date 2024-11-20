@@ -188,7 +188,23 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
             graph: Graph = Body(...),
         ):
-            """Creates an empty graph for a collection."""
+            """
+            Creates a new empty graph.
+
+            This is the first step in building a knowledge graph. After creating the graph, you can:
+
+            1. Add data to the graph:
+               - Manually add entities and relationships via the /entities and /relationships endpoints
+               - Automatically extract entities and relationships from documents via the /graphs/{id}/documents endpoint
+
+            2. Build communities:
+               - Build communities of related entities via the /graphs/{id}/communities/build endpoint
+
+            3. Update graph metadata:
+               - Modify the graph name, description and settings via the /graphs/{id} endpoint
+
+            The graph ID returned by this endpoint is required for all subsequent operations on the graph.
+            """
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can create graphs", 403)
 
@@ -235,14 +251,26 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Gets the information about a graph.
+            Retrieves detailed information about a specific graph by ID.
 
-            Returns information about:
-            - Creation status and timestamp
-            - Enrichment status and timestamp
-            - Entity and relationship counts
-            - Community statistics
-            - Current settings
+            Returns a graph object containing:
+            - Creation metadata: status, timestamp, creator
+            - Enrichment metadata: status, timestamp, last enrichment run
+            - Graph statistics:
+                - Total entity count and types
+                - Total relationship count and types
+                - Number of communities and hierarchy levels
+            - Graph settings:
+                - Entity extraction settings
+                - Relationship extraction settings
+                - Community detection settings
+                - Current prompt configurations
+
+            The graph details can be used to:
+            - Monitor graph processing status
+            - Get graph size and composition metrics
+            - View and validate graph configuration
+            - Track enrichment progress
             """
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -292,14 +320,7 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Lists all graphs.
-
-            Returns information about:
-            - Creation status and timestamp
-            - Enrichment status and timestamp
-            - Entity and relationship counts
-            - Community statistics
-            - Current settings
+            Lists all graphs in the system with pagination support.
             """
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -345,24 +366,21 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def delete_graph(
-            id: UUID = Path(...),
-            cascade: bool = Query(False),
+            id: UUID = Path(...),   
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Deletes the graph and associated entities and relationships.
+            Deletes a graph and all its associated data.
+
+            This endpoint permanently removes the specified graph along with all entities and relationships that belong to only this graph.
+
+            Entities and relationships extracted from documents are not deleted and must be deleted separately using the /entities and /relationships endpoints.
             """
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can delete graphs", 403)
 
-            if cascade:
-                raise R2RException(
-                    "Cascade deletion not implemented. Please delete document level entities and relationships using the document delete endpoints.",
-                    400,
-                )
-
             id = await self.services["kg"].delete_graph_v3(
-                id=id, cascade=cascade
+                id=id
             )
             # FIXME: Can we sync this with the deletion response from other routes? Those return a boolean.
             return {"message": "Graph deleted successfully", "id": id}  # type: ignore
@@ -401,9 +419,17 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Updates the graph object.
+            Updates an existing graph's metadata and settings.
 
-            The graph object can be updated to change the name, description, settings and other attributes.
+            This endpoint allows you to modify:
+            - Basic metadata: name, description, tags
+            - Graph settings:
+                - Entity extraction settings
+                - Relationship extraction settings 
+                - Community detection settings
+                - Prompt configurations
+            
+            The graph ID must match between the URL path and request body (if provided in body).
             """
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can update graphs", 403)
@@ -462,7 +488,7 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def tune_prompt(
-            collection_id: UUID = Path(...),
+            id: UUID = Path(...),
             prompt_name: str = Body(
                 ...,
                 description="The prompt to tune. Valid options: graphrag_relationships_extraction_few_shot, graphrag_entity_description, graphrag_communities",
@@ -485,7 +511,7 @@ class GraphRouter(BaseRouterV3):
 
             tuned_prompt = await self.services["kg"].tune_prompt(
                 prompt_name=prompt_name,
-                collection_id=collection_id,
+                collection_id=id,
                 documents_offset=documents_offset,
                 documents_limit=documents_limit,
                 chunks_offset=chunks_offset,
@@ -493,3 +519,113 @@ class GraphRouter(BaseRouterV3):
             )
 
             return tuned_prompt  # type: ignore
+
+
+        @self.router.post(
+            "/graphs/{id}/documents",
+            summary="Extract entities and relationships from a document and add them to the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.extract_entities_and_relationships(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                ],
+                "operationId": "documents_extract_entities_and_relationships_v3_documents__id__entities_and_relationships_post_documents",
+            },
+        )
+        @self.base_endpoint
+        async def extract_entities_and_relationships(
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to extract entities and relationships from.",
+            ),
+            run_type: KGRunType = Query(
+                default=KGRunType.ESTIMATE,
+                description="Whether to return an estimate of the creation cost or to actually extract the entities and relationships.",
+            ),
+            settings: Optional[KGCreationSettings] = Body(
+                default=None,
+                description="Settings for the entities and relationships extraction process.",
+            ),
+            run_with_orchestration: Optional[bool] = Query(
+                default=True,
+                description="Whether to run the entities and relationships extraction process with orchestration.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedKGCreationResponse:  # type: ignore
+            """
+            Extracts entities and relationships from a document and adds them to the graph.
+
+            The entities and relationships extraction process involves:
+            1. Parsing documents into semantic chunks
+            2. Extracting entities and relationships using LLMs
+
+            If the entities and relationships were already extracted for the document, they will not be extracted again and the existing entities and relationships will be added to the graph.
+            """
+
+            settings = settings.dict() if settings else None  # type: ignore
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            # If no run type is provided, default to estimate
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
+
+            # Apply runtime settings overrides
+            server_kg_creation_settings = (
+                self.providers.database.config.kg_creation_settings
+            )
+
+            if settings:
+                server_kg_creation_settings = update_settings_from_dict(
+                    server_settings=server_kg_creation_settings,
+                    settings_dict=settings,  # type: ignore
+                )
+
+            # If the run type is estimate, return an estimate of the creation cost
+            if run_type is KGRunType.ESTIMATE:
+                return {  # type: ignore
+                    "message": "Estimate retrieved successfully",
+                    "task_id": None,
+                    "id": id,
+                    "estimate": await self.services[
+                        "kg"
+                    ].get_creation_estimate(
+                        document_id=id,
+                        kg_creation_settings=server_kg_creation_settings,
+                    ),
+                }
+            else:
+                # Otherwise, create the graph
+                if run_with_orchestration:
+                    workflow_input = {
+                        "document_id": str(id),
+                        "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
+                        "user": auth_user.json(),
+                    }
+
+                    return await self.orchestration_provider.run_workflow(  # type: ignore
+                        "create-graph", {"request": workflow_input}, {}
+                    )
+                else:
+                    from core.main.orchestration import simple_kg_factory
+
+                    logger.info("Running create-graph without orchestration.")
+                    simple_kg = simple_kg_factory(self.services["kg"])
+                    await simple_kg["create-graph"](workflow_input)  # type: ignore
+                    return {  # type: ignore
+                        "message": "Graph created successfully.",
+                        "task_id": None,
+                    }

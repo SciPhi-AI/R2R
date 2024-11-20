@@ -99,10 +99,6 @@ class RelationshipsRouter(BaseRouterV3):
         @self.base_endpoint
         async def list_relationships(
             request: Request,
-            id: UUID = Path(
-                ...,
-                description="The ID of the chunk to retrieve relationships for.",
-            ),
             graph_id: Optional[UUID] = Query(
                 None,
                 description="The ID of the graph to retrieve relationships for.",
@@ -111,15 +107,15 @@ class RelationshipsRouter(BaseRouterV3):
                 None,
                 description="The ID of the document to retrieve relationships for.",
             ),
-            entity_names: Optional[list[str]] = Query(
+            entity_names: Optional[list[str]] = Body(
                 None,
                 description="A list of subject or object entity names to filter the relationships by.",
             ),
-            relationship_types: Optional[list[str]] = Query(
+            relationship_types: Optional[list[str]] = Body(
                 None,
                 description="A list of relationship types to filter the relationships by.",
             ),
-            attributes: Optional[list[str]] = Query(
+            attributes: Optional[list[str]] = Body(
                 None,
                 description="A list of attributes to return. By default, all attributes are returned.",
             ),
@@ -136,6 +132,17 @@ class RelationshipsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipsResponse:
+            """
+            Lists all relationships in the graph with pagination support.
+
+            Relationships can be filtered by:
+            - Graph ID
+            - Document ID
+            - Entity names
+            - Relationship types
+
+            By default, all attributes are returned, but this can be limited using the `attributes` parameter.
+            """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
@@ -188,8 +195,17 @@ class RelationshipsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the relationship to retrieve.",
             ),
+            attributes: Optional[list[str]] = Body(
+                None,
+                description="A list of attributes to return. By default, all attributes are returned.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipResponse:
+            """
+            Retrieves a relationship by its ID.
+
+            By default, all attributes are returned, but this can be limited using the `attributes` parameter.
+            """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
@@ -198,6 +214,7 @@ class RelationshipsRouter(BaseRouterV3):
             relationship = await self.services["kg"].list_relationships_v3(
                 level=self._get_path_level(request),
                 id=id,
+                attributes=attributes,  
             )
 
             return relationship
@@ -232,6 +249,11 @@ class RelationshipsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedKGCreationResponse:
+            """
+            Creates new relationships.
+
+            Relationships can be created by providing a list of relationship objects.
+            """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
@@ -280,6 +302,17 @@ class RelationshipsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
+            """
+            Updates an existing relationship in the database.
+
+            This endpoint allows you to modify:
+            - Relationship type and classification 
+            - Relationship attributes and properties
+            - Source and target entity connections
+            - Relationship metadata and tags
+
+            Any fields not included in the update request will retain their existing values.
+            """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
@@ -320,6 +353,15 @@ class RelationshipsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
+            """
+            Deletes a relationship by its ID.
+
+            Note that this will not delete the source or target entities of the relationship.
+
+            This will also not delete the relationship from any communities that it is part of.
+
+            This operation cannot be undone.
+            """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
