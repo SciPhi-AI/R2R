@@ -74,6 +74,8 @@ class AsyncSMTPEmailProvider(EmailProvider):
         subject: str,
         body: str,
         html_body: Optional[str] = None,
+        *args,
+        **kwargs
     ) -> None:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
@@ -98,7 +100,11 @@ class AsyncSMTPEmailProvider(EmailProvider):
             raise RuntimeError(error_msg) from e
 
     async def send_verification_email(
-        self, to_email: str, verification_code: str
+        self, 
+        to_email: str, 
+        verification_code: str, 
+        *args,
+        **kwargs
     ) -> None:
         body = f"""
         Please verify your email address by entering the following code:
@@ -124,7 +130,11 @@ class AsyncSMTPEmailProvider(EmailProvider):
         )
 
     async def send_password_reset_email(
-        self, to_email: str, reset_token: str
+        self, 
+        to_email: str, 
+        reset_token: str, 
+        *args,
+        **kwargs
     ) -> None:
         body = f"""
         You have requested to reset your password.
