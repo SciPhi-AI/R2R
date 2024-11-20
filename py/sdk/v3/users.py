@@ -1,14 +1,25 @@
 from typing import Optional
 from uuid import UUID
 
-from ..models import Token, UserResponse
+from ..models import Token
+
+from shared.api.models.auth.responses import WrappedTokenResponse
+from shared.api.models.base import (
+    WrappedBooleanResponse,
+    WrappedGenericMessageResponse,
+)
+from shared.api.models.management.responses import (
+    WrappedCollectionsResponse,
+    WrappedUserResponse,
+    WrappedUsersResponse,
+)
 
 
 class UsersSDK:
     def __init__(self, client):
         self.client = client
 
-    async def register(self, email: str, password: str) -> UserResponse:
+    async def register(self, email: str, password: str) -> WrappedUserResponse:
         """
         Register a new user.
 
@@ -27,7 +38,9 @@ class UsersSDK:
             version="v3",
         )
 
-    async def delete(self, id: str | UUID, password: str) -> dict:
+    async def delete(
+        self, id: str | UUID, password: str
+    ) -> WrappedBooleanResponse:
         """
         Delete a specific user.
         Users can only delete their own account unless they are superusers.
@@ -47,7 +60,9 @@ class UsersSDK:
             version="v3",
         )
 
-    async def verify_email(self, email: str, verification_code: str) -> dict:
+    async def verify_email(
+        self, email: str, verification_code: str
+    ) -> WrappedGenericMessageResponse:
         """
         Verify a user's email address.
 
@@ -118,7 +133,7 @@ class UsersSDK:
             self.client._refresh_token = None
             raise ValueError("Invalid token provided")
 
-    async def logout(self) -> dict:
+    async def logout(self) -> WrappedGenericMessageResponse:
         """Log out the current user."""
         response = await self.client._make_request(
             "POST",
@@ -129,7 +144,7 @@ class UsersSDK:
         self.client._refresh_token = None
         return response
 
-    async def refresh_token(self) -> dict[str, Token]:
+    async def refresh_token(self) -> WrappedTokenResponse:
         """Refresh the access token using the refresh token."""
         response = await self.client._make_request(
             "POST",
@@ -145,7 +160,7 @@ class UsersSDK:
 
     async def change_password(
         self, current_password: str, new_password: str
-    ) -> dict:
+    ) -> WrappedGenericMessageResponse:
         """
         Change the user's password.
 
@@ -167,7 +182,9 @@ class UsersSDK:
             version="v3",
         )
 
-    async def request_password_reset(self, email: str) -> dict:
+    async def request_password_reset(
+        self, email: str
+    ) -> WrappedGenericMessageResponse:
         """
         Request a password reset.
 
@@ -186,7 +203,7 @@ class UsersSDK:
 
     async def reset_password(
         self, reset_token: str, new_password: str
-    ) -> dict:
+    ) -> WrappedGenericMessageResponse:
         """
         Reset password using a reset token.
 
@@ -210,7 +227,7 @@ class UsersSDK:
         ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> dict:
+    ) -> WrappedUsersResponse:
         """
         List users with pagination and filtering options.
 
@@ -238,7 +255,7 @@ class UsersSDK:
     async def retrieve(
         self,
         id: str | UUID,
-    ) -> dict:
+    ) -> WrappedUserResponse:
         """
         Get a specific user.
 
@@ -256,7 +273,7 @@ class UsersSDK:
 
     async def me(
         self,
-    ) -> dict:
+    ) -> WrappedUserResponse:
         """
         Get detailed information about the currently authenticated user.
 
@@ -277,7 +294,7 @@ class UsersSDK:
         name: Optional[str] = None,
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
-    ) -> dict:
+    ) -> WrappedUserResponse:
         """
         Update user information.
 
@@ -314,7 +331,7 @@ class UsersSDK:
         id: str | UUID,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> dict:
+    ) -> WrappedCollectionsResponse:
         """
         Get all collections associated with a specific user.
 
@@ -342,7 +359,7 @@ class UsersSDK:
         self,
         id: str | UUID,
         collection_id: str | UUID,
-    ) -> None:
+    ) -> WrappedBooleanResponse:
         """
         Add a user to a collection.
 
@@ -350,7 +367,7 @@ class UsersSDK:
             id (str | UUID): User ID to add
             collection_id (str | UUID): Collection ID to add user to
         """
-        await self.client._make_request(
+        return await self.client._make_request(
             "POST",
             f"users/{str(id)}/collections/{str(collection_id)}",
             version="v3",
@@ -360,7 +377,7 @@ class UsersSDK:
         self,
         id: str | UUID,
         collection_id: str | UUID,
-    ) -> bool:
+    ) -> WrappedBooleanResponse:
         """
         Remove a user from a collection.
 

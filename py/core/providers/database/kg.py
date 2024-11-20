@@ -1280,8 +1280,8 @@ class PostgresGraphHandler(GraphHandler):
         if count == 0:
             # If it's the last document, delete collection-related data
             collection_queries = [
-                f"DELETE FROM {self._get_table_name('community_info')} WHERE collection_id = $1",
-                f"DELETE FROM {self._get_table_name('community')} WHERE collection_id = $1",
+                f"DELETE FROM {self._get_table_name('graph_community_info')} WHERE collection_id = $1",
+                f"DELETE FROM {self._get_table_name('graph_community')} WHERE collection_id = $1",
             ]
             for query in collection_queries:
                 await self.connection_manager.execute_query(
@@ -1622,8 +1622,8 @@ class PostgresGraphHandler(GraphHandler):
 
         # remove all relationships for these documents.
         DELETE_QUERIES = [
-            f"DELETE FROM {self._get_table_name('community_info')} WHERE collection_id = $1;",
-            f"DELETE FROM {self._get_table_name('community')} WHERE collection_id = $1;",
+            f"DELETE FROM {self._get_table_name('graph_community_info')} WHERE collection_id = $1;",
+            f"DELETE FROM {self._get_table_name('graph_community')} WHERE collection_id = $1;",
         ]
 
         # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.

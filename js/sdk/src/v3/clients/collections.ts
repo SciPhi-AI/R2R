@@ -1,10 +1,10 @@
 import { r2rClient } from "../../r2rClient";
 import {
   WrappedBooleanResponse,
+  WrappedGenericMessageResponse,
   WrappedCollectionResponse,
   WrappedCollectionsResponse,
   WrappedDocumentsResponse,
-  WrappedGenericMessageResponse,
   WrappedUsersResponse,
 } from "../../types";
 
