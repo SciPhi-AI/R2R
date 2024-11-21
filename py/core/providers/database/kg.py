@@ -102,7 +102,7 @@ class PostgresEntityHandler(EntityHandler):
             document_ids UUID[],
             document_id UUID,
             graph_ids UUID[],
-            created_by UUID REFERENCES {self._get_table_name("users")}(user_id),
+            user_id UUID REFERENCES {self._get_table_name("users")}(user_id),
             last_modified_by UUID REFERENCES {self._get_table_name("users")}(user_id),
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -182,8 +182,8 @@ class PostgresEntityHandler(EntityHandler):
         """
 
         QUERY = f"""
-            INSERT INTO {self._get_table_name(entity_table_name)} (name, category, description, description_embedding, attributes, chunk_ids, document_id, document_ids, created_by, last_modified_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING id, name, category, description, document_id, document_ids, created_by, last_modified_by, created_at, updated_at, attributes
+            INSERT INTO {self._get_table_name(entity_table_name)} (name, category, description, description_embedding, attributes, chunk_ids, document_id, document_ids, user_id, last_modified_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING id, name, category, description, document_id, document_ids, user_id, last_modified_by, created_at, updated_at, attributes
         """
 
         output = await self.connection_manager.fetch_query(
@@ -1007,21 +1007,14 @@ class PostgresCommunityHandler(CommunityHandler):
         rating_explanation: Optional[str],
         level: Optional[int],
         attributes: Optional[dict],
-        auth_user: Any,
-    ) -> None:
-
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(graph_id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to create this community.",
-                    403,
-                )
+        user_id: UUID,
+    ) -> Community:
 
         QUERY = f"""
             INSERT INTO {self._get_table_name("graph_community")}
-            (graph_id, name, summary, findings, rating, rating_explanation, embedding, level, attributes, created_by, updated_by)
+            (graph_id, name, summary, findings, rating, rating_explanation, embedding, level, attributes, user_id, last_modified_by)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, created_by, updated_by
+            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, user_id, last_modified_by, created_at, updated_at
         """
 
         params = [
@@ -1033,12 +1026,36 @@ class PostgresCommunityHandler(CommunityHandler):
             rating_explanation,
             embedding,
             level,
-            attributes,
-            auth_user.id,
-            auth_user.id,
+            json.dumps(attributes),
+            user_id,
+            user_id,
         ]
 
-        return await self.connection_manager.fetchrow_query(QUERY, params)
+        try:
+
+            result = await self.connection_manager.fetchrow_query(QUERY, params)
+
+            return Community(
+                id=result["id"],
+                graph_id=result["graph_id"],
+                name=result["name"],
+                summary=result["summary"],
+                findings=result["findings"],
+                rating=result["rating"],
+                rating_explanation=result["rating_explanation"],
+                level=result["level"],
+                attributes=result["attributes"],
+                user_id=result["user_id"],
+                last_modified_by=result["last_modified_by"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+            )
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while creating the community: {e}",
+            )
 
     async def update(
         self,
@@ -1052,15 +1069,8 @@ class PostgresCommunityHandler(CommunityHandler):
         rating_explanation: Optional[str],
         level: Optional[int],
         attributes: Optional[dict],
-        auth_user: Any,
-    ) -> None:
-
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to update this community.",
-                    403,
-                )
+        user_id: UUID,
+    ) -> Community:
 
         update_fields = []
         params = [community_id]  # type: ignore
@@ -1096,16 +1106,40 @@ class PostgresCommunityHandler(CommunityHandler):
             update_fields.append(f"attributes = ${len(params)+1}")
             params.append(attributes)
 
-        update_fields.append(f"updated_by = ${len(params)+1}")
-        params.append(auth_user.id)
+        if user_id is not None:
+            update_fields.append(f"user_id = ${len(params)+1}")
+            params.append(user_id)
 
         update_fields.append(f"updated_at = CURRENT_TIMESTAMP")
 
         QUERY = f"""
             UPDATE {self._get_table_name("graph_community")} SET {", ".join(update_fields)} WHERE id = $1
-            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, attributes, level, created_by, updated_by, updated_at
+            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, attributes, level, user_id, last_modified_by, created_at, updated_at
         """
-        return await self.connection_manager.fetchrow_query(QUERY, params)
+        try:
+            result = await self.connection_manager.fetchrow_query(QUERY, params)
+
+            return Community(
+                id=result["id"],
+                graph_id=result["graph_id"],
+                name=result["name"],
+                summary=result["summary"],
+                findings=result["findings"],
+                rating=result["rating"],
+                rating_explanation=result["rating_explanation"],
+                level=result["level"],
+                attributes=result["attributes"],
+                user_id=result["user_id"],
+                last_modified_by=result["last_modified_by"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+            )
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while updating the community: {e}",
+            )
 
     async def delete(
         self, graph_id: UUID, community_id: UUID, auth_user: Any
@@ -1123,6 +1157,80 @@ class PostgresCommunityHandler(CommunityHandler):
         """
         await self.connection_manager.execute_query(QUERY, [community_id])
 
+    async def list_communities(
+        self,
+        graph_id: UUID,
+        filter_community_ids: Optional[list[UUID]],
+        filter_user_ids: Optional[list[UUID]],
+        offset: int,
+        limit: int,
+    ) -> list[Community]:
+
+        conditions = []
+        params: list[Any] = []
+        param_index = 1
+
+        if filter_community_ids:
+            conditions.append(f"id = ANY(${param_index})")
+            params.append(filter_community_ids)
+            param_index += 1
+
+        if filter_user_ids:
+            conditions.append(f"user_id = ANY(${param_index})")
+            params.append(filter_user_ids)
+            param_index += 1
+
+        where_clause = (
+            f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        )
+
+        query = f"""
+            SELECT 
+                id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, user_id, last_modified_by, created_at, updated_at,
+                COUNT(*) OVER() as total_entries
+            FROM {self._get_table_name("graph_community")} {where_clause}
+            ORDER BY created_at DESC
+            OFFSET ${param_index} LIMIT ${param_index + 1}
+        """
+
+        params.extend([offset, limit])
+
+        try:
+            results = await self.connection_manager.fetch_query(query, params)
+
+            total_entries = results[0]["total_entries"] if results else 0
+
+            communities = [
+                Community(
+                    id=row["id"],
+                    graph_id=row["graph_id"],
+                    name=row["name"],
+                    summary=row["summary"],
+                    findings=row["findings"],
+                    rating=row["rating"],
+                    rating_explanation=row["rating_explanation"],
+                    level=row["level"],
+                    attributes=row["attributes"],
+                    user_id=row["user_id"],
+                    last_modified_by=row["last_modified_by"],
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
+                )
+                for row in results
+            ]
+
+            return {
+                "results": communities,
+                "total_entries": total_entries,
+            }
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while fetching communities: {e}",
+            )
+
+
     async def get(
         self,
         graph_id: UUID,
@@ -1131,6 +1239,7 @@ class PostgresCommunityHandler(CommunityHandler):
         community_id: Optional[UUID] = None,
         auth_user: Optional[Any] = None,
     ):
+        # not being used 
 
         if not auth_user.is_superuser:
             if not await self._check_permissions(graph_id, auth_user.id):
@@ -1169,7 +1278,7 @@ class PostgresCommunityHandler(CommunityHandler):
         else:
             QUERY = f"""
                 SELECT
-                    id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, created_by, updated_by, created_at, updated_at
+                    id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, user_id, last_modified_by, created_at, updated_at
                 FROM {self._get_table_name("graph_community")} WHERE graph_id = $1 AND id = $2
             """
             params = [graph_id, community_id]

@@ -355,7 +355,7 @@ class KgService(Service):
         rating_explanation: Optional[str],
         level: Optional[int],
         attributes: Optional[dict],
-        auth_user: Any,
+        user_id: UUID,
         **kwargs,
     ):
         embedding = str(
@@ -371,7 +371,7 @@ class KgService(Service):
             rating_explanation=rating_explanation,
             level=level,
             attributes=attributes,
-            auth_user=auth_user,
+            user_id=user_id,
         )
 
     @telemetry_event("update_community_v3")
@@ -386,7 +386,7 @@ class KgService(Service):
         rating_explanation: Optional[str],
         level: Optional[int],
         attributes: Optional[dict],
-        auth_user: Any,
+        user_id: UUID,
         **kwargs,
     ):
         if summary is not None:
@@ -407,7 +407,7 @@ class KgService(Service):
             rating_explanation=rating_explanation,
             level=level,
             attributes=attributes,
-            auth_user=auth_user,
+            user_id=user_id,
         )
 
     @telemetry_event("delete_community_v3")
@@ -415,13 +415,13 @@ class KgService(Service):
         self,
         graph_id: UUID,
         community_id: UUID,
-        auth_user: Any,
+        user_id: UUID,
         **kwargs,
     ):
         return await self.providers.database.graph_handler.communities.delete(
             graph_id=graph_id,
             community_id=community_id,
-            auth_user=auth_user,
+            user_id=user_id,
         )
 
     @telemetry_event("list_communities_v3")

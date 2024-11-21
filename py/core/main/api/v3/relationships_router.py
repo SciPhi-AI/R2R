@@ -127,12 +127,8 @@ class RelationshipsRouter(BaseRouterV3):
             Lists all relationships in the graph with pagination support.
 
             Relationships can be filtered by:
-            - Graph ID
-            - Document ID
-            - Entity names
-            - Relationship types
-
-            By default, all attributes are returned, but this can be limited using the `attributes` parameter.
+            - Relationship IDs
+            - User IDs
             """
 
             requesting_user_id = (
@@ -198,8 +194,6 @@ class RelationshipsRouter(BaseRouterV3):
         ) -> WrappedRelationshipResponse:
             """
             Retrieves a relationship by its ID.
-
-            By default, all attributes are returned, but this can be limited using the `attributes` parameter.
             """
 
             list_relationships_response = await self.services[
