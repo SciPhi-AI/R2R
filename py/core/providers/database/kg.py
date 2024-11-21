@@ -176,10 +176,12 @@ class PostgresEntityHandler(EntityHandler):
         """
 
         try:
-            result = await self.connection_manager.fetch_query(
+            result = await self.connection_manager.fetchrow_query(
                 query=query,
                 params=params,
             )
+
+            print(result)
 
             return Entity(
                 id=result["id"],

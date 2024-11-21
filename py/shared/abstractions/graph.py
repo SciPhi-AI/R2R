@@ -41,48 +41,16 @@ class Entity(R2RSerializable):
     name: str
     category: Optional[str] = None
     description: Optional[str] = None
-    chunk_ids: list[UUID] = Field(
-        alias="chunkIds",
-        default_factory=list,
-    )
-    description_embedding: Optional[list[float] | str] = Field(
-        alias="descriptionEmbedding",
-        default=None,
-    )
-    document_id: Optional[UUID] = Field(  # this is for backward compatibility
-        alias="documentId",
-        default=None,
-    )
-    document_ids: list[UUID] = Field(
-        alias="documentIds",
-        default_factory=list,
-    )
-    graph_ids: list[UUID] = Field(
-        alias="graphIds",
-        default_factory=list,
-    )
-    user_id: UUID = Field(
-        alias="userId",
-    )
-    last_modified_by: UUID = Field(
-        alias="lastModifiedBy",
-    )
-    created_at: datetime = Field(
-        alias="createdAt",
-        default_factory=datetime.utcnow,
-    )
-    updated_at: datetime = Field(
-        alias="updatedAt",
-        default_factory=datetime.utcnow,
-    )
+    chunk_ids: list[UUID] = []
+    description_embedding: Optional[list[float] | str] = None
+    document_id: Optional[UUID] = None  # this is for backward compatibility
+    document_ids: list[UUID] = []
+    graph_ids: list[UUID] = []
+    user_id: UUID
+    last_modified_by: UUID
+    created_at: datetime
+    updated_at: datetime
     attributes: Optional[dict[str, Any] | str] = None
-
-    def __str__(self):
-        return (
-            f"{self.category}:{self.subcategory}:{self.value}"
-            if self.subcategory
-            else f"{self.category}:{self.value}"
-        )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

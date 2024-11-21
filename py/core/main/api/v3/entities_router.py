@@ -140,7 +140,7 @@ class EntitiesRouter(BaseRouterV3):
                 description=description,
                 category=category,
                 attributes=attributes,
-                user_id=auth_user,
+                user_id=auth_user.id,
             )
 
         # Getting entities for a graph and a document

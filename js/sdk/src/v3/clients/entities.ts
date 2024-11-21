@@ -1,7 +1,5 @@
 import { r2rClient } from "../../r2rClient";
-import {
-  WrappedEntityResponse,
-} from "../../types";
+import { WrappedEntityResponse } from "../../types";
 
 export class EntitiesClient {
   constructor(private client: r2rClient) {}
@@ -20,7 +18,7 @@ export class EntitiesClient {
     attributes?: string[];
     category?: string;
   }): Promise<WrappedEntityResponse> {
-    return this.client.makeRequest("POST", "graphs", {
+    return this.client.makeRequest("POST", "entities", {
       data: options,
     });
   }

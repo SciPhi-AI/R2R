@@ -39,5 +39,5 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     expect(response.results).toBeDefined();
     expect(response.results.name).toEqual("Entity 2");
     expect(response.results.description).toEqual("The second entity");
-  });  
+  });
 });
