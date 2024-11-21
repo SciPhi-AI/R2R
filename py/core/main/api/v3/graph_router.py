@@ -807,7 +807,7 @@ class GraphRouter(BaseRouterV3):
             return await self.services[
                 "kg"
             ].documents.graph_handler.entities.remove_from_graph(
-                id, [entity_id], auth_user
+                id, entity_id, auth_user
             )
 
         @self.router.post(
@@ -893,7 +893,7 @@ class GraphRouter(BaseRouterV3):
             return await self.services[
                 "kg"
             ].documents.graph_handler.relationships.remove_from_graph(
-                id, [relationship_id], auth_user
+                id, relationship_id, auth_user
             )
 
         @self.router.post(
@@ -979,5 +979,5 @@ class GraphRouter(BaseRouterV3):
             return await self.services[
                 "kg"
             ].documents.graph_handler.communities.remove_from_graph(
-                id, [community_id], auth_user
+                id, community_id, auth_user
             )

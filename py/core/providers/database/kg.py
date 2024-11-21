@@ -669,46 +669,10 @@ class PostgresRelationshipHandler(RelationshipHandler):
             QUERY, [relationship_id]
         )
 
-    async def add_to_graph(
-        self, graph_id: UUID, relationship_ids: list[UUID]
-    ) -> None:
-        QUERY = f"""
-            UPDATE {self._get_table_name("graph_relationship")}
-            SET graph_ids = CASE
-                WHEN graph_ids IS NULL THEN ARRAY[$1]
-                WHEN NOT ($1 = ANY(graph_ids)) THEN array_append(graph_ids, $1)
-                ELSE graph_ids
-            END
-            WHERE id = ANY($2)
-        """
-        return await self.connection_manager.execute_query(
-            QUERY, [graph_id, relationship_ids]
-        )
-
-    async def remove_from_graph(
-        self,
-        graph_id: UUID,
-        relationship_ids: list[UUID],
-        auth_user: Optional[Any] = None,
-    ) -> None:
-
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(
-                relationship_ids, auth_user.id
-            ):
-                raise R2RException(
-                    "You do not have permission to remove this relationship from the graph.",
-                    403,
-                )
-
-        QUERY = f"""
-            UPDATE {self._get_table_name("graph_relationship")}
-            SET graph_ids = array_remove(graph_ids, $1)
-            WHERE id = ANY($2)
-        """
-        return await self.connection_manager.execute_query(
-            QUERY, [graph_id, relationship_ids]
-        )
+    async def _check_permissions(
+        self, relationship_ids: list[UUID], auth_user_id: UUID
+    ) -> bool:
+        raise NotImplementedError("This is not implemented yet.")
 
     async def add_to_graph(
         self,
@@ -739,21 +703,16 @@ class PostgresRelationshipHandler(RelationshipHandler):
             QUERY, [graph_id, relationship_ids]
         )
 
-    async def _check_permissions(
-        self, relationship_ids: list[UUID], auth_user_id: UUID
-    ) -> bool:
-        raise NotImplementedError("This is not implemented yet.")
-
     async def remove_from_graph(
         self,
         graph_id: UUID,
-        relationship_ids: list[UUID],
+        relationship_id: UUID,
         auth_user: Optional[Any] = None,
     ) -> None:
 
         if not auth_user.is_superuser:
             if not await self._check_permissions(
-                relationship_ids, auth_user.id
+                relationship_id, auth_user.id
             ):
                 raise R2RException(
                     "You do not have permission to remove this relationship from the graph.",
@@ -763,40 +722,11 @@ class PostgresRelationshipHandler(RelationshipHandler):
         QUERY = f"""
             UPDATE {self._get_table_name("graph_relationship")}
             SET graph_ids = array_remove(graph_ids, $1)
-            WHERE id = ANY($2)
+            WHERE id = $2
         """
         return await self.connection_manager.execute_query(
-            QUERY, [graph_id, relationship_ids]
+            QUERY, [graph_id, relationship_id]
         )
-
-    async def add_to_graph(
-        self, graph_id: UUID, relationship_ids: list[UUID]
-    ) -> None:
-        QUERY = f"""
-            UPDATE {self._get_table_name("graph_relationship")}
-            SET graph_ids = CASE
-                WHEN graph_ids IS NULL THEN ARRAY[$1]
-                WHEN NOT ($1 = ANY(graph_ids)) THEN array_append(graph_ids, $1)
-                ELSE graph_ids
-            END
-            WHERE id = ANY($2)
-        """
-        return await self.connection_manager.execute_query(
-            QUERY, [graph_id, relationship_ids]
-        )
-
-    async def remove_from_graph(
-        self, graph_id: UUID, relationship_ids: list[UUID]
-    ) -> None:
-        QUERY = f"""
-            UPDATE {self._get_table_name("graph_relationship")}
-            SET graph_ids = array_remove(graph_ids, $1)
-            WHERE id = ANY($2)
-        """
-        return await self.connection_manager.execute_query(
-            QUERY, [graph_id, relationship_ids]
-        )
-
 
 class PostgresCommunityHandler(CommunityHandler):
 
@@ -947,23 +877,21 @@ class PostgresCommunityHandler(CommunityHandler):
     async def remove_from_graph(
         self,
         graph_id: UUID,
-        community_ids: list[UUID],
+        community_id: UUID,
         auth_user: Optional[Any] = None,
     ) -> None:
 
         if not auth_user.is_superuser:
-            if not await self._check_permissions(community_ids, auth_user.id):
+            if not await self._check_permissions(community_id, auth_user.id):
                 raise R2RException(
                     "You do not have permission to remove this community from the graph.",
                     403,
                 )
 
         QUERY = f"""
-            UPDATE {self._get_table_name("graph_community")} SET graph_id = NULL WHERE id = ANY($1)
+            UPDATE {self._get_table_name("graph_community")} SET graph_id = NULL WHERE id = $1
         """
-        return await self.connection_manager.execute_query(
-            QUERY, [community_ids]
-        )
+        return await self.connection_manager.execute_query(QUERY, [community_id])
 
 
 class PostgresGraphHandler(GraphHandler):
