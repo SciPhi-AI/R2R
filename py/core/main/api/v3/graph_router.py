@@ -7,7 +7,6 @@ from fastapi import Body, Depends, Path, Query
 
 from core.base import R2RException, RunType
 from core.base.abstractions import DataLevel, KGRunType
-from core.base.abstractions import Community, Entity, Relationship, Graph
 
 from core.base.api.models import (
     GenericBooleanResponse,
@@ -163,7 +162,7 @@ class GraphRouter(BaseRouterV3):
             summary="Create a new graph",
             openapi_extra={
                 "x-codeSamples": [
-                    {
+                    {  # TODO: Verify
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
@@ -177,7 +176,27 @@ class GraphRouter(BaseRouterV3):
                                     "name": "New Graph",
                                     "description": "New Description"
                                 }
-                            )"""
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.create({
+                                    name: "New Graph",
+                                    description: "New Description",
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                 ]
@@ -218,7 +237,44 @@ class GraphRouter(BaseRouterV3):
         @self.router.get(
             "/graphs",
             summary="List graphs",
-            openapi_extra={},
+            openapi_extra={
+                "x-codeSamples": [
+                    {  # TODO: Verify
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.create(
+                                graph={
+                                    "name": "New Graph",
+                                    "description": "New Description"
+                                }
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.list();
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def list_graphs(
@@ -253,9 +309,7 @@ class GraphRouter(BaseRouterV3):
 
             graph_uuids = [UUID(graph_id) for graph_id in ids]
 
-            collections_overview_response = await self.services[
-                "kg"
-            ].list_graphs(
+            list_graphs_response = await self.services["kg"].list_graphs(
                 user_ids=requesting_user_id,
                 graph_ids=graph_uuids,
                 offset=offset,
@@ -263,12 +317,8 @@ class GraphRouter(BaseRouterV3):
             )
 
             return (  # type: ignore
-                collections_overview_response["results"],
-                {
-                    "total_entries": collections_overview_response[
-                        "total_entries"
-                    ]
-                },
+                list_graphs_response["results"],
+                {"total_entries": list_graphs_response["total_entries"]},
             )
 
         @self.router.get(
@@ -291,6 +341,24 @@ class GraphRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.retrieve({
+                                    id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -305,90 +373,23 @@ class GraphRouter(BaseRouterV3):
         async def get_graph(
             id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedGraphResponse:
             """
             Retrieves detailed information about a specific graph by ID.
-
-            Returns a graph object containing:
-            - Creation metadata: status, timestamp, creator
-            - Enrichment metadata: status, timestamp, last enrichment run
-            - Graph statistics:
-                - Total entity count and types
-                - Total relationship count and types
-                - Number of communities and hierarchy levels
-            - Graph settings:
-                - Entity extraction settings
-                - Relationship extraction settings
-                - Community detection settings
-                - Current prompt configurations
-
-            The graph details can be used to:
-            - Monitor graph processing status
-            - Get graph size and composition metrics
-            - View and validate graph configuration
-            - Track enrichment progress
             """
-            if not auth_user.is_superuser:
+            if not auth_user.is_superuser and id not in auth_user.graph_ids:
                 raise R2RException(
-                    "Only superusers can view graph status", 403
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
                 )
 
-            return (
-                await self.services["kg"].get_graphs(
-                    graph_id=id, offset=0, limit=1
-                )
-            )["results"][0]
-
-        @self.router.get(
-            "/graphs",
-            summary="List graphs",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.get(
-                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
-                            )"""
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X GET "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def get_graphs(
-            offset: int = Query(0, ge=0),
-            limit: int = Query(100, ge=1, le=1000),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
-            """
-            Lists all graphs in the system with pagination support.
-            """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can view graph status", 403
-                )
-
-            results = await self.services["kg"].get_graphs(
-                offset=offset, limit=limit, graph_id=None
+            list_graphs_response = await self.services["kg"].list_graphs(
+                user_ids=None,
+                graph_ids=[id],
+                offset=0,
+                limit=1,
             )
-            return results["results"], {
-                "total_entries": results["total_entries"]
-            }
+            return list_graphs_response["results"][0]
 
         @self.router.delete(
             "/graphs/{id}",
@@ -410,6 +411,24 @@ class GraphRouter(BaseRouterV3):
                         ),
                     },
                     {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.delete({
+                                    id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -424,7 +443,7 @@ class GraphRouter(BaseRouterV3):
         async def delete_graph(
             id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedBooleanResponse:
             """
             Deletes a graph and all its associated data.
 
@@ -434,18 +453,14 @@ class GraphRouter(BaseRouterV3):
             and must be deleted separately using the /entities and /relationships
             endpoints.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
+            if not auth_user.is_superuser and id not in auth_user.graph_ids:
                 raise R2RException(
                     "The currently authenticated user does not have access to the specified collection.",
                     403,
                 )
 
-            id = await self.services["kg"].delete_graph_v3(id=id)
-            # FIXME: Can we sync this with the deletion response from other routes? Those return a boolean.
-            return {"message": "Graph deleted successfully", "id": id}  # type: ignore
+            await self.services["kg"].delete_graph_v3(id=id)
+            return GenericBooleanResponse(success=True)  # type: ignore
 
         # update graph
         @self.router.post(
@@ -471,43 +486,63 @@ class GraphRouter(BaseRouterV3):
                             )"""
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.update({
+                                    id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                    name: "New Name",
+                                    description: "New Description",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
                 ]
             },
         )
         @self.base_endpoint
         async def update_graph(
-            id: UUID = Path(...),
-            graph: Graph = Body(...),
+            id: UUID = Path(
+                ...,
+                description="The unique identifier of the graph to update",
+            ),
+            name: Optional[str] = Body(
+                None, description="The name of the graph"
+            ),
+            description: Optional[str] = Body(
+                None, description="An optional description of the graph"
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Updates an existing graph's metadata and settings.
+            Update an existing graphs's configuration.
 
-            This endpoint allows you to modify:
-            - Basic metadata: name, description, tags
-            - Graph settings:
-                - Entity extraction settings
-                - Relationship extraction settings
-                - Community detection settings
-                - Prompt configurations
-
-            The graph ID must match between the URL path and request body (if provided in body).
+            This endpoint allows updating the name and description of an existing collection.
+            The user must have appropriate permissions to modify the collection.
             """
-            if not auth_user.is_superuser:
-                raise R2RException("Only superusers can update graphs", 403)
+            if (
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
 
-            if graph.id is None:
-                graph.id = id
-            else:
-                if graph.id != id:
-                    raise R2RException(
-                        "Graph ID in path and body do not match", 400
-                    )
-
-            return {
-                "id": (await self.services["kg"].update_graph(graph))["id"],
-                "message": "Graph updated successfully",
-            }
+            return await self.services["kg"].update_graph(  # type: ignore
+                id,
+                name=name,
+                description=description,
+            )
 
         @self.router.post(
             "/graphs/{id}/tune-prompt",
@@ -549,6 +584,7 @@ class GraphRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
+        # FIXME: This should be refactored to use the document summaries
         async def tune_prompt(
             id: UUID = Path(...),
             prompt_name: str = Body(
@@ -715,7 +751,6 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def add_entity_to_graph(
-            request: Request,
             id: UUID = Path(
                 ...,
                 description="The ID of the graph to add the entity to.",
@@ -756,7 +791,6 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def remove_entity_from_graph(
-            request: Request,
             id: UUID = Path(
                 ...,
                 description="The ID of the graph to remove the entity from.",
@@ -800,7 +834,6 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def add_relationship_to_graph(
-            request: Request,
             id: UUID = Path(
                 ...,
                 description="The ID of the graph to add the relationship to.",
@@ -844,7 +877,6 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def remove_relationship_from_graph(
-            request: Request,
             id: UUID = Path(
                 ...,
                 description="The ID of the graph to remove the relationship from.",
@@ -888,7 +920,6 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def add_communities_to_graph(
-            request: Request,
             id: UUID = Path(
                 ...,
                 description="The ID of the graph to add the communities to.",
@@ -932,7 +963,6 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def remove_community_from_graph(
-            request: Request,
             id: UUID = Path(
                 ...,
                 description="The ID of the graph to remove the community from.",

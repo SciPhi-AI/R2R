@@ -141,7 +141,6 @@ class KgService(Service):
         entity_names: Optional[list[str]] = None,
         entity_categories: Optional[list[str]] = None,
         attributes: Optional[list[str]] = None,
-        from_built_graph: Optional[bool] = False,
     ):
         return await self.providers.database.graph_handler.entities.get(
             level=level,
@@ -151,7 +150,6 @@ class KgService(Service):
             attributes=attributes,
             offset=offset,
             limit=limit,
-            from_built_graph=from_built_graph,
         )
 
     @telemetry_event("update_entity")
@@ -381,8 +379,17 @@ class KgService(Service):
         )
 
     @telemetry_event("update_graph")
-    async def update_graph(self, graph: Graph) -> UUID:
-        return await self.providers.database.graph_handler.update(graph)
+    async def update_graph(
+        self,
+        graph_id: UUID,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> GraphResponse:
+        return await self.providers.database.graph_handler.update(
+            graph_id=graph_id,
+            name=name,
+            description=description,
+        )
 
     @telemetry_event("delete_graph_v3")
     async def delete_graph_v3(self, id: UUID) -> bool:

@@ -44,13 +44,47 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     expect(response.results.length).toEqual(2);
   });
 
+  test("Retrieve graph 1", async () => {
+    const response = await client.graphs.retrieve({ id: graph1Id });
+    expect(response.results).toBeDefined();
+    expect(response.results.name).toEqual("Graph 1");
+    expect(response.results.description).toBe(null);
+  });
+
+  test("Retrieve graph 2", async () => {
+    const response = await client.graphs.retrieve({ id: graph2Id });
+    expect(response.results).toBeDefined();
+    expect(response.results.name).toEqual("2");
+    expect(response.results.description).toEqual("Graph 2");
+  });
+
+  test("Update the name of graph 1", async () => {
+    const response = await client.graphs.update({
+      id: graph1Id,
+      name: "Graph 1 Updated",
+    });
+    expect(response.results).toBeDefined();
+    expect(response.results.name).toEqual("Graph 1 Updated");
+  });
+
+  test("Update the desription graph 2", async () => {
+    const response = await client.graphs.update({
+      id: graph2Id,
+      description: "Graph 2 Updated",
+    });
+    expect(response.results).toBeDefined();
+    expect(response.results.description).toEqual("Graph 2 Updated");
+  });
+
   test("Delete graph 1", async () => {
     const response = await client.graphs.delete({ id: graph1Id });
     expect(response.results).toBeDefined();
+    expect(response.results.success).toBe(true);
   });
 
   test("Delete graph 2", async () => {
     const response = await client.graphs.delete({ id: graph2Id });
     expect(response.results).toBeDefined();
+    expect(response.results.success).toBe(true);
   });
 });

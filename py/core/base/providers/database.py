@@ -702,7 +702,12 @@ class GraphHandler(Handler):
         pass
 
     @abstractmethod
-    async def update(self, graph: Graph) -> UUID:
+    async def update(
+        self,
+        graph_id: UUID,
+        name: Optional[str],
+        description: Optional[str],
+    ) -> GraphResponse:
         """Update graph"""
         pass
 

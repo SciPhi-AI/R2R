@@ -382,7 +382,9 @@ class CollectionsRouter(BaseRouterV3):
                 ...,
                 description="The unique identifier of the collection to update",
             ),
-            name: str = Body(..., description="The name of the collection"),
+            name: Optional[str] = Body(
+                None, description="The name of the collection"
+            ),
             description: Optional[str] = Body(
                 None, description="An optional description of the collection"
             ),

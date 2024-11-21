@@ -127,14 +127,17 @@ class PostgresCollectionHandler(CollectionHandler):
 
         update_fields = []
         params: list = []
+        param_index = 1
 
         if name is not None:
-            update_fields.append("name = $1")
+            update_fields.append(f"name = ${param_index}")
             params.append(name)
+            param_index += 1
 
         if description is not None:
-            update_fields.append(f"description = ${len(params) + 1}")
+            update_fields.append(f"description = ${param_index}")
             params.append(description)
+            param_index += 1
 
         if not update_fields:
             raise R2RException(status_code=400, message="No fields to update")
@@ -146,7 +149,7 @@ class PostgresCollectionHandler(CollectionHandler):
             WITH updated_collection AS (
                 UPDATE {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
                 SET {', '.join(update_fields)}
-                WHERE collection_id = ${len(params)}
+                WHERE collection_id = ${param_index}
                 RETURNING collection_id, user_id, name, description, kg_enrichment_status, created_at, updated_at
             )
             SELECT
@@ -158,22 +161,31 @@ class PostgresCollectionHandler(CollectionHandler):
             LEFT JOIN {self._get_table_name('document_info')} d ON uc.collection_id = ANY(d.collection_ids)
             GROUP BY uc.collection_id, uc.user_id, uc.name, uc.description, uc.kg_enrichment_status, uc.created_at, uc.updated_at
         """
+        try:
+            result = await self.connection_manager.fetchrow_query(
+                query, params
+            )
+            if not result:
+                raise R2RException(
+                    status_code=404, message="Collection not found"
+                )
 
-        result = await self.connection_manager.fetchrow_query(query, params)
-        if not result:
-            raise R2RException(status_code=404, message="Collection not found")
-
-        return CollectionResponse(
-            id=result["collection_id"],
-            user_id=result["user_id"],
-            name=result["name"],
-            description=result["description"],
-            kg_enrichment_status=result["kg_enrichment_status"],
-            created_at=result["created_at"],
-            updated_at=result["updated_at"],
-            user_count=result["user_count"],
-            document_count=result["document_count"],
-        )
+            return CollectionResponse(
+                id=result["collection_id"],
+                user_id=result["user_id"],
+                name=result["name"],
+                description=result["description"],
+                kg_enrichment_status=result["kg_enrichment_status"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+                user_count=result["user_count"],
+                document_count=result["document_count"],
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while updating the collection: {e}",
+            )
 
     async def delete_collection_relational(self, collection_id: UUID) -> None:
         # Remove collection_id from users

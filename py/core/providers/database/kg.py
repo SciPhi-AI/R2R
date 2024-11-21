@@ -692,11 +692,6 @@ class PostgresGraphHandler(GraphHandler):
 
     def __init__(
         self,
-        # project_name: str,
-        # connection_manager: PostgresConnectionManager,
-        # collection_handler: PostgresCollectionHandler,
-        # dimension: int,
-        # quantization_type: VectorQuantizationType,
         *args: Any,
         **kwargs: Any,
     ) -> None:
@@ -1214,13 +1209,62 @@ class PostgresGraphHandler(GraphHandler):
 
         return True
 
-    async def update(self, graph: Graph) -> UUID:
-        return await _update_object(
-            object=graph.__dict__,
-            full_table_name=self._get_table_name("graph"),
-            connection_manager=self.connection_manager,
-            id_column="id",
-        )
+    async def update(
+        self,
+        graph_id: UUID,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> GraphResponse:
+        """Update an existing graph."""
+        update_fields = []
+        params: list = []
+        param_index = 1
+
+        if name is not None:
+            update_fields.append(f"name = ${param_index}")
+            params.append(name)
+            param_index += 1
+
+        if description is not None:
+            update_fields.append(f"description = ${param_index}")
+            params.append(description)
+            param_index += 1
+
+        if not update_fields:
+            raise R2RException(status_code=400, message="No fields to update")
+
+        update_fields.append("updated_at = NOW()")
+        params.append(graph_id)
+
+        query = f"""
+            UPDATE {self._get_table_name("graph")}
+            SET {', '.join(update_fields)}
+            WHERE id = ${param_index}
+            RETURNING id, user_id, name, description, status, created_at, updated_at
+        """
+
+        try:
+            result = await self.connection_manager.fetchrow_query(
+                query, params
+            )
+
+            if not result:
+                raise R2RException(status_code=404, message="Graph not found")
+
+            return GraphResponse(
+                id=result["id"],
+                user_id=result["user_id"],
+                name=result["name"],
+                description=result["description"],
+                status=result["status"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while updating the graph: {e}",
+            )
 
     ###### ESTIMATION METHODS ######
 
