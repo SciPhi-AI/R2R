@@ -74,6 +74,172 @@ class EntitiesRouter(BaseRouterV3):
 
     def _setup_routes(self):
 
+        # Getting entities for a graph and a document 
+        @self.router.get(
+            "/graphs/{id}/entities",
+            summary="List entities",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.entities.list(graph_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def list_entities(
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to retrieve entities for.",
+            ),
+            entity_names: Optional[list[str]] = Query(
+                None,
+                description="A list of entity names to filter the entities by.",
+            ),
+            include_embeddings: bool = Query(
+                False,
+                description="Whether to include vector embeddings in the response.",
+            ),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedEntitiesResponse:
+            """
+            Returns a paginated list of entities from a knowledge graph or document.
+
+            You must provide either a graph_id or a document_id.
+
+            The entities can be filtered by:
+            - Graph ID: Get entities from a specific graph
+            - Document ID: Get entities from a specific document
+            - Entity names: Filter by specific entity names
+            - Include embeddings: Whether to include vector embeddings in the response
+
+            The response includes:
+            - List of entity objects with their attributes
+            - Total count of matching entities
+            """
+
+            if auth_user.is_superuser:
+                user_id = None
+            else:
+                user_id = auth_user.id
+
+            entities, count = await self.services["kg"].list_entities(
+                graph_id=id,
+                offset=offset,
+                limit=limit,
+                entity_names=entity_names,
+                include_embeddings=include_embeddings,
+                user_id=user_id,
+            )
+
+            return entities, {  # type: ignore
+                "total_entries": count,
+            }
+
+        # Getting entities for a graph and a document 
+        @self.router.get(
+            "/documents/{id}/entities",
+            summary="List entities",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.entities.list(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def list_entities(
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to retrieve entities for.",
+            ),
+            entity_names: Optional[list[str]] = Query(
+                None,
+                description="A list of entity names to filter the entities by.",
+            ),
+            include_embeddings: bool = Query(
+                False,
+                description="Whether to include vector embeddings in the response.",
+            ),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedEntitiesResponse:
+            """
+            Returns a paginated list of entities from a knowledge graph or document.
+
+            You must provide either a graph_id or a document_id.
+
+            The entities can be filtered by:
+            - Graph ID: Get entities from a specific graph
+            - Document ID: Get entities from a specific document
+            - Entity names: Filter by specific entity names
+            - Include embeddings: Whether to include vector embeddings in the response
+
+            The response includes:
+            - List of entity objects with their attributes
+            - Total count of matching entities
+            """
+
+            if auth_user.is_superuser:
+                user_id = None
+            else:
+                user_id = auth_user.id
+
+            entities, count = await self.services["kg"].list_entities(
+                document_id=id,
+                offset=offset,
+                limit=limit,
+                entity_names=entity_names,
+                include_embeddings=include_embeddings,
+                user_id=user_id,
+            )
+
+            return entities, {  # type: ignore
+                "total_entries": count,
+            }
+
         @self.router.get(
             "/entities",
             summary="List entities",
@@ -144,12 +310,18 @@ class EntitiesRouter(BaseRouterV3):
             """
 
             if not graph_id and not document_id:
-                raise ValueError(
-                    "Either graph_id or document_id must be provided."
+                raise R2RException(
+                    "Either graph_id or document_id must be provided.",
+                    400,
                 )
 
+
+            if auth_user.is_superuser:
+                user_id = None
+            else:
+                user_id = auth_user.id
+
             entities, count = await self.services["kg"].list_entities(
-                id=id,
                 graph_id=graph_id,
                 document_id=document_id,
                 offset=offset,
@@ -211,7 +383,7 @@ class EntitiesRouter(BaseRouterV3):
 
         @self.router.post(
             "/entities",
-            summary="Create entities",
+            summary="Create a new entity",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -233,8 +405,15 @@ class EntitiesRouter(BaseRouterV3):
         @self.base_endpoint
         async def create_entities_v3(
             request: Request,
-            entities: list[Entity] = Body(
-                ..., description="The entities to create."
+            name: str = Body(..., description="The name of the entity"),
+            description: str = Body(..., description="The description of the entity"),
+            attributes: Optional[dict] = Body(
+                None,
+                description="The attributes of the entity",
+            ),
+            category: Optional[str] = Body(
+                None,
+                description="The category of the entity",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
@@ -242,27 +421,19 @@ class EntitiesRouter(BaseRouterV3):
             Creates new entities.
 
             This endpoint allows you to:
-            1. Create multiple entities in a single request by providing a list of entity objects
-            2. Define entity attributes, types, and metadata
-            3. Automatically generate unique IDs for each entity
-            4. Link entities to existing graphs or documents
+            1. Create a new entity using the name, category, description, and attributes
+            2. Automatically generate unique IDs for each entity and embeddings for the description
+            3. Link entities to existing graphs or documents
 
             Entity IDs are automatically generated by the server and returned in the response.
             """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
-
-            for entity in entities:
-                if entity.id or entity.sid:
-                    raise R2RException(
-                        "Cannot provide id or sid, they are generated by the server.",
-                        400,
-                    )
 
             res = await self.services["kg"].create_entities(
-                entities=entities,
+                name=name,
+                description=description,
+                category=category,
+                attributes=attributes,
+                auth_user=auth_user,
             )
 
             return res
@@ -290,12 +461,26 @@ class EntitiesRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def update_entity(
-            request: Request,
             id: UUID = Path(
                 ...,
                 description="The ID of the entity to update.",
             ),
-            entity: Entity = Body(..., description="The updated entity."),
+            name: Optional[str] = Body(
+                None,
+                description="The name of the entity",
+            ),
+            description: Optional[str] = Body(
+                None,
+                description="The description of the entity",
+            ),
+            category: Optional[str] = Body(
+                None,
+                description="The category of the entity",
+            ),
+            attributes: Optional[dict] = Body(
+                None,
+                description="The attributes of the entity",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
@@ -309,15 +494,13 @@ class EntitiesRouter(BaseRouterV3):
 
             Any fields not included in the update request will retain their existing values.
             """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
-
-            entity.id = id
-
             return await self.services["kg"].update_entity_v3(
-                entity=entity,
+                id=id,
+                name=name,
+                description=description,
+                category=category,
+                attributes=attributes,
+                auth_user=auth_user,
             )
 
         @self.router.delete(
@@ -365,5 +548,5 @@ class EntitiesRouter(BaseRouterV3):
 
             return await self.services["kg"].delete_entity_v3(
                 id=id,
-                level=self._get_path_level(request),
+                auth_user=auth_user,
             )
