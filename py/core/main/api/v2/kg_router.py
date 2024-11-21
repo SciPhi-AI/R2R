@@ -69,6 +69,7 @@ class KGRouter(BaseRouter):
                 "KG Entity Deduplication task queued successfully."
             )
         else:
+            # TODO: change this message for v2 and v3
             workflow_messages["create-graph"] = (
                 "Graph created successfully, please run enrich-graph to enrich the graph for GraphRAG."
             )

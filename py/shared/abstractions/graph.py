@@ -47,6 +47,8 @@ class Entity(R2RSerializable):
     graph_ids: list[UUID] = []
     document_ids: list[UUID] = []
     document_id: Optional[UUID] = None  # this is for backward compatibility
+    created_by: Optional[UUID] = None
+    updated_by: Optional[UUID] = None
 
     # we don't use these yet
     # name_embedding: Optional[list[float]] = None

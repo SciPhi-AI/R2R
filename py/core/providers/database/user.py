@@ -673,3 +673,26 @@ class PostgresUserHandler(UserHandler):
                 ),
             }
         }
+
+    async def has_document_access(self, auth_user, document_id: UUID) -> bool:
+        """
+        Check if the user has access to a document.
+
+        If the user is a superuser, return True.
+        Otherwise, check if the user is a member of the collection that the document belongs to.
+        """
+
+        if auth_user.is_superuser:
+            return True
+
+        query = f"""
+            SELECT 1
+            FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
+            INNER JOIN {self._get_table_name("document_info")} d
+                ON d.collection_ids && u.collection_ids
+            WHERE u.user_id = $1 AND d.document_id = $2
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [auth_user.id, document_id]
+        )
+        return result is not None

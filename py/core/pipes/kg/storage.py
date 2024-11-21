@@ -12,6 +12,8 @@ from core.base.pipes.base_pipe import AsyncPipe
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.providers.database.postgres import PostgresDBProvider
 
+from typing import Optional
+
 from core.providers.database.kg import DataLevel
 
 logger = logging.getLogger()
@@ -50,6 +52,7 @@ class KGStoragePipe(AsyncPipe):
     async def store(
         self,
         kg_extractions: list[KGExtraction],
+        auth_user: Optional[Any] = None,
     ):
         """
         Stores a batch of knowledge graph extractions in the graph database.
@@ -68,16 +71,20 @@ class KGStoragePipe(AsyncPipe):
                 if not extraction.entities[0].chunk_ids:
                     for i in range(len(extraction.entities)):
                         extraction.entities[i].chunk_ids = extraction.chunk_ids
-                        extraction.entities[i].document_id = (
-                            extraction.document_id
-                        )
 
                 for entity in extraction.entities:
-                    entity.level = DataLevel.CHUNK
-
-                await self.database_provider.graph_handler.entities.create(
-                    extraction.entities
-                )
+                    await self.database_provider.graph_handler.entities.create(
+                        name=entity.name,
+                        category=entity.category,
+                        description=entity.description,
+                        description_embedding=entity.description_embedding,
+                        attributes=entity.attributes,
+                        chunk_ids=entity.chunk_ids,
+                        document_ids=[extraction.document_id],
+                        created_by=entity.created_by,
+                        updated_by=entity.updated_by,
+                        entity_table_name="chunk_entity",
+                    )
 
             if extraction.relationships:
                 if not extraction.relationships[0].chunk_ids:

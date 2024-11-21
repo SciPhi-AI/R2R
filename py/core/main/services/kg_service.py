@@ -71,6 +71,7 @@ class KgService(Service):
         max_knowledge_relationships: int,
         entity_types: list[str],
         relation_types: list[str],
+        auth_user: Optional[Any] = None,
         **kwargs,
     ):
         try:
@@ -95,6 +96,7 @@ class KgService(Service):
                         "entity_types": entity_types,
                         "relation_types": relation_types,
                         "logger": logger,
+                        "auth_user": auth_user,
                     }
                 ),
                 state=None,
@@ -524,6 +526,7 @@ class KgService(Service):
         self,
         document_id: UUID,
         max_description_input_length: int,
+        auth_user: Any,
         **kwargs,
     ):
 
@@ -541,9 +544,10 @@ class KgService(Service):
             )
         )
 
-        logger.info(
-            f"KGService: Found {entity_count} entities in document {document_id}"
-        )
+        if entity_count == 0:
+            raise R2RException(
+                "No entities found for document. Please check the document for errors."
+            )
 
         # TODO - Do not hardcode the batch size,
         # make it a configurable parameter at runtime & server-side defaults
@@ -566,6 +570,7 @@ class KgService(Service):
                         "limit": 256,
                         "max_description_input_length": max_description_input_length,
                         "document_id": document_id,
+                        "auth_user": auth_user,
                         "logger": logger,
                     }
                 ),

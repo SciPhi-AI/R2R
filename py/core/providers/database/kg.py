@@ -94,13 +94,20 @@ class PostgresEntityHandler(EntityHandler):
             CREATE TABLE IF NOT EXISTS {self._get_table_name("chunk_entity")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             sid SERIAL,
-            category TEXT NOT NULL,
             name TEXT NOT NULL,
+            category TEXT,
             description TEXT NOT NULL,
-            chunk_ids UUID[] NOT NULL,
-            document_id UUID NOT NULL,
+            chunk_ids UUID[],
+            description_embedding {vector_column_str},
+            document_ids UUID[],
+            document_id UUID,
+            graph_ids UUID[],
+            created_by UUID REFERENCES {self._get_table_name("users")}(user_id),
+            last_modified_by UUID REFERENCES {self._get_table_name("users")}(user_id),
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
             attributes JSONB
-        );
+            );
         """
         await self.connection_manager.execute_query(query)
 
@@ -154,7 +161,11 @@ class PostgresEntityHandler(EntityHandler):
         description: str,
         description_embedding: str,
         attributes: dict,
-        auth_user: Optional[Any] = None,
+        chunk_ids: Optional[list[UUID]] = None,  # not exposed on the API
+        document_ids: Optional[list[UUID]] = None,  # not exposed on the API
+        created_by: Optional[UUID] = None,
+        updated_by: Optional[UUID] = None,
+        entity_table_name: str = "entity",
     ) -> UUID:  # type: ignore
         """Create a new entity in the database.
 
@@ -164,13 +175,16 @@ class PostgresEntityHandler(EntityHandler):
             description: Description of the entity
             description_embedding: Embedding of the description
             attributes: Attributes of the entity
+            chunk_ids: Optional list of UUIDs of the chunks the entity belongs to
+            document_ids: Optional list of UUIDs of the documents the entity belongs to
+            auth_user: User object
 
         Returns:
             UUID of the created entity
         """
 
         QUERY = f"""
-            INSERT INTO {self._get_table_name("entity")} (name, category, description, description_embedding, attributes, created_by, last_modified_by) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO {self._get_table_name(entity_table_name)} (name, category, description, description_embedding, attributes, chunk_ids, document_ids, created_by, last_modified_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING id, name, category, description, created_by, last_modified_by, created_at, updated_at, attributes
         """
 
@@ -181,9 +195,11 @@ class PostgresEntityHandler(EntityHandler):
                 category,
                 description,
                 description_embedding,
-                attributes,
-                auth_user.id,
-                auth_user.id,
+                str(attributes),
+                chunk_ids,
+                document_ids,
+                created_by,
+                updated_by,
             ],
         )
 
@@ -728,6 +744,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
             QUERY, [graph_id, relationship_id]
         )
 
+
 class PostgresCommunityHandler(CommunityHandler):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -971,6 +988,7 @@ class PostgresCommunityHandler(CommunityHandler):
                     )
                 )
             ]
+
 
 class PostgresGraphHandler(GraphHandler):
     """Handler for Knowledge Graph METHODS in PostgreSQL."""
@@ -2403,16 +2421,15 @@ class PostgresGraphHandler(GraphHandler):
             WITH entities_list AS (
                 SELECT DISTINCT name
                 FROM {self._get_table_name("chunk_entity")}
-                WHERE document_id = $1
+                WHERE $1 = ANY(document_ids)
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
             SELECT e.name, e.description, e.category,
-                   (SELECT array_agg(DISTINCT x) FROM unnest(e.chunk_ids) x) AS chunk_ids,
-                   e.document_id
+                   (SELECT array_agg(DISTINCT x) FROM unnest(e.chunk_ids) x) AS chunk_ids
             FROM {self._get_table_name("chunk_entity")} e
             JOIN entities_list el ON e.name = el.name
-            GROUP BY e.name, e.description, e.category, e.chunk_ids, e.document_id
+            GROUP BY e.name, e.description, e.category, e.chunk_ids
             ORDER BY e.name;"""
 
         entities_list = await self.connection_manager.fetch_query(
@@ -2424,25 +2441,25 @@ class PostgresGraphHandler(GraphHandler):
                 description=entity["description"],
                 category=entity["category"],
                 chunk_ids=entity["chunk_ids"],
-                document_id=entity["document_id"],
+                document_ids=[document_id],
             )
             for entity in entities_list
         ]
 
         QUERY2 = f"""
             WITH entities_list AS (
-
                 SELECT DISTINCT name
                 FROM {self._get_table_name("chunk_entity")}
-                WHERE document_id = $1
+                WHERE $1 = ANY(document_ids)
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
-
             SELECT DISTINCT t.subject, t.predicate, t.object, t.weight, t.description,
-                   (SELECT array_agg(DISTINCT x) FROM unnest(t.chunk_ids) x) AS chunk_ids, t.document_id
+                   (SELECT array_agg(DISTINCT x) FROM unnest(t.chunk_ids) x) AS chunk_ids,
+                   t.document_id
             FROM {self._get_table_name("relationship")} t
-            JOIN entities_list el ON t.subject = el.name
+            INNER JOIN entities_list el ON t.subject = el.name
+            WHERE t.document_id = $1
             ORDER BY t.subject, t.predicate, t.object;
         """
 
@@ -2974,7 +2991,7 @@ class PostgresGraphHandler(GraphHandler):
             )
             params.append(str(collection_id))
         else:
-            conditions.append("document_id = $1")
+            conditions.append("$1 = ANY(document_ids)")
             params.append(str(document_id))
 
         count_value = "DISTINCT name" if distinct else "*"

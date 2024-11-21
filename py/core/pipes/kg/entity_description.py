@@ -74,7 +74,11 @@ class KGEntityDescriptionPipe(AsyncPipe):
             return truncated_info
 
         async def process_entity(
-            entities, relationships, max_description_input_length, document_id
+            entities,
+            relationships,
+            max_description_input_length,
+            document_id,
+            auth_user,
         ):
 
             entity_info = [
@@ -132,9 +136,17 @@ class KGEntityDescriptionPipe(AsyncPipe):
             )[0]
 
             # upsert the entity and its embedding
-            await self.database_provider.graph_handler.add_entities(
-                [out_entity],
-                table_name="entity",
+            await self.database_provider.graph_handler.entities.create(
+                name=out_entity.name,
+                category=out_entity.category,
+                description=out_entity.description,
+                description_embedding=str(out_entity.description_embedding),
+                chunk_ids=out_entity.chunk_ids,
+                attributes=out_entity.attributes or {},
+                document_ids=[document_id],
+                entity_table_name="entity",
+                created_by=auth_user["id"] if auth_user else None,
+                updated_by=auth_user["id"] if auth_user else None,
             )
 
             return out_entity.name
@@ -143,6 +155,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
         limit = input.message["limit"]
         document_id = input.message["document_id"]
         logger = input.message["logger"]
+        auth_user = input.message.get("auth_user", None)
 
         logger.info(
             f"KGEntityDescriptionPipe: Getting entity map for document {document_id}",
@@ -167,6 +180,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                         entity_info["relationships"],
                         input.message["max_description_input_length"],
                         document_id,
+                        auth_user,
                     )
                 )
             except Exception as e:
