@@ -1075,7 +1075,7 @@ class PostgresCommunityHandler(CommunityHandler):
     ) -> Community:
 
         update_fields = []
-        params: list[Any] = [community_id, graph_id]  # type: ignore
+        params: list[Any] = [community_id, id]  # type: ignore
         params_index = 3
 
         if name is not None:
