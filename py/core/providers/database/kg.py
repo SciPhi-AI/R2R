@@ -97,15 +97,8 @@ class PostgresEntityHandler(EntityHandler):
             name TEXT NOT NULL,
             category TEXT,
             description TEXT NOT NULL,
-            chunk_ids UUID[],
-            description_embedding {vector_column_str},
-            document_ids UUID[],
-            document_id UUID,
-            graph_ids UUID[],
-            user_id UUID REFERENCES {self._get_table_name("users")}(user_id),
-            last_modified_by UUID REFERENCES {self._get_table_name("users")}(user_id),
-            created_at TIMESTAMPTZ DEFAULT NOW(),
-            updated_at TIMESTAMPTZ DEFAULT NOW(),
+            chunk_ids UUID[] NOT NULL,
+            document_id UUID NOT NULL,
             attributes JSONB
             );
         """
@@ -161,12 +154,7 @@ class PostgresEntityHandler(EntityHandler):
         description: str,
         description_embedding: str,
         attributes: dict,
-        chunk_ids: Optional[list[UUID]] = None,  # not exposed on the API
-        document_id: Optional[UUID] = None,
-        document_ids: Optional[list[UUID]] = None,  # not exposed on the API
-        user_id: Optional[UUID] = None,
-        last_modified_by: Optional[UUID] = None,
-        entity_table_name: str = "entity",
+        auth_user: Optional[Any] = None,
     ) -> UUID:  # type: ignore
         """Create a new entity in the database.
 
@@ -176,19 +164,14 @@ class PostgresEntityHandler(EntityHandler):
             description: Description of the entity
             description_embedding: Embedding of the description
             attributes: Attributes of the entity
-            chunk_ids: Optional list of UUIDs of the chunks the entity belongs to
-            document_id: Optional UUID of the document the entity belongs to
-            document_ids: Optional list of UUIDs of the documents the entity belongs to
-            user_id: Optional UUID of the user who created the entity
-            last_modified_by: Optional UUID of the user who last modified the entity
 
         Returns:
             UUID of the created entity
         """
 
         QUERY = f"""
-            INSERT INTO {self._get_table_name(entity_table_name)} (name, category, description, description_embedding, attributes, chunk_ids, document_id, document_ids, user_id, last_modified_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING id, name, category, description, document_id, document_ids, user_id, last_modified_by, created_at, updated_at, attributes
+            INSERT INTO {self._get_table_name("entity")} (name, category, description, description_embedding, attributes, created_by, last_modified_by) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id, name, category, description, created_by, last_modified_by, created_at, updated_at, attributes
         """
 
         output = await self.connection_manager.fetch_query(
@@ -198,12 +181,9 @@ class PostgresEntityHandler(EntityHandler):
                 category,
                 description,
                 description_embedding,
-                str(attributes),
-                chunk_ids,
-                document_id,
-                document_ids,
-                user_id,
-                last_modified_by,
+                attributes,
+                auth_user.id,
+                auth_user.id,
             ],
         )
 
@@ -874,142 +854,33 @@ class PostgresCommunityHandler(CommunityHandler):
             rating FLOAT NOT NULL,
             rating_explanation TEXT NOT NULL,
             embedding {vector_column_str} NOT NULL,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            user_id UUID REFERENCES {self._get_table_name("users")}(user_id),
-            last_modified_by UUID REFERENCES {self._get_table_name("users")}(user_id),
             attributes JSONB,
             UNIQUE (community_number, level, graph_id, collection_id)
         );"""
 
         await self.connection_manager.execute_query(query)
 
-    async def create(
-        self,
-        graph_id: UUID,
-        name: str,
-        summary: str,
-        embedding: str,
-        findings: list[str],
-        rating: Optional[float],
-        rating_explanation: Optional[str],
-        level: Optional[int],
-        attributes: Optional[dict],
-        auth_user: Any,
-    ) -> None:
+    async def create(self, communities: list[Community]) -> None:
+        await _add_objects(
+            objects=[community.__dict__ for community in communities],
+            full_table_name=self._get_table_name("graph_community"),
+            connection_manager=self.connection_manager,
+        )
 
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(graph_id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to create this community.",
-                    403,
-                )
+    async def update(self, community: Community) -> None:
+        return await _update_object(
+            object=community.__dict__,
+            full_table_name=self._get_table_name("graph_community"),
+            connection_manager=self.connection_manager,
+            id_column="id",
+        )
 
-        QUERY = f"""
-            INSERT INTO {self._get_table_name("graph_community")}
-            (graph_id, name, summary, findings, rating, rating_explanation, embedding, level, attributes, user_id, last_modified_by)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, user_id, last_modified_by
-        """
-
-        params = [
-            graph_id,
-            name,
-            summary,
-            findings,
-            rating,
-            rating_explanation,
-            embedding,
-            level,
-            attributes,
-            auth_user.id,
-            auth_user.id,
-        ]
-
-        return await self.connection_manager.fetchrow_query(QUERY, params)
-
-    async def update(
-        self,
-        id: UUID,
-        community_id: UUID,
-        name: Optional[str],
-        summary: Optional[str],
-        embedding: Optional[str],
-        findings: Optional[list[str]],
-        rating: Optional[float],
-        rating_explanation: Optional[str],
-        level: Optional[int],
-        attributes: Optional[dict],
-        auth_user: Any,
-    ) -> None:
-
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to update this community.",
-                    403,
-                )
-
-        update_fields = []
-        params = [community_id]  # type: ignore
-        if name is not None:
-            update_fields.append(f"name = ${len(params)+1}")
-            params.append(name)
-
-        if summary is not None:
-            update_fields.append(f"summary = ${len(params)+1}")
-            params.append(summary)
-
-        if embedding is not None:
-            update_fields.append(f"embedding = ${len(params)+1}")
-            params.append(embedding)
-
-        if findings is not None:
-            update_fields.append(f"findings = ${len(params)+1}")
-            params.append(findings)
-
-        if rating is not None:
-            update_fields.append(f"rating = ${len(params)+1}")
-            params.append(rating)
-
-        if rating_explanation is not None:
-            update_fields.append(f"rating_explanation = ${len(params)+1}")
-            params.append(rating_explanation)
-
-        if level is not None:
-            update_fields.append(f"level = ${len(params)+1}")
-            params.append(level)
-
-        if attributes is not None:
-            update_fields.append(f"attributes = ${len(params)+1}")
-            params.append(attributes)
-
-        update_fields.append(f"last_modified_by = ${len(params)+1}")
-        params.append(auth_user.id)
-
-        update_fields.append(f"updated_at = CURRENT_TIMESTAMP")
-
-        QUERY = f"""
-            UPDATE {self._get_table_name("graph_community")} SET {", ".join(update_fields)} WHERE id = $1
-            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, attributes, level, user_id, last_modified_by, updated_at
-        """
-        return await self.connection_manager.fetchrow_query(QUERY, params)
-
-    async def delete(
-        self, graph_id: UUID, community_id: UUID, auth_user: Any
-    ) -> None:
-
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(graph_id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to delete this community.",
-                    403,
-                )
-
-        QUERY = f"""
-            DELETE FROM {self._get_table_name("graph_community")} WHERE id = $1
-        """
-        await self.connection_manager.execute_query(QUERY, [community_id])
+    async def delete(self, community: Community) -> None:
+        return await _delete_object(
+            object_id=community.id,  # type: ignore
+            full_table_name=self._get_table_name("graph_community"),
+            connection_manager=self.connection_manager,
+        )
 
     async def get(
         self,
@@ -1030,9 +901,7 @@ class PostgresCommunityHandler(CommunityHandler):
         if community_id is None:
 
             QUERY = f"""
-                SELECT
-                    id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, user_id, last_modified_by, created_at, updated_at
-                FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
+                SELECT * FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
                 OFFSET $2 LIMIT $3
             """
             params = [graph_id, offset, limit]
@@ -1056,9 +925,7 @@ class PostgresCommunityHandler(CommunityHandler):
 
         else:
             QUERY = f"""
-                SELECT
-                    id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, user_id, last_modified_by, created_at, updated_at
-                FROM {self._get_table_name("graph_community")} WHERE graph_id = $1 AND id = $2
+                SELECT * FROM {self._get_table_name("graph_community")} WHERE graph_id = $1 AND id = $2
             """
             params = [graph_id, community_id]
             return [
