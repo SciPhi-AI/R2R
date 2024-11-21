@@ -48,6 +48,21 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     expect(response.results.length).toEqual(2);
   });
 
+  test("Retrieve entity 1", async () => {
+    const response = await client.entities.retrieve({ id: entity1Id });
+    expect(response.results).toBeDefined();
+    expect(response.results.name).toEqual("Entity 1");
+    expect(response.results.description).toEqual("The first entity");
+  });
+
+  test("Retrieve entity 2", async () => {
+    const response = await client.entities.retrieve({ id: entity2Id });
+    expect(response.results).toBeDefined();
+    expect(response.results.name).toEqual("Entity 2");
+    expect(response.results.description).toEqual("The second entity");
+    expect(response.results.category).toEqual("category");
+  });
+
   test("Delete entity 1", async () => {
     const response = await client.entities.delete({ id: entity1Id });
     expect(response.results).toBeDefined();

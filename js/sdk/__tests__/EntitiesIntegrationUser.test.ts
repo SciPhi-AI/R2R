@@ -133,44 +133,110 @@ describe("r2rClient V3 System Integration Tests User", () => {
     expect(response.results.length).toEqual(2);
   });
 
-//   test("User 1 should not be able to delete user 2's entities", async () => {
-//     const response = await user1Client.entities.delete({ id: user2Entity1Id });
-//     expect(response.results).toBeDefined();
-//     expect(response.results.success).toBe(false);
+  test("User 1 should be able to retrieve their entities", async () => {
+    const response = await user1Client.entities.retrieve({
+      id: user1Entity1Id,
+    });
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(user1Entity1Id);
+  });
+
+//   test("User 1 should not be able to retrieve user 2's entities", async () => {
+//     expect(
+//       await user1Client.entities.retrieve({ id: user2Entity1Id }),
+//     ).toThrowError();
 //   });
 
-//   test("User 2 should not be able to delete user 1's entities", async () => {
-//     const response = await user2Client.entities.delete({ id: user1Entity1Id });
-//     expect(response.results).toBeDefined();
-//     expect(response.results.success).toBe(false);
+  test("User 2 should be able to retrieve their entities", async () => {
+    const response = await user2Client.entities.retrieve({
+      id: user2Entity1Id,
+    });
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(user2Entity1Id);
+  });
+
+//   test("User 2 should not be able to retrieve user 1's entities", async () => {
+//     expect(
+//       await user2Client.entities.retrieve({ id: user1Entity1Id }),
+//     ).toThrowError();
 //   });
 
-  test("Delete user 1's entities", async () => {
-    const firstResponse = await user1Client.entities.delete({
+  test("A super user should be able to retrieve user 1's entities", async () => {
+    const response = await client.entities.retrieve({ id: user1Entity1Id });
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(user1Entity1Id);
+  });
+
+  test("A super user should be able to retrieve user 2's entities", async () => {
+    const response = await client.entities.retrieve({ id: user2Entity1Id });
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(user2Entity1Id);
+  });
+
+  //   test("User 1 should not be able to delete user 2's entities", async () => {
+  //     const response = await user1Client.entities.delete({ id: user2Entity1Id });
+  //     expect(response.results).toBeDefined();
+  //     expect(response.results.success).toBe(false);
+  //   });
+
+  //   test("User 2 should not be able to delete user 1's entities", async () => {
+  //     const response = await user2Client.entities.delete({ id: user1Entity1Id });
+  //     expect(response.results).toBeDefined();
+  //     expect(response.results.success).toBe(false);
+  //   });
+
+  //   test("Delete user 1's entities", async () => {
+  //     const firstResponse = await user1Client.entities.delete({
+  //       id: user1Entity1Id,
+  //     });
+  //     expect(firstResponse.results).toBeDefined();
+  //     expect(firstResponse.results.success).toBe(true);
+
+  //     const secondResponse = await user1Client.entities.delete({
+  //       id: user1Entity2Id,
+  //     });
+  //     expect(secondResponse.results).toBeDefined();
+  //     expect(secondResponse.results.success).toBe(true);
+  //   });
+
+  //   test("Delete user 2's entities", async () => {
+  //     const firstResponse = await user2Client.entities.delete({
+  //       id: user2Entity1Id,
+  //     });
+  //     expect(firstResponse.results).toBeDefined();
+  //     expect(firstResponse.results.success).toBe(true);
+
+  //     const secondResponse = await user2Client.entities.delete({
+  //       id: user2Entity2Id,
+  //     });
+  //     expect(secondResponse.results).toBeDefined();
+  //     expect(secondResponse.results.success).toBe(true);
+  //   });
+
+  test("REMOVE THIS, BUT A SUPER USER NEEDS TO DELETE THE ENTITIES FOR NOW", async () => {
+    const firstResponse = await client.entities.delete({
       id: user1Entity1Id,
     });
     expect(firstResponse.results).toBeDefined();
     expect(firstResponse.results.success).toBe(true);
 
-    const secondResponse = await user1Client.entities.delete({
+    const secondResponse = await client.entities.delete({
       id: user1Entity2Id,
     });
     expect(secondResponse.results).toBeDefined();
     expect(secondResponse.results.success).toBe(true);
-  });
 
-  test("Delete user 2's entities", async () => {
-    const firstResponse = await user2Client.entities.delete({
+    const thirdResponse = await client.entities.delete({
       id: user2Entity1Id,
     });
-    expect(firstResponse.results).toBeDefined();
-    expect(firstResponse.results.success).toBe(true);
+    expect(thirdResponse.results).toBeDefined();
+    expect(thirdResponse.results.success).toBe(true);
 
-    const secondResponse = await user2Client.entities.delete({
+    const fourthResponse = await client.entities.delete({
       id: user2Entity2Id,
     });
-    expect(secondResponse.results).toBeDefined();
-    expect(secondResponse.results.success).toBe(true);
+    expect(fourthResponse.results).toBeDefined();
+    expect(fourthResponse.results.success).toBe(true);
   });
 
   test("Delete user 1", async () => {

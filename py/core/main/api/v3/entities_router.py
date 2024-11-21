@@ -120,172 +120,6 @@ class EntitiesRouter(BaseRouterV3):
                 user_id=auth_user.id,
             )
 
-        # Getting entities for a graph and a document
-        @self.router.get(
-            "/graphs/{id}/entities",
-            summary="List entities",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.entities.list(graph_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
-                            """
-                        ),
-                    },
-                ],
-            },
-        )
-        @self.base_endpoint
-        async def list_entities(
-            id: UUID = Path(
-                ...,
-                description="The ID of the graph to retrieve entities for.",
-            ),
-            entity_names: Optional[list[str]] = Query(
-                None,
-                description="A list of entity names to filter the entities by.",
-            ),
-            include_embeddings: bool = Query(
-                False,
-                description="Whether to include vector embeddings in the response.",
-            ),
-            offset: int = Query(
-                0,
-                ge=0,
-                description="Specifies the number of objects to skip. Defaults to 0.",
-            ),
-            limit: int = Query(
-                100,
-                ge=1,
-                le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedEntitiesResponse:
-            """
-            Returns a paginated list of entities from a knowledge graph or document.
-
-            You must provide either a graph_id or a document_id.
-
-            The entities can be filtered by:
-            - Graph ID: Get entities from a specific graph
-            - Document ID: Get entities from a specific document
-            - Entity names: Filter by specific entity names
-            - Include embeddings: Whether to include vector embeddings in the response
-
-            The response includes:
-            - List of entity objects with their attributes
-            - Total count of matching entities
-            """
-
-            if auth_user.is_superuser:
-                user_id = None
-            else:
-                user_id = auth_user.id
-
-            entities, count = await self.services["kg"].list_entities(
-                graph_id=id,
-                offset=offset,
-                limit=limit,
-                entity_names=entity_names,
-                include_embeddings=include_embeddings,
-                user_id=user_id,
-            )
-
-            return entities, {  # type: ignore
-                "total_entries": count,
-            }
-
-        # Getting entities for a graph and a document
-        @self.router.get(
-            "/documents/{id}/entities",
-            summary="List entities",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.documents.entities.list(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
-                            """
-                        ),
-                    },
-                ],
-            },
-        )
-        @self.base_endpoint
-        async def list_entities(
-            id: UUID = Path(
-                ...,
-                description="The ID of the document to retrieve entities for.",
-            ),
-            entity_names: Optional[list[str]] = Query(
-                None,
-                description="A list of entity names to filter the entities by.",
-            ),
-            include_embeddings: bool = Query(
-                False,
-                description="Whether to include vector embeddings in the response.",
-            ),
-            offset: int = Query(
-                0,
-                ge=0,
-                description="Specifies the number of objects to skip. Defaults to 0.",
-            ),
-            limit: int = Query(
-                100,
-                ge=1,
-                le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedEntitiesResponse:
-            """
-            Returns a paginated list of entities from a knowledge graph or document.
-
-            You must provide either a graph_id or a document_id.
-
-            The entities can be filtered by:
-            - Graph ID: Get entities from a specific graph
-            - Document ID: Get entities from a specific document
-            - Entity names: Filter by specific entity names
-            - Include embeddings: Whether to include vector embeddings in the response
-
-            The response includes:
-            - List of entity objects with their attributes
-            - Total count of matching entities
-            """
-
-            if auth_user.is_superuser:
-                user_id = None
-            else:
-                user_id = auth_user.id
-
-            entities, count = await self.services["kg"].list_entities(
-                document_id=id,
-                offset=offset,
-                limit=limit,
-                entity_names=entity_names,
-                include_embeddings=include_embeddings,
-                user_id=user_id,
-            )
-
-            return entities, {  # type: ignore
-                "total_entries": count,
-            }
-
         @self.router.get(
             "/entities",
             summary="List entities",
@@ -301,6 +135,22 @@ class EntitiesRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.documents.graphs.entities.list(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.entities.list({});
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -371,33 +221,43 @@ class EntitiesRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.entities.retrieve({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
                 ]
             },
         )
         @self.base_endpoint
         async def get_entity(
-            id: UUID = Path(
-                ...,
-                description="The ID of the entity to retrieve.",
-            ),
+            id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntityResponse:
             """
-            Retrieves detailed information about a specific entity by its unique identifier.
-
-            The attributes parameter allows selective retrieval of specific entity properties to optimize response size and processing.
+            Retrieves detailed information about a specific entity by ID.
             """
-
-            entity = await self.services["kg"].get_entity(
-                id=id,
+            # FIXME: This is unacceptable. We need to check if the user has access to the entity.
+            list_entities_response = await self.services["kg"].list_entities(
+                user_ids=None,
+                entity_ids=[id],
+                offset=0,
+                limit=1,
             )
-
-            graph_ids = entity.graph_ids
-            document_ids = entity.document_ids
-
-            # if the user does not have access to the graph or the document, return a 403
-
-            return entity
+            return list_entities_response["results"][0]
 
         @self.router.delete(
             "/entities/{id}",
