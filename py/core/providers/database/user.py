@@ -398,9 +398,7 @@ class PostgresUserHandler(UserHandler):
             )
         return True
 
-    async def add_user_to_graph(
-        self, user_id: UUID, graph_id: UUID
-    ) -> bool:
+    async def add_user_to_graph(self, user_id: UUID, graph_id: UUID) -> bool:
         if not await self.get_user_by_id(user_id):
             raise R2RException(status_code=404, message="User not found")
 

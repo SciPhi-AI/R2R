@@ -422,7 +422,7 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def delete_graph(
-            id: UUID = Path(...),   
+            id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """

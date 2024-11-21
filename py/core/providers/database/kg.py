@@ -214,7 +214,6 @@ class PostgresEntityHandler(EntityHandler):
             filter += " AND ${len(params)+1} = ANY(document_ids)"
             params.append(document_id)
 
-
         # Build query with conditional LIMIT
         base_query = f"""
             SELECT * from {self._get_table_name("entity")} WHERE {filter}
@@ -229,20 +228,26 @@ class PostgresEntityHandler(EntityHandler):
 
         QUERY = base_query
 
-        import pdb; pdb.set_trace()
+        import pdb
+
+        pdb.set_trace()
 
         output = await self.connection_manager.fetch_query(QUERY, params)
 
         output = [
             Entity(
-                id = entity["id"],
-                name = entity["name"],
-                description = entity["description"],
-                description_embedding = entity["description_embedding"] if include_embeddings else None,
-                chunk_ids = entity["chunk_ids"],
-                document_ids = entity["document_ids"],
-                graph_ids = entity["graph_ids"],
-                attributes = entity["attributes"],
+                id=entity["id"],
+                name=entity["name"],
+                description=entity["description"],
+                description_embedding=(
+                    entity["description_embedding"]
+                    if include_embeddings
+                    else None
+                ),
+                chunk_ids=entity["chunk_ids"],
+                document_ids=entity["document_ids"],
+                graph_ids=entity["graph_ids"],
+                attributes=entity["attributes"],
             )
             for entity in output
         ]
@@ -261,7 +266,7 @@ class PostgresEntityHandler(EntityHandler):
                 "No entities found in the graph, please add first",
                 204,
             )
-        
+
         if count == 0 and document_id:
             raise R2RException(
                 "No entities found in the document, please add first",
@@ -279,7 +284,7 @@ class PostgresEntityHandler(EntityHandler):
         Raises:
             R2RException: If the entity does not exist in the database
         """
-        
+
         filter = "id = $1"
         params: list[Any] = [entity.id]
 
@@ -511,26 +516,34 @@ class PostgresRelationshipHandler(RelationshipHandler):
         return await self.connection_manager.fetchrow_query(
             QUERY, [relationship_id]
         )
-    
-    async def add_to_graph(self, graph_id: UUID, relationship_ids: list[UUID]) -> None:
+
+    async def add_to_graph(
+        self, graph_id: UUID, relationship_ids: list[UUID]
+    ) -> None:
         QUERY = f"""
             UPDATE {self._get_table_name("graph_relationship")}
-            SET graph_ids = CASE 
+            SET graph_ids = CASE
                 WHEN graph_ids IS NULL THEN ARRAY[$1]
                 WHEN NOT ($1 = ANY(graph_ids)) THEN array_append(graph_ids, $1)
                 ELSE graph_ids
             END
             WHERE id = ANY($2)
         """
-        return await self.connection_manager.execute_query(QUERY, [graph_id, relationship_ids])
-    
-    async def remove_from_graph(self, graph_id: UUID, relationship_ids: list[UUID]) -> None:
+        return await self.connection_manager.execute_query(
+            QUERY, [graph_id, relationship_ids]
+        )
+
+    async def remove_from_graph(
+        self, graph_id: UUID, relationship_ids: list[UUID]
+    ) -> None:
         QUERY = f"""
             UPDATE {self._get_table_name("graph_relationship")}
             SET graph_ids = array_remove(graph_ids, $1)
             WHERE id = ANY($2)
         """
-        return await self.connection_manager.execute_query(QUERY, [graph_id, relationship_ids])
+        return await self.connection_manager.execute_query(
+            QUERY, [graph_id, relationship_ids]
+        )
 
     async def add_to_graph(
         self, graph_id: UUID, relationship_ids: list[UUID]
@@ -2255,7 +2268,10 @@ class PostgresGraphHandler(GraphHandler):
             filter_query = "WHERE collection_id = ANY($3)"
             filter_ids = collection_ids_dict["$overlap"]
 
-            if search_type == "__Community__" or table_name == "collection_entity":
+            if (
+                search_type == "__Community__"
+                or table_name == "collection_entity"
+            ):
                 logger.info(f"Searching in collection ids: {filter_ids}")
 
             elif search_type in ["__Entity__", "__Relationship__"]:

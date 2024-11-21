@@ -352,9 +352,7 @@ async def test_perform_graph_clustering(
 ):
 
     # addd entities and relationships
-    await postgres_db_provider.add_entities(
-        entities_list, table_name="entity"
-    )
+    await postgres_db_provider.add_entities(entities_list, table_name="entity")
     await postgres_db_provider.graph_handler.add_relationships(
         relationships_raw_list, table_name="relationship"
     )
@@ -375,9 +373,7 @@ async def test_get_community_details(
     community_table_info,
 ):
 
-    await postgres_db_provider.add_entities(
-        entities_list, table_name="entity"
-    )
+    await postgres_db_provider.add_entities(entities_list, table_name="entity")
     await postgres_db_provider.graph_handler.add_relationships(
         relationships_raw_list, table_name="relationship"
     )
