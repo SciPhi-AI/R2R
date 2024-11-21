@@ -201,13 +201,13 @@ class KgService(Service):
         self,
         graph_id: UUID,
         entity_id: UUID,
-        auth_user: Optional[Any] = None,
     ):
-        return (
-            await self.providers.database.graph_handler.entities.add_to_graph(
-                graph_id, entity_id, auth_user
-            )
+        await self.providers.database.graph_handler.entities.add_to_graph(
+            graph_id=graph_id,
+            entity_id=entity_id,
         )
+
+        return {"message": "Entity assigned to graph successfully"}
 
     # TODO: deprecate this
     @telemetry_event("get_entities")

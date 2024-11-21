@@ -421,7 +421,9 @@ class ManagementService(Service):
 
     @telemetry_event("AssignDocumentToCollection")
     async def assign_document_to_collection(
-        self, document_id: UUID, collection_id: UUID
+        self,
+        document_id: UUID,
+        collection_id: UUID,
     ):
         await self.providers.database.assign_document_to_collection_vector(
             document_id, collection_id

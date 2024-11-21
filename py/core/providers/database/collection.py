@@ -426,8 +426,8 @@ class PostgresCollectionHandler(CollectionHandler):
             if not result:
                 # Document exists but was already assigned to the collection
                 raise R2RException(
-                    status_code=409,
                     message="Document is already assigned to the collection",
+                    status_code=409,
                 )
 
             return collection_id

@@ -528,29 +528,41 @@ class PostgresEntityHandler(EntityHandler):
             )
 
     async def add_to_graph(
-        self, graph_id: UUID, entity_id: UUID, auth_user: Optional[Any] = None
+        self,
+        graph_id: UUID,
+        entity_id: UUID,
     ) -> None:
-
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(entity_id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to add this entity to the graph.",
-                    403,
-                )
-
-        QUERY = f"""
-            UPDATE {self._get_table_name("entity")}
-            SET graph_ids = CASE
-                WHEN graph_ids IS NULL THEN ARRAY[$1::uuid]
-                WHEN NOT ($1 = ANY(graph_ids)) THEN array_append(graph_ids, $1)
-                ELSE graph_ids
-            END
-            WHERE id = $2
-            RETURNING id, name, category, description, graph_ids, attributes
+        # First, check if the entity exists
+        entity_check_query = f"""
+            SELECT graph_ids FROM {self._get_table_name("entity")}
+            WHERE id = $1
         """
+        entity = await self.connection_manager.fetchrow_query(
+            entity_check_query, [entity_id]
+        )
 
-        return await self.connection_manager.fetch_query(
-            QUERY, [graph_id, entity_id]
+        if not entity:
+            raise R2RException(
+                message="Entity not found",
+                status_code=404,
+            )
+
+        # Check if graph_id already exists in graph_ids
+        if entity["graph_ids"] and graph_id in entity["graph_ids"]:
+            raise R2RException(
+                message="Entity already exists in the graph",
+                status_code=409,
+            )
+
+        # Add to graph_ids
+        assign_query = f"""
+            UPDATE {self._get_table_name("entity")}
+            SET graph_ids = array_append(graph_ids, $1)
+            where id = $2
+            RETURNING id
+        """
+        await self.connection_manager.fetchrow_query(
+            assign_query, [graph_id, entity_id]
         )
 
     async def remove_from_graph(

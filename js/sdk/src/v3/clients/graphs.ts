@@ -3,6 +3,7 @@ import {
   WrappedGraphResponse,
   WrappedBooleanResponse,
   WrappedGraphsResponse,
+  WrappedGenericMessageResponse,
 } from "../../types";
 
 export class GraphsClient {
@@ -87,5 +88,21 @@ export class GraphsClient {
    */
   async delete(options: { id: string }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", `graphs/${options.id}`);
+  }
+
+  /**
+   * Add a entity to a graph.
+   * @param id Graph ID
+   * @param entityId Entity ID to add
+   * @returns
+   */
+  async addEntity(options: {
+    id: string;
+    entityId: string;
+  }): Promise<WrappedGenericMessageResponse> {
+    return this.client.makeRequest(
+      "POST",
+      `graphs/${options.id}/entities/${options.entityId}`,
+    );
   }
 }

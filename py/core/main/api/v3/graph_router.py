@@ -12,18 +12,11 @@ from core.base.api.models import (
     GenericBooleanResponse,
     GenericMessageResponse,
     WrappedBooleanResponse,
-    WrappedGenericMessageResponse,
     WrappedKGCreationResponse,
+    WrappedGenericMessageResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
-    WrappedEntityResponse,
-    WrappedEntitiesResponse,
-    WrappedRelationshipResponse,
-    WrappedRelationshipsResponse,
-    WrappedCommunityResponse,
-    WrappedCommunitiesResponse,
     WrappedKGEntityDeduplicationResponse,
-    WrappedKGEnrichmentResponse,
     WrappedKGTunePromptResponse,
 )
 
@@ -379,7 +372,7 @@ class GraphRouter(BaseRouterV3):
             """
             if not auth_user.is_superuser and id not in auth_user.graph_ids:
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
+                    "The currently authenticated user does not have access to the specified graph.",
                     403,
                 )
 
@@ -455,7 +448,7 @@ class GraphRouter(BaseRouterV3):
             """
             if not auth_user.is_superuser and id not in auth_user.graph_ids:
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
+                    "The currently authenticated user does not have access to the specified graph.",
                     403,
                 )
 
@@ -528,12 +521,9 @@ class GraphRouter(BaseRouterV3):
             This endpoint allows updating the name and description of an existing collection.
             The user must have appropriate permissions to modify the collection.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
+            if not auth_user.is_superuser and id not in auth_user.graph_ids:
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
+                    "The currently authenticated user does not have access to the specified graph.",
                     403,
                 )
 
@@ -750,20 +740,20 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def add_entity_to_graph(
-            id: UUID = Path(
-                ...,
-                description="The ID of the graph to add the entity to.",
-            ),
-            entity_id: UUID = Path(
-                ..., description="The ID of the entity to add to the graph."
-            ),
+            id: UUID = Path(...),
+            entity_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedGenericMessageResponse:
             """
             Adds a list of entities to the graph by their IDs.
             """
+            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
             return await self.services["kg"].add_entity_to_graph(
-                id, entity_id, auth_user
+                graph_id=id, entity_id=entity_id
             )
 
         @self.router.delete(
