@@ -279,9 +279,9 @@ class KGRouter(BaseRouter):
             if entity_level == DataLevel.CHUNK:
                 entity_table_name = "chunk_entity"
             elif entity_level == DataLevel.DOCUMENT:
-                entity_table_name = "document_entity"
+                entity_table_name = "entity"
             else:
-                entity_table_name = "graph_entity"
+                entity_table_name = "collection_entity"
 
             get_entities_response = await self.service.get_entities(
                 collection_id=collection_id,

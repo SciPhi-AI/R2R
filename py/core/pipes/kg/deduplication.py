@@ -124,7 +124,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
                         value
                     )
 
-        # upsert deduplcated entities in the graph_entity table
+        # upsert deduplcated entities in the collection_entity table
         deduplicated_entities_list = [
             Entity(
                 name=name,
@@ -145,7 +145,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
 
         await self.database_provider.graph_handler.add_entities(
             deduplicated_entities_list,
-            table_name="graph_entity",
+            table_name="collection_entity",
         )
 
         yield {
@@ -205,7 +205,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
                     deduplicated_entities[label] = []
                 deduplicated_entities[label].append(entities[id])
 
-        # upsert deduplcated entities in the graph_entity table
+        # upsert deduplcated entities in the collection_entity table
         deduplicated_entities_list = []
         for label, entities in deduplicated_entities.items():
             longest_name = ""
@@ -251,7 +251,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         )
         await self.database_provider.graph_handler.add_entities(
             deduplicated_entities_list,
-            table_name="graph_entity",
+            table_name="collection_entity",
             conflict_columns=["name", "graph_id", "attributes"],
         )
 

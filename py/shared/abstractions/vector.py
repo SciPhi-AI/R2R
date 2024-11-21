@@ -115,10 +115,10 @@ class VectorTableName(str, Enum):
     """
 
     VECTORS = "vectors"
-    ENTITIES_DOCUMENT = "document_entity"
-    ENTITIES_COLLECTION = "graph_entity"
+    ENTITIES_DOCUMENT = "entity"
+    ENTITIES_COLLECTION = "collection_entity"
     # TODO: Add support for relationships
-    # TRIPLES = "chunk_relationship"
+    # TRIPLES = "relationship"
     COMMUNITIES = "community"
 
     def __str__(self) -> str:

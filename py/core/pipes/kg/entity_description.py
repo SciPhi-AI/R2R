@@ -134,7 +134,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
             # upsert the entity and its embedding
             await self.database_provider.graph_handler.add_entities(
                 [out_entity],
-                table_name="document_entity",
+                table_name="entity",
             )
 
             return out_entity.name

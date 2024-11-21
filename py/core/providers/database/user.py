@@ -398,6 +398,25 @@ class PostgresUserHandler(UserHandler):
             )
         return True
 
+    async def add_user_to_graph(self, user_id: UUID, graph_id: UUID) -> bool:
+        if not await self.get_user_by_id(user_id):
+            raise R2RException(status_code=404, message="User not found")
+
+        query = f"""
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
+            SET graph_ids = array_append(graph_ids, $1)
+            WHERE user_id = $2 AND NOT ($1 = ANY(graph_ids))
+            RETURNING user_id
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [graph_id, user_id]
+        )  # fetchrow instead of execute_query
+        if not result:
+            raise R2RException(
+                status_code=400, message="User already in graph"
+            )
+        return True
+
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
@@ -417,6 +436,28 @@ class PostgresUserHandler(UserHandler):
             raise R2RException(
                 status_code=400,
                 message="User is not a member of the specified collection",
+            )
+        return True
+
+    async def remove_user_from_graph(
+        self, user_id: UUID, graph_id: UUID
+    ) -> bool:
+        if not await self.get_user_by_id(user_id):
+            raise R2RException(status_code=404, message="User not found")
+
+        query = f"""
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
+            SET graph_ids = array_remove(graph_ids, $1)
+            WHERE user_id = $2 AND $1 = ANY(graph_ids)
+            RETURNING user_id
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [graph_id, user_id]
+        )
+        if not result:
+            raise R2RException(
+                status_code=400,
+                message="User is not a member of the specified graph",
             )
         return True
 
