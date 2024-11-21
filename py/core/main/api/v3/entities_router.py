@@ -338,6 +338,26 @@ class EntitiesRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.entities.update({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    name: "Updated name",
+                                    description: "Updated description",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
                 ],
             },
         )
