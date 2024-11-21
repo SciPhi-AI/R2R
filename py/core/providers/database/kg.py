@@ -1075,50 +1075,59 @@ class PostgresCommunityHandler(CommunityHandler):
     ) -> Community:
 
         update_fields = []
-        params = [community_id]  # type: ignore
+        params: list[Any] = [community_id, graph_id]  # type: ignore
+        params_index = 3
+
         if name is not None:
-            update_fields.append(f"name = ${len(params)+1}")
+            update_fields.append(f"name = ${params_index}")
             params.append(name)
 
         if summary is not None:
-            update_fields.append(f"summary = ${len(params)+1}")
+            update_fields.append(f"summary = ${params_index}")
             params.append(summary)
+            params_index += 1
 
         if embedding is not None:
-            update_fields.append(f"embedding = ${len(params)+1}")
+            update_fields.append(f"embedding = ${params_index}")
             params.append(embedding)
+            params_index += 1
 
         if findings is not None:
-            update_fields.append(f"findings = ${len(params)+1}")
+            update_fields.append(f"findings = ${params_index}")
             params.append(findings)
+            params_index += 1
 
         if rating is not None:
-            update_fields.append(f"rating = ${len(params)+1}")
+            update_fields.append(f"rating = ${params_index}")
             params.append(rating)
 
         if rating_explanation is not None:
-            update_fields.append(f"rating_explanation = ${len(params)+1}")
+            update_fields.append(f"rating_explanation = ${params_index}")
             params.append(rating_explanation)
+            params_index += 1
 
         if level is not None:
-            update_fields.append(f"level = ${len(params)+1}")
+            update_fields.append(f"level = ${params_index}")
             params.append(level)
+            params_index += 1
 
         if attributes is not None:
-            update_fields.append(f"attributes = ${len(params)+1}")
+            update_fields.append(f"attributes = ${params_index}")
             params.append(attributes)
 
         if user_id is not None:
-            update_fields.append(f"user_id = ${len(params)+1}")
+            update_fields.append(f"user_id = ${params_index}")
             params.append(user_id)
+            params_index += 1
 
         update_fields.append(f"updated_at = CURRENT_TIMESTAMP")
 
         QUERY = f"""
-            UPDATE {self._get_table_name("graph_community")} SET {", ".join(update_fields)} WHERE id = $1
+            UPDATE {self._get_table_name("graph_community")} SET {", ".join(update_fields)} WHERE id = $1 AND graph_id = $2
             RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, attributes, level, user_id, last_modified_by, created_at, updated_at
         """
         try:
+
             result = await self.connection_manager.fetchrow_query(
                 QUERY, params
             )
