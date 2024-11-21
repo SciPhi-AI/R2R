@@ -239,11 +239,9 @@ class RelationshipsRouter(BaseRouterV3):
                 description="The attributes of the relationship",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGCreationResponse:
+        ) -> WrappedRelationshipResponse:
             """
-            Creates new relationships.
-
-            Relationships can be created by providing a list of relationship objects.
+            Creates a new relationship in the database.
             """
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -260,10 +258,7 @@ class RelationshipsRouter(BaseRouterV3):
                 user_id=auth_user.id,
             )
 
-            return {  # type: ignore
-                "message": "Relationships created successfully.",
-                "count": relationships,
-            }
+            return relationships
 
         @self.router.post(
             "/relationships/{id}",
