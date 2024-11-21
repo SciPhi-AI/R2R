@@ -49,6 +49,32 @@ export class GraphsClient {
     });
   }
 
+  async retrieve(options: { id: string }): Promise<WrappedGraphResponse> {
+    return this.client.makeRequest("GET", `graphs/${options.id}`);
+  }
+
+  /**
+   * Update an existing graph.
+   * @param id Graph ID to update
+   * @param name Optional new name for the graph
+   * @param description Optional new description for the graph
+   * @returns
+   */
+  async update(options: {
+    id: string;
+    name?: string;
+    description?: string;
+  }): Promise<WrappedGraphResponse> {
+    const data = {
+      ...(options.name && { name: options.name }),
+      ...(options.description && { description: options.description }),
+    };
+
+    return this.client.makeRequest("POST", `graphs/${options.id}`, {
+      data,
+    });
+  }
+
   /**
    *
    * @param options

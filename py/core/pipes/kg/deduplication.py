@@ -62,7 +62,6 @@ class KGEntityDeduplicationPipe(AsyncPipe):
                     id=graph_id,
                     offset=0,
                     limit=-1,
-                    from_built_graph=False,
                 )
             )[0]
         else:
