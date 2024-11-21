@@ -111,12 +111,17 @@ class PostgresEntityHandler(EntityHandler):
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             sid SERIAL,
             name TEXT NOT NULL,
+            category TEXT,
             description TEXT NOT NULL,
             chunk_ids UUID[],
             description_embedding {vector_column_str} NOT NULL,
             document_ids UUID[],
             document_id UUID,
             graph_ids UUID[],
+            created_by UUID REFERENCES {self._get_table_name("users")}(user_id),
+            last_modified_by UUID REFERENCES {self._get_table_name("users")}(user_id),
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
             attributes JSONB
             );
         """
@@ -142,22 +147,47 @@ class PostgresEntityHandler(EntityHandler):
 
         await self.connection_manager.execute_query(query)
 
-    async def create(self, entities: list[Entity]) -> list[UUID]:  # type: ignore
-        """Create new entities in the database.
+    async def create(
+        self,
+        name: str,
+        category: str,
+        description: str,
+        description_embedding: str,
+        attributes: dict,
+        auth_user: Optional[Any] = None,
+    ) -> UUID:  # type: ignore
+        """Create a new entity in the database.
 
         Args:
-            entities: List of Entity objects to create. All entities must be of the same level.
+            name: Name of the entity
+            category: Category of the entity
+            description: Description of the entity
+            description_embedding: Embedding of the description
+            attributes: Attributes of the entity
 
-        Raises:
-            ValueError: If entity level is not set or if entities have different levels.
+        Returns:
+            UUID of the created entity
         """
 
-        return await _add_objects(
-            objects=[entity.__dict__ for entity in entities],
-            full_table_name=self._get_table_name("entity"),
-            connection_manager=self.connection_manager,
-            exclude_attributes=["level"],
+        QUERY = f"""
+            INSERT INTO {self._get_table_name("entity")} (name, category, description, description_embedding, attributes, created_by, last_modified_by) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id, name, category, description, created_by, last_modified_by, created_at, updated_at, attributes
+        """
+
+        output = await self.connection_manager.fetch_query(
+            QUERY,
+            [
+                name,
+                category,
+                description,
+                description_embedding,
+                attributes,
+                auth_user.id,
+                auth_user.id,
+            ],
         )
+
+        return output[0]
 
     async def get(
         self,
@@ -192,32 +222,38 @@ class PostgresEntityHandler(EntityHandler):
                 400,
             )
 
+        filters = []
+        params = []
+
         if id:
             params = [id]
-            filter = "id = $1"
+            filters.append("id = $1")
         else:
             params = []
-            filter = ""
 
         if entity_names:
-            filter += " AND name = ANY(${len(params)+1})"
+            filters.append(f"name = ANY(${len(params)+1})")
             params.append(entity_names)
 
         if graph_id:
-            filter += " AND ${len(params)+1} = ANY(graph_ids)"
+            filters.append(f"${len(params)+1} = ANY(graph_ids)")
             params.append(graph_id)
         elif user_id:
-            filter += " AND graph_ids && (SELECT array_agg(id) FROM graph WHERE user_id = ${len(params)+1})"
+            filters.append(
+                f"(graph_ids && (SELECT array_agg(id) FROM graph)) AND user_id = ${len(params)+1}"
+            )
             params.append(user_id)
 
         if document_id:
             # user has access to the document as we have done a check earlier
-            filter += " AND ${len(params)+1} = ANY(document_ids)"
+            filters.append(f"${len(params)+1} = ANY(document_ids)")
             params.append(document_id)
+
+        filters_str = " AND ".join(filters)
 
         # Build query with conditional LIMIT
         base_query = f"""
-            SELECT * from {self._get_table_name("entity")} WHERE {filter}
+            SELECT * from {self._get_table_name("entity")} WHERE {filters_str}
             OFFSET ${len(params)+1}
         """
 
@@ -249,8 +285,10 @@ class PostgresEntityHandler(EntityHandler):
             for entity in output
         ]
 
+        filters_str = " AND ".join(filters)
+
         QUERY = f"""
-            SELECT COUNT(*) from {self._get_table_name("entity")} WHERE {filter}
+            SELECT COUNT(*) from {self._get_table_name("entity")} WHERE {filters_str}
         """
         count = (
             await self.connection_manager.fetch_query(
@@ -272,7 +310,16 @@ class PostgresEntityHandler(EntityHandler):
 
         return output, count
 
-    async def update(self, entity: Entity) -> None:
+    async def update(
+        self,
+        id: UUID,
+        name: Optional[str] = None,
+        category: Optional[str] = None,
+        description: Optional[str] = None,
+        description_embedding: Optional[str] = None,
+        attributes: Optional[dict] = None,
+        auth_user: Optional[Any] = None,
+    ) -> None:
         """Update an existing entity in the database.
 
         Args:
@@ -282,66 +329,174 @@ class PostgresEntityHandler(EntityHandler):
             R2RException: If the entity does not exist in the database
         """
 
-        filter = "id = $1"
-        params: list[Any] = [entity.id]
+        if not auth_user.is_superuser:
+            if not await self._check_permissions(id, auth_user.id):
+                raise R2RException(
+                    "You do not have permission to update this entity.", 403
+                )
+        # Build update fields based on non-null attributes
+        update_fields = []
+        params = []
+        param_count = 1
 
-        # get non null attributes
-        non_null_attributes = [
-            k for k, v in entity.to_dict().items() if v is not None
-        ]
+        if name is not None:
+            update_fields.append(f"name = ${param_count}")
+            params.append(name)
+            param_count += 1
 
-        return await _update_object(
-            object=entity.__dict__,
-            full_table_name=self._get_table_name("entity"),
-            connection_manager=self.connection_manager,
-            id_column="id",
+        if category is not None:
+            update_fields.append(f"category = ${param_count}")
+            params.append(category)
+            param_count += 1
+
+        if description is not None:
+            update_fields.append(f"description = ${param_count}")
+            params.append(description)
+            param_count += 1
+
+        if description_embedding is not None:
+            update_fields.append(f"description_embedding = ${param_count}")
+            params.append(description_embedding)
+            param_count += 1
+
+        if attributes is not None:
+            update_fields.append(f"attributes = ${param_count}")
+            params.append(attributes)
+            param_count += 1
+
+        # Always update last_modified_by
+        update_fields.append(f"last_modified_by = ${param_count}")
+        params.append(auth_user.id)
+        param_count += 1
+
+        update_fields.append("updated_at = CURRENT_TIMESTAMP")
+
+        # Add id as final parameter
+        params.append(id)
+
+        if not update_fields:
+            raise R2RException(
+                "Error updating entity. No fields provided to update.", 400
+            )
+
+        QUERY = f"""
+            UPDATE {self._get_table_name("entity")}
+            SET {", ".join(update_fields)}
+            WHERE id = ${param_count}
+            RETURNING id, name, category, description, created_by, last_modified_by, created_at, updated_at, attributes
+        """
+        return await self.connection_manager.fetch_query(QUERY, params)
+
+    async def _check_permissions(
+        self,
+        id: UUID,
+        user_id: UUID,
+    ) -> bool:
+
+        # check if the user created the entity
+        QUERY = f"""
+            SELECT created_by, graph_ids FROM {self._get_table_name("entity")} WHERE id = $1
+        """
+        created_by, document_ids, graph_ids = (
+            await self.connection_manager.fetch_query(QUERY, [id])
         )
 
-    async def delete(
-        self, id: UUID, entity_id: UUID, level: DataLevel
-    ) -> None:
+        if created_by == user_id:
+            return True
+
+        # check if the user has access to the graph, so somoene shared the graph with the user
+        if graph_ids:
+            QUERY = f"""
+                SELECT user_ids from {self._get_table_name("graph")} WHERE id = ANY($1)
+            """
+            user_ids = await self.connection_manager.fetch_query(
+                QUERY, graph_ids
+            )
+            if user_id in user_ids:
+                return True
+
+        # check if the user has access all the documents that created this entity
+        # Can be made more efficient by using a single query
+        has_access_to_all_documents = True
+        for document_id in document_ids:
+            QUERY = f"""
+                SELECT c.user_ids
+                FROM {self._get_table_name("document_info")} d
+                JOIN {self._get_table_name("collection")} c ON c.id = ANY(d.collection_ids)
+                WHERE d.document_id = $1 AND $2 = ANY(c.user_ids)
+            """
+            has_access = await self.connection_manager.fetch_query(
+                QUERY, [document_id, user_id]
+            )
+
+            if not has_access:
+                has_access_to_all_documents = False
+                break
+
+        return has_access_to_all_documents
+
+    async def delete(self, id: UUID, auth_user: Optional[Any] = None) -> None:
         """Delete an entity from the database.
 
         Args:
-            entity_id: UUID of the entity to delete
-            level: Level of the entity (chunk, document, or collection)
+            id: UUID of the entity to delete
         """
-        table_name = level.value + "_entity"  # type: ignore
 
-        # TODO: check if the entity exists
+        if not auth_user.is_superuser:
+            if not await self._check_permissions(id, auth_user.id):
+                raise R2RException(
+                    "You do not have permission to delete this entity.", 403
+                )
 
-        return await _delete_object(
-            object_id=entity_id,  # type: ignore
-            full_table_name=self._get_table_name(table_name),
-            connection_manager=self.connection_manager,
-        )
+        QUERY = f"""
+            DELETE FROM {self._get_table_name("entity")} WHERE id = $1
+        """
+        return await self.connection_manager.execute_query(QUERY, [id])
 
     async def add_to_graph(
-        self, graph_id: UUID, entity_ids: list[UUID]
+        self, graph_id: UUID, entity_id: UUID, auth_user: Optional[Any] = None
     ) -> None:
+
+        if not auth_user.is_superuser:
+            if not await self._check_permissions(entity_id, auth_user.id):
+                raise R2RException(
+                    "You do not have permission to add this entity to the graph.",
+                    403,
+                )
+
         QUERY = f"""
-            UPDATE {self._get_table_name("graph_entity")}
+            UPDATE {self._get_table_name("entity")}
             SET graph_ids = CASE
-                WHEN graph_ids IS NULL THEN ARRAY[$1]
+                WHEN graph_ids IS NULL THEN ARRAY[$1::uuid]
                 WHEN NOT ($1 = ANY(graph_ids)) THEN array_append(graph_ids, $1)
                 ELSE graph_ids
             END
-            WHERE id = ANY($2)
+            WHERE id = $2
+            RETURNING id, name, category, description, graph_ids, attributes
         """
-        return await self.connection_manager.execute_query(
-            QUERY, [graph_id, entity_ids]
+
+        return await self.connection_manager.fetch_query(
+            QUERY, [graph_id, entity_id]
         )
 
     async def remove_from_graph(
-        self, graph_id: UUID, entity_ids: list[UUID]
+        self, graph_id: UUID, entity_id: UUID, auth_user: Optional[Any] = None
     ) -> None:
+
+        if not auth_user.is_superuser:
+            if not await self._check_permissions(entity_id, auth_user.id):
+                raise R2RException(
+                    "You do not have permission to remove this entity from the graph.",
+                    403,
+                )
+
         QUERY = f"""
-            UPDATE {self._get_table_name("graph_entity")}
+            UPDATE {self._get_table_name("entity")}
             SET graph_ids = array_remove(graph_ids, $1)
-            WHERE id = ANY($2)
+            WHERE id = $2
         """
         return await self.connection_manager.execute_query(
-            QUERY, [graph_id, entity_ids]
+            QUERY, [graph_id, entity_id]
         )
 
 
@@ -514,9 +669,27 @@ class PostgresRelationshipHandler(RelationshipHandler):
             QUERY, [relationship_id]
         )
 
+    async def _check_permissions(
+        self, relationship_ids: list[UUID], auth_user_id: UUID
+    ) -> bool:
+        raise NotImplementedError("This is not implemented yet.")
+
     async def add_to_graph(
-        self, graph_id: UUID, relationship_ids: list[UUID]
+        self,
+        graph_id: UUID,
+        relationship_ids: list[UUID],
+        auth_user: Optional[Any] = None,
     ) -> None:
+
+        if not auth_user.is_superuser:
+            if not await self._check_permissions(
+                relationship_ids, auth_user.id
+            ):
+                raise R2RException(
+                    "You do not have permission to add this relationship to the graph.",
+                    403,
+                )
+
         QUERY = f"""
             UPDATE {self._get_table_name("graph_relationship")}
             SET graph_ids = CASE
@@ -531,45 +704,29 @@ class PostgresRelationshipHandler(RelationshipHandler):
         )
 
     async def remove_from_graph(
-        self, graph_id: UUID, relationship_ids: list[UUID]
+        self,
+        graph_id: UUID,
+        relationship_id: UUID,
+        auth_user: Optional[Any] = None,
     ) -> None:
+
+        if not auth_user.is_superuser:
+            if not await self._check_permissions(
+                relationship_id, auth_user.id
+            ):
+                raise R2RException(
+                    "You do not have permission to remove this relationship from the graph.",
+                    403,
+                )
+
         QUERY = f"""
             UPDATE {self._get_table_name("graph_relationship")}
             SET graph_ids = array_remove(graph_ids, $1)
-            WHERE id = ANY($2)
+            WHERE id = $2
         """
         return await self.connection_manager.execute_query(
-            QUERY, [graph_id, relationship_ids]
+            QUERY, [graph_id, relationship_id]
         )
-
-    async def add_to_graph(
-        self, graph_id: UUID, relationship_ids: list[UUID]
-    ) -> None:
-        QUERY = f"""
-            UPDATE {self._get_table_name("graph_relationship")}
-            SET graph_ids = CASE
-                WHEN graph_ids IS NULL THEN ARRAY[$1]
-                WHEN NOT ($1 = ANY(graph_ids)) THEN array_append(graph_ids, $1)
-                ELSE graph_ids
-            END
-            WHERE id = ANY($2)
-        """
-        return await self.connection_manager.execute_query(
-            QUERY, [graph_id, relationship_ids]
-        )
-
-    async def remove_from_graph(
-        self, graph_id: UUID, relationship_ids: list[UUID]
-    ) -> None:
-        QUERY = f"""
-            UPDATE {self._get_table_name("graph_relationship")}
-            SET graph_ids = array_remove(graph_ids, $1)
-            WHERE id = ANY($2)
-        """
-        return await self.connection_manager.execute_query(
-            QUERY, [graph_id, relationship_ids]
-        )
-
 
 class PostgresCommunityHandler(CommunityHandler):
 
@@ -692,8 +849,19 @@ class PostgresCommunityHandler(CommunityHandler):
             ]
 
     async def add_to_graph(
-        self, graph_id: UUID, community_ids: list[UUID]
+        self,
+        graph_id: UUID,
+        community_ids: list[UUID],
+        auth_user: Optional[Any] = None,
     ) -> None:
+
+        if not auth_user.is_superuser:
+            if not await self._check_permissions(community_ids, auth_user.id):
+                raise R2RException(
+                    "You do not have permission to add this community to the graph.",
+                    403,
+                )
+
         QUERY = f"""
             UPDATE {self._get_table_name("graph_community")} SET graph_id = $1 WHERE id = ANY($2)
         """
@@ -701,15 +869,29 @@ class PostgresCommunityHandler(CommunityHandler):
             QUERY, [graph_id, community_ids]
         )
 
+    async def _check_permissions(
+        self, community_ids: list[UUID], auth_user_id: UUID
+    ) -> bool:
+        raise NotImplementedError("This is not implemented yet.")
+
     async def remove_from_graph(
-        self, graph_id: UUID, community_ids: list[UUID]
+        self,
+        graph_id: UUID,
+        community_id: UUID,
+        auth_user: Optional[Any] = None,
     ) -> None:
+
+        if not auth_user.is_superuser:
+            if not await self._check_permissions(community_id, auth_user.id):
+                raise R2RException(
+                    "You do not have permission to remove this community from the graph.",
+                    403,
+                )
+
         QUERY = f"""
-            UPDATE {self._get_table_name("graph_community")} SET graph_id = NULL WHERE id = ANY($1)
+            UPDATE {self._get_table_name("graph_community")} SET graph_id = NULL WHERE id = $1
         """
-        return await self.connection_manager.execute_query(
-            QUERY, [community_ids]
-        )
+        return await self.connection_manager.execute_query(QUERY, [community_id])
 
 
 class PostgresGraphHandler(GraphHandler):

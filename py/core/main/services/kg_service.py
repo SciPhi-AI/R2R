@@ -1,7 +1,7 @@
 import logging
 import math
 import time
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator, Optional, Any
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -125,10 +125,24 @@ class KgService(Service):
     @telemetry_event("create_entities")
     async def create_entities(
         self,
-        entities: list[Entity],
+        name: str,
+        description: str,
+        attributes: Optional[dict] = None,
+        category: Optional[str] = None,
+        auth_user: Optional[Any] = None,
     ):
+
+        description_embedding = str(
+            await self.providers.embedding.async_get_embedding(description)
+        )
+
         return await self.providers.database.graph_handler.entities.create(
-            entities=entities,
+            name=name,
+            category=category,
+            description=description,
+            description_embedding=description_embedding,
+            attributes=attributes,
+            auth_user=auth_user,
         )
 
     @telemetry_event("list_entities")
@@ -157,10 +171,29 @@ class KgService(Service):
     @telemetry_event("update_entity")
     async def update_entity_v3(
         self,
-        entity: Entity,
+        id: UUID,
+        name: Optional[str],
+        category: Optional[str],
+        description: Optional[str],
+        attributes: Optional[dict],
+        auth_user: Optional[Any] = None,
     ):
+
+        if description is not None:
+            description_embedding = str(
+                await self.providers.embedding.async_get_embedding(description)
+            )
+        else:
+            description_embedding = None
+
         return await self.providers.database.graph_handler.entities.update(
-            entity=entity,
+            id=id,
+            name=name,
+            category=category,
+            description=description,
+            description_embedding=description_embedding,
+            attributes=attributes,
+            auth_user=auth_user,
         )
 
     @telemetry_event("delete_entity")
@@ -175,6 +208,19 @@ class KgService(Service):
             id=id,
             entity_id=entity_id,
             level=level,
+        )
+
+    @telemetry_event("add_entity_to_graph")
+    async def add_entity_to_graph(
+        self,
+        graph_id: UUID,
+        entity_id: UUID,
+        auth_user: Optional[Any] = None,
+    ):
+        return (
+            await self.providers.database.graph_handler.entities.add_to_graph(
+                graph_id, entity_id, auth_user
+            )
         )
 
     # TODO: deprecate this

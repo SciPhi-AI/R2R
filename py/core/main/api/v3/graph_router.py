@@ -728,7 +728,7 @@ class GraphRouter(BaseRouterV3):
                     }
 
         @self.router.post(
-            "/graphs/{id}/entities",
+            "/graphs/{id}/entities/{entity_id}",
             summary="Add entities to the graph",
             openapi_extra={
                 "x-codeSamples": [
@@ -755,17 +755,17 @@ class GraphRouter(BaseRouterV3):
                 ...,
                 description="The ID of the graph to add the entity to.",
             ),
-            entity_ids: list[UUID] = Body(
-                ..., description="The IDs of the entities to add to the graph."
+            entity_id: UUID = Path(
+                ..., description="The ID of the entity to add to the graph."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
             Adds a list of entities to the graph by their IDs.
             """
-            return await self.services[
-                "kg"
-            ].documents.graph_handler.entities.add_to_graph(id, entity_ids)
+            return await self.services["kg"].add_entity_to_graph(
+                id, entity_id, auth_user
+            )
 
         @self.router.delete(
             "/graphs/{id}/entities/{entity_id}",
@@ -807,7 +807,7 @@ class GraphRouter(BaseRouterV3):
             return await self.services[
                 "kg"
             ].documents.graph_handler.entities.remove_from_graph(
-                id, [entity_id]
+                id, entity_id, auth_user
             )
 
         @self.router.post(
@@ -850,7 +850,7 @@ class GraphRouter(BaseRouterV3):
             return await self.services[
                 "kg"
             ].documents.graph_handler.relationships.add_to_graph(
-                id, relationship_ids
+                id, relationship_ids, auth_user
             )
 
         @self.router.delete(
@@ -893,7 +893,7 @@ class GraphRouter(BaseRouterV3):
             return await self.services[
                 "kg"
             ].documents.graph_handler.relationships.remove_from_graph(
-                id, [relationship_id]
+                id, relationship_id, auth_user
             )
 
         @self.router.post(
@@ -936,7 +936,7 @@ class GraphRouter(BaseRouterV3):
             return await self.services[
                 "kg"
             ].documents.graph_handler.communities.add_to_graph(
-                id, community_ids
+                id, community_ids, auth_user
             )
 
         @self.router.delete(
@@ -979,5 +979,5 @@ class GraphRouter(BaseRouterV3):
             return await self.services[
                 "kg"
             ].documents.graph_handler.communities.remove_from_graph(
-                id, [community_id]
+                id, community_id, auth_user
             )
