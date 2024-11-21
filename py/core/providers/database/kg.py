@@ -972,27 +972,6 @@ class PostgresCommunityHandler(CommunityHandler):
                 )
             ]
 
-    async def add_to_graph(
-        self, graph_id: UUID, community_ids: list[UUID]
-    ) -> None:
-        QUERY = f"""
-            UPDATE {self._get_table_name("graph_community")} SET graph_id = $1 WHERE id = ANY($2)
-        """
-        return await self.connection_manager.execute_query(
-            QUERY, [graph_id, community_ids]
-        )
-
-    async def remove_from_graph(
-        self, graph_id: UUID, community_ids: list[UUID]
-    ) -> None:
-        QUERY = f"""
-            UPDATE {self._get_table_name("graph_community")} SET graph_id = NULL WHERE id = ANY($1)
-        """
-        return await self.connection_manager.execute_query(
-            QUERY, [community_ids]
-        )
-
-
 class PostgresGraphHandler(GraphHandler):
     """Handler for Knowledge Graph METHODS in PostgreSQL."""
 
