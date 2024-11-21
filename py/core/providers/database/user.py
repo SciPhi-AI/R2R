@@ -731,10 +731,7 @@ class PostgresUserHandler(UserHandler):
             query, [auth_user.id, collection_id]
         )
         return result is not None
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/feature/api-v3
     async def has_entity_access(self, auth_user, entity_id: UUID) -> bool:
         """
         Check if the user has access to an entity.
@@ -754,8 +751,4 @@ class PostgresUserHandler(UserHandler):
         """
         Check if the user has access to a community.
         """
-<<<<<<< HEAD
         raise NotImplementedError
-=======
-        raise NotImplementedError
->>>>>>> origin/feature/api-v3
