@@ -132,7 +132,7 @@ class EntitiesRouter(BaseRouterV3):
 
             The entities can be filtered by:
             - Graph ID: Get entities from a specific graph
-            - Document ID: Get entities from a specific document 
+            - Document ID: Get entities from a specific document
             - Entity names: Filter by specific entity names
             - Attributes: Select which entity attributes to return
 
@@ -342,12 +342,12 @@ class EntitiesRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-                Deletes an entity and all its associated data.
+            Deletes an entity and all its associated data.
 
-                This endpoint permanently removes:
-                - The entity itself and all its attributes
+            This endpoint permanently removes:
+            - The entity itself and all its attributes
 
-                However, this will not remove any relationships or communities that the entity is part of.
+            However, this will not remove any relationships or communities that the entity is part of.
             """
             if not auth_user.is_superuser:
                 raise R2RException(

@@ -213,7 +213,7 @@ class RelationshipsRouter(BaseRouterV3):
             relationship = await self.services["kg"].list_relationships_v3(
                 level=self._get_path_level(request),
                 id=id,
-                attributes=attributes,  
+                attributes=attributes,
             )
 
             return relationship
@@ -305,7 +305,7 @@ class RelationshipsRouter(BaseRouterV3):
             Updates an existing relationship in the database.
 
             This endpoint allows you to modify:
-            - Relationship type and classification 
+            - Relationship type and classification
             - Relationship attributes and properties
             - Source and target entity connections
             - Relationship metadata and tags

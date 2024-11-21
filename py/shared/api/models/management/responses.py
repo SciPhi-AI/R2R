@@ -61,6 +61,7 @@ class UserResponse(R2RSerializable):
     updated_at: datetime = datetime.now()
     is_verified: bool = False
     collection_ids: list[UUID] = []
+    graph_ids: list[UUID] = []
 
     # Optional fields (to update or set at creation)
     hashed_password: Optional[str] = None
