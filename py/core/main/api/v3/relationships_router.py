@@ -106,7 +106,7 @@ class RelationshipsRouter(BaseRouterV3):
         async def list_relationships(
             ids: Optional[list[UUID]] = Query(
                 None,
-                description="A list of entity IDs to retrieve. If not provided, all entities will be returned.",
+                description="A list of relationship IDs to retrieve. If not provided, all relationships will be returned.",
             ),
             offset: int = Query(
                 0,

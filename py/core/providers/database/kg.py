@@ -870,6 +870,10 @@ class PostgresCommunityHandler(CommunityHandler):
             rating FLOAT NOT NULL,
             rating_explanation TEXT NOT NULL,
             embedding {vector_column_str} NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            user_id UUID REFERENCES {self._get_table_name("users")}(user_id),
+            last_modified_by UUID REFERENCES {self._get_table_name("users")}(user_id),
             attributes JSONB,
             UNIQUE (community_number, level, graph_id, collection_id)
         );"""
@@ -1022,7 +1026,9 @@ class PostgresCommunityHandler(CommunityHandler):
         if community_id is None:
 
             QUERY = f"""
-                SELECT * FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
+                SELECT
+                    id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, user_id, last_modified_by, created_at, updated_at
+                FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
                 OFFSET $2 LIMIT $3
             """
             params = [graph_id, offset, limit]
