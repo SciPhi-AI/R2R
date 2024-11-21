@@ -194,7 +194,6 @@ class PostgresEntityHandler(EntityHandler):
                 description,
                 description_embedding,
                 attributes,
-                str(attributes),
                 chunk_ids,
                 document_id,
                 document_ids,
