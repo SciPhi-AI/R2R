@@ -344,4 +344,23 @@ export class DocumentsClient {
       data: options.filters,
     });
   }
+
+  async extract(options: {
+    id: string;
+    runType?: string;
+    runWithOrchestration?: boolean;
+  }): Promise<any> {
+    const data: Record<string, any> = {};
+
+    if (options.runType) {
+      data.runType = options.runType;
+    }
+    if (options.runWithOrchestration !== undefined) {
+      data.runWithOrchestration = options.runWithOrchestration;
+    }
+
+    return this.client.makeRequest("POST", `documents/${options.id}/extract`, {
+      data,
+    });
+  }
 }

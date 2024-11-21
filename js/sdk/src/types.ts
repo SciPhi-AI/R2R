@@ -47,6 +47,10 @@ export interface CollectionResponse {
   document_count: number;
 }
 
+//TODO: Sync this with the finished API response model
+// Community types
+export interface CommunityResponse {}
+
 // Conversation types
 export interface ConversationResponse {
   id: string;
@@ -87,6 +91,25 @@ export interface DocumentResponse {
   ingestion_attempt_number?: number;
   summary?: string;
   summary_embedding?: string;
+}
+
+// Entity types
+export interface EntityResponse {
+  id: string;
+  sid?: string;
+  name: string;
+  category?: string;
+  description?: string;
+  chunk_ids: string[];
+  description_embedding?: string;
+  document_id: string;
+  document_ids: string[];
+  graph_ids: string[];
+  user_id: string;
+  last_modified_by: string;
+  created_at: string;
+  updated_at: string;
+  attributes?: Record<string, any>;
 }
 
 // Graph types
@@ -133,6 +156,10 @@ export interface PromptResponse {
   updated_at: string;
   input_types: string[];
 }
+
+//TODO: Sync this with the finished API response model
+// Relationship types
+export interface RelationshipResponse {}
 
 // Retrieval types
 export interface VectorSearchResult {
@@ -218,6 +245,12 @@ export type WrappedCollectionsResponse = PaginatedResultsWrapper<
   CollectionResponse[]
 >;
 
+// Community Responses
+export type WrappedCommunityResponse = ResultsWrapper<CommunityResponse>;
+export type WrappedCommunitiesResponse = PaginatedResultsWrapper<
+  CommunityResponse[]
+>;
+
 // Conversation Responses
 export type WrappedConversationMessagesResponse = ResultsWrapper<
   MessageResponse[]
@@ -240,6 +273,10 @@ export type WrappedDocumentsResponse = PaginatedResultsWrapper<
   DocumentResponse[]
 >;
 
+// Entity Responses
+export type WrappedEntityResponse = ResultsWrapper<EntityResponse>;
+export type WrappedEntitiesResponse = PaginatedResultsWrapper<EntityResponse[]>;
+
 // Graph Responses
 export type WrappedGraphResponse = ResultsWrapper<GraphResponse>;
 export type WrappedGraphsResponse = PaginatedResultsWrapper<GraphResponse[]>;
@@ -253,6 +290,12 @@ export type WrappedListVectorIndicesResponse = ResultsWrapper<IndexConfig[]>;
 // Prompt Responses
 export type WrappedPromptResponse = ResultsWrapper<PromptResponse>;
 export type WrappedPromptsResponse = PaginatedResultsWrapper<PromptResponse[]>;
+
+// Relationship Responses
+export type WrappedRelationshipResponse = ResultsWrapper<RelationshipResponse>;
+export type WrappedRelationshipsResponse = PaginatedResultsWrapper<
+  RelationshipResponse[]
+>;
 
 // Retrieval Responses
 export type WrappedVectorSearchResponse = ResultsWrapper<VectorSearchResult[]>;
