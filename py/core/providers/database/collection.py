@@ -442,7 +442,9 @@ class PostgresCollectionHandler(CollectionHandler):
             )
 
     async def remove_document_from_collection_relational(
-        self, document_id: UUID, collection_id: UUID
+        self,
+        document_id: UUID,
+        collection_id: UUID,
     ) -> None:
         """
         Remove a document from a collection.

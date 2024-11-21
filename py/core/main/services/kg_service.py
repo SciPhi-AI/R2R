@@ -1,7 +1,7 @@
 import logging
 import math
 import time
-from typing import AsyncGenerator, Optional, Any
+from typing import AsyncGenerator, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -208,6 +208,17 @@ class KgService(Service):
         )
 
         return {"message": "Entity assigned to graph successfully"}
+
+    @telemetry_event("remove_entity_from_graph")
+    async def remove_entity_from_graph(
+        self,
+        graph_id: UUID,
+        entity_id: UUID,
+    ) -> None:
+        await self.providers.database.graph_handler.entities.remove_from_graph(
+            graph_id=graph_id,
+            entity_id=entity_id,
+        )
 
     # TODO: deprecate this
     @telemetry_event("get_entities")

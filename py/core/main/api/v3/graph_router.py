@@ -10,7 +10,6 @@ from core.base.abstractions import DataLevel, KGRunType
 
 from core.base.api.models import (
     GenericBooleanResponse,
-    GenericMessageResponse,
     WrappedBooleanResponse,
     WrappedKGCreationResponse,
     WrappedGenericMessageResponse,
@@ -735,6 +734,25 @@ class GraphRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.addEntity({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    entityId: "123e4567-e89b-12d3-a456-426614174000",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
                 ],
             },
         )
@@ -745,7 +763,7 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedGenericMessageResponse:
             """
-            Adds a list of entities to the graph by their IDs.
+            Adds an entity to the graph by its ID.
             """
             if not auth_user.is_superuser and id not in auth_user.graph_ids:
                 raise R2RException(
@@ -753,7 +771,8 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
             return await self.services["kg"].add_entity_to_graph(
-                graph_id=id, entity_id=entity_id
+                graph_id=id,
+                entity_id=entity_id,
             )
 
         @self.router.delete(
@@ -775,29 +794,48 @@ class GraphRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.removeEntity({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    entityId: "123e4567-e89b-12d3-a456-426614174000",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
                 ],
             },
         )
         @self.base_endpoint
         async def remove_entity_from_graph(
-            id: UUID = Path(
-                ...,
-                description="The ID of the graph to remove the entity from.",
-            ),
-            entity_id: UUID = Path(
-                ...,
-                description="The ID of the entity to remove from the graph.",
-            ),
+            id: UUID = Path(...),
+            entity_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedBooleanResponse:
             """
-            Removes an entity from the graph by its ID.
+            Removes an entity to the graph by its ID.
             """
-            return await self.services[
-                "kg"
-            ].documents.graph_handler.entities.remove_from_graph(
-                id, entity_id, auth_user
+            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
+
+            await self.services["kg"].remove_entity_from_graph(
+                graph_id=id,
+                entity_id=entity_id,
             )
+            return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
             "/graphs/{id}/relationships",

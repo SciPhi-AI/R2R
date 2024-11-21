@@ -91,7 +91,7 @@ export class GraphsClient {
   }
 
   /**
-   * Add a entity to a graph.
+   * Add an entity to a graph.
    * @param id Graph ID
    * @param entityId Entity ID to add
    * @returns
@@ -102,6 +102,22 @@ export class GraphsClient {
   }): Promise<WrappedGenericMessageResponse> {
     return this.client.makeRequest(
       "POST",
+      `graphs/${options.id}/entities/${options.entityId}`,
+    );
+  }
+
+  /**
+   * Remove an entity from a graph.
+   * @param id Graph ID
+   * @param entityId Entity ID to remove
+   * @returns
+   */
+  async removeEntity(options: {
+    id: string;
+    entityId: string;
+  }): Promise<WrappedBooleanResponse> {
+    return this.client.makeRequest(
+      "DELETE",
       `graphs/${options.id}/entities/${options.entityId}`,
     );
   }

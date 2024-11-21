@@ -566,23 +566,41 @@ class PostgresEntityHandler(EntityHandler):
         )
 
     async def remove_from_graph(
-        self, graph_id: UUID, entity_id: UUID, auth_user: Optional[Any] = None
+        self,
+        graph_id: UUID,
+        entity_id: UUID,
     ) -> None:
+        # First, check if the entity exists
+        entity_check_query = f"""
+            SELECT graph_ids FROM {self._get_table_name("entity")}
+            WHERE id = $1
+        """
+        entity = await self.connection_manager.fetchrow_query(
+            entity_check_query, [entity_id]
+        )
 
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(entity_id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to remove this entity from the graph.",
-                    403,
-                )
+        if not entity:
+            raise R2RException(
+                message="Entity not found",
+                status_code=404,
+            )
 
-        QUERY = f"""
+        # Check if graph_id exists in graph_ids
+        if not entity["graph_ids"] or graph_id not in entity["graph_ids"]:
+            raise R2RException(
+                message="Entity is not in the graph",
+                status_code=404,
+            )
+
+        # Remove from graph_ids
+        remove_query = f"""
             UPDATE {self._get_table_name("entity")}
             SET graph_ids = array_remove(graph_ids, $1)
             WHERE id = $2
+            RETURNING id
         """
-        return await self.connection_manager.execute_query(
-            QUERY, [graph_id, entity_id]
+        await self.connection_manager.fetchrow_query(
+            remove_query, [graph_id, entity_id]
         )
 
 

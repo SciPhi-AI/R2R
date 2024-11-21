@@ -5,8 +5,11 @@ const baseUrl = "http://localhost:7272";
 
 describe("r2rClient V3 Collections Integration Tests", () => {
   let client: r2rClient;
+
   let graph1Id: string;
   let graph2Id: string;
+
+  let entity1Id: string;
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);
@@ -74,6 +77,35 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     });
     expect(response.results).toBeDefined();
     expect(response.results.description).toEqual("Graph 2 Updated");
+  });
+
+  test("Create an entity and add it to graph 1", async () => {
+    const createResponse = await client.entities.create({
+      name: "Entity 1",
+      description: "Entity 1 Description",
+    });
+    entity1Id = createResponse.results.id;
+    expect(createResponse.results).toBeDefined();
+    expect(createResponse.results.name).toEqual("Entity 1");
+
+    const addResponse = await client.graphs.addEntity({
+      id: graph1Id,
+      entityId: createResponse.results.id,
+    });
+    expect(addResponse.results).toBeDefined();
+  });
+
+  test("Remove entity from graph 1", async () => {
+    const response = await client.graphs.removeEntity({
+      id: graph1Id,
+      entityId: entity1Id,
+    });
+    expect(response.results).toBeDefined;
+  });
+
+  test("Delete entity from graph 1", async () => {
+    const response = await client.entities.delete({ id: entity1Id });
+    expect(response.results).toBeDefined();
   });
 
   test("Delete graph 1", async () => {
