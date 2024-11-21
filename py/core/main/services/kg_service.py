@@ -264,12 +264,24 @@ class KgService(Service):
     @telemetry_event("create_relationships_v3")
     async def create_relationships_v3(
         self,
-        relationships: list[Relationship],
+        subject: str,
+        predicate: str,
+        object: str,
+        description: str,
+        weight: Optional[float],
+        attributes: Optional[dict],
+        user_id: UUID,
         **kwargs,
     ):
         return (
             await self.providers.database.graph_handler.relationships.create(
-                relationships
+                subject=subject,
+                predicate=predicate,
+                object=object,
+                description=description,
+                weight=weight,
+                attributes=attributes,
+                user_id=user_id,
             )
         )
 

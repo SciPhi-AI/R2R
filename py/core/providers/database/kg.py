@@ -193,8 +193,7 @@ class PostgresEntityHandler(EntityHandler):
                 category,
                 description,
                 description_embedding,
-                attributes,
-                str(attributes),
+                json.dumps(attributes),
                 chunk_ids,
                 document_id,
                 document_ids,
@@ -587,13 +586,59 @@ class PostgresRelationshipHandler(RelationshipHandler):
         """Get the fully qualified table name."""
         return f'"{self.project_name}"."{table}"'
 
-    async def create(self, relationships: list[Relationship]) -> None:
+    async def create(
+        self,
+        subject: str,
+        predicate: str,
+        object: str,
+        description: str,
+        weight: Optional[float],
+        attributes: Optional[dict],
+        user_id: UUID,
+    ) -> None:
         """Create a new relationship in the database."""
-        await _add_objects(
-            objects=[relationship.__dict__ for relationship in relationships],
-            full_table_name=self._get_table_name("relationship"),
-            connection_manager=self.connection_manager,
-        )
+
+        params = [
+            subject,
+            predicate,
+            object,
+            description,
+            weight,
+            json.dumps(attributes),
+            user_id,
+            user_id,
+        ]
+
+        QUERY = f"""
+            INSERT INTO {self._get_table_name("relationship")} (subject, predicate, object, description, weight, attributes, user_id, last_modified_by)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id, subject, predicate, object, weight, description, user_id, last_modified_by, created_at, updated_at, attributes
+        """
+
+        try:
+            result = await self.connection_manager.fetchrow_query(
+                QUERY,
+                params,
+            )
+
+            return Relationship(
+                id=result["id"],
+                subject=result["subject"],
+                predicate=result["predicate"],
+                object=result["object"],
+                weight=result["weight"],
+                description=result["description"],
+                user_id=result["user_id"],
+                last_modified_by=result["last_modified_by"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+                attributes=result["attributes"],
+            )
+
+        except UniqueViolationError as e:
+            raise R2RException(
+                message="Relationship with ID already exists.", status_code=409
+            )
 
     async def get(
         self,

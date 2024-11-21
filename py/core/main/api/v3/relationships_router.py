@@ -80,7 +80,7 @@ class RelationshipsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.relationships.list(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            result = client.relationships.list(ids=["9fbe403b-c11c-5aae-8ade-ef22980c3ad1"])
                             """
                         ),
                     },
@@ -92,7 +92,7 @@ class RelationshipsRouter(BaseRouterV3):
                             const client = new r2rClient("http://localhost:7272");
                             function main() {
                                 const response = await client.relationships.list({
-                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    ids: ["9fbe403b-c11c-5aae-8ade-ef22980c3ad1"],
                                 });
                             }
                             main();
@@ -214,14 +214,29 @@ class RelationshipsRouter(BaseRouterV3):
                         ),
                     },
                 ],
-                "operationId": "create_relationships_v3_relationships_post_relationships",
             },
         )
         @self.base_endpoint
         async def create_relationships(
-            request: Request,
-            relationships: list[Relationship] = Body(
-                ..., description="The relationships to create."
+            subject: str = Body(
+                ..., description="The subject of the relationship"
+            ),
+            predicate: str = Body(
+                ..., description="The predicate of the relationship"
+            ),
+            object: str = Body(
+                ..., description="The object of the relationship"
+            ),
+            description: str = Body(
+                ..., description="The description of the relationship"
+            ),
+            weight: Optional[float] = Body(
+                1.0,
+                description="The weight of the relationship",
+            ),
+            attributes: Optional[dict] = Body(
+                {},
+                description="The attributes of the relationship",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedKGCreationResponse:
@@ -236,7 +251,13 @@ class RelationshipsRouter(BaseRouterV3):
                 )
 
             relationships = await self.services["kg"].create_relationships_v3(
-                relationships=relationships,
+                subject=subject,
+                predicate=predicate,
+                object=object,
+                description=description,
+                weight=weight,
+                attributes=attributes,
+                user_id=auth_user.id,
             )
 
             return {  # type: ignore
