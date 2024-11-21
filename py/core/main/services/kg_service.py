@@ -145,27 +145,20 @@ class KgService(Service):
             user_id=user_id,
         )
 
-    @telemetry_event("list_entities")
     async def list_entities(
         self,
         offset: int,
         limit: int,
-        id: Optional[UUID] = None,
-        graph_id: Optional[UUID] = None,
-        document_id: Optional[UUID] = None,
-        entity_names: Optional[list[str]] = None,
-        include_embeddings: Optional[bool] = False,
-        user_id: Optional[UUID] = None,
-    ):
-        return await self.providers.database.graph_handler.entities.get(
-            id=id,
-            graph_id=graph_id,
-            document_id=document_id,
-            entity_names=entity_names,
-            include_embeddings=include_embeddings,
-            offset=offset,
-            limit=limit,
-            user_id=user_id,
+        user_ids: Optional[list[UUID]] = None,
+        entity_ids: Optional[list[UUID]] = None,
+    ) -> dict[str, list[Entity] | int]:
+        return (
+            await self.providers.database.graph_handler.entities.list_entities(
+                offset=offset,
+                limit=limit,
+                filter_user_ids=user_ids,
+                filter_entity_ids=entity_ids,
+            )
         )
 
     @telemetry_event("update_entity")

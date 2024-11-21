@@ -7,6 +7,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   let client: r2rClient;
   let entity1Id: string;
   let entity2Id: string;
+  let entity3Id: string;
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);
@@ -21,7 +22,6 @@ describe("r2rClient V3 Collections Integration Tests", () => {
       name: "Entity 1",
       description: "The first entity",
     });
-    console.log(response);
     expect(response.results).toBeDefined();
     entity1Id = response.results.id;
     expect(entity1Id).toEqual(response.results.id);
@@ -35,12 +35,17 @@ describe("r2rClient V3 Collections Integration Tests", () => {
       description: "The second entity",
       category: "category",
     });
-    console.log(response);
     entity2Id = response.results.id;
     expect(response.results).toBeDefined();
     expect(response.results.name).toEqual("Entity 2");
     expect(response.results.description).toEqual("The second entity");
     expect(response.results.category).toEqual("category");
+  });
+
+  test("Ensure that there are two entities", async () => {
+    const response = await client.entities.list();
+    expect(response.results).toBeDefined();
+    expect(response.results.length).toEqual(2);
   });
 
   test("Delete entity 1", async () => {
@@ -50,7 +55,37 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   });
 
   test("Delete entity 2", async () => {
-    const response = await client.graphs.delete({ id: entity2Id });
+    const response = await client.entities.delete({ id: entity2Id });
+    expect(response.results).toBeDefined();
+    expect(response.results.success).toBe(true);
+  });
+
+  test("Ensure that there are no entities", async () => {
+    const response = await client.entities.list();
+    expect(response.results).toBeDefined();
+    expect(response.results.length).toEqual(0);
+  });
+
+  test("Create an entity", async () => {
+    const response = await client.entities.create({
+      name: "Entity 3",
+      description: "The third entity",
+    });
+    expect(response.results).toBeDefined();
+    entity3Id = response.results.id;
+    expect(entity3Id).toEqual(response.results.id);
+    expect(response.results.name).toEqual("Entity 3");
+    expect(response.results.description).toBe("The third entity");
+  });
+
+  test("Ensure that there is only one entity now", async () => {
+    const response = await client.entities.list();
+    expect(response.results).toBeDefined();
+    expect(response.results.length).toEqual(1);
+  });
+
+  test("Delete entity 3", async () => {
+    const response = await client.entities.delete({ id: entity3Id });
     expect(response.results).toBeDefined();
     expect(response.results.success).toBe(true);
   });

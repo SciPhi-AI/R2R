@@ -456,6 +456,72 @@ class PostgresEntityHandler(EntityHandler):
                 status_code=500,
             )
 
+    async def list_entities(
+        self,
+        offset: int,
+        limit: int,
+        filter_user_ids: Optional[list[UUID]] = None,
+        filter_entity_ids: Optional[list[UUID]] = None,
+    ) -> dict[str, list[Entity] | int]:
+        conditions = []
+        params: list[Any] = []
+        param_index = 1
+
+        if filter_entity_ids:
+            conditions.append(f"id = ANY(${param_index})")
+            params.append(filter_entity_ids)
+            param_index += 1
+
+        if filter_user_ids:
+            conditions.append(f"user_id = ANY(${param_index})")
+            params.append(filter_user_ids)
+            param_index += 1
+
+        where_clause = (
+            f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        )
+
+        query = f"""
+            SELECT
+                id, name, category, description, user_id, last_modified_by, created_at, updated_at, attributes,
+                COUNT(*) OVER() as total_entries
+            FROM {self._get_table_name("entity")}
+            {where_clause}
+            ORDER BY created_at DESC
+            OFFSET ${param_index} LIMIT ${param_index + 1}
+        """
+
+        params.extend([offset, limit])
+
+        try:
+            results = await self.connection_manager.fetch_query(query, params)
+            if not results:
+                return {"results": [], "total_entries": 0}
+
+            total_entries = results[0]["total_entries"] if results else 0
+
+            graphs = [
+                Entity(
+                    id=row["id"],
+                    name=row["name"],
+                    category=row["category"],
+                    description=row["description"],
+                    user_id=row["user_id"],
+                    last_modified_by=row["last_modified_by"],
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
+                    attributes=row["attributes"],
+                )
+                for row in results
+            ]
+
+            return {"results": graphs, "total_entries": total_entries}
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while fetching entities: {e}",
+            )
+
     async def add_to_graph(
         self, graph_id: UUID, entity_id: UUID, auth_user: Optional[Any] = None
     ) -> None:

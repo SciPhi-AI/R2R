@@ -334,22 +334,9 @@ class EntitiesRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def list_entities(
-            request: Request,
-            graph_id: Optional[UUID] = Query(
-                None,
-                description="The ID of the graph to retrieve entities for.",
-            ),
-            document_id: Optional[UUID] = Query(
-                None,
-                description="The ID of the document to retrieve entities for.",
-            ),
-            entity_names: Optional[list[str]] = Query(
-                None,
-                description="A list of entity names to filter the entities by.",
-            ),
-            include_embeddings: bool = Query(
-                False,
-                description="Whether to include vector embeddings in the response.",
+            ids: list[str] = Query(
+                [],
+                description="A list of graph IDs to retrieve. If not provided, all graphs will be returned.",
             ),
             offset: int = Query(
                 0,
@@ -365,45 +352,31 @@ class EntitiesRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntitiesResponse:
             """
-            Returns a paginated list of entities from a knowledge graph or document.
+            Returns a paginated list of entities the authenticated user has access to.
 
-            You must provide either a graph_id or a document_id.
+            Results can be filtered by providing specific entity IDs. Regular users will only see
+            entities they have access to. Superusers can see all entities.
 
-            The entities can be filtered by:
-            - Graph ID: Get entities from a specific graph
-            - Document ID: Get entities from a specific document
-            - Entity names: Filter by specific entity names
-            - Include embeddings: Whether to include vector embeddings in the response
-
-            The response includes:
-            - List of entity objects with their attributes
-            - Total count of matching entities
+            The entities are returned in order of last modification, with most recent first.
             """
 
-            if not graph_id and not document_id:
-                raise R2RException(
-                    "Either graph_id or document_id must be provided.",
-                    400,
-                )
-
-            if auth_user.is_superuser:
-                user_id = None
-            else:
-                user_id = auth_user.id
-
-            entities, count = await self.services["kg"].list_entities(
-                graph_id=graph_id,
-                document_id=document_id,
-                offset=offset,
-                limit=limit,
-                entity_names=entity_names,
-                include_embeddings=include_embeddings,
-                user_id=user_id,
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
             )
 
-            return entities, {  # type: ignore
-                "total_entries": count,
-            }
+            entity_uuids = [UUID(entity_id) for entity_id in ids]
+
+            list_entities_response = await self.services["kg"].list_entities(
+                user_ids=requesting_user_id,
+                entity_ids=entity_uuids,
+                offset=offset,
+                limit=limit,
+            )
+
+            return (  # type: ignore
+                list_entities_response["results"],
+                {"total_entries": list_entities_response["total_entries"]},
+            )
 
         @self.router.get(
             "/entities/{id}",
