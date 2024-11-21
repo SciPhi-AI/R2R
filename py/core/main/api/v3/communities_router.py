@@ -7,13 +7,7 @@ from fastapi import Body, Depends, Path, Query
 
 from core.base import R2RException, RunType
 from core.base.abstractions import DataLevel, KGRunType
-from core.base.abstractions import (
-    Community,
-    Entity,
-    Relationship,
-    Graph,
-    KGEnrichmentSettings,
-)
+from core.base.abstractions import Community, Entity, Relationship, Graph
 
 from core.base.api.models import (
     GenericMessageResponse,
@@ -177,10 +171,7 @@ class CommunitiesRouter(BaseRouterV3):
         @self.base_endpoint
         async def create_communities(
             id: UUID = Path(...),
-            settings: Optional[KGEnrichmentSettings] = Body(
-                None,
-                description="Optional settings for the community build process.",
-            ),
+            settings: Optional[dict] = Body(None),
             run_type: Optional[KGRunType] = Query(
                 description="Run type for the graph creation process.",
             ),
@@ -358,11 +349,11 @@ class CommunitiesRouter(BaseRouterV3):
             request: Request,
             id: UUID = Path(
                 ...,
-                description="The ID of the graph to get communities for.",
+                description="The ID of the collection to get communities for.",
             ),
-            attributes: Optional[list[str]] = Query(
-                None,
-                description="A list of attributes to return. By default, all attributes are returned.",
+            community_id: UUID = Path(
+                ...,
+                description="The ID of the community to get.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):

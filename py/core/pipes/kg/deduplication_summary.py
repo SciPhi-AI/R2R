@@ -198,7 +198,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
                 graph_id=graph_id,
                 collection_id=collection_id,
                 entity_names=entity_names,
-                entity_table_name="document_entity",
+                entity_table_name="entity",
                 offset=offset,
                 limit=limit,
             )

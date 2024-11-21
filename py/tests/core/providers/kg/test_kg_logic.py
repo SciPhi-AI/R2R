@@ -230,10 +230,10 @@ async def test_add_entities(
     postgres_db_provider, entities_list, collection_id
 ):
     await postgres_db_provider.graph_handler.add_entities(
-        entities_list, table_name="document_entity"
+        entities_list, table_name="entity"
     )
     entities = await postgres_db_provider.get_entities(
-        collection_id, entity_table_name="document_entity"
+        collection_id, entity_table_name="entity"
     )
     assert entities["entities"][0].name == "Entity1"
     assert entities["entities"][1].name == "Entity2"
@@ -246,7 +246,7 @@ async def test_add_relationships(
     postgres_db_provider, relationships_raw_list, collection_id
 ):
     await postgres_db_provider.graph_handler.add_relationships(
-        relationships_raw_list, table_name="chunk_relationship"
+        relationships_raw_list, table_name="relationship"
     )
     relationships = await postgres_db_provider.get_relationships(collection_id)
     assert relationships["relationships"][0].subject == "Entity1"
@@ -284,7 +284,7 @@ async def test_get_entity_map(
 async def test_upsert_embeddings(
     postgres_db_provider, collection_id, entities_list
 ):
-    table_name = "document_entity"
+    table_name = "entity"
 
     entities_list_to_upsert = [
         (
@@ -352,11 +352,9 @@ async def test_perform_graph_clustering(
 ):
 
     # addd entities and relationships
-    await postgres_db_provider.add_entities(
-        entities_list, table_name="document_entity"
-    )
+    await postgres_db_provider.add_entities(entities_list, table_name="entity")
     await postgres_db_provider.graph_handler.add_relationships(
-        relationships_raw_list, table_name="chunk_relationship"
+        relationships_raw_list, table_name="relationship"
     )
 
     num_communities = await postgres_db_provider.perform_graph_clustering(
@@ -375,11 +373,9 @@ async def test_get_community_details(
     community_table_info,
 ):
 
-    await postgres_db_provider.add_entities(
-        entities_list, table_name="document_entity"
-    )
+    await postgres_db_provider.add_entities(entities_list, table_name="entity")
     await postgres_db_provider.graph_handler.add_relationships(
-        relationships_raw_list, table_name="chunk_relationship"
+        relationships_raw_list, table_name="relationship"
     )
     await postgres_db_provider.add_community_info(community_table_info)
     await postgres_db_provider.add_community(community_list[0])

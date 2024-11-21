@@ -35,18 +35,18 @@ class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
     name: str
+    # id is Union of UUID and int for backwards compatibility
+    # we will migrate to UUID only in the future
+    # sid is also deprecated and needs to be removed in the future
     id: Optional[UUID | int] = None
     sid: Optional[int] = None
-    level: Optional[DataLevel] = None
     category: Optional[str] = None
     description: Optional[str] = None
     description_embedding: Optional[list[float] | str] = None
-    community_numbers: Optional[list[int]] = None
-    chunk_ids: Optional[list[UUID]] = None
-    graph_id: Optional[UUID] = None
-    graph_ids: Optional[list[UUID]] = None
-    document_id: Optional[UUID] = None
-    document_ids: Optional[list[UUID]] = None
+    chunk_ids: list[UUID] = []
+    graph_ids: list[UUID] = []
+    document_ids: list[UUID] = []
+    document_id: Optional[UUID] = None  # this is for backward compatibility
 
     # we don't use these yet
     # name_embedding: Optional[list[float]] = None
@@ -73,14 +73,13 @@ class Entity(R2RSerializable):
 class Relationship(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
+    # id is Union of UUID and int for backwards compatibility
+    subject: str
+    predicate: str
+    object: str
     id: Optional[UUID | int] = None
-    sid: Optional[int] = None
-    level: Optional[DataLevel] = None
-    subject: Optional[str] = None
-    predicate: Optional[str] = None
     subject_id: Optional[UUID] = None
     object_id: Optional[UUID] = None
-    object: Optional[str] = None
     weight: float | None = 1.0
     description: str | None = None
     description_embedding: list[float] | None = None
@@ -105,8 +104,9 @@ class CommunityInfo(R2RSerializable):
 
     node: str
     cluster: int
-    parent_cluster: int | None
     level: int
+    id: Optional[UUID | int] = None
+    parent_cluster: int | None
     is_final_cluster: bool
     graph_id: Optional[UUID] = None
     collection_id: Optional[UUID] = None  # for backwards compatibility
@@ -126,7 +126,7 @@ class Community(R2RSerializable):
 
     findings: list[str] = []
     id: Optional[int | UUID] = None
-    graph_id: Optional[UUID] = None
+    graph_ids: list[UUID] = []
     collection_id: Optional[UUID] = None
     rating: float | None = None
     rating_explanation: str | None = None
