@@ -115,6 +115,7 @@ class PostgresEntityHandler(EntityHandler):
             chunk_ids UUID[],
             description_embedding {vector_column_str} NOT NULL,
             document_ids UUID[],
+            document_id UUID,
             graph_ids UUID[],
             attributes JSONB
             );
@@ -585,6 +586,7 @@ class PostgresCommunityHandler(CommunityHandler):
         )
 
         # communities table, result of the Leiden algorithm
+        # graph_id is for backward compatibility
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("graph_community_info")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -603,6 +605,8 @@ class PostgresCommunityHandler(CommunityHandler):
         await self.connection_manager.execute_query(query)
 
         # communities_report table
+        # collection ID is for backward compatibility
+        # Avoid unnecessary complexity by making communities belong to one graph only
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("graph_community")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
