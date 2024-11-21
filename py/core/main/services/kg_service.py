@@ -197,18 +197,11 @@ class KgService(Service):
         )
 
     @telemetry_event("delete_entity")
-    async def delete_entity_v3(
-        self,
-        id: UUID,
-        entity_id: UUID,
-        level: DataLevel,
-        **kwargs,
-    ):
-        return await self.providers.database.graph_handler.entities.delete(
-            id=id,
-            entity_id=entity_id,
-            level=level,
+    async def delete_entity_v3(self, id: UUID) -> bool:
+        await self.providers.database.graph_handler.entities.delete(
+            entity_id=id,
         )
+        return True
 
     @telemetry_event("add_entity_to_graph")
     async def add_entity_to_graph(

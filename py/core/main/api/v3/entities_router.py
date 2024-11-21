@@ -10,7 +10,9 @@ from core.base.abstractions import DataLevel, KGRunType
 from core.base.abstractions import Community, Entity, Relationship, Graph
 
 from core.base.api.models import (
+    GenericBooleanResponse,
     GenericMessageResponse,
+    WrappedBooleanResponse,
     WrappedGenericMessageResponse,
     WrappedKGCreationResponse,
     WrappedEntityResponse,
@@ -449,6 +451,67 @@ class EntitiesRouter(BaseRouterV3):
 
             return entity
 
+        @self.router.delete(
+            "/entities/{id}",
+            summary="Delete an entity",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.entities.delete(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.entities.delete({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def delete_entity(
+            id: UUID = Path(...),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedBooleanResponse:
+            """
+            Deletes an entity and all its associated data.
+
+            This endpoint permanently removes:
+            - The entity itself and all its attributes
+
+            However, this will not remove any relationships or communities that the entity is part of.
+            """
+            # FIXME: This is unacceptable.
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only superusers can access this endpoint.", 403
+                )
+
+            await self.services["kg"].delete_entity_v3(id=id)
+            return GenericBooleanResponse(success=True)  # type: ignore
+
         @self.router.post(
             "/entities/{id}",
             summary="Update an entity",
@@ -511,53 +574,5 @@ class EntitiesRouter(BaseRouterV3):
                 description=description,
                 category=category,
                 attributes=attributes,
-                auth_user=auth_user,
-            )
-
-        @self.router.delete(
-            "/entities/{id}",
-            summary="Delete an entity",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.entities.delete(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
-                            """
-                        ),
-                    },
-                ],
-            },
-        )
-        @self.base_endpoint
-        async def delete_entity(
-            request: Request,
-            id: UUID = Path(
-                ...,
-                description="The ID of the graph to delete the entity for.",
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
-            """
-            Deletes an entity and all its associated data.
-
-            This endpoint permanently removes:
-            - The entity itself and all its attributes
-
-            However, this will not remove any relationships or communities that the entity is part of.
-            """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
-
-            return await self.services["kg"].delete_entity_v3(
-                id=id,
                 auth_user=auth_user,
             )

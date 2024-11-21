@@ -16,7 +16,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     });
   });
 
-  test("Create an Entity", async () => {
+  test("Create an entity", async () => {
     const response = await client.entities.create({
       name: "Entity 1",
       description: "The first entity",
@@ -29,15 +29,29 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     expect(response.results.description).toBe("The first entity");
   });
 
-  test("Create an Entity", async () => {
+  test("Create an entity with a category", async () => {
     const response = await client.entities.create({
       name: "Entity 2",
       description: "The second entity",
+      category: "category",
     });
     console.log(response);
     entity2Id = response.results.id;
     expect(response.results).toBeDefined();
     expect(response.results.name).toEqual("Entity 2");
     expect(response.results.description).toEqual("The second entity");
+    expect(response.results.category).toEqual("category");
+  });
+
+  test("Delete entity 1", async () => {
+    const response = await client.entities.delete({ id: entity1Id });
+    expect(response.results).toBeDefined();
+    expect(response.results.success).toBe(true);
+  });
+
+  test("Delete entity 2", async () => {
+    const response = await client.graphs.delete({ id: entity2Id });
+    expect(response.results).toBeDefined();
+    expect(response.results.success).toBe(true);
   });
 });

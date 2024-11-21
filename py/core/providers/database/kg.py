@@ -181,8 +181,6 @@ class PostgresEntityHandler(EntityHandler):
                 params=params,
             )
 
-            print(result)
-
             return Entity(
                 id=result["id"],
                 name=result["name"],
@@ -446,23 +444,17 @@ class PostgresEntityHandler(EntityHandler):
 
         return has_access_to_all_documents
 
-    async def delete(self, id: UUID, auth_user: Optional[Any] = None) -> None:
-        """Delete an entity from the database.
-
-        Args:
-            id: UUID of the entity to delete
-        """
-
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to delete this entity.", 403
-                )
-
-        QUERY = f"""
+    async def delete(self, entity_id: UUID) -> None:
+        query = f"""
             DELETE FROM {self._get_table_name("entity")} WHERE id = $1
         """
-        return await self.connection_manager.execute_query(QUERY, [id])
+        try:
+            await self.connection_manager.fetchrow_query(query, [entity_id])
+        except Exception as e:
+            raise R2RException(
+                message=f"Error deleting entity: {e}",
+                status_code=500,
+            )
 
     async def add_to_graph(
         self, graph_id: UUID, entity_id: UUID, auth_user: Optional[Any] = None
