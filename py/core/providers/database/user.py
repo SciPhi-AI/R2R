@@ -42,6 +42,7 @@ class PostgresUserHandler(UserHandler):
             reset_token TEXT,
             reset_token_expiry TIMESTAMPTZ,
             collection_ids UUID[] NULL,
+            graph_ids UUID[] NULL,
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
@@ -181,7 +182,7 @@ class PostgresUserHandler(UserHandler):
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET email = $1, is_superuser = $2, is_active = $3, is_verified = $4, updated_at = NOW(),
                 name = $5, profile_picture = $6, bio = $7, collection_ids = $8, graph_ids = $9
-            WHERE user_id = $9
+            WHERE user_id = $10
             RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, collection_ids, graph_ids
         """
         result = await self.connection_manager.fetchrow_query(
@@ -484,7 +485,7 @@ class PostgresUserHandler(UserHandler):
 
         query = f"""
             SELECT u.user_id, u.email, u.is_active, u.is_superuser, u.created_at, u.updated_at,
-                u.is_verified, u.collection_ids, u.name, u.bio, u.profile_picture,
+                u.is_verified, u.collection_ids, u.graph_ids, u.name, u.bio, u.profile_picture,
                 COUNT(*) OVER() AS total_entries
             FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
             WHERE $1 = ANY(u.collection_ids)
@@ -509,6 +510,7 @@ class PostgresUserHandler(UserHandler):
                 updated_at=row["updated_at"],
                 is_verified=row["is_verified"],
                 collection_ids=row["collection_ids"],
+                graph_ids=row["graph_ids"],
                 name=row["name"],
                 bio=row["bio"],
                 profile_picture=row["profile_picture"],

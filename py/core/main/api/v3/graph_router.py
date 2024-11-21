@@ -15,6 +15,8 @@ from core.base.api.models import (
     WrappedBooleanResponse,
     WrappedGenericMessageResponse,
     WrappedKGCreationResponse,
+    WrappedGraphResponse,
+    WrappedGraphsResponse,
     WrappedEntityResponse,
     WrappedEntitiesResponse,
     WrappedRelationshipResponse,
@@ -42,13 +44,9 @@ from core.base.abstractions import (
     GraphBuildSettings,
 )
 
-from core.base.abstractions import DocumentResponse, DocumentType
-
 from .base_router import BaseRouterV3
 
 from fastapi import Request
-
-from shared.utils.base_utils import generate_entity_document_id
 
 logger = logging.getLogger()
 
@@ -186,10 +184,13 @@ class GraphRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def create_empty_graph(
+        async def create_graph(
+            name: str = Body(..., description="The name of the graph"),
+            description: Optional[str] = Body(
+                None, description="An optional description of the graph"
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-            graph: Graph = Body(...),
-        ):
+        ) -> WrappedGraphResponse:
             """
             Creates a new empty graph.
 
@@ -207,15 +208,68 @@ class GraphRouter(BaseRouterV3):
 
             The graph ID returned by this endpoint is required for all subsequent operations on the graph.
             """
-            if not auth_user.is_superuser:
-                raise R2RException("Only superusers can create graphs", 403)
 
-            graph_id = await self.services["kg"].create_new_graph(graph)
+            return await self.services["kg"].create_new_graph(
+                user_id=auth_user.id,
+                name=name,
+                description=description,
+            )
 
-            return {
-                "id": graph_id,
-                "message": "An empty graph object created successfully",
-            }
+        @self.router.get(
+            "/graphs",
+            summary="List graphs",
+            openapi_extra={},
+        )
+        @self.base_endpoint
+        async def list_graphs(
+            ids: list[str] = Query(
+                [],
+                description="A list of graph IDs to retrieve. If not provided, all graphs will be returned.",
+            ),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedGraphsResponse:
+            """
+            Returns a paginated list of graphs the authenticated user has access to.
+
+            Results can be filtered by providing specific graph IDs. Regular users will only see
+            graphs they own or have access to. Superusers can see all graphs.
+
+            The graphs are returned in order of last modification, with most recent first.
+            """
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
+            graph_uuids = [UUID(graph_id) for graph_id in ids]
+
+            collections_overview_response = await self.services[
+                "kg"
+            ].list_graphs(
+                user_ids=requesting_user_id,
+                graph_ids=graph_uuids,
+                offset=offset,
+                limit=limit,
+            )
+
+            return (  # type: ignore
+                collections_overview_response["results"],
+                {
+                    "total_entries": collections_overview_response[
+                        "total_entries"
+                    ]
+                },
+            )
 
         @self.router.get(
             "/graphs/{id}",
@@ -374,16 +428,22 @@ class GraphRouter(BaseRouterV3):
             """
             Deletes a graph and all its associated data.
 
-            This endpoint permanently removes the specified graph along with all entities and relationships that belong to only this graph.
-
-            Entities and relationships extracted from documents are not deleted and must be deleted separately using the /entities and /relationships endpoints.
+            This endpoint permanently removes the specified graph along with all
+            entities and relationships that belong to only this graph.
+            Entities and relationships extracted from documents are not deleted
+            and must be deleted separately using the /entities and /relationships
+            endpoints.
             """
-            if not auth_user.is_superuser:
-                raise R2RException("Only superusers can delete graphs", 403)
+            if (
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
 
-            id = await self.services["kg"].delete_graph_v3(
-                id=id
-            )
+            id = await self.services["kg"].delete_graph_v3(id=id)
             # FIXME: Can we sync this with the deletion response from other routes? Those return a boolean.
             return {"message": "Graph deleted successfully", "id": id}  # type: ignore
 
@@ -427,10 +487,10 @@ class GraphRouter(BaseRouterV3):
             - Basic metadata: name, description, tags
             - Graph settings:
                 - Entity extraction settings
-                - Relationship extraction settings 
+                - Relationship extraction settings
                 - Community detection settings
                 - Prompt configurations
-            
+
             The graph ID must match between the URL path and request body (if provided in body).
             """
             if not auth_user.is_superuser:
@@ -521,7 +581,6 @@ class GraphRouter(BaseRouterV3):
             )
 
             return tuned_prompt  # type: ignore
-
 
         @self.router.post(
             "/graphs/{id}/documents",
@@ -632,8 +691,6 @@ class GraphRouter(BaseRouterV3):
                         "task_id": None,
                     }
 
-        
-
         @self.router.post(
             "/graphs/{id}/entities",
             summary="Add entities to the graph",
@@ -671,7 +728,9 @@ class GraphRouter(BaseRouterV3):
             """
             Adds a list of entities to the graph by their IDs.
             """
-            return await self.services["kg"].documents.graph_handler.entities.add_to_graph(id, entity_ids)
+            return await self.services[
+                "kg"
+            ].documents.graph_handler.entities.add_to_graph(id, entity_ids)
 
         @self.router.delete(
             "/graphs/{id}/entities/{entity_id}",
@@ -703,15 +762,19 @@ class GraphRouter(BaseRouterV3):
                 description="The ID of the graph to remove the entity from.",
             ),
             entity_id: UUID = Path(
-                ..., description="The ID of the entity to remove from the graph."
+                ...,
+                description="The ID of the entity to remove from the graph.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
             Removes an entity from the graph by its ID.
             """
-            return await self.services["kg"].documents.graph_handler.entities.remove_from_graph(id, [entity_id])
-
+            return await self.services[
+                "kg"
+            ].documents.graph_handler.entities.remove_from_graph(
+                id, [entity_id]
+            )
 
         @self.router.post(
             "/graphs/{id}/relationships",
@@ -743,16 +806,19 @@ class GraphRouter(BaseRouterV3):
                 description="The ID of the graph to add the relationship to.",
             ),
             relationship_ids: list[UUID] = Body(
-                ..., description="The IDs of the relationships to add to the graph."
+                ...,
+                description="The IDs of the relationships to add to the graph.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
             Adds a list of relationships to the graph by their IDs.
             """
-            return await self.services["kg"].documents.graph_handler.relationships.add_to_graph(id, relationship_ids)
-        
-
+            return await self.services[
+                "kg"
+            ].documents.graph_handler.relationships.add_to_graph(
+                id, relationship_ids
+            )
 
         @self.router.delete(
             "/graphs/{id}/relationships/{relationship_id}",
@@ -784,16 +850,19 @@ class GraphRouter(BaseRouterV3):
                 description="The ID of the graph to remove the relationship from.",
             ),
             relationship_id: UUID = Path(
-                ..., description="The ID of the relationship to remove from the graph."
+                ...,
+                description="The ID of the relationship to remove from the graph.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
             Removes a relationship from the graph by its ID.
             """
-            return await self.services["kg"].documents.graph_handler.relationships.remove_from_graph(id, [relationship_id])
-
-
+            return await self.services[
+                "kg"
+            ].documents.graph_handler.relationships.remove_from_graph(
+                id, [relationship_id]
+            )
 
         @self.router.post(
             "/graphs/{id}/communities",
@@ -825,16 +894,19 @@ class GraphRouter(BaseRouterV3):
                 description="The ID of the graph to add the communities to.",
             ),
             community_ids: list[UUID] = Body(
-                ..., description="The IDs of the communities to add to the graph."
+                ...,
+                description="The IDs of the communities to add to the graph.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
             Adds a list of communities to the graph by their IDs.
             """
-            return await self.services["kg"].documents.graph_handler.communities.add_to_graph(id, community_ids)
-        
-
+            return await self.services[
+                "kg"
+            ].documents.graph_handler.communities.add_to_graph(
+                id, community_ids
+            )
 
         @self.router.delete(
             "/graphs/{id}/communities/{community_id}",
@@ -866,12 +938,16 @@ class GraphRouter(BaseRouterV3):
                 description="The ID of the graph to remove the community from.",
             ),
             community_id: UUID = Path(
-                ..., description="The ID of the community to remove from the graph."
+                ...,
+                description="The ID of the community to remove from the graph.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
             Removes a community from the graph by its ID.
             """
-            return await self.services["kg"].documents.graph_handler.communities.remove_from_graph(id, [community_id])
-
+            return await self.services[
+                "kg"
+            ].documents.graph_handler.communities.remove_from_graph(
+                id, [community_id]
+            )

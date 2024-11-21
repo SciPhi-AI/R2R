@@ -97,10 +97,7 @@ class EntitiesRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def list_entities(
-            user_id: Optional[UUID] = Query(
-                None,
-                description="The ID of the user performing the request.",
-            ),
+            request: Request,
             graph_id: Optional[UUID] = Query(
                 None,
                 description="The ID of the graph to retrieve entities for.",

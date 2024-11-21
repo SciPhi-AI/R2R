@@ -345,8 +345,6 @@ class KgService(Service):
             limit=limit or -1,
         )
 
-    ################### GRAPHS ###################
-
     @telemetry_event("create_new_graph")
     async def create_new_graph(
         self,
@@ -358,6 +356,20 @@ class KgService(Service):
             user_id=user_id,
             name=name,
             description=description,
+        )
+
+    async def list_graphs(
+        self,
+        offset: int,
+        limit: int,
+        user_ids: Optional[list[UUID]] = None,
+        graph_ids: Optional[list[UUID]] = None,
+    ) -> dict[str, list[GraphResponse] | int]:
+        return await self.providers.database.graph_handler.list_graphs(
+            offset=offset,
+            limit=limit,
+            filter_user_ids=user_ids,
+            filter_graph_ids=graph_ids,
         )
 
     @telemetry_event("get_graphs")
@@ -373,8 +385,11 @@ class KgService(Service):
         return await self.providers.database.graph_handler.update(graph)
 
     @telemetry_event("delete_graph_v3")
-    async def delete_graph_v3(self, id: UUID, cascade: bool = False) -> UUID:
-        return await self.providers.database.graph_handler.delete(id, cascade)
+    async def delete_graph_v3(self, id: UUID) -> bool:
+        await self.providers.database.graph_handler.delete(
+            graph_id=id,
+        )
+        return True
 
     @telemetry_event("get_document_ids_for_create_graph")
     async def get_document_ids_for_create_graph(

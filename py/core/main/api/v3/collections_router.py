@@ -206,7 +206,7 @@ class CollectionsRouter(BaseRouterV3):
             Returns a paginated list of collections the authenticated user has access to.
 
             Results can be filtered by providing specific collection IDs. Regular users will only see
-            collections they own or have access to. Superusers can see all documents.
+            collections they own or have access to. Superusers can see all collections.
 
             The collections are returned in order of last modification, with most recent first.
             """

@@ -705,22 +705,22 @@ class GraphHandler(Handler):
 
     @abstractmethod
     async def create(self, *args: Any, **kwargs: Any) -> GraphResponse:
-        """Create graph in storage."""
+        """Create graph"""
         pass
 
     @abstractmethod
     async def get(self, *args: Any, **kwargs: Any) -> list[Graph]:
-        """Get graph from storage."""
+        """Get graph"""
         pass
 
     @abstractmethod
     async def update(self, graph: Graph) -> UUID:
-        """Update graph in storage."""
+        """Update graph"""
         pass
 
     @abstractmethod
-    async def delete(self, graph_id: UUID, cascade: bool = False) -> UUID:
-        """Delete graph from storage."""
+    async def delete(self, graph_id: UUID) -> None:
+        """Delete graph"""
         pass
 
 
