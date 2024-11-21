@@ -6,24 +6,13 @@ from uuid import UUID
 from fastapi import Body, Depends, Path, Query
 
 from core.base import R2RException, RunType
-from core.base.abstractions import DataLevel, KGRunType
-from core.base.abstractions import Community, Entity, Relationship, Graph
+from core.base.abstractions import DataLevel
 
 from core.base.api.models import (
     GenericBooleanResponse,
-    GenericMessageResponse,
     WrappedBooleanResponse,
-    WrappedGenericMessageResponse,
-    WrappedKGCreationResponse,
     WrappedEntityResponse,
     WrappedEntitiesResponse,
-    WrappedRelationshipResponse,
-    WrappedRelationshipsResponse,
-    WrappedCommunityResponse,
-    WrappedCommunitiesResponse,
-    WrappedKGEntityDeduplicationResponse,
-    WrappedKGEnrichmentResponse,
-    WrappedKGTunePromptResponse,
 )
 
 
@@ -31,24 +20,10 @@ from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
-from core.utils import (
-    update_settings_from_dict,
-)
-
-from core.base.abstractions import (
-    Entity,
-    KGCreationSettings,
-    Relationship,
-    GraphBuildSettings,
-)
-
-from core.base.abstractions import DocumentResponse, DocumentType
 
 from .base_router import BaseRouterV3
 
 from fastapi import Request
-
-from shared.utils.base_utils import generate_entity_document_id
 
 logger = logging.getLogger()
 
@@ -476,7 +451,7 @@ class EntitiesRouter(BaseRouterV3):
 
             However, this will not remove any relationships or communities that the entity is part of.
             """
-            # FIXME: This is unacceptable.
+            # FIXME: This is unacceptable. We need to check if the user has access to the entity.
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
