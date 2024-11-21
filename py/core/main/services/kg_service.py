@@ -427,8 +427,17 @@ class KgService(Service):
         )
 
     @telemetry_event("update_graph")
-    async def update_graph(self, graph: Graph) -> UUID:
-        return await self.providers.database.graph_handler.update(graph)
+    async def update_graph(
+        self,
+        graph_id: UUID,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> GraphResponse:
+        return await self.providers.database.graph_handler.update(
+            graph_id=graph_id,
+            name=name,
+            description=description,
+        )
 
     @telemetry_event("delete_graph_v3")
     async def delete_graph_v3(self, id: UUID) -> bool:
