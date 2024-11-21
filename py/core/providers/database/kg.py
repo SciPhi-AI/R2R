@@ -728,7 +728,6 @@ class PostgresRelationshipHandler(RelationshipHandler):
             QUERY, [graph_id, relationship_id]
         )
 
-
 class PostgresCommunityHandler(CommunityHandler):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -973,16 +972,24 @@ class PostgresCommunityHandler(CommunityHandler):
                 )
             ]
 
-    async def _check_permissions(
-        self, graph_id: UUID, auth_user_id: UUID
-    ) -> bool:
-
-        # check if the user has access to the graph
+    async def add_to_graph(
+        self, graph_id: UUID, community_ids: list[UUID]
+    ) -> None:
         QUERY = f"""
-            SELECT * FROM {self._get_table_name("users")} WHERE user_id = $1 AND $1 = ANY(graph_ids)
+            UPDATE {self._get_table_name("graph_community")} SET graph_id = $1 WHERE id = ANY($2)
         """
-        return await self.connection_manager.fetchrow_query(
-            QUERY, [auth_user_id]
+        return await self.connection_manager.execute_query(
+            QUERY, [graph_id, community_ids]
+        )
+
+    async def remove_from_graph(
+        self, graph_id: UUID, community_ids: list[UUID]
+    ) -> None:
+        QUERY = f"""
+            UPDATE {self._get_table_name("graph_community")} SET graph_id = NULL WHERE id = ANY($1)
+        """
+        return await self.connection_manager.execute_query(
+            QUERY, [community_ids]
         )
 
 
