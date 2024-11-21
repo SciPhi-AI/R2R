@@ -176,9 +176,6 @@ class PostgresCollectionHandler(CollectionHandler):
         )
 
     async def delete_collection_relational(self, collection_id: UUID) -> None:
-        # async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
-        #     async with conn.transaction():
-        #         try:
         # Remove collection_id from users
         user_update_query = f"""
             UPDATE {self._get_table_name('users')}

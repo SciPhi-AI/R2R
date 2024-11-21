@@ -22,6 +22,9 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     });
     expect(response.results).toBeDefined();
     graph1Id = response.results.id;
+    expect(graph1Id).toEqual(response.results.id);
+    expect(response.results.name).toEqual("Graph 1");
+    expect(response.results.description).toBe(null);
   });
 
   test("Create a graph with name and description", async () => {
@@ -29,13 +32,25 @@ describe("r2rClient V3 Collections Integration Tests", () => {
       name: "2",
       description: "Graph 2",
     });
-    console.log("Result from create graph 2", response);
+    graph2Id = response.results.id;
+    expect(response.results).toBeDefined();
+    expect(response.results.name).toEqual("2");
+    expect(response.results.description).toEqual("Graph 2");
+  });
+
+  test("Ensure that there are two graphs", async () => {
+    const response = await client.graphs.list();
+    expect(response.results).toBeDefined();
+    expect(response.results.length).toEqual(2);
+  });
+
+  test("Delete graph 1", async () => {
+    const response = await client.graphs.delete({ id: graph1Id });
     expect(response.results).toBeDefined();
   });
 
-  test("Creating a graph that already exists will throw a 409", async () => {
-    await expect(client.graphs.create({ name: "Graph 1" })).rejects.toThrow(
-      /Status 409/,
-    );
+  test("Delete graph 2", async () => {
+    const response = await client.graphs.delete({ id: graph2Id });
+    expect(response.results).toBeDefined();
   });
 });

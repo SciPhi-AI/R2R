@@ -307,7 +307,9 @@ def test_kg_create_graph_sample_file_cli():
         print("KG create graph test failed: Graph not created")
         sys.exit(1)
 
-    entities_list = [ele["name"] for ele in response.json()["results"]["entities"]]
+    entities_list = [
+        ele["name"] for ele in response.json()["results"]["entities"]
+    ]
 
     print(entities_list)
 

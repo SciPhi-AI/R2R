@@ -320,25 +320,34 @@ class PostgresEntityHandler(EntityHandler):
             connection_manager=self.connection_manager,
         )
 
-    async def add_to_graph(self, graph_id: UUID, entity_ids: list[UUID]) -> None:
+    async def add_to_graph(
+        self, graph_id: UUID, entity_ids: list[UUID]
+    ) -> None:
         QUERY = f"""
             UPDATE {self._get_table_name("graph_entity")}
-            SET graph_ids = CASE 
+            SET graph_ids = CASE
                 WHEN graph_ids IS NULL THEN ARRAY[$1]
                 WHEN NOT ($1 = ANY(graph_ids)) THEN array_append(graph_ids, $1)
                 ELSE graph_ids
             END
             WHERE id = ANY($2)
         """
-        return await self.connection_manager.execute_query(QUERY, [graph_id, entity_ids])
+        return await self.connection_manager.execute_query(
+            QUERY, [graph_id, entity_ids]
+        )
 
-    async def remove_from_graph(self, graph_id: UUID, entity_ids: list[UUID]) -> None:
+    async def remove_from_graph(
+        self, graph_id: UUID, entity_ids: list[UUID]
+    ) -> None:
         QUERY = f"""
             UPDATE {self._get_table_name("graph_entity")}
             SET graph_ids = array_remove(graph_ids, $1)
             WHERE id = ANY($2)
         """
-        return await self.connection_manager.execute_query(QUERY, [graph_id, entity_ids])
+        return await self.connection_manager.execute_query(
+            QUERY, [graph_id, entity_ids]
+        )
+
 
 class PostgresRelationshipHandler(RelationshipHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -508,26 +517,34 @@ class PostgresRelationshipHandler(RelationshipHandler):
         return await self.connection_manager.fetchrow_query(
             QUERY, [relationship_id]
         )
-    
-    async def add_to_graph(self, graph_id: UUID, relationship_ids: list[UUID]) -> None:
+
+    async def add_to_graph(
+        self, graph_id: UUID, relationship_ids: list[UUID]
+    ) -> None:
         QUERY = f"""
             UPDATE {self._get_table_name("graph_relationship")}
-            SET graph_ids = CASE 
+            SET graph_ids = CASE
                 WHEN graph_ids IS NULL THEN ARRAY[$1]
                 WHEN NOT ($1 = ANY(graph_ids)) THEN array_append(graph_ids, $1)
                 ELSE graph_ids
             END
             WHERE id = ANY($2)
         """
-        return await self.connection_manager.execute_query(QUERY, [graph_id, relationship_ids])
-    
-    async def remove_from_graph(self, graph_id: UUID, relationship_ids: list[UUID]) -> None:
+        return await self.connection_manager.execute_query(
+            QUERY, [graph_id, relationship_ids]
+        )
+
+    async def remove_from_graph(
+        self, graph_id: UUID, relationship_ids: list[UUID]
+    ) -> None:
         QUERY = f"""
             UPDATE {self._get_table_name("graph_relationship")}
             SET graph_ids = array_remove(graph_ids, $1)
             WHERE id = ANY($2)
         """
-        return await self.connection_manager.execute_query(QUERY, [graph_id, relationship_ids])
+        return await self.connection_manager.execute_query(
+            QUERY, [graph_id, relationship_ids]
+        )
 
 
 class PostgresCommunityHandler(CommunityHandler):
@@ -647,17 +664,26 @@ class PostgresCommunityHandler(CommunityHandler):
                 )
             ]
 
-    async def add_to_graph(self, graph_id: UUID, community_ids: list[UUID]) -> None:
+    async def add_to_graph(
+        self, graph_id: UUID, community_ids: list[UUID]
+    ) -> None:
         QUERY = f"""
             UPDATE {self._get_table_name("graph_community")} SET graph_id = $1 WHERE id = ANY($2)
         """
-        return await self.connection_manager.execute_query(QUERY, [graph_id, community_ids])
-    
-    async def remove_from_graph(self, graph_id: UUID, community_ids: list[UUID]) -> None:
+        return await self.connection_manager.execute_query(
+            QUERY, [graph_id, community_ids]
+        )
+
+    async def remove_from_graph(
+        self, graph_id: UUID, community_ids: list[UUID]
+    ) -> None:
         QUERY = f"""
             UPDATE {self._get_table_name("graph_community")} SET graph_id = NULL WHERE id = ANY($1)
         """
-        return await self.connection_manager.execute_query(QUERY, [community_ids])
+        return await self.connection_manager.execute_query(
+            QUERY, [community_ids]
+        )
+
 
 class PostgresGraphHandler(GraphHandler):
     """Handler for Knowledge Graph METHODS in PostgreSQL."""
@@ -760,12 +786,17 @@ class PostgresGraphHandler(GraphHandler):
                 status_code=409,
             )
 
-    async def delete(self, graph_id: UUID, cascade: bool = False) -> UUID:
-
-        if cascade:
-            raise NotImplementedError(
-                "Cascade deletion not implemented. Please delete document level entities and relationships using the document delete endpoints."
-            )
+    # FIXME: This needs to be cleaned up.
+    async def delete(self, graph_id: UUID) -> None:
+        # Remove graph_id from users
+        user_update_query = f"""
+            UPDATE {self._get_table_name('users')}
+            SET graph_ids = array_remove(graph_ids, $1)
+            WHERE $1 = ANY(graph_ids)
+        """
+        await self.connection_manager.execute_query(
+            user_update_query, [graph_id]
+        )
 
         QUERY = f"""
             DELETE FROM {self._get_table_name("graph")} WHERE id = $1
@@ -794,7 +825,69 @@ class PostgresGraphHandler(GraphHandler):
         """
         await self.connection_manager.execute_query(QUERY, [graph_id])
 
-        return graph_id
+    async def list_graphs(
+        self,
+        offset: int,
+        limit: int,
+        filter_user_ids: Optional[list[UUID]] = None,
+        filter_graph_ids: Optional[list[UUID]] = None,
+    ) -> dict[str, list[GraphResponse] | int]:
+        conditions = []
+        params: list[Any] = []
+        param_index = 1
+
+        if filter_graph_ids:
+            conditions.append(f"id = ANY(${param_index})")
+            params.append(filter_graph_ids)
+            param_index += 1
+
+        if filter_user_ids:
+            conditions.append(f"user_id = ANY(${param_index})")
+            params.append(filter_user_ids)
+            param_index += 1
+
+        where_clause = (
+            f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        )
+
+        query = f"""
+            SELECT
+                id, user_id, name, description, status, created_at, updated_at,
+                COUNT(*) OVER() as total_entries
+            FROM {self._get_table_name("graph")}
+            {where_clause}
+            ORDER BY created_at DESC
+            OFFSET ${param_index} LIMIT ${param_index + 1}
+        """
+
+        params.extend([offset, limit])
+
+        try:
+            results = await self.connection_manager.fetch_query(query, params)
+            if not results:
+                return {"results": [], "total_entries": 0}
+
+            total_entries = results[0]["total_entries"] if results else 0
+
+            graphs = [
+                GraphResponse(
+                    id=row["id"],
+                    user_id=row["user_id"],
+                    name=row["name"],
+                    description=row["description"],
+                    status=row["status"],
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
+                )
+                for row in results
+            ]
+
+            return {"results": graphs, "total_entries": total_entries}
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while fetching graphs: {e}",
+            )
 
     async def get(
         self, offset: int, limit: int, graph_id: Optional[UUID] = None
