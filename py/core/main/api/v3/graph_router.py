@@ -767,7 +767,7 @@ class GraphRouter(BaseRouterV3):
                 id, entity_id, auth_user
             )
 
-            return GenericBooleanResponse(success=True) 
+            return GenericBooleanResponse(success=True)
 
         @self.router.delete(
             "/graphs/{id}/entities/{entity_id}",
@@ -937,7 +937,7 @@ class GraphRouter(BaseRouterV3):
         ):
             """
             Adds a document to the graph by its ID.
-            
+
             This endpoint adds all entities and relationships from the document to the graph.
 
             You need to run '/documents/{id}/entities_and_relationships' first to get the entities and relationships.
@@ -946,20 +946,25 @@ class GraphRouter(BaseRouterV3):
             """
 
             # check permissions
-            if not await self.services["management"].has_document_access(auth_user, document_id):
-                raise R2RException(
-                    message="You do not have permission to add this document to the graph.",
-                    status_code=403,
-                )
-                
-            if not await self.services["management"].has_graph_access(auth_user, id):
+            if not await self.services["management"].has_document_access(
+                auth_user, document_id
+            ):
                 raise R2RException(
                     message="You do not have permission to add this document to the graph.",
                     status_code=403,
                 )
 
-            await self.services["kg"].documents.graph_handler.add_document_to_graph(
-                id, document_id, auth_user
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    message="You do not have permission to add this document to the graph.",
+                    status_code=403,
+                )
+
+            await self.services["kg"].add_documents_to_graph(
+                graph_id=id,
+                document_ids=[document_id],
             )
 
             return GenericBooleanResponse(success=True)
@@ -1003,29 +1008,32 @@ class GraphRouter(BaseRouterV3):
             """
 
             # check permissions
-            if not await self.services["management"].has_document_access(auth_user, document_id):
-                raise R2RException(
-                    message="You do not have permission to remove this document from the graph.",
-                    status_code=403,
-                )
-                
-            if not await self.services["management"].has_graph_access(auth_user, id):
+            if not await self.services["management"].has_document_access(
+                auth_user, document_id
+            ):
                 raise R2RException(
                     message="You do not have permission to remove this document from the graph.",
                     status_code=403,
                 )
 
-            await self.services[
-                "kg"
-            ].documents.graph_handler.remove_document_from_graph(
-                id, document_id, auth_user
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    message="You do not have permission to remove this document from the graph.",
+                    status_code=403,
+                )
+
+            await self.services["kg"].remove_documents_from_graph(
+                graph_id=id,
+                document_ids=[document_id],
             )
 
-            return GenericBooleanResponse(success=True) 
-        
+            return GenericBooleanResponse(success=True)
+
         # Add and remove collections from graph
 
-                ### Add and remove document from graph
+        ### Add and remove document from graph
         @self.router.post(
             "/graphs/{id}/collections/{collection_id}",
             summary="Add a collection to the graph",
@@ -1052,20 +1060,31 @@ class GraphRouter(BaseRouterV3):
                 description="The ID of the graph to add the entity to.",
             ),
             collection_id: UUID = Path(
-                ..., description="The ID of the collection to add to the graph."
+                ...,
+                description="The ID of the collection to add to the graph.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
             Adds a collection to the graph by its ID.
-            
+
             This endpoint adds all entities and relationships from all documents in the collection to the graph.
 
             The endpoints returns an error if there are no entities and relationships extractions present for any of the documents in the collection.
             """
 
-            await self.services["kg"].documents.graph_handler.add_collection_to_graph(
-                id, collection_id, auth_user
+            # check permissions
+            if not await self.services["management"].has_collection_access(
+                auth_user, collection_id
+            ):
+                raise R2RException(
+                    message="You do not have permission to add this collection to the graph.",
+                    status_code=403,
+                )
+
+            await self.services["kg"].add_collection_to_graph(
+                graph_id=id,
+                collection_id=collection_id,
             )
 
             return GenericBooleanResponse(success=True)
@@ -1107,11 +1126,19 @@ class GraphRouter(BaseRouterV3):
 
             This endpoint removes all entities and relationships from all documents in the collection in the graph.
             """
-            await self.services[
-                "kg"
-            ].documents.graph_handler.remove_collection_from_graph(
-                id, collection_id, auth_user
+
+            # check permissions
+            if not await self.services["management"].has_collection_access(
+                auth_user, collection_id
+            ):
+                raise R2RException(
+                    message="You do not have permission to remove this collection from the graph.",
+                    status_code=403,
+                )
+
+            await self.services["kg"].remove_collection_from_graph(
+                graph_id=id,
+                collection_id=collection_id,
             )
 
-            return GenericBooleanResponse(success=True) 
-        
+            return GenericBooleanResponse(success=True)

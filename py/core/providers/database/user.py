@@ -697,7 +697,6 @@ class PostgresUserHandler(UserHandler):
         )
         return result is not None
 
-
     async def has_graph_access(self, auth_user, graph_id: UUID) -> bool:
         """
         Check if the user has access to a graph.
@@ -715,8 +714,9 @@ class PostgresUserHandler(UserHandler):
 
         return result is not None
 
-
-    async def has_collection_access(self, auth_user, collection_id: UUID) -> bool:
+    async def has_collection_access(
+        self, auth_user, collection_id: UUID
+    ) -> bool:
         """
         Check if the user has access to a collection.
         """
@@ -727,4 +727,25 @@ class PostgresUserHandler(UserHandler):
         query = f"""
             SELECT 1 FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} WHERE user_id = $1 AND $2 = ANY(collection_ids)
         """
-        result = await self.connection_manager.fetchrow_query(query, [auth_user.id, collection_id])
+        result = await self.connection_manager.fetchrow_query(
+            query, [auth_user.id, collection_id]
+        )
+
+    async def has_entity_access(self, auth_user, entity_id: UUID) -> bool:
+        """
+        Check if the user has access to an entity.
+        """
+
+    async def has_relationship_access(
+        self, auth_user, relationship_id: UUID
+    ) -> bool:
+        """
+        Check if the user has access to a relationship.
+        """
+
+    async def has_community_access(
+        self, auth_user, community_id: UUID
+    ) -> bool:
+        """
+        Check if the user has access to a community.
+        """

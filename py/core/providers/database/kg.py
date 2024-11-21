@@ -1241,19 +1241,21 @@ class PostgresGraphHandler(GraphHandler):
             }
 
     async def add_documents_to_graph(
-        self, id: UUID, document_ids: list[UUID], auth_user: Any
+        self, graph_id: UUID, document_ids: list[UUID]
     ) -> bool:
 
         # Get count of entities for each document
         for document_id in document_ids:
             QUERY = f"""
-                SELECT document_ids
+                SELECT document_id
                 FROM {self._get_table_name("entity")}
-                WHERE $1 = ANY(document_ids)
+                WHERE document_id = $1
                 LIMIT 1
             """
-            result = await self.connection_manager.fetchrow_query(QUERY, [document_id])
-            if result["document_ids"] is None:
+            result = await self.connection_manager.fetchrow_query(
+                QUERY, [document_id]
+            )
+            if result["document_id"] is None:
                 raise R2RException(
                     message=f"Please make sure that the document {document_id} has at least one entity before adding it to the graph.",
                     status_code=400,
@@ -1263,31 +1265,38 @@ class PostgresGraphHandler(GraphHandler):
             QUERY = f"""
                 SELECT document_id
                 FROM {self._get_table_name("relationship")}
-                WHERE $1 = document_id
+                WHERE document_id = $1
                 LIMIT 1
             """
-            result = await self.connection_manager.fetchrow_query(QUERY, [document_id])
+            result = await self.connection_manager.fetchrow_query(
+                QUERY, [document_id]
+            )
 
-            if result["document_ids"] is None:
+            if result["document_id"] is None:
                 raise R2RException(
                     message=f"Please make sure that the document {document_id} has at least one relationship before adding it to the graph.",
                     status_code=400,
                 )
 
-        QUERY = f"""
-            UPDATE {self._get_table_name("entity")}
-            SET graph_ids = CASE
-                WHEN $1 = ANY(graph_ids) THEN graph_ids
-                ELSE array_append(COALESCE(graph_ids, ARRAY[]::uuid[]), $1)
-            END
-            WHERE document_ids @> ARRAY[$2]::uuid[]
-        """
-        await self.connection_manager.execute_query(QUERY, [id, document_ids])
+        # cannot remove this second for loop
+        for document_id in document_ids:
+            for table in ["entity", "relationship"]:
+                QUERY = f"""
+                    UPDATE {self._get_table_name(table)}
+                    SET graph_ids = CASE
+                        WHEN $1 = ANY(graph_ids) THEN graph_ids
+                        ELSE array_append(COALESCE(graph_ids, ARRAY[]::uuid[]), $1)
+                    END
+                    WHERE document_id = $2
+                """
+                await self.connection_manager.execute_query(
+                    QUERY, [graph_id, document_id]
+                )
 
         return True
 
     async def remove_documents_from_graph(
-        self, id: UUID, document_ids: list[UUID], delete_data: bool = True
+        self, graph_id: UUID, document_ids: list[UUID]
     ) -> bool:
         """
         Remove all entities and relationships for this document from the graph.
@@ -1300,17 +1309,39 @@ class PostgresGraphHandler(GraphHandler):
                     WHERE document_id = $2
                 """
                 await self.connection_manager.execute_query(
-                    QUERY, [id, document_id]
+                    QUERY, [graph_id, document_id]
                 )
 
         return True
 
     async def add_collection_to_graph(
-        self, id: UUID, collection_id: UUID, copy_data: bool = True
+        self, graph_id: UUID, collection_id: UUID
     ) -> bool:
         """
         Add all entities and relationships for this collection to the graph.
         """
+
+        # check that all documents in the collection have at least one entity
+
+        for table in ["entity", "relationship"]:
+            QUERY = f"""
+                SELECT document_id
+                FROM {self._get_table_name("document_info")} di
+                WHERE $1 = ANY(collection_ids)
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM {self._get_table_name(table)} t
+                    WHERE t.document_id = di.document_id
+                )
+            """
+            result = await self.connection_manager.fetch_query(
+                QUERY, [collection_id]
+            )
+            if result:
+                raise R2RException(
+                    message=f"Please make sure that all documents in the collection {collection_id} have at least one {table} before adding it to the graph.",
+                    status_code=400,
+                )
 
         for table in ["entity", "relationship"]:
             QUERY = f"""
@@ -1327,13 +1358,13 @@ class PostgresGraphHandler(GraphHandler):
                 );
             """
             await self.connection_manager.execute_query(
-                QUERY, [id, collection_id]
+                QUERY, [graph_id, collection_id]
             )
 
         return True
 
     async def remove_collection_from_graph(
-        self, id: UUID, collection_id: UUID, delete_data: bool = True
+        self, graph_id: UUID, collection_id: UUID
     ) -> bool:
         """
         Remove all entities and relationships for this collection from the graph.
@@ -1350,7 +1381,7 @@ class PostgresGraphHandler(GraphHandler):
                     )
                 """
             await self.connection_manager.execute_query(
-                QUERY, [id, collection_id]
+                QUERY, [graph_id, collection_id]
             )
 
         return True

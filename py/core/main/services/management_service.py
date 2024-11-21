@@ -818,8 +818,12 @@ class ManagementService(Service):
         )
 
     @telemetry_event("HasCollectionAccess")
-    async def has_collection_access(self, auth_user, collection_id: UUID) -> bool:
-        return await self.providers.database.user_handler.has_collection_access(
-            auth_user=auth_user,
-            collection_id=collection_id,
+    async def has_collection_access(
+        self, auth_user, collection_id: UUID
+    ) -> bool:
+        return (
+            await self.providers.database.user_handler.has_collection_access(
+                auth_user=auth_user,
+                collection_id=collection_id,
+            )
         )
