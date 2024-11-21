@@ -65,6 +65,7 @@ class PostgresUserHandler(UserHandler):
                     "profile_picture",
                     "bio",
                     "collection_ids",
+                    "graph_ids",
                 ]
             )
             .where("user_id = $1")
@@ -88,6 +89,7 @@ class PostgresUserHandler(UserHandler):
             profile_picture=result["profile_picture"],
             bio=result["bio"],
             collection_ids=result["collection_ids"],
+            graph_ids=result["graph_ids"],
         )
 
     async def get_user_by_email(self, email: str) -> UserResponse:
@@ -107,6 +109,7 @@ class PostgresUserHandler(UserHandler):
                     "profile_picture",
                     "bio",
                     "collection_ids",
+                    "graph_ids",
                 ]
             )
             .where("email = $1")
@@ -129,6 +132,7 @@ class PostgresUserHandler(UserHandler):
             profile_picture=result["profile_picture"],
             bio=result["bio"],
             collection_ids=result["collection_ids"],
+            graph_ids=result["graph_ids"],
         )
 
     async def create_user(self, email: str, password: str) -> UserResponse:
@@ -145,12 +149,12 @@ class PostgresUserHandler(UserHandler):
         hashed_password = self.crypto_provider.get_password_hash(password)  # type: ignore
         query = f"""
             INSERT INTO {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
-            (email, user_id, hashed_password, collection_ids)
-            VALUES ($1, $2, $3, $4)
-            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids
+            (email, user_id, hashed_password, collection_ids, graph_ids)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids, graph_ids
         """
         result = await self.connection_manager.fetchrow_query(
-            query, [email, generate_user_id(email), hashed_password, []]
+            query, [email, generate_user_id(email), hashed_password, [], []]
         )
 
         if not result:
@@ -168,6 +172,7 @@ class PostgresUserHandler(UserHandler):
             created_at=result["created_at"],
             updated_at=result["updated_at"],
             collection_ids=result["collection_ids"],
+            graph_ids=result["graph_ids"],
             hashed_password=hashed_password,
         )
 
@@ -175,9 +180,9 @@ class PostgresUserHandler(UserHandler):
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET email = $1, is_superuser = $2, is_active = $3, is_verified = $4, updated_at = NOW(),
-                name = $5, profile_picture = $6, bio = $7, collection_ids = $8
+                name = $5, profile_picture = $6, bio = $7, collection_ids = $8, graph_ids = $9
             WHERE user_id = $9
-            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, collection_ids
+            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, collection_ids, graph_ids
         """
         result = await self.connection_manager.fetchrow_query(
             query,
@@ -190,6 +195,7 @@ class PostgresUserHandler(UserHandler):
                 user.profile_picture,
                 user.bio,
                 user.collection_ids,
+                user.graph_ids,
                 user.id,
             ],
         )
@@ -212,6 +218,7 @@ class PostgresUserHandler(UserHandler):
             profile_picture=result["profile_picture"],
             bio=result["bio"],
             collection_ids=result["collection_ids"],
+            graph_ids=result["graph_ids"],
         )
 
     async def delete_user_relational(self, user_id: UUID) -> None:
@@ -264,7 +271,7 @@ class PostgresUserHandler(UserHandler):
 
     async def get_all_users(self) -> list[UserResponse]:
         query = f"""
-            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids
+            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids, graph_ids
             FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
         """
         results = await self.connection_manager.fetch_query(query)
@@ -280,6 +287,7 @@ class PostgresUserHandler(UserHandler):
                 created_at=result["created_at"],
                 updated_at=result["updated_at"],
                 collection_ids=result["collection_ids"],
+                graph_ids=result["graph_ids"],
             )
             for result in results
         ]
@@ -389,6 +397,27 @@ class PostgresUserHandler(UserHandler):
             )
         return True
 
+    async def add_user_to_graph(
+        self, user_id: UUID, graph_id: UUID
+    ) -> bool:
+        if not await self.get_user_by_id(user_id):
+            raise R2RException(status_code=404, message="User not found")
+
+        query = f"""
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
+            SET graph_ids = array_append(graph_ids, $1)
+            WHERE user_id = $2 AND NOT ($1 = ANY(graph_ids))
+            RETURNING user_id
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [graph_id, user_id]
+        )  # fetchrow instead of execute_query
+        if not result:
+            raise R2RException(
+                status_code=400, message="User already in graph"
+            )
+        return True
+
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
@@ -408,6 +437,28 @@ class PostgresUserHandler(UserHandler):
             raise R2RException(
                 status_code=400,
                 message="User is not a member of the specified collection",
+            )
+        return True
+
+    async def remove_user_from_graph(
+        self, user_id: UUID, graph_id: UUID
+    ) -> bool:
+        if not await self.get_user_by_id(user_id):
+            raise R2RException(status_code=404, message="User not found")
+
+        query = f"""
+            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
+            SET graph_ids = array_remove(graph_ids, $1)
+            WHERE user_id = $2 AND $1 = ANY(graph_ids)
+            RETURNING user_id
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [graph_id, user_id]
+        )
+        if not result:
+            raise R2RException(
+                status_code=400,
+                message="User is not a member of the specified graph",
             )
         return True
 
@@ -522,6 +573,7 @@ class PostgresUserHandler(UserHandler):
                     u.created_at,
                     u.updated_at,
                     u.collection_ids,
+                    u.graph_ids,
                     COUNT(d.document_id) AS num_files,
                     COALESCE(SUM(d.size_in_bytes), 0) AS total_size_in_bytes,
                     ARRAY_AGG(d.document_id) FILTER (WHERE d.document_id IS NOT NULL) AS document_ids,
@@ -529,7 +581,7 @@ class PostgresUserHandler(UserHandler):
                 FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
                 LEFT JOIN {self._get_table_name('document_info')} d ON u.user_id = d.user_id
                 {' WHERE u.user_id = ANY($3::uuid[])' if user_ids else ''}
-                GROUP BY u.user_id, u.email, u.is_superuser, u.is_active, u.is_verified, u.created_at, u.updated_at, u.collection_ids
+                GROUP BY u.user_id, u.email, u.is_superuser, u.is_active, u.is_verified, u.created_at, u.updated_at, u.collection_ids, u.graph_ids
             )
             SELECT *
             FROM user_docs
@@ -558,9 +610,10 @@ class PostgresUserHandler(UserHandler):
                 created_at=row[5],
                 updated_at=row[6],
                 collection_ids=row[7] or [],
-                num_files=row[8],
-                total_size_in_bytes=row[9],
-                document_ids=row[10] or [],
+                graph_ids=row[8] or [],
+                num_files=row[9],
+                total_size_in_bytes=row[10],
+                document_ids=row[11] or [],
             )
             for row in results
         ]

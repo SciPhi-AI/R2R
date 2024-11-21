@@ -184,8 +184,8 @@ class IndicesRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedGenericMessageResponse:
             """
-            Create a new vector similarity search index in over the target table. Allowed tables include 'vectors', 'document_entity', 'document_collections'.
-            Vectors correspond to the chunks of text that are indexed for similarity search, whereas document_entity and document_collections are created during knowledge graph construction.
+            Create a new vector similarity search index in over the target table. Allowed tables include 'vectors', 'entity', 'document_collections'.
+            Vectors correspond to the chunks of text that are indexed for similarity search, whereas entity and document_collections are created during knowledge graph construction.
 
             This endpoint creates a database index optimized for efficient similarity search over vector embeddings.
             It supports two main indexing methods:
@@ -420,7 +420,7 @@ class IndicesRouter(BaseRouterV3):
         async def get_index(
             table_name: VectorTableName = Path(
                 ...,
-                description="The table of vector embeddings to delete (e.g. `vectors`, `document_entity`, `document_collections`)",
+                description="The table of vector embeddings to delete (e.g. `vectors`, `entity`, `document_collections`)",
             ),
             index_name: str = Path(
                 ..., description="The name of the index to delete"
@@ -581,7 +581,7 @@ class IndicesRouter(BaseRouterV3):
         async def delete_index(
             table_name: VectorTableName = Path(
                 default=...,
-                description="The table of vector embeddings to delete (e.g. `vectors`, `document_entity`, `document_collections`)",
+                description="The table of vector embeddings to delete (e.g. `vectors`, `entity`, `document_collections`)",
             ),
             index_name: str = Path(
                 ..., description="The name of the index to delete"

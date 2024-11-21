@@ -433,6 +433,18 @@ class UserHandler(Handler):
         pass
 
     @abstractmethod
+    async def add_user_to_graph(
+        self, user_id: UUID, graph_id: UUID
+    ) -> bool:
+        pass
+
+    @abstractmethod
+    async def remove_user_from_graph(
+        self, user_id: UUID, graph_id: UUID
+    ) -> bool:
+        pass
+
+    @abstractmethod
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int, limit: int
     ) -> dict[str, list[UserResponse] | int]:
