@@ -49,6 +49,11 @@ export class GraphsClient {
     });
   }
 
+  /**
+   * Get detailed information about a specific graph.
+   * @param id Graph ID to retrieve
+   * @returns
+   */
   async retrieve(options: { id: string }): Promise<WrappedGraphResponse> {
     return this.client.makeRequest("GET", `graphs/${options.id}`);
   }

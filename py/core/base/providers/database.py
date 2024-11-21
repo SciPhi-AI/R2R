@@ -628,7 +628,16 @@ class EntityHandler(Handler):
         pass
 
     @abstractmethod
-    async def update(self, *args: Any, **kwargs: Any) -> None:
+    async def update(
+        self,
+        entity_id: UUID,
+        name: Optional[str] = None,
+        category: Optional[str] = None,
+        description: Optional[str] = None,
+        description_embedding: Optional[str] = None,
+        attributes: Optional[dict] = None,
+        user_id: Optional[UUID] = None,
+    ) -> Entity:
         """Update entities in storage."""
         pass
 

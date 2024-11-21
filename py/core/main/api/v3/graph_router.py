@@ -462,7 +462,6 @@ class GraphRouter(BaseRouterV3):
             await self.services["kg"].delete_graph_v3(id=id)
             return GenericBooleanResponse(success=True)  # type: ignore
 
-        # update graph
         @self.router.post(
             "/graphs/{id}",
             summary="Update graph",
@@ -539,7 +538,7 @@ class GraphRouter(BaseRouterV3):
                 )
 
             return await self.services["kg"].update_graph(  # type: ignore
-                id,
+                graph_id=id,
                 name=name,
                 description=description,
             )

@@ -321,80 +321,85 @@ class PostgresEntityHandler(EntityHandler):
 
     async def update(
         self,
-        id: UUID,
+        entity_id: UUID,
         name: Optional[str] = None,
         category: Optional[str] = None,
         description: Optional[str] = None,
         description_embedding: Optional[str] = None,
         attributes: Optional[dict] = None,
-        auth_user: Optional[Any] = None,
-    ) -> None:
-        """Update an existing entity in the database.
-
-        Args:
-            entity: Entity object containing updated data
-
-        Raises:
-            R2RException: If the entity does not exist in the database
-        """
-
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to update this entity.", 403
-                )
-        # Build update fields based on non-null attributes
+        user_id: Optional[UUID] = None,
+    ) -> Entity:
         update_fields = []
-        params = []
-        param_count = 1
+        params: list = []
+        param_index = 1
 
         if name is not None:
-            update_fields.append(f"name = ${param_count}")
+            update_fields.append(f"name = ${param_index}")
             params.append(name)
-            param_count += 1
+            param_index += 1
 
         if category is not None:
-            update_fields.append(f"category = ${param_count}")
+            update_fields.append(f"category = ${param_index}")
             params.append(category)
-            param_count += 1
+            param_index += 1
 
         if description is not None:
-            update_fields.append(f"description = ${param_count}")
+            update_fields.append(f"description = ${param_index}")
             params.append(description)
-            param_count += 1
+            param_index += 1
 
         if description_embedding is not None:
-            update_fields.append(f"description_embedding = ${param_count}")
+            update_fields.append(f"description_embedding = ${param_index}")
             params.append(description_embedding)
-            param_count += 1
+            param_index += 1
 
         if attributes is not None:
-            update_fields.append(f"attributes = ${param_count}")
+            update_fields.append(f"attributes = ${param_index}")
             params.append(attributes)
-            param_count += 1
+            param_index += 1
 
-        # Always update last_modified_by
-        update_fields.append(f"last_modified_by = ${param_count}")
-        params.append(auth_user.id)
-        param_count += 1
-
-        update_fields.append("updated_at = CURRENT_TIMESTAMP")
-
-        # Add id as final parameter
-        params.append(id)
+        if user_id is not None:
+            update_fields.append(f"last_modified_by = ${param_index}")
+            params.append(user_id)
+            param_index += 1
 
         if not update_fields:
-            raise R2RException(
-                "Error updating entity. No fields provided to update.", 400
-            )
+            raise R2RException(status_code=400, message="No fields to update")
 
-        QUERY = f"""
+        update_fields.append("updated_at = NOW()")
+        params.append(entity_id)
+
+        query = f"""
             UPDATE {self._get_table_name("entity")}
             SET {", ".join(update_fields)}
-            WHERE id = ${param_count}
+            WHERE id = ${param_index}
             RETURNING id, name, category, description, user_id, last_modified_by, created_at, updated_at, attributes
         """
-        return await self.connection_manager.fetch_query(QUERY, params)
+
+        try:
+            result = await self.connection_manager.fetchrow_query(
+                query, params
+            )
+
+            if not result:
+                raise R2RException(status_code=404, message="Entity not found")
+
+            return Entity(
+                id=result["id"],
+                name=result["name"],
+                category=result["category"],
+                description=result["description"],
+                user_id=result["user_id"],
+                last_modified_by=result["last_modified_by"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+                attributes=result["attributes"],
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while updating the entity: {e}",
+            )
 
     async def _check_permissions(
         self,
@@ -1496,7 +1501,6 @@ class PostgresGraphHandler(GraphHandler):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> GraphResponse:
-        """Update an existing graph."""
         update_fields = []
         params: list = []
         param_index = 1

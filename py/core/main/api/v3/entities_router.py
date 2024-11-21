@@ -345,7 +345,7 @@ class EntitiesRouter(BaseRouterV3):
         async def update_entity(
             id: UUID = Path(
                 ...,
-                description="The ID of the entity to update.",
+                description="The unique identifier of the entity to update",
             ),
             name: Optional[str] = Body(
                 None,
@@ -355,32 +355,29 @@ class EntitiesRouter(BaseRouterV3):
                 None,
                 description="The description of the entity",
             ),
-            category: Optional[str] = Body(
-                None,
-                description="The category of the entity",
-            ),
             attributes: Optional[dict] = Body(
                 None,
                 description="The attributes of the entity",
             ),
+            category: Optional[str] = Body(
+                None,
+                description="The category of the entity",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Updates an existing entity in the database.
+            Update an existing entity.
 
-            This endpoint allows you to modify:
-            - Entity attributes and properties
-            - Entity type and classification
-            - Entity metadata and tags
-            - Graph and document associations
-
-            Any fields not included in the update request will retain their existing values.
+            This endpoint allows updating the an existing entity.
+            The user must have appropriate permissions to modify the entity.
             """
-            return await self.services["kg"].update_entity_v3(
-                id=id,
+            # FIXME: This is unacceptable. We need to check if the user has access to the entity.
+
+            return await self.services["kg"].update_entity(
+                entity_id=id,
                 name=name,
                 description=description,
                 category=category,
                 attributes=attributes,
-                auth_user=auth_user,
+                user_id=auth_user.id,
             )

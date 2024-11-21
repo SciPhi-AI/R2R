@@ -141,11 +141,11 @@ describe("r2rClient V3 System Integration Tests User", () => {
     expect(response.results.id).toBe(user1Entity1Id);
   });
 
-//   test("User 1 should not be able to retrieve user 2's entities", async () => {
-//     expect(
-//       await user1Client.entities.retrieve({ id: user2Entity1Id }),
-//     ).toThrowError();
-//   });
+  //   test("User 1 should not be able to retrieve user 2's entities", async () => {
+  //     expect(
+  //       await user1Client.entities.retrieve({ id: user2Entity1Id }),
+  //     ).toThrowError();
+  //   });
 
   test("User 2 should be able to retrieve their entities", async () => {
     const response = await user2Client.entities.retrieve({
@@ -155,11 +155,11 @@ describe("r2rClient V3 System Integration Tests User", () => {
     expect(response.results.id).toBe(user2Entity1Id);
   });
 
-//   test("User 2 should not be able to retrieve user 1's entities", async () => {
-//     expect(
-//       await user2Client.entities.retrieve({ id: user1Entity1Id }),
-//     ).toThrowError();
-//   });
+  //   test("User 2 should not be able to retrieve user 1's entities", async () => {
+  //     expect(
+  //       await user2Client.entities.retrieve({ id: user1Entity1Id }),
+  //     ).toThrowError();
+  //   });
 
   test("A super user should be able to retrieve user 1's entities", async () => {
     const response = await client.entities.retrieve({ id: user1Entity1Id });
@@ -172,6 +172,41 @@ describe("r2rClient V3 System Integration Tests User", () => {
     expect(response.results).toBeDefined();
     expect(response.results.id).toBe(user2Entity1Id);
   });
+
+  test("User 1 should be able to update their entities", async () => {
+    const response = await user1Client.entities.update({
+      id: user1Entity1Id,
+      name: "Entity 1 Updated",
+    });
+    expect(response.results).toBeDefined();
+    expect(response.results.name).toBe("Entity 1 Updated");
+  });
+
+  test("Retrieve user 1's updated entity", async () => {
+    const response = await user1Client.entities.retrieve({
+      id: user1Entity1Id,
+    });
+    expect(response.results).toBeDefined();
+    expect(response.results.name).toBe("Entity 1 Updated");
+  });
+
+  //   test("User 1 should not be able to update user 2's entities", async () => {
+  //     expect(
+  //       await user1Client.entities.update({
+  //         id: user2Entity1Id,
+  //         name: "Entity 2 Updated",
+  //       }),
+  //     ).toThrowError();
+  //   });
+
+  //   test("User 2 should be able to update user 1's entities", async () => {
+  //     expect(
+  //         await user2Client.entities.update({
+  //             id: user1Entity1Id,
+  //             name: "Entity 1 Updated Again",
+  //         }),
+  //         ).toThrowError();
+  //     });
 
   //   test("User 1 should not be able to delete user 2's entities", async () => {
   //     const response = await user1Client.entities.delete({ id: user2Entity1Id });
