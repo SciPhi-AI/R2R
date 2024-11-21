@@ -1033,7 +1033,9 @@ class PostgresCommunityHandler(CommunityHandler):
 
         try:
 
-            result = await self.connection_manager.fetchrow_query(QUERY, params)
+            result = await self.connection_manager.fetchrow_query(
+                QUERY, params
+            )
 
             return Community(
                 id=result["id"],
@@ -1117,7 +1119,9 @@ class PostgresCommunityHandler(CommunityHandler):
             RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, attributes, level, user_id, last_modified_by, created_at, updated_at
         """
         try:
-            result = await self.connection_manager.fetchrow_query(QUERY, params)
+            result = await self.connection_manager.fetchrow_query(
+                QUERY, params
+            )
 
             return Community(
                 id=result["id"],
@@ -1185,7 +1189,7 @@ class PostgresCommunityHandler(CommunityHandler):
         )
 
         query = f"""
-            SELECT 
+            SELECT
                 id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, user_id, last_modified_by, created_at, updated_at,
                 COUNT(*) OVER() as total_entries
             FROM {self._get_table_name("graph_community")} {where_clause}
@@ -1230,7 +1234,6 @@ class PostgresCommunityHandler(CommunityHandler):
                 detail=f"An error occurred while fetching communities: {e}",
             )
 
-
     async def get(
         self,
         graph_id: UUID,
@@ -1239,7 +1242,7 @@ class PostgresCommunityHandler(CommunityHandler):
         community_id: Optional[UUID] = None,
         auth_user: Optional[Any] = None,
     ):
-        # not being used 
+        # not being used
 
         if not auth_user.is_superuser:
             if not await self._check_permissions(graph_id, auth_user.id):

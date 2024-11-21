@@ -222,7 +222,7 @@ class CommunitiesRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.graphs.communities.create(
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", 
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
                                 name="My Community",
                                 summary="A summary of the community",
                                 findings=["Finding 1", "Finding 2"],
@@ -241,7 +241,7 @@ class CommunitiesRouter(BaseRouterV3):
                             const client = new r2rClient("http://localhost:7272");
                             function main() {
                                 const response = client.graphs.communities.create(
-                                    id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", 
+                                    id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
                                     name="My Community",
                                     summary="A summary of the community",
                                     findings=["Finding 1", "Finding 2"],
@@ -251,9 +251,9 @@ class CommunitiesRouter(BaseRouterV3):
                                 );
                             }
                             main();
-                            """                   
+                            """
                         ),
-                    }
+                    },
                 ]
             },
         )
@@ -341,7 +341,7 @@ class CommunitiesRouter(BaseRouterV3):
                             main();
                             """
                         ),
-                    }
+                    },
                 ]
             },
         )
@@ -406,7 +406,7 @@ class CommunitiesRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.graphs.communities.get(
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", 
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
                                 community_id="123e4567-e89b-12d3-a456-426614174000"
                             )
                             """
@@ -420,14 +420,14 @@ class CommunitiesRouter(BaseRouterV3):
                             const client = new r2rClient("http://localhost:7272");
                             function main() {
                                 const response = client.graphs.communities.get(
-                                    id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", 
+                                    id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
                                     community_id="123e4567-e89b-12d3-a456-426614174000"
                                 );
                             }
                             main();
                             """
                         ),
-                    }
+                    },
                 ]
             },
         )
@@ -535,7 +535,7 @@ class CommunitiesRouter(BaseRouterV3):
                             main();
                             """
                         ),
-                    }
+                    },
                 ]
             },
         )
