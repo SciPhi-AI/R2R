@@ -43,9 +43,9 @@ class Entity(R2RSerializable):
     category: Optional[str] = None
     description: Optional[str] = None
     description_embedding: Optional[list[float] | str] = None
-    chunk_ids: list[UUID] = []
-    graph_ids: list[UUID] = []
-    document_ids: list[UUID] = []
+    chunk_ids: Optional[list[UUID]] = None
+    graph_ids: Optional[list[UUID]] = None
+    document_ids: Optional[list[UUID]] = None
     document_id: Optional[UUID] = None  # this is for backward compatibility
     created_by: Optional[UUID] = None
     updated_by: Optional[UUID] = None

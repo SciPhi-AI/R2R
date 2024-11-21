@@ -809,3 +809,17 @@ class ManagementService(Service):
             auth_user=auth_user,
             document_id=document_id,
         )
+
+    @telemetry_event("HasGraphAccess")
+    async def has_graph_access(self, auth_user, graph_id: UUID) -> bool:
+        return await self.providers.database.user_handler.has_graph_access(
+            auth_user=auth_user,
+            graph_id=graph_id,
+        )
+
+    @telemetry_event("HasCollectionAccess")
+    async def has_collection_access(self, auth_user, collection_id: UUID) -> bool:
+        return await self.providers.database.user_handler.has_collection_access(
+            auth_user=auth_user,
+            collection_id=collection_id,
+        )

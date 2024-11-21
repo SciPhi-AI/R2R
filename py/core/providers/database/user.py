@@ -696,3 +696,35 @@ class PostgresUserHandler(UserHandler):
             query, [auth_user.id, document_id]
         )
         return result is not None
+
+
+    async def has_graph_access(self, auth_user, graph_id: UUID) -> bool:
+        """
+        Check if the user has access to a graph.
+        """
+
+        if auth_user.is_superuser:
+            return True
+
+        query = f"""
+            SELECT 1 FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} WHERE user_id = $1 AND $2 = ANY(graph_ids)
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [auth_user.id, graph_id]
+        )
+
+        return result is not None
+
+
+    async def has_collection_access(self, auth_user, collection_id: UUID) -> bool:
+        """
+        Check if the user has access to a collection.
+        """
+
+        if auth_user.is_superuser:
+            return True
+
+        query = f"""
+            SELECT 1 FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} WHERE user_id = $1 AND $2 = ANY(collection_ids)
+        """
+        result = await self.connection_manager.fetchrow_query(query, [auth_user.id, collection_id])

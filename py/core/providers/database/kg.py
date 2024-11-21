@@ -162,6 +162,7 @@ class PostgresEntityHandler(EntityHandler):
         description_embedding: str,
         attributes: dict,
         chunk_ids: Optional[list[UUID]] = None,  # not exposed on the API
+        document_id: Optional[UUID] = None,
         document_ids: Optional[list[UUID]] = None,  # not exposed on the API
         created_by: Optional[UUID] = None,
         updated_by: Optional[UUID] = None,
@@ -176,6 +177,7 @@ class PostgresEntityHandler(EntityHandler):
             description_embedding: Embedding of the description
             attributes: Attributes of the entity
             chunk_ids: Optional list of UUIDs of the chunks the entity belongs to
+            document_id: Optional UUID of the document the entity belongs to
             document_ids: Optional list of UUIDs of the documents the entity belongs to
             auth_user: User object
 
@@ -184,8 +186,8 @@ class PostgresEntityHandler(EntityHandler):
         """
 
         QUERY = f"""
-            INSERT INTO {self._get_table_name(entity_table_name)} (name, category, description, description_embedding, attributes, chunk_ids, document_ids, created_by, last_modified_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING id, name, category, description, created_by, last_modified_by, created_at, updated_at, attributes
+            INSERT INTO {self._get_table_name(entity_table_name)} (name, category, description, description_embedding, attributes, chunk_ids, document_id, document_ids, created_by, last_modified_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING id, name, category, description, document_id, document_ids, created_by, last_modified_by, created_at, updated_at, attributes
         """
 
         output = await self.connection_manager.fetch_query(
@@ -197,6 +199,7 @@ class PostgresEntityHandler(EntityHandler):
                 description_embedding,
                 str(attributes),
                 chunk_ids,
+                document_id,
                 document_ids,
                 created_by,
                 updated_by,
@@ -262,7 +265,10 @@ class PostgresEntityHandler(EntityHandler):
 
         if document_id:
             # user has access to the document as we have done a check earlier
-            filters.append(f"${len(params)+1} = ANY(document_ids)")
+            # Note that you cannot do document_ids = ANY($1) because that would result in data leakage
+            # poetentially we can give the users to provide a list of document_ids to filter by to get deduplicated entities
+            # but deduplicated entities for are associated with a graph, not a document, so graph_id filter should be used instead
+            filters.append(f"document_id = ${len(params)+1}")
             params.append(document_id)
 
         filters_str = " AND ".join(filters)
@@ -294,6 +300,7 @@ class PostgresEntityHandler(EntityHandler):
                     else None
                 ),
                 chunk_ids=entity["chunk_ids"],
+                document_id=entity["document_id"],
                 document_ids=entity["document_ids"],
                 graph_ids=entity["graph_ids"],
                 attributes=entity["attributes"],
@@ -1233,76 +1240,53 @@ class PostgresGraphHandler(GraphHandler):
                 ]
             }
 
-    async def add_documents(
-        self, id: UUID, document_ids: list[UUID], copy_data: bool = True
+    async def add_documents_to_graph(
+        self, id: UUID, document_ids: list[UUID], auth_user: Any
     ) -> bool:
 
         # Get count of entities for each document
-        QUERY = f"""
-            SELECT document_id, COUNT(*) as entity_count
-            FROM {self._get_table_name("entity")}
-            WHERE document_id = ANY($1) AND entity_count = 0
-            GROUP BY document_id
-        """
-        docs_missing_entities = await self.connection_manager.fetch_query(
-            QUERY, [document_ids]
-        )
-
-        if len(docs_missing_entities) > 0:
-            raise R2RException(
-                f"Please make sure that all documents have at least one entity before adding them to the graph.",
-                400,
-            )
-
-        # get count of relationships for each document
-        QUERY = f"""
-            SELECT document_id, COUNT(*) as relationship_count
-            FROM {self._get_table_name("relationship")}
-            WHERE document_id = ANY($1)
-            GROUP BY document_id
-        """
-        docs_missing_relationships = await self.connection_manager.fetch_query(
-            QUERY, [document_ids]
-        )
-
-        if len(docs_missing_relationships) > 0:
-            raise R2RException(
-                f"Please make sure that all documents have at least one relationship before adding them to the graph.",
-                400,
-            )
-
         for document_id in document_ids:
-            for table in ["entity", "relationship"]:
-                QUERY = f"""
-                    UPDATE {self._get_table_name(table)}
-                    SET graph_ids = CASE
-                        WHEN $1 = ANY(graph_ids) THEN graph_ids
-                        ELSE array_append(graph_ids, $1)
-                    END
-                    WHERE document_id = $2
-                """
-                await self.connection_manager.execute_query(
-                    QUERY, [id, document_id]
+            QUERY = f"""
+                SELECT document_ids
+                FROM {self._get_table_name("entity")}
+                WHERE $1 = ANY(document_ids)
+                LIMIT 1
+            """
+            result = await self.connection_manager.fetchrow_query(QUERY, [document_id])
+            if result["document_ids"] is None:
+                raise R2RException(
+                    message=f"Please make sure that the document {document_id} has at least one entity before adding it to the graph.",
+                    status_code=400,
                 )
 
-        if copy_data:
-            for old_table, new_table in [
-                ("entity", "collection_entity"),
-                ("relationship", "graph_relationship"),
-            ]:
-                for document_id in document_ids:
-                    QUERY = f"""
-                        INSERT INTO {self._get_table_name(new_table)}
-                        SELECT * FROM {self._get_table_name(old_table)}
-                        WHERE document_id = $1
-                    """
-                    await self.connection_manager.execute_query(
-                        QUERY, [document_id]
-                    )
+            # get count of relationships for each document
+            QUERY = f"""
+                SELECT document_id
+                FROM {self._get_table_name("relationship")}
+                WHERE $1 = document_id
+                LIMIT 1
+            """
+            result = await self.connection_manager.fetchrow_query(QUERY, [document_id])
+
+            if result["document_ids"] is None:
+                raise R2RException(
+                    message=f"Please make sure that the document {document_id} has at least one relationship before adding it to the graph.",
+                    status_code=400,
+                )
+
+        QUERY = f"""
+            UPDATE {self._get_table_name("entity")}
+            SET graph_ids = CASE
+                WHEN $1 = ANY(graph_ids) THEN graph_ids
+                ELSE array_append(COALESCE(graph_ids, ARRAY[]::uuid[]), $1)
+            END
+            WHERE document_ids @> ARRAY[$2]::uuid[]
+        """
+        await self.connection_manager.execute_query(QUERY, [id, document_ids])
 
         return True
 
-    async def remove_documents(
+    async def remove_documents_from_graph(
         self, id: UUID, document_ids: list[UUID], delete_data: bool = True
     ) -> bool:
         """
@@ -1319,73 +1303,43 @@ class PostgresGraphHandler(GraphHandler):
                     QUERY, [id, document_id]
                 )
 
-        if delete_data:
-            for old_table, new_table in [
-                ("entity", "collection_entity"),
-                ("relationship", "graph_relationship"),
-            ]:
-                for document_id in document_ids:
-                    QUERY = f"""
-                        DELETE FROM {self._get_table_name(new_table)} WHERE document_id = $1
-                    """
-                    await self.connection_manager.execute_query(
-                        QUERY, [document_id]
-                    )
-
         return True
 
-    async def add_collections(
-        self, id: UUID, collection_ids: list[UUID], copy_data: bool = True
+    async def add_collection_to_graph(
+        self, id: UUID, collection_id: UUID, copy_data: bool = True
     ) -> bool:
         """
         Add all entities and relationships for this collection to the graph.
         """
-        for collection_id in collection_ids:
-            for table in ["entity", "relationship"]:
-                QUERY = f"""
-                    UPDATE {self._get_table_name(table)}
-                    SET graph_ids = CASE
-                        WHEN $1 = ANY(graph_ids) THEN graph_ids
-                        ELSE array_append(graph_ids, $1)
-                    END
-                    WHERE document_id = ANY(
-                        ARRAY(
-                            SELECT document_id FROM {self._get_table_name("document_info")}
-                            WHERE $2 = ANY(collection_ids)
-                        )
-                    );
-                """
-                await self.connection_manager.execute_query(
-                    QUERY, [id, collection_id]
-                )
 
-        if copy_data:
-            for old_table, new_table in [
-                ("entity", "collection_entity"),
-                ("relationship", "graph_relationship"),
-            ]:
-                for collection_id in collection_ids:
-                    QUERY = f"""
-                        INSERT INTO {self._get_table_name(new_table)}
-                        SELECT * FROM {self._get_table_name(old_table)}
-                        WHERE document_id = ANY(
-                            ARRAY(SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids)))
-                    """
-                    await self.connection_manager.execute_query(
-                        QUERY, [collection_id]
+        for table in ["entity", "relationship"]:
+            QUERY = f"""
+                UPDATE {self._get_table_name(table)}
+                SET graph_ids = CASE
+                    WHEN $1 = ANY(graph_ids) THEN graph_ids
+                    ELSE array_append(graph_ids, $1)
+                END
+                WHERE document_id = ANY(
+                    ARRAY(
+                        SELECT document_id FROM {self._get_table_name("document_info")}
+                        WHERE $2 = ANY(collection_ids)
                     )
+                );
+            """
+            await self.connection_manager.execute_query(
+                QUERY, [id, collection_id]
+            )
 
         return True
 
-    async def remove_collections(
-        self, id: UUID, collection_ids: list[UUID], delete_data: bool = True
+    async def remove_collection_from_graph(
+        self, id: UUID, collection_id: UUID, delete_data: bool = True
     ) -> bool:
         """
         Remove all entities and relationships for this collection from the graph.
         """
-        for collection_id in collection_ids:
-            for table in ["entity", "relationship"]:
-                QUERY = f"""
+        for table in ["entity", "relationship"]:
+            QUERY = f"""
                     UPDATE {self._get_table_name(table)}
                     SET graph_ids = array_remove(graph_ids, $1)
                     WHERE document_id = ANY(
@@ -1395,22 +1349,9 @@ class PostgresGraphHandler(GraphHandler):
                         )
                     )
                 """
-                await self.connection_manager.execute_query(
-                    QUERY, [id, collection_id]
-                )
-
-        if delete_data:
-            for _, new_table in [
-                ("entity", "collection_entity"),
-                ("relationship", "graph_relationship"),
-            ]:
-                for collection_id in collection_ids:
-                    QUERY = f"""
-                        DELETE FROM {self._get_table_name(new_table)} WHERE document_id = ANY(ARRAY(SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids)))
-                    """
-                    await self.connection_manager.execute_query(
-                        QUERY, [collection_id]
-                    )
+            await self.connection_manager.execute_query(
+                QUERY, [id, collection_id]
+            )
 
         return True
 

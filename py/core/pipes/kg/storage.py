@@ -80,6 +80,7 @@ class KGStoragePipe(AsyncPipe):
                         description_embedding=entity.description_embedding,
                         attributes=entity.attributes,
                         chunk_ids=entity.chunk_ids,
+                        document_id=extraction.document_id,
                         document_ids=[extraction.document_id],
                         created_by=entity.created_by,
                         updated_by=entity.updated_by,

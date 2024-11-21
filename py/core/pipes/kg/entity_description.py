@@ -143,6 +143,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                 description_embedding=str(out_entity.description_embedding),
                 chunk_ids=out_entity.chunk_ids,
                 attributes=out_entity.attributes or {},
+                document_id=document_id,
                 document_ids=[document_id],
                 entity_table_name="entity",
                 created_by=auth_user["id"] if auth_user else None,
