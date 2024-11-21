@@ -127,10 +127,10 @@ class KgService(Service):
         self,
         name: str,
         description: str,
-        attributes: Optional[dict] = None,
         category: Optional[str] = None,
-        auth_user: Optional[Any] = None,
-    ):
+        user_id: Optional[UUID] = None,
+        attributes: Optional[dict] = None,
+    ) -> Entity:
 
         description_embedding = str(
             await self.providers.embedding.async_get_embedding(description)
@@ -142,7 +142,7 @@ class KgService(Service):
             description=description,
             description_embedding=description_embedding,
             attributes=attributes,
-            auth_user=auth_user,
+            user_id=user_id,
         )
 
     @telemetry_event("list_entities")

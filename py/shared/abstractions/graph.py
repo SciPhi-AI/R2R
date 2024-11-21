@@ -34,24 +34,47 @@ class DataLevel(str, Enum):
 class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
+    id: Optional[UUID | int] = (
+        None  # id is Union of UUID and int for backwards compatibility
+    )
+    sid: Optional[int] = None  # deprecated, remove in the future
     name: str
-    # id is Union of UUID and int for backwards compatibility
-    # we will migrate to UUID only in the future
-    # sid is also deprecated and needs to be removed in the future
-    id: Optional[UUID | int] = None
-    sid: Optional[int] = None
     category: Optional[str] = None
     description: Optional[str] = None
-    description_embedding: Optional[list[float] | str] = None
-    chunk_ids: list[UUID] = []
-    graph_ids: list[UUID] = []
-    document_ids: list[UUID] = []
-    document_id: Optional[UUID] = None  # this is for backward compatibility
-
-    # we don't use these yet
-    # name_embedding: Optional[list[float]] = None
-    # graph_embedding: Optional[list[float]] = None
-    # rank: Optional[int] = None
+    chunk_ids: list[UUID] = Field(
+        alias="chunkIds",
+        default_factory=list,
+    )
+    description_embedding: Optional[list[float] | str] = Field(
+        alias="descriptionEmbedding",
+        default=None,
+    )
+    document_id: Optional[UUID] = Field(  # this is for backward compatibility
+        alias="documentId",
+        default=None,
+    )
+    document_ids: list[UUID] = Field(
+        alias="documentIds",
+        default_factory=list,
+    )
+    graph_ids: list[UUID] = Field(
+        alias="graphIds",
+        default_factory=list,
+    )
+    user_id: UUID = Field(
+        alias="userId",
+    )
+    last_modified_by: UUID = Field(
+        alias="lastModifiedBy",
+    )
+    created_at: datetime = Field(
+        alias="createdAt",
+        default_factory=datetime.utcnow,
+    )
+    updated_at: datetime = Field(
+        alias="updatedAt",
+        default_factory=datetime.utcnow,
+    )
     attributes: Optional[dict[str, Any] | str] = None
 
     def __str__(self):

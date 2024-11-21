@@ -115,10 +115,10 @@ class PostgresEntityHandler(EntityHandler):
             description TEXT NOT NULL,
             chunk_ids UUID[],
             description_embedding {vector_column_str} NOT NULL,
-            document_ids UUID[],
             document_id UUID,
+            document_ids UUID[],
             graph_ids UUID[],
-            created_by UUID REFERENCES {self._get_table_name("users")}(user_id),
+            user_id UUID REFERENCES {self._get_table_name("users")}(user_id),
             last_modified_by UUID REFERENCES {self._get_table_name("users")}(user_id),
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -150,44 +150,53 @@ class PostgresEntityHandler(EntityHandler):
     async def create(
         self,
         name: str,
-        category: str,
         description: str,
         description_embedding: str,
-        attributes: dict,
-        auth_user: Optional[Any] = None,
-    ) -> UUID:  # type: ignore
-        """Create a new entity in the database.
+        category: Optional[str] = None,
+        attributes: Optional[dict] = None,
+        user_id: Optional[UUID] = None,
+    ) -> Entity:
+        """Create a new entity in the database."""
 
-        Args:
-            name: Name of the entity
-            category: Category of the entity
-            description: Description of the entity
-            description_embedding: Embedding of the description
-            attributes: Attributes of the entity
+        params = [
+            name,
+            category,
+            description,
+            description_embedding,
+            attributes,
+            user_id,
+            user_id,
+        ]
 
-        Returns:
-            UUID of the created entity
+        query = f"""
+            INSERT INTO {self._get_table_name("entity")}
+            (name, category, description, description_embedding, attributes, user_id, last_modified_by)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id, name, category, description, user_id, last_modified_by, created_at, updated_at, attributes
         """
 
-        QUERY = f"""
-            INSERT INTO {self._get_table_name("entity")} (name, category, description, description_embedding, attributes, created_by, last_modified_by) VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id, name, category, description, created_by, last_modified_by, created_at, updated_at, attributes
-        """
+        try:
+            result = await self.connection_manager.fetch_query(
+                query=query,
+                params=params,
+            )
 
-        output = await self.connection_manager.fetch_query(
-            QUERY,
-            [
-                name,
-                category,
-                description,
-                description_embedding,
-                attributes,
-                auth_user.id,
-                auth_user.id,
-            ],
-        )
-
-        return output[0]
+            return Entity(
+                id=result["id"],
+                name=result["name"],
+                category=result["category"],
+                description=result["description"],
+                user_id=result["user_id"],
+                last_modified_by=result["last_modified_by"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+                attributes=result["attributes"],
+            )
+        except UniqueViolationError:
+            raise R2RException(
+                message="Entity with this ID already exists",
+                status_code=409,
+            )
 
     async def get(
         self,
@@ -383,7 +392,7 @@ class PostgresEntityHandler(EntityHandler):
             UPDATE {self._get_table_name("entity")}
             SET {", ".join(update_fields)}
             WHERE id = ${param_count}
-            RETURNING id, name, category, description, created_by, last_modified_by, created_at, updated_at, attributes
+            RETURNING id, name, category, description, user_id, last_modified_by, created_at, updated_at, attributes
         """
         return await self.connection_manager.fetch_query(QUERY, params)
 
@@ -395,13 +404,13 @@ class PostgresEntityHandler(EntityHandler):
 
         # check if the user created the entity
         QUERY = f"""
-            SELECT created_by, graph_ids FROM {self._get_table_name("entity")} WHERE id = $1
+            SELECT user_id, graph_ids FROM {self._get_table_name("entity")} WHERE id = $1
         """
-        created_by, document_ids, graph_ids = (
+        user_id, document_ids, graph_ids = (
             await self.connection_manager.fetch_query(QUERY, [id])
         )
 
-        if created_by == user_id:
+        if user_id == user_id:
             return True
 
         # check if the user has access to the graph, so somoene shared the graph with the user
@@ -728,6 +737,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
             QUERY, [graph_id, relationship_id]
         )
 
+
 class PostgresCommunityHandler(CommunityHandler):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -891,7 +901,9 @@ class PostgresCommunityHandler(CommunityHandler):
         QUERY = f"""
             UPDATE {self._get_table_name("graph_community")} SET graph_id = NULL WHERE id = $1
         """
-        return await self.connection_manager.execute_query(QUERY, [community_id])
+        return await self.connection_manager.execute_query(
+            QUERY, [community_id]
+        )
 
 
 class PostgresGraphHandler(GraphHandler):

@@ -89,6 +89,25 @@ export interface DocumentResponse {
   summary_embedding?: string;
 }
 
+// Entity types
+export interface EntityResponse {
+  id: string;
+  sid?: string;
+  name: string;
+  category?: string;
+  description?: string;
+  chunk_ids: string[];
+  description_embedding?: string;
+  document_id: string;
+  document_ids: string[];
+  graph_ids: string[];
+  user_id: string;
+  last_modified_by: string;
+  created_at: string;
+  updated_at: string;
+  attributes?: Record<string, any>;
+}
+
 // Graph types
 export interface GraphResponse {
   id: string;
@@ -239,6 +258,10 @@ export type WrappedDocumentResponse = ResultsWrapper<DocumentResponse>;
 export type WrappedDocumentsResponse = PaginatedResultsWrapper<
   DocumentResponse[]
 >;
+
+// Entity Responses
+export type WrappedEntityResponse = ResultsWrapper<EntityResponse>;
+export type WrappedEntitiesResponse = PaginatedResultsWrapper<EntityResponse[]>;
 
 // Graph Responses
 export type WrappedGraphResponse = ResultsWrapper<GraphResponse>;
