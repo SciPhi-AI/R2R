@@ -815,7 +815,7 @@ class PostgresCommunityHandler(CommunityHandler):
 
         if community_id is None:
             QUERY = f"""
-                SELECT * FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
+                SELECT * FROM {self._get_table_name("community")} WHERE graph_id = $1
                 OFFSET $2 LIMIT $3
             """
             params = [id, offset, limit]
@@ -827,7 +827,7 @@ class PostgresCommunityHandler(CommunityHandler):
             ]
 
             QUERY_COUNT = f"""
-                SELECT COUNT(*) FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
+                SELECT COUNT(*) FROM {self._get_table_name("community")} WHERE graph_id = $1
             """
             count = (
                 await self.connection_manager.fetch_query(QUERY_COUNT, [id])
@@ -837,7 +837,7 @@ class PostgresCommunityHandler(CommunityHandler):
 
         else:
             QUERY = f"""
-                SELECT * FROM {self._get_table_name("graph_community")} WHERE graph_id = $1 AND id = $2
+                SELECT * FROM {self._get_table_name("community")} WHERE graph_id = $1 AND id = $2
             """
             params = [id, community_id]
             return [
@@ -863,7 +863,7 @@ class PostgresCommunityHandler(CommunityHandler):
                 )
 
         QUERY = f"""
-            UPDATE {self._get_table_name("graph_community")} SET graph_id = $1 WHERE id = ANY($2)
+            UPDATE {self._get_table_name("community")} SET graph_id = $1 WHERE id = ANY($2)
         """
         return await self.connection_manager.execute_query(
             QUERY, [graph_id, community_ids]
@@ -889,7 +889,7 @@ class PostgresCommunityHandler(CommunityHandler):
                 )
 
         QUERY = f"""
-            UPDATE {self._get_table_name("graph_community")} SET graph_id = NULL WHERE id = $1
+            UPDATE {self._get_table_name("community")} SET graph_id = NULL WHERE id = $1
         """
         return await self.connection_manager.execute_query(QUERY, [community_id])
 

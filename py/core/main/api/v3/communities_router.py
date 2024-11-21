@@ -206,8 +206,8 @@ class CommunitiesRouter(BaseRouterV3):
             )
 
         @self.router.post(
-            "/communities",
-            summary="Create communities",
+            "/graphs/{id}/communities",
+            summary="Create a community in the graph",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -228,14 +228,17 @@ class CommunitiesRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_communities(
-            request: Request,
-            communities: list[Community] = Body(
-                ..., description="The communities to create."
-            ),
+            id: UUID = Path(...),
+            name: str = Body(...),
+            summary: str = Body(...),
+            findings: list[str] = Body(...),
+            rating: Optional[float] = Body(default=5, ge=1, le=10, description="Rating between 1 and 10"),
+            rating_explanation: Optional[str] = Body(default="", description="Explanation for the rating"),
+            attributes: Optional[dict] = Body(default=None, description="Attributes for the community"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Creates custom communities in the graph.
+            Creates a new community in the graph.
 
             While communities are typically built automatically via the /graphs/{id}/communities/build endpoint,
             this endpoint allows you to manually create your own communities. This can be useful when you want to:
@@ -248,15 +251,19 @@ class CommunitiesRouter(BaseRouterV3):
             The created communities will be integrated with any existing automatically detected communities
             in the graph's community structure.
             """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
-
-            return await self.services["kg"].create_communities_v3(communities)
+            return await self.services["kg"].create_community_v3(
+                id, 
+                name, 
+                summary, 
+                findings, 
+                rating, 
+                rating_explanation, 
+                attributes, 
+                auth_user
+            )
 
         @self.router.get(
-            "/communities",
+            "/graphs/{id}/communities",
             summary="List communities",
             openapi_extra={
                 "x-codeSamples": [
@@ -313,7 +320,7 @@ class CommunitiesRouter(BaseRouterV3):
             communities, count = await self.services[
                 "kg"
             ].providers.database.graph_handler.communities.get(
-                id=id,
+                graph_id=id,
                 offset=offset,
                 limit=limit,
                 attributes=attributes,
@@ -324,7 +331,7 @@ class CommunitiesRouter(BaseRouterV3):
             }
 
         @self.router.get(
-            "/communities/{id}",
+            "/graphs/{id}/communities/{community_id}",
             summary="Retrieve a community",
             openapi_extra={
                 "x-codeSamples": [

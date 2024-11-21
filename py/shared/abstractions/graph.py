@@ -126,7 +126,7 @@ class Community(R2RSerializable):
 
     findings: list[str] = []
     id: Optional[int | UUID] = None
-    graph_ids: list[UUID] = []
+    graph_id: Optional[UUID] = None
     collection_id: Optional[UUID] = None
     rating: float | None = None
     rating_explanation: str | None = None
