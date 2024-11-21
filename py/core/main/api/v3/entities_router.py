@@ -74,7 +74,7 @@ class EntitiesRouter(BaseRouterV3):
 
     def _setup_routes(self):
 
-        # Getting entities for a graph and a document 
+        # Getting entities for a graph and a document
         @self.router.get(
             "/graphs/{id}/entities",
             summary="List entities",
@@ -157,7 +157,7 @@ class EntitiesRouter(BaseRouterV3):
                 "total_entries": count,
             }
 
-        # Getting entities for a graph and a document 
+        # Getting entities for a graph and a document
         @self.router.get(
             "/documents/{id}/entities",
             summary="List entities",
@@ -315,7 +315,6 @@ class EntitiesRouter(BaseRouterV3):
                     400,
                 )
 
-
             if auth_user.is_superuser:
                 user_id = None
             else:
@@ -406,7 +405,9 @@ class EntitiesRouter(BaseRouterV3):
         async def create_entities_v3(
             request: Request,
             name: str = Body(..., description="The name of the entity"),
-            description: str = Body(..., description="The description of the entity"),
+            description: str = Body(
+                ..., description="The description of the entity"
+            ),
             attributes: Optional[dict] = Body(
                 None,
                 description="The attributes of the entity",

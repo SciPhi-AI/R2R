@@ -728,7 +728,9 @@ class GraphRouter(BaseRouterV3):
             """
             Adds a list of entities to the graph by their IDs.
             """
-            return await self.services["kg"].add_entity_to_graph(id, entity_id, auth_user)
+            return await self.services["kg"].add_entity_to_graph(
+                id, entity_id, auth_user
+            )
 
         @self.router.delete(
             "/graphs/{id}/entities/{entity_id}",

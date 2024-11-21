@@ -178,7 +178,7 @@ class KgService(Service):
         attributes: Optional[dict],
         auth_user: Optional[Any] = None,
     ):
-        
+
         if description is not None:
             description_embedding = str(
                 await self.providers.embedding.async_get_embedding(description)
@@ -217,7 +217,11 @@ class KgService(Service):
         entity_id: UUID,
         auth_user: Optional[Any] = None,
     ):
-        return await self.providers.database.graph_handler.entities.add_to_graph(graph_id, entity_id, auth_user)
+        return (
+            await self.providers.database.graph_handler.entities.add_to_graph(
+                graph_id, entity_id, auth_user
+            )
+        )
 
     # TODO: deprecate this
     @telemetry_event("get_entities")
