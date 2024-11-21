@@ -100,7 +100,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
       id: graph1Id,
       entityId: entity1Id,
     });
-    expect(response.results).toBeDefined;
+    expect(response.results).toBeDefined();
   });
 
   test("Delete entity from graph 1", async () => {
