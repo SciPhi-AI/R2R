@@ -149,10 +149,10 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
                                     extraction.id for extraction in extractions
                                 ],
                                 attributes={},
-                                created_by=(
+                                user_id=(
                                     auth_user["id"] if auth_user else None
                                 ),
-                                updated_by=(
+                                last_modified_by=(
                                     auth_user["id"] if auth_user else None
                                 ),
                             )
@@ -179,10 +179,10 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
                                     extraction.id for extraction in extractions
                                 ],
                                 attributes={},
-                                created_by=(
+                                user_id=(
                                     auth_user["id"] if auth_user else None
                                 ),
-                                updated_by=(
+                                last_modified_by=(
                                     auth_user["id"] if auth_user else None
                                 ),
                             )

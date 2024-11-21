@@ -102,7 +102,7 @@ class PostgresEntityHandler(EntityHandler):
             document_ids UUID[],
             document_id UUID,
             graph_ids UUID[],
-            created_by UUID REFERENCES {self._get_table_name("users")}(user_id),
+            user_id UUID REFERENCES {self._get_table_name("users")}(user_id),
             last_modified_by UUID REFERENCES {self._get_table_name("users")}(user_id),
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -125,7 +125,7 @@ class PostgresEntityHandler(EntityHandler):
             document_ids UUID[],
             document_id UUID,
             graph_ids UUID[],
-            created_by UUID REFERENCES {self._get_table_name("users")}(user_id),
+            user_id UUID REFERENCES {self._get_table_name("users")}(user_id),
             last_modified_by UUID REFERENCES {self._get_table_name("users")}(user_id),
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -164,8 +164,8 @@ class PostgresEntityHandler(EntityHandler):
         chunk_ids: Optional[list[UUID]] = None,  # not exposed on the API
         document_id: Optional[UUID] = None,
         document_ids: Optional[list[UUID]] = None,  # not exposed on the API
-        created_by: Optional[UUID] = None,
-        updated_by: Optional[UUID] = None,
+        user_id: Optional[UUID] = None,
+        last_modified_by: Optional[UUID] = None,
         entity_table_name: str = "entity",
     ) -> UUID:  # type: ignore
         """Create a new entity in the database.
@@ -179,15 +179,16 @@ class PostgresEntityHandler(EntityHandler):
             chunk_ids: Optional list of UUIDs of the chunks the entity belongs to
             document_id: Optional UUID of the document the entity belongs to
             document_ids: Optional list of UUIDs of the documents the entity belongs to
-            auth_user: User object
+            user_id: Optional UUID of the user who created the entity
+            last_modified_by: Optional UUID of the user who last modified the entity
 
         Returns:
             UUID of the created entity
         """
 
         QUERY = f"""
-            INSERT INTO {self._get_table_name(entity_table_name)} (name, category, description, description_embedding, attributes, chunk_ids, document_id, document_ids, created_by, last_modified_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING id, name, category, description, document_id, document_ids, created_by, last_modified_by, created_at, updated_at, attributes
+            INSERT INTO {self._get_table_name(entity_table_name)} (name, category, description, description_embedding, attributes, chunk_ids, document_id, document_ids, user_id, last_modified_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING id, name, category, description, document_id, document_ids, user_id, last_modified_by, created_at, updated_at, attributes
         """
 
         output = await self.connection_manager.fetch_query(
@@ -201,8 +202,8 @@ class PostgresEntityHandler(EntityHandler):
                 chunk_ids,
                 document_id,
                 document_ids,
-                created_by,
-                updated_by,
+                user_id,
+                last_modified_by,
             ],
         )
 
@@ -406,7 +407,7 @@ class PostgresEntityHandler(EntityHandler):
             UPDATE {self._get_table_name("entity")}
             SET {", ".join(update_fields)}
             WHERE id = ${param_count}
-            RETURNING id, name, category, description, created_by, last_modified_by, created_at, updated_at, attributes
+            RETURNING id, name, category, description, user_id, last_modified_by, created_at, updated_at, attributes
         """
         return await self.connection_manager.fetch_query(QUERY, params)
 
@@ -418,13 +419,13 @@ class PostgresEntityHandler(EntityHandler):
 
         # check if the user created the entity
         QUERY = f"""
-            SELECT created_by, graph_ids FROM {self._get_table_name("entity")} WHERE id = $1
+            SELECT user_id, graph_ids FROM {self._get_table_name("entity")} WHERE id = $1
         """
-        created_by, document_ids, graph_ids = (
+        user_id, document_ids, graph_ids = (
             await self.connection_manager.fetch_query(QUERY, [id])
         )
 
-        if created_by == user_id:
+        if user_id == user_id:
             return True
 
         # check if the user has access to the graph, so somoene shared the graph with the user
@@ -547,7 +548,9 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 graph_ids UUID[],
                 attributes JSONB,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                user_id UUID REFERENCES {self._get_table_name("users")}(user_id),
+                last_modified_by UUID REFERENCES {self._get_table_name("users")}(user_id)
             );
             CREATE INDEX IF NOT EXISTS relationship_subject_idx ON {self._get_table_name("relationship")} (subject);
             CREATE INDEX IF NOT EXISTS relationship_object_idx ON {self._get_table_name("relationship")} (object);
@@ -573,7 +576,9 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 document_id UUID,
                 attributes JSONB,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                user_id UUID REFERENCES {self._get_table_name("users")}(user_id),
+                last_modified_by UUID REFERENCES {self._get_table_name("users")}(user_id)
             );
             CREATE INDEX IF NOT EXISTS relationship_subject_idx ON {self._get_table_name("graph_relationship")} (subject);
             CREATE INDEX IF NOT EXISTS relationship_object_idx ON {self._get_table_name("graph_relationship")} (object);
@@ -664,6 +669,74 @@ class PostgresRelationshipHandler(RelationshipHandler):
             )[0]["count"]
 
             return [Relationship(**row) for row in rows], count  # type: ignore
+
+    async def list_relationships(
+        self,
+        filter_user_ids: Optional[list[UUID]] = None,
+        filter_relationship_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> dict[str, list[Relationship] | int]:
+        """List relationships from storage by user ID or relationship ID."""
+
+        conditions = []
+        params: list[Any] = []
+        params_idx = 1
+
+        if filter_user_ids:
+            conditions.append(f"user_id = ANY(${params_idx})")
+            params.append(filter_user_ids)
+            params_idx += 1
+
+        if filter_relationship_ids:
+            conditions.append(f"id = ANY(${params_idx})")
+            params.append(filter_relationship_ids)
+            params_idx += 1
+
+        where_clause = (
+            f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        )
+
+        QUERY = f"""
+            SELECT id, subject, predicate, object, weight, description, user_id, last_modified_by, created_at, updated_at, attributes, COUNT(*) OVER() AS total_entries
+            FROM {self._get_table_name("relationship")}
+            {where_clause}
+            ORDER BY created_at DESC
+            OFFSET ${params_idx}
+            LIMIT ${params_idx + 1}
+        """
+
+        params.extend([offset, limit])
+
+        try:
+            results = await self.connection_manager.fetch_query(QUERY, params)
+
+            total_entries = results[0]["total_entries"] if results else 0
+
+            relationships = [
+                Relationship(
+                    id=row["id"],
+                    subject=row["subject"],
+                    predicate=row["predicate"],
+                    object=row["object"],
+                    weight=row["weight"],
+                    description=row["description"],
+                    user_id=row["user_id"],
+                    last_modified_by=row["last_modified_by"],
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
+                    attributes=row["attributes"],
+                )
+                for row in results
+            ]
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while fetching relationships: {e}",
+            )
+
+        return {"results": relationships, "total_entries": total_entries}
 
     async def update(self, relationship: Relationship) -> UUID:  # type: ignore
         return await _update_object(
@@ -803,8 +876,8 @@ class PostgresCommunityHandler(CommunityHandler):
             embedding {vector_column_str} NOT NULL,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            created_by UUID REFERENCES {self._get_table_name("users")}(user_id),
-            updated_by UUID REFERENCES {self._get_table_name("users")}(user_id),
+            user_id UUID REFERENCES {self._get_table_name("users")}(user_id),
+            last_modified_by UUID REFERENCES {self._get_table_name("users")}(user_id),
             attributes JSONB,
             UNIQUE (community_number, level, graph_id, collection_id)
         );"""
@@ -834,9 +907,9 @@ class PostgresCommunityHandler(CommunityHandler):
 
         QUERY = f"""
             INSERT INTO {self._get_table_name("graph_community")}
-            (graph_id, name, summary, findings, rating, rating_explanation, embedding, level, attributes, created_by, updated_by)
+            (graph_id, name, summary, findings, rating, rating_explanation, embedding, level, attributes, user_id, last_modified_by)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, created_by, updated_by
+            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, user_id, last_modified_by
         """
 
         params = [
@@ -911,14 +984,14 @@ class PostgresCommunityHandler(CommunityHandler):
             update_fields.append(f"attributes = ${len(params)+1}")
             params.append(attributes)
 
-        update_fields.append(f"updated_by = ${len(params)+1}")
+        update_fields.append(f"last_modified_by = ${len(params)+1}")
         params.append(auth_user.id)
 
         update_fields.append(f"updated_at = CURRENT_TIMESTAMP")
 
         QUERY = f"""
             UPDATE {self._get_table_name("graph_community")} SET {", ".join(update_fields)} WHERE id = $1
-            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, attributes, level, created_by, updated_by, updated_at
+            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, attributes, level, user_id, last_modified_by, updated_at
         """
         return await self.connection_manager.fetchrow_query(QUERY, params)
 
@@ -958,7 +1031,7 @@ class PostgresCommunityHandler(CommunityHandler):
 
             QUERY = f"""
                 SELECT
-                    id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, created_by, updated_by, created_at, updated_at
+                    id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, user_id, last_modified_by, created_at, updated_at
                 FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
                 OFFSET $2 LIMIT $3
             """
@@ -984,7 +1057,7 @@ class PostgresCommunityHandler(CommunityHandler):
         else:
             QUERY = f"""
                 SELECT
-                    id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, created_by, updated_by, created_at, updated_at
+                    id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, user_id, last_modified_by, created_at, updated_at
                 FROM {self._get_table_name("graph_community")} WHERE graph_id = $1 AND id = $2
             """
             params = [graph_id, community_id]

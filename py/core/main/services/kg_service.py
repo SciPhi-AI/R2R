@@ -249,24 +249,16 @@ class KgService(Service):
     @telemetry_event("list_relationships_v3")
     async def list_relationships_v3(
         self,
-        id: UUID,
-        level: DataLevel,
-        offset: int,
-        limit: int,
-        entity_names: Optional[list[str]] = None,
-        relationship_types: Optional[list[str]] = None,
-        attributes: Optional[list[str]] = None,
-        relationship_id: Optional[UUID] = None,
+        filter_user_ids: Optional[list[UUID]] = None,
+        filter_relationship_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = 100,
     ):
-        return await self.providers.database.graph_handler.relationships.get(
-            id=id,
-            level=level,
-            entity_names=entity_names,
-            relationship_types=relationship_types,
-            attributes=attributes,
+        return await self.providers.database.graph_handler.relationships.list_relationships(
+            filter_user_ids=filter_user_ids,
+            filter_relationship_ids=filter_relationship_ids,
             offset=offset,
             limit=limit,
-            relationship_id=relationship_id,
         )
 
     @telemetry_event("create_relationships_v3")
@@ -896,9 +888,11 @@ class KgService(Service):
     async def add_documents_to_graph(
         self, graph_id: UUID, document_ids: list[UUID]
     ) -> None:
-        return await self.providers.database.graph_handler.add_documents_to_graph(
-            graph_id=graph_id,
-            document_ids=document_ids,
+        return (
+            await self.providers.database.graph_handler.add_documents_to_graph(
+                graph_id=graph_id,
+                document_ids=document_ids,
+            )
         )
 
     async def remove_documents_from_graph(

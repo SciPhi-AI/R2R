@@ -64,15 +64,6 @@ class RelationshipsRouter(BaseRouterV3):
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
 
-    def _get_path_level(self, request: Request) -> DataLevel:
-        path = request.url.path
-        if "/chunks/" in path:
-            return DataLevel.CHUNK
-        elif "/documents/" in path:
-            return DataLevel.DOCUMENT
-        else:
-            return DataLevel.GRAPH
-
     def _setup_routes(self):
 
         @self.router.get(
@@ -93,31 +84,29 @@ class RelationshipsRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = await client.relationships.list({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+                            main();
+                            """
+                        ),
+                    },
                 ]
             },
         )
         @self.base_endpoint
         async def list_relationships(
-            request: Request,
-            graph_id: Optional[UUID] = Query(
+            ids: Optional[list[UUID]] = Query(
                 None,
-                description="The ID of the graph to retrieve relationships for.",
-            ),
-            document_id: Optional[UUID] = Query(
-                None,
-                description="The ID of the document to retrieve relationships for.",
-            ),
-            entity_names: Optional[list[str]] = Query(
-                None,
-                description="A list of subject or object entity names to filter the relationships by.",
-            ),
-            relationship_types: Optional[list[str]] = Query(
-                None,
-                description="A list of relationship types to filter the relationships by.",
-            ),
-            attributes: Optional[list[str]] = Query(
-                None,
-                description="A list of attributes to return. By default, all attributes are returned.",
+                description="A list of entity IDs to retrieve. If not provided, all entities will be returned.",
             ),
             offset: int = Query(
                 0,
@@ -127,7 +116,7 @@ class RelationshipsRouter(BaseRouterV3):
             limit: int = Query(
                 100,
                 ge=1,
-                le=1000,
+                le=100,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
@@ -143,27 +132,22 @@ class RelationshipsRouter(BaseRouterV3):
 
             By default, all attributes are returned, but this can be limited using the `attributes` parameter.
             """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
 
-            relationships, count = await self.services[
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
+            list_relationships_response = await self.services[
                 "kg"
             ].list_relationships_v3(
-                level=self._get_path_level(request),
-                id=id,
-                graph_id=graph_id,
-                document_id=document_id,
-                entity_names=entity_names,
-                relationship_types=relationship_types,
-                attributes=attributes,
+                filter_user_ids=requesting_user_id,
+                filter_relationship_ids=ids,
                 offset=offset,
                 limit=limit,
             )
 
-            return relationships, {  # type: ignore
-                "total_entries": count,
+            return list_relationships_response["results"], {
+                "total_entries": list_relationships_response["total_entries"]
             }
 
         @self.router.get(
@@ -189,14 +173,9 @@ class RelationshipsRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def get_relationship(
-            request: Request,
             id: UUID = Path(
                 ...,
                 description="The ID of the relationship to retrieve.",
-            ),
-            attributes: Optional[list[str]] = Query(
-                None,
-                description="A list of attributes to return. By default, all attributes are returned.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipResponse:
@@ -205,18 +184,16 @@ class RelationshipsRouter(BaseRouterV3):
 
             By default, all attributes are returned, but this can be limited using the `attributes` parameter.
             """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
 
-            relationship = await self.services["kg"].list_relationships_v3(
-                level=self._get_path_level(request),
-                id=id,
-                attributes=attributes,
+            list_relationships_response = await self.services[
+                "kg"
+            ].list_relationships_v3(
+                filter_relationship_ids=[id],
+                offset=0,
+                limit=1,
             )
 
-            return relationship
+            return list_relationships_response["results"][0]
 
         @self.router.post(
             "/relationships",

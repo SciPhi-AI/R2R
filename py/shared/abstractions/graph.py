@@ -47,8 +47,8 @@ class Entity(R2RSerializable):
     graph_ids: Optional[list[UUID]] = None
     document_ids: Optional[list[UUID]] = None
     document_id: Optional[UUID] = None  # this is for backward compatibility
-    created_by: Optional[UUID] = None
-    updated_by: Optional[UUID] = None
+    user_id: Optional[UUID] = None
+    last_modified_by: Optional[UUID] = None
 
     # we don't use these yet
     # name_embedding: Optional[list[float]] = None
@@ -89,6 +89,8 @@ class Relationship(R2RSerializable):
     chunk_ids: list[UUID] = []
     document_id: Optional[UUID] = None
     graph_id: Optional[UUID] = None
+    user_id: Optional[UUID] = None
+    last_modified_by: Optional[UUID] = None
     attributes: dict[str, Any] | str = {}
 
     def __init__(self, **kwargs):
