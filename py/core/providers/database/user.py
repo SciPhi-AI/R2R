@@ -673,3 +673,81 @@ class PostgresUserHandler(UserHandler):
                 ),
             }
         }
+
+    async def has_document_access(self, auth_user, document_id: UUID) -> bool:
+        """
+        Check if the user has access to a document.
+
+        If the user is a superuser, return True.
+        Otherwise, check if the user is a member of the collection that the document belongs to.
+        """
+
+        if auth_user.is_superuser:
+            return True
+
+        query = f"""
+            SELECT 1
+            FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
+            INNER JOIN {self._get_table_name("document_info")} d
+                ON d.collection_ids && u.collection_ids
+            WHERE u.user_id = $1 AND d.document_id = $2
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [auth_user.id, document_id]
+        )
+        return result is not None
+
+    async def has_graph_access(self, auth_user, graph_id: UUID) -> bool:
+        """
+        Check if the user has access to a graph.
+        """
+
+        if auth_user.is_superuser:
+            return True
+
+        query = f"""
+            SELECT 1 FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} WHERE user_id = $1 AND $2 = ANY(graph_ids)
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [auth_user.id, graph_id]
+        )
+
+        return result is not None
+
+    async def has_collection_access(
+        self, auth_user, collection_id: UUID
+    ) -> bool:
+        """
+        Check if the user has access to a collection.
+        """
+
+        if auth_user.is_superuser:
+            return True
+
+        query = f"""
+            SELECT 1 FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} WHERE user_id = $1 AND $2 = ANY(collection_ids)
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [auth_user.id, collection_id]
+        )
+        return result is not None
+    async def has_entity_access(self, auth_user, entity_id: UUID) -> bool:
+        """
+        Check if the user has access to an entity.
+        """
+
+    async def has_relationship_access(
+        self, auth_user, relationship_id: UUID
+    ) -> bool:
+        """
+        Check if the user has access to a relationship.
+        """
+        raise NotImplementedError
+
+    async def has_community_access(
+        self, auth_user, community_id: UUID
+    ) -> bool:
+        """
+        Check if the user has access to a community.
+        """
+        raise NotImplementedError

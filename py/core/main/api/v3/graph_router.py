@@ -763,9 +763,11 @@ class GraphRouter(BaseRouterV3):
             """
             Adds a list of entities to the graph by their IDs.
             """
-            return await self.services["kg"].add_entity_to_graph(
+            await self.services["kg"].add_entity_to_graph(
                 id, entity_id, auth_user
             )
+
+            return GenericBooleanResponse(success=True)
 
         @self.router.delete(
             "/graphs/{id}/entities/{entity_id}",
@@ -804,11 +806,13 @@ class GraphRouter(BaseRouterV3):
             """
             Removes an entity from the graph by its ID.
             """
-            return await self.services[
+            await self.services[
                 "kg"
             ].documents.graph_handler.entities.remove_from_graph(
                 id, entity_id, auth_user
             )
+
+            return GenericBooleanResponse(success=True)
 
         @self.router.post(
             "/graphs/{id}/relationships",
@@ -847,11 +851,13 @@ class GraphRouter(BaseRouterV3):
             """
             Adds a list of relationships to the graph by their IDs.
             """
-            return await self.services[
+            await self.services[
                 "kg"
             ].documents.graph_handler.relationships.add_to_graph(
                 id, relationship_ids, auth_user
             )
+
+            return GenericBooleanResponse(success=True)
 
         @self.router.delete(
             "/graphs/{id}/relationships/{relationship_id}",
@@ -890,15 +896,18 @@ class GraphRouter(BaseRouterV3):
             """
             Removes a relationship from the graph by its ID.
             """
-            return await self.services[
+            await self.services[
                 "kg"
             ].documents.graph_handler.relationships.remove_from_graph(
                 id, relationship_id, auth_user
             )
 
+            return GenericBooleanResponse(success=True)
+
+        ### Add and remove document from graph
         @self.router.post(
-            "/graphs/{id}/communities",
-            summary="Add communities to the graph",
+            "/graphs/{id}/documents/{document_id}",
+            summary="Add a document to the graph",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -908,10 +917,7 @@ class GraphRouter(BaseRouterV3):
                             from r2r import R2RClient
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
-                            result = client.graphs.add_communities(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", community_ids=[
-                                "123e4567-e89b-12d3-a456-426614174000",
-                                "123e4567-e89b-12d3-a456-426614174001",
-                            ])
+                            result = client.graphs.add_document_to_graph(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", document_id="123e4567-e89b-12d3-a456-426614174000")
                             """
                         ),
                     },
@@ -919,29 +925,53 @@ class GraphRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def add_communities_to_graph(
+        async def add_document_to_graph(
             id: UUID = Path(
                 ...,
-                description="The ID of the graph to add the communities to.",
+                description="The ID of the graph to add the entity to.",
             ),
-            community_ids: list[UUID] = Body(
-                ...,
-                description="The IDs of the communities to add to the graph.",
+            document_id: UUID = Path(
+                ..., description="The ID of the document to add to the graph."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Adds a list of communities to the graph by their IDs.
+            Adds a document to the graph by its ID.
+
+            This endpoint adds all entities and relationships from the document to the graph.
+
+            You need to run '/documents/{id}/entities_and_relationships' first to get the entities and relationships.
+
+            The endpoints returns an error if there are no entities and relationships extractions present for the document.
             """
-            return await self.services[
-                "kg"
-            ].documents.graph_handler.communities.add_to_graph(
-                id, community_ids, auth_user
+
+            # check permissions
+            if not await self.services["management"].has_document_access(
+                auth_user, document_id
+            ):
+                raise R2RException(
+                    message="You do not have permission to add this document to the graph.",
+                    status_code=403,
+                )
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    message="You do not have permission to add this document to the graph.",
+                    status_code=403,
+                )
+
+            await self.services["kg"].add_documents_to_graph(
+                graph_id=id,
+                document_ids=[document_id],
             )
 
+            return GenericBooleanResponse(success=True)
+
         @self.router.delete(
-            "/graphs/{id}/communities/{community_id}",
-            summary="Remove a community from the graph",
+            "/graphs/{id}/documents/{document_id}",
+            summary="Remove a document from the graph",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -951,9 +981,7 @@ class GraphRouter(BaseRouterV3):
                             from r2r import R2RClient
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
-                            result = client.graphs.remove_communities(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", community_ids=[
-                                "123e4567-e89b-12d3-a456-426614174000",
-                                "123e4567-e89b-12d3-a456-426614174001",
+                            result = client.graphs.remove_document_from_graph(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", document_id="123e4567-e89b-12d3-a456-426614174000")
                             ])
                             """
                         ),
@@ -962,22 +990,155 @@ class GraphRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def remove_community_from_graph(
+        async def remove_document_from_graph(
             id: UUID = Path(
                 ...,
-                description="The ID of the graph to remove the community from.",
+                description="The ID of the graph to remove the entity from.",
             ),
-            community_id: UUID = Path(
+            document_id: UUID = Path(
                 ...,
-                description="The ID of the community to remove from the graph.",
+                description="The ID of the document to remove from the graph.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Removes a community from the graph by its ID.
+            Removes a document from the graph by its ID.
+
+            This endpoint removes all entities and relationships from the document in the graph.
             """
-            return await self.services[
-                "kg"
-            ].documents.graph_handler.communities.remove_from_graph(
-                id, community_id, auth_user
+
+            # check permissions
+            if not await self.services["management"].has_document_access(
+                auth_user, document_id
+            ):
+                raise R2RException(
+                    message="You do not have permission to remove this document from the graph.",
+                    status_code=403,
+                )
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    message="You do not have permission to remove this document from the graph.",
+                    status_code=403,
+                )
+
+            await self.services["kg"].remove_documents_from_graph(
+                graph_id=id,
+                document_ids=[document_id],
             )
+
+            return GenericBooleanResponse(success=True)
+
+        # Add and remove collections from graph
+
+        ### Add and remove document from graph
+        @self.router.post(
+            "/graphs/{id}/collections/{collection_id}",
+            summary="Add a collection to the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.graphs.add_document_to_graph(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", document_id="123e4567-e89b-12d3-a456-426614174000")
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def add_collection_to_graph(
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to add the entity to.",
+            ),
+            collection_id: UUID = Path(
+                ...,
+                description="The ID of the collection to add to the graph.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Adds a collection to the graph by its ID.
+
+            This endpoint adds all entities and relationships from all documents in the collection to the graph.
+
+            The endpoints returns an error if there are no entities and relationships extractions present for any of the documents in the collection.
+            """
+
+            # check permissions
+            if not await self.services["management"].has_collection_access(
+                auth_user, collection_id
+            ):
+                raise R2RException(
+                    message="You do not have permission to add this collection to the graph.",
+                    status_code=403,
+                )
+
+            await self.services["kg"].add_collection_to_graph(
+                graph_id=id,
+                collection_id=collection_id,
+            )
+
+            return GenericBooleanResponse(success=True)
+
+        @self.router.delete(
+            "/graphs/{id}/collections/{collection_id}",
+            summary="Remove a collection from the graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.graphs.remove_collection_from_graph(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", collection_id="123e4567-e89b-12d3-a456-426614174000")
+                            ])
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def remove_collection_from_graph(
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to remove the entity from.",
+            ),
+            collection_id: UUID = Path(
+                ...,
+                description="The ID of the collection to remove from the graph.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Removes a document from the graph by its ID.
+
+            This endpoint removes all entities and relationships from all documents in the collection in the graph.
+            """
+
+            # check permissions
+            if not await self.services["management"].has_collection_access(
+                auth_user, collection_id
+            ):
+                raise R2RException(
+                    message="You do not have permission to remove this collection from the graph.",
+                    status_code=403,
+                )
+
+            await self.services["kg"].remove_collection_from_graph(
+                graph_id=id,
+                collection_id=collection_id,
+            )
+
+            return GenericBooleanResponse(success=True)

@@ -1262,14 +1262,21 @@ class DocumentsRouter(BaseRouterV3):
         ) -> WrappedKGCreationResponse:  # type: ignore
             """
             Extracts entities and relationships from a document.
-                The entities and relationships extraction process involves:
+                The entities and relationships extaction process involves:
                 1. Parsing documents into semantic chunks
                 2. Extracting entities and relationships using LLMs
             """
 
             settings = settings.dict() if settings else None  # type: ignore
-            if not auth_user.is_superuser:
-                logger.warning("Implement permission checks here.")
+
+            # check permission to see if the user has access to the document
+            if not await self.services["management"].has_document_access(
+                auth_user=auth_user,
+                document_id=id,
+            ):
+                raise R2RException(
+                    "You do not have permission to access this document.", 403
+                )
 
             # If no run type is provided, default to estimate
             if not run_type:
@@ -1300,14 +1307,16 @@ class DocumentsRouter(BaseRouterV3):
                     ),
                 }
             else:
+
+                workflow_input = {
+                    "document_id": str(id),
+                    "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
+                    "auth_user": auth_user.json(),
+                    "user": auth_user.json(),  # terrible hack for quick fix
+                }
+
                 # Otherwise, create the graph
                 if run_with_orchestration:
-                    workflow_input = {
-                        "document_id": str(id),
-                        "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
-                        "user": auth_user.json(),
-                    }
-
                     return await self.orchestration_provider.run_workflow(  # type: ignore
                         "create-graph", {"request": workflow_input}, {}
                     )

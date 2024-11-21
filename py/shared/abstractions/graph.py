@@ -43,10 +43,12 @@ class Entity(R2RSerializable):
     category: Optional[str] = None
     description: Optional[str] = None
     description_embedding: Optional[list[float] | str] = None
-    chunk_ids: list[UUID] = []
-    graph_ids: list[UUID] = []
-    document_ids: list[UUID] = []
+    chunk_ids: Optional[list[UUID]] = None
+    graph_ids: Optional[list[UUID]] = None
+    document_ids: Optional[list[UUID]] = None
     document_id: Optional[UUID] = None  # this is for backward compatibility
+    created_by: Optional[UUID] = None
+    updated_by: Optional[UUID] = None
 
     # we don't use these yet
     # name_embedding: Optional[list[float]] = None
@@ -119,14 +121,14 @@ class CommunityInfo(R2RSerializable):
 @dataclass
 class Community(R2RSerializable):
 
-    community_number: int
     level: int
     name: str = ""
     summary: str = ""
 
     findings: list[str] = []
     id: Optional[int | UUID] = None
-    graph_ids: list[UUID] = []
+    community_number: Optional[int] = None
+    graph_id: Optional[UUID] = None
     collection_id: Optional[UUID] = None
     rating: float | None = None
     rating_explanation: str | None = None

@@ -71,6 +71,7 @@ class KgService(Service):
         max_knowledge_relationships: int,
         entity_types: list[str],
         relation_types: list[str],
+        auth_user: Optional[Any] = None,
         **kwargs,
     ):
         try:
@@ -95,6 +96,7 @@ class KgService(Service):
                         "entity_types": entity_types,
                         "relation_types": relation_types,
                         "logger": logger,
+                        "auth_user": auth_user,
                     }
                 ),
                 state=None,
@@ -328,34 +330,84 @@ class KgService(Service):
 
     ################### COMMUNITIES ###################
 
-    @telemetry_event("create_communities_v3")
-    async def create_communities_v3(
+    @telemetry_event("create_community_v3")
+    async def create_community_v3(
         self,
-        communities: list[Community],
+        graph_id: UUID,
+        name: str,
+        summary: str,
+        findings: list[str],
+        rating: Optional[float],
+        rating_explanation: Optional[str],
+        level: Optional[int],
+        attributes: Optional[dict],
+        auth_user: Any,
         **kwargs,
     ):
+        embedding = str(
+            await self.providers.embedding.async_get_embedding(summary)
+        )
         return await self.providers.database.graph_handler.communities.create(
-            communities
+            graph_id=graph_id,
+            name=name,
+            summary=summary,
+            embedding=embedding,
+            findings=findings,
+            rating=rating,
+            rating_explanation=rating_explanation,
+            level=level,
+            attributes=attributes,
+            auth_user=auth_user,
         )
 
     @telemetry_event("update_community_v3")
     async def update_community_v3(
         self,
-        community: Community,
+        id: UUID,
+        community_id: UUID,
+        name: Optional[str],
+        summary: Optional[str],
+        findings: Optional[list[str]],
+        rating: Optional[float],
+        rating_explanation: Optional[str],
+        level: Optional[int],
+        attributes: Optional[dict],
+        auth_user: Any,
         **kwargs,
     ):
+        if summary is not None:
+            embedding = str(
+                await self.providers.embedding.async_get_embedding(summary)
+            )
+        else:
+            embedding = None
+
         return await self.providers.database.graph_handler.communities.update(
-            community
+            id=id,
+            community_id=community_id,
+            name=name,
+            summary=summary,
+            embedding=embedding,
+            findings=findings,
+            rating=rating,
+            rating_explanation=rating_explanation,
+            level=level,
+            attributes=attributes,
+            auth_user=auth_user,
         )
 
     @telemetry_event("delete_community_v3")
     async def delete_community_v3(
         self,
-        community: Community,
+        graph_id: UUID,
+        community_id: UUID,
+        auth_user: Any,
         **kwargs,
     ):
         return await self.providers.database.graph_handler.communities.delete(
-            community
+            graph_id=graph_id,
+            community_id=community_id,
+            auth_user=auth_user,
         )
 
     @telemetry_event("list_communities_v3")
@@ -474,6 +526,7 @@ class KgService(Service):
         self,
         document_id: UUID,
         max_description_input_length: int,
+        auth_user: Any,
         **kwargs,
     ):
 
@@ -491,9 +544,10 @@ class KgService(Service):
             )
         )
 
-        logger.info(
-            f"KGService: Found {entity_count} entities in document {document_id}"
-        )
+        if entity_count == 0:
+            raise R2RException(
+                "No entities found for document. Please check the document for errors."
+            )
 
         # TODO - Do not hardcode the batch size,
         # make it a configurable parameter at runtime & server-side defaults
@@ -516,6 +570,7 @@ class KgService(Service):
                         "limit": 256,
                         "max_description_input_length": max_description_input_length,
                         "document_id": document_id,
+                        "auth_user": auth_user,
                         "logger": logger,
                     }
                 ),
@@ -837,3 +892,35 @@ class KgService(Service):
             )
 
         return results[0]
+
+    async def add_documents_to_graph(
+        self, graph_id: UUID, document_ids: list[UUID]
+    ) -> None:
+        return await self.providers.database.graph_handler.add_documents_to_graph(
+            graph_id=graph_id,
+            document_ids=document_ids,
+        )
+
+    async def remove_documents_from_graph(
+        self, graph_id: UUID, document_ids: list[UUID]
+    ) -> None:
+        return await self.providers.database.graph_handler.remove_documents_from_graph(
+            graph_id=graph_id,
+            document_ids=document_ids,
+        )
+
+    async def add_collection_to_graph(
+        self, graph_id: UUID, collection_id: UUID
+    ) -> None:
+        return await self.providers.database.graph_handler.add_collection_to_graph(
+            graph_id=graph_id,
+            collection_id=collection_id,
+        )
+
+    async def remove_collection_from_graph(
+        self, graph_id: UUID, collection_id: UUID
+    ) -> None:
+        return await self.providers.database.graph_handler.remove_collection_from_graph(
+            graph_id=graph_id,
+            collection_id=collection_id,
+        )
