@@ -328,34 +328,84 @@ class KgService(Service):
 
     ################### COMMUNITIES ###################
 
-    @telemetry_event("create_communities_v3")
-    async def create_communities_v3(
+    @telemetry_event("create_community_v3")
+    async def create_community_v3(
         self,
-        communities: list[Community],
+        graph_id: UUID,
+        name: str,
+        summary: str,
+        findings: list[str],
+        rating: Optional[float],
+        rating_explanation: Optional[str],
+        level: Optional[int],
+        attributes: Optional[dict],
+        auth_user: Any,
         **kwargs,
     ):
+        embedding = str(
+            await self.providers.embedding.async_get_embedding(summary)
+        )
         return await self.providers.database.graph_handler.communities.create(
-            communities
+            graph_id=graph_id,
+            name=name,
+            summary=summary,
+            embedding=embedding,
+            findings=findings,
+            rating=rating,
+            rating_explanation=rating_explanation,
+            level=level,
+            attributes=attributes,
+            auth_user=auth_user,
         )
 
     @telemetry_event("update_community_v3")
     async def update_community_v3(
         self,
-        community: Community,
+        id: UUID,
+        community_id: UUID,
+        name: Optional[str],
+        summary: Optional[str],
+        findings: Optional[list[str]],
+        rating: Optional[float],
+        rating_explanation: Optional[str],
+        level: Optional[int],
+        attributes: Optional[dict],
+        auth_user: Any,
         **kwargs,
     ):
+        if summary is not None:
+            embedding = str(
+                await self.providers.embedding.async_get_embedding(summary)
+            )
+        else:
+            embedding = None
+
         return await self.providers.database.graph_handler.communities.update(
-            community
+            id=id,
+            community_id=community_id,
+            name=name,
+            summary=summary,
+            embedding=embedding,
+            findings=findings,
+            rating=rating,
+            rating_explanation=rating_explanation,
+            level=level,
+            attributes=attributes,
+            auth_user=auth_user,
         )
 
     @telemetry_event("delete_community_v3")
     async def delete_community_v3(
         self,
-        community: Community,
+        graph_id: UUID,
+        community_id: UUID,
+        auth_user: Any,
         **kwargs,
     ):
         return await self.providers.database.graph_handler.communities.delete(
-            community
+            graph_id=graph_id,
+            community_id=community_id,
+            auth_user=auth_user,
         )
 
     @telemetry_event("list_communities_v3")

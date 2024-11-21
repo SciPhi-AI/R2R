@@ -119,13 +119,13 @@ class CommunityInfo(R2RSerializable):
 @dataclass
 class Community(R2RSerializable):
 
-    community_number: int
     level: int
     name: str = ""
     summary: str = ""
 
     findings: list[str] = []
     id: Optional[int | UUID] = None
+    community_number: Optional[int] = None
     graph_id: Optional[UUID] = None
     collection_id: Optional[UUID] = None
     rating: float | None = None
