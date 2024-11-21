@@ -73,10 +73,10 @@ class Relationship(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
     # id is Union of UUID and int for backwards compatibility
-    id: Optional[UUID | int] = None
     subject: str
     predicate: str
     object: str
+    id: Optional[UUID | int] = None
     subject_id: Optional[UUID] = None
     object_id: Optional[UUID] = None
     weight: float | None = 1.0
@@ -101,11 +101,11 @@ class Relationship(R2RSerializable):
 class CommunityInfo(R2RSerializable):
     """A protocol for a community in the system."""
 
-    id: Optional[UUID | int] = None
     node: str
     cluster: int
-    parent_cluster: int | None
     level: int
+    id: Optional[UUID | int] = None
+    parent_cluster: int | None
     is_final_cluster: bool
     graph_id: Optional[UUID] = None
     collection_id: Optional[UUID] = None  # for backwards compatibility

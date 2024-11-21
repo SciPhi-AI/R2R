@@ -228,10 +228,6 @@ class PostgresEntityHandler(EntityHandler):
 
         QUERY = base_query
 
-        import pdb
-
-        pdb.set_trace()
-
         output = await self.connection_manager.fetch_query(QUERY, params)
 
         output = [
