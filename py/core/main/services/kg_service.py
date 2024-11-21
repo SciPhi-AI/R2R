@@ -288,28 +288,38 @@ class KgService(Service):
     @telemetry_event("delete_relationship_v3")
     async def delete_relationship_v3(
         self,
-        level: DataLevel,
         id: UUID,
-        relationship_id: UUID,
         **kwargs,
     ):
         return (
             await self.providers.database.graph_handler.relationships.delete(
-                level=level,
                 id=id,
-                relationship_id=relationship_id,
             )
         )
 
     @telemetry_event("update_relationship_v3")
     async def update_relationship_v3(
         self,
-        relationship: Relationship,
+        relationship_id: UUID,
+        subject: str,
+        predicate: str,
+        object: str,
+        description: str,
+        weight: Optional[float],
+        attributes: Optional[dict],
+        user_id: UUID,
         **kwargs,
     ):
         return (
             await self.providers.database.graph_handler.relationships.update(
-                relationship
+                relationship_id=relationship_id,
+                subject=subject,
+                predicate=predicate,
+                object=object,
+                description=description,
+                weight=weight,
+                attributes=attributes,
+                user_id=user_id,
             )
         )
 

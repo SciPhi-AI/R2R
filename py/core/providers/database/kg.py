@@ -779,32 +779,103 @@ class PostgresRelationshipHandler(RelationshipHandler):
 
         return {"results": relationships, "total_entries": total_entries}
 
-    async def update(self, relationship: Relationship) -> UUID:  # type: ignore
-        return await _update_object(
-            object=relationship.__dict__,
-            full_table_name=self._get_table_name(
-                relationship.level.value + "_relationship"  # type: ignore
-            ),
-            connection_manager=self.connection_manager,
-            id_column="id",
-        )
+    async def update(
+        self,
+        relationship_id: UUID,
+        subject: str,
+        predicate: str,
+        object: str,
+        description: str,
+        weight: Optional[float],
+        attributes: Optional[dict],
+        user_id: UUID,
+    ) -> Relationship:
+        update_fields = []
+        params: list[Any] = []
+        params_index = 1
 
-    async def delete(
-        self, level: DataLevel, id: UUID, relationship_id: UUID
-    ) -> None:
-        """Delete a relationship from the database."""
+        if subject:
+            update_fields.append(f"subject = ${params_index}")
+            params.append(subject)
+            params_index += 1
 
-        if level == DataLevel.DOCUMENT:
-            level = DataLevel.CHUNK
+        if predicate:
+            update_fields.append(f"predicate = ${params_index}")
+            params.append(predicate)
+            params_index += 1
+
+        if object:
+            update_fields.append(f"object = ${params_index}")
+            params.append(object)
+            params_index += 1
+
+        if description:
+            update_fields.append(f"description = ${params_index}")
+            params.append(description)
+            params_index += 1
+
+        if weight:
+            update_fields.append(f"weight = ${params_index}")
+            params.append(weight)
+            params_index += 1
+
+        if attributes:
+            update_fields.append(f"attributes = ${params_index}")
+            params.append(json.dumps(attributes))
+            params_index += 1
+
+        if user_id:
+            update_fields.append(f"user_id = ${params_index}")
+            params.append(user_id)
+            params_index += 1
+
+        update_fields.append("updated_at = NOW()")
+        params.append(relationship_id)
 
         QUERY = f"""
-            DELETE FROM {self._get_table_name(level.value + "_relationship")}
+            UPDATE {self._get_table_name("relationship")} SET {", ".join(update_fields)} WHERE id = ${params_index}
+            RETURNING id, subject, predicate, object, weight, description, user_id, last_modified_by, created_at, updated_at, attributes
+        """
+
+        try:
+            result = await self.connection_manager.fetchrow_query(
+                QUERY, params
+            )
+
+            if not result:
+                raise R2RException(
+                    message="Relationship not found", status_code=404
+                )
+
+            return Relationship(
+                id=result["id"],
+                subject=result["subject"],
+                predicate=result["predicate"],
+                object=result["object"],
+                weight=result["weight"],
+                description=result["description"],
+                user_id=result["user_id"],
+                last_modified_by=result["last_modified_by"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+                attributes=result["attributes"],
+            )
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while updating the relationship: {e}",
+            )
+
+    async def delete(self, id: UUID) -> None:
+        """Delete a relationship from the database."""
+
+        QUERY = f"""
+            DELETE FROM {self._get_table_name("relationship")}
             WHERE id = $1
             RETURNING id
         """
-        return await self.connection_manager.fetchrow_query(
-            QUERY, [relationship_id]
-        )
+        await self.connection_manager.fetchrow_query(QUERY, [id])
 
     async def _check_permissions(
         self, relationship_ids: list[UUID], auth_user_id: UUID

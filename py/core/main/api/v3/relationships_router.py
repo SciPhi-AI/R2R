@@ -22,6 +22,8 @@ from core.base.api.models import (
     WrappedKGEntityDeduplicationResponse,
     WrappedKGEnrichmentResponse,
     WrappedKGTunePromptResponse,
+    GenericBooleanResponse,
+    WrappedBooleanResponse,
 )
 
 
@@ -168,6 +170,21 @@ class RelationshipsRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = client.relationships.get({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+                            main();
+                            """
+                        ),
+                    },
                 ],
             },
         )
@@ -209,7 +226,30 @@ class RelationshipsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.relationships.create(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationships=[relationship1, relationship2])
+                            result = client.relationships.create(
+                                subject="subject",
+                                predicate="predicate",
+                                object="object",
+                                description="description",
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = client.relationships.create({
+                                    subject: "subject",
+                                    predicate: "predicate",
+                                    object: "object",
+                                    description: "description",
+                                });
+                            }
+                            main();
                             """
                         ),
                     },
@@ -274,12 +314,35 @@ class RelationshipsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.relationships.update(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship=relationship)
+                            result = client.relationships.update(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                subject="subject",
+                                predicate="predicate",
+                                object="object",
+                                description="description",
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = client.relationships.update({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    subject: "subject",
+                                    predicate: "predicate",
+                                    object: "object",
+                                    description: "description",
+                                });
+                            }
+                            main();
                             """
                         ),
                     },
                 ],
-                "operationId": "update_relationships_v3_relationships__id__post_relationships",
             },
         )
         @self.base_endpoint
@@ -289,11 +352,26 @@ class RelationshipsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the relationship to update.",
             ),
-            relationship: Relationship = Body(
-                ..., description="The updated relationship."
+            subject: Optional[str] = Body(
+                None, description="The subject of the relationship"
+            ),
+            predicate: Optional[str] = Body(
+                None, description="The predicate of the relationship"
+            ),
+            object: Optional[str] = Body(
+                None, description="The object of the relationship"
+            ),
+            description: Optional[str] = Body(
+                None, description="The description of the relationship"
+            ),
+            weight: Optional[float] = Body(
+                None, description="The weight of the relationship"
+            ),
+            attributes: Optional[dict] = Body(
+                None, description="The attributes of the relationship"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedRelationshipResponse:
             """
             Updates an existing relationship in the database.
 
@@ -311,7 +389,14 @@ class RelationshipsRouter(BaseRouterV3):
                 )
 
             return await self.services["kg"].update_relationship_v3(
-                relationship=relationship,
+                relationship_id=id,
+                subject=subject,
+                predicate=predicate,
+                object=object,
+                description=description,
+                weight=weight,
+                attributes=attributes,
+                user_id=auth_user.id,
             )
 
         @self.router.delete(
@@ -332,6 +417,21 @@ class RelationshipsRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = client.relationships.delete({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+                            main();
+                            """
+                        ),
+                    },
                 ],
                 "operationId": "delete_relationships_v3_relationships__id__delete_relationships",
             },
@@ -344,7 +444,7 @@ class RelationshipsRouter(BaseRouterV3):
                 description="The ID of the relationship to delete.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedBooleanResponse:
             """
             Deletes a relationship by its ID.
 
@@ -359,6 +459,8 @@ class RelationshipsRouter(BaseRouterV3):
                     "Only superusers can access this endpoint.", 403
                 )
 
-            return await self.services["kg"].delete_relationship_v3(
+            await self.services["kg"].delete_relationship_v3(
                 id=id,
             )
+
+            return GenericBooleanResponse(success=True)

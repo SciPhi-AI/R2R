@@ -70,6 +70,8 @@ class Entity(R2RSerializable):
                 self.attributes = json.loads(self.attributes)
             except json.JSONDecodeError:
                 self.attributes = {}
+
+
 class Relationship(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
@@ -77,16 +79,12 @@ class Relationship(R2RSerializable):
     subject: str
     predicate: str
     object: str
+    description: str
     id: Optional[UUID | int] = None
-    subject_id: Optional[UUID] = None
-    object_id: Optional[UUID] = None
     weight: float | None = 1.0
-    description: str | None = None
-    description_embedding: list[float] | None = None
-    predicate_embedding: list[float] | None = None
-    chunk_ids: list[UUID] = []
+    chunk_ids: Optional[list[UUID]] = None
     document_id: Optional[UUID] = None
-    graph_id: Optional[UUID] = None
+    graph_ids: Optional[list[UUID]] = None
     user_id: Optional[UUID] = None
     last_modified_by: Optional[UUID] = None
     attributes: Optional[dict[str, Any] | str] = None
