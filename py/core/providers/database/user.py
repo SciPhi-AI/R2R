@@ -730,7 +730,7 @@ class PostgresUserHandler(UserHandler):
         result = await self.connection_manager.fetchrow_query(
             query, [auth_user.id, collection_id]
         )
-
+        return result is not None
     async def has_entity_access(self, auth_user, entity_id: UUID) -> bool:
         """
         Check if the user has access to an entity.
@@ -742,6 +742,7 @@ class PostgresUserHandler(UserHandler):
         """
         Check if the user has access to a relationship.
         """
+        raise NotImplementedError
 
     async def has_community_access(
         self, auth_user, community_id: UUID
@@ -749,3 +750,4 @@ class PostgresUserHandler(UserHandler):
         """
         Check if the user has access to a community.
         """
+        raise NotImplementedError

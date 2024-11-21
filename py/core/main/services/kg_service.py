@@ -893,38 +893,34 @@ class KgService(Service):
 
         return results[0]
 
-    def add_documents_to_graph(
+    async def add_documents_to_graph(
         self, graph_id: UUID, document_ids: list[UUID]
     ) -> None:
-        return self.providers.database.graph_handler.add_documents_to_graph(
+        return await self.providers.database.graph_handler.add_documents_to_graph(
             graph_id=graph_id,
             document_ids=document_ids,
         )
 
-    def remove_documents_from_graph(
+    async def remove_documents_from_graph(
         self, graph_id: UUID, document_ids: list[UUID]
     ) -> None:
-        return (
-            self.providers.database.graph_handler.remove_documents_from_graph(
-                graph_id=graph_id,
-                document_ids=document_ids,
-            )
+        return await self.providers.database.graph_handler.remove_documents_from_graph(
+            graph_id=graph_id,
+            document_ids=document_ids,
         )
 
-    def add_collection_to_graph(
+    async def add_collection_to_graph(
         self, graph_id: UUID, collection_id: UUID
     ) -> None:
-        return self.providers.database.graph_handler.add_collection_to_graph(
+        return await self.providers.database.graph_handler.add_collection_to_graph(
             graph_id=graph_id,
             collection_id=collection_id,
         )
 
-    def remove_collection_from_graph(
+    async def remove_collection_from_graph(
         self, graph_id: UUID, collection_id: UUID
     ) -> None:
-        return (
-            self.providers.database.graph_handler.remove_collection_from_graph(
-                graph_id=graph_id,
-                collection_id=collection_id,
-            )
+        return await self.providers.database.graph_handler.remove_collection_from_graph(
+            graph_id=graph_id,
+            collection_id=collection_id,
         )

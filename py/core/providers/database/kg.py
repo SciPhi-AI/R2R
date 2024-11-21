@@ -1255,7 +1255,7 @@ class PostgresGraphHandler(GraphHandler):
             result = await self.connection_manager.fetchrow_query(
                 QUERY, [document_id]
             )
-            if result["document_id"] is None:
+            if result is None:
                 raise R2RException(
                     message=f"Please make sure that the document {document_id} has at least one entity before adding it to the graph.",
                     status_code=400,
@@ -1272,7 +1272,7 @@ class PostgresGraphHandler(GraphHandler):
                 QUERY, [document_id]
             )
 
-            if result["document_id"] is None:
+            if result is None:
                 raise R2RException(
                     message=f"Please make sure that the document {document_id} has at least one relationship before adding it to the graph.",
                     status_code=400,
