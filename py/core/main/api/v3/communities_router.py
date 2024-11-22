@@ -346,6 +346,19 @@ class CommunitiesRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = client.graphs.communities.get(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1");
+                            }
+                            main();
+                            """
+                        ),
+                    },
                 ]
             },
         )
