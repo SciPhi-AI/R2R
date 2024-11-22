@@ -196,24 +196,15 @@ class PostgresEntityHandler(EntityHandler):
         if include_embeddings:
             select_fields += ", description_embedding"
 
-        # Count query - uses the same conditions but without offset/limit
         COUNT_QUERY = f"""
             SELECT COUNT(*)
             FROM {self._get_table_name(table_name)}
             WHERE {' AND '.join(conditions)}
         """
 
-        # Use only the parameters needed for the WHERE conditions
-        count_params = params[: param_index - 1]  # Exclude offset/limit params
-        print("COUNT_QUERY = ", COUNT_QUERY)
-        print("count_params = ", count_params)
-        count = (
-            await self.connection_manager.fetch_query(
-                COUNT_QUERY, count_params
-            )
-        )[0]["count"]
+        count_params = params[: param_index - 1]
+        count = (await self.connection_manager.fetch_query(COUNT_QUERY, count_params))[0]["count"]
 
-        # Main query for fetching entities
         QUERY = f"""
             SELECT {select_fields}
             FROM {self._get_table_name(table_name)}
@@ -232,22 +223,28 @@ class PostgresEntityHandler(EntityHandler):
 
         entities = []
         for row in rows:
-            if isinstance(row["metadata"], str):
+            # Convert the Record to a dictionary
+            entity_dict = dict(row)
+            
+            # Process metadata if it exists and is a string
+            if isinstance(entity_dict["metadata"], str):
                 try:
-                    row["metadata"] = json.loads(row["metadata"])
+                    entity_dict["metadata"] = json.loads(entity_dict["metadata"])
                 except json.JSONDecodeError:
                     pass
-            entities.append(Entity(**row))
+                    
+            entities.append(Entity(**entity_dict))
 
         return entities, count
 
     async def update(
-        self, entities: list[tuple[UUID, Entity]], store_type: StoreType
+        self, entities: list[Entity], store_type: StoreType
     ) -> list[UUID]:
         """Update multiple entities in the specified store."""
         table_name = self._get_entity_table_for_store(store_type)
         results = []
 
+        print('entities = ', entities)
         QUERY = f"""
             UPDATE {self._get_table_name(table_name)}
             SET
@@ -262,7 +259,7 @@ class PostgresEntityHandler(EntityHandler):
             RETURNING id
         """
 
-        for entity_id, entity in entities:
+        for entity in entities:
             metadata = entity.metadata
             if isinstance(metadata, str):
                 try:
@@ -281,17 +278,19 @@ class PostgresEntityHandler(EntityHandler):
                 description_embedding,
                 entity.chunk_ids,
                 json.dumps(metadata) if metadata else None,
-                entity_id,
+                entity.id,
                 entity.parent_id,
             ]
+            print("QUERY = ", QUERY)
 
             result = await self.connection_manager.fetchrow_query(
                 QUERY, params
             )
+            print("result = ", result)
 
             if not result:
                 raise R2RException(
-                    f"Entity {entity_id} not found in {store_type.value} store or no permission to update",
+                    f"Entity {entity.id} not found in {store_type} store or no permission to update",
                     404,
                 )
 
@@ -347,12 +346,11 @@ class PostgresEntityHandler(EntityHandler):
             deleted_ids = [row["id"] for row in results]
             if entity_ids and len(deleted_ids) != len(entity_ids):
                 raise R2RException(
-                    f"Some entities not found in {store_type.value} store or no permission to delete",
+                    f"Some entities not found in {store_type} store or no permission to delete",
                     404,
                 )
 
         return [row["id"] for row in results]
-
 
 class PostgresRelationshipHandler(RelationshipHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -405,8 +403,8 @@ class PostgresRelationshipHandler(RelationshipHandler):
                     chunk_ids UUID[],
                     parent_id UUID NOT NULL,
                     metadata JSONB,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW(),
                     {parent_constraint}
                 );
 
@@ -427,87 +425,88 @@ class PostgresRelationshipHandler(RelationshipHandler):
 
     async def create(
         self, relationships: list[Relationship], store_type: StoreType
-    ) -> None:
-        """Create new relationships in the specified store."""
+    ) -> list[UUID]:
+        """Create multiple relationships in the specified store."""
         table_name = self._get_relationship_table_for_store(store_type)
         values = []
+        results = []
 
-        for rel in relationships:
-            metadata = rel.metadata
+        for relationship in relationships:
+            metadata = relationship.metadata
             if isinstance(metadata, str):
                 try:
                     metadata = json.loads(metadata)
                 except json.JSONDecodeError:
                     pass
 
-            values.append(
-                (
-                    rel.subject,
-                    rel.predicate,
-                    rel.object,
-                    rel.description,
-                    rel.subject_id,
-                    rel.object_id,
-                    rel.weight,
-                    rel.chunk_ids,
-                    rel.parent_id,
-                    json.dumps(metadata) if metadata else None,
-                )
+            value = (
+                relationship.subject,
+                relationship.predicate,
+                relationship.object,
+                relationship.description,
+                relationship.subject_id,
+                relationship.object_id,
+                relationship.weight,
+                relationship.chunk_ids,
+                relationship.parent_id,
+                json.dumps(metadata) if metadata else None,
             )
+            values.append(value)
 
         QUERY = f"""
             INSERT INTO {self._get_table_name(table_name)}
-            (subject, predicate, object, description, subject_id, object_id,
+            (subject, predicate, object, description, subject_id, object_id, 
              weight, chunk_ids, parent_id, metadata)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING id
         """
 
-        await self.connection_manager.execute_many(QUERY, values)
+        for value in values:
+            result = await self.connection_manager.fetchrow_query(QUERY, value)
+            results.append(result["id"])
+
+        return results
 
     async def get(
         self,
         parent_id: UUID,
         store_type: StoreType,
+        offset: int = 0,
+        limit: int = 100,
+        relationship_ids: Optional[list[UUID]] = None,
         entity_names: Optional[list[str]] = None,
         relationship_types: Optional[list[str]] = None,
-        offset: int = 0,
-        limit: int = -1,
-        relationship_id: Optional[UUID] = None,
-    ):
-        """Get relationships from the specified store."""
+        include_metadata: bool = False,
+    ) -> tuple[list[Relationship], int]:
+        """
+        Get relationships from the specified store.
+
+        Args:
+            parent_id: UUID of the parent (graph_id or document_id)
+            store_type: Type of store (graph or document)
+            offset: Number of records to skip
+            limit: Maximum number of records to return (-1 for no limit)
+            relationship_ids: Optional list of specific relationship IDs to retrieve
+            entity_names: Optional list of entity names to filter by (matches subject or object)
+            relationship_types: Optional list of relationship types (predicates) to filter by
+            include_metadata: Whether to include metadata in the response
+
+        Returns:
+            Tuple of (list of relationships, total count)
+        """
         table_name = self._get_relationship_table_for_store(store_type)
 
         conditions = ["parent_id = $1"]
         params = [parent_id]
         param_index = 2
 
-        if relationship_id:
-            conditions.append(f"id = ${param_index}")
-            params.append(relationship_id)
+        if relationship_ids:
+            conditions.append(f"id = ANY(${param_index})")
+            params.append(relationship_ids)
             param_index += 1
 
-            QUERY = f"""
-                SELECT
-                    id, subject, predicate, object, description,
-                    subject_id, object_id, weight, chunk_ids,
-                    parent_id, metadata
-                FROM {self._get_table_name(table_name)}
-                WHERE {' AND '.join(conditions)}
-            """
-
-            result = await self.connection_manager.fetchrow_query(
-                QUERY, params
-            )
-            if not result:
-                raise R2RException(
-                    f"Relationship not found in {store_type.value} store", 404
-                )
-            return Relationship(**result)
-
         if entity_names:
-            conditions.append(
-                f"(subject = ANY(${param_index}) OR object = ANY(${param_index}))"
-            )
+            conditions.append(f"(subject = ANY(${param_index}) OR object = ANY(${param_index}))")
             params.append(entity_names)
             param_index += 1
 
@@ -516,24 +515,26 @@ class PostgresRelationshipHandler(RelationshipHandler):
             params.append(relationship_types)
             param_index += 1
 
-        # Get total count using the same conditions but without pagination params
+        select_fields = """
+            id, subject, predicate, object, description,
+            subject_id, object_id, weight, chunk_ids,
+            parent_id
+        """
+        if include_metadata:
+            select_fields += ", metadata"
+
+        # Count query
         COUNT_QUERY = f"""
             SELECT COUNT(*)
             FROM {self._get_table_name(table_name)}
             WHERE {' AND '.join(conditions)}
         """
+        count_params = params[: param_index - 1]
+        count = (await self.connection_manager.fetch_query(COUNT_QUERY, count_params))[0]["count"]
 
-        # Use the params without pagination parameters
-        count = (
-            await self.connection_manager.fetch_query(COUNT_QUERY, params)
-        )[0]["count"]
-
-        # Main query for fetching relationships with pagination
+        # Main query
         QUERY = f"""
-            SELECT
-                id, subject, predicate, object, description,
-                subject_id, object_id, weight, chunk_ids,
-                parent_id, metadata
+            SELECT {select_fields}
             FROM {self._get_table_name(table_name)}
             WHERE {' AND '.join(conditions)}
             ORDER BY created_at
@@ -550,30 +551,22 @@ class PostgresRelationshipHandler(RelationshipHandler):
 
         relationships = []
         for row in rows:
-            if isinstance(row["metadata"], str):
+            relationship_dict = dict(row)
+            if include_metadata and isinstance(relationship_dict["metadata"], str):
                 try:
-                    row["metadata"] = json.loads(row["metadata"])
+                    relationship_dict["metadata"] = json.loads(relationship_dict["metadata"])
                 except json.JSONDecodeError:
                     pass
-            relationships.append(Relationship(**row))
+            relationships.append(Relationship(**relationship_dict))
 
         return relationships, count
 
     async def update(
-        self, relationship: Relationship, store_type: StoreType
-    ) -> UUID:
-        """Update a relationship in the specified store."""
-        if not relationship.id:
-            raise ValueError("Relationship ID is required for update")
-
+        self, relationships: list[Relationship], store_type: StoreType
+    ) -> list[UUID]:
+        """Update multiple relationships in the specified store."""
         table_name = self._get_relationship_table_for_store(store_type)
-
-        metadata = relationship.metadata
-        if isinstance(metadata, str):
-            try:
-                metadata = json.loads(metadata)
-            except json.JSONDecodeError:
-                pass
+        results = []
 
         QUERY = f"""
             UPDATE {self._get_table_name(table_name)}
@@ -592,9 +585,15 @@ class PostgresRelationshipHandler(RelationshipHandler):
             RETURNING id
         """
 
-        result = await self.connection_manager.fetchrow_query(
-            QUERY,
-            [
+        for relationship in relationships:
+            metadata = relationship.metadata
+            if isinstance(metadata, str):
+                try:
+                    metadata = json.loads(metadata)
+                except json.JSONDecodeError:
+                    pass
+
+            params = [
                 relationship.subject,
                 relationship.predicate,
                 relationship.object,
@@ -606,69 +605,488 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 json.dumps(metadata) if metadata else None,
                 relationship.id,
                 relationship.parent_id,
-            ],
-        )
+            ]
 
-        if not result:
-            raise R2RException(
-                f"Relationship not found in {store_type.value} store or no permission to update",
-                404,
-            )
+            result = await self.connection_manager.fetchrow_query(QUERY, params)
+            if not result:
+                raise R2RException(
+                    f"Relationship {relationship.id} not found in {store_type} store or no permission to update",
+                    404,
+                )
+            results.append(result["id"])
 
-        return result["id"]
+        return results
 
     async def delete(
         self,
         parent_id: UUID,
-        relationship_id: Optional[UUID] = None,
+        relationship_ids: Optional[list[UUID]] = None,
         store_type: StoreType = StoreType.GRAPH,
     ) -> list[UUID]:
         """
         Delete relationships from the specified store.
-        If relationship_id is not provided, deletes all relationships for the given parent_id.
+        If relationship_ids is not provided, deletes all relationships for the given parent_id.
 
         Args:
-            parent_id (UUID): Parent ID (graph_id or document_id)
-            relationship_id (Optional[UUID]): Specific relationship ID to delete. If None, deletes all relationships for parent_id
-            store_type (StoreType): Type of store (graph or document)
+            parent_id: UUID of the parent (graph_id or document_id)
+            relationship_ids: Optional list of specific relationship IDs to delete
+            store_type: Type of store (graph or document)
 
         Returns:
-            list[UUID]: List of deleted relationship IDs
+            List of deleted relationship IDs
 
         Raises:
-            R2RException: If a specific relationship was requested but not found
+            R2RException: If specific relationships were requested but not all found
         """
         table_name = self._get_relationship_table_for_store(store_type)
 
-        if relationship_id is None:
-            # Delete all relationships for the parent_id
+        if relationship_ids is None:
             QUERY = f"""
                 DELETE FROM {self._get_table_name(table_name)}
                 WHERE parent_id = $1
                 RETURNING id
             """
-            results = await self.connection_manager.fetch_query(
-                QUERY, [parent_id]
-            )
+            results = await self.connection_manager.fetch_query(QUERY, [parent_id])
         else:
-            # Delete specific relationship
             QUERY = f"""
                 DELETE FROM {self._get_table_name(table_name)}
-                WHERE id = $1 AND parent_id = $2
+                WHERE id = ANY($1) AND parent_id = $2
                 RETURNING id
             """
             results = await self.connection_manager.fetch_query(
-                QUERY, [relationship_id, parent_id]
+                QUERY, [relationship_ids, parent_id]
             )
 
-            # Check if the requested relationship was deleted
-            if not results:
+            deleted_ids = [row["id"] for row in results]
+            if relationship_ids and len(deleted_ids) != len(relationship_ids):
                 raise R2RException(
-                    f"Relationship not found in {store_type.value} store or no permission to delete",
+                    f"Some relationships not found in {store_type} store or no permission to delete",
                     404,
                 )
 
         return [row["id"] for row in results]
+    
+
+# class PostgresRelationshipHandler(RelationshipHandler):
+#     def __init__(self, *args: Any, **kwargs: Any) -> None:
+#         self.project_name: str = kwargs.get("project_name")  # type: ignore
+#         self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
+
+#     def _get_table_name(self, table: str) -> str:
+#         """Get the fully qualified table name."""
+#         return f'"{self.project_name}"."{table}"'
+
+#     def _get_relationship_table_for_store(self, store_type: StoreType) -> str:
+#         """Get the appropriate table name for the store type."""
+#         if isinstance(store_type, StoreType):
+#             store_type = store_type.value
+#         return f"{store_type}_relationship"
+
+#     def _get_parent_constraint(self, store_type: StoreType) -> str:
+#         """Get the appropriate foreign key constraint for the store type."""
+#         if store_type == StoreType.GRAPH:
+#             return f"""
+#                 CONSTRAINT fk_graph
+#                     FOREIGN KEY(parent_id)
+#                     REFERENCES {self._get_table_name("graph")}(id)
+#                     ON DELETE CASCADE
+#             """
+#         else:
+#             return f"""
+#                 CONSTRAINT fk_document
+#                     FOREIGN KEY(parent_id)
+#                     REFERENCES {self._get_table_name("document_info")}(document_id)
+#                     ON DELETE CASCADE
+#             """
+
+#     async def create_tables(self) -> None:
+#         """Create separate tables for graph and document relationships."""
+#         for store_type in StoreType:
+#             table_name = self._get_relationship_table_for_store(store_type)
+#             parent_constraint = self._get_parent_constraint(store_type)
+
+#             QUERY = f"""
+#                 CREATE TABLE IF NOT EXISTS {self._get_table_name(table_name)} (
+#                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+#                     subject TEXT NOT NULL,
+#                     predicate TEXT NOT NULL,
+#                     object TEXT NOT NULL,
+#                     description TEXT,
+#                     subject_id UUID,
+#                     object_id UUID,
+#                     weight FLOAT DEFAULT 1.0,
+#                     chunk_ids UUID[],
+#                     parent_id UUID NOT NULL,
+#                     metadata JSONB,
+#                     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+#                     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+#                     {parent_constraint}
+#                 );
+
+#                 CREATE INDEX IF NOT EXISTS {table_name}_subject_idx
+#                     ON {self._get_table_name(table_name)} (subject);
+#                 CREATE INDEX IF NOT EXISTS {table_name}_object_idx
+#                     ON {self._get_table_name(table_name)} (object);
+#                 CREATE INDEX IF NOT EXISTS {table_name}_predicate_idx
+#                     ON {self._get_table_name(table_name)} (predicate);
+#                 CREATE INDEX IF NOT EXISTS {table_name}_parent_id_idx
+#                     ON {self._get_table_name(table_name)} (parent_id);
+#                 CREATE INDEX IF NOT EXISTS {table_name}_subject_id_idx
+#                     ON {self._get_table_name(table_name)} (subject_id);
+#                 CREATE INDEX IF NOT EXISTS {table_name}_object_id_idx
+#                     ON {self._get_table_name(table_name)} (object_id);
+#             """
+#             await self.connection_manager.execute_query(QUERY)
+
+#     async def create(
+#         self, relationships: list[Relationship], store_type: StoreType
+#     ) -> None:
+#         """Create new relationships in the specified store."""
+#         table_name = self._get_relationship_table_for_store(store_type)
+#         values = []
+
+#         for rel in relationships:
+#             metadata = rel.metadata
+#             if isinstance(metadata, str):
+#                 try:
+#                     metadata = json.loads(metadata)
+#                 except json.JSONDecodeError:
+#                     pass
+
+#             values.append(
+#                 (
+#                     rel.subject,
+#                     rel.predicate,
+#                     rel.object,
+#                     rel.description,
+#                     rel.subject_id,
+#                     rel.object_id,
+#                     rel.weight,
+#                     rel.chunk_ids,
+#                     rel.parent_id,
+#                     json.dumps(metadata) if metadata else None,
+#                 )
+#             )
+
+#         QUERY = f"""
+#             INSERT INTO {self._get_table_name(table_name)}
+#             (subject, predicate, object, description, subject_id, object_id,
+#              weight, chunk_ids, parent_id, metadata)
+#             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+#         """
+
+#         await self.connection_manager.execute_many(QUERY, values)
+
+#     async def get(
+#         self,
+#         parent_id: UUID,
+#         store_type: StoreType,
+#         offset: int = 0,
+#         limit: int = 100,
+#         relationship_ids: Optional[list[UUID]] = None,
+#         entity_names: Optional[list[str]] = None,
+#         relationship_types: Optional[list[str]] = None,
+#         include_metadata: bool = False,
+#     ) -> tuple[list[Relationship], int]:
+#         """
+#         Get relationships from the specified store.
+
+#         Args:
+#             parent_id (UUID): Parent ID (graph_id or document_id)
+#             store_type (StoreType): Type of store (graph or document)
+#             offset (int): Number of records to skip
+#             limit (int): Maximum number of records to return (-1 for no limit)
+#             relationship_ids (Optional[list[UUID]]): Optional list of specific relationship IDs to retrieve
+#             entity_names (Optional[list[str]]): Optional list of entity names to filter by (matches subject or object)
+#             relationship_types (Optional[list[str]]): Optional list of relationship types (predicates) to filter by
+#             include_metadata (bool): Whether to include metadata in the response
+
+#         Returns:
+#             tuple[list[Relationship], int]: Tuple containing list of relationships and total count
+#         """
+#         table_name = self._get_relationship_table_for_store(store_type)
+
+#         conditions = ["parent_id = $1"]
+#         params = [parent_id]
+#         param_index = 2
+
+#         if relationship_ids:
+#             conditions.append(f"id = ANY(${param_index})")
+#             params.append(relationship_ids)
+#             param_index += 1
+
+#         if entity_names:
+#             conditions.append(f"(subject = ANY(${param_index}) OR object = ANY(${param_index}))")
+#             params.append(entity_names)
+#             param_index += 1
+
+#         if relationship_types:
+#             conditions.append(f"predicate = ANY(${param_index})")
+#             params.append(relationship_types)
+#             param_index += 1
+
+#         select_fields = """
+#             id, subject, predicate, object, description,
+#             subject_id, object_id, weight, chunk_ids,
+#             parent_id
+#         """
+#         if include_metadata:
+#             select_fields += ", metadata"
+
+#         # Count query - uses the same conditions but without pagination params
+#         COUNT_QUERY = f"""
+#             SELECT COUNT(*)
+#             FROM {self._get_table_name(table_name)}
+#             WHERE {' AND '.join(conditions)}
+#         """
+#         count_params = params[: param_index - 1]
+#         count = (await self.connection_manager.fetch_query(COUNT_QUERY, count_params))[0]["count"]
+
+#         # Main query for fetching relationships with pagination
+#         QUERY = f"""
+#             SELECT {select_fields}
+#             FROM {self._get_table_name(table_name)}
+#             WHERE {' AND '.join(conditions)}
+#             ORDER BY created_at
+#             OFFSET ${param_index}
+#         """
+#         params.append(offset)
+#         param_index += 1
+
+#         if limit != -1:
+#             QUERY += f" LIMIT ${param_index}"
+#             params.append(limit)
+
+#         rows = await self.connection_manager.fetch_query(QUERY, params)
+
+#         relationships = []
+#         for row in rows:
+#             # Convert the Record to a dictionary
+#             relationship_dict = dict(row)
+            
+#             # Process metadata if it exists and is a string
+#             if include_metadata and isinstance(relationship_dict["metadata"], str):
+#                 try:
+#                     relationship_dict["metadata"] = json.loads(relationship_dict["metadata"])
+#                 except json.JSONDecodeError:
+#                     pass
+                    
+#             relationships.append(Relationship(**relationship_dict))
+
+#         return relationships, count
+        
+#     # async def get(
+#     #     self,
+#     #     parent_id: UUID,
+#     #     store_type: StoreType,
+#     #     entity_names: Optional[list[str]] = None,
+#     #     relationship_types: Optional[list[str]] = None,
+#     #     offset: int = 0,
+#     #     limit: int = -1,
+#     #     relationship_id: Optional[UUID] = None,
+#     # ):
+#     #     """Get relationships from the specified store."""
+#     #     table_name = self._get_relationship_table_for_store(store_type)
+
+#     #     conditions = ["parent_id = $1"]
+#     #     params = [parent_id]
+#     #     param_index = 2
+
+#     #     if relationship_id:
+#     #         conditions.append(f"id = ${param_index}")
+#     #         params.append(relationship_id)
+#     #         param_index += 1
+
+#     #         QUERY = f"""
+#     #             SELECT
+#     #                 id, subject, predicate, object, description,
+#     #                 subject_id, object_id, weight, chunk_ids,
+#     #                 parent_id, metadata
+#     #             FROM {self._get_table_name(table_name)}
+#     #             WHERE {' AND '.join(conditions)}
+#     #         """
+
+#     #         result = await self.connection_manager.fetchrow_query(
+#     #             QUERY, params
+#     #         )
+#     #         if not result:
+#     #             raise R2RException(
+#     #                 f"Relationship not found in {store_type.value} store", 404
+#     #             )
+#     #         return Relationship(**result)
+
+#     #     if entity_names:
+#     #         conditions.append(
+#     #             f"(subject = ANY(${param_index}) OR object = ANY(${param_index}))"
+#     #         )
+#     #         params.append(entity_names)
+#     #         param_index += 1
+
+#     #     if relationship_types:
+#     #         conditions.append(f"predicate = ANY(${param_index})")
+#     #         params.append(relationship_types)
+#     #         param_index += 1
+
+#     #     # Get total count using the same conditions but without pagination params
+#     #     COUNT_QUERY = f"""
+#     #         SELECT COUNT(*)
+#     #         FROM {self._get_table_name(table_name)}
+#     #         WHERE {' AND '.join(conditions)}
+#     #     """
+
+#     #     # Use the params without pagination parameters
+#     #     count = (
+#     #         await self.connection_manager.fetch_query(COUNT_QUERY, params)
+#     #     )[0]["count"]
+
+#     #     # Main query for fetching relationships with pagination
+#     #     QUERY = f"""
+#     #         SELECT
+#     #             id, subject, predicate, object, description,
+#     #             subject_id, object_id, weight, chunk_ids,
+#     #             parent_id, metadata
+#     #         FROM {self._get_table_name(table_name)}
+#     #         WHERE {' AND '.join(conditions)}
+#     #         ORDER BY created_at
+#     #         OFFSET ${param_index}
+#     #     """
+#     #     params.append(offset)
+#     #     param_index += 1
+
+#     #     if limit != -1:
+#     #         QUERY += f" LIMIT ${param_index}"
+#     #         params.append(limit)
+
+#     #     rows = await self.connection_manager.fetch_query(QUERY, params)
+
+#     #     relationships = []
+#     #     for row in rows:
+#     #         # if isinstance(row["metadata"], str):
+#     #         #     try:
+#     #         #         row["metadata"] = json.loads(row["metadata"])
+#     #         #     except json.JSONDecodeError:
+#     #         #         pass
+#     #         # relationships.append(Relationship(**row))
+#     #         relationship_dict = dict(row)
+#     #         if isinstance(relationship_dict["metadata"], str):
+#     #             try:
+#     #                 relationship_dict["metadata"] = json.loads(relationship_dict["metadata"])
+#     #             except json.JSONDecodeError:
+#     #                 pass
+#     #         relationships.append(Relationship(**relationship_dict))
+
+#     #     return relationships, count
+
+#     async def update(
+#         self, relationship: Relationship, store_type: StoreType
+#     ) -> UUID:
+#         """Update a relationship in the specified store."""
+#         if not relationship.id:
+#             raise ValueError("Relationship ID is required for update")
+
+#         table_name = self._get_relationship_table_for_store(store_type)
+
+#         metadata = relationship.metadata
+#         if isinstance(metadata, str):
+#             try:
+#                 metadata = json.loads(metadata)
+#             except json.JSONDecodeError:
+#                 pass
+
+#         QUERY = f"""
+#             UPDATE {self._get_table_name(table_name)}
+#             SET
+#                 subject = $1,
+#                 predicate = $2,
+#                 object = $3,
+#                 description = $4,
+#                 subject_id = $5,
+#                 object_id = $6,
+#                 weight = $7,
+#                 chunk_ids = $8,
+#                 metadata = $9,
+#                 updated_at = CURRENT_TIMESTAMP
+#             WHERE id = $10 AND parent_id = $11
+#             RETURNING id
+#         """
+
+#         result = await self.connection_manager.fetchrow_query(
+#             QUERY,
+#             [
+#                 relationship.subject,
+#                 relationship.predicate,
+#                 relationship.object,
+#                 relationship.description,
+#                 relationship.subject_id,
+#                 relationship.object_id,
+#                 relationship.weight,
+#                 relationship.chunk_ids,
+#                 json.dumps(metadata) if metadata else None,
+#                 relationship.id,
+#                 relationship.parent_id,
+#             ],
+#         )
+
+#         if not result:
+#             raise R2RException(
+#                 f"Relationship not found in {store_type.value} store or no permission to update",
+#                 404,
+#             )
+
+#         return result["id"]
+
+#     async def delete(
+#         self,
+#         parent_id: UUID,
+#         relationship_id: Optional[UUID] = None,
+#         store_type: StoreType = StoreType.GRAPH,
+#     ) -> list[UUID]:
+#         """
+#         Delete relationships from the specified store.
+#         If relationship_id is not provided, deletes all relationships for the given parent_id.
+
+#         Args:
+#             parent_id (UUID): Parent ID (graph_id or document_id)
+#             relationship_id (Optional[UUID]): Specific relationship ID to delete. If None, deletes all relationships for parent_id
+#             store_type (StoreType): Type of store (graph or document)
+
+#         Returns:
+#             list[UUID]: List of deleted relationship IDs
+
+#         Raises:
+#             R2RException: If a specific relationship was requested but not found
+#         """
+#         table_name = self._get_relationship_table_for_store(store_type)
+
+#         if relationship_id is None:
+#             # Delete all relationships for the parent_id
+#             QUERY = f"""
+#                 DELETE FROM {self._get_table_name(table_name)}
+#                 WHERE parent_id = $1
+#                 RETURNING id
+#             """
+#             results = await self.connection_manager.fetch_query(
+#                 QUERY, [parent_id]
+#             )
+#         else:
+#             # Delete specific relationship
+#             QUERY = f"""
+#                 DELETE FROM {self._get_table_name(table_name)}
+#                 WHERE id = $1 AND parent_id = $2
+#                 RETURNING id
+#             """
+#             results = await self.connection_manager.fetch_query(
+#                 QUERY, [relationship_id, parent_id]
+#             )
+
+#             # Check if the requested relationship was deleted
+#             if not results:
+#                 raise R2RException(
+#                     f"Relationship not found in {store_type.value} store or no permission to delete",
+#                     404,
+#                 )
+
+#         return [row["id"] for row in results]
 
 
 class PostgresCommunityHandler(CommunityHandler):
@@ -1507,26 +1925,25 @@ class PostgresGraphHandler(GraphHandler):
 
         return True
 
-    async def remove_entities(
-        self, id: UUID, entity_ids: list[UUID], delete_data: bool = True
-    ) -> bool:
-        """
-        Remove entities from the graph.
-        """
-        QUERY = f"""
-            UPDATE {self._get_table_name("entity")}
-            SET graph_ids = array_remove(graph_ids, $1)
-            WHERE id = ANY($2)
-        """
-        await self.connection_manager.execute_query(QUERY, [id, entity_ids])
+    # async def remove_entities(
+    #     self, id: UUID, entity_ids: list[UUID]
+    # ) -> bool:
+    #     """
+    #     Remove entities from the graph.
+    #     """
+    #     QUERY = f"""
+    #         UPDATE {self._get_table_name("graph_entity")}
+    #         SET graph_ids = array_remove(graph_ids, $1)
+    #         WHERE id = ANY($2)
+    #     """
+    #     await self.connection_manager.execute_query(QUERY, [id, entity_ids])
 
-        if delete_data:
-            QUERY = f"""
-                DELETE FROM {self._get_table_name("collection_entity")} WHERE id = ANY($1)
-            """
-            await self.connection_manager.execute_query(QUERY, [entity_ids])
+    #     # QUERY = f"""
+    #     #     DELETE FROM {self._get_table_name("collection_entity")} WHERE id = ANY($1)
+    #     # """
+    #     # await self.connection_manager.execute_query(QUERY, [entity_ids])
 
-        return True
+    #     return True
 
     async def add_relationships_v3(
         self, id: UUID, relationship_ids: list[UUID], copy_data: bool = True
@@ -1947,13 +2364,21 @@ class PostgresGraphHandler(GraphHandler):
 
         entities = []
         for row in rows:
-            # Parse JSON metadata if it's a string
-            if isinstance(row["metadata"], str):
+            # # Parse JSON metadata if it's a string
+            # if isinstance(row["metadata"], str):
+            #     try:
+            #         row["metadata"] = json.loads(row["metadata"])
+            #     except json.JSONDecodeError:
+            #         pass
+            # entities.append(Entity(**row))
+            entity_dict = dict(row)
+            if isinstance(entity_dict["metadata"], str):
                 try:
-                    row["metadata"] = json.loads(row["metadata"])
+                    entity_dict["metadata"] = json.loads(entity_dict["metadata"])
                 except json.JSONDecodeError:
                     pass
-            entities.append(Entity(**row))
+            entities.append(Entity(**entity_dict))
+
 
         return entities, count
 
@@ -2219,12 +2644,19 @@ class PostgresGraphHandler(GraphHandler):
 
         relationships = []
         for row in rows:
-            if include_metadata and isinstance(row["metadata"], str):
+            # if include_metadata and isinstance(row["metadata"], str):
+            #     try:
+            #         row["metadata"] = json.loads(row["metadata"])
+            #     except json.JSONDecodeError:
+            #         pass
+            # relationships.append(Relationship(**row))
+            relationship_dict = dict(row)
+            if isinstance(relationship_dict["metadata"], str):
                 try:
-                    row["metadata"] = json.loads(row["metadata"])
+                    relationship_dict["metadata"] = json.loads(relationship_dict["metadata"])
                 except json.JSONDecodeError:
                     pass
-            relationships.append(Relationship(**row))
+            relationships.append(Relationship(**relationship_dict))
 
         return relationships, count
 

@@ -42,7 +42,7 @@ class Entity(R2RSerializable):
     id: Optional[UUID | int] = None
     category: Optional[str] = None
     description: Optional[str] = None
-    parent_id: UUID  # graph_id | document_id
+    parent_id: Optional[UUID] = None  # graph_id | document_id
     # document_ids: list[UUID] = []
     description_embedding: Optional[list[float] | str] = None
 
@@ -79,7 +79,7 @@ class Relationship(R2RSerializable):
     object_id: Optional[UUID] = None
     weight: float | None = 1.0
     chunk_ids: list[UUID] = []
-    parent_id: UUID
+    parent_id:  Optional[UUID] = None
 
     metadata: Optional[dict[str, Any] | str] = None
 

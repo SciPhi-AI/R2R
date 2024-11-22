@@ -576,18 +576,65 @@ class GraphRouter(BaseRouterV3):
         @self.router.post("/graphs/{id}/entities")
         @self.base_endpoint
         async def create_entity(
-            id: UUID = Path(
-                ..., description="The ID of the graph to add the entity to."
-            ),
-            entity_id: UUID = Path(
-                ..., description="The ID of the entity to add to the graph."
-            ),
+            id: UUID = Path(..., description="The ID of the graph to add the entity to."),
+            entity: Entity = Body(..., description="The entity to create"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedEntityResponse:
+        ): # -> WrappedEntityResponse:
             """Creates a new entity in the graph."""
-            return await self.services["kg"].add_entity_to_graph(
-                id, entity_id, auth_user
+            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+                raise R2RException(
+                    "The currently authenticated user does not have access to this graph.",
+                    403,
+                )
+            
+            # Set parent ID to graph ID
+            entity.parent_id = id
+            
+            # Create entity
+            created_ids = await self.providers.database.graph_handler.entities.create(
+                entities=[entity],
+                store_type="graph"
             )
+            
+            print('created_ids = ', created_ids)
+            if not created_ids:
+                raise R2RException("Failed to create entity", 500)
+                
+            result = await self.providers.database.graph_handler.entities.get(
+                parent_id=id,
+                store_type="graph",
+                entity_ids=[created_ids[0]]
+            )
+            print("result = ", result)
+            if len(result) == 0:
+                raise R2RException("Failed to create entity", 500)
+            return result[0]
+        
+        @self.router.post("/graphs/{id}/relationships")
+        @self.base_endpoint 
+        async def create_relationship(
+            id: UUID = Path(..., description="The ID of the graph to add the relationship to."),
+            relationship: Relationship = Body(..., description="The relationship to create"),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedRelationshipResponse:
+            """Creates a new relationship in the graph."""
+            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+                raise R2RException(
+                    "The currently authenticated user does not have access to this graph.",
+                    403,
+                )
+
+            # Set parent ID to graph ID
+            relationship.parent_id = id
+            
+            # Create relationship
+            await self.providers.database.graph_handler.relationships.create(
+                relationships=[relationship],
+                store_type="graph"
+            )
+            
+            return relationship
+
 
         @self.router.get("/graphs/{id}/entities/{entity_id}")
         @self.base_endpoint
@@ -602,9 +649,12 @@ class GraphRouter(BaseRouterV3):
         ) -> WrappedEntityResponse:
             """Retrieves a specific entity by its ID."""
             # Note: The original was missing implementation, so assuming similar pattern to relationships
-            return await self.services["kg"].get_graph_entity(
-                id, entity_id, auth_user
+            result = await self.providers.database.graph_handler.entities.get(
+                id, "graph", entity_ids=[entity_id]
             )
+            if len(result) == 0 or len(result[0]) == 0:
+                raise R2RException("Entity not found", 404)
+            return result[0][0]
 
         @self.router.post("/graphs/{id}/entities/{entity_id}")
         @self.base_endpoint
@@ -621,9 +671,14 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntityResponse:
             """Updates an existing entity in the graph."""
-            return await self.services["kg"].update_graph_entity(
-                id, entity_id, entity, auth_user
+            entity.id = entity_id
+            entity.parent_id = entity.parent_id or id # Set parent ID to graph ID
+            results = await self.providers.database.graph_handler.entities.update(
+                [entity], store_type="graph"
+                #id, entity_id, entity, auth_user
             )
+            print("results = ", results)
+            return entity
 
         @self.router.delete("/graphs/{id}/entities/{entity_id}")
         @self.base_endpoint
@@ -639,12 +694,11 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedBooleanResponse:
             """Removes an entity from the graph."""
-            return await self.services[
-                "kg"
-            ].documents.graph_handler.entities.remove_from_graph(
-                id, entity_id, auth_user
+            await self.providers.database.graph_handler.entities.delete(
+                id, [entity_id], "graph"
             )
-
+            return {"success": True}
+        
         @self.router.get("/graphs/{id}/relationships")
         @self.base_endpoint
         async def get_relationships(
@@ -711,10 +765,8 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipResponse:
             """Creates a new relationship in the graph."""
-            return await self.services[
-                "kg"
-            ].documents.graph_handler.relationships.add_to_graph(
-                id, relationship_ids, auth_user
+            return await self.providers.database.graph_handler.relationships.add_to_graph(
+                id, relationship_ids, "graph"
             )
 
         @self.router.get("/graphs/{id}/relationships/{relationship_id}")
@@ -730,9 +782,12 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipResponse:
             """Retrieves a specific relationship by its ID."""
-            return await self.services["kg"].get_graph_relationship(
-                id, relationship_id, auth_user
+            results = await self.providers.database.graph_handler.relationships.get(
+                id, "graph", relationship_ids=[relationship_id]
             )
+            if len(results) == 0 or len(results[0]) == 0:
+                raise R2RException("Relationship not found", 404)
+            return results[0][0]
 
         @self.router.post("/graphs/{id}/relationships/{relationship_id}")
         @self.base_endpoint
@@ -748,10 +803,12 @@ class GraphRouter(BaseRouterV3):
                 ..., description="The updated relationship object."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedRelationshipResponse:
+        ): #  -> WrappedRelationshipResponse:
             """Updates an existing relationship in the graph."""
-            return await self.services["kg"].update_graph_relationship(
-                id, relationship_id, relationship, auth_user
+            relationship.id = relationship_id
+            relationship.parent_id = relationship.parent_id or id
+            return await self.providers.database.graph_handler.relationships.update(
+                [relationship], "graph"
             )
 
         @self.router.delete("/graphs/{id}/relationships/{relationship_id}")
@@ -768,11 +825,15 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedBooleanResponse:
             """Removes a relationship from the graph."""
-            return await self.services[
-                "kg"
-            ].documents.graph_handler.relationships.remove_from_graph(
-                id, relationship_id, auth_user
+            # return await self.services[
+            #     "kg"
+            # ].documents.graph_handler.relationships.remove_from_graph(
+            #     id, relationship_id, auth_user
+            # )
+            await self.providers.database.graph_handler.relationships.delete(
+                id, [relationship_id], "graph"
             )
+            return {"success": True}
 
         @self.router.post(
             "/graphs/{id}/communities/build",
