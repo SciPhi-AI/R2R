@@ -745,7 +745,7 @@ class PostgresUserHandler(UserHandler):
             graph_ids = result["graph_ids"]
 
         # check if the user created the entity
-        if user_id == user_id:
+        if user_id == auth_user.id:
             return True
 
         # check if the user has access to the graph
@@ -798,7 +798,7 @@ class PostgresUserHandler(UserHandler):
                 return True
 
         # check if the user created the relationship
-        if user_id == user_id:
+        if user_id == auth_user.id:
             return True
 
         # check if the user has access to all the documents that created this relationship

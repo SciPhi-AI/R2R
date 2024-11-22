@@ -429,54 +429,6 @@ class PostgresEntityHandler(EntityHandler):
                 detail=f"An error occurred while updating the entity: {e}",
             )
 
-    async def _check_permissions(
-        self,
-        id: UUID,
-        user_id: UUID,
-    ) -> bool:
-
-        # check if the user created the entity
-        QUERY = f"""
-            SELECT user_id, graph_ids FROM {self._get_table_name("entity")} WHERE id = $1
-        """
-        user_id, document_ids, graph_ids = (
-            await self.connection_manager.fetch_query(QUERY, [id])
-        )
-
-        if user_id == user_id:
-            return True
-
-        # check if the user has access to the graph, so somoene shared the graph with the user
-        if graph_ids:
-            QUERY = f"""
-                SELECT user_ids from {self._get_table_name("graph")} WHERE id = ANY($1)
-            """
-            user_ids = await self.connection_manager.fetch_query(
-                QUERY, graph_ids
-            )
-            if user_id in user_ids:
-                return True
-
-        # check if the user has access all the documents that created this entity
-        # Can be made more efficient by using a single query
-        has_access_to_all_documents = True
-        for document_id in document_ids:
-            QUERY = f"""
-                SELECT c.user_ids
-                FROM {self._get_table_name("document_info")} d
-                JOIN {self._get_table_name("collection")} c ON c.id = ANY(d.collection_ids)
-                WHERE d.document_id = $1 AND $2 = ANY(c.user_ids)
-            """
-            has_access = await self.connection_manager.fetch_query(
-                QUERY, [document_id, user_id]
-            )
-
-            if not has_access:
-                has_access_to_all_documents = False
-                break
-
-        return has_access_to_all_documents
-
     async def delete(self, entity_id: UUID) -> None:
         query = f"""
             DELETE FROM {self._get_table_name("entity")} WHERE id = $1
