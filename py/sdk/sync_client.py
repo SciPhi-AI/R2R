@@ -78,11 +78,14 @@ class R2RClient(R2RAsyncClient):
         sdk_objects = [
             self.chunks,
             self.collections,
+            self.communities,
             self.conversations,
             self.documents,
+            self.entities,
             self.graphs,
             self.indices,
             self.prompts,
+            self.relationships,
             self.retrieval,
             self.users,
         ]
