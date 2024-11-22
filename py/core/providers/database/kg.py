@@ -499,7 +499,7 @@ class PostgresEntityHandler(EntityHandler):
 
         query = f"""
             SELECT
-                id, name, category, description, user_id, last_modified_by, created_at, updated_at, attributes,
+                id, name, category, description, user_id, document_id, document_ids, graph_ids, last_modified_by, created_at, updated_at, attributes,
                 COUNT(*) OVER() as total_entries
             FROM {self._get_table_name("entity")}
             {where_clause}
@@ -523,6 +523,9 @@ class PostgresEntityHandler(EntityHandler):
                     category=row["category"],
                     description=row["description"],
                     user_id=row["user_id"],
+                    document_id=row["document_id"],
+                    document_ids=row["document_ids"],
+                    graph_ids=row["graph_ids"],
                     last_modified_by=row["last_modified_by"],
                     created_at=row["created_at"],
                     updated_at=row["updated_at"],
@@ -545,7 +548,7 @@ class PostgresEntityHandler(EntityHandler):
 
         QUERY = f"""
             SELECT
-                id, name, category, description, user_id, last_modified_by, created_at, updated_at, attributes,
+                id, name, category, description, user_id, document_id, document_ids, graph_ids, last_modified_by, created_at, updated_at, attributes,
                 COUNT(*) OVER() as total_entries
             FROM {self._get_table_name("entity")}
             WHERE document_id = $1
@@ -564,6 +567,9 @@ class PostgresEntityHandler(EntityHandler):
                     category=row["category"],
                     description=row["description"],
                     user_id=row["user_id"],
+                    document_id=row["document_id"],
+                    document_ids=row["document_ids"],
+                    graph_ids=row["graph_ids"],
                     last_modified_by=row["last_modified_by"],
                     created_at=row["created_at"],
                     updated_at=row["updated_at"],
@@ -587,7 +593,7 @@ class PostgresEntityHandler(EntityHandler):
 
         QUERY = f"""
             SELECT
-                id, name, category, description, user_id, last_modified_by, created_at, updated_at, attributes,
+                id, name, category, description, user_id, document_id, document_ids, graph_ids, last_modified_by, created_at, updated_at, attributes,
                 COUNT(*) OVER() as total_entries
             FROM {self._get_table_name("entity")}
             WHERE $1 = ANY(graph_ids)
@@ -607,6 +613,9 @@ class PostgresEntityHandler(EntityHandler):
                     category=row["category"],
                     description=row["description"],
                     user_id=row["user_id"],
+                    document_id=row["document_id"],
+                    document_ids=row["document_ids"],
+                    graph_ids=row["graph_ids"],
                     last_modified_by=row["last_modified_by"],
                     created_at=row["created_at"],
                     updated_at=row["updated_at"],
