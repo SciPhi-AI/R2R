@@ -2106,8 +2106,9 @@ class PostgresGraphHandler(GraphHandler):
             )[0]["count"]
 
             if not entity_count:
-                raise ValueError(
-                    "No entities found in the graph. Please run `create-graph` first."
+                raise HTTPException(
+                    status_code=404,
+                    detail="No entities found in the graph. Please add entities first.",
                 )
 
             relationship_count = (
@@ -2116,6 +2117,12 @@ class PostgresGraphHandler(GraphHandler):
                     [graph_id],
                 )
             )[0]["count"]
+
+        if not relationship_count:
+            raise HTTPException(
+                status_code=404,
+                detail="No relationships found in the graph. Please add relationships first.",
+            )
 
         # Calculate estimates
         estimated_llm_calls = (entity_count // 10, entity_count // 5)

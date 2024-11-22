@@ -100,8 +100,14 @@ class CommunitiesRouter(BaseRouterV3):
             - Community detection algorithm parameters
             - Summary generation prompt
         """
-        if not auth_user.is_superuser:
-            raise R2RException("Only superusers can create communities", 403)
+
+        if not await self.services["management"].has_graph_access(
+            auth_user, graph_id
+        ):
+            raise R2RException(
+                "You do not have permission to create communities in this graph.",
+                403,
+            )
 
         # Apply runtime settings overrides
         server_kg_enrichment_settings = (
@@ -162,7 +168,7 @@ class CommunitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.build(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            result = client.communities.build(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
                             """
                         ),
                     },
@@ -221,7 +227,7 @@ class CommunitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.create(
+                            result = client.communities.create(
                                 id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
                                 name="My Community",
                                 summary="A summary of the community",
@@ -240,7 +246,7 @@ class CommunitiesRouter(BaseRouterV3):
                             const { r2rClient } = require("r2r-js");
                             const client = new r2rClient("http://localhost:7272");
                             function main() {
-                                const response = client.graphs.communities.create(
+                                const response = client.communities.create(
                                     id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
                                     name="My Community",
                                     summary="A summary of the community",
@@ -334,7 +340,7 @@ class CommunitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.list(
+                            result = client.communities.list(
                                 id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
                             )
                             """
@@ -347,7 +353,7 @@ class CommunitiesRouter(BaseRouterV3):
                             const { r2rClient } = require("r2r-js");
                             const client = new r2rClient("http://localhost:7272");
                             function main() {
-                                const response = client.graphs.communities.list(
+                                const response = client.communities.list(
                                     id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
                                 );
                             }
@@ -362,7 +368,7 @@ class CommunitiesRouter(BaseRouterV3):
                             const { r2rClient } = require("r2r-js");
                             const client = new r2rClient("http://localhost:7272");
                             function main() {
-                                const response = client.graphs.communities.get(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1");
+                                const response = client.communities.get(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1");
                             }
                             main();
                             """
@@ -435,7 +441,7 @@ class CommunitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.retrieve(
+                            result = client.communities.retrieve(
                                 id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
                                 community_id="123e4567-e89b-12d3-a456-426614174000"
                             )
@@ -449,7 +455,7 @@ class CommunitiesRouter(BaseRouterV3):
                             const { r2rClient } = require("r2r-js");
                             const client = new r2rClient("http://localhost:7272");
                             function main() {
-                                const response = client.graphs.communities.retrieve(
+                                const response = client.communities.retrieve(
                                     id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
                                     community_id="123e4567-e89b-12d3-a456-426614174000"
                                 );
@@ -512,7 +518,7 @@ class CommunitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.delete(
+                            result = client.communities.delete(
                                 id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
                                 community_id="123e4567-e89b-12d3-a456-426614174000"
                             )
@@ -526,7 +532,7 @@ class CommunitiesRouter(BaseRouterV3):
                             const { r2rClient } = require("r2r-js");
                             const client = new r2rClient("http://localhost:7272");
                             function main() {
-                                const response = client.graphs.communities.delete(
+                                const response = client.communities.delete(
                                     id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
                                     community_id="123e4567-e89b-12d3-a456-426614174000"
                                 );
@@ -584,7 +590,7 @@ class CommunitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.update(
+                            result = client.communities.update(
                                 id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 community_id="123e4567-e89b-12d3-a456-426614174000",
                                 name="My Community",
@@ -603,7 +609,7 @@ class CommunitiesRouter(BaseRouterV3):
                             const { r2rClient } = require("r2r-js");
                             const client = new r2rClient("http://localhost:7272");
                             function main() {
-                                const response = client.graphs.communities.update(
+                                const response = client.communities.update(
                                     id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                     community_id="123e4567-e89b-12d3-a456-426614174000",
                                     name="My Community",

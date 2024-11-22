@@ -18,11 +18,14 @@ from .v2 import (
 from .v3 import (
     ChunksSDK,
     CollectionsSDK,
+    CommunitiesSDK,
     ConversationsSDK,
     DocumentsSDK,
+    EntitiesSDK,
     GraphsSDK,
     IndicesSDK,
     PromptsSDK,
+    RelationshipsSDK,
     RetrievalSDK,
     SystemSDK,
     UsersSDK,
@@ -53,11 +56,14 @@ class R2RAsyncClient(
         self.client = custom_client or httpx.AsyncClient(timeout=timeout)
         self.chunks = ChunksSDK(self)
         self.collections = CollectionsSDK(self)
+        self.communities = CommunitiesSDK(self)
         self.conversations = ConversationsSDK(self)
         self.documents = DocumentsSDK(self)
+        self.entities = EntitiesSDK(self)
         self.graphs = GraphsSDK(self)
         self.indices = IndicesSDK(self)
         self.prompts = PromptsSDK(self)
+        self.relationships = RelationshipsSDK(self)
         self.retrieval = RetrievalSDK(self)
         self.system = SystemSDK(self)
         self.users = UsersSDK(self)
