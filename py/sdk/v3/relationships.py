@@ -46,7 +46,7 @@ class RelationshipsSDK:
         if predicate:
             data["predicate"] = predicate
         if object:
-            data["description"] = description
+            data["object"] = object
         if description:
             data["description"] = description
         if weight:
