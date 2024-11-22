@@ -57,7 +57,6 @@ class EntitiesRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        # FIXME: This is wrong
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
@@ -66,7 +65,31 @@ class EntitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.entities.create([entity1, entity2])
+                            result = client.entities.create(
+                                name="entity1",
+                                description="description1",
+                                attributes={"attr1": "value1"},
+                                category="category1",
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.entities.create({
+                                    name: "entity1",
+                                    description: "description1",
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -90,7 +113,7 @@ class EntitiesRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntityResponse:
             """
-            Creates new entities.
+            Creates a new entity in the database.
             """
 
             return await self.services["kg"].create_entities(
@@ -115,7 +138,7 @@ class EntitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.graphs.entities.list(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
+                            result = client.entities.list()
                             """
                         ),
                     },
@@ -142,7 +165,7 @@ class EntitiesRouter(BaseRouterV3):
         async def list_entities(
             ids: list[str] = Query(
                 [],
-                description="A list of graph IDs to retrieve. If not provided, all graphs will be returned.",
+                description="A list of entity IDs to retrieve. If not provided, all entities will be returned.",
             ),
             offset: int = Query(
                 0,
@@ -198,7 +221,9 @@ class EntitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.entities.get(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            result = client.entities.retrieve(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
                             """
                         ),
                     },
@@ -254,7 +279,9 @@ class EntitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.entities.delete(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            result = client.entities.delete(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
                             """
                         ),
                     },
@@ -315,7 +342,10 @@ class EntitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.entities.update(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity=entity)
+                            result = client.entities.update(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                entity=entity,
+                            )
                             """
                         ),
                     },

@@ -181,7 +181,7 @@ class GraphRouter(BaseRouterV3):
                             const client = new r2rClient("http://localhost:7272");
 
                             function main() {
-                                const response = await client.documents.create({
+                                const response = await client.graphs.create({
                                     name: "New Graph",
                                     description: "New Description",
                                 });
@@ -727,9 +727,9 @@ class GraphRouter(BaseRouterV3):
                             from r2r import R2RClient
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
-                            result = client.graphs.add_entity(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity_ids=[
-                                "123e4567-e89b-12d3-a456-426614174000",
-                                "123e4567-e89b-12d3-a456-426614174001",
+                            result = client.graphs.add_entity(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                entity_id="123e4567-e89b-12d3-a456-426614174000",
                             ])
                             """
                         ),
@@ -774,8 +774,6 @@ class GraphRouter(BaseRouterV3):
                 graph_id=id,
                 entity_id=entity_id,
             )
-
-            return GenericBooleanResponse(success=True)
 
         @self.router.delete(
             "/graphs/{id}/entities/{entity_id}",
@@ -839,10 +837,8 @@ class GraphRouter(BaseRouterV3):
             )
             return GenericBooleanResponse(success=True)  # type: ignore
 
-            return GenericBooleanResponse(success=True)
-
         @self.router.post(
-            "/graphs/{id}/relationships",
+            "/graphs/{id}/relationships/{relationship_id}",
             summary="Add relationships to the graph",
             openapi_extra={
                 "x-codeSamples": [
@@ -853,10 +849,29 @@ class GraphRouter(BaseRouterV3):
                             from r2r import R2RClient
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
-                            result = client.graphs.add_relationship(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_ids=[
-                                "123e4567-e89b-12d3-a456-426614174000",
-                                "123e4567-e89b-12d3-a456-426614174001",
-                            ])
+                            result = client.graphs.add_relationship(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                relationship_id="123e4567-e89b-12d3-a456-426614174000"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.addRelationship({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    relationshipId: "123e4567-e89b-12d3-a456-426614174000",
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -869,22 +884,20 @@ class GraphRouter(BaseRouterV3):
                 ...,
                 description="The ID of the graph to add the relationship to.",
             ),
-            relationship_ids: list[UUID] = Body(
+            relationship_id: UUID = Path(
                 ...,
-                description="The IDs of the relationships to add to the graph.",
+                description="The ID of the relationship to add to the graph.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedGenericMessageResponse:
             """
-            Adds a list of relationships to the graph by their IDs.
+            Adds a relationship to the graph by its ID.
             """
-            await self.services[
+            return await self.services[
                 "kg"
-            ].documents.graph_handler.relationships.add_to_graph(
-                id, relationship_ids, auth_user
+            ].add_relationship_to_graph(
+                graph_id=id, relationship_id=relationship_id
             )
-
-            return GenericBooleanResponse(success=True)
 
         @self.router.delete(
             "/graphs/{id}/relationships/{relationship_id}",
@@ -898,10 +911,29 @@ class GraphRouter(BaseRouterV3):
                             from r2r import R2RClient
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
-                            result = client.graphs.remove_relationships(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship_ids=[
-                                "123e4567-e89b-12d3-a456-426614174000",
-                                "123e4567-e89b-12d3-a456-426614174001",
-                            ])
+                            result = client.graphs.remove_relationship(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                relationship_id="123e4567-e89b-12d3-a456-426614174000"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.removeRelationship({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    relationshipId: "123e4567-e89b-12d3-a456-426614174000",
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -919,14 +951,14 @@ class GraphRouter(BaseRouterV3):
                 description="The ID of the relationship to remove from the graph.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedBooleanResponse:
             """
             Removes a relationship from the graph by its ID.
             """
             await self.services[
                 "kg"
-            ].documents.graph_handler.relationships.remove_from_graph(
-                id, relationship_id, auth_user
+            ].remove_relationship_from_graph(
+                graph_id=id, relationship_id=relationship_id
             )
 
             return GenericBooleanResponse(success=True)
@@ -944,7 +976,29 @@ class GraphRouter(BaseRouterV3):
                             from r2r import R2RClient
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
-                            result = client.graphs.add_document_to_graph(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", document_id="123e4567-e89b-12d3-a456-426614174000")
+                            result = client.graphs.add_document(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                document_id="123e4567-e89b-12d3-a456-426614174000"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.addDocument({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    documentId: "123e4567-e89b-12d3-a456-426614174000",
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -1008,8 +1062,29 @@ class GraphRouter(BaseRouterV3):
                             from r2r import R2RClient
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
-                            result = client.graphs.remove_document_from_graph(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", document_id="123e4567-e89b-12d3-a456-426614174000")
-                            ])
+                            result = client.graphs.remove_document(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                document_id="123e4567-e89b-12d3-a456-426614174000"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.removeDocument({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    documentId: "123e4567-e89b-12d3-a456-426614174000",
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -1027,7 +1102,7 @@ class GraphRouter(BaseRouterV3):
                 description="The ID of the document to remove from the graph.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedBooleanResponse:
             """
             Removes a document from the graph by its ID.
 
@@ -1058,9 +1133,6 @@ class GraphRouter(BaseRouterV3):
 
             return GenericBooleanResponse(success=True)
 
-        # Add and remove collections from graph
-
-        ### Add and remove document from graph
         @self.router.post(
             "/graphs/{id}/collections/{collection_id}",
             summary="Add a collection to the graph",
@@ -1073,7 +1145,29 @@ class GraphRouter(BaseRouterV3):
                             from r2r import R2RClient
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
-                            result = client.graphs.add_document_to_graph(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", document_id="123e4567-e89b-12d3-a456-426614174000")
+                            result = client.graphs.add_collection(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                collection_id="123e4567-e89b-12d3-a456-426614174000"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.addCollection({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    collectionId: "123e4567-e89b-12d3-a456-426614174000",
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -1091,7 +1185,7 @@ class GraphRouter(BaseRouterV3):
                 description="The ID of the collection to add to the graph.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedGenericMessageResponse:
             """
             Adds a collection to the graph by its ID.
 
@@ -1109,12 +1203,11 @@ class GraphRouter(BaseRouterV3):
                     status_code=403,
                 )
 
-            await self.services["kg"].add_collection_to_graph(
+            return await self.services["kg"].add_collection_to_graph(
                 graph_id=id,
                 collection_id=collection_id,
             )
 
-            return GenericBooleanResponse(success=True)
 
         @self.router.delete(
             "/graphs/{id}/collections/{collection_id}",
@@ -1128,8 +1221,29 @@ class GraphRouter(BaseRouterV3):
                             from r2r import R2RClient
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
-                            result = client.graphs.remove_collection_from_graph(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", collection_id="123e4567-e89b-12d3-a456-426614174000")
-                            ])
+                            result = client.graphs.remove_collection(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                collection_id="123e4567-e89b-12d3-a456-426614174000"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.removeCollection({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    collectionId: "123e4567-e89b-12d3-a456-426614174000",
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -1147,7 +1261,7 @@ class GraphRouter(BaseRouterV3):
                 description="The ID of the collection to remove from the graph.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedBooleanResponse:
             """
             Removes a document from the graph by its ID.
 
