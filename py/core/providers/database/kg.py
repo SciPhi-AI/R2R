@@ -1,59 +1,54 @@
 import asyncio
-import asyncpg
+import datetime
 import json
 import logging
 import time
-
+from enum import Enum
 from typing import Any, AsyncGenerator, Optional, Tuple
-from asyncpg.exceptions import UniqueViolationError, UndefinedTableError
 from uuid import UUID, uuid4
 
-
+import asyncpg
+from asyncpg.exceptions import UndefinedTableError, UniqueViolationError
 from fastapi import HTTPException
 
 from core.base.abstractions import (
     Community,
-    Entity,
-    KGExtractionStatus,
-    Graph,
-    R2RException,
-    Relationship,
-)
-from core.base.providers.database import (
-    GraphHandler,
-    EntityHandler,
-    RelationshipHandler,
-    CommunityHandler,
-    CommunityInfoHandler,
-)
-from core.base.abstractions import (
     CommunityInfo,
     DataLevel,
+    Entity,
+    Graph,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEnrichmentStatus,
     KGEntityDeduplicationSettings,
+    KGExtractionStatus,
+    R2RException,
+    Relationship,
     VectorQuantizationType,
 )
 from core.base.api.models import GraphResponse
-
-import datetime
-import json
-
+from core.base.providers.database import (
+    CommunityHandler,
+    CommunityInfoHandler,
+    EntityHandler,
+    GraphHandler,
+    RelationshipHandler,
+)
 from core.base.utils import (
     _decorate_vector_type,
-    llm_cost_per_million_tokens,
     _get_str_estimation_output,
+    llm_cost_per_million_tokens,
 )
 
 from .base import PostgresConnectionManager
 from .collection import PostgresCollectionHandler
 
-from enum import Enum
 
 class StoreType(str, Enum):
     GRAPH = "graph"
     DOCUMENT = "document"
+
+
 logger = logging.getLogger()
 
 
@@ -79,14 +74,14 @@ class PostgresEntityHandler(EntityHandler):
         if store_type == StoreType.GRAPH:
             return f"""
                 CONSTRAINT fk_graph
-                    FOREIGN KEY(parent_id) 
+                    FOREIGN KEY(parent_id)
                     REFERENCES {self._get_table_name("graph")}(id)
                     ON DELETE CASCADE
             """
         else:
             return f"""
                 CONSTRAINT fk_document
-                    FOREIGN KEY(parent_id) 
+                    FOREIGN KEY(parent_id)
                     REFERENCES {self._get_table_name("document_info")}(document_id)
                     ON DELETE CASCADE
             """
@@ -115,19 +110,17 @@ class PostgresEntityHandler(EntityHandler):
                     updated_at TIMESTAMPTZ DEFAULT NOW(),
                     {parent_constraint}
                 );
-                CREATE INDEX IF NOT EXISTS {table_name}_name_idx 
+                CREATE INDEX IF NOT EXISTS {table_name}_name_idx
                     ON {self._get_table_name(table_name)} (name);
-                CREATE INDEX IF NOT EXISTS {table_name}_parent_id_idx 
+                CREATE INDEX IF NOT EXISTS {table_name}_parent_id_idx
                     ON {self._get_table_name(table_name)} (parent_id);
-                CREATE INDEX IF NOT EXISTS {table_name}_category_idx 
+                CREATE INDEX IF NOT EXISTS {table_name}_category_idx
                     ON {self._get_table_name(table_name)} (category);
             """
             await self.connection_manager.execute_query(QUERY)
 
     async def create(
-        self,
-        entities: list[Entity],
-        store_type: StoreType
+        self, entities: list[Entity], store_type: StoreType
     ) -> list[UUID]:
         """Create multiple entities in the specified store."""
         table_name = self._get_entity_table_for_store(store_type)
@@ -153,12 +146,12 @@ class PostgresEntityHandler(EntityHandler):
                 entity.parent_id,
                 description_embedding,
                 entity.chunk_ids,
-                json.dumps(metadata) if metadata else None
+                json.dumps(metadata) if metadata else None,
             )
             values.append(value)
 
         QUERY = f"""
-            INSERT INTO {self._get_table_name(table_name)} 
+            INSERT INTO {self._get_table_name(table_name)}
             (name, category, description, parent_id, description_embedding, chunk_ids, metadata)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING id
@@ -178,11 +171,11 @@ class PostgresEntityHandler(EntityHandler):
         limit: int = 100,
         entity_ids: Optional[list[UUID]] = None,
         entity_names: Optional[list[str]] = None,
-        include_embeddings: bool = False
+        include_embeddings: bool = False,
     ):
         """Retrieve entities from the specified store."""
         table_name = self._get_entity_table_for_store(store_type)
-        
+
         conditions = ["parent_id = $1"]
         params = [parent_id]
         param_index = 2
@@ -198,7 +191,7 @@ class PostgresEntityHandler(EntityHandler):
             param_index += 1
 
         select_fields = """
-            id, name, category, description, parent_id, 
+            id, name, category, description, parent_id,
             chunk_ids, metadata
         """
         if include_embeddings:
@@ -206,16 +199,20 @@ class PostgresEntityHandler(EntityHandler):
 
         # Count query - uses the same conditions but without offset/limit
         COUNT_QUERY = f"""
-            SELECT COUNT(*) 
+            SELECT COUNT(*)
             FROM {self._get_table_name(table_name)}
             WHERE {' AND '.join(conditions)}
         """
-        
+
         # Use only the parameters needed for the WHERE conditions
-        count_params = params[:param_index-1]  # Exclude offset/limit params
+        count_params = params[: param_index - 1]  # Exclude offset/limit params
         print("COUNT_QUERY = ", COUNT_QUERY)
-        print('count_params = ', count_params)
-        count = (await self.connection_manager.fetch_query(COUNT_QUERY, count_params))[0]["count"]
+        print("count_params = ", count_params)
+        count = (
+            await self.connection_manager.fetch_query(
+                COUNT_QUERY, count_params
+            )
+        )[0]["count"]
 
         # Main query for fetching entities
         QUERY = f"""
@@ -232,7 +229,6 @@ class PostgresEntityHandler(EntityHandler):
             QUERY += f" LIMIT ${param_index}"
             params.append(limit)
 
-
         rows = await self.connection_manager.fetch_query(QUERY, params)
 
         entities = []
@@ -247,9 +243,7 @@ class PostgresEntityHandler(EntityHandler):
         return entities, count
 
     async def update(
-        self,
-        entities: list[tuple[UUID, Entity]],
-        store_type: StoreType
+        self, entities: list[tuple[UUID, Entity]], store_type: StoreType
     ) -> list[UUID]:
         """Update multiple entities in the specified store."""
         table_name = self._get_entity_table_for_store(store_type)
@@ -257,7 +251,7 @@ class PostgresEntityHandler(EntityHandler):
 
         QUERY = f"""
             UPDATE {self._get_table_name(table_name)}
-            SET 
+            SET
                 name = $1,
                 category = $2,
                 description = $3,
@@ -289,30 +283,29 @@ class PostgresEntityHandler(EntityHandler):
                 entity.chunk_ids,
                 json.dumps(metadata) if metadata else None,
                 entity_id,
-                entity.parent_id
+                entity.parent_id,
             ]
 
-            result = await self.connection_manager.fetchrow_query(QUERY, params)
+            result = await self.connection_manager.fetchrow_query(
+                QUERY, params
+            )
 
             if not result:
                 raise R2RException(
-                    f"Entity {entity_id} not found in {store_type.value} store or no permission to update", 
-                    404
+                    f"Entity {entity_id} not found in {store_type.value} store or no permission to update",
+                    404,
                 )
-            
+
             results.append(result["id"])
 
         return results
 
     async def delete(
-        self,
-        parent_id: UUID,
-        entity_ids: list[UUID],
-        store_type: StoreType
+        self, parent_id: UUID, entity_ids: list[UUID], store_type: StoreType
     ) -> list[UUID]:
         """Delete multiple entities from the specified store."""
         table_name = self._get_entity_table_for_store(store_type)
-        
+
         QUERY = f"""
             DELETE FROM {self._get_table_name(table_name)}
             WHERE id = ANY($1) AND parent_id = $2
@@ -322,14 +315,14 @@ class PostgresEntityHandler(EntityHandler):
         results = await self.connection_manager.fetch_query(
             QUERY, [entity_ids, parent_id]
         )
-        
+
         deleted_ids = [row["id"] for row in results]
         if len(deleted_ids) != len(entity_ids):
             raise R2RException(
-                f"Some entities not found in {store_type.value} store or no permission to delete", 
-                404
+                f"Some entities not found in {store_type.value} store or no permission to delete",
+                404,
             )
-            
+
         return deleted_ids
 
     async def batch_get_by_names(
@@ -337,13 +330,13 @@ class PostgresEntityHandler(EntityHandler):
         parent_id: UUID,
         names: list[str],
         store_type: StoreType,
-        include_embeddings: bool = False
+        include_embeddings: bool = False,
     ) -> tuple[list[Entity], int]:
         """Get multiple entities by their names."""
         table_name = self._get_entity_table_for_store(store_type)
 
         select_fields = """
-            id, name, category, description, parent_id, 
+            id, name, category, description, parent_id,
             chunk_ids, metadata
         """
         if include_embeddings:
@@ -355,9 +348,11 @@ class PostgresEntityHandler(EntityHandler):
             WHERE parent_id = $1 AND name = ANY($2)
             ORDER BY created_at
         """
-        
-        rows = await self.connection_manager.fetch_query(QUERY, [parent_id, names])
-        
+
+        rows = await self.connection_manager.fetch_query(
+            QUERY, [parent_id, names]
+        )
+
         entities = []
         for row in rows:
             if isinstance(row["metadata"], str):
@@ -368,6 +363,7 @@ class PostgresEntityHandler(EntityHandler):
             entities.append(Entity(**row))
 
         return entities, len(entities)
+
 
 class PostgresRelationshipHandler(RelationshipHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -389,14 +385,14 @@ class PostgresRelationshipHandler(RelationshipHandler):
         if store_type == StoreType.GRAPH:
             return f"""
                 CONSTRAINT fk_graph
-                    FOREIGN KEY(parent_id) 
+                    FOREIGN KEY(parent_id)
                     REFERENCES {self._get_table_name("graph")}(id)
                     ON DELETE CASCADE
             """
         else:
             return f"""
                 CONSTRAINT fk_document
-                    FOREIGN KEY(parent_id) 
+                    FOREIGN KEY(parent_id)
                     REFERENCES {self._get_table_name("document_info")}(document_id)
                     ON DELETE CASCADE
             """
@@ -424,26 +420,24 @@ class PostgresRelationshipHandler(RelationshipHandler):
                     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     {parent_constraint}
                 );
-                
-                CREATE INDEX IF NOT EXISTS {table_name}_subject_idx 
+
+                CREATE INDEX IF NOT EXISTS {table_name}_subject_idx
                     ON {self._get_table_name(table_name)} (subject);
-                CREATE INDEX IF NOT EXISTS {table_name}_object_idx 
+                CREATE INDEX IF NOT EXISTS {table_name}_object_idx
                     ON {self._get_table_name(table_name)} (object);
-                CREATE INDEX IF NOT EXISTS {table_name}_predicate_idx 
+                CREATE INDEX IF NOT EXISTS {table_name}_predicate_idx
                     ON {self._get_table_name(table_name)} (predicate);
-                CREATE INDEX IF NOT EXISTS {table_name}_parent_id_idx 
+                CREATE INDEX IF NOT EXISTS {table_name}_parent_id_idx
                     ON {self._get_table_name(table_name)} (parent_id);
-                CREATE INDEX IF NOT EXISTS {table_name}_subject_id_idx 
+                CREATE INDEX IF NOT EXISTS {table_name}_subject_id_idx
                     ON {self._get_table_name(table_name)} (subject_id);
-                CREATE INDEX IF NOT EXISTS {table_name}_object_id_idx 
+                CREATE INDEX IF NOT EXISTS {table_name}_object_id_idx
                     ON {self._get_table_name(table_name)} (object_id);
             """
             await self.connection_manager.execute_query(QUERY)
 
     async def create(
-        self,
-        relationships: list[Relationship],
-        store_type: StoreType
+        self, relationships: list[Relationship], store_type: StoreType
     ) -> None:
         """Create new relationships in the specified store."""
         table_name = self._get_relationship_table_for_store(store_type)
@@ -468,17 +462,17 @@ class PostgresRelationshipHandler(RelationshipHandler):
                     rel.weight,
                     rel.chunk_ids,
                     rel.parent_id,
-                    json.dumps(metadata) if metadata else None
+                    json.dumps(metadata) if metadata else None,
                 )
             )
 
         QUERY = f"""
             INSERT INTO {self._get_table_name(table_name)}
-            (subject, predicate, object, description, subject_id, object_id, 
+            (subject, predicate, object, description, subject_id, object_id,
              weight, chunk_ids, parent_id, metadata)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         """
-        
+
         await self.connection_manager.execute_many(QUERY, values)
 
     async def get(
@@ -493,7 +487,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
     ):
         """Get relationships from the specified store."""
         table_name = self._get_relationship_table_for_store(store_type)
-        
+
         conditions = ["parent_id = $1"]
         params = [parent_id]
         param_index = 2
@@ -504,24 +498,27 @@ class PostgresRelationshipHandler(RelationshipHandler):
             param_index += 1
 
             QUERY = f"""
-                SELECT 
+                SELECT
                     id, subject, predicate, object, description,
                     subject_id, object_id, weight, chunk_ids,
                     parent_id, metadata
-                FROM {self._get_table_name(table_name)} 
+                FROM {self._get_table_name(table_name)}
                 WHERE {' AND '.join(conditions)}
             """
-            
-            result = await self.connection_manager.fetchrow_query(QUERY, params)
+
+            result = await self.connection_manager.fetchrow_query(
+                QUERY, params
+            )
             if not result:
                 raise R2RException(
-                    f"Relationship not found in {store_type.value} store", 
-                    404
+                    f"Relationship not found in {store_type.value} store", 404
                 )
             return Relationship(**result)
 
         if entity_names:
-            conditions.append(f"(subject = ANY(${param_index}) OR object = ANY(${param_index}))")
+            conditions.append(
+                f"(subject = ANY(${param_index}) OR object = ANY(${param_index}))"
+            )
             params.append(entity_names)
             param_index += 1
 
@@ -532,17 +529,19 @@ class PostgresRelationshipHandler(RelationshipHandler):
 
         # Get total count using the same conditions but without pagination params
         COUNT_QUERY = f"""
-            SELECT COUNT(*) 
+            SELECT COUNT(*)
             FROM {self._get_table_name(table_name)}
             WHERE {' AND '.join(conditions)}
         """
-        
+
         # Use the params without pagination parameters
-        count = (await self.connection_manager.fetch_query(COUNT_QUERY, params))[0]["count"]
+        count = (
+            await self.connection_manager.fetch_query(COUNT_QUERY, params)
+        )[0]["count"]
 
         # Main query for fetching relationships with pagination
         QUERY = f"""
-            SELECT 
+            SELECT
                 id, subject, predicate, object, description,
                 subject_id, object_id, weight, chunk_ids,
                 parent_id, metadata
@@ -583,7 +582,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
     # ):
     #     """Get relationships from the specified store."""
     #     table_name = self._get_relationship_table_for_store(store_type)
-        
+
     #     conditions = ["parent_id = $1"]
     #     params = [parent_id]
     #     param_index = 2
@@ -594,11 +593,11 @@ class PostgresRelationshipHandler(RelationshipHandler):
     #         param_index += 1
 
     #         QUERY = f"""
-    #             SELECT 
+    #             SELECT
     #                 id, subject, predicate, object, description,
     #                 subject_id, object_id, weight, chunk_ids,
     #                 parent_id, metadata
-    #             FROM {self._get_table_name(table_name)} 
+    #             FROM {self._get_table_name(table_name)}
     #             WHERE {' AND '.join(conditions)}
     #         """
     #         print("QUERY = ", QUERY)
@@ -606,7 +605,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
     #         result = await self.connection_manager.fetchrow_query(QUERY, params)
     #         if not result:
     #             raise R2RException(
-    #                 f"Relationship not found in {store_type.value} store", 
+    #                 f"Relationship not found in {store_type.value} store",
     #                 404
     #             )
     #         return Relationship(**result)
@@ -621,10 +620,9 @@ class PostgresRelationshipHandler(RelationshipHandler):
     #         params.append(relationship_types)
     #         param_index += 1
 
-
     #     # Get total count
     #     COUNT_QUERY = f"""
-    #         SELECT COUNT(*) 
+    #         SELECT COUNT(*)
     #         FROM {self._get_table_name(table_name)}
     #         WHERE {' AND '.join(conditions)}
     #     """
@@ -635,7 +633,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
 
     #     # Get relationships with pagination
     #     QUERY = f"""
-    #         SELECT 
+    #         SELECT
     #             id, subject, predicate, object, description,
     #             subject_id, object_id, weight, chunk_ids,
     #             parent_id, metadata
@@ -655,7 +653,6 @@ class PostgresRelationshipHandler(RelationshipHandler):
 
     #     rows = await self.connection_manager.fetch_query(QUERY, params)
 
-
     #     relationships = []
     #     for row in rows:
     #         if isinstance(row["metadata"], str):
@@ -668,16 +665,14 @@ class PostgresRelationshipHandler(RelationshipHandler):
     #     return relationships, count
 
     async def update(
-        self,
-        relationship: Relationship,
-        store_type: StoreType
+        self, relationship: Relationship, store_type: StoreType
     ) -> UUID:
         """Update a relationship in the specified store."""
         if not relationship.id:
             raise ValueError("Relationship ID is required for update")
 
         table_name = self._get_relationship_table_for_store(store_type)
-        
+
         metadata = relationship.metadata
         if isinstance(metadata, str):
             try:
@@ -687,7 +682,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
 
         QUERY = f"""
             UPDATE {self._get_table_name(table_name)}
-            SET 
+            SET
                 subject = $1,
                 predicate = $2,
                 object = $3,
@@ -701,7 +696,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
             WHERE id = $10 AND parent_id = $11
             RETURNING id
         """
-        
+
         result = await self.connection_manager.fetchrow_query(
             QUERY,
             [
@@ -715,41 +710,38 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 relationship.chunk_ids,
                 json.dumps(metadata) if metadata else None,
                 relationship.id,
-                relationship.parent_id
-            ]
+                relationship.parent_id,
+            ],
         )
-        
+
         if not result:
             raise R2RException(
-                f"Relationship not found in {store_type.value} store or no permission to update", 
-                404
+                f"Relationship not found in {store_type.value} store or no permission to update",
+                404,
             )
-            
+
         return result["id"]
 
     async def delete(
-        self,
-        parent_id: UUID,
-        relationship_id: UUID,
-        store_type: StoreType
+        self, parent_id: UUID, relationship_id: UUID, store_type: StoreType
     ) -> None:
         """Delete a relationship from the specified store."""
         table_name = self._get_relationship_table_for_store(store_type)
-        
+
         QUERY = f"""
             DELETE FROM {self._get_table_name(table_name)}
             WHERE id = $1 AND parent_id = $2
             RETURNING id
         """
-        
+
         result = await self.connection_manager.fetchrow_query(
             QUERY, [relationship_id, parent_id]
         )
-        
+
         if not result:
             raise R2RException(
-                f"Relationship not found in {store_type.value} store or no permission to delete", 
-                404
+                f"Relationship not found in {store_type.value} store or no permission to delete",
+                404,
             )
 
     async def batch_get_by_subject_ids(
@@ -758,39 +750,39 @@ class PostgresRelationshipHandler(RelationshipHandler):
         subject_ids: list[UUID],
         store_type: StoreType,
         offset: int = 0,
-        limit: int = 100
+        limit: int = 100,
     ):
         """Get relationships by subject IDs from the specified store."""
         table_name = self._get_relationship_table_for_store(store_type)
-        
+
         QUERY = f"""
-            SELECT 
+            SELECT
                 id, subject, predicate, object, description,
                 subject_id, object_id, weight, chunk_ids,
                 parent_id, metadata
             FROM {self._get_table_name(table_name)}
-            WHERE parent_id = $1 
+            WHERE parent_id = $1
             AND subject_id = ANY($2)
             ORDER BY created_at
             OFFSET $3
             LIMIT $4
         """
-        
+
         rows = await self.connection_manager.fetch_query(
-            QUERY, 
-            [parent_id, subject_ids, offset, limit]
+            QUERY, [parent_id, subject_ids, offset, limit]
         )
 
         COUNT_QUERY = f"""
-            SELECT COUNT(*) 
+            SELECT COUNT(*)
             FROM {self._get_table_name(table_name)}
-            WHERE parent_id = $1 
+            WHERE parent_id = $1
             AND subject_id = ANY($2)
         """
-        count = (await self.connection_manager.fetch_query(
-            COUNT_QUERY, 
-            [parent_id, subject_ids]
-        ))[0]["count"]
+        count = (
+            await self.connection_manager.fetch_query(
+                COUNT_QUERY, [parent_id, subject_ids]
+            )
+        )[0]["count"]
 
         relationships = []
         for row in rows:
@@ -802,7 +794,8 @@ class PostgresRelationshipHandler(RelationshipHandler):
             relationships.append(Relationship(**row))
 
         return relationships, count
-            
+
+
 class PostgresCommunityHandler(CommunityHandler):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -2478,46 +2471,38 @@ class PostgresGraphHandler(GraphHandler):
         QUERY1 = f"""
             WITH entities_list AS (
                 SELECT DISTINCT name
-                FROM {self._get_table_name("chunk_entity")}
-                WHERE document_id = $1
+                FROM {self._get_table_name("document_entity")}
+                WHERE parent_id = $1
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
             SELECT e.name, e.description, e.category,
                    (SELECT array_agg(DISTINCT x) FROM unnest(e.chunk_ids) x) AS chunk_ids,
-                   e.document_id
-            FROM {self._get_table_name("chunk_entity")} e
+                   e.parent_id
+            FROM {self._get_table_name("document_entity")} e
             JOIN entities_list el ON e.name = el.name
-            GROUP BY e.name, e.description, e.category, e.chunk_ids, e.document_id
+            GROUP BY e.name, e.description, e.category, e.chunk_ids, e.parent_id
             ORDER BY e.name;"""
 
         entities_list = await self.connection_manager.fetch_query(
             QUERY1, [document_id]
         )
-        entities_list = [
-            Entity(
-                name=entity["name"],
-                description=entity["description"],
-                category=entity["category"],
-                chunk_ids=entity["chunk_ids"],
-                document_id=entity["document_id"],
-            )
-            for entity in entities_list
-        ]
+        print("entities_list = ", entities_list)
+        entities_list = [Entity(**entity) for entity in entities_list]
 
         QUERY2 = f"""
             WITH entities_list AS (
 
                 SELECT DISTINCT name
-                FROM {self._get_table_name("chunk_entity")}
-                WHERE document_id = $1
+                FROM {self._get_table_name("document_entity")}
+                WHERE parent_id = $1
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
 
             SELECT DISTINCT t.subject, t.predicate, t.object, t.weight, t.description,
-                   (SELECT array_agg(DISTINCT x) FROM unnest(t.chunk_ids) x) AS chunk_ids, t.document_id
-            FROM {self._get_table_name("relationship")} t
+                   (SELECT array_agg(DISTINCT x) FROM unnest(t.chunk_ids) x) AS chunk_ids, t.parent_id
+            FROM {self._get_table_name("document_relationship")} t
             JOIN entities_list el ON t.subject = el.name
             ORDER BY t.subject, t.predicate, t.object;
         """
@@ -2526,16 +2511,7 @@ class PostgresGraphHandler(GraphHandler):
             QUERY2, [document_id]
         )
         relationships_list = [
-            Relationship(
-                subject=relationship["subject"],
-                predicate=relationship["predicate"],
-                object=relationship["object"],
-                weight=relationship["weight"],
-                description=relationship["description"],
-                chunk_ids=relationship["chunk_ids"],
-                document_id=relationship["document_id"],
-            )
-            for relationship in relationships_list
+            Relationship(**relationship) for relationship in relationships_list
         ]
 
         entity_map: dict[str, dict[str, list[Any]]] = {}
@@ -3029,29 +3005,28 @@ class PostgresGraphHandler(GraphHandler):
                 "Either collection_id or document_id must be provided."
             )
 
-        conditions = []
-        params = []
+        conditions = ["parent_id = $1"]
+        params = [str(document_id)]
 
-        if entity_table_name == "collection_entity":
-            if document_id:
-                raise ValueError(
-                    "document_id is not supported for collection_entity table"
-                )
-            conditions.append("collection_id = $1")
-            params.append(str(collection_id))
-        elif collection_id:
-            conditions.append(
-                f"""
-                document_id = ANY(
-                    SELECT document_id FROM {self._get_table_name("document_info")}
-                    WHERE $1 = ANY(collection_ids)
-                )
-                """
-            )
-            params.append(str(collection_id))
-        else:
-            conditions.append("document_id = $1")
-            params.append(str(document_id))
+        # if entity_table_name == "collection_entity":
+        #     if document_id:
+        #         raise ValueError(
+        #             "document_id is not supported for collection_entity table"
+        #         )
+        #     params.append(str(collection_id))
+        # elif collection_id:
+        #     conditions.append(
+        #         f"""
+        #         document_id = ANY(
+        #             SELECT document_id FROM {self._get_table_name("document_info")}
+        #             WHERE $1 = ANY(collection_ids)
+        #         )
+        #         """
+        #     )
+        #     params.append(str(collection_id))
+        # else:
+        #     conditions.append("document_id = $1")
+        #     params.append(str(document_id))
 
         count_value = "DISTINCT name" if distinct else "*"
 
@@ -3059,6 +3034,7 @@ class PostgresGraphHandler(GraphHandler):
             SELECT COUNT({count_value}) FROM {self._get_table_name(entity_table_name)}
             WHERE {" AND ".join(conditions)}
         """
+        print("QUERY = ", QUERY)
         return (await self.connection_manager.fetch_query(QUERY, params))[0][
             "count"
         ]

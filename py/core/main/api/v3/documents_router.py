@@ -20,8 +20,8 @@ from core.base.abstractions import (
     Relationship,
 )
 from core.base.api.models import (
-    PaginatedResultsWrapper,
     GenericBooleanResponse,
+    PaginatedResultsWrapper,
     WrappedBooleanResponse,
     WrappedChunksResponse,
     WrappedCollectionsResponse,
@@ -1367,9 +1367,9 @@ class DocumentsRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[list[Entity]]:
             """
-            Retrieves the entities that were extracted from a document. These represent 
+            Retrieves the entities that were extracted from a document. These represent
             important semantic elements like people, places, organizations, concepts, etc.
-            
+
             Users can only access entities from documents they own or have access to through
             collections. Entity embeddings are only included if specifically requested.
 
@@ -1380,7 +1380,11 @@ class DocumentsRouter(BaseRouterV3):
                 "management"
             ].documents_overview(
                 user_ids=None if auth_user.is_superuser else [auth_user.id],
-                collection_ids=None if auth_user.is_superuser else auth_user.collection_ids,
+                collection_ids=(
+                    None
+                    if auth_user.is_superuser
+                    else auth_user.collection_ids
+                ),
                 document_ids=[id],
                 offset=0,
                 limit=1,
@@ -1390,12 +1394,14 @@ class DocumentsRouter(BaseRouterV3):
                 raise R2RException("Document not found.", 404)
 
             # Get all entities for this document from the document_entity table
-            entities, total_count = await self.providers.database.graph_handler.entities.get(
-                parent_id=id,
-                store_type="document",
-                offset=offset,
-                limit=limit,
-                include_embeddings=include_embeddings
+            entities, total_count = (
+                await self.providers.database.graph_handler.entities.get(
+                    parent_id=id,
+                    store_type="document",
+                    offset=offset,
+                    limit=limit,
+                    include_embeddings=include_embeddings,
+                )
             )
 
             return entities, {"total_entries": total_count}
@@ -1423,7 +1429,7 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "JavaScript", 
+                        "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
                             const { r2rClient } = require("r2r-js");
@@ -1490,18 +1496,24 @@ class DocumentsRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> PaginatedResultsWrapper[list[Relationship]]:
             """
-            Retrieves the relationships between entities that were extracted from a document. These represent 
+            Retrieves the relationships between entities that were extracted from a document. These represent
             connections and interactions between entities found in the text.
-            
+
             Users can only access relationships from documents they own or have access to through
             collections. Results can be filtered by entity names and relationship types.
 
             Results are returned in the order they were extracted from the document.
             """
             # First check if the document exists and user has access
-            documents_overview_response = await self.services["management"].documents_overview(
+            documents_overview_response = await self.services[
+                "management"
+            ].documents_overview(
                 user_ids=None if auth_user.is_superuser else [auth_user.id],
-                collection_ids=None if auth_user.is_superuser else auth_user.collection_ids,
+                collection_ids=(
+                    None
+                    if auth_user.is_superuser
+                    else auth_user.collection_ids
+                ),
                 document_ids=[id],
                 offset=0,
                 limit=1,
@@ -1510,18 +1522,19 @@ class DocumentsRouter(BaseRouterV3):
             if not documents_overview_response["results"]:
                 raise R2RException("Document not found.", 404)
 
-            # Get relationships for this document 
-            relationships, total_count = await self.providers.database.graph_handler.relationships.get(
-                parent_id=id,
-                store_type="document",
-                entity_names=entity_names,
-                relationship_types=relationship_types,
-                offset=offset,
-                limit=limit,
+            # Get relationships for this document
+            relationships, total_count = (
+                await self.providers.database.graph_handler.relationships.get(
+                    parent_id=id,
+                    store_type="document",
+                    entity_names=entity_names,
+                    relationship_types=relationship_types,
+                    offset=offset,
+                    limit=limit,
+                )
             )
 
             return relationships, {"total_entries": total_count}
-
 
     @staticmethod
     async def _process_file(file):

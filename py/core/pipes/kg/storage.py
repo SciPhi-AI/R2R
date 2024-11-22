@@ -3,16 +3,11 @@ import logging
 from typing import Any, AsyncGenerator
 from uuid import UUID
 
-from core.base import (
-    AsyncState,
-    KGExtraction,
-    R2RDocumentProcessingError,
-)
+from core.base import AsyncState, KGExtraction, R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
-from core.providers.database.postgres import PostgresDBProvider
-
 from core.providers.database.kg import DataLevel
+from core.providers.database.postgres import PostgresDBProvider
+from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -58,7 +53,7 @@ class KGStoragePipe(AsyncPipe):
         total_entities, total_relationships = 0, 0
 
         for extraction in kg_extractions:
-            print('extraction = ', extraction)
+            print("extraction = ", extraction)
 
             total_entities, total_relationships = (
                 total_entities + len(extraction.entities),
@@ -75,7 +70,7 @@ class KGStoragePipe(AsyncPipe):
 
                 print("extraction.entities = ", extraction.entities)
                 for entity in extraction.entities:
-                    print('entity = ', entity)
+                    print("entity = ", entity)
                     await self.database_provider.graph_handler.entities.create(
                         **entity.to_dict()
                     )
@@ -113,7 +108,7 @@ class KGStoragePipe(AsyncPipe):
         errors = []
 
         async for kg_extraction in input.message:
-            print('kg_extraction = ', kg_extraction)
+            print("kg_extraction = ", kg_extraction)
             if isinstance(kg_extraction, R2RDocumentProcessingError):
                 errors.append(kg_extraction)
                 continue

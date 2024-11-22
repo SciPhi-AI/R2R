@@ -1,28 +1,33 @@
-import re
-import json
 import asyncio
+import json
 import logging
 import math
+import re
 import time
-from typing import AsyncGenerator, Optional, Any
+from typing import Any, AsyncGenerator, Optional, Union
 from uuid import UUID
-from typing import Union
 
 from fastapi import HTTPException
 
-from core.base import KGExtractionStatus, RunManager, KGExtraction, DocumentChunk, R2RDocumentProcessingError
+from core.base import (
+    DocumentChunk,
+    KGExtraction,
+    KGExtractionStatus,
+    R2RDocumentProcessingError,
+    RunManager,
+)
 from core.base.abstractions import (
+    Community,
     DataLevel,
+    Entity,
     GenerationConfig,
+    Graph,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
     KGEntityDeduplicationType,
     R2RException,
-    Entity,
     Relationship,
-    Community,
-    Graph,
 )
 from core.base.api.models import GraphResponse
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
@@ -32,11 +37,11 @@ from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
-
 logger = logging.getLogger()
 
 
 MIN_VALID_KG_EXTRACTION_RESPONSE_LENGTH = 128
+
 
 async def _collect_results(result_gen: AsyncGenerator) -> list[dict]:
     results = []
@@ -543,7 +548,7 @@ class KgService(Service):
             await self.providers.database.graph_handler.get_entity_count(
                 document_id=document_id,
                 distinct=True,
-                entity_table_name="chunk_entity",
+                entity_table_name="document_entity",
             )
         )
 
@@ -894,7 +899,6 @@ class KgService(Service):
 
         return results[0]
 
-
     async def kg_extraction(  # type: ignore
         self,
         document_id: UUID,
@@ -909,8 +913,8 @@ class KgService(Service):
         **kwargs: Any,
     ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
         start_time = time.time()
-    
-        print('....')
+
+        print("....")
         logger.info(
             f"KGExtractionPipe: Processing document {document_id} for KG extraction",
         )
@@ -926,40 +930,37 @@ class KgService(Service):
                 limit=limit,
             )
 
-            chunks.extend([
-                DocumentChunk(
-                    id=chunk["id"],
-                    document_id=chunk["document_id"],
-                    user_id=chunk["user_id"],
-                    collection_ids=chunk["collection_ids"],
-                    data=chunk["text"],
-                    metadata=chunk["metadata"],
-                )
-                for chunk in chunk_req["results"]
+            chunks.extend(
+                [
+                    DocumentChunk(
+                        id=chunk["id"],
+                        document_id=chunk["document_id"],
+                        user_id=chunk["user_id"],
+                        collection_ids=chunk["collection_ids"],
+                        data=chunk["text"],
+                        metadata=chunk["metadata"],
+                    )
+                    for chunk in chunk_req["results"]
                 ]
             )
             if len(chunk_req["results"]) < limit:
                 break
             offset += limit
 
-        logger.info(
-            f"Found {len(chunks)} chunks for document {document_id}"
-        )
+        logger.info(f"Found {len(chunks)} chunks for document {document_id}")
         if len(chunks) == 0:
             logger.info(f"No chunks found for document {document_id}")
             raise R2RException(
                 message="No chunks found for document",
                 status_code=404,
             )
-        
+
         if filter_out_existing_chunks:
             existing_chunk_ids = await self.providers.database.graph_handler.get_existing_document_entity_chunk_ids(
                 document_id=document_id
             )
             chunks = [
-                chunk
-                for chunk in chunks
-                if chunk.id not in existing_chunk_ids
+                chunk for chunk in chunks if chunk.id not in existing_chunk_ids
             ]
             logger.info(
                 f"Filtered out {len(existing_chunk_ids)} existing chunks, remaining {len(chunks)} chunks for document {document_id}"
@@ -1029,8 +1030,6 @@ class KgService(Service):
         logger.info(
             f"KGExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks, time from start: {time.time() - start_time:.2f} seconds",
         )
-
-
 
     async def _extract_kg(
         self,
@@ -1109,9 +1108,7 @@ class KgService(Service):
                                 description=entity_description,
                                 name=entity_value,
                                 parent_id=chunks[0].document_id,
-                                chunk_ids=[
-                                    chunk.id for chunk in chunks
-                                ],
+                                chunk_ids=[chunk.id for chunk in chunks],
                                 attributes={},
                             )
                         )
@@ -1133,9 +1130,7 @@ class KgService(Service):
                                 description=description,
                                 weight=weight,
                                 parent_id=chunks[0].document_id,
-                                chunk_ids=[
-                                    chunk.id for chunk in chunks
-                                ],
+                                chunk_ids=[chunk.id for chunk in chunks],
                                 attributes={},
                             )
                         )
@@ -1173,8 +1168,6 @@ class KgService(Service):
             relationships=[],
         )
 
-
-
     async def store_kg_extractions(
         self,
         kg_extractions: list[KGExtraction],
@@ -1186,7 +1179,7 @@ class KgService(Service):
         total_entities, total_relationships = 0, 0
 
         for extraction in kg_extractions:
-            print('extraction = ', extraction)
+            print("extraction = ", extraction)
 
             total_entities, total_relationships = (
                 total_entities + len(extraction.entities),
@@ -1195,14 +1188,12 @@ class KgService(Service):
 
             if extraction.entities:
                 await self.providers.database.graph_handler.entities.create(
-                    extraction.entities,
-                    store_type="document"
+                    extraction.entities, store_type="document"
                 )
 
             if extraction.relationships:
                 await self.providers.database.graph_handler.relationships.create(
-                    extraction.relationships,
-                    store_type="document"
+                    extraction.relationships, store_type="document"
                 )
 
             return (total_entities, total_relationships)

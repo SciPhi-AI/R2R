@@ -1,9 +1,10 @@
 import json
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
-from datetime import datetime
+
 from pydantic import Field
 
 from .base import R2RSerializable
@@ -41,7 +42,7 @@ class Entity(R2RSerializable):
     id: Optional[UUID | int] = None
     category: Optional[str] = None
     description: Optional[str] = None
-    parent_id: UUID # graph_id | document_id
+    parent_id: UUID  # graph_id | document_id
     # document_ids: list[UUID] = []
     description_embedding: Optional[list[float] | str] = None
 
@@ -54,9 +55,7 @@ class Entity(R2RSerializable):
     metadata: Optional[dict[str, Any] | str] = None
 
     def __str__(self):
-        return (
-            f"{self.name}:{self.category}"
-        )
+        return f"{self.name}:{self.category}"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

@@ -236,7 +236,8 @@ async def ingest_files_from_urls(client, urls):
         for it, file in enumerate(files_to_ingest):
             click.echo(f"Ingesting file: {file}")
             response = await client.documents.create(
-                file, metadata=metadatas[it], # document_id=document_ids[it]
+                file,
+                metadata=metadatas[it],  # document_id=document_ids[it]
             )
 
         return response["results"]

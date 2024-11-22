@@ -59,20 +59,20 @@ def simple_kg_factory(service: KgService):
         for _, document_id in enumerate(document_ids):
             # Extract relationships from the document
             try:
-                extractions = []
-                async for extraction in service.kg_extraction(
-                    document_id=document_id,
-                    **input_data["kg_creation_settings"],
-                ):
-                    print("extraction = ", extraction)
-                    extractions.append(extraction)
-                await service.store_kg_extractions(extractions)
-                    # print('extraction = ', extraction)
-                # Describe the entities in the graph
-                # await service.kg_entity_description(
+                # extractions = []
+                # async for extraction in service.kg_extraction(
                 #     document_id=document_id,
                 #     **input_data["kg_creation_settings"],
-                # )
+                # ):
+                #     print("extraction = ", extraction)
+                #     extractions.append(extraction)
+                # await service.store_kg_extractions(extractions)
+
+                # Describe the entities in the graph
+                await service.kg_entity_description(
+                    document_id=document_id,
+                    **input_data["kg_creation_settings"],
+                )
 
             except Exception as e:
                 logger.error(
