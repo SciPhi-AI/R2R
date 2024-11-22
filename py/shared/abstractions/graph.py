@@ -34,34 +34,23 @@ class DataLevel(str, Enum):
 class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
+    id: Optional[UUID | int] = (
+        None  # id is Union of UUID and int for backwards compatibility
+    )
+    sid: Optional[int] = None  # deprecated, remove in the future
     name: str
-    # id is Union of UUID and int for backwards compatibility
-    # we will migrate to UUID only in the future
-    # sid is also deprecated and needs to be removed in the future
-    id: Optional[UUID | int] = None
-    sid: Optional[int] = None
     category: Optional[str] = None
     description: Optional[str] = None
+    chunk_ids: list[UUID] = []
     description_embedding: Optional[list[float] | str] = None
-    chunk_ids: Optional[list[UUID]] = None
-    graph_ids: Optional[list[UUID]] = None
-    document_ids: Optional[list[UUID]] = None
     document_id: Optional[UUID] = None  # this is for backward compatibility
-    created_by: Optional[UUID] = None
-    updated_by: Optional[UUID] = None
-
-    # we don't use these yet
-    # name_embedding: Optional[list[float]] = None
-    # graph_embedding: Optional[list[float]] = None
-    # rank: Optional[int] = None
+    document_ids: list[UUID] = []
+    graph_ids: list[UUID] = []
+    user_id: UUID
+    last_modified_by: UUID
+    created_at: datetime
+    updated_at: datetime
     attributes: Optional[dict[str, Any] | str] = None
-
-    def __str__(self):
-        return (
-            f"{self.category}:{self.subcategory}:{self.value}"
-            if self.subcategory
-            else f"{self.category}:{self.value}"
-        )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

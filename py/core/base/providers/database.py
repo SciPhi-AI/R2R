@@ -610,8 +610,16 @@ class VectorHandler(Handler):
 class EntityHandler(Handler):
 
     @abstractmethod
-    async def create(self, *args: Any, **kwargs: Any) -> None:
-        """Create entities in storage."""
+    async def create(
+        self,
+        name: str,
+        description: str,
+        description_embedding: str,
+        category: Optional[str] = None,
+        attributes: Optional[dict] = None,
+        user_id: Optional[UUID] = None,
+    ) -> Entity:
+        """Create entity"""
         pass
 
     @abstractmethod
@@ -620,7 +628,16 @@ class EntityHandler(Handler):
         pass
 
     @abstractmethod
-    async def update(self, *args: Any, **kwargs: Any) -> None:
+    async def update(
+        self,
+        entity_id: UUID,
+        name: Optional[str] = None,
+        category: Optional[str] = None,
+        description: Optional[str] = None,
+        description_embedding: Optional[str] = None,
+        attributes: Optional[dict] = None,
+        user_id: Optional[UUID] = None,
+    ) -> Entity:
         """Update entities in storage."""
         pass
 

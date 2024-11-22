@@ -10,20 +10,12 @@ from core.base.abstractions import DataLevel, KGRunType
 
 from core.base.api.models import (
     GenericBooleanResponse,
-    GenericMessageResponse,
     WrappedBooleanResponse,
-    WrappedGenericMessageResponse,
     WrappedKGCreationResponse,
+    WrappedGenericMessageResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
-    WrappedEntityResponse,
-    WrappedEntitiesResponse,
-    WrappedRelationshipResponse,
-    WrappedRelationshipsResponse,
-    WrappedCommunityResponse,
-    WrappedCommunitiesResponse,
     WrappedKGEntityDeduplicationResponse,
-    WrappedKGEnrichmentResponse,
     WrappedKGTunePromptResponse,
 )
 
@@ -379,7 +371,7 @@ class GraphRouter(BaseRouterV3):
             """
             if not auth_user.is_superuser and id not in auth_user.graph_ids:
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
+                    "The currently authenticated user does not have access to the specified graph.",
                     403,
                 )
 
@@ -455,14 +447,13 @@ class GraphRouter(BaseRouterV3):
             """
             if not auth_user.is_superuser and id not in auth_user.graph_ids:
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
+                    "The currently authenticated user does not have access to the specified graph.",
                     403,
                 )
 
             await self.services["kg"].delete_graph_v3(id=id)
             return GenericBooleanResponse(success=True)  # type: ignore
 
-        # update graph
         @self.router.post(
             "/graphs/{id}",
             summary="Update graph",
@@ -529,17 +520,14 @@ class GraphRouter(BaseRouterV3):
             This endpoint allows updating the name and description of an existing collection.
             The user must have appropriate permissions to modify the collection.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
+            if not auth_user.is_superuser and id not in auth_user.graph_ids:
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
+                    "The currently authenticated user does not have access to the specified graph.",
                     403,
                 )
 
             return await self.services["kg"].update_graph(  # type: ignore
-                id,
+                graph_id=id,
                 name=name,
                 description=description,
             )
@@ -746,25 +734,45 @@ class GraphRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.addEntity({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    entityId: "123e4567-e89b-12d3-a456-426614174000",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
                 ],
             },
         )
         @self.base_endpoint
         async def add_entity_to_graph(
-            id: UUID = Path(
-                ...,
-                description="The ID of the graph to add the entity to.",
-            ),
-            entity_id: UUID = Path(
-                ..., description="The ID of the entity to add to the graph."
-            ),
+            id: UUID = Path(...),
+            entity_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedGenericMessageResponse:
             """
-            Adds a list of entities to the graph by their IDs.
+            Adds an entity to the graph by its ID.
             """
-            await self.services["kg"].add_entity_to_graph(
-                id, entity_id, auth_user
+            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
+            return await self.services["kg"].add_entity_to_graph(
+                graph_id=id,
+                entity_id=entity_id,
             )
 
             return GenericBooleanResponse(success=True)
@@ -788,29 +796,48 @@ class GraphRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.removeEntity({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    entityId: "123e4567-e89b-12d3-a456-426614174000",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
                 ],
             },
         )
         @self.base_endpoint
         async def remove_entity_from_graph(
-            id: UUID = Path(
-                ...,
-                description="The ID of the graph to remove the entity from.",
-            ),
-            entity_id: UUID = Path(
-                ...,
-                description="The ID of the entity to remove from the graph.",
-            ),
+            id: UUID = Path(...),
+            entity_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedBooleanResponse:
             """
-            Removes an entity from the graph by its ID.
+            Removes an entity to the graph by its ID.
             """
-            await self.services[
-                "kg"
-            ].documents.graph_handler.entities.remove_from_graph(
-                id, entity_id, auth_user
+            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
+
+            await self.services["kg"].remove_entity_from_graph(
+                graph_id=id,
+                entity_id=entity_id,
             )
+            return GenericBooleanResponse(success=True)  # type: ignore
 
             return GenericBooleanResponse(success=True)
 

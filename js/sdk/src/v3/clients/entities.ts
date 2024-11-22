@@ -1,25 +1,28 @@
 import { r2rClient } from "../../r2rClient";
 import {
-  WrappedGraphResponse,
   WrappedBooleanResponse,
-  WrappedGraphsResponse,
-  WrappedGenericMessageResponse,
+  WrappedEntitiesResponse,
+  WrappedEntityResponse,
 } from "../../types";
 
-export class GraphsClient {
+export class EntitiesClient {
   constructor(private client: r2rClient) {}
 
   /**
-   * Create a new graph.
-   * @param name Name of the graph
-   * @param description Optional description of the graph
+   * Create a new entity.
+   * @param name Name of the entity
+   * @param description Description of the entity
+   * @param attributes Optional list of attributes
+   * @param category Optional category
    * @returns The created graph
    */
   async create(options: {
     name: string;
-    description?: string;
-  }): Promise<WrappedGraphResponse> {
-    return this.client.makeRequest("POST", "graphs", {
+    description: string;
+    attributes?: Record<string, any>;
+    category?: string;
+  }): Promise<WrappedEntityResponse> {
+    return this.client.makeRequest("POST", "entities", {
       data: options,
     });
   }
@@ -35,7 +38,7 @@ export class GraphsClient {
     ids?: string[];
     offset?: number;
     limit?: number;
-  }): Promise<WrappedGraphsResponse> {
+  }): Promise<WrappedEntitiesResponse> {
     const params: Record<string, any> = {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? 100,
@@ -45,7 +48,7 @@ export class GraphsClient {
       params.ids = options.ids;
     }
 
-    return this.client.makeRequest("GET", "graphs", {
+    return this.client.makeRequest("GET", "entities", {
       params,
     });
   }
@@ -55,8 +58,8 @@ export class GraphsClient {
    * @param id Graph ID to retrieve
    * @returns
    */
-  async retrieve(options: { id: string }): Promise<WrappedGraphResponse> {
-    return this.client.makeRequest("GET", `graphs/${options.id}`);
+  async retrieve(options: { id: string }): Promise<WrappedEntityResponse> {
+    return this.client.makeRequest("GET", `entities/${options.id}`);
   }
 
   /**
@@ -70,13 +73,17 @@ export class GraphsClient {
     id: string;
     name?: string;
     description?: string;
-  }): Promise<WrappedGraphResponse> {
+    attributes?: Record<string, any>;
+    category?: string;
+  }): Promise<WrappedEntityResponse> {
     const data = {
       ...(options.name && { name: options.name }),
       ...(options.description && { description: options.description }),
+      ...(options.attributes && { attributes: options.attributes }),
+      ...(options.category && { category: options.category }),
     };
 
-    return this.client.makeRequest("POST", `graphs/${options.id}`, {
+    return this.client.makeRequest("POST", `entities/${options.id}`, {
       data,
     });
   }
@@ -87,38 +94,6 @@ export class GraphsClient {
    * @returns
    */
   async delete(options: { id: string }): Promise<WrappedBooleanResponse> {
-    return this.client.makeRequest("DELETE", `graphs/${options.id}`);
-  }
-
-  /**
-   * Add an entity to a graph.
-   * @param id Graph ID
-   * @param entityId Entity ID to add
-   * @returns
-   */
-  async addEntity(options: {
-    id: string;
-    entityId: string;
-  }): Promise<WrappedGenericMessageResponse> {
-    return this.client.makeRequest(
-      "POST",
-      `graphs/${options.id}/entities/${options.entityId}`,
-    );
-  }
-
-  /**
-   * Remove an entity from a graph.
-   * @param id Graph ID
-   * @param entityId Entity ID to remove
-   * @returns
-   */
-  async removeEntity(options: {
-    id: string;
-    entityId: string;
-  }): Promise<WrappedBooleanResponse> {
-    return this.client.makeRequest(
-      "DELETE",
-      `graphs/${options.id}/entities/${options.entityId}`,
-    );
+    return this.client.makeRequest("DELETE", `entities/${options.id}`);
   }
 }
