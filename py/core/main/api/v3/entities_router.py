@@ -6,22 +6,13 @@ from uuid import UUID
 from fastapi import Body, Depends, Path, Query
 
 from core.base import R2RException, RunType
-from core.base.abstractions import DataLevel, KGRunType
-from core.base.abstractions import Community, Entity, Relationship, Graph
+from core.base.abstractions import DataLevel
 
 from core.base.api.models import (
-    GenericMessageResponse,
-    WrappedGenericMessageResponse,
-    WrappedKGCreationResponse,
+    GenericBooleanResponse,
+    WrappedBooleanResponse,
     WrappedEntityResponse,
     WrappedEntitiesResponse,
-    WrappedRelationshipResponse,
-    WrappedRelationshipsResponse,
-    WrappedCommunityResponse,
-    WrappedCommunitiesResponse,
-    WrappedKGEntityDeduplicationResponse,
-    WrappedKGEnrichmentResponse,
-    WrappedKGTunePromptResponse,
 )
 
 
@@ -29,24 +20,10 @@ from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
-from core.utils import (
-    update_settings_from_dict,
-)
-
-from core.base.abstractions import (
-    Entity,
-    KGCreationSettings,
-    Relationship,
-    GraphBuildSettings,
-)
-
-from core.base.abstractions import DocumentResponse, DocumentType
 
 from .base_router import BaseRouterV3
 
 from fastapi import Request
-
-from shared.utils.base_utils import generate_entity_document_id
 
 logger = logging.getLogger()
 
@@ -74,13 +51,13 @@ class EntitiesRouter(BaseRouterV3):
 
     def _setup_routes(self):
 
-        # Getting entities for a graph and a document
-        @self.router.get(
-            "/graphs/{id}/entities",
-            summary="List entities",
+        @self.router.post(
+            "/entities",
+            summary="Create a new entity",
             openapi_extra={
                 "x-codeSamples": [
                     {
+                        # FIXME: This is wrong
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
@@ -89,7 +66,7 @@ class EntitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.entities.list(graph_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
+                            result = client.entities.create([entity1, entity2])
                             """
                         ),
                     },
@@ -164,15 +141,21 @@ class EntitiesRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
+                        "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            const { r2rClient } = require("r2r-js");
 
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
+                            const client = new r2rClient("http://localhost:7272");
 
-                            result = client.documents.entities.list(document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=100)
+                            function main() {
+                                const response = await client.entities.create({
+                                    name: "Entity 1",
+                                    description: "A description of the entity",
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -180,65 +163,32 @@ class EntitiesRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def list_entities(
-            id: UUID = Path(
-                ...,
-                description="The ID of the document to retrieve entities for.",
+        async def create_entity(
+            name: str = Body(..., description="The name of the entity"),
+            description: str = Body(
+                ..., description="The description of the entity"
             ),
-            entity_names: Optional[list[str]] = Query(
+            attributes: Optional[dict] = Body(
                 None,
-                description="A list of entity names to filter the entities by.",
+                description="The attributes of the entity",
             ),
-            include_embeddings: bool = Query(
-                False,
-                description="Whether to include vector embeddings in the response.",
-            ),
-            offset: int = Query(
-                0,
-                ge=0,
-                description="Specifies the number of objects to skip. Defaults to 0.",
-            ),
-            limit: int = Query(
-                100,
-                ge=1,
-                le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+            category: Optional[str] = Body(
+                None,
+                description="The category of the entity",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedEntitiesResponse:
+        ) -> WrappedEntityResponse:
             """
-            Returns a paginated list of entities from a knowledge graph or document.
-
-            You must provide either a graph_id or a document_id.
-
-            The entities can be filtered by:
-            - Graph ID: Get entities from a specific graph
-            - Document ID: Get entities from a specific document
-            - Entity names: Filter by specific entity names
-            - Include embeddings: Whether to include vector embeddings in the response
-
-            The response includes:
-            - List of entity objects with their attributes
-            - Total count of matching entities
+            Creates new entities.
             """
 
-            if auth_user.is_superuser:
-                user_id = None
-            else:
-                user_id = auth_user.id
-
-            entities, count = await self.services["kg"].list_entities(
-                document_id=id,
-                offset=offset,
-                limit=limit,
-                entity_names=entity_names,
-                include_embeddings=include_embeddings,
-                user_id=user_id,
+            return await self.services["kg"].create_entities(
+                name=name,
+                description=description,
+                category=category,
+                attributes=attributes,
+                user_id=auth_user.id,
             )
-
-            return entities, {  # type: ignore
-                "total_entries": count,
-            }
 
         @self.router.get(
             "/entities",
@@ -258,27 +208,30 @@ class EntitiesRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.entities.list({});
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
                 ],
             },
         )
         @self.base_endpoint
         async def list_entities(
-            request: Request,
-            graph_id: Optional[UUID] = Query(
-                None,
-                description="The ID of the graph to retrieve entities for.",
-            ),
-            document_id: Optional[UUID] = Query(
-                None,
-                description="The ID of the document to retrieve entities for.",
-            ),
-            entity_names: Optional[list[str]] = Query(
-                None,
-                description="A list of entity names to filter the entities by.",
-            ),
-            include_embeddings: bool = Query(
-                False,
-                description="Whether to include vector embeddings in the response.",
+            ids: list[str] = Query(
+                [],
+                description="A list of graph IDs to retrieve. If not provided, all graphs will be returned.",
             ),
             offset: int = Query(
                 0,
@@ -294,45 +247,31 @@ class EntitiesRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntitiesResponse:
             """
-            Returns a paginated list of entities from a knowledge graph or document.
+            Returns a paginated list of entities the authenticated user has access to.
 
-            You must provide either a graph_id or a document_id.
+            Results can be filtered by providing specific entity IDs. Regular users will only see
+            entities they have access to. Superusers can see all entities.
 
-            The entities can be filtered by:
-            - Graph ID: Get entities from a specific graph
-            - Document ID: Get entities from a specific document
-            - Entity names: Filter by specific entity names
-            - Include embeddings: Whether to include vector embeddings in the response
-
-            The response includes:
-            - List of entity objects with their attributes
-            - Total count of matching entities
+            The entities are returned in order of last modification, with most recent first.
             """
 
-            if not graph_id and not document_id:
-                raise R2RException(
-                    "Either graph_id or document_id must be provided.",
-                    400,
-                )
-
-            if auth_user.is_superuser:
-                user_id = None
-            else:
-                user_id = auth_user.id
-
-            entities, count = await self.services["kg"].list_entities(
-                graph_id=graph_id,
-                document_id=document_id,
-                offset=offset,
-                limit=limit,
-                entity_names=entity_names,
-                include_embeddings=include_embeddings,
-                user_id=user_id,
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
             )
 
-            return entities, {  # type: ignore
-                "total_entries": count,
-            }
+            entity_uuids = [UUID(entity_id) for entity_id in ids]
+
+            list_entities_response = await self.services["kg"].list_entities(
+                user_ids=requesting_user_id,
+                entity_ids=entity_uuids,
+                offset=offset,
+                limit=limit,
+            )
+
+            return (  # type: ignore
+                list_entities_response["results"],
+                {"total_entries": list_entities_response["total_entries"]},
+            )
 
         @self.router.get(
             "/entities/{id}",
@@ -352,157 +291,43 @@ class EntitiesRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.entities.retrieve({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
                 ]
             },
         )
         @self.base_endpoint
         async def get_entity(
-            id: UUID = Path(
-                ...,
-                description="The ID of the entity to retrieve.",
-            ),
+            id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntityResponse:
             """
-            Retrieves detailed information about a specific entity by its unique identifier.
-
-            The attributes parameter allows selective retrieval of specific entity properties to optimize response size and processing.
+            Retrieves detailed information about a specific entity by ID.
             """
-
-            entity = await self.services["kg"].get_entity(
-                id=id,
+            # FIXME: This is unacceptable. We need to check if the user has access to the entity.
+            list_entities_response = await self.services["kg"].list_entities(
+                user_ids=None,
+                entity_ids=[id],
+                offset=0,
+                limit=1,
             )
-
-            graph_ids = entity.graph_ids
-            document_ids = entity.document_ids
-
-            # if the user does not have access to the graph or the document, return a 403
-
-            return entity
-
-        @self.router.post(
-            "/entities",
-            summary="Create a new entity",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.entities.create([entity1, entity2])
-                            """
-                        ),
-                    },
-                ],
-            },
-        )
-        @self.base_endpoint
-        async def create_entities_v3(
-            request: Request,
-            name: str = Body(..., description="The name of the entity"),
-            description: str = Body(
-                ..., description="The description of the entity"
-            ),
-            attributes: Optional[dict] = Body(
-                None,
-                description="The attributes of the entity",
-            ),
-            category: Optional[str] = Body(
-                None,
-                description="The category of the entity",
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
-            """
-            Creates new entities.
-
-            This endpoint allows you to:
-            1. Create a new entity using the name, category, description, and attributes
-            2. Automatically generate unique IDs for each entity and embeddings for the description
-            3. Link entities to existing graphs or documents
-
-            Entity IDs are automatically generated by the server and returned in the response.
-            """
-
-            res = await self.services["kg"].create_entities(
-                name=name,
-                description=description,
-                category=category,
-                attributes=attributes,
-                auth_user=auth_user,
-            )
-
-            return res
-
-        @self.router.post(
-            "/entities/{id}",
-            summary="Update an entity",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.entities.update(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity=entity)
-                            """
-                        ),
-                    },
-                ],
-            },
-        )
-        @self.base_endpoint
-        async def update_entity(
-            id: UUID = Path(
-                ...,
-                description="The ID of the entity to update.",
-            ),
-            name: Optional[str] = Body(
-                None,
-                description="The name of the entity",
-            ),
-            description: Optional[str] = Body(
-                None,
-                description="The description of the entity",
-            ),
-            category: Optional[str] = Body(
-                None,
-                description="The category of the entity",
-            ),
-            attributes: Optional[dict] = Body(
-                None,
-                description="The attributes of the entity",
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
-            """
-            Updates an existing entity in the database.
-
-            This endpoint allows you to modify:
-            - Entity attributes and properties
-            - Entity type and classification
-            - Entity metadata and tags
-            - Graph and document associations
-
-            Any fields not included in the update request will retain their existing values.
-            """
-            return await self.services["kg"].update_entity_v3(
-                id=id,
-                name=name,
-                description=description,
-                category=category,
-                attributes=attributes,
-                auth_user=auth_user,
-            )
+            return list_entities_response["results"][0]
 
         @self.router.delete(
             "/entities/{id}",
@@ -522,18 +347,32 @@ class EntitiesRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.entities.delete({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
                 ],
             },
         )
         @self.base_endpoint
         async def delete_entity(
-            request: Request,
-            id: UUID = Path(
-                ...,
-                description="The ID of the graph to delete the entity for.",
-            ),
+            id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedBooleanResponse:
             """
             Deletes an entity and all its associated data.
 
@@ -542,12 +381,93 @@ class EntitiesRouter(BaseRouterV3):
 
             However, this will not remove any relationships or communities that the entity is part of.
             """
+            # FIXME: This is unacceptable. We need to check if the user has access to the entity.
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
                 )
 
-            return await self.services["kg"].delete_entity_v3(
-                id=id,
-                auth_user=auth_user,
+            await self.services["kg"].delete_entity_v3(id=id)
+            return GenericBooleanResponse(success=True)  # type: ignore
+
+        @self.router.post(
+            "/entities/{id}",
+            summary="Update an entity",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.entities.update(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", entity=entity)
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.entities.update({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    name: "Updated name",
+                                    description: "Updated description",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def update_entity(
+            id: UUID = Path(
+                ...,
+                description="The unique identifier of the entity to update",
+            ),
+            name: Optional[str] = Body(
+                None,
+                description="The name of the entity",
+            ),
+            description: Optional[str] = Body(
+                None,
+                description="The description of the entity",
+            ),
+            attributes: Optional[dict] = Body(
+                None,
+                description="The attributes of the entity",
+            ),
+            category: Optional[str] = Body(
+                None,
+                description="The category of the entity",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Update an existing entity.
+
+            This endpoint allows updating the an existing entity.
+            The user must have appropriate permissions to modify the entity.
+            """
+            # FIXME: This is unacceptable. We need to check if the user has access to the entity.
+
+            return await self.services["kg"].update_entity(
+                entity_id=id,
+                name=name,
+                description=description,
+                category=category,
+                attributes=attributes,
+                user_id=auth_user.id,
             )

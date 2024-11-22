@@ -1,7 +1,7 @@
 import logging
 import math
 import time
-from typing import AsyncGenerator, Optional, Any
+from typing import AsyncGenerator, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -129,10 +129,10 @@ class KgService(Service):
         self,
         name: str,
         description: str,
-        attributes: Optional[dict] = None,
         category: Optional[str] = None,
-        auth_user: Optional[Any] = None,
-    ):
+        user_id: Optional[UUID] = None,
+        attributes: Optional[dict] = None,
+    ) -> Entity:
 
         description_embedding = str(
             await self.providers.embedding.async_get_embedding(description)
@@ -144,41 +144,34 @@ class KgService(Service):
             description=description,
             description_embedding=description_embedding,
             attributes=attributes,
-            auth_user=auth_user,
+            user_id=user_id,
         )
 
-    @telemetry_event("list_entities")
     async def list_entities(
         self,
         offset: int,
         limit: int,
-        id: Optional[UUID] = None,
-        graph_id: Optional[UUID] = None,
-        document_id: Optional[UUID] = None,
-        entity_names: Optional[list[str]] = None,
-        include_embeddings: Optional[bool] = False,
-        user_id: Optional[UUID] = None,
-    ):
-        return await self.providers.database.graph_handler.entities.get(
-            id=id,
-            graph_id=graph_id,
-            document_id=document_id,
-            entity_names=entity_names,
-            include_embeddings=include_embeddings,
-            offset=offset,
-            limit=limit,
-            user_id=user_id,
+        user_ids: Optional[list[UUID]] = None,
+        entity_ids: Optional[list[UUID]] = None,
+    ) -> dict[str, list[Entity] | int]:
+        return (
+            await self.providers.database.graph_handler.entities.list_entities(
+                offset=offset,
+                limit=limit,
+                filter_user_ids=user_ids,
+                filter_entity_ids=entity_ids,
+            )
         )
 
     @telemetry_event("update_entity")
-    async def update_entity_v3(
+    async def update_entity(
         self,
-        id: UUID,
+        entity_id: UUID,
         name: Optional[str],
         category: Optional[str],
         description: Optional[str],
         attributes: Optional[dict],
-        auth_user: Optional[Any] = None,
+        user_id: UUID,
     ):
 
         if description is not None:
@@ -189,40 +182,44 @@ class KgService(Service):
             description_embedding = None
 
         return await self.providers.database.graph_handler.entities.update(
-            id=id,
+            entity_id=entity_id,
             name=name,
             category=category,
             description=description,
             description_embedding=description_embedding,
             attributes=attributes,
-            auth_user=auth_user,
+            user_id=user_id,
         )
 
     @telemetry_event("delete_entity")
-    async def delete_entity_v3(
-        self,
-        id: UUID,
-        entity_id: UUID,
-        level: DataLevel,
-        **kwargs,
-    ):
-        return await self.providers.database.graph_handler.entities.delete(
-            id=id,
-            entity_id=entity_id,
-            level=level,
+    async def delete_entity_v3(self, id: UUID) -> bool:
+        await self.providers.database.graph_handler.entities.delete(
+            entity_id=id,
         )
+        return True
 
     @telemetry_event("add_entity_to_graph")
     async def add_entity_to_graph(
         self,
         graph_id: UUID,
         entity_id: UUID,
-        auth_user: Optional[Any] = None,
     ):
-        return (
-            await self.providers.database.graph_handler.entities.add_to_graph(
-                graph_id, entity_id, auth_user
-            )
+        await self.providers.database.graph_handler.entities.add_to_graph(
+            graph_id=graph_id,
+            entity_id=entity_id,
+        )
+
+        return {"message": "Entity assigned to graph successfully"}
+
+    @telemetry_event("remove_entity_from_graph")
+    async def remove_entity_from_graph(
+        self,
+        graph_id: UUID,
+        entity_id: UUID,
+    ) -> None:
+        await self.providers.database.graph_handler.entities.remove_from_graph(
+            graph_id=graph_id,
+            entity_id=entity_id,
         )
 
     # TODO: deprecate this
