@@ -15,7 +15,6 @@ from shared.api.models import (
     WrappedGenericMessageResponse,
 )
 
-
 class GraphsSDK:
     """
     SDK for interacting with knowledge graphs in the v3 API.
@@ -51,6 +50,7 @@ class GraphsSDK:
             data=data,
             version="v3",
         )
+    
 
     async def retrieve(
         self,
