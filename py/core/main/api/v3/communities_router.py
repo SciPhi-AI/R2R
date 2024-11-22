@@ -100,8 +100,14 @@ class CommunitiesRouter(BaseRouterV3):
             - Community detection algorithm parameters
             - Summary generation prompt
         """
-        if not auth_user.is_superuser:
-            raise R2RException("Only superusers can create communities", 403)
+
+        if not await self.services["management"].has_graph_access(
+            auth_user, graph_id
+        ):
+            raise R2RException(
+                "You do not have permission to create communities in this graph.",
+                403,
+            )
 
         # Apply runtime settings overrides
         server_kg_enrichment_settings = (
