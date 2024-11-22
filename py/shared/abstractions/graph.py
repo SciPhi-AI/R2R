@@ -74,6 +74,7 @@ class Relationship(R2RSerializable):
     weight: float | None = 1.0
     chunk_ids: Optional[list[UUID]] = None
     document_id: Optional[UUID] = None
+    document_ids: Optional[list[UUID]] = None
     graph_ids: Optional[list[UUID]] = None
     user_id: Optional[UUID] = None
     last_modified_by: Optional[UUID] = None

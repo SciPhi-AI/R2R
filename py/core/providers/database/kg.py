@@ -166,7 +166,7 @@ class PostgresEntityHandler(EntityHandler):
         document_ids: Optional[list[UUID]] = None,  # not exposed on the API
         user_id: Optional[UUID] = None,
         entity_table_name: str = "entity",
-    ) -> UUID:  # type: ignore
+    ) -> Entity:
         """Create a new entity in the database.
 
         Args:
@@ -233,7 +233,7 @@ class PostgresEntityHandler(EntityHandler):
         entity_names: Optional[list[str]] = None,
         include_embeddings: Optional[bool] = False,
         user_id: Optional[UUID] = None,
-    ):
+    ) -> Tuple[list[Entity], int]:
         """Retrieve entities from the database based on various filters.
 
         Args:
@@ -413,6 +413,16 @@ class PostgresEntityHandler(EntityHandler):
             if not result:
                 raise R2RException(status_code=404, message="Entity not found")
 
+            # update any graphs to stale that have this entity
+            QUERY = f"""
+                UPDATE {self._get_table_name("graph")}
+                SET status = 'stale'
+                WHERE id = ANY($1)
+            """
+            await self.connection_manager.execute_query(
+                QUERY, [result["graph_ids"]]
+            )
+
             return Entity(
                 id=result["id"],
                 name=result["name"],
@@ -424,6 +434,7 @@ class PostgresEntityHandler(EntityHandler):
                 updated_at=result["updated_at"],
                 attributes=result["attributes"],
             )
+
         except Exception as e:
             raise HTTPException(
                 status_code=500,
@@ -431,11 +442,30 @@ class PostgresEntityHandler(EntityHandler):
             )
 
     async def delete(self, entity_id: UUID) -> None:
-        query = f"""
-            DELETE FROM {self._get_table_name("entity")} WHERE id = $1
-        """
+
         try:
-            await self.connection_manager.fetchrow_query(query, [entity_id])
+            # update any graphs to stale that have this entity
+            # if we want, we not allow deleting entities that are part of a graph
+            # whatever is easiest for the developer
+            QUERY = f"""
+                UPDATE {self._get_table_name("graph")}
+                SET status = 'stale'
+                WHERE id = ANY (
+                    SELECT graph_ids
+                    FROM {self._get_table_name("relationship")}
+                    WHERE id = $1
+                )
+            """
+            await self.connection_manager.execute_query(QUERY, [entity_id])
+
+            # delete the entity
+            QUERY = f"""
+                DELETE FROM {self._get_table_name("relationship")}
+                WHERE id = $1
+                RETURNING id
+            """
+            await self.connection_manager.fetchrow_query(QUERY, [entity_id])
+
         except Exception as e:
             raise R2RException(
                 message=f"Error deleting entity: {e}",
@@ -706,34 +736,6 @@ class PostgresRelationshipHandler(RelationshipHandler):
         """
         await self.connection_manager.execute_query(QUERY)
 
-        QUERY = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("graph_relationship")} (
-                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                sid SERIAL,
-                graph_id UUID NOT NULL,
-                subject TEXT NOT NULL,
-                predicate TEXT NOT NULL,
-                object TEXT NOT NULL,
-                subject_id UUID,
-                object_id UUID,
-                weight FLOAT DEFAULT 1.0,
-                description TEXT,
-                predicate_embedding FLOAT[],
-                chunk_ids UUID[],
-                document_id UUID,
-                attributes JSONB,
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                user_id UUID REFERENCES {self._get_table_name("users")}(user_id),
-                last_modified_by UUID REFERENCES {self._get_table_name("users")}(user_id)
-            );
-            CREATE INDEX IF NOT EXISTS relationship_subject_idx ON {self._get_table_name("graph_relationship")} (subject);
-            CREATE INDEX IF NOT EXISTS relationship_object_idx ON {self._get_table_name("graph_relationship")} (object);
-            CREATE INDEX IF NOT EXISTS relationship_predicate_idx ON {self._get_table_name("graph_relationship")} (predicate);
-            CREATE INDEX IF NOT EXISTS relationship_document_id_idx ON {self._get_table_name("graph_relationship")} (document_id);
-        """
-        await self.connection_manager.execute_query(QUERY)
-
     def _get_table_name(self, table: str) -> str:
         """Get the fully qualified table name."""
         return f'"{self.project_name}"."{table}"'
@@ -770,7 +772,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
         QUERY = f"""
             INSERT INTO {self._get_table_name("relationship")} (subject, predicate, object, description, weight, chunk_ids, document_id, document_ids, attributes, user_id, last_modified_by)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING id, subject, predicate, object, weight, description, user_id, last_modified_by, created_at, updated_at, attributes
+            RETURNING id, subject, predicate, object, weight, description, document_id, document_ids, graph_ids, user_id, last_modified_by, created_at, updated_at, attributes
         """
 
         try:
@@ -787,8 +789,9 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 weight=result["weight"],
                 description=result["description"],
                 user_id=result["user_id"],
-                document_id=document_id,
-                document_ids=document_ids,
+                document_id=result["document_id"],
+                document_ids=result["document_ids"],
+                graph_ids=result["graph_ids"],
                 last_modified_by=result["last_modified_by"],
                 created_at=result["created_at"],
                 updated_at=result["updated_at"],
@@ -899,7 +902,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
         )
 
         QUERY = f"""
-            SELECT id, subject, predicate, object, weight, description, user_id, last_modified_by, created_at, updated_at, attributes, COUNT(*) OVER() AS total_entries
+            SELECT id, subject, predicate, object, weight, description, document_id, document_ids, graph_ids, user_id, last_modified_by, created_at, updated_at, attributes, COUNT(*) OVER() AS total_entries
             FROM {self._get_table_name("relationship")}
             {where_clause}
             ORDER BY created_at DESC
@@ -922,6 +925,9 @@ class PostgresRelationshipHandler(RelationshipHandler):
                     object=row["object"],
                     weight=row["weight"],
                     description=row["description"],
+                    document_id=row["document_id"],
+                    document_ids=row["document_ids"],
+                    graph_ids=row["graph_ids"],
                     user_id=row["user_id"],
                     last_modified_by=row["last_modified_by"],
                     created_at=row["created_at"],
@@ -945,9 +951,9 @@ class PostgresRelationshipHandler(RelationshipHandler):
     ) -> dict[str, list[Relationship] | int]:
 
         QUERY = f"""
-            SELECT id, subject, predicate, object, weight, description, user_id, last_modified_by, created_at, updated_at, attributes, COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name("graph_relationship")}
-            WHERE $1 = ANY(graph_ids)
+            SELECT id, subject, predicate, object, weight, description, document_id, document_ids, graph_ids, user_id, last_modified_by, created_at, updated_at, attributes, COUNT(*) OVER() AS total_entries
+            FROM {self._get_table_name("relationship")}
+            WHERE $1 = ANY(document_ids)
         """
 
         try:
@@ -965,6 +971,9 @@ class PostgresRelationshipHandler(RelationshipHandler):
                     object=row["object"],
                     weight=row["weight"],
                     description=row["description"],
+                    document_id=row["document_id"],
+                    document_ids=row["document_ids"],
+                    graph_ids=row["graph_ids"],
                     user_id=row["user_id"],
                     last_modified_by=row["last_modified_by"],
                     created_at=row["created_at"],
@@ -988,8 +997,8 @@ class PostgresRelationshipHandler(RelationshipHandler):
     ) -> dict[str, list[Relationship] | int]:
 
         QUERY = f"""
-            SELECT id, subject, predicate, object, weight, description, user_id, last_modified_by, created_at, updated_at, attributes, COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name("graph_relationship")}
+            SELECT id, subject, predicate, object, weight, description, document_id, document_ids, graph_ids, user_id, last_modified_by, created_at, updated_at, attributes, COUNT(*) OVER() AS total_entries
+            FROM {self._get_table_name("relationship")}
             WHERE $1 = ANY(graph_ids)
         """
 
@@ -1080,7 +1089,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
 
         QUERY = f"""
             UPDATE {self._get_table_name("relationship")} SET {", ".join(update_fields)} WHERE id = ${params_index}
-            RETURNING id, subject, predicate, object, weight, description, user_id, last_modified_by, created_at, updated_at, attributes
+            RETURNING id, subject, predicate, object, weight, description, document_id, document_ids, graph_ids, user_id, last_modified_by, created_at, updated_at, attributes
         """
 
         try:
@@ -1092,6 +1101,14 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 raise R2RException(
                     message="Relationship not found", status_code=404
                 )
+
+            # update any graphs to stale that have this relationship
+            QUERY = f"""
+                UPDATE {self._get_table_name("graph")}
+                SET status = 'stale'
+                WHERE id = ANY($1)
+            """
+            await self.connection_manager.execute_query(QUERY, [result["graph_ids"]])
 
             return Relationship(
                 id=result["id"],
@@ -1116,12 +1133,35 @@ class PostgresRelationshipHandler(RelationshipHandler):
     async def delete(self, id: UUID) -> None:
         """Delete a relationship from the database."""
 
-        QUERY = f"""
-            DELETE FROM {self._get_table_name("relationship")}
-            WHERE id = $1
-            RETURNING id
-        """
-        await self.connection_manager.fetchrow_query(QUERY, [id])
+        try:
+            # update any graphs to stale that have this relationship
+            # if we want, we not allow deleting relationships that are part of a graph
+            # whatever is easiest for the developer
+            QUERY = f"""
+                UPDATE {self._get_table_name("graph")}
+                SET status = 'stale'
+                WHERE id = ANY (
+                    SELECT graph_ids
+                    FROM {self._get_table_name("relationship")}
+                    WHERE id = $1
+                )
+            """
+            await self.connection_manager.execute_query(QUERY, [id])
+
+            # delete the relationship
+            QUERY = f"""
+                DELETE FROM {self._get_table_name("relationship")}
+                WHERE id = $1
+                RETURNING id
+            """
+            await self.connection_manager.fetchrow_query(QUERY, [id])
+
+        except Exception as e:
+
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while deleting the relationship: {e}",
+            )
 
     async def add_to_graph(
         self,
@@ -1400,6 +1440,8 @@ class PostgresCommunityHandler(CommunityHandler):
             result = await self.connection_manager.fetchrow_query(
                 QUERY, params
             )
+
+            # graph is not stale after updating community
 
             return Community(
                 id=result["id"],
@@ -1710,7 +1752,6 @@ class PostgresGraphHandler(GraphHandler):
                 status_code=409,
             )
 
-    # FIXME: This needs to be cleaned up.
     async def delete(self, graph_id: UUID) -> None:
         # Remove graph_id from users
         user_update_query = f"""
@@ -1722,30 +1763,42 @@ class PostgresGraphHandler(GraphHandler):
             user_update_query, [graph_id]
         )
 
+        # Delete all communities
+        QUERY = f"""
+            DELETE FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
+        """
+        await self.connection_manager.execute_query(QUERY, [graph_id])
+
+        # Delete all community info
+        QUERY = f"""
+            DELETE FROM {self._get_table_name("graph_community_info")} WHERE graph_id = $1
+        """
+        await self.connection_manager.execute_query(QUERY, [graph_id])
+
+        # Remove entities and relationships and delete them if they are orphaned
+        for table in ["entity", "relationship"]:
+
+            # Delete elements that have only this graph_id and no document_id
+            QUERY = f"""
+                DELETE FROM {self._get_table_name(table)}
+                WHERE $1 = ANY(graph_ids)
+                  AND array_length(graph_ids, 1) = 1
+                  AND document_id IS NULL;
+            """
+            await self.connection_manager.execute_query(QUERY, [graph_id])
+
+            # Update elements to remove the graph_id from graph_ids array
+            QUERY = f"""
+                UPDATE {self._get_table_name(table)}
+                SET graph_ids = array_remove(graph_ids, $1)
+                WHERE $1 = ANY(graph_ids)
+                  AND (document_id IS NOT NULL OR array_length(graph_ids, 1) > 1);
+            """
+            await self.connection_manager.execute_query(QUERY, [graph_id])
+
+        # finally delete the graph
         QUERY = f"""
             DELETE FROM {self._get_table_name("graph")} WHERE id = $1
-        """
-        await self.connection_manager.execute_query(QUERY, [graph_id])
-
-        # delete all entities and relationships mapping for this graph
-        QUERY = f"""
-            DELETE FROM {self._get_table_name("collection_entity")} WHERE graph_id = $1
-        """
-        await self.connection_manager.execute_query(QUERY, [graph_id])
-
-        QUERY = f"""
-            DELETE FROM {self._get_table_name("graph_relationship")} WHERE graph_id = $1
-        """
-        await self.connection_manager.execute_query(QUERY, [graph_id])
-
-        # finally update the document entity and chunk relationship tables to remove the graph_id
-        QUERY = f"""
-            UPDATE {self._get_table_name("entity")} SET graph_ids = array_remove(graph_ids, $1) WHERE $1 = ANY(graph_ids)
-        """
-        await self.connection_manager.execute_query(QUERY, [graph_id])
-
-        QUERY = f"""
-            UPDATE {self._get_table_name("relationship")} SET graph_ids = array_remove(graph_ids, $1) WHERE $1 = ANY(graph_ids)
         """
         await self.connection_manager.execute_query(QUERY, [graph_id])
 
@@ -3656,7 +3709,42 @@ class PostgresGraphHandler(GraphHandler):
 
         await self.connection_manager.execute_many(query, inputs)  # type: ignore
 
-    ####################### PRIVATE  METHODS ##########################
+    async def delete_graph_elements_for_document(self, document_id: UUID):
+        # this achieves behaviour as if we had copied the entities to a new graph
+
+        # delete the raw entities for this document
+        QUERY = f"""
+            DELETE FROM {self._get_table_name("chunk_entity")} WHERE document_id = $1
+        """
+        await self.connection_manager.execute_query(QUERY, [document_id])
+
+        # I want to first get the entities for this document (table is entity and field is document_id)
+        # then check two things:
+        # 1. if the entity is in any graph (length of graph_ids > 0)
+        # 2. if the entity is not in any graph, delete it
+        # 3. if the entity is in a graph, set the document_id to null
+        for table in ["entity", "relationship"]:
+
+            DELETE_QUERY = f"""
+                DELETE FROM {self._get_table_name(table)}
+                WHERE document_id = $1
+                AND (graph_ids IS NULL OR array_length(graph_ids, 1) < 1)
+            """
+            await self.connection_manager.execute_query(
+                DELETE_QUERY, [document_id]
+            )
+
+            # Update document_id to null for elements that are in graphs
+            UPDATE_QUERY = f"""
+                UPDATE {self._get_table_name(table)}
+                SET document_id = NULL, document_ids = array_remove(document_ids, $1)
+                WHERE document_id = $1
+            """
+            await self.connection_manager.execute_query(
+                UPDATE_QUERY, [document_id]
+            )
+
+    ####################### PRIVATE METHODS ##########################
 
 
 def _json_serialize(obj):
@@ -3757,67 +3845,3 @@ async def _add_objects(
 
     # Extract and return the IDs
     return [record["id"] for record in result]
-
-
-async def _update_object(
-    object: dict[str, Any],
-    full_table_name: str,
-    connection_manager: PostgresConnectionManager,
-    id_column: str = "id",
-    exclude_attributes: list[str] = [],
-) -> asyncpg.Record:
-    """
-    Update a single object in the specified table.
-
-    Args:
-        object: Dictionary containing the fields to update
-        full_table_name: Name of the table to update
-        connection_manager: Database connection manager
-        id_column: Name of the ID column to use in WHERE clause (default: "id")
-        exclude_attributes: List of attributes to exclude from update
-    """
-    # Get non-null attributes, excluding the ID and any excluded attributes
-    non_null_attrs = {
-        k: v
-        for k, v in object.items()
-        if v is not None and k != id_column and k not in exclude_attributes
-    }
-
-    # Create SET clause with placeholders
-    set_clause = ", ".join(
-        f"{k} = ${i+1}" for i, k in enumerate(non_null_attrs.keys())
-    )
-
-    QUERY = f"""
-        UPDATE {full_table_name}
-        SET {set_clause}
-        WHERE {id_column} = ${len(non_null_attrs) + 1}
-        RETURNING id
-    """
-
-    # Prepare parameters: values for SET clause + ID value for WHERE clause
-    params = [
-        (
-            json.dumps(v)
-            if isinstance(v, dict)
-            else str(v) if "embedding" in k else v
-        )
-        for k, v in non_null_attrs.items()
-    ]
-    params.append(object[id_column])
-
-    ret = await connection_manager.fetchrow_query(QUERY, tuple(params))  # type: ignore
-
-    return ret
-
-
-async def _delete_object(
-    object_id: UUID,
-    full_table_name: str,
-    connection_manager: PostgresConnectionManager,
-):
-    QUERY = f"""
-        DELETE FROM {full_table_name} WHERE id = $1
-        RETURNING id
-    """
-    return await connection_manager.fetchrow_query(QUERY, [object_id])

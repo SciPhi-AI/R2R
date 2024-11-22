@@ -1,6 +1,6 @@
 import json
 from io import BytesIO
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from shared.api.models.base import WrappedBooleanResponse
@@ -40,7 +40,7 @@ class RelationshipsSDK:
             attributes (Optional[dict]): The attributes of the relationship.
         """
 
-        data = {}
+        data: dict[str, Any] = {}
         if subject:
             data["subject"] = subject
         if predicate:

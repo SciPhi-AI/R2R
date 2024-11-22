@@ -1,6 +1,6 @@
 import json
 from io import BytesIO
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from shared.api.models.base import WrappedBooleanResponse
@@ -46,7 +46,7 @@ class CommunitiesSDK:
             The created community.
         """
 
-        data = {}
+        data: dict[str, Any] = {}
         if name:
             data["name"] = name
         if summary:
@@ -121,7 +121,7 @@ class CommunitiesSDK:
             dict: Updated results containing entity information.
         """
 
-        data = {}
+        data: dict[str, Any] = {}
         if name:
             data["name"] = name
         if summary:

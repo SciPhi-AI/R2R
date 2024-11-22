@@ -373,6 +373,10 @@ class ManagementService(Service):
                             f"Error deleting document ID {document_id} from documents_overview: {e}"
                         )
 
+                await self.providers.database.graph_handler.delete_graph_elements_for_document(
+                    document_id
+                )
+
         return None
 
     @telemetry_event("DownloadFile")
