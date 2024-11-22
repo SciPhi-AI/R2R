@@ -536,9 +536,9 @@ class R2RPipeFactory:
         )
 
     def create_kg_relationships_extraction_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import KGRelationshipsExtractionPipe
+        from core.pipes import KGExtractionPipe
 
-        return KGRelationshipsExtractionPipe(
+        return KGExtractionPipe(
             logging_provider=self.providers.logging,
             llm_provider=self.providers.llm,
             database_provider=self.providers.database,

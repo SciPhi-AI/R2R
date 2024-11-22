@@ -7,12 +7,20 @@ from io import BytesIO
 from typing import Optional
 from uuid import UUID
 
-from fastapi import Depends, File, Form, Path, Query, UploadFile, Body
+from fastapi import Body, Depends, File, Form, Path, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import Json
 
 from core.base import R2RException, RunType, generate_document_id
+from core.base.abstractions import (
+    Entity,
+    GraphBuildSettings,
+    KGCreationSettings,
+    KGRunType,
+    Relationship,
+)
 from core.base.api.models import (
+    PaginatedResultsWrapper,
     GenericBooleanResponse,
     WrappedBooleanResponse,
     WrappedChunksResponse,
@@ -26,15 +34,6 @@ from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
-
-from core.base.abstractions import (
-    Entity,
-    KGCreationSettings,
-    KGRunType,
-    Relationship,
-    GraphBuildSettings,
-)
-
 from core.utils import update_settings_from_dict
 
 from .base_router import BaseRouterV3
@@ -1217,8 +1216,8 @@ class DocumentsRouter(BaseRouterV3):
             }
 
         @self.router.post(
-            "/documents/{id}/entities_and_relationships",
-            summary="Extract entities and relationships from a document",
+            "/documents/{id}/extract",
+            summary="Extract entities and relationships",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -1230,25 +1229,24 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.extract_entities_and_relationships(
+                            result = client.documents.extract(
                                 id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
                             )
                             """
                         ),
                     },
                 ],
-                "operationId": "documents_extract_entities_and_relationships_v3_documents__id__entities_and_relationships_post_documents",
             },
         )
         @self.base_endpoint
-        async def extract_entities_and_relationships(
+        async def extract(
             id: UUID = Path(
                 ...,
                 description="The ID of the document to extract entities and relationships from.",
             ),
             run_type: KGRunType = Query(
-                default=KGRunType.ESTIMATE,
-                description="Whether to return an estimate of the creation cost or to actually create the graph.",
+                default=KGRunType.RUN,
+                description="Whether to return an estimate of the creation cost or to actually extract the document.",
             ),
             settings: Optional[KGCreationSettings] = Body(
                 default=None,
@@ -1321,6 +1319,209 @@ class DocumentsRouter(BaseRouterV3):
                         "message": "Graph created successfully.",
                         "task_id": None,
                     }
+
+        @self.router.get(
+            "/documents/{id}/entities",
+            summary="Lists the entities from the document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.extract(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def get_entities(
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to retrieve entities from.",
+            ),
+            offset: Optional[int] = Query(
+                0,
+                ge=0,
+                description="The offset of the first entity to retrieve.",
+            ),
+            limit: Optional[int] = Query(
+                100,
+                ge=0,
+                le=20_000,
+                description="The maximum number of entities to retrieve, up to 20,000.",
+            ),
+            include_embeddings: Optional[bool] = Query(
+                False,
+                description="Whether to include vector embeddings in the response.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> PaginatedResultsWrapper[list[Entity]]:
+            """
+            Retrieves the entities that were extracted from a document. These represent 
+            important semantic elements like people, places, organizations, concepts, etc.
+            
+            Users can only access entities from documents they own or have access to through
+            collections. Entity embeddings are only included if specifically requested.
+
+            Results are returned in the order they were extracted from the document.
+            """
+            # First check if the document exists and user has access
+            documents_overview_response = await self.services[
+                "management"
+            ].documents_overview(
+                user_ids=None if auth_user.is_superuser else [auth_user.id],
+                collection_ids=None if auth_user.is_superuser else auth_user.collection_ids,
+                document_ids=[id],
+                offset=0,
+                limit=1,
+            )
+
+            if not documents_overview_response["results"]:
+                raise R2RException("Document not found.", 404)
+
+            # Get all entities for this document from the document_entity table
+            entities, total_count = await self.providers.database.graph_handler.entities.get(
+                parent_id=id,
+                store_type="document",
+                offset=offset,
+                limit=limit,
+                include_embeddings=include_embeddings
+            )
+
+            return entities, {"total_entries": total_count}
+
+        @self.router.get(
+            "/documents/{id}/relationships",
+            summary="List document relationships",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.list_relationships(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                offset=0,
+                                limit=100
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript", 
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.documents.listRelationships({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    offset: 0,
+                                    limit: 100,
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r documents list-relationships 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/relationships" \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def list_relationships(
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to retrieve relationships for.",
+            ),
+            offset: Optional[int] = Query(
+                0,
+                ge=0,
+                description="The offset of the first relationship to retrieve.",
+            ),
+            limit: Optional[int] = Query(
+                100,
+                ge=0,
+                le=20_000,
+                description="The maximum number of relationships to retrieve, up to 20,000.",
+            ),
+            entity_names: Optional[list[str]] = Query(
+                None,
+                description="Filter relationships by specific entity names.",
+            ),
+            relationship_types: Optional[list[str]] = Query(
+                None,
+                description="Filter relationships by specific relationship types.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> PaginatedResultsWrapper[list[Relationship]]:
+            """
+            Retrieves the relationships between entities that were extracted from a document. These represent 
+            connections and interactions between entities found in the text.
+            
+            Users can only access relationships from documents they own or have access to through
+            collections. Results can be filtered by entity names and relationship types.
+
+            Results are returned in the order they were extracted from the document.
+            """
+            # First check if the document exists and user has access
+            documents_overview_response = await self.services["management"].documents_overview(
+                user_ids=None if auth_user.is_superuser else [auth_user.id],
+                collection_ids=None if auth_user.is_superuser else auth_user.collection_ids,
+                document_ids=[id],
+                offset=0,
+                limit=1,
+            )
+
+            if not documents_overview_response["results"]:
+                raise R2RException("Document not found.", 404)
+
+            # Get relationships for this document 
+            relationships, total_count = await self.providers.database.graph_handler.relationships.get(
+                parent_id=id,
+                store_type="document",
+                entity_names=entity_names,
+                relationship_types=relationship_types,
+                offset=offset,
+                limit=limit,
+            )
+
+            return relationships, {"total_entries": total_count}
+
 
     @staticmethod
     async def _process_file(file):

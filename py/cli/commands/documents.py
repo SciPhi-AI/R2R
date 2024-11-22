@@ -233,9 +233,11 @@ async def ingest_files_from_urls(client, urls):
             # TODO: use the utils function generate_document_id
             document_ids.append(uuid.uuid5(uuid.NAMESPACE_DNS, url))
 
-        response = await client.ingest_files(
-            files_to_ingest, metadatas=metadatas, document_ids=document_ids
-        )
+        for it, file in enumerate(files_to_ingest):
+            click.echo(f"Ingesting file: {file}")
+            response = await client.documents.create(
+                file, metadata=metadatas[it], # document_id=document_ids[it]
+            )
 
         return response["results"]
     finally:
@@ -252,9 +254,9 @@ async def ingest_files_from_urls(client, urls):
     "--v3", is_flag=True, help="use aristotle_v3.txt (a larger file)"
 )
 @pass_context
-async def create_sample(ctx, v2=False, v3=False):
+async def create_sample(ctx, v2=True, v3=False):
     """Ingest the first sample file into R2R."""
-    sample_file_url = f"https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle{'_v2' if v2 else ''}{'_v3' if v3 else ''}.txt"
+    sample_file_url = f"https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle_v2.txt"
     client: R2RAsyncClient = ctx.obj
 
     with timer():

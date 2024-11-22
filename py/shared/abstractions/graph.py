@@ -39,63 +39,58 @@ class Entity(R2RSerializable):
     # we will migrate to UUID only in the future
     # sid is also deprecated and needs to be removed in the future
     id: Optional[UUID | int] = None
-    sid: Optional[int] = None
     category: Optional[str] = None
     description: Optional[str] = None
+    parent_id: UUID # graph_id | document_id
+    # document_ids: list[UUID] = []
     description_embedding: Optional[list[float] | str] = None
-    chunk_ids: list[UUID] = []
-    graph_ids: list[UUID] = []
-    document_ids: list[UUID] = []
-    document_id: Optional[UUID] = None  # this is for backward compatibility
+
+    chunk_ids: Optional[list[UUID]] = []
 
     # we don't use these yet
     # name_embedding: Optional[list[float]] = None
     # graph_embedding: Optional[list[float]] = None
     # rank: Optional[int] = None
-    attributes: Optional[dict[str, Any] | str] = None
+    metadata: Optional[dict[str, Any] | str] = None
 
     def __str__(self):
         return (
-            f"{self.category}:{self.subcategory}:{self.value}"
-            if self.subcategory
-            else f"{self.category}:{self.value}"
+            f"{self.name}:{self.category}"
         )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if isinstance(self.attributes, str):
+        if isinstance(self.metadata, str):
             try:
-                self.attributes = json.loads(self.attributes)
+                self.metadata = json.loads(self.metadata)
             except json.JSONDecodeError:
-                self.attributes = self.attributes
+                self.metadata = self.metadata
 
 
 class Relationship(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
     # id is Union of UUID and int for backwards compatibility
+    id: Optional[UUID] = None
     subject: str
     predicate: str
     object: str
-    id: Optional[UUID | int] = None
+    description: str | None = None
     subject_id: Optional[UUID] = None
     object_id: Optional[UUID] = None
     weight: float | None = 1.0
-    description: str | None = None
-    description_embedding: list[float] | None = None
-    predicate_embedding: list[float] | None = None
     chunk_ids: list[UUID] = []
-    document_id: Optional[UUID] = None
-    graph_id: Optional[UUID] = None
-    attributes: dict[str, Any] | str = {}
+    parent_id: UUID
+
+    metadata: Optional[dict[str, Any] | str] = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if isinstance(self.attributes, str):
+        if isinstance(self.metadata, str):
             try:
-                self.attributes = json.loads(self.attributes)
+                self.metadata = json.loads(self.metadata)
             except json.JSONDecodeError:
-                self.attributes = self.attributes
+                self.metadata = self.metadata
 
 
 @dataclass
@@ -155,8 +150,6 @@ class Community(R2RSerializable):
 class KGExtraction(R2RSerializable):
     """A protocol for a knowledge graph extraction."""
 
-    chunk_ids: list[UUID]
-    document_id: UUID
     entities: list[Entity]
     relationships: list[Relationship]
 

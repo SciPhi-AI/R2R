@@ -152,8 +152,6 @@ def kg_extractions(
 ):
     return [
         KGExtraction(
-            chunk_ids=chunk_ids,
-            entities=entities_raw_list,
             relationships=relationships_raw_list,
             document_id=document_id,
         )

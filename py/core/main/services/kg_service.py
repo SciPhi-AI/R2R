@@ -1,12 +1,16 @@
+import re
+import json
+import asyncio
 import logging
 import math
 import time
 from typing import AsyncGenerator, Optional, Any
 from uuid import UUID
+from typing import Union
 
 from fastapi import HTTPException
 
-from core.base import KGExtractionStatus, RunManager
+from core.base import KGExtractionStatus, RunManager, KGExtraction, DocumentChunk, R2RDocumentProcessingError
 from core.base.abstractions import (
     DataLevel,
     GenerationConfig,
@@ -31,6 +35,8 @@ from .base import Service
 
 logger = logging.getLogger()
 
+
+MIN_VALID_KG_EXTRACTION_RESPONSE_LENGTH = 128
 
 async def _collect_results(result_gen: AsyncGenerator) -> list[dict]:
     results = []
@@ -127,7 +133,7 @@ class KgService(Service):
         self,
         name: str,
         description: str,
-        attributes: Optional[dict] = None,
+        metadata: Optional[dict] = None,
         category: Optional[str] = None,
         auth_user: Optional[Any] = None,
     ):
@@ -141,7 +147,7 @@ class KgService(Service):
             category=category,
             description=description,
             description_embedding=description_embedding,
-            attributes=attributes,
+            metadata=metadata,
             auth_user=auth_user,
         )
 
@@ -887,3 +893,316 @@ class KgService(Service):
             )
 
         return results[0]
+
+
+    async def kg_extraction(  # type: ignore
+        self,
+        document_id: UUID,
+        generation_config: GenerationConfig,
+        max_knowledge_relationships: int,
+        entity_types: list[str],
+        relation_types: list[str],
+        chunk_merge_count: int,
+        filter_out_existing_chunks: bool = True,
+        total_tasks: Optional[int] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
+        start_time = time.time()
+    
+        print('....')
+        logger.info(
+            f"KGExtractionPipe: Processing document {document_id} for KG extraction",
+        )
+
+        # Then create the extractions from the results
+        limit = 100
+        offset = 0
+        chunks = []
+        while True:
+            chunk_req = await self.providers.database.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                document_id=document_id,
+                offset=offset,
+                limit=limit,
+            )
+
+            chunks.extend([
+                DocumentChunk(
+                    id=chunk["id"],
+                    document_id=chunk["document_id"],
+                    user_id=chunk["user_id"],
+                    collection_ids=chunk["collection_ids"],
+                    data=chunk["text"],
+                    metadata=chunk["metadata"],
+                )
+                for chunk in chunk_req["results"]
+                ]
+            )
+            if len(chunk_req["results"]) < limit:
+                break
+            offset += limit
+
+        logger.info(
+            f"Found {len(chunks)} chunks for document {document_id}"
+        )
+        if len(chunks) == 0:
+            logger.info(f"No chunks found for document {document_id}")
+            raise R2RException(
+                message="No chunks found for document",
+                status_code=404,
+            )
+        
+        if filter_out_existing_chunks:
+            existing_chunk_ids = await self.providers.database.graph_handler.get_existing_document_entity_chunk_ids(
+                document_id=document_id
+            )
+            chunks = [
+                chunk
+                for chunk in chunks
+                if chunk.id not in existing_chunk_ids
+            ]
+            logger.info(
+                f"Filtered out {len(existing_chunk_ids)} existing chunks, remaining {len(chunks)} chunks for document {document_id}"
+            )
+
+            if len(chunks) == 0:
+                logger.info(f"No extractions left for document {document_id}")
+                return
+
+        logger.info(
+            f"KGExtractionPipe: Obtained {len(chunks)} chunks to process, time from start: {time.time() - start_time:.2f} seconds",
+        )
+
+        # sort the extractions accroding to chunk_order field in metadata in ascending order
+        chunks = sorted(
+            chunks,
+            key=lambda x: x.metadata.get("chunk_order", float("inf")),
+        )
+
+        # group these extractions into groups of chunk_merge_count
+        grouped_chunks = [
+            chunks[i : i + chunk_merge_count]
+            for i in range(0, len(chunks), chunk_merge_count)
+        ]
+
+        logger.info(
+            f"KGExtractionPipe: Extracting KG Relationships for document and created {len(grouped_chunks)} tasks, time from start: {time.time() - start_time:.2f} seconds",
+        )
+
+        tasks = [
+            asyncio.create_task(
+                self._extract_kg(
+                    chunks=chunk_group,
+                    generation_config=generation_config,
+                    max_knowledge_relationships=max_knowledge_relationships,
+                    entity_types=entity_types,
+                    relation_types=relation_types,
+                    task_id=task_id,
+                    total_tasks=len(grouped_chunks),
+                )
+            )
+            for task_id, chunk_group in enumerate(grouped_chunks)
+        ]
+
+        completed_tasks = 0
+        total_tasks = len(tasks)
+
+        logger.info(
+            f"KGExtractionPipe: Waiting for {total_tasks} KG extraction tasks to complete",
+        )
+
+        for completed_task in asyncio.as_completed(tasks):
+            try:
+                yield await completed_task
+                completed_tasks += 1
+                if completed_tasks % 100 == 0:
+                    logger.info(
+                        f"KGExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks",
+                    )
+            except Exception as e:
+                logger.error(f"Error in Extracting KG Relationships: {e}")
+                yield R2RDocumentProcessingError(
+                    document_id=document_id,
+                    error_message=str(e),
+                )
+
+        logger.info(
+            f"KGExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks, time from start: {time.time() - start_time:.2f} seconds",
+        )
+
+
+
+    async def _extract_kg(
+        self,
+        chunks: list[DocumentChunk],
+        generation_config: GenerationConfig,
+        max_knowledge_relationships: int,
+        entity_types: list[str],
+        relation_types: list[str],
+        retries: int = 5,
+        delay: int = 2,
+        task_id: Optional[int] = None,
+        total_tasks: Optional[int] = None,
+    ) -> KGExtraction:
+        """
+        Extracts NER relationships from a extraction with retries.
+        """
+
+        # combine all extractions into a single string
+        combined_extraction: str = " ".join([chunk.data for chunk in chunks])  # type: ignore
+
+        messages = await self.providers.database.prompt_handler.get_message_payload(
+            task_prompt_name=self.providers.database.config.kg_creation_settings.graphrag_relationships_extraction_few_shot,
+            task_inputs={
+                "input": combined_extraction,
+                "max_knowledge_relationships": max_knowledge_relationships,
+                "entity_types": "\n".join(entity_types),
+                "relation_types": "\n".join(relation_types),
+            },
+        )
+
+        for attempt in range(retries):
+            try:
+                response = await self.providers.llm.aget_completion(
+                    messages,
+                    generation_config=generation_config,
+                )
+
+                kg_extraction = response.choices[0].message.content
+
+                if not kg_extraction:
+                    raise R2RException(
+                        "No knowledge graph extraction found in the response string, the selected LLM likely failed to format it's response correctly.",
+                        400,
+                    )
+
+                entity_pattern = (
+                    r'\("entity"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\)'
+                )
+                relationship_pattern = r'\("relationship"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\${4}(\d+(?:\.\d+)?)\)'
+
+                def parse_fn(response_str: str) -> Any:
+                    entities = re.findall(entity_pattern, response_str)
+
+                    if (
+                        len(kg_extraction)
+                        > MIN_VALID_KG_EXTRACTION_RESPONSE_LENGTH
+                        and len(entities) == 0
+                    ):
+                        raise R2RException(
+                            f"No entities found in the response string, the selected LLM likely failed to format it's response correctly. {response_str}",
+                            400,
+                        )
+
+                    relationships = re.findall(
+                        relationship_pattern, response_str
+                    )
+
+                    entities_arr = []
+                    for entity in entities:
+                        entity_value = entity[0]
+                        entity_category = entity[1]
+                        entity_description = entity[2]
+                        entities_arr.append(
+                            Entity(
+                                category=entity_category,
+                                description=entity_description,
+                                name=entity_value,
+                                parent_id=chunks[0].document_id,
+                                chunk_ids=[
+                                    chunk.id for chunk in chunks
+                                ],
+                                attributes={},
+                            )
+                        )
+
+                    relations_arr = []
+                    for relationship in relationships:
+                        subject = relationship[0]
+                        object = relationship[1]
+                        predicate = relationship[2]
+                        description = relationship[3]
+                        weight = float(relationship[4])
+
+                        # check if subject and object are in entities_dict
+                        relations_arr.append(
+                            Relationship(
+                                subject=subject,
+                                predicate=predicate,
+                                object=object,
+                                description=description,
+                                weight=weight,
+                                parent_id=chunks[0].document_id,
+                                chunk_ids=[
+                                    chunk.id for chunk in chunks
+                                ],
+                                attributes={},
+                            )
+                        )
+
+                    return entities_arr, relations_arr
+
+                entities, relationships = parse_fn(kg_extraction)
+                return KGExtraction(
+                    entities=entities,
+                    relationships=relationships,
+                )
+
+            except (
+                Exception,
+                json.JSONDecodeError,
+                KeyError,
+                IndexError,
+                R2RException,
+            ) as e:
+                if attempt < retries - 1:
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(
+                        f"Failed after retries with for chunk {chunks[0].id} of document {chunks[0].document_id}: {e}"
+                    )
+                    # raise e # you should raise an error.
+        # add metadata to entities and relationships
+
+        logger.info(
+            f"KGExtractionPipe: Completed task number {task_id} of {total_tasks} for document {chunks[0].document_id}",
+        )
+
+        return KGExtraction(
+            entities=[],
+            relationships=[],
+        )
+
+
+
+    async def store_kg_extractions(
+        self,
+        kg_extractions: list[KGExtraction],
+    ):
+        """
+        Stores a batch of knowledge graph extractions in the graph database.
+        """
+
+        total_entities, total_relationships = 0, 0
+
+        for extraction in kg_extractions:
+            print('extraction = ', extraction)
+
+            total_entities, total_relationships = (
+                total_entities + len(extraction.entities),
+                total_relationships + len(extraction.relationships),
+            )
+
+            if extraction.entities:
+                await self.providers.database.graph_handler.entities.create(
+                    extraction.entities,
+                    store_type="document"
+                )
+
+            if extraction.relationships:
+                await self.providers.database.graph_handler.relationships.create(
+                    extraction.relationships,
+                    store_type="document"
+                )
+
+            return (total_entities, total_relationships)

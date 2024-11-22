@@ -24,9 +24,6 @@ from .api.v3.prompts_router import PromptsRouter
 from .api.v3.retrieval_router import RetrievalRouterV3
 from .api.v3.system_router import SystemRouter
 from .api.v3.users_router import UsersRouter
-from .api.v3.entities_router import EntitiesRouter
-from .api.v3.relationships_router import RelationshipsRouter
-from .api.v3.communities_router import CommunitiesRouter
 from .config import R2RConfig
 
 
@@ -52,9 +49,6 @@ class R2RApp:
         retrieval_router_v3: RetrievalRouterV3,
         system_router: SystemRouter,
         graph_router: GraphRouter,
-        entities_router: EntitiesRouter,
-        relationships_router: RelationshipsRouter,
-        communities_router: CommunitiesRouter,
     ):
         self.config = config
         self.ingestion_router = ingestion_router
@@ -73,9 +67,6 @@ class R2RApp:
         self.retrieval_router_v3 = retrieval_router_v3
         self.system_router = system_router
         self.graph_router = graph_router
-        self.entities_router = entities_router
-        self.relationships_router = relationships_router
-        self.communities_router = communities_router
 
         self.app = FastAPI()
 
@@ -94,11 +85,11 @@ class R2RApp:
 
     def _setup_routes(self):
         # Include routers in the app
-        self.app.include_router(self.ingestion_router, prefix="/v2")
-        self.app.include_router(self.management_router, prefix="/v2")
-        self.app.include_router(self.retrieval_router, prefix="/v2")
-        self.app.include_router(self.auth_router, prefix="/v2")
-        self.app.include_router(self.kg_router, prefix="/v2")
+        # self.app.include_router(self.ingestion_router, prefix="/v2")
+        # self.app.include_router(self.management_router, prefix="/v2")
+        # self.app.include_router(self.retrieval_router, prefix="/v2")
+        # self.app.include_router(self.auth_router, prefix="/v2")
+        # self.app.include_router(self.kg_router, prefix="/v2")
 
         self.app.include_router(self.documents_router, prefix="/v3")
         self.app.include_router(self.chunks_router, prefix="/v3")
@@ -108,9 +99,6 @@ class R2RApp:
         self.app.include_router(self.conversations_router, prefix="/v3")
         self.app.include_router(self.prompts_router, prefix="/v3")
         self.app.include_router(self.retrieval_router_v3, prefix="/v3")
-        self.app.include_router(self.entities_router, prefix="/v3")
-        self.app.include_router(self.relationships_router, prefix="/v3")
-        self.app.include_router(self.communities_router, prefix="/v3")
         self.app.include_router(self.graph_router, prefix="/v3")
         self.app.include_router(self.system_router, prefix="/v3")
 
