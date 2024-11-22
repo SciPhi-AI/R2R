@@ -10,7 +10,7 @@ logger = logging.getLogger()
 
 
 class KGEnrichmentPipeline(AsyncPipeline):
-    """A pipeline for enhancing the graph with communities, connnected components etc."""
+    """A pipeline for enhancing the graph with communities, connected components etc."""
 
     pipeline_type: str = "other"
 
