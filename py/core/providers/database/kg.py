@@ -165,7 +165,6 @@ class PostgresEntityHandler(EntityHandler):
         document_id: Optional[UUID] = None,
         document_ids: Optional[list[UUID]] = None,  # not exposed on the API
         user_id: Optional[UUID] = None,
-        last_modified_by: Optional[UUID] = None,
         entity_table_name: str = "entity",
     ) -> UUID:  # type: ignore
         """Create a new entity in the database.
@@ -191,7 +190,7 @@ class PostgresEntityHandler(EntityHandler):
             document_id,
             document_ids,
             user_id,
-            last_modified_by,
+            user_id,
         ]
 
         query = f"""

@@ -83,7 +83,6 @@ class KGStoragePipe(AsyncPipe):
                         document_id=extraction.document_id,
                         document_ids=[extraction.document_id],
                         user_id=entity.user_id,
-                        last_modified_by=entity.last_modified_by,
                         entity_table_name="chunk_entity",
                     )
 

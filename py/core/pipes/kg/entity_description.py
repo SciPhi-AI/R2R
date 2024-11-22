@@ -147,7 +147,6 @@ class KGEntityDescriptionPipe(AsyncPipe):
                 document_ids=[document_id],
                 entity_table_name="entity",
                 user_id=auth_user["id"] if auth_user else None,
-                last_modified_by=auth_user["id"] if auth_user else None,
             )
 
             return out_entity.name
