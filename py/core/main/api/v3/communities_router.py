@@ -10,6 +10,7 @@ from core.base.abstractions import DataLevel, KGRunType
 from core.base.abstractions import Community, Entity, Relationship, Graph
 
 from core.base.api.models import (
+    GenericBooleanResponse,
     GenericMessageResponse,
     WrappedGenericMessageResponse,
     WrappedKGCreationResponse,
@@ -206,8 +207,8 @@ class CommunitiesRouter(BaseRouterV3):
             )
 
         @self.router.post(
-            "/communities",
-            summary="Create communities",
+            "/graphs/{id}/communities",
+            summary="Create a new community in the graph",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -228,14 +229,34 @@ class CommunitiesRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_communities(
-            request: Request,
-            communities: list[Community] = Body(
-                ..., description="The communities to create."
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to create the community in.",
+            ),
+            name: str = Body(..., description="The name of the community"),
+            summary: str = Body(..., description="A summary of the community"),
+            findings: Optional[list[str]] = Body(
+                default=[], description="Findings about the community"
+            ),
+            level: Optional[int] = Body(
+                default=0,
+                ge=0,
+                le=100,
+                description="The level of the community",
+            ),
+            rating: Optional[float] = Body(
+                default=5, ge=1, le=10, description="Rating between 1 and 10"
+            ),
+            rating_explanation: Optional[str] = Body(
+                default="", description="Explanation for the rating"
+            ),
+            attributes: Optional[dict] = Body(
+                default=None, description="Attributes for the community"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
-            Creates custom communities in the graph.
+            Creates a new community in the graph.
 
             While communities are typically built automatically via the /graphs/{id}/communities/build endpoint,
             this endpoint allows you to manually create your own communities. This can be useful when you want to:
@@ -248,15 +269,20 @@ class CommunitiesRouter(BaseRouterV3):
             The created communities will be integrated with any existing automatically detected communities
             in the graph's community structure.
             """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
-
-            return await self.services["kg"].create_communities_v3(communities)
+            return await self.services["kg"].create_community_v3(
+                graph_id=id,
+                name=name,
+                summary=summary,
+                findings=findings,
+                rating=rating,
+                rating_explanation=rating_explanation,
+                level=level,
+                attributes=attributes,
+                auth_user=auth_user,
+            )
 
         @self.router.get(
-            "/communities",
+            "/graphs/{id}/communities",
             summary="List communities",
             openapi_extra={
                 "x-codeSamples": [
@@ -279,7 +305,7 @@ class CommunitiesRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_communities(
             request: Request,
-            id: UUID = Query(
+            id: UUID = Path(
                 ...,
                 description="The ID of the graph to get communities for.",
             ),
@@ -293,10 +319,6 @@ class CommunitiesRouter(BaseRouterV3):
                 ge=1,
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
-            ),
-            attributes: Optional[list[str]] = Query(
-                None,
-                description="A list of attributes to return. By default, all attributes are returned.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
@@ -313,10 +335,10 @@ class CommunitiesRouter(BaseRouterV3):
             communities, count = await self.services[
                 "kg"
             ].providers.database.graph_handler.communities.get(
-                id=id,
+                graph_id=id,
                 offset=offset,
                 limit=limit,
-                attributes=attributes,
+                auth_user=auth_user,
             )
 
             return communities, {
@@ -324,7 +346,7 @@ class CommunitiesRouter(BaseRouterV3):
             }
 
         @self.router.get(
-            "/communities/{id}",
+            "/graphs/{id}/communities/{community_id}",
             summary="Retrieve a community",
             openapi_extra={
                 "x-codeSamples": [
@@ -370,12 +392,15 @@ class CommunitiesRouter(BaseRouterV3):
             return await self.services[
                 "kg"
             ].providers.database.graph_handler.communities.get(
-                community_id=id,
-                attributes=attributes,
+                graph_id=id,
+                community_id=community_id,
+                auth_user=auth_user,
+                offset=0,
+                limit=1,
             )
 
         @self.router.delete(
-            "/communities/{id}",
+            "/graphs/{id}/communities/{community_id}",
             summary="Delete a community",
         )
         @self.base_endpoint
@@ -385,18 +410,25 @@ class CommunitiesRouter(BaseRouterV3):
                 ...,
                 description="The ID of the graph to delete the community from.",
             ),
+            community_id: UUID = Path(
+                ...,
+                description="The ID of the community to delete.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
                 )
-            return await self.services["kg"].delete_community_v3(
-                id=id,
+            await self.services["kg"].delete_community_v3(
+                graph_id=id,
+                community_id=community_id,
+                auth_user=auth_user,
             )
+            return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
-            "/communities/{id}",
+            "/graphs/{id}/communities/{community_id}",
             summary="Update community",
             openapi_extra={
                 "x-codeSamples": [
@@ -426,7 +458,14 @@ class CommunitiesRouter(BaseRouterV3):
         @self.base_endpoint
         async def update_community(
             id: UUID = Path(...),
-            community: Community = Body(...),
+            community_id: UUID = Path(...),
+            name: Optional[str] = Body(None),
+            summary: Optional[str] = Body(None),
+            findings: Optional[list[str]] = Body(None),
+            rating: Optional[float] = Body(None),
+            rating_explanation: Optional[str] = Body(None),
+            level: Optional[int] = Body(None),
+            attributes: Optional[dict] = Body(None),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
             """
@@ -437,6 +476,15 @@ class CommunitiesRouter(BaseRouterV3):
                     "Only superusers can update communities", 403
                 )
 
-            return await self.services[
-                "kg"
-            ].providers.database.graph_handler.communities.update(community)
+            return await self.services["kg"].update_community_v3(
+                id=id,
+                community_id=community_id,
+                name=name,
+                summary=summary,
+                findings=findings,
+                rating=rating,
+                rating_explanation=rating_explanation,
+                level=level,
+                attributes=attributes,
+                auth_user=auth_user,
+            )

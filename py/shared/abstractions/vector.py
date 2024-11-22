@@ -119,7 +119,7 @@ class VectorTableName(str, Enum):
     ENTITIES_COLLECTION = "collection_entity"
     # TODO: Add support for relationships
     # TRIPLES = "relationship"
-    COMMUNITIES = "community"
+    COMMUNITIES = "graph_community"
 
     def __str__(self) -> str:
         return self.value

@@ -94,13 +94,20 @@ class PostgresEntityHandler(EntityHandler):
             CREATE TABLE IF NOT EXISTS {self._get_table_name("chunk_entity")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             sid SERIAL,
-            category TEXT NOT NULL,
             name TEXT NOT NULL,
+            category TEXT,
             description TEXT NOT NULL,
-            chunk_ids UUID[] NOT NULL,
-            document_id UUID NOT NULL,
+            chunk_ids UUID[],
+            description_embedding {vector_column_str},
+            document_ids UUID[],
+            document_id UUID,
+            graph_ids UUID[],
+            created_by UUID REFERENCES {self._get_table_name("users")}(user_id),
+            last_modified_by UUID REFERENCES {self._get_table_name("users")}(user_id),
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
             attributes JSONB
-        );
+            );
         """
         await self.connection_manager.execute_query(query)
 
@@ -152,6 +159,7 @@ class PostgresEntityHandler(EntityHandler):
         name: str,
         description: str,
         description_embedding: str,
+
         category: Optional[str] = None,
         attributes: Optional[dict] = None,
         user_id: Optional[UUID] = None,
@@ -255,7 +263,10 @@ class PostgresEntityHandler(EntityHandler):
 
         if document_id:
             # user has access to the document as we have done a check earlier
-            filters.append(f"${len(params)+1} = ANY(document_ids)")
+            # Note that you cannot do document_ids = ANY($1) because that would result in data leakage
+            # poetentially we can give the users to provide a list of document_ids to filter by to get deduplicated entities
+            # but deduplicated entities for are associated with a graph, not a document, so graph_id filter should be used instead
+            filters.append(f"document_id = ${len(params)+1}")
             params.append(document_id)
 
         filters_str = " AND ".join(filters)
@@ -287,6 +298,7 @@ class PostgresEntityHandler(EntityHandler):
                     else None
                 ),
                 chunk_ids=entity["chunk_ids"],
+                document_id=entity["document_id"],
                 document_ids=entity["document_ids"],
                 graph_ids=entity["graph_ids"],
                 attributes=entity["attributes"],
@@ -874,7 +886,7 @@ class PostgresCommunityHandler(CommunityHandler):
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             graph_id UUID,
             collection_id UUID,
-            community_number INT NOT NULL,
+            community_number INT,
             level INT NOT NULL,
             name TEXT NOT NULL,
             summary TEXT NOT NULL,
@@ -882,48 +894,168 @@ class PostgresCommunityHandler(CommunityHandler):
             rating FLOAT NOT NULL,
             rating_explanation TEXT NOT NULL,
             embedding {vector_column_str} NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            created_by UUID REFERENCES {self._get_table_name("users")}(user_id),
+            updated_by UUID REFERENCES {self._get_table_name("users")}(user_id),
             attributes JSONB,
             UNIQUE (community_number, level, graph_id, collection_id)
         );"""
 
         await self.connection_manager.execute_query(query)
 
-    async def create(self, communities: list[Community]) -> None:
-        await _add_objects(
-            objects=[community.__dict__ for community in communities],
-            full_table_name=self._get_table_name("graph_community"),
-            connection_manager=self.connection_manager,
-        )
+    async def create(
+        self,
+        graph_id: UUID,
+        name: str,
+        summary: str,
+        embedding: str,
+        findings: list[str],
+        rating: Optional[float],
+        rating_explanation: Optional[str],
+        level: Optional[int],
+        attributes: Optional[dict],
+        auth_user: Any,
+    ) -> None:
 
-    async def update(self, community: Community) -> None:
-        return await _update_object(
-            object=community.__dict__,
-            full_table_name=self._get_table_name("graph_community"),
-            connection_manager=self.connection_manager,
-            id_column="id",
-        )
+        if not auth_user.is_superuser:
+            if not await self._check_permissions(graph_id, auth_user.id):
+                raise R2RException(
+                    "You do not have permission to create this community.",
+                    403,
+                )
 
-    async def delete(self, community: Community) -> None:
-        return await _delete_object(
-            object_id=community.id,  # type: ignore
-            full_table_name=self._get_table_name("graph_community"),
-            connection_manager=self.connection_manager,
-        )
+        QUERY = f"""
+            INSERT INTO {self._get_table_name("graph_community")}
+            (graph_id, name, summary, findings, rating, rating_explanation, embedding, level, attributes, created_by, updated_by)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, created_by, updated_by
+        """
+
+        params = [
+            graph_id,
+            name,
+            summary,
+            findings,
+            rating,
+            rating_explanation,
+            embedding,
+            level,
+            attributes,
+            auth_user.id,
+            auth_user.id,
+        ]
+
+        return await self.connection_manager.fetchrow_query(QUERY, params)
+
+    async def update(
+        self,
+        id: UUID,
+        community_id: UUID,
+        name: Optional[str],
+        summary: Optional[str],
+        embedding: Optional[str],
+        findings: Optional[list[str]],
+        rating: Optional[float],
+        rating_explanation: Optional[str],
+        level: Optional[int],
+        attributes: Optional[dict],
+        auth_user: Any,
+    ) -> None:
+
+        if not auth_user.is_superuser:
+            if not await self._check_permissions(id, auth_user.id):
+                raise R2RException(
+                    "You do not have permission to update this community.",
+                    403,
+                )
+
+        update_fields = []
+        params = [community_id]  # type: ignore
+        if name is not None:
+            update_fields.append(f"name = ${len(params)+1}")
+            params.append(name)
+
+        if summary is not None:
+            update_fields.append(f"summary = ${len(params)+1}")
+            params.append(summary)
+
+        if embedding is not None:
+            update_fields.append(f"embedding = ${len(params)+1}")
+            params.append(embedding)
+
+        if findings is not None:
+            update_fields.append(f"findings = ${len(params)+1}")
+            params.append(findings)
+
+        if rating is not None:
+            update_fields.append(f"rating = ${len(params)+1}")
+            params.append(rating)
+
+        if rating_explanation is not None:
+            update_fields.append(f"rating_explanation = ${len(params)+1}")
+            params.append(rating_explanation)
+
+        if level is not None:
+            update_fields.append(f"level = ${len(params)+1}")
+            params.append(level)
+
+        if attributes is not None:
+            update_fields.append(f"attributes = ${len(params)+1}")
+            params.append(attributes)
+
+        update_fields.append(f"updated_by = ${len(params)+1}")
+        params.append(auth_user.id)
+
+        update_fields.append(f"updated_at = CURRENT_TIMESTAMP")
+
+        QUERY = f"""
+            UPDATE {self._get_table_name("graph_community")} SET {", ".join(update_fields)} WHERE id = $1
+            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, attributes, level, created_by, updated_by, updated_at
+        """
+        return await self.connection_manager.fetchrow_query(QUERY, params)
+
+    async def delete(
+        self, graph_id: UUID, community_id: UUID, auth_user: Any
+    ) -> None:
+
+        if not auth_user.is_superuser:
+            if not await self._check_permissions(graph_id, auth_user.id):
+                raise R2RException(
+                    "You do not have permission to delete this community.",
+                    403,
+                )
+
+        QUERY = f"""
+            DELETE FROM {self._get_table_name("graph_community")} WHERE id = $1
+        """
+        await self.connection_manager.execute_query(QUERY, [community_id])
 
     async def get(
         self,
-        id: UUID,
+        graph_id: UUID,
         offset: int,
         limit: int,
         community_id: Optional[UUID] = None,
+        auth_user: Optional[Any] = None,
     ):
 
+        if not auth_user.is_superuser:
+            if not await self._check_permissions(graph_id, auth_user.id):
+                raise R2RException(
+                    "You do not have permission to access this graph.",
+                    403,
+                )
+
         if community_id is None:
+
             QUERY = f"""
-                SELECT * FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
+                SELECT
+                    id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, created_by, updated_by, created_at, updated_at
+                FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
                 OFFSET $2 LIMIT $3
             """
-            params = [id, offset, limit]
+            params = [graph_id, offset, limit]
             communities = [
                 Community(**row)
                 for row in await self.connection_manager.fetch_query(
@@ -935,16 +1067,20 @@ class PostgresCommunityHandler(CommunityHandler):
                 SELECT COUNT(*) FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
             """
             count = (
-                await self.connection_manager.fetch_query(QUERY_COUNT, [id])
+                await self.connection_manager.fetch_query(
+                    QUERY_COUNT, [graph_id]
+                )
             )[0]["count"]
 
             return communities, count
 
         else:
             QUERY = f"""
-                SELECT * FROM {self._get_table_name("graph_community")} WHERE graph_id = $1 AND id = $2
+                SELECT
+                    id, graph_id, name, summary, findings, rating, rating_explanation, level, attributes, created_by, updated_by, created_at, updated_at
+                FROM {self._get_table_name("graph_community")} WHERE graph_id = $1 AND id = $2
             """
-            params = [id, community_id]
+            params = [graph_id, community_id]
             return [
                 Community(
                     **await self.connection_manager.fetchrow_query(
@@ -1244,77 +1380,63 @@ class PostgresGraphHandler(GraphHandler):
                 ]
             }
 
-    async def add_documents(
-        self, id: UUID, document_ids: list[UUID], copy_data: bool = True
+    async def add_documents_to_graph(
+        self, graph_id: UUID, document_ids: list[UUID]
     ) -> bool:
 
         # Get count of entities for each document
-        QUERY = f"""
-            SELECT document_id, COUNT(*) as entity_count
-            FROM {self._get_table_name("entity")}
-            WHERE document_id = ANY($1) AND entity_count = 0
-            GROUP BY document_id
-        """
-        docs_missing_entities = await self.connection_manager.fetch_query(
-            QUERY, [document_ids]
-        )
+        for document_id in document_ids:
+            QUERY = f"""
+                SELECT document_id
+                FROM {self._get_table_name("entity")}
+                WHERE document_id = $1
+                LIMIT 1
+            """
+            result = await self.connection_manager.fetchrow_query(
+                QUERY, [document_id]
+            )
+            if result is None:
+                raise R2RException(
+                    message=f"Please make sure that the document {document_id} has at least one entity before adding it to the graph.",
+                    status_code=400,
+                )
 
-        if len(docs_missing_entities) > 0:
-            raise R2RException(
-                f"Please make sure that all documents have at least one entity before adding them to the graph.",
-                400,
+            # get count of relationships for each document
+            QUERY = f"""
+                SELECT document_id
+                FROM {self._get_table_name("relationship")}
+                WHERE document_id = $1
+                LIMIT 1
+            """
+            result = await self.connection_manager.fetchrow_query(
+                QUERY, [document_id]
             )
 
-        # get count of relationships for each document
-        QUERY = f"""
-            SELECT document_id, COUNT(*) as relationship_count
-            FROM {self._get_table_name("relationship")}
-            WHERE document_id = ANY($1)
-            GROUP BY document_id
-        """
-        docs_missing_relationships = await self.connection_manager.fetch_query(
-            QUERY, [document_ids]
-        )
+            if result is None:
+                raise R2RException(
+                    message=f"Please make sure that the document {document_id} has at least one relationship before adding it to the graph.",
+                    status_code=400,
+                )
 
-        if len(docs_missing_relationships) > 0:
-            raise R2RException(
-                f"Please make sure that all documents have at least one relationship before adding them to the graph.",
-                400,
-            )
-
+        # cannot remove this second for loop
         for document_id in document_ids:
             for table in ["entity", "relationship"]:
                 QUERY = f"""
                     UPDATE {self._get_table_name(table)}
                     SET graph_ids = CASE
                         WHEN $1 = ANY(graph_ids) THEN graph_ids
-                        ELSE array_append(graph_ids, $1)
+                        ELSE array_append(COALESCE(graph_ids, ARRAY[]::uuid[]), $1)
                     END
                     WHERE document_id = $2
                 """
                 await self.connection_manager.execute_query(
-                    QUERY, [id, document_id]
+                    QUERY, [graph_id, document_id]
                 )
-
-        if copy_data:
-            for old_table, new_table in [
-                ("entity", "collection_entity"),
-                ("relationship", "graph_relationship"),
-            ]:
-                for document_id in document_ids:
-                    QUERY = f"""
-                        INSERT INTO {self._get_table_name(new_table)}
-                        SELECT * FROM {self._get_table_name(old_table)}
-                        WHERE document_id = $1
-                    """
-                    await self.connection_manager.execute_query(
-                        QUERY, [document_id]
-                    )
 
         return True
 
-    async def remove_documents(
-        self, id: UUID, document_ids: list[UUID], delete_data: bool = True
+    async def remove_documents_from_graph(
+        self, graph_id: UUID, document_ids: list[UUID]
     ) -> bool:
         """
         Remove all entities and relationships for this document from the graph.
@@ -1327,76 +1449,68 @@ class PostgresGraphHandler(GraphHandler):
                     WHERE document_id = $2
                 """
                 await self.connection_manager.execute_query(
-                    QUERY, [id, document_id]
+                    QUERY, [graph_id, document_id]
                 )
-
-        if delete_data:
-            for old_table, new_table in [
-                ("entity", "collection_entity"),
-                ("relationship", "graph_relationship"),
-            ]:
-                for document_id in document_ids:
-                    QUERY = f"""
-                        DELETE FROM {self._get_table_name(new_table)} WHERE document_id = $1
-                    """
-                    await self.connection_manager.execute_query(
-                        QUERY, [document_id]
-                    )
 
         return True
 
-    async def add_collections(
-        self, id: UUID, collection_ids: list[UUID], copy_data: bool = True
+    async def add_collection_to_graph(
+        self, graph_id: UUID, collection_id: UUID
     ) -> bool:
         """
         Add all entities and relationships for this collection to the graph.
         """
-        for collection_id in collection_ids:
-            for table in ["entity", "relationship"]:
-                QUERY = f"""
-                    UPDATE {self._get_table_name(table)}
-                    SET graph_ids = CASE
-                        WHEN $1 = ANY(graph_ids) THEN graph_ids
-                        ELSE array_append(graph_ids, $1)
-                    END
-                    WHERE document_id = ANY(
-                        ARRAY(
-                            SELECT document_id FROM {self._get_table_name("document_info")}
-                            WHERE $2 = ANY(collection_ids)
-                        )
-                    );
-                """
-                await self.connection_manager.execute_query(
-                    QUERY, [id, collection_id]
+
+        # check that all documents in the collection have at least one entity
+
+        for table in ["entity", "relationship"]:
+            QUERY = f"""
+                SELECT document_id
+                FROM {self._get_table_name("document_info")} di
+                WHERE $1 = ANY(collection_ids)
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM {self._get_table_name(table)} t
+                    WHERE t.document_id = di.document_id
+                )
+            """
+            result = await self.connection_manager.fetch_query(
+                QUERY, [collection_id]
+            )
+            if result:
+                raise R2RException(
+                    message=f"Please make sure that all documents in the collection {collection_id} have at least one {table} before adding it to the graph.",
+                    status_code=400,
                 )
 
-        if copy_data:
-            for old_table, new_table in [
-                ("entity", "collection_entity"),
-                ("relationship", "graph_relationship"),
-            ]:
-                for collection_id in collection_ids:
-                    QUERY = f"""
-                        INSERT INTO {self._get_table_name(new_table)}
-                        SELECT * FROM {self._get_table_name(old_table)}
-                        WHERE document_id = ANY(
-                            ARRAY(SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids)))
-                    """
-                    await self.connection_manager.execute_query(
-                        QUERY, [collection_id]
+        for table in ["entity", "relationship"]:
+            QUERY = f"""
+                UPDATE {self._get_table_name(table)}
+                SET graph_ids = CASE
+                    WHEN $1 = ANY(graph_ids) THEN graph_ids
+                    ELSE array_append(graph_ids, $1)
+                END
+                WHERE document_id = ANY(
+                    ARRAY(
+                        SELECT document_id FROM {self._get_table_name("document_info")}
+                        WHERE $2 = ANY(collection_ids)
                     )
+                );
+            """
+            await self.connection_manager.execute_query(
+                QUERY, [graph_id, collection_id]
+            )
 
         return True
 
-    async def remove_collections(
-        self, id: UUID, collection_ids: list[UUID], delete_data: bool = True
+    async def remove_collection_from_graph(
+        self, graph_id: UUID, collection_id: UUID
     ) -> bool:
         """
         Remove all entities and relationships for this collection from the graph.
         """
-        for collection_id in collection_ids:
-            for table in ["entity", "relationship"]:
-                QUERY = f"""
+        for table in ["entity", "relationship"]:
+            QUERY = f"""
                     UPDATE {self._get_table_name(table)}
                     SET graph_ids = array_remove(graph_ids, $1)
                     WHERE document_id = ANY(
@@ -1406,22 +1520,9 @@ class PostgresGraphHandler(GraphHandler):
                         )
                     )
                 """
-                await self.connection_manager.execute_query(
-                    QUERY, [id, collection_id]
-                )
-
-        if delete_data:
-            for _, new_table in [
-                ("entity", "collection_entity"),
-                ("relationship", "graph_relationship"),
-            ]:
-                for collection_id in collection_ids:
-                    QUERY = f"""
-                        DELETE FROM {self._get_table_name(new_table)} WHERE document_id = ANY(ARRAY(SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids)))
-                    """
-                    await self.connection_manager.execute_query(
-                        QUERY, [collection_id]
-                    )
+            await self.connection_manager.execute_query(
+                QUERY, [graph_id, collection_id]
+            )
 
         return True
 
@@ -2431,16 +2532,15 @@ class PostgresGraphHandler(GraphHandler):
             WITH entities_list AS (
                 SELECT DISTINCT name
                 FROM {self._get_table_name("chunk_entity")}
-                WHERE document_id = $1
+                WHERE $1 = ANY(document_ids)
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
             SELECT e.name, e.description, e.category,
-                   (SELECT array_agg(DISTINCT x) FROM unnest(e.chunk_ids) x) AS chunk_ids,
-                   e.document_id
+                   (SELECT array_agg(DISTINCT x) FROM unnest(e.chunk_ids) x) AS chunk_ids
             FROM {self._get_table_name("chunk_entity")} e
             JOIN entities_list el ON e.name = el.name
-            GROUP BY e.name, e.description, e.category, e.chunk_ids, e.document_id
+            GROUP BY e.name, e.description, e.category, e.chunk_ids
             ORDER BY e.name;"""
 
         entities_list = await self.connection_manager.fetch_query(
@@ -2452,25 +2552,25 @@ class PostgresGraphHandler(GraphHandler):
                 description=entity["description"],
                 category=entity["category"],
                 chunk_ids=entity["chunk_ids"],
-                document_id=entity["document_id"],
+                document_ids=[document_id],
             )
             for entity in entities_list
         ]
 
         QUERY2 = f"""
             WITH entities_list AS (
-
                 SELECT DISTINCT name
                 FROM {self._get_table_name("chunk_entity")}
-                WHERE document_id = $1
+                WHERE $1 = ANY(document_ids)
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
-
             SELECT DISTINCT t.subject, t.predicate, t.object, t.weight, t.description,
-                   (SELECT array_agg(DISTINCT x) FROM unnest(t.chunk_ids) x) AS chunk_ids, t.document_id
+                   (SELECT array_agg(DISTINCT x) FROM unnest(t.chunk_ids) x) AS chunk_ids,
+                   t.document_id
             FROM {self._get_table_name("relationship")} t
-            JOIN entities_list el ON t.subject = el.name
+            INNER JOIN entities_list el ON t.subject = el.name
+            WHERE t.document_id = $1
             ORDER BY t.subject, t.predicate, t.object;
         """
 
@@ -3002,7 +3102,7 @@ class PostgresGraphHandler(GraphHandler):
             )
             params.append(str(collection_id))
         else:
-            conditions.append("document_id = $1")
+            conditions.append("$1 = ANY(document_ids)")
             params.append(str(document_id))
 
         count_value = "DISTINCT name" if distinct else "*"

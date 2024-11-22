@@ -78,6 +78,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
         delay: int = 2,
         task_id: Optional[int] = None,
         total_tasks: Optional[int] = None,
+        auth_user: Optional[Any] = None,
     ) -> KGExtraction:
         """
         Extracts NER relationships from a extraction with retries.
@@ -148,6 +149,12 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
                                     extraction.id for extraction in extractions
                                 ],
                                 attributes={},
+                                created_by=(
+                                    auth_user["id"] if auth_user else None
+                                ),
+                                updated_by=(
+                                    auth_user["id"] if auth_user else None
+                                ),
                             )
                         )
 
@@ -172,6 +179,12 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
                                     extraction.id for extraction in extractions
                                 ],
                                 attributes={},
+                                created_by=(
+                                    auth_user["id"] if auth_user else None
+                                ),
+                                updated_by=(
+                                    auth_user["id"] if auth_user else None
+                                ),
                             )
                         )
 
@@ -235,7 +248,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
         filter_out_existing_chunks = input.message.get(
             "filter_out_existing_chunks", True
         )
-
+        auth_user = input.message.get("auth_user", None)
         logger = input.message.get("logger", logging.getLogger())
 
         logger.info(
@@ -267,7 +280,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
 
         if filter_out_existing_chunks:
             existing_chunk_ids = await self.database_provider.graph_handler.get_existing_entity_chunk_ids(
-                document_id=document_id
+                document_id=document_id,
             )
             extractions = [
                 extraction
@@ -312,6 +325,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
                     relation_types=relation_types,
                     task_id=task_id,
                     total_tasks=len(extractions_groups),
+                    auth_user=auth_user,
                 )
             )
             for task_id, extractions_group in enumerate(extractions_groups)

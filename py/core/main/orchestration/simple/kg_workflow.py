@@ -28,6 +28,9 @@ def simple_kg_factory(service: KgService):
             if key == "graph_id":
                 input_data[key] = uuid.UUID(value)
 
+            if key == "auth_user":
+                input_data[key] = json.loads(value)
+
             if key == "kg_creation_settings":
                 input_data[key] = json.loads(value)
                 input_data[key]["generation_config"] = GenerationConfig(
@@ -38,6 +41,10 @@ def simple_kg_factory(service: KgService):
                 input_data[key]["generation_config"] = GenerationConfig(
                     **input_data[key]["generation_config"]
                 )
+
+            if key == "user":
+                input_data[key] = json.loads(value)
+
         return input_data
 
     async def create_graph(input_data):
@@ -62,11 +69,13 @@ def simple_kg_factory(service: KgService):
             try:
                 await service.kg_relationships_extraction(
                     document_id=document_id,
+                    auth_user=input_data.get("auth_user", None),
                     **input_data["kg_creation_settings"],
                 )
                 # Describe the entities in the graph
                 await service.kg_entity_description(
                     document_id=document_id,
+                    auth_user=input_data.get("auth_user", None),
                     **input_data["kg_creation_settings"],
                 )
 
