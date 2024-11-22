@@ -436,7 +436,7 @@ class GraphRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def delete_graph(
+        async def delete(
             id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedBooleanResponse:

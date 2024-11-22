@@ -15,7 +15,7 @@ from core.providers.database.base import PostgresConnectionManager
 from core.providers.database.collection import PostgresCollectionHandler
 from core.providers.database.document import PostgresDocumentHandler
 from core.providers.database.file import PostgresFileHandler
-from core.providers.database.kg import PostgresGraphHandler
+from core.providers.database.graph import PostgresGraphHandler
 from core.providers.database.logging import PostgresLoggingHandler
 from core.providers.database.prompt import PostgresPromptHandler
 from core.providers.database.tokens import PostgresTokenHandler

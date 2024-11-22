@@ -29,7 +29,6 @@ from core.base.abstractions import (
 from core.base.api.models import GraphResponse
 from core.base.providers.database import (
     CommunityHandler,
-    CommunityInfoHandler,
     EntityHandler,
     GraphHandler,
     RelationshipHandler,
@@ -325,45 +324,6 @@ class PostgresEntityHandler(EntityHandler):
 
         return deleted_ids
 
-    async def batch_get_by_names(
-        self,
-        parent_id: UUID,
-        names: list[str],
-        store_type: StoreType,
-        include_embeddings: bool = False,
-    ) -> tuple[list[Entity], int]:
-        """Get multiple entities by their names."""
-        table_name = self._get_entity_table_for_store(store_type)
-
-        select_fields = """
-            id, name, category, description, parent_id,
-            chunk_ids, metadata
-        """
-        if include_embeddings:
-            select_fields += ", description_embedding"
-
-        QUERY = f"""
-            SELECT {select_fields}
-            FROM {self._get_table_name(table_name)}
-            WHERE parent_id = $1 AND name = ANY($2)
-            ORDER BY created_at
-        """
-
-        rows = await self.connection_manager.fetch_query(
-            QUERY, [parent_id, names]
-        )
-
-        entities = []
-        for row in rows:
-            if isinstance(row["metadata"], str):
-                try:
-                    row["metadata"] = json.loads(row["metadata"])
-                except json.JSONDecodeError:
-                    pass
-            entities.append(Entity(**row))
-
-        return entities, len(entities)
-
 
 class PostgresRelationshipHandler(RelationshipHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -570,100 +530,6 @@ class PostgresRelationshipHandler(RelationshipHandler):
 
         return relationships, count
 
-    # async def get(
-    #     self,
-    #     parent_id: UUID,
-    #     store_type: StoreType,
-    #     entity_names: Optional[list[str]] = None,
-    #     relationship_types: Optional[list[str]] = None,
-    #     offset: int = 0,
-    #     limit: int = -1,
-    #     relationship_id: Optional[UUID] = None,
-    # ):
-    #     """Get relationships from the specified store."""
-    #     table_name = self._get_relationship_table_for_store(store_type)
-
-    #     conditions = ["parent_id = $1"]
-    #     params = [parent_id]
-    #     param_index = 2
-
-    #     if relationship_id:
-    #         conditions.append(f"id = ${param_index}")
-    #         params.append(relationship_id)
-    #         param_index += 1
-
-    #         QUERY = f"""
-    #             SELECT
-    #                 id, subject, predicate, object, description,
-    #                 subject_id, object_id, weight, chunk_ids,
-    #                 parent_id, metadata
-    #             FROM {self._get_table_name(table_name)}
-    #             WHERE {' AND '.join(conditions)}
-    #         """
-    #         print("QUERY = ", QUERY)
-    #         print('params = ', params)
-    #         result = await self.connection_manager.fetchrow_query(QUERY, params)
-    #         if not result:
-    #             raise R2RException(
-    #                 f"Relationship not found in {store_type.value} store",
-    #                 404
-    #             )
-    #         return Relationship(**result)
-
-    #     if entity_names:
-    #         conditions.append(f"(subject = ANY(${param_index}) OR object = ANY(${param_index}))")
-    #         params.append(entity_names)
-    #         param_index += 1
-
-    #     if relationship_types:
-    #         conditions.append(f"predicate = ANY(${param_index})")
-    #         params.append(relationship_types)
-    #         param_index += 1
-
-    #     # Get total count
-    #     COUNT_QUERY = f"""
-    #         SELECT COUNT(*)
-    #         FROM {self._get_table_name(table_name)}
-    #         WHERE {' AND '.join(conditions)}
-    #     """
-    #     print('COUNT_QUERY = ', COUNT_QUERY)
-    #     print('params = ', params)
-
-    #     count = (await self.connection_manager.fetch_query(COUNT_QUERY, params[:-1]))[0]["count"]
-
-    #     # Get relationships with pagination
-    #     QUERY = f"""
-    #         SELECT
-    #             id, subject, predicate, object, description,
-    #             subject_id, object_id, weight, chunk_ids,
-    #             parent_id, metadata
-    #         FROM {self._get_table_name(table_name)}
-    #         WHERE {' AND '.join(conditions)}
-    #         ORDER BY created_at
-    #         OFFSET ${param_index}
-    #     """
-    #     params.append(offset)
-    #     param_index += 1
-
-    #     if limit != -1:
-    #         QUERY += f" LIMIT ${param_index}"
-    #         params.append(limit)
-    #     print('COUNT_QUERY = ', COUNT_QUERY)
-    #     print('params = ', params)
-
-    #     rows = await self.connection_manager.fetch_query(QUERY, params)
-
-    #     relationships = []
-    #     for row in rows:
-    #         if isinstance(row["metadata"], str):
-    #             try:
-    #                 row["metadata"] = json.loads(row["metadata"])
-    #             except json.JSONDecodeError:
-    #                 pass
-    #         relationships.append(Relationship(**row))
-
-    #     return relationships, count
-
     async def update(
         self, relationship: Relationship, store_type: StoreType
     ) -> UUID:
@@ -743,57 +609,6 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 f"Relationship not found in {store_type.value} store or no permission to delete",
                 404,
             )
-
-    async def batch_get_by_subject_ids(
-        self,
-        parent_id: UUID,
-        subject_ids: list[UUID],
-        store_type: StoreType,
-        offset: int = 0,
-        limit: int = 100,
-    ):
-        """Get relationships by subject IDs from the specified store."""
-        table_name = self._get_relationship_table_for_store(store_type)
-
-        QUERY = f"""
-            SELECT
-                id, subject, predicate, object, description,
-                subject_id, object_id, weight, chunk_ids,
-                parent_id, metadata
-            FROM {self._get_table_name(table_name)}
-            WHERE parent_id = $1
-            AND subject_id = ANY($2)
-            ORDER BY created_at
-            OFFSET $3
-            LIMIT $4
-        """
-
-        rows = await self.connection_manager.fetch_query(
-            QUERY, [parent_id, subject_ids, offset, limit]
-        )
-
-        COUNT_QUERY = f"""
-            SELECT COUNT(*)
-            FROM {self._get_table_name(table_name)}
-            WHERE parent_id = $1
-            AND subject_id = ANY($2)
-        """
-        count = (
-            await self.connection_manager.fetch_query(
-                COUNT_QUERY, [parent_id, subject_ids]
-            )
-        )[0]["count"]
-
-        relationships = []
-        for row in rows:
-            if isinstance(row["metadata"], str):
-                try:
-                    row["metadata"] = json.loads(row["metadata"])
-                except json.JSONDecodeError:
-                    pass
-            relationships.append(Relationship(**row))
-
-        return relationships, count
 
 
 class PostgresCommunityHandler(CommunityHandler):
@@ -1142,72 +957,144 @@ class PostgresGraphHandler(GraphHandler):
                 status_code=409,
             )
 
-    async def delete_graph(self, graph_id: UUID) -> None:
+    async def delete(self, graph_id: UUID) -> None:
         """
         Completely delete a graph and all associated data.
-
+        
         This method:
         1. Removes graph associations from users
-        2. Deletes all graph entities
+        2. Deletes all graph entities 
         3. Deletes all graph relationships
         4. Deletes all graph communities and community info
         5. Removes the graph record itself
-
+        
         Args:
             graph_id (UUID): ID of the graph to delete
-
+            
         Returns:
             None
-
+            
         Raises:
             R2RException: If deletion fails
         """
         try:
-            # Start transaction to ensure atomic deletion
-            async with self.connection_manager.pool.acquire() as conn:
-                async with conn.transaction():
-                    # Remove graph_id from users
-                    user_update_query = f"""
-                        UPDATE {self._get_table_name('users')}
-                        SET graph_ids = array_remove(graph_ids, $1)
-                        WHERE $1 = ANY(graph_ids)
-                    """
-                    await conn.execute(user_update_query, graph_id)
+            # Remove graph_id from users
+            user_update_query = f"""
+                UPDATE {self._get_table_name('users')}
+                SET graph_ids = array_remove(graph_ids, $1)
+                WHERE $1 = ANY(graph_ids)
+            """
+            await self.connection_manager.execute_query(
+                user_update_query, [graph_id]
+            )
 
-                    # Delete all graph entities
-                    entity_delete_query = f"""
-                        DELETE FROM {self._get_table_name("graph_entity")}
-                        WHERE parent_id = $1
-                    """
-                    await conn.execute(entity_delete_query, graph_id)
+            # Delete all graph entities
+            entity_delete_query = f"""
+                DELETE FROM {self._get_table_name("graph_entity")}
+                WHERE parent_id = $1
+            """
+            await self.connection_manager.execute_query(
+                entity_delete_query, [graph_id]
+            )
 
-                    # Delete all graph relationships
-                    relationship_delete_query = f"""
-                        DELETE FROM {self._get_table_name("graph_relationship")}
-                        WHERE parent_id = $1
-                    """
-                    await conn.execute(relationship_delete_query, graph_id)
+            # Delete all graph relationships
+            relationship_delete_query = f"""
+                DELETE FROM {self._get_table_name("graph_relationship")}
+                WHERE parent_id = $1
+            """
+            await self.connection_manager.execute_query(
+                relationship_delete_query, [graph_id]
+            )
 
-                    # Delete all graph communities and community info
-                    community_delete_queries = [
-                        f"""DELETE FROM {self._get_table_name("graph_community_info")}
-                        WHERE graph_id = $1""",
-                        f"""DELETE FROM {self._get_table_name("graph_community")}
-                        WHERE graph_id = $1""",
-                    ]
-                    for query in community_delete_queries:
-                        await conn.execute(query, graph_id)
+            # Delete all graph communities and community info
+            community_delete_queries = [
+                f"""DELETE FROM {self._get_table_name("graph_community_info")}
+                    WHERE graph_id = $1""",
+                f"""DELETE FROM {self._get_table_name("graph_community")}
+                    WHERE graph_id = $1""",
+            ]
+            for query in community_delete_queries:
+                await self.connection_manager.execute_query(
+                    query, [graph_id]
+                )
 
-                    # Finally delete the graph itself
-                    graph_delete_query = f"""
-                        DELETE FROM {self._get_table_name("graph")}
-                        WHERE id = $1
-                    """
-                    await conn.execute(graph_delete_query, graph_id)
+            # Finally delete the graph itself
+            graph_delete_query = f"""
+                DELETE FROM {self._get_table_name("graph")}
+                WHERE id = $1
+            """
+            await self.connection_manager.execute_query(
+                graph_delete_query, [graph_id]
+            )
 
         except Exception as e:
             logger.error(f"Error deleting graph {graph_id}: {str(e)}")
             raise R2RException(f"Failed to delete graph: {str(e)}", 500)
+        
+    # async def delete(self, graph_id: UUID) -> None:
+    #     """
+    #     Completely delete a graph and all associated data.
+
+    #     This method:
+    #     1. Removes graph associations from users
+    #     2. Deletes all graph entities
+    #     3. Deletes all graph relationships
+    #     4. Deletes all graph communities and community info
+    #     5. Removes the graph record itself
+
+    #     Args:
+    #         graph_id (UUID): ID of the graph to delete
+
+    #     Returns:
+    #         None
+
+    #     Raises:
+    #         R2RException: If deletion fails
+    #     """
+    #     try:
+    #         # Start transaction to ensure atomic deletion
+    #         # Remove graph_id from users
+    #         user_update_query = f"""
+    #             UPDATE {self._get_table_name('users')}
+    #             SET graph_ids = array_remove(graph_ids, $1)
+    #             WHERE $1 = ANY(graph_ids)
+    #         """
+    #         await self.connection_manager.execute_query(user_update_query, graph_id)
+
+    #         # Delete all graph entities
+    #         entity_delete_query = f"""
+    #             DELETE FROM {self._get_table_name("graph_entity")}
+    #             WHERE parent_id = $1
+    #         """
+    #         await self.connection_manager.execute_query.execute(entity_delete_query, graph_id)
+
+    #         # Delete all graph relationships
+    #         relationship_delete_query = f"""
+    #             DELETE FROM {self._get_table_name("graph_relationship")}
+    #             WHERE parent_id = $1
+    #         """
+    #         await self.connection_manager.execute_query.execute(relationship_delete_query, graph_id)
+
+    #         # Delete all graph communities and community info
+    #         community_delete_queries = [
+    #             f"""DELETE FROM {self._get_table_name("graph_community_info")}
+    #             WHERE graph_id = $1""",
+    #             f"""DELETE FROM {self._get_table_name("graph_community")}
+    #             WHERE graph_id = $1""",
+    #         ]
+    #         for query in community_delete_queries:
+    #             await self.connection_manager.execute_query.execute(query, graph_id)
+
+    #         # Finally delete the graph itself
+    #         graph_delete_query = f"""
+    #             DELETE FROM {self._get_table_name("graph")}
+    #             WHERE id = $1
+    #         """
+    #         await self.connection_manager.execute_query.execute(graph_delete_query, graph_id)
+
+    #     except Exception as e:
+    #         logger.error(f"Error deleting graph {graph_id}: {str(e)}")
+    #         raise R2RException(f"Failed to delete graph: {str(e)}", 500)
 
     async def list_graphs(
         self,
