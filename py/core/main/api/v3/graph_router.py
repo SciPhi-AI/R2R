@@ -664,11 +664,38 @@ class GraphRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedRelationshipsResponse:
-            """Lists all relationships in the graph with pagination support."""
-            return await self.services["kg"].list_graph_relationships(
-                id, offset, limit, auth_user
+        ) -> PaginatedResultsWrapper[list[Relationship]]:
+            """
+            Lists all relationships in the graph with pagination support.
+
+            Args:
+                id: UUID of the graph
+                offset: Number of records to skip
+                limit: Maximum number of records to return
+                auth_user: Authenticated user
+
+            Returns:
+                Paginated list of relationships
+            """
+            # Permission check
+            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+                raise R2RException(
+                    "The currently authenticated user does not have access to this graph.",
+                    403,
+                )
+
+            relationships, count = (
+                await self.providers.database.graph_handler.relationships.get(
+                    parent_id=id,
+                    store_type="graph",
+                    offset=offset,
+                    limit=limit,
+                )
             )
+
+            return relationships, {
+                "total_entries": count,
+            }
 
         @self.router.post("/graphs/{id}/relationships")
         @self.base_endpoint
@@ -1219,26 +1246,14 @@ class GraphRouter(BaseRouterV3):
             document_id: UUID = Path(
                 ..., description="The ID of the document to remove."
             ),
-            delete_data: bool = Query(
-                True,
-                description="Whether to delete the copied entities and relationships.",
-            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedBooleanResponse:
             """
-            Removes a document from a graph and optionally deletes its copied data.
+            Removes a document from a graph and removes any associated entities
 
             This endpoint:
             1. Removes the document ID from the graph's document_ids array
             2. Optionally deletes the document's copied entities and relationships
-
-            When delete_data is True:
-            - Entities copied from the document are deleted from graph_entity table
-            - Relationships copied from the document are deleted from graph_relationship table
-
-            When delete_data is False:
-            - The copied entities and relationships remain in the graph tables
-            - Only the document association is removed
 
             The user must have access to both the graph and the document being removed.
             """
@@ -1261,7 +1276,8 @@ class GraphRouter(BaseRouterV3):
 
             success = (
                 await self.providers.database.graph_handler.remove_documents(
-                    id=id, document_ids=[document_id], delete_data=delete_data
+                    id=id,
+                    document_ids=[document_id],  # , delete_data=delete_data
                 )
             )
 
