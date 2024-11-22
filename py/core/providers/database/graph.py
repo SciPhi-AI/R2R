@@ -300,29 +300,58 @@ class PostgresEntityHandler(EntityHandler):
         return results
 
     async def delete(
-        self, parent_id: UUID, entity_ids: list[UUID], store_type: StoreType
+        self,
+        parent_id: UUID,
+        entity_ids: Optional[list[UUID]] = None,
+        store_type: StoreType = StoreType.GRAPH,
     ) -> list[UUID]:
-        """Delete multiple entities from the specified store."""
+        """
+        Delete entities from the specified store.
+        If entity_ids is not provided, deletes all entities for the given parent_id.
+
+        Args:
+            parent_id (UUID): Parent ID (graph_id or document_id)
+            entity_ids (Optional[list[UUID]]): Specific entity IDs to delete. If None, deletes all entities for parent_id
+            store_type (StoreType): Type of store (graph or document)
+
+        Returns:
+            list[UUID]: List of deleted entity IDs
+
+        Raises:
+            R2RException: If specific entities were requested but not all found
+        """
         table_name = self._get_entity_table_for_store(store_type)
 
-        QUERY = f"""
-            DELETE FROM {self._get_table_name(table_name)}
-            WHERE id = ANY($1) AND parent_id = $2
-            RETURNING id
-        """
-
-        results = await self.connection_manager.fetch_query(
-            QUERY, [entity_ids, parent_id]
-        )
-
-        deleted_ids = [row["id"] for row in results]
-        if len(deleted_ids) != len(entity_ids):
-            raise R2RException(
-                f"Some entities not found in {store_type.value} store or no permission to delete",
-                404,
+        if entity_ids is None:
+            # Delete all entities for the parent_id
+            QUERY = f"""
+                DELETE FROM {self._get_table_name(table_name)}
+                WHERE parent_id = $1
+                RETURNING id
+            """
+            results = await self.connection_manager.fetch_query(
+                QUERY, [parent_id]
+            )
+        else:
+            # Delete specific entities
+            QUERY = f"""
+                DELETE FROM {self._get_table_name(table_name)}
+                WHERE id = ANY($1) AND parent_id = $2
+                RETURNING id
+            """
+            results = await self.connection_manager.fetch_query(
+                QUERY, [entity_ids, parent_id]
             )
 
-        return deleted_ids
+            # Check if all requested entities were deleted
+            deleted_ids = [row["id"] for row in results]
+            if entity_ids and len(deleted_ids) != len(entity_ids):
+                raise R2RException(
+                    f"Some entities not found in {store_type.value} store or no permission to delete",
+                    404,
+                )
+
+        return [row["id"] for row in results]
 
 
 class PostgresRelationshipHandler(RelationshipHandler):
@@ -589,26 +618,57 @@ class PostgresRelationshipHandler(RelationshipHandler):
         return result["id"]
 
     async def delete(
-        self, parent_id: UUID, relationship_id: UUID, store_type: StoreType
-    ) -> None:
-        """Delete a relationship from the specified store."""
+        self,
+        parent_id: UUID,
+        relationship_id: Optional[UUID] = None,
+        store_type: StoreType = StoreType.GRAPH,
+    ) -> list[UUID]:
+        """
+        Delete relationships from the specified store.
+        If relationship_id is not provided, deletes all relationships for the given parent_id.
+
+        Args:
+            parent_id (UUID): Parent ID (graph_id or document_id)
+            relationship_id (Optional[UUID]): Specific relationship ID to delete. If None, deletes all relationships for parent_id
+            store_type (StoreType): Type of store (graph or document)
+
+        Returns:
+            list[UUID]: List of deleted relationship IDs
+
+        Raises:
+            R2RException: If a specific relationship was requested but not found
+        """
         table_name = self._get_relationship_table_for_store(store_type)
 
-        QUERY = f"""
-            DELETE FROM {self._get_table_name(table_name)}
-            WHERE id = $1 AND parent_id = $2
-            RETURNING id
-        """
-
-        result = await self.connection_manager.fetchrow_query(
-            QUERY, [relationship_id, parent_id]
-        )
-
-        if not result:
-            raise R2RException(
-                f"Relationship not found in {store_type.value} store or no permission to delete",
-                404,
+        if relationship_id is None:
+            # Delete all relationships for the parent_id
+            QUERY = f"""
+                DELETE FROM {self._get_table_name(table_name)}
+                WHERE parent_id = $1
+                RETURNING id
+            """
+            results = await self.connection_manager.fetch_query(
+                QUERY, [parent_id]
             )
+        else:
+            # Delete specific relationship
+            QUERY = f"""
+                DELETE FROM {self._get_table_name(table_name)}
+                WHERE id = $1 AND parent_id = $2
+                RETURNING id
+            """
+            results = await self.connection_manager.fetch_query(
+                QUERY, [relationship_id, parent_id]
+            )
+
+            # Check if the requested relationship was deleted
+            if not results:
+                raise R2RException(
+                    f"Relationship not found in {store_type.value} store or no permission to delete",
+                    404,
+                )
+
+        return [row["id"] for row in results]
 
 
 class PostgresCommunityHandler(CommunityHandler):
@@ -960,20 +1020,20 @@ class PostgresGraphHandler(GraphHandler):
     async def delete(self, graph_id: UUID) -> None:
         """
         Completely delete a graph and all associated data.
-        
+
         This method:
         1. Removes graph associations from users
-        2. Deletes all graph entities 
+        2. Deletes all graph entities
         3. Deletes all graph relationships
         4. Deletes all graph communities and community info
         5. Removes the graph record itself
-        
+
         Args:
             graph_id (UUID): ID of the graph to delete
-            
+
         Returns:
             None
-            
+
         Raises:
             R2RException: If deletion fails
         """
@@ -1014,9 +1074,7 @@ class PostgresGraphHandler(GraphHandler):
                     WHERE graph_id = $1""",
             ]
             for query in community_delete_queries:
-                await self.connection_manager.execute_query(
-                    query, [graph_id]
-                )
+                await self.connection_manager.execute_query(query, [graph_id])
 
             # Finally delete the graph itself
             graph_delete_query = f"""
@@ -1030,7 +1088,7 @@ class PostgresGraphHandler(GraphHandler):
         except Exception as e:
             logger.error(f"Error deleting graph {graph_id}: {str(e)}")
             raise R2RException(f"Failed to delete graph: {str(e)}", 500)
-        
+
     # async def delete(self, graph_id: UUID) -> None:
     #     """
     #     Completely delete a graph and all associated data.

@@ -372,6 +372,12 @@ class ManagementService(Service):
                         logger.error(
                             f"Error deleting document ID {document_id} from documents_overview: {e}"
                         )
+                await self.providers.database.graph_handler.entities.delete(
+                    parent_id=document_id, store_type="document"
+                )
+                await self.providers.database.graph_handler.relationships.delete(
+                    parent_id=document_id, store_type="document"
+                )
 
         return None
 
