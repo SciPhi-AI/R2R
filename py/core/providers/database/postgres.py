@@ -58,7 +58,7 @@ class PostgresDBProvider(DatabaseProvider):
 
     connection_manager: PostgresConnectionManager
     document_handler: PostgresDocumentHandler
-    collection_handler: PostgresCollectionHandler
+    collections_handler: PostgresCollectionHandler
     token_handler: PostgresTokenHandler
     user_handler: PostgresUserHandler
     vector_handler: PostgresVectorHandler
@@ -141,7 +141,7 @@ class PostgresDBProvider(DatabaseProvider):
         self.token_handler = PostgresTokenHandler(
             self.project_name, self.connection_manager
         )
-        self.collection_handler = PostgresCollectionHandler(
+        self.collections_handler = PostgresCollectionHandler(
             self.project_name, self.connection_manager, self.config
         )
         self.user_handler = PostgresUserHandler(
@@ -158,7 +158,7 @@ class PostgresDBProvider(DatabaseProvider):
         self.graph_handler = PostgresGraphHandler(
             project_name=self.project_name,
             connection_manager=self.connection_manager,
-            collection_handler=self.collection_handler,
+            collections_handler=self.collections_handler,
             dimension=self.dimension,
             quantization_type=self.quantization_type,
         )
@@ -193,7 +193,7 @@ class PostgresDBProvider(DatabaseProvider):
             )
 
         await self.document_handler.create_tables()
-        await self.collection_handler.create_tables()
+        await self.collections_handler.create_tables()
         await self.token_handler.create_tables()
         await self.user_handler.create_tables()
         await self.vector_handler.create_tables()

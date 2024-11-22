@@ -7,7 +7,7 @@ from asyncpg.exceptions import UniqueViolationError
 from fastapi import HTTPException
 
 from core.base import (
-    CollectionHandler,
+    CollectionsHandler,
     DatabaseConfig,
     KGExtractionStatus,
     R2RException,
@@ -26,7 +26,7 @@ from .base import PostgresConnectionManager
 logger = logging.getLogger()
 
 
-class PostgresCollectionHandler(CollectionHandler):
+class PostgresCollectionHandler(CollectionsHandler):
     TABLE_NAME = "collections"
 
     def __init__(

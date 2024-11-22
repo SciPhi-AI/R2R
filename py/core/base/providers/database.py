@@ -264,7 +264,7 @@ class DocumentHandler(Handler):
         pass
 
 
-class CollectionHandler(Handler):
+class CollectionsHandler(Handler):
     @abstractmethod
     async def collection_exists(self, collection_id: UUID) -> bool:
         pass
@@ -954,7 +954,7 @@ class LoggingHandler(Handler):
 class DatabaseProvider(Provider):
     connection_manager: DatabaseConnectionManager
     document_handler: DocumentHandler
-    collection_handler: CollectionHandler
+    collections_handler: CollectionsHandler
     token_handler: TokenHandler
     user_handler: UserHandler
     vector_handler: VectorHandler
@@ -1036,7 +1036,7 @@ class DatabaseProvider(Provider):
 
     # Collection handler methods
     async def collection_exists(self, collection_id: UUID) -> bool:
-        return await self.collection_handler.collection_exists(collection_id)
+        return await self.collections_handler.collection_exists(collection_id)
 
     async def create_collection(
         self,
@@ -1045,7 +1045,7 @@ class DatabaseProvider(Provider):
         description: str = "",
         collection_id: Optional[UUID] = None,
     ) -> CollectionResponse:
-        return await self.collection_handler.create_collection(
+        return await self.collections_handler.create_collection(
             user_id=user_id,
             name=name,
             description=description,
@@ -1058,19 +1058,19 @@ class DatabaseProvider(Provider):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> CollectionResponse:
-        return await self.collection_handler.update_collection(
+        return await self.collections_handler.update_collection(
             collection_id, name, description
         )
 
     async def delete_collection_relational(self, collection_id: UUID) -> None:
-        return await self.collection_handler.delete_collection_relational(
+        return await self.collections_handler.delete_collection_relational(
             collection_id
         )
 
     async def documents_in_collection(
         self, collection_id: UUID, offset: int, limit: int
     ) -> dict[str, list[DocumentResponse] | int]:
-        return await self.collection_handler.documents_in_collection(
+        return await self.collections_handler.documents_in_collection(
             collection_id, offset, limit
         )
 
@@ -1082,7 +1082,7 @@ class DatabaseProvider(Provider):
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
     ) -> dict[str, list[CollectionResponse] | int]:
-        return await self.collection_handler.get_collections_overview(
+        return await self.collections_handler.get_collections_overview(
             offset=offset,
             limit=limit,
             filter_user_ids=filter_user_ids,
@@ -1095,7 +1095,7 @@ class DatabaseProvider(Provider):
         document_id: UUID,
         collection_id: UUID,
     ) -> UUID:
-        return await self.collection_handler.assign_document_to_collection_relational(
+        return await self.collections_handler.assign_document_to_collection_relational(
             document_id=document_id,
             collection_id=collection_id,
         )
@@ -1103,7 +1103,7 @@ class DatabaseProvider(Provider):
     async def remove_document_from_collection_relational(
         self, document_id: UUID, collection_id: UUID
     ) -> None:
-        return await self.collection_handler.remove_document_from_collection_relational(
+        return await self.collections_handler.remove_document_from_collection_relational(
             document_id, collection_id
         )
 

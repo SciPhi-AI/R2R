@@ -1370,7 +1370,7 @@ class PostgresGraphHandler(GraphHandler):
         self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
         self.dimension: int = kwargs.get("dimension")  # type: ignore
         self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
-        self.collection_handler: PostgresCollectionHandler = kwargs.get("collection_handler")  # type: ignore
+        self.collections_handler: PostgresCollectionHandler = kwargs.get("collections_handler")  # type: ignore
 
         self.entities = PostgresEntityHandler(*args, **kwargs)
         self.relationships = PostgresRelationshipHandler(*args, **kwargs)
@@ -2112,7 +2112,7 @@ class PostgresGraphHandler(GraphHandler):
             [document_id]
             if document_id
             else [
-                doc.id for doc in (await self.collection_handler.documents_in_collection(collection_id, offset=0, limit=-1))["results"]  # type: ignore
+                doc.id for doc in (await self.collections_handler.documents_in_collection(collection_id, offset=0, limit=-1))["results"]  # type: ignore
             ]
         )
 
@@ -2184,7 +2184,7 @@ class PostgresGraphHandler(GraphHandler):
             document_ids = [
                 doc.id
                 for doc in (
-                    await self.collection_handler.documents_in_collection(collection_id, offset=0, limit=-1)  # type: ignore
+                    await self.collections_handler.documents_in_collection(collection_id, offset=0, limit=-1)  # type: ignore
                 )["results"]
             ]
 
@@ -2483,7 +2483,7 @@ class PostgresGraphHandler(GraphHandler):
 
         # Check if this is the last document in the collection
         # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
-        documents = await self.collection_handler.documents_in_collection(
+        documents = await self.collections_handler.documents_in_collection(
             offset=0,
             limit=100,
             collection_id=collection_id,
@@ -2968,7 +2968,7 @@ class PostgresGraphHandler(GraphHandler):
 
         # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
         document_ids_response = (
-            await self.collection_handler.documents_in_collection(
+            await self.collections_handler.documents_in_collection(
                 offset=0,
                 limit=100,
                 collection_id=collection_id,

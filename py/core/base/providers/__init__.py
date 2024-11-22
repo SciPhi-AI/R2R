@@ -2,7 +2,7 @@ from .auth import AuthConfig, AuthProvider
 from .base import AppConfig, Provider, ProviderConfig
 from .crypto import CryptoConfig, CryptoProvider
 from .database import (
-    CollectionHandler,
+    CollectionsHandler,
     DatabaseConfig,
     DatabaseConnectionManager,
     DatabaseProvider,
@@ -43,7 +43,7 @@ __all__ = [
     # Database providers
     "DatabaseConnectionManager",
     "DocumentHandler",
-    "CollectionHandler",
+    "CollectionsHandler",
     "TokenHandler",
     "UserHandler",
     "LoggingHandler",

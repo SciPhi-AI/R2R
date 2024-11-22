@@ -1206,8 +1206,8 @@ class GraphRouter(BaseRouterV3):
             )
 
         @self.router.post(
-            "/graphs/{id}/documents",
-            summary="Add documents to graph",
+            "/graphs/{id}/initialize",
+            summary="Initialize graph",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -1219,9 +1219,8 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.add_documents(
-                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                document_ids=["f98db41a-5555-4444-3333-222222222222"]
+                            result = client.graphs.initialize(
+                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )"""
                         ),
                     },
@@ -1235,8 +1234,7 @@ class GraphRouter(BaseRouterV3):
 
                             async function main() {
                                 const response = await client.graphs.addDocuments({
-                                    id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                    documentIds: ["f98db41a-5555-4444-3333-222222222222"]
+                                    id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                                 });
                             }
 
@@ -1248,13 +1246,13 @@ class GraphRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def add_documents(
+        async def initialize(
             id: UUID = Path(
-                ..., description="The ID of the graph to add documents to."
+                ..., description="The ID of the graph to initialize."
             ),
-            document_ids: list[UUID] = Body(
-                ..., description="List of document IDs to add to the graph."
-            ),
+            # document_ids: list[UUID] = Body(
+            #     ..., description="List of document IDs to add to the graph."
+            # ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedBooleanResponse:
             """
@@ -1283,21 +1281,41 @@ class GraphRouter(BaseRouterV3):
                     "The currently authenticated user does not have access to the specified graph.",
                     403,
                 )
+            list_graphs_response = await self.services["kg"].list_graphs(
+                # user_ids=None,
+                graph_ids=[id],
+                offset=0,
+                limit=1,
+            )
+            print("list_graphs_response = ", list_graphs_response)
+            if len(list_graphs_response["results"]) == 0:
+                raise R2RException("Graph not found", 404)
+            collection_id = list_graphs_response["results"][0].collection_id
+            print('collection_id = ', collection_id)
+            documents = []
+            document_ids_req = (await self.providers.database.collections_handler.documents_in_collection(collection_id, offset=0, limit=100))["results"]
+            while len(document_ids_req) == 100:
+                documents.extend(document_ids_req)
+                documents_req = (await self.providers.database.collections_handler.documents_in_collection(collection_id, offset=len(document_ids), limit=100))["results"]
+            
+            documents.extend(document_ids_req)
+
+            # print('document_ids = ', document_ids)
 
             # Check user permissions for documents
-            for doc_id in document_ids:
+            for document in documents:
                 if (
                     not auth_user.is_superuser
-                    and doc_id not in auth_user.document_ids
+                    and document.id not in auth_user.document_ids # TODO - extend to include checks on collections
                 ):
                     raise R2RException(
-                        f"The currently authenticated user does not have access to document {doc_id}",
+                        f"The currently authenticated user does not have access to document {document.id}",
                         403,
                     )
 
             success = (
                 await self.providers.database.graph_handler.add_documents(
-                    id=id, document_ids=document_ids
+                    id=id, document_ids=[doc.id for doc in documents]
                 )
             )
 
