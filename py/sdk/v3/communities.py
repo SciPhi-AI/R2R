@@ -90,7 +90,7 @@ class CommunitiesSDK:
             f"graphs/{str(id)}/communities/{str(community_id)}",
             version="v3",
         )
-    
+
     async def update(
         self,
         id: str | UUID,
@@ -196,4 +196,3 @@ class CommunitiesSDK:
             f"graphs/{str(id)}/communities/{str(community_id)}",
             version="v3",
         )
-

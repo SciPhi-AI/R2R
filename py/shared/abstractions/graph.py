@@ -46,10 +46,11 @@ class Entity(R2RSerializable):
     document_id: Optional[UUID] = None  # this is for backward compatibility
     document_ids: list[UUID] = []
     graph_ids: list[UUID] = []
-    user_id: UUID
-    last_modified_by: UUID
-    created_at: datetime
-    updated_at: datetime
+    user_id: Optional[UUID] = None
+    last_modified_by: Optional[UUID] = None
+    # optional because the relationship extraction pipeline does not set these
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     attributes: Optional[dict[str, Any] | str] = None
 
     def __init__(self, **kwargs):

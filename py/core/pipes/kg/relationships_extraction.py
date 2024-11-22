@@ -20,6 +20,8 @@ from core.base.pipes.base_pipe import AsyncPipe
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.providers.database import PostgresDBProvider
 
+from uuid import UUID
+
 logger = logging.getLogger()
 
 
@@ -78,7 +80,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
         delay: int = 2,
         task_id: Optional[int] = None,
         total_tasks: Optional[int] = None,
-        auth_user: Optional[Any] = None,
+        user_id: Optional[UUID] = None,
     ) -> KGExtraction:
         """
         Extracts NER relationships from a extraction with retries.
@@ -149,12 +151,8 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
                                     extraction.id for extraction in extractions
                                 ],
                                 attributes={},
-                                user_id=(
-                                    auth_user["id"] if auth_user else None
-                                ),
-                                last_modified_by=(
-                                    auth_user["id"] if auth_user else None
-                                ),
+                                user_id=user_id,
+                                last_modified_by=user_id,
                             )
                         )
 
@@ -175,16 +173,13 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
                                 description=description,
                                 weight=weight,
                                 document_id=extractions[0].document_id,
+                                document_ids=[extractions[0].document_id],
                                 chunk_ids=[
                                     extraction.id for extraction in extractions
                                 ],
                                 attributes={},
-                                user_id=(
-                                    auth_user["id"] if auth_user else None
-                                ),
-                                last_modified_by=(
-                                    auth_user["id"] if auth_user else None
-                                ),
+                                user_id=user_id,
+                                last_modified_by=user_id,
                             )
                         )
 
@@ -248,7 +243,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
         filter_out_existing_chunks = input.message.get(
             "filter_out_existing_chunks", True
         )
-        auth_user = input.message.get("auth_user", None)
+        user_id = input.message.get("user_id", None)
         logger = input.message.get("logger", logging.getLogger())
 
         logger.info(
@@ -269,7 +264,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
                 await self.database_provider.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                     document_id=document_id,
                     offset=0,
-                    limit=100,
+                    limit=1000000,  # FIXME: realistically, this should be enough. but -1 is preferrable
                 )
             )["results"]
         ]
@@ -325,7 +320,7 @@ class KGRelationshipsExtractionPipe(AsyncPipe[dict]):
                     relation_types=relation_types,
                     task_id=task_id,
                     total_tasks=len(extractions_groups),
-                    auth_user=auth_user,
+                    user_id=user_id,
                 )
             )
             for task_id, extractions_group in enumerate(extractions_groups)

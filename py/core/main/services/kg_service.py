@@ -71,7 +71,7 @@ class KgService(Service):
         max_knowledge_relationships: int,
         entity_types: list[str],
         relation_types: list[str],
-        auth_user: Optional[Any] = None,
+        user_id: Optional[UUID] = None,
         **kwargs,
     ):
         try:
@@ -96,7 +96,7 @@ class KgService(Service):
                         "entity_types": entity_types,
                         "relation_types": relation_types,
                         "logger": logger,
-                        "auth_user": auth_user,
+                        "user_id": user_id,
                     }
                 ),
                 state=None,
@@ -161,6 +161,22 @@ class KgService(Service):
                 filter_user_ids=user_ids,
                 filter_entity_ids=entity_ids,
             )
+        )
+
+    async def list_entities_for_graph(
+        self,
+        graph_id: UUID,
+    ) -> dict[str, list[Entity] | int]:
+        return await self.providers.database.graph_handler.entities.list_entities_for_graph(
+            graph_id=graph_id,
+        )
+
+    async def list_entities_for_document(
+        self,
+        document_id: UUID,
+    ) -> dict[str, list[Entity] | int]:
+        return await self.providers.database.graph_handler.entities.list_entities_for_document(
+            document_id=document_id,
         )
 
     @telemetry_event("update_entity")
@@ -256,6 +272,22 @@ class KgService(Service):
             filter_relationship_ids=filter_relationship_ids,
             offset=offset,
             limit=limit,
+        )
+
+    async def list_relationships_for_graph(
+        self,
+        graph_id: UUID,
+    ) -> dict[str, list[Relationship] | int]:
+        return await self.providers.database.graph_handler.relationships.list_relationships_for_graph(
+            graph_id=graph_id,
+        )
+
+    async def list_relationships_for_document(
+        self,
+        document_id: UUID,
+    ) -> dict[str, list[Relationship] | int]:
+        return await self.providers.database.graph_handler.relationships.list_relationships_for_document(
+            document_id=document_id,
         )
 
     @telemetry_event("create_relationships_v3")
@@ -562,7 +594,7 @@ class KgService(Service):
         self,
         document_id: UUID,
         max_description_input_length: int,
-        auth_user: Any,
+        user_id: Optional[UUID],
         **kwargs,
     ):
 
@@ -582,7 +614,8 @@ class KgService(Service):
 
         if entity_count == 0:
             raise R2RException(
-                "No entities found for document. Please check the document for errors."
+                "No entities found for document. Please check the document for errors.",
+                status_code=404,
             )
 
         # TODO - Do not hardcode the batch size,
@@ -606,7 +639,7 @@ class KgService(Service):
                         "limit": 256,
                         "max_description_input_length": max_description_input_length,
                         "document_id": document_id,
-                        "auth_user": auth_user,
+                        "user_id": user_id,
                         "logger": logger,
                     }
                 ),

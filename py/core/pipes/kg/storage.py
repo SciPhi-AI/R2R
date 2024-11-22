@@ -52,7 +52,6 @@ class KGStoragePipe(AsyncPipe):
     async def store(
         self,
         kg_extractions: list[KGExtraction],
-        auth_user: Optional[Any] = None,
     ):
         """
         Stores a batch of knowledge graph extractions in the graph database.
@@ -96,9 +95,19 @@ class KGStoragePipe(AsyncPipe):
                         extraction.document_id
                     )
 
-                await self.database_provider.graph_handler.relationships.create(
-                    extraction.relationships,
-                )
+                for relationship in extraction.relationships:
+                    await self.database_provider.graph_handler.relationships.create(
+                        subject=relationship.subject,
+                        predicate=relationship.predicate,
+                        object=relationship.object,
+                        description=relationship.description,
+                        weight=relationship.weight,
+                        chunk_ids=relationship.chunk_ids,
+                        document_id=relationship.document_id,
+                        document_ids=[relationship.document_id],
+                        attributes=relationship.attributes,
+                        user_id=relationship.user_id,
+                    )
 
             return (total_entities, total_relationships)
 

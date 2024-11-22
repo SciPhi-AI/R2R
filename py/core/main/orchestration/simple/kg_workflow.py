@@ -28,8 +28,8 @@ def simple_kg_factory(service: KgService):
             if key == "graph_id":
                 input_data[key] = uuid.UUID(value)
 
-            if key == "auth_user":
-                input_data[key] = json.loads(value)
+            if key == "user_id":
+                input_data[key] = uuid.UUID(value)
 
             if key == "kg_creation_settings":
                 input_data[key] = json.loads(value)
@@ -69,13 +69,13 @@ def simple_kg_factory(service: KgService):
             try:
                 await service.kg_relationships_extraction(
                     document_id=document_id,
-                    auth_user=input_data.get("auth_user", None),
+                    user_id=input_data.get("user_id", None),
                     **input_data["kg_creation_settings"],
                 )
                 # Describe the entities in the graph
                 await service.kg_entity_description(
                     document_id=document_id,
-                    auth_user=input_data.get("auth_user", None),
+                    user_id=input_data.get("user_id", None),
                     **input_data["kg_creation_settings"],
                 )
 
