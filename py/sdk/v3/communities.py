@@ -33,10 +33,17 @@ class CommunitiesSDK:
         Create a new community.
 
         Args:
-            name (str): The name of the entity.
-            description (Optional[str]): The description of the entity.
-            category (Optional[str]): The category of the entity.
-            attributes (Optional[dict]): The attributes of the entity.
+            graph_id (str | UUID): The ID of the graph to create the community in.
+            name (str): The name of the community.
+            summary (str): The summary of the community.
+            findings (Optional[list[str]]): The findings of the community.
+            level (Optional[int]): The level of the community.
+            rating (Optional[float]): The rating of the community.
+            rating_explanation (Optional[str]): The rating explanation of the community.
+            attributes (Optional[dict]): The attributes of the community.
+
+        Returns:
+            The created community.
         """
 
         data = {}
@@ -86,7 +93,8 @@ class CommunitiesSDK:
 
     async def list(
         self,
-        ids: Optional[list[str | UUID]] = None,
+        id: str | UUID,
+        community_ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedCommunitiesResponse:
@@ -94,7 +102,8 @@ class CommunitiesSDK:
         List communities with pagination.
 
         Args:
-            ids (Optional[list[str | UUID]]): Optional list of community IDs to filter by.
+            id (str | UUID): The ID of the graph to list communities for.
+            community_ids (Optional[list[str | UUID]]): Optional list of community IDs to filter by.
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
@@ -106,8 +115,8 @@ class CommunitiesSDK:
             "offset": offset,
             "limit": limit,
         }
-        if ids:
-            params["ids"] = [str(community_id) for community_id in ids]  # type: ignore
+        if community_ids:
+            params["ids"] = [str(community_id) for community_id in community_ids]  # type: ignore
 
         return await self.client._make_request(
             "GET",
