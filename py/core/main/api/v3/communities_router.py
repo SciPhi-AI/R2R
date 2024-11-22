@@ -23,6 +23,7 @@ from core.base.api.models import (
     WrappedKGEntityDeduplicationResponse,
     WrappedKGEnrichmentResponse,
     WrappedKGTunePromptResponse,
+    WrappedBooleanResponse,
 )
 
 
@@ -178,7 +179,7 @@ class CommunitiesRouter(BaseRouterV3):
             ),
             run_with_orchestration: bool = Query(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGEnrichmentResponse:
+        ) -> WrappedCommunityResponse:
             """Creates communities in the graph by analyzing entity relationships and similarities.
 
             Communities are created through the following process:
@@ -220,7 +221,36 @@ class CommunitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.create(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", communities=[community1, community2])
+                            result = client.graphs.communities.create(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                name="My Community",
+                                summary="A summary of the community",
+                                findings=["Finding 1", "Finding 2"],
+                                level=0,
+                                rating=5,
+                                rating_explanation="Explanation for the rating",
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = client.graphs.communities.create(
+                                    id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    name="My Community",
+                                    summary="A summary of the community",
+                                    findings=["Finding 1", "Finding 2"],
+                                    level=0,
+                                    rating=5,
+                                    rating_explanation="Explanation for the rating",
+                                );
+                            }
+                            main();
                             """
                         ),
                     },
@@ -254,7 +284,7 @@ class CommunitiesRouter(BaseRouterV3):
                 default=None, description="Attributes for the community"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedCommunityResponse:
             """
             Creates a new community in the graph.
 
@@ -278,7 +308,7 @@ class CommunitiesRouter(BaseRouterV3):
                 rating_explanation=rating_explanation,
                 level=level,
                 attributes=attributes,
-                auth_user=auth_user,
+                user_id=auth_user.id,
             )
 
         @self.router.get(
@@ -299,6 +329,19 @@ class CommunitiesRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = client.graphs.communities.get(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1");
+                            }
+                            main();
+                            """
+                        ),
+                    },
                 ]
             },
         )
@@ -308,6 +351,10 @@ class CommunitiesRouter(BaseRouterV3):
             id: UUID = Path(
                 ...,
                 description="The ID of the graph to get communities for.",
+            ),
+            community_ids: Optional[list[UUID]] = Query(
+                default=None,
+                description="A list of community IDs to filter by.",
             ),
             offset: int = Query(
                 0,
@@ -321,28 +368,27 @@ class CommunitiesRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedCommunitiesResponse:
             """
             Lists all communities in the graph with pagination support.
-
-            By default, all attributes are returned, but this can be limited using the `attributes` parameter.
             """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
                 )
 
-            communities, count = await self.services[
+            list_communities_response = await self.services[
                 "kg"
-            ].providers.database.graph_handler.communities.get(
+            ].providers.database.graph_handler.communities.list_communities(
                 graph_id=id,
+                filter_community_ids=community_ids,
+                filter_user_ids=[auth_user.id],
                 offset=offset,
                 limit=limit,
-                auth_user=auth_user,
             )
 
-            return communities, {
-                "total_entries": count,
+            return list_communities_response["results"], {
+                "total_entries": list_communities_response["total_entries"],
             }
 
         @self.router.get(
@@ -359,7 +405,26 @@ class CommunitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.get(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            result = client.graphs.communities.get(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                community_id="123e4567-e89b-12d3-a456-426614174000"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = client.graphs.communities.get(
+                                    id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    community_id="123e4567-e89b-12d3-a456-426614174000"
+                                );
+                            }
+                            main();
                             """
                         ),
                     },
@@ -378,26 +443,26 @@ class CommunitiesRouter(BaseRouterV3):
                 description="The ID of the community to get.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedCommunityResponse:
             """
             Retrieves a specific community by its ID.
-
-            By default, all attributes are returned, but this can be limited using the `attributes` parameter.
             """
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can access this endpoint.", 403
                 )
 
-            return await self.services[
+            list_communities_response = await self.services[
                 "kg"
-            ].providers.database.graph_handler.communities.get(
+            ].providers.database.graph_handler.communities.list_communities(
                 graph_id=id,
-                community_id=community_id,
-                auth_user=auth_user,
+                filter_community_ids=[community_id],
+                filter_user_ids=[auth_user.id],
                 offset=0,
                 limit=1,
             )
+
+            return list_communities_response["results"][0]
 
         @self.router.delete(
             "/graphs/{id}/communities/{community_id}",
@@ -415,11 +480,8 @@ class CommunitiesRouter(BaseRouterV3):
                 description="The ID of the community to delete.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
+        ) -> WrappedBooleanResponse:
+
             await self.services["kg"].delete_community_v3(
                 graph_id=id,
                 community_id=community_id,
@@ -441,15 +503,37 @@ class CommunitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.update_community(
+                            result = client.graphs.communities.update(
                                 id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                community_update={
-                                    "metadata": {
-                                        "topic": "Technology",
-                                        "description": "Tech companies and products"
-                                    }
-                                }
-                            )"""
+                                community_id="123e4567-e89b-12d3-a456-426614174000",
+                                name="My Community",
+                                summary="A summary of the community",
+                                findings=["Finding 1", "Finding 2"],
+                                rating=5,
+                                rating_explanation="Explanation for the rating",
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = client.graphs.communities.update(
+                                    id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                    community_id="123e4567-e89b-12d3-a456-426614174000",
+                                    name="My Community",
+                                    summary="A summary of the community",
+                                    findings=["Finding 1", "Finding 2"],
+                                    rating=5,
+                                    rating_explanation="Explanation for the rating",
+                                );
+                            }
+                            main();
+                            """
                         ),
                     },
                 ]
@@ -467,7 +551,7 @@ class CommunitiesRouter(BaseRouterV3):
             level: Optional[int] = Body(None),
             attributes: Optional[dict] = Body(None),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedCommunityResponse:
             """
             Updates an existing community's metadata and properties.
             """
@@ -486,5 +570,5 @@ class CommunitiesRouter(BaseRouterV3):
                 rating_explanation=rating_explanation,
                 level=level,
                 attributes=attributes,
-                auth_user=auth_user,
+                user_id=auth_user.id,
             )

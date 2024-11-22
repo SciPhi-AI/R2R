@@ -731,6 +731,7 @@ class PostgresUserHandler(UserHandler):
             query, [auth_user.id, collection_id]
         )
         return result is not None
+
     async def has_entity_access(self, auth_user, entity_id: UUID) -> bool:
         """
         Check if the user has access to an entity.

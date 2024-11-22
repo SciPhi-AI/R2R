@@ -22,6 +22,8 @@ from core.base.api.models import (
     WrappedKGEntityDeduplicationResponse,
     WrappedKGEnrichmentResponse,
     WrappedKGTunePromptResponse,
+    GenericBooleanResponse,
+    WrappedBooleanResponse,
 )
 
 
@@ -50,15 +52,6 @@ class RelationshipsRouter(BaseRouterV3):
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
 
-    def _get_path_level(self, request: Request) -> DataLevel:
-        path = request.url.path
-        if "/chunks/" in path:
-            return DataLevel.CHUNK
-        elif "/documents/" in path:
-            return DataLevel.DOCUMENT
-        else:
-            return DataLevel.GRAPH
-
     def _setup_routes(self):
 
         @self.router.get(
@@ -75,7 +68,22 @@ class RelationshipsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.relationships.list(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            result = client.relationships.list(ids=["9fbe403b-c11c-5aae-8ade-ef22980c3ad1"])
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = await client.relationships.list({
+                                    ids: ["9fbe403b-c11c-5aae-8ade-ef22980c3ad1"],
+                                });
+                            }
+                            main();
                             """
                         ),
                     },
@@ -84,26 +92,9 @@ class RelationshipsRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def list_relationships(
-            request: Request,
-            graph_id: Optional[UUID] = Query(
+            ids: Optional[list[UUID]] = Query(
                 None,
-                description="The ID of the graph to retrieve relationships for.",
-            ),
-            document_id: Optional[UUID] = Query(
-                None,
-                description="The ID of the document to retrieve relationships for.",
-            ),
-            entity_names: Optional[list[str]] = Query(
-                None,
-                description="A list of subject or object entity names to filter the relationships by.",
-            ),
-            relationship_types: Optional[list[str]] = Query(
-                None,
-                description="A list of relationship types to filter the relationships by.",
-            ),
-            attributes: Optional[list[str]] = Query(
-                None,
-                description="A list of attributes to return. By default, all attributes are returned.",
+                description="A list of relationship IDs to retrieve. If not provided, all relationships will be returned.",
             ),
             offset: int = Query(
                 0,
@@ -113,7 +104,7 @@ class RelationshipsRouter(BaseRouterV3):
             limit: int = Query(
                 100,
                 ge=1,
-                le=1000,
+                le=100,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
@@ -122,34 +113,25 @@ class RelationshipsRouter(BaseRouterV3):
             Lists all relationships in the graph with pagination support.
 
             Relationships can be filtered by:
-            - Graph ID
-            - Document ID
-            - Entity names
-            - Relationship types
-
-            By default, all attributes are returned, but this can be limited using the `attributes` parameter.
+            - Relationship IDs
+            - User IDs
             """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
 
-            relationships, count = await self.services[
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
+            list_relationships_response = await self.services[
                 "kg"
             ].list_relationships_v3(
-                level=self._get_path_level(request),
-                id=id,
-                graph_id=graph_id,
-                document_id=document_id,
-                entity_names=entity_names,
-                relationship_types=relationship_types,
-                attributes=attributes,
+                filter_user_ids=requesting_user_id,
+                filter_relationship_ids=ids,
                 offset=offset,
                 limit=limit,
             )
 
-            return relationships, {  # type: ignore
-                "total_entries": count,
+            return list_relationships_response["results"], {
+                "total_entries": list_relationships_response["total_entries"]
             }
 
         @self.router.get(
@@ -170,39 +152,45 @@ class RelationshipsRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = client.relationships.get({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+                            main();
+                            """
+                        ),
+                    },
                 ],
             },
         )
         @self.base_endpoint
         async def get_relationship(
-            request: Request,
             id: UUID = Path(
                 ...,
                 description="The ID of the relationship to retrieve.",
-            ),
-            attributes: Optional[list[str]] = Query(
-                None,
-                description="A list of attributes to return. By default, all attributes are returned.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipResponse:
             """
             Retrieves a relationship by its ID.
-
-            By default, all attributes are returned, but this can be limited using the `attributes` parameter.
             """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
 
-            relationship = await self.services["kg"].list_relationships_v3(
-                level=self._get_path_level(request),
-                id=id,
-                attributes=attributes,
+            list_relationships_response = await self.services[
+                "kg"
+            ].list_relationships_v3(
+                filter_relationship_ids=[id],
+                offset=0,
+                limit=1,
             )
 
-            return relationship
+            return list_relationships_response["results"][0]
 
         @self.router.post(
             "/relationships",
@@ -218,26 +206,62 @@ class RelationshipsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.relationships.create(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationships=[relationship1, relationship2])
+                            result = client.relationships.create(
+                                subject="subject",
+                                predicate="predicate",
+                                object="object",
+                                description="description",
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = client.relationships.create({
+                                    subject: "subject",
+                                    predicate: "predicate",
+                                    object: "object",
+                                    description: "description",
+                                });
+                            }
+                            main();
                             """
                         ),
                     },
                 ],
-                "operationId": "create_relationships_v3_relationships_post_relationships",
             },
         )
         @self.base_endpoint
         async def create_relationships(
-            request: Request,
-            relationships: list[Relationship] = Body(
-                ..., description="The relationships to create."
+            subject: str = Body(
+                ..., description="The subject of the relationship"
+            ),
+            predicate: str = Body(
+                ..., description="The predicate of the relationship"
+            ),
+            object: str = Body(
+                ..., description="The object of the relationship"
+            ),
+            description: str = Body(
+                ..., description="The description of the relationship"
+            ),
+            weight: Optional[float] = Body(
+                1.0,
+                description="The weight of the relationship",
+            ),
+            attributes: Optional[dict] = Body(
+                {},
+                description="The attributes of the relationship",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGCreationResponse:
+        ) -> WrappedRelationshipResponse:
             """
-            Creates new relationships.
-
-            Relationships can be created by providing a list of relationship objects.
+            Creates a new relationship in the database.
             """
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -245,13 +269,16 @@ class RelationshipsRouter(BaseRouterV3):
                 )
 
             relationships = await self.services["kg"].create_relationships_v3(
-                relationships=relationships,
+                subject=subject,
+                predicate=predicate,
+                object=object,
+                description=description,
+                weight=weight,
+                attributes=attributes,
+                user_id=auth_user.id,
             )
 
-            return {  # type: ignore
-                "message": "Relationships created successfully.",
-                "count": relationships,
-            }
+            return relationships
 
         @self.router.post(
             "/relationships/{id}",
@@ -267,12 +294,35 @@ class RelationshipsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.relationships.update(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", relationship=relationship)
+                            result = client.relationships.update(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                subject="subject",
+                                predicate="predicate",
+                                object="object",
+                                description="description",
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = client.relationships.update({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    subject: "subject",
+                                    predicate: "predicate",
+                                    object: "object",
+                                    description: "description",
+                                });
+                            }
+                            main();
                             """
                         ),
                     },
                 ],
-                "operationId": "update_relationships_v3_relationships__id__post_relationships",
             },
         )
         @self.base_endpoint
@@ -282,11 +332,26 @@ class RelationshipsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the relationship to update.",
             ),
-            relationship: Relationship = Body(
-                ..., description="The updated relationship."
+            subject: Optional[str] = Body(
+                None, description="The subject of the relationship"
+            ),
+            predicate: Optional[str] = Body(
+                None, description="The predicate of the relationship"
+            ),
+            object: Optional[str] = Body(
+                None, description="The object of the relationship"
+            ),
+            description: Optional[str] = Body(
+                None, description="The description of the relationship"
+            ),
+            weight: Optional[float] = Body(
+                None, description="The weight of the relationship"
+            ),
+            attributes: Optional[dict] = Body(
+                None, description="The attributes of the relationship"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedRelationshipResponse:
             """
             Updates an existing relationship in the database.
 
@@ -304,7 +369,14 @@ class RelationshipsRouter(BaseRouterV3):
                 )
 
             return await self.services["kg"].update_relationship_v3(
-                relationship=relationship,
+                relationship_id=id,
+                subject=subject,
+                predicate=predicate,
+                object=object,
+                description=description,
+                weight=weight,
+                attributes=attributes,
+                user_id=auth_user.id,
             )
 
         @self.router.delete(
@@ -325,6 +397,21 @@ class RelationshipsRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = client.relationships.delete({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+                            main();
+                            """
+                        ),
+                    },
                 ],
                 "operationId": "delete_relationships_v3_relationships__id__delete_relationships",
             },
@@ -337,7 +424,7 @@ class RelationshipsRouter(BaseRouterV3):
                 description="The ID of the relationship to delete.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedBooleanResponse:
             """
             Deletes a relationship by its ID.
 
@@ -352,6 +439,8 @@ class RelationshipsRouter(BaseRouterV3):
                     "Only superusers can access this endpoint.", 403
                 )
 
-            return await self.services["kg"].delete_relationship_v3(
+            await self.services["kg"].delete_relationship_v3(
                 id=id,
             )
+
+            return GenericBooleanResponse(success=True)

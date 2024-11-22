@@ -1,7 +1,7 @@
 import logging
 import math
 import time
-from typing import AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -246,63 +246,77 @@ class KgService(Service):
     @telemetry_event("list_relationships_v3")
     async def list_relationships_v3(
         self,
-        id: UUID,
-        level: DataLevel,
-        offset: int,
-        limit: int,
-        entity_names: Optional[list[str]] = None,
-        relationship_types: Optional[list[str]] = None,
-        attributes: Optional[list[str]] = None,
-        relationship_id: Optional[UUID] = None,
+        filter_user_ids: Optional[list[UUID]] = None,
+        filter_relationship_ids: Optional[list[UUID]] = None,
+        offset: int = 0,
+        limit: int = 100,
     ):
-        return await self.providers.database.graph_handler.relationships.get(
-            id=id,
-            level=level,
-            entity_names=entity_names,
-            relationship_types=relationship_types,
-            attributes=attributes,
+        return await self.providers.database.graph_handler.relationships.list_relationships(
+            filter_user_ids=filter_user_ids,
+            filter_relationship_ids=filter_relationship_ids,
             offset=offset,
             limit=limit,
-            relationship_id=relationship_id,
         )
 
     @telemetry_event("create_relationships_v3")
     async def create_relationships_v3(
         self,
-        relationships: list[Relationship],
+        subject: str,
+        predicate: str,
+        object: str,
+        description: str,
+        weight: Optional[float],
+        attributes: Optional[dict],
+        user_id: UUID,
         **kwargs,
     ):
         return (
             await self.providers.database.graph_handler.relationships.create(
-                relationships
+                subject=subject,
+                predicate=predicate,
+                object=object,
+                description=description,
+                weight=weight,
+                attributes=attributes,
+                user_id=user_id,
             )
         )
 
     @telemetry_event("delete_relationship_v3")
     async def delete_relationship_v3(
         self,
-        level: DataLevel,
         id: UUID,
-        relationship_id: UUID,
         **kwargs,
     ):
         return (
             await self.providers.database.graph_handler.relationships.delete(
-                level=level,
                 id=id,
-                relationship_id=relationship_id,
             )
         )
 
     @telemetry_event("update_relationship_v3")
     async def update_relationship_v3(
         self,
-        relationship: Relationship,
+        relationship_id: UUID,
+        subject: str,
+        predicate: str,
+        object: str,
+        description: str,
+        weight: Optional[float],
+        attributes: Optional[dict],
+        user_id: UUID,
         **kwargs,
     ):
         return (
             await self.providers.database.graph_handler.relationships.update(
-                relationship
+                relationship_id=relationship_id,
+                subject=subject,
+                predicate=predicate,
+                object=object,
+                description=description,
+                weight=weight,
+                attributes=attributes,
+                user_id=user_id,
             )
         )
 
@@ -338,7 +352,7 @@ class KgService(Service):
         rating_explanation: Optional[str],
         level: Optional[int],
         attributes: Optional[dict],
-        auth_user: Any,
+        user_id: UUID,
         **kwargs,
     ):
         embedding = str(
@@ -354,7 +368,7 @@ class KgService(Service):
             rating_explanation=rating_explanation,
             level=level,
             attributes=attributes,
-            auth_user=auth_user,
+            user_id=user_id,
         )
 
     @telemetry_event("update_community_v3")
@@ -369,7 +383,7 @@ class KgService(Service):
         rating_explanation: Optional[str],
         level: Optional[int],
         attributes: Optional[dict],
-        auth_user: Any,
+        user_id: UUID,
         **kwargs,
     ):
         if summary is not None:
@@ -390,7 +404,7 @@ class KgService(Service):
             rating_explanation=rating_explanation,
             level=level,
             attributes=attributes,
-            auth_user=auth_user,
+            user_id=user_id,
         )
 
     @telemetry_event("delete_community_v3")
@@ -398,13 +412,13 @@ class KgService(Service):
         self,
         graph_id: UUID,
         community_id: UUID,
-        auth_user: Any,
+        user_id: UUID,
         **kwargs,
     ):
         return await self.providers.database.graph_handler.communities.delete(
             graph_id=graph_id,
             community_id=community_id,
-            auth_user=auth_user,
+            user_id=user_id,
         )
 
     @telemetry_event("list_communities_v3")
@@ -893,9 +907,11 @@ class KgService(Service):
     async def add_documents_to_graph(
         self, graph_id: UUID, document_ids: list[UUID]
     ) -> None:
-        return await self.providers.database.graph_handler.add_documents_to_graph(
-            graph_id=graph_id,
-            document_ids=document_ids,
+        return (
+            await self.providers.database.graph_handler.add_documents_to_graph(
+                graph_id=graph_id,
+                document_ids=document_ids,
+            )
         )
 
     async def remove_documents_from_graph(

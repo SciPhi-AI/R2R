@@ -58,7 +58,7 @@ class Entity(R2RSerializable):
             try:
                 self.attributes = json.loads(self.attributes)
             except json.JSONDecodeError:
-                self.attributes = self.attributes
+                self.attributes = {}
 
 
 class Relationship(R2RSerializable):
@@ -68,17 +68,15 @@ class Relationship(R2RSerializable):
     subject: str
     predicate: str
     object: str
+    description: str
     id: Optional[UUID | int] = None
-    subject_id: Optional[UUID] = None
-    object_id: Optional[UUID] = None
     weight: float | None = 1.0
-    description: str | None = None
-    description_embedding: list[float] | None = None
-    predicate_embedding: list[float] | None = None
-    chunk_ids: list[UUID] = []
+    chunk_ids: Optional[list[UUID]] = None
     document_id: Optional[UUID] = None
-    graph_id: Optional[UUID] = None
-    attributes: dict[str, Any] | str = {}
+    graph_ids: Optional[list[UUID]] = None
+    user_id: Optional[UUID] = None
+    last_modified_by: Optional[UUID] = None
+    attributes: Optional[dict[str, Any] | str] = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -86,7 +84,7 @@ class Relationship(R2RSerializable):
             try:
                 self.attributes = json.loads(self.attributes)
             except json.JSONDecodeError:
-                self.attributes = self.attributes
+                self.attributes = {}
 
 
 @dataclass

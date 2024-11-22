@@ -70,25 +70,6 @@ class EntitiesRouter(BaseRouterV3):
                             """
                         ),
                     },
-                    {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
-                            const { r2rClient } = require("r2r-js");
-
-                            const client = new r2rClient("http://localhost:7272");
-
-                            function main() {
-                                const response = await client.entities.create({
-                                    name: "Entity 1",
-                                    description: "A description of the entity",
-                                });
-                            }
-
-                            main();
-                            """
-                        ),
-                    },
                 ],
             },
         )
