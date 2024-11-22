@@ -1081,6 +1081,7 @@ class PostgresCommunityHandler(CommunityHandler):
         if name is not None:
             update_fields.append(f"name = ${params_index}")
             params.append(name)
+            params_index += 1
 
         if summary is not None:
             update_fields.append(f"summary = ${params_index}")
