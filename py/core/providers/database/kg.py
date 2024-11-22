@@ -452,7 +452,7 @@ class PostgresEntityHandler(EntityHandler):
                 SET status = 'stale'
                 WHERE id = ANY (
                     SELECT graph_ids
-                    FROM {self._get_table_name("relationship")}
+                    FROM {self._get_table_name("entity")}
                     WHERE id = $1
                 )
             """
@@ -460,7 +460,7 @@ class PostgresEntityHandler(EntityHandler):
 
             # delete the entity
             QUERY = f"""
-                DELETE FROM {self._get_table_name("relationship")}
+                DELETE FROM {self._get_table_name("entity")}
                 WHERE id = $1
                 RETURNING id
             """
