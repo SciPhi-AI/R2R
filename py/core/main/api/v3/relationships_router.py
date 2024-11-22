@@ -322,7 +322,6 @@ class RelationshipsRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def update_relationship(
-            request: Request,
             id: UUID = Path(
                 ...,
                 description="The ID of the relationship to update.",
