@@ -17,6 +17,7 @@ from core.base.abstractions import (
 from core.base.api.models import (
     GenericBooleanResponse,
     GenericMessageResponse,
+    PaginatedResultsWrapper,
     WrappedBooleanResponse,
     WrappedCommunitiesResponse,
     WrappedCommunityResponse,
@@ -197,7 +198,9 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_graph(
-            name: str = Body(..., description="The name of the graph"),
+            name: Optional[str] = Body(
+                None, description="The name of the graph"
+            ),
             description: Optional[str] = Body(
                 None, description="An optional description of the graph"
             ),
@@ -555,11 +558,20 @@ class GraphRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedEntitiesResponse:
+        ) -> PaginatedResultsWrapper[list[Entity]]:
             """Lists all entities in the graph with pagination support."""
-            return await self.services["kg"].list_graph_entities(
-                id, offset, limit, auth_user
+            # return await self.services["kg"].get_entities(
+            #     id, offset, limit, auth_user
+            # )
+            entities, count = (
+                await self.providers.database.graph_handler.get_entities(
+                    id, offset, limit
+                )
             )
+            print("entities = ", entities)
+            return entities, {
+                "total_entries": count,
+            }
 
         @self.router.post("/graphs/{id}/entities")
         @self.base_endpoint
@@ -1076,3 +1088,181 @@ class GraphRouter(BaseRouterV3):
                 attributes=attributes,
                 auth_user=auth_user,
             )
+
+        @self.router.post(
+            "/graphs/{id}/documents",
+            summary="Add documents to graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.add_documents(
+                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                document_ids=["f98db41a-5555-4444-3333-222222222222"]
+                            )"""
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            async function main() {
+                                const response = await client.graphs.addDocuments({
+                                    id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                    documentIds: ["f98db41a-5555-4444-3333-222222222222"]
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def add_documents(
+            id: UUID = Path(
+                ..., description="The ID of the graph to add documents to."
+            ),
+            document_ids: list[UUID] = Body(
+                ..., description="List of document IDs to add to the graph."
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedBooleanResponse:
+            """
+            Adds documents to a graph by copying their entities and relationships.
+
+            This endpoint:
+            1. Copies document entities to the graph_entity table
+            2. Copies document relationships to the graph_relationship table
+            3. Associates the documents with the graph
+
+            When a document is added:
+            - Its entities and relationships are copied to graph-specific tables
+            - Existing entities/relationships are updated by merging their properties
+            - The document ID is recorded in the graph's document_ids array
+
+            Documents added to a graph will contribute their knowledge to:
+            - Graph analysis and querying
+            - Community detection
+            - Knowledge graph enrichment
+
+            The user must have access to both the graph and the documents being added.
+            """
+            # Check user permissions for graph
+            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
+
+            # Check user permissions for documents
+            for doc_id in document_ids:
+                if (
+                    not auth_user.is_superuser
+                    and doc_id not in auth_user.document_ids
+                ):
+                    raise R2RException(
+                        f"The currently authenticated user does not have access to document {doc_id}",
+                        403,
+                    )
+
+            success = (
+                await self.providers.database.graph_handler.add_documents(
+                    id=id, document_ids=document_ids
+                )
+            )
+
+            return GenericBooleanResponse(success=success)
+
+        @self.router.delete(
+            "/graphs/{id}/documents/{document_id}",
+            summary="Remove document from graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.remove_document(
+                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                document_id="f98db41a-5555-4444-3333-222222222222"
+                            )"""
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def remove_document(
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to remove the document from.",
+            ),
+            document_id: UUID = Path(
+                ..., description="The ID of the document to remove."
+            ),
+            delete_data: bool = Query(
+                True,
+                description="Whether to delete the copied entities and relationships.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedBooleanResponse:
+            """
+            Removes a document from a graph and optionally deletes its copied data.
+
+            This endpoint:
+            1. Removes the document ID from the graph's document_ids array
+            2. Optionally deletes the document's copied entities and relationships
+
+            When delete_data is True:
+            - Entities copied from the document are deleted from graph_entity table
+            - Relationships copied from the document are deleted from graph_relationship table
+
+            When delete_data is False:
+            - The copied entities and relationships remain in the graph tables
+            - Only the document association is removed
+
+            The user must have access to both the graph and the document being removed.
+            """
+            # Check user permissions for graph
+            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
+
+            # Check user permissions for document
+            if (
+                not auth_user.is_superuser
+                and document_id not in auth_user.document_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified document.",
+                    403,
+                )
+
+            success = (
+                await self.providers.database.graph_handler.remove_documents(
+                    id=id, document_ids=[document_id], delete_data=delete_data
+                )
+            )
+
+            return GenericBooleanResponse(success=success)

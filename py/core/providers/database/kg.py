@@ -1081,6 +1081,8 @@ class PostgresGraphHandler(GraphHandler):
                 description TEXT,
                 status TEXT NOT NULL,
                 statistics JSONB,
+                document_ids UUID[],
+                collection_ids UUID[],
                 metadata JSONB,
                 created_at TIMESTAMPTZ DEFAULT NOW(),
                 updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -1097,10 +1099,13 @@ class PostgresGraphHandler(GraphHandler):
         self,
         user_id: UUID,
         name: Optional[str] = None,
-        description: str = "",
+        description: Optional[str] = None,
         graph_id: Optional[UUID] = None,
         status: str = "pending",
     ) -> GraphResponse:
+        graph_id = graph_id or uuid4()
+        name = name or f"Graph {graph_id}"
+        description = description or ""
 
         query = f"""
             INSERT INTO {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
@@ -1109,7 +1114,7 @@ class PostgresGraphHandler(GraphHandler):
             RETURNING id, user_id, name, description, status, created_at, updated_at
         """
         params = [
-            graph_id or uuid4(),
+            graph_id,
             user_id,
             name,
             description,
@@ -1284,104 +1289,130 @@ class PostgresGraphHandler(GraphHandler):
                 ]
             }
 
-    async def add_documents(
-        self, id: UUID, document_ids: list[UUID], copy_data: bool = True
-    ) -> bool:
-
-        # Get count of entities for each document
-        QUERY = f"""
-            SELECT document_id, COUNT(*) as entity_count
-            FROM {self._get_table_name("entity")}
-            WHERE document_id = ANY($1) AND entity_count = 0
-            GROUP BY document_id
+    async def add_documents(self, id: UUID, document_ids: list[UUID]) -> bool:
         """
-        docs_missing_entities = await self.connection_manager.fetch_query(
-            QUERY, [document_ids]
+        Add documents to the graph by copying their entities and relationships.
+        """
+        # Copy entities from document_entity to graph_entity
+        ENTITY_COPY_QUERY = f"""
+            INSERT INTO {self._get_table_name("graph_entity")} (
+                name, category, description, parent_id, description_embedding,
+                chunk_ids, metadata
+            )
+            SELECT
+                name, category, description, $1, description_embedding,
+                chunk_ids, metadata
+            FROM {self._get_table_name("document_entity")}
+            WHERE parent_id = ANY($2)
+        """
+        await self.connection_manager.execute_query(
+            ENTITY_COPY_QUERY, [id, document_ids]
         )
 
-        if len(docs_missing_entities) > 0:
-            raise R2RException(
-                f"Please make sure that all documents have at least one entity before adding them to the graph.",
-                400,
+        # Copy relationships from document_relationship to graph_relationship
+        RELATIONSHIP_COPY_QUERY = f"""
+            INSERT INTO {self._get_table_name("graph_relationship")} (
+                subject, predicate, object, description, subject_id, object_id,
+                weight, chunk_ids, parent_id, metadata
             )
-
-        # get count of relationships for each document
-        QUERY = f"""
-            SELECT document_id, COUNT(*) as relationship_count
-            FROM {self._get_table_name("relationship")}
-            WHERE document_id = ANY($1)
-            GROUP BY document_id
+            SELECT
+                subject, predicate, object, description, subject_id, object_id,
+                weight, chunk_ids, $1, metadata
+            FROM {self._get_table_name("document_relationship")}
+            WHERE parent_id = ANY($2)
         """
-        docs_missing_relationships = await self.connection_manager.fetch_query(
-            QUERY, [document_ids]
+        await self.connection_manager.execute_query(
+            RELATIONSHIP_COPY_QUERY, [id, document_ids]
         )
 
-        if len(docs_missing_relationships) > 0:
-            raise R2RException(
-                f"Please make sure that all documents have at least one relationship before adding them to the graph.",
-                400,
+        # Add document_ids to the graph
+        UPDATE_GRAPH_QUERY = f"""
+            UPDATE {self._get_table_name("graph")}
+            SET document_ids = array_cat(
+                CASE
+                    WHEN document_ids IS NULL THEN ARRAY[]::uuid[]
+                    ELSE document_ids
+                END,
+                $2::uuid[]
             )
-
-        for document_id in document_ids:
-            for table in ["entity", "relationship"]:
-                QUERY = f"""
-                    UPDATE {self._get_table_name(table)}
-                    SET graph_ids = CASE
-                        WHEN $1 = ANY(graph_ids) THEN graph_ids
-                        ELSE array_append(graph_ids, $1)
-                    END
-                    WHERE document_id = $2
-                """
-                await self.connection_manager.execute_query(
-                    QUERY, [id, document_id]
-                )
-
-        if copy_data:
-            for old_table, new_table in [
-                ("entity", "collection_entity"),
-                ("relationship", "graph_relationship"),
-            ]:
-                for document_id in document_ids:
-                    QUERY = f"""
-                        INSERT INTO {self._get_table_name(new_table)}
-                        SELECT * FROM {self._get_table_name(old_table)}
-                        WHERE document_id = $1
-                    """
-                    await self.connection_manager.execute_query(
-                        QUERY, [document_id]
-                    )
+            WHERE id = $1
+        """
+        await self.connection_manager.execute_query(
+            UPDATE_GRAPH_QUERY, [id, document_ids]
+        )
 
         return True
 
     async def remove_documents(
-        self, id: UUID, document_ids: list[UUID], delete_data: bool = True
+        self, id: UUID, document_ids: list[UUID]
     ) -> bool:
         """
-        Remove all entities and relationships for this document from the graph.
-        """
-        for document_id in document_ids:
-            for table in ["entity", "relationship"]:
-                QUERY = f"""
-                    UPDATE {self._get_table_name(table)}
-                    SET graph_ids = array_remove(graph_ids, $1)
-                    WHERE document_id = $2
-                """
-                await self.connection_manager.execute_query(
-                    QUERY, [id, document_id]
-                )
+        Remove documents from the graph by:
+        1. Removing document_ids from the graph
+        2. Optionally deleting copied entities and relationships
 
-        if delete_data:
-            for old_table, new_table in [
-                ("entity", "collection_entity"),
-                ("relationship", "graph_relationship"),
-            ]:
-                for document_id in document_ids:
-                    QUERY = f"""
-                        DELETE FROM {self._get_table_name(new_table)} WHERE document_id = $1
-                    """
-                    await self.connection_manager.execute_query(
-                        QUERY, [document_id]
-                    )
+        Args:
+            id (UUID): Graph ID
+            document_ids (list[UUID]): List of document IDs to remove
+            delete_data (bool): Whether to delete copied entities/relationships
+
+        Returns:
+            bool: Success status
+        """
+        # Remove document_ids from the graph
+        UPDATE_GRAPH_QUERY = f"""
+            UPDATE {self._get_table_name("graph")}
+            SET document_ids = array_remove(document_ids, ALL($2::uuid[]))
+            WHERE id = $1
+        """
+        await self.connection_manager.execute_query(
+            UPDATE_GRAPH_QUERY, [id, document_ids]
+        )
+
+        # Get entities and relationships to delete
+        ENTITY_IDS_QUERY = f"""
+            SELECT id FROM {self._get_table_name("graph_entity")}
+            WHERE parent_id = $1 AND name IN (
+                SELECT name FROM {self._get_table_name("document_entity")}
+                WHERE parent_id = ANY($2)
+            )
+        """
+        entity_ids = await self.connection_manager.fetch_query(
+            ENTITY_IDS_QUERY, [id, document_ids]
+        )
+        entity_ids = [row["id"] for row in entity_ids]
+
+        RELATIONSHIP_IDS_QUERY = f"""
+            SELECT id FROM {self._get_table_name("graph_relationship")}
+            WHERE parent_id = $1 AND (subject, predicate, object) IN (
+                SELECT subject, predicate, object
+                FROM {self._get_table_name("document_relationship")}
+                WHERE parent_id = ANY($2)
+            )
+        """
+        relationship_ids = await self.connection_manager.fetch_query(
+            RELATIONSHIP_IDS_QUERY, [id, document_ids]
+        )
+        relationship_ids = [row["id"] for row in relationship_ids]
+
+        # Delete entities and relationships
+        if entity_ids:
+            DELETE_ENTITIES_QUERY = f"""
+                DELETE FROM {self._get_table_name("graph_entity")}
+                WHERE id = ANY($1)
+            """
+            await self.connection_manager.execute_query(
+                DELETE_ENTITIES_QUERY, [entity_ids]
+            )
+
+        if relationship_ids:
+            DELETE_RELATIONSHIPS_QUERY = f"""
+                DELETE FROM {self._get_table_name("graph_relationship")}
+                WHERE id = ANY($1)
+            """
+            await self.connection_manager.execute_query(
+                DELETE_RELATIONSHIPS_QUERY, [relationship_ids]
+            )
 
         return True
 
@@ -1855,20 +1886,101 @@ class PostgresGraphHandler(GraphHandler):
             logger.error(f"Error in get_deduplication_estimate: {str(e)}")
             raise HTTPException(500, "Error fetching deduplication estimate.")
 
-    # TODO: deprecate this
+    # # TODO: deprecate this
+    # async def get_entities(
+    #     self,
+    #     offset: int,
+    #     limit: int,
+    #     collection_id: Optional[UUID] = None,
+    #     graph_id: Optional[UUID] = None,
+    #     entity_ids: Optional[list[str]] = None,
+    #     entity_names: Optional[list[str]] = None,
+    #     entity_table_name: str = "entity",
+    #     extra_columns: Optional[list[str]] = None,
+    # ) -> dict:
+    #     conditions = []
+    #     params: list = [collection_id]
+    #     param_index = 2
+
+    #     if entity_ids:
+    #         conditions.append(f"id = ANY(${param_index})")
+    #         params.append(entity_ids)
+    #         param_index += 1
+
+    #     if entity_names:
+    #         conditions.append(f"name = ANY(${param_index})")
+    #         params.append(entity_names)
+    #         param_index += 1
+
+    #     pagination_params = []
+    #     if offset:
+    #         pagination_params.append(f"OFFSET ${param_index}")
+    #         params.append(offset)
+    #         param_index += 1
+
+    #     if limit != -1:
+    #         pagination_params.append(f"LIMIT ${param_index}")
+    #         params.append(limit)
+    #         param_index += 1
+
+    #     pagination_clause = " ".join(pagination_params)
+
+    #     if entity_table_name == "collection_entity":
+    #         query = f"""
+    #         SELECT sid as id, name, description, chunk_ids, document_ids, graph_id {", " + ", ".join(extra_columns) if extra_columns else ""}
+    #         FROM {self._get_table_name(entity_table_name)}
+    #         WHERE collection_id = $1
+    #         {" AND " + " AND ".join(conditions) if conditions else ""}
+    #         ORDER BY id
+    #         {pagination_clause}
+    #         """
+    #     else:
+    #         query = f"""
+    #         SELECT sid as id, name, description, chunk_ids, document_id, graph_ids {", " + ", ".join(extra_columns) if extra_columns else ""}
+    #         FROM {self._get_table_name(entity_table_name)}
+    #         WHERE document_id = ANY(
+    #             SELECT document_id FROM {self._get_table_name("document_info")}
+    #             WHERE $1 = ANY(collection_ids)
+    #         )
+    #         {" AND " + " AND ".join(conditions) if conditions else ""}
+    #         ORDER BY id
+    #         {pagination_clause}
+    #         """
+
+    #     results = await self.connection_manager.fetch_query(query, params)
+    #     entities = [Entity(**entity) for entity in results]
+
+    #     total_entries = await self.get_entity_count(
+    #         collection_id=collection_id, entity_table_name=entity_table_name
+    #     )
+
+    #     return {"entities": entities, "total_entries": total_entries}
+
     async def get_entities(
         self,
+        graph_id: UUID,
         offset: int,
         limit: int,
-        collection_id: Optional[UUID] = None,
-        graph_id: Optional[UUID] = None,
-        entity_ids: Optional[list[str]] = None,
+        entity_ids: Optional[list[UUID]] = None,
         entity_names: Optional[list[str]] = None,
-        entity_table_name: str = "entity",
-        extra_columns: Optional[list[str]] = None,
-    ) -> dict:
-        conditions = []
-        params: list = [collection_id]
+        include_embeddings: bool = False,
+    ) -> tuple[list[Entity], int]:
+        """
+        Get entities for a graph.
+
+        Args:
+            offset: Number of records to skip
+            limit: Maximum number of records to return (-1 for no limit)
+            graph_id: UUID of the graph
+            entity_ids: Optional list of entity IDs to filter by
+            entity_names: Optional list of entity names to filter by
+            include_embeddings: Whether to include embeddings in the response
+
+        Returns:
+            Tuple of (list of entities, total count)
+        """
+        conditions = ["parent_id = $1"]
+        params = [graph_id]
         param_index = 2
 
         if entity_ids:
@@ -1881,49 +1993,58 @@ class PostgresGraphHandler(GraphHandler):
             params.append(entity_names)
             param_index += 1
 
-        pagination_params = []
-        if offset:
-            pagination_params.append(f"OFFSET ${param_index}")
-            params.append(offset)
-            param_index += 1
+        # Count query - uses the same conditions but without offset/limit
+        COUNT_QUERY = f"""
+            SELECT COUNT(*)
+            FROM {self._get_table_name("graph_entity")}
+            WHERE {' AND '.join(conditions)}
+        """
+        print("COUNT_QUERY = ", COUNT_QUERY)
+        print("params = ", params)
+        count = (
+            await self.connection_manager.fetch_query(COUNT_QUERY, params)
+        )[0]["count"]
+        print("count = ", count)
+
+        # Define base columns to select
+        select_fields = """
+            id, name, category, description, parent_id,
+            chunk_ids, metadata
+        """
+        if include_embeddings:
+            select_fields += ", description_embedding"
+
+        # Main query for fetching entities with pagination
+        QUERY = f"""
+            SELECT {select_fields}
+            FROM {self._get_table_name("graph_entity")}
+            WHERE {' AND '.join(conditions)}
+            ORDER BY created_at
+            OFFSET ${param_index}
+        """
+        params.append(offset)
+        param_index += 1
 
         if limit != -1:
-            pagination_params.append(f"LIMIT ${param_index}")
+            QUERY += f" LIMIT ${param_index}"
             params.append(limit)
-            param_index += 1
 
-        pagination_clause = " ".join(pagination_params)
+        print("QUERY = ", QUERY)
+        print("params = ", params)
+        rows = await self.connection_manager.fetch_query(QUERY, params)
+        print("rows = ", rows)
 
-        if entity_table_name == "collection_entity":
-            query = f"""
-            SELECT sid as id, name, description, chunk_ids, document_ids, graph_id {", " + ", ".join(extra_columns) if extra_columns else ""}
-            FROM {self._get_table_name(entity_table_name)}
-            WHERE collection_id = $1
-            {" AND " + " AND ".join(conditions) if conditions else ""}
-            ORDER BY id
-            {pagination_clause}
-            """
-        else:
-            query = f"""
-            SELECT sid as id, name, description, chunk_ids, document_id, graph_ids {", " + ", ".join(extra_columns) if extra_columns else ""}
-            FROM {self._get_table_name(entity_table_name)}
-            WHERE document_id = ANY(
-                SELECT document_id FROM {self._get_table_name("document_info")}
-                WHERE $1 = ANY(collection_ids)
-            )
-            {" AND " + " AND ".join(conditions) if conditions else ""}
-            ORDER BY id
-            {pagination_clause}
-            """
+        entities = []
+        for row in rows:
+            # Parse JSON metadata if it's a string
+            if isinstance(row["metadata"], str):
+                try:
+                    row["metadata"] = json.loads(row["metadata"])
+                except json.JSONDecodeError:
+                    pass
+            entities.append(Entity(**row))
 
-        results = await self.connection_manager.fetch_query(query, params)
-        entities = [Entity(**entity) for entity in results]
-
-        total_entries = await self.get_entity_count(
-            collection_id=collection_id, entity_table_name=entity_table_name
-        )
-
-        return {"entities": entities, "total_entries": total_entries}
+        return entities, count
 
     async def add_entities(
         self,
