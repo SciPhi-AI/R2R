@@ -21,6 +21,8 @@ from core.base.api.models import (
     WrappedDocumentsResponse,
     WrappedIngestionResponse,
     WrappedKGCreationResponse,
+    WrappedEntitiesResponse,
+    WrappedRelationshipsResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -1311,8 +1313,8 @@ class DocumentsRouter(BaseRouterV3):
                 workflow_input = {
                     "document_id": str(id),
                     "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
-                    "auth_user": auth_user.json(),
-                    "user": auth_user.json(),  # terrible hack for quick fix
+                    "user_id": auth_user.id,
+                    "user": auth_user.json(),  # not sure where this is being used
                 }
 
                 # Otherwise, create the graph
@@ -1330,6 +1332,107 @@ class DocumentsRouter(BaseRouterV3):
                         "message": "Graph created successfully.",
                         "task_id": None,
                     }
+
+        # get entities and relationships for a document
+        @self.router.get(
+            "/documents/{id}/entities",
+            summary="List entities for a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.documents.get_entities(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            const result = await client.documents.getEntities({
+                                id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                            });
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def get_document_entities(
+            id: UUID = Path(..., description="Document ID"),
+        ) -> WrappedEntitiesResponse:
+            """
+            Retrieves all entities extracted from a document.
+            """
+            list_entities_response = await self.services[
+                "kg"
+            ].list_entities_for_document(id)
+
+            return list_entities_response["results"], {
+                "total_entries": list_entities_response["total_entries"]
+            }
+
+        @self.router.get(
+            "/documents/{id}/relationships",
+            summary="List relationships for a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.relationships.list(
+                                document_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+
+                            const result = await client.relationships.list({
+                                document_id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                            });
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def get_document_relationships(
+            document_id: UUID = Path(..., description="Document ID"),
+        ) -> WrappedRelationshipsResponse:
+            """
+            Retrieves all relationships extracted from a document.
+            """
+
+            list_relationships_response = await self.services[
+                "kg"
+            ].list_relationships_for_document(id=document_id)
+
+            return list_relationships_response["results"], {
+                "total_entries": list_relationships_response["total_entries"]
+            }
 
     @staticmethod
     async def _process_file(file):

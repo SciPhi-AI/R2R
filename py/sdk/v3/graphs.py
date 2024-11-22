@@ -15,6 +15,7 @@ from shared.api.models import (
     WrappedGenericMessageResponse,
 )
 
+
 class GraphsSDK:
     """
     SDK for interacting with knowledge graphs in the v3 API.
@@ -50,7 +51,6 @@ class GraphsSDK:
             data=data,
             version="v3",
         )
-    
 
     async def retrieve(
         self,
@@ -71,7 +71,6 @@ class GraphsSDK:
             f"graphs/{str(id)}",
             version="v3",
         )
-
 
     async def list(
         self,
@@ -104,7 +103,7 @@ class GraphsSDK:
         )
 
     async def update(
-        self,   
+        self,
         id: str | UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -190,7 +189,6 @@ class GraphsSDK:
             json=data,
             version="v3",
         )
-
 
     async def add_entity(
         self,
@@ -323,7 +321,6 @@ class GraphsSDK:
             f"graphs/{str(id)}/documents/{str(document_id)}",
             version="v3",
         )
-
 
     async def add_collection(
         self,

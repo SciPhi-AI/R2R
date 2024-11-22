@@ -39,8 +39,8 @@ def hatchet_kg_factory(
             if key == "graph_id":
                 input_data[key] = uuid.UUID(value)
 
-            if key == "auth_user":
-                input_data[key] = json.loads(value)
+            if key == "user_id":
+                input_data[key] = uuid.UUID(value)
 
             if key == "kg_creation_settings":
                 input_data[key] = json.loads(value)
@@ -124,7 +124,9 @@ def hatchet_kg_factory(
 
             await self.kg_service.kg_entity_description(
                 document_id=document_id,
-                auth_user=context.workflow_input()["request"]["auth_user"],
+                user_id=context.workflow_input()["request"].get(
+                    "user_id", None
+                ),
                 **input_data["kg_creation_settings"],
             )
 
@@ -227,9 +229,9 @@ def hatchet_kg_factory(
                                     ][
                                         "kg_creation_settings"
                                     ],
-                                    "auth_user": context.workflow_input()[
+                                    "user_id": context.workflow_input()[
                                         "request"
-                                    ]["auth_user"],
+                                    ].get("user_id", None),
                                 }
                             },
                             key=f"kg-extract-{cnt}/{len(document_ids)}",

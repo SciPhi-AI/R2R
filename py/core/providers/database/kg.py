@@ -184,7 +184,8 @@ class PostgresEntityHandler(EntityHandler):
             category,
             description,
             description_embedding,
-            attributes,
+            # need to json.dumps for postgres
+            json.dumps(attributes),
             chunk_ids,
             document_id,
             document_ids,
@@ -507,6 +508,91 @@ class PostgresEntityHandler(EntityHandler):
                 detail=f"An error occurred while fetching entities: {e}",
             )
 
+    async def list_entities_for_document(
+        self,
+        document_id: UUID,
+    ) -> dict[str, list[Entity] | int]:
+
+        QUERY = f"""
+            SELECT
+                id, name, category, description, user_id, last_modified_by, created_at, updated_at, attributes,
+                COUNT(*) OVER() as total_entries
+            FROM {self._get_table_name("entity")}
+            WHERE document_id = $1
+        """
+        try:
+            results = await self.connection_manager.fetch_query(
+                QUERY, [document_id]
+            )
+
+            total_entries = results[0]["total_entries"] if results else 0
+
+            entities = [
+                Entity(
+                    id=row["id"],
+                    name=row["name"],
+                    category=row["category"],
+                    description=row["description"],
+                    user_id=row["user_id"],
+                    last_modified_by=row["last_modified_by"],
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
+                    attributes=row["attributes"],
+                )
+                for row in results
+            ]
+
+            return {"results": entities, "total_entries": total_entries}
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while fetching entities: {e}",
+            )
+
+    async def list_entities_for_graph(
+        self,
+        graph_id: UUID,
+    ) -> dict[str, list[Entity] | int]:
+
+        QUERY = f"""
+            SELECT
+                id, name, category, description, user_id, last_modified_by, created_at, updated_at, attributes,
+                COUNT(*) OVER() as total_entries
+            FROM {self._get_table_name("entity")}
+            WHERE $1 = ANY(graph_ids)
+        """
+        try:
+
+            results = await self.connection_manager.fetch_query(
+                QUERY, [graph_id]
+            )
+
+            total_entries = results[0]["total_entries"] if results else 0
+
+            entities = [
+                Entity(
+                    id=row["id"],
+                    name=row["name"],
+                    category=row["category"],
+                    description=row["description"],
+                    user_id=row["user_id"],
+                    last_modified_by=row["last_modified_by"],
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
+                    attributes=row["attributes"],
+                )
+                for row in results
+            ]
+
+            return {"results": entities, "total_entries": total_entries}
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while fetching entities: {e}",
+            )
+
     async def add_to_graph(
         self,
         graph_id: UUID,
@@ -605,6 +691,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 predicate_embedding FLOAT[],
                 chunk_ids UUID[],
                 document_id UUID,
+                document_ids UUID[],
                 graph_ids UUID[],
                 attributes JSONB,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -658,6 +745,9 @@ class PostgresRelationshipHandler(RelationshipHandler):
         object: str,
         description: str,
         weight: Optional[float],
+        chunk_ids: Optional[list[UUID]],
+        document_id: Optional[UUID],
+        document_ids: Optional[list[UUID]],
         attributes: Optional[dict],
         user_id: UUID,
     ) -> None:
@@ -669,14 +759,17 @@ class PostgresRelationshipHandler(RelationshipHandler):
             object,
             description,
             weight,
+            chunk_ids,
+            document_id,
+            document_ids,
             json.dumps(attributes),
             user_id,
             user_id,
         ]
 
         QUERY = f"""
-            INSERT INTO {self._get_table_name("relationship")} (subject, predicate, object, description, weight, attributes, user_id, last_modified_by)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO {self._get_table_name("relationship")} (subject, predicate, object, description, weight, chunk_ids, document_id, document_ids, attributes, user_id, last_modified_by)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING id, subject, predicate, object, weight, description, user_id, last_modified_by, created_at, updated_at, attributes
         """
 
@@ -694,6 +787,8 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 weight=result["weight"],
                 description=result["description"],
                 user_id=result["user_id"],
+                document_id=document_id,
+                document_ids=document_ids,
                 last_modified_by=result["last_modified_by"],
                 created_at=result["created_at"],
                 updated_at=result["updated_at"],
@@ -843,6 +938,92 @@ class PostgresRelationshipHandler(RelationshipHandler):
             )
 
         return {"results": relationships, "total_entries": total_entries}
+
+    async def list_relationships_for_document(
+        self,
+        document_id: UUID,
+    ) -> dict[str, list[Relationship] | int]:
+
+        QUERY = f"""
+            SELECT id, subject, predicate, object, weight, description, user_id, last_modified_by, created_at, updated_at, attributes, COUNT(*) OVER() AS total_entries
+            FROM {self._get_table_name("graph_relationship")}
+            WHERE $1 = ANY(graph_ids)
+        """
+
+        try:
+            results = await self.connection_manager.fetch_query(
+                QUERY, [document_id]
+            )
+
+            total_entries = results[0]["total_entries"] if results else 0
+
+            relationships = [
+                Relationship(
+                    id=row["id"],
+                    subject=row["subject"],
+                    predicate=row["predicate"],
+                    object=row["object"],
+                    weight=row["weight"],
+                    description=row["description"],
+                    user_id=row["user_id"],
+                    last_modified_by=row["last_modified_by"],
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
+                    attributes=row["attributes"],
+                )
+                for row in results
+            ]
+
+            return {"results": relationships, "total_entries": total_entries}
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while fetching relationships: {e}",
+            )
+
+    async def list_relationships_for_graph(
+        self,
+        graph_id: UUID,
+    ) -> dict[str, list[Relationship] | int]:
+
+        QUERY = f"""
+            SELECT id, subject, predicate, object, weight, description, user_id, last_modified_by, created_at, updated_at, attributes, COUNT(*) OVER() AS total_entries
+            FROM {self._get_table_name("graph_relationship")}
+            WHERE $1 = ANY(graph_ids)
+        """
+
+        try:
+            results = await self.connection_manager.fetch_query(
+                QUERY, [graph_id]
+            )
+
+            total_entries = results[0]["total_entries"] if results else 0
+
+            relationships = [
+                Relationship(
+                    id=row["id"],
+                    subject=row["subject"],
+                    predicate=row["predicate"],
+                    object=row["object"],
+                    weight=row["weight"],
+                    description=row["description"],
+                    user_id=row["user_id"],
+                    last_modified_by=row["last_modified_by"],
+                    created_at=row["created_at"],
+                    updated_at=row["updated_at"],
+                    attributes=row["attributes"],
+                )
+                for row in results
+            ]
+
+            return {"results": relationships, "total_entries": total_entries}
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while fetching relationships: {e}",
+            )
 
     async def update(
         self,
@@ -2837,7 +3018,7 @@ class PostgresGraphHandler(GraphHandler):
             WITH entities_list AS (
                 SELECT DISTINCT name
                 FROM {self._get_table_name("chunk_entity")}
-                WHERE $1 = ANY(document_ids)
+                WHERE document_id = $1
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )
@@ -2866,7 +3047,7 @@ class PostgresGraphHandler(GraphHandler):
             WITH entities_list AS (
                 SELECT DISTINCT name
                 FROM {self._get_table_name("chunk_entity")}
-                WHERE $1 = ANY(document_ids)
+                WHERE document_id = $1
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
             )

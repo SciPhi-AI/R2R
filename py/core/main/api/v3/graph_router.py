@@ -15,8 +15,10 @@ from core.base.api.models import (
     WrappedGenericMessageResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
+    WrappedRelationshipsResponse,
     WrappedKGEntityDeduplicationResponse,
     WrappedKGTunePromptResponse,
+    WrappedEntitiesResponse,
 )
 
 
@@ -614,6 +616,53 @@ class GraphRouter(BaseRouterV3):
 
             return tuned_prompt  # type: ignore
 
+        @self.router.get(
+            "/graphs/{id}/entities",
+            summary="List entities in a graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.entities.list(
+                                graph_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                            )"""
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def list_entities_in_graph(
+            id: UUID = Path(...),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedEntitiesResponse:
+            """
+            List entities in a graph.
+            """
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    "You do not have permission to access this graph.",
+                    403,
+                )
+
+            list_entities_response = await self.services[
+                "kg"
+            ].list_entities_for_graph(
+                graph_id=id,
+            )
+
+            return list_entities_response["results"], {
+                "total_entries": list_entities_response["total_entries"],
+            }
+
         @self.router.post(
             "/graphs/{id}/entities/{entity_id}",
             summary="Add entities to the graph",
@@ -758,6 +807,71 @@ class GraphRouter(BaseRouterV3):
                 entity_id=entity_id,
             )
             return GenericBooleanResponse(success=True)  # type: ignore
+
+        @self.router.get(
+            "/graphs/{id}/relationships",
+            summary="List relationships in a graph",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.relationships.list(
+                                graph_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                            )"""
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.relationships.list({
+                                    graphId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def list_relationships_in_graph(
+            id: UUID = Path(...),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedRelationshipsResponse:
+            """
+            List relationships in a graph.
+            """
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    "You do not have permission to access this graph.",
+                    403,
+                )
+
+            list_relationships_response = await self.services[
+                "kg"
+            ].list_relationships_for_graph(
+                graph_id=id,
+            )
+
+            return list_relationships_response["results"], {
+                "total_entries": list_relationships_response["total_entries"],
+            }
 
         @self.router.post(
             "/graphs/{id}/relationships/{relationship_id}",
@@ -994,12 +1108,10 @@ class GraphRouter(BaseRouterV3):
                     status_code=403,
                 )
 
-            await self.services["kg"].add_documents_to_graph(
+            return await self.services["kg"].add_documents_to_graph(
                 graph_id=id,
                 document_ids=[document_id],
             )
-
-            return GenericBooleanResponse(success=True)
 
         @self.router.delete(
             "/graphs/{id}/documents/{document_id}",
