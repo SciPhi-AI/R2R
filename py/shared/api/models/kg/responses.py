@@ -1,12 +1,12 @@
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from datetime import datetime
 
 from pydantic import BaseModel, Field
 
 from shared.abstractions.base import R2RSerializable
 from shared.abstractions.graph import Community, Entity, Relationship
-from shared.api.models.base import ResultsWrapper, PaginatedResultsWrapper
+from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 
 class KGCreationEstimate(R2RSerializable):
@@ -260,7 +260,8 @@ WrappedKGEntityDeduplicationResponse = ResultsWrapper[
 
 class GraphResponse(BaseModel):
     id: UUID
-    user_id: Optional[UUID]
+    collection_id: UUID
+    user_id: UUID
     name: str
     description: Optional[str]
     status: str

@@ -37,7 +37,10 @@ from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
-from core.utils import update_settings_from_dict
+from core.utils import (
+    generate_default_user_collection_id,
+    update_settings_from_dict,
+)
 
 from .base_router import BaseRouterV3
 
@@ -149,8 +152,15 @@ class GraphRouter(BaseRouterV3):
                 "task_id": None,
             }
 
-    def _setup_routes(self):
+    async def _get_collection_id(
+        self, collection_id: Optional[UUID], auth_user
+    ) -> UUID:
+        """Helper method to get collection ID, using default if none provided"""
+        if collection_id is None:
+            return generate_default_user_collection_id(auth_user.id)
+        return collection_id
 
+    def _setup_routes(self):
         @self.router.post(
             "/graphs",
             summary="Create a new graph",
@@ -198,6 +208,10 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_graph(
+            collection_id: Optional[UUID] = Body(
+                None,
+                description="Collection ID to associate with the graph. If not provided, uses user's default collection.",
+            ),
             name: Optional[str] = Body(
                 None, description="The name of the graph"
             ),
@@ -224,8 +238,13 @@ class GraphRouter(BaseRouterV3):
             The graph ID returned by this endpoint is required for all subsequent operations on the graph.
             """
 
+            collection_id = await self._get_collection_id(
+                collection_id, auth_user
+            )
+
             return await self.services["kg"].create_new_graph(
                 user_id=auth_user.id,
+                collection_id=collection_id,
                 name=name,
                 description=description,
             )
@@ -576,45 +595,51 @@ class GraphRouter(BaseRouterV3):
         @self.router.post("/graphs/{id}/entities")
         @self.base_endpoint
         async def create_entity(
-            id: UUID = Path(..., description="The ID of the graph to add the entity to."),
+            id: UUID = Path(
+                ..., description="The ID of the graph to add the entity to."
+            ),
             entity: Entity = Body(..., description="The entity to create"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ): # -> WrappedEntityResponse:
+        ):  # -> WrappedEntityResponse:
             """Creates a new entity in the graph."""
             if not auth_user.is_superuser and id not in auth_user.graph_ids:
                 raise R2RException(
                     "The currently authenticated user does not have access to this graph.",
                     403,
                 )
-            
+
             # Set parent ID to graph ID
             entity.parent_id = id
-            
+
             # Create entity
-            created_ids = await self.providers.database.graph_handler.entities.create(
-                entities=[entity],
-                store_type="graph"
+            created_ids = (
+                await self.providers.database.graph_handler.entities.create(
+                    entities=[entity], store_type="graph"
+                )
             )
-            
-            print('created_ids = ', created_ids)
+
+            print("created_ids = ", created_ids)
             if not created_ids:
                 raise R2RException("Failed to create entity", 500)
-                
+
             result = await self.providers.database.graph_handler.entities.get(
-                parent_id=id,
-                store_type="graph",
-                entity_ids=[created_ids[0]]
+                parent_id=id, store_type="graph", entity_ids=[created_ids[0]]
             )
             print("result = ", result)
             if len(result) == 0:
                 raise R2RException("Failed to create entity", 500)
             return result[0]
-        
+
         @self.router.post("/graphs/{id}/relationships")
-        @self.base_endpoint 
+        @self.base_endpoint
         async def create_relationship(
-            id: UUID = Path(..., description="The ID of the graph to add the relationship to."),
-            relationship: Relationship = Body(..., description="The relationship to create"),
+            id: UUID = Path(
+                ...,
+                description="The ID of the graph to add the relationship to.",
+            ),
+            relationship: Relationship = Body(
+                ..., description="The relationship to create"
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipResponse:
             """Creates a new relationship in the graph."""
@@ -626,15 +651,13 @@ class GraphRouter(BaseRouterV3):
 
             # Set parent ID to graph ID
             relationship.parent_id = id
-            
+
             # Create relationship
             await self.providers.database.graph_handler.relationships.create(
-                relationships=[relationship],
-                store_type="graph"
+                relationships=[relationship], store_type="graph"
             )
-            
-            return relationship
 
+            return relationship
 
         @self.router.get("/graphs/{id}/entities/{entity_id}")
         @self.base_endpoint
@@ -672,10 +695,13 @@ class GraphRouter(BaseRouterV3):
         ) -> WrappedEntityResponse:
             """Updates an existing entity in the graph."""
             entity.id = entity_id
-            entity.parent_id = entity.parent_id or id # Set parent ID to graph ID
+            entity.parent_id = (
+                entity.parent_id or id
+            )  # Set parent ID to graph ID
             results = await self.providers.database.graph_handler.entities.update(
-                [entity], store_type="graph"
-                #id, entity_id, entity, auth_user
+                [entity],
+                store_type="graph",
+                # id, entity_id, entity, auth_user
             )
             print("results = ", results)
             return entity
@@ -698,7 +724,7 @@ class GraphRouter(BaseRouterV3):
                 id, [entity_id], "graph"
             )
             return {"success": True}
-        
+
         @self.router.get("/graphs/{id}/relationships")
         @self.base_endpoint
         async def get_relationships(
@@ -782,8 +808,10 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipResponse:
             """Retrieves a specific relationship by its ID."""
-            results = await self.providers.database.graph_handler.relationships.get(
-                id, "graph", relationship_ids=[relationship_id]
+            results = (
+                await self.providers.database.graph_handler.relationships.get(
+                    id, "graph", relationship_ids=[relationship_id]
+                )
             )
             if len(results) == 0 or len(results[0]) == 0:
                 raise R2RException("Relationship not found", 404)
@@ -803,7 +831,7 @@ class GraphRouter(BaseRouterV3):
                 ..., description="The updated relationship object."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ): #  -> WrappedRelationshipResponse:
+        ):  #  -> WrappedRelationshipResponse:
             """Updates an existing relationship in the graph."""
             relationship.id = relationship_id
             relationship.parent_id = relationship.parent_id or id

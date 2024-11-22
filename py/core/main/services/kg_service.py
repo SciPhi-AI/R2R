@@ -455,11 +455,13 @@ class KgService(Service):
     @telemetry_event("create_new_graph")
     async def create_new_graph(
         self,
+        collection_id: UUID,
         user_id: UUID,
         name: Optional[str],
         description: str = "",
     ) -> GraphResponse:
         return await self.providers.database.graph_handler.create(
+            collection_id=collection_id,
             user_id=user_id,
             name=name,
             description=description,

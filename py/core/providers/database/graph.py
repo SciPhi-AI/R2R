@@ -203,7 +203,11 @@ class PostgresEntityHandler(EntityHandler):
         """
 
         count_params = params[: param_index - 1]
-        count = (await self.connection_manager.fetch_query(COUNT_QUERY, count_params))[0]["count"]
+        count = (
+            await self.connection_manager.fetch_query(
+                COUNT_QUERY, count_params
+            )
+        )[0]["count"]
 
         QUERY = f"""
             SELECT {select_fields}
@@ -225,14 +229,16 @@ class PostgresEntityHandler(EntityHandler):
         for row in rows:
             # Convert the Record to a dictionary
             entity_dict = dict(row)
-            
+
             # Process metadata if it exists and is a string
             if isinstance(entity_dict["metadata"], str):
                 try:
-                    entity_dict["metadata"] = json.loads(entity_dict["metadata"])
+                    entity_dict["metadata"] = json.loads(
+                        entity_dict["metadata"]
+                    )
                 except json.JSONDecodeError:
                     pass
-                    
+
             entities.append(Entity(**entity_dict))
 
         return entities, count
@@ -244,7 +250,7 @@ class PostgresEntityHandler(EntityHandler):
         table_name = self._get_entity_table_for_store(store_type)
         results = []
 
-        print('entities = ', entities)
+        print("entities = ", entities)
         QUERY = f"""
             UPDATE {self._get_table_name(table_name)}
             SET
@@ -352,6 +358,7 @@ class PostgresEntityHandler(EntityHandler):
 
         return [row["id"] for row in results]
 
+
 class PostgresRelationshipHandler(RelationshipHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.project_name: str = kwargs.get("project_name")  # type: ignore
@@ -455,7 +462,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
 
         QUERY = f"""
             INSERT INTO {self._get_table_name(table_name)}
-            (subject, predicate, object, description, subject_id, object_id, 
+            (subject, predicate, object, description, subject_id, object_id,
              weight, chunk_ids, parent_id, metadata)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             RETURNING id
@@ -506,7 +513,9 @@ class PostgresRelationshipHandler(RelationshipHandler):
             param_index += 1
 
         if entity_names:
-            conditions.append(f"(subject = ANY(${param_index}) OR object = ANY(${param_index}))")
+            conditions.append(
+                f"(subject = ANY(${param_index}) OR object = ANY(${param_index}))"
+            )
             params.append(entity_names)
             param_index += 1
 
@@ -530,7 +539,11 @@ class PostgresRelationshipHandler(RelationshipHandler):
             WHERE {' AND '.join(conditions)}
         """
         count_params = params[: param_index - 1]
-        count = (await self.connection_manager.fetch_query(COUNT_QUERY, count_params))[0]["count"]
+        count = (
+            await self.connection_manager.fetch_query(
+                COUNT_QUERY, count_params
+            )
+        )[0]["count"]
 
         # Main query
         QUERY = f"""
@@ -552,9 +565,13 @@ class PostgresRelationshipHandler(RelationshipHandler):
         relationships = []
         for row in rows:
             relationship_dict = dict(row)
-            if include_metadata and isinstance(relationship_dict["metadata"], str):
+            if include_metadata and isinstance(
+                relationship_dict["metadata"], str
+            ):
                 try:
-                    relationship_dict["metadata"] = json.loads(relationship_dict["metadata"])
+                    relationship_dict["metadata"] = json.loads(
+                        relationship_dict["metadata"]
+                    )
                 except json.JSONDecodeError:
                     pass
             relationships.append(Relationship(**relationship_dict))
@@ -607,7 +624,9 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 relationship.parent_id,
             ]
 
-            result = await self.connection_manager.fetchrow_query(QUERY, params)
+            result = await self.connection_manager.fetchrow_query(
+                QUERY, params
+            )
             if not result:
                 raise R2RException(
                     f"Relationship {relationship.id} not found in {store_type} store or no permission to update",
@@ -646,7 +665,9 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 WHERE parent_id = $1
                 RETURNING id
             """
-            results = await self.connection_manager.fetch_query(QUERY, [parent_id])
+            results = await self.connection_manager.fetch_query(
+                QUERY, [parent_id]
+            )
         else:
             QUERY = f"""
                 DELETE FROM {self._get_table_name(table_name)}
@@ -665,7 +686,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 )
 
         return [row["id"] for row in results]
-    
+
 
 # class PostgresRelationshipHandler(RelationshipHandler):
 #     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -863,18 +884,18 @@ class PostgresRelationshipHandler(RelationshipHandler):
 #         for row in rows:
 #             # Convert the Record to a dictionary
 #             relationship_dict = dict(row)
-            
+
 #             # Process metadata if it exists and is a string
 #             if include_metadata and isinstance(relationship_dict["metadata"], str):
 #                 try:
 #                     relationship_dict["metadata"] = json.loads(relationship_dict["metadata"])
 #                 except json.JSONDecodeError:
 #                     pass
-                    
+
 #             relationships.append(Relationship(**relationship_dict))
 
 #         return relationships, count
-        
+
 #     # async def get(
 #     #     self,
 #     #     parent_id: UUID,
@@ -1366,20 +1387,30 @@ class PostgresGraphHandler(GraphHandler):
         self.nx = nx
 
     async def create_tables(self) -> None:
+        """Create the graph tables with mandatory collection_id support."""
         QUERY = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("graph")} (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                user_id UUID,
+                user_id UUID NOT NULL,
+                collection_id UUID NOT NULL,
                 name TEXT NOT NULL,
                 description TEXT,
                 status TEXT NOT NULL,
                 statistics JSONB,
                 document_ids UUID[],
-                collection_ids UUID[],
                 metadata JSONB,
                 created_at TIMESTAMPTZ DEFAULT NOW(),
-                updated_at TIMESTAMPTZ DEFAULT NOW()
+                updated_at TIMESTAMPTZ DEFAULT NOW(),
+                CONSTRAINT fk_collection
+                    FOREIGN KEY(collection_id)
+                    REFERENCES {self._get_table_name("collections")}(collection_id)
+                    ON DELETE CASCADE
             );
+
+            CREATE INDEX IF NOT EXISTS graph_collection_id_idx
+                ON {self._get_table_name("graph")} (collection_id);
+            CREATE INDEX IF NOT EXISTS graph_user_id_idx
+                ON {self._get_table_name("graph")} (user_id);
         """
 
         await self.connection_manager.execute_query(QUERY)
@@ -1391,24 +1422,27 @@ class PostgresGraphHandler(GraphHandler):
     async def create(
         self,
         user_id: UUID,
+        collection_id: UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
         graph_id: Optional[UUID] = None,
         status: str = "pending",
     ) -> GraphResponse:
+        """Create a new graph associated with a collection."""
         graph_id = graph_id or uuid4()
         name = name or f"Graph {graph_id}"
         description = description or ""
 
         query = f"""
             INSERT INTO {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
-            (id, user_id, name, description, status)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING id, user_id, name, description, status, created_at, updated_at
+            (id, user_id, collection_id, name, description, status)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id, user_id, collection_id, name, description, status, created_at, updated_at
         """
         params = [
             graph_id,
             user_id,
+            collection_id,
             name,
             description,
             status,
@@ -1423,6 +1457,7 @@ class PostgresGraphHandler(GraphHandler):
             return GraphResponse(
                 id=result["id"],
                 user_id=result["user_id"],
+                collection_id=result["collection_id"],
                 name=result["name"],
                 description=result["description"],
                 status=result["status"],
@@ -1599,7 +1634,7 @@ class PostgresGraphHandler(GraphHandler):
 
         query = f"""
             SELECT
-                id, user_id, name, description, status, created_at, updated_at,
+                id, user_id, collection_id, name, description, status, created_at, updated_at,
                 COUNT(*) OVER() as total_entries
             FROM {self._get_table_name("graph")}
             {where_clause}
@@ -1621,6 +1656,7 @@ class PostgresGraphHandler(GraphHandler):
                     id=row["id"],
                     user_id=row["user_id"],
                     name=row["name"],
+                    collection_id=row["collection_id"],
                     description=row["description"],
                     status=row["status"],
                     created_at=row["created_at"],
@@ -2028,7 +2064,7 @@ class PostgresGraphHandler(GraphHandler):
             UPDATE {self._get_table_name("graph")}
             SET {', '.join(update_fields)}
             WHERE id = ${param_index}
-            RETURNING id, user_id, name, description, status, created_at, updated_at
+            RETURNING id, user_id, name, description, status, created_at, updated_at, collection_id
         """
 
         try:
@@ -2042,6 +2078,7 @@ class PostgresGraphHandler(GraphHandler):
             return GraphResponse(
                 id=result["id"],
                 user_id=result["user_id"],
+                collection_id=result["collection_id"],
                 name=result["name"],
                 description=result["description"],
                 status=result["status"],
@@ -2374,11 +2411,12 @@ class PostgresGraphHandler(GraphHandler):
             entity_dict = dict(row)
             if isinstance(entity_dict["metadata"], str):
                 try:
-                    entity_dict["metadata"] = json.loads(entity_dict["metadata"])
+                    entity_dict["metadata"] = json.loads(
+                        entity_dict["metadata"]
+                    )
                 except json.JSONDecodeError:
                     pass
             entities.append(Entity(**entity_dict))
-
 
         return entities, count
 
@@ -2653,7 +2691,9 @@ class PostgresGraphHandler(GraphHandler):
             relationship_dict = dict(row)
             if isinstance(relationship_dict["metadata"], str):
                 try:
-                    relationship_dict["metadata"] = json.loads(relationship_dict["metadata"])
+                    relationship_dict["metadata"] = json.loads(
+                        relationship_dict["metadata"]
+                    )
                 except json.JSONDecodeError:
                     pass
             relationships.append(Relationship(**relationship_dict))
