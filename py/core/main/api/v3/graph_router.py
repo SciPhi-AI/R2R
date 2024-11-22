@@ -369,9 +369,12 @@ class GraphRouter(BaseRouterV3):
             """
             Retrieves detailed information about a specific graph by ID.
             """
-            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "You do not have permission to access this graph.",
                     403,
                 )
 
@@ -445,9 +448,12 @@ class GraphRouter(BaseRouterV3):
             and must be deleted separately using the /entities and /relationships
             endpoints.
             """
-            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "You do not have permission to delete this graph.",
                     403,
                 )
 
@@ -520,9 +526,11 @@ class GraphRouter(BaseRouterV3):
             This endpoint allows updating the name and description of an existing collection.
             The user must have appropriate permissions to modify the collection.
             """
-            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "You do not have permission to update this graph.",
                     403,
                 )
 
@@ -607,115 +615,6 @@ class GraphRouter(BaseRouterV3):
             return tuned_prompt  # type: ignore
 
         @self.router.post(
-            "/graphs/{id}/documents",
-            summary="Extract entities and relationships from a document and add them to the graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.documents.extract_entities_and_relationships(
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
-                            )
-                            """
-                        ),
-                    },
-                ],
-                "operationId": "documents_extract_entities_and_relationships_v3_documents__id__entities_and_relationships_post_documents",
-            },
-        )
-        @self.base_endpoint
-        async def extract_entities_and_relationships(
-            id: UUID = Path(
-                ...,
-                description="The ID of the document to extract entities and relationships from.",
-            ),
-            run_type: KGRunType = Query(
-                default=KGRunType.ESTIMATE,
-                description="Whether to return an estimate of the creation cost or to actually extract the entities and relationships.",
-            ),
-            settings: Optional[KGCreationSettings] = Body(
-                default=None,
-                description="Settings for the entities and relationships extraction process.",
-            ),
-            run_with_orchestration: Optional[bool] = Query(
-                default=True,
-                description="Whether to run the entities and relationships extraction process with orchestration.",
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGCreationResponse:  # type: ignore
-            """
-            Extracts entities and relationships from a document and adds them to the graph.
-
-            The entities and relationships extraction process involves:
-            1. Parsing documents into semantic chunks
-            2. Extracting entities and relationships using LLMs
-
-            If the entities and relationships were already extracted for the document, they will not be extracted again and the existing entities and relationships will be added to the graph.
-            """
-
-            settings = settings.dict() if settings else None  # type: ignore
-            if not auth_user.is_superuser:
-                logger.warning("Implement permission checks here.")
-
-            # If no run type is provided, default to estimate
-            if not run_type:
-                run_type = KGRunType.ESTIMATE
-
-            # Apply runtime settings overrides
-            server_kg_creation_settings = (
-                self.providers.database.config.kg_creation_settings
-            )
-
-            if settings:
-                server_kg_creation_settings = update_settings_from_dict(
-                    server_settings=server_kg_creation_settings,
-                    settings_dict=settings,  # type: ignore
-                )
-
-            # If the run type is estimate, return an estimate of the creation cost
-            if run_type is KGRunType.ESTIMATE:
-                return {  # type: ignore
-                    "message": "Estimate retrieved successfully",
-                    "task_id": None,
-                    "id": id,
-                    "estimate": await self.services[
-                        "kg"
-                    ].get_creation_estimate(
-                        document_id=id,
-                        kg_creation_settings=server_kg_creation_settings,
-                    ),
-                }
-            else:
-                # Otherwise, create the graph
-                if run_with_orchestration:
-                    workflow_input = {
-                        "document_id": str(id),
-                        "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
-                        "user": auth_user.json(),
-                    }
-
-                    return await self.orchestration_provider.run_workflow(  # type: ignore
-                        "create-graph", {"request": workflow_input}, {}
-                    )
-                else:
-                    from core.main.orchestration import simple_kg_factory
-
-                    logger.info("Running create-graph without orchestration.")
-                    simple_kg = simple_kg_factory(self.services["kg"])
-                    await simple_kg["create-graph"](workflow_input)  # type: ignore
-                    return {  # type: ignore
-                        "message": "Graph created successfully.",
-                        "task_id": None,
-                    }
-
-        @self.router.post(
             "/graphs/{id}/entities/{entity_id}",
             summary="Add entities to the graph",
             openapi_extra={
@@ -765,11 +664,23 @@ class GraphRouter(BaseRouterV3):
             """
             Adds an entity to the graph by its ID.
             """
-            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "You do not have permission to add an entity to this graph.",
                     403,
                 )
+
+            if not await self.services["management"].has_entity_access(
+                auth_user, entity_id
+            ):
+                raise R2RException(
+                    "You do not have permission to add this entity to the graph.",
+                    403,
+                )
+
             return await self.services["kg"].add_entity_to_graph(
                 graph_id=id,
                 entity_id=entity_id,
@@ -825,9 +736,20 @@ class GraphRouter(BaseRouterV3):
             """
             Removes an entity to the graph by its ID.
             """
-            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "You do not have permission to remove an entity from this graph.",
+                    403,
+                )
+
+            if not await self.services["management"].has_entity_access(
+                auth_user, entity_id
+            ):
+                raise R2RException(
+                    "You do not have permission to remove this entity from the graph.",
                     403,
                 )
 
@@ -893,9 +815,24 @@ class GraphRouter(BaseRouterV3):
             """
             Adds a relationship to the graph by its ID.
             """
-            return await self.services[
-                "kg"
-            ].add_relationship_to_graph(
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    "You do not have permission to add a relationship to this graph.",
+                    403,
+                )
+
+            if not await self.services["management"].has_relationship_access(
+                auth_user, relationship_id
+            ):
+                raise R2RException(
+                    "You do not have permission to add this relationship to the graph.",
+                    403,
+                )
+
+            return await self.services["kg"].add_relationship_to_graph(
                 graph_id=id, relationship_id=relationship_id
             )
 
@@ -955,9 +892,24 @@ class GraphRouter(BaseRouterV3):
             """
             Removes a relationship from the graph by its ID.
             """
-            await self.services[
-                "kg"
-            ].remove_relationship_from_graph(
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    "You do not have permission to remove a relationship from this graph.",
+                    403,
+                )
+
+            if not await self.services["management"].has_relationship_access(
+                auth_user, relationship_id
+            ):
+                raise R2RException(
+                    "You do not have permission to remove this relationship from the graph.",
+                    403,
+                )
+
+            await self.services["kg"].remove_relationship_from_graph(
                 graph_id=id, relationship_id=relationship_id
             )
 
@@ -1026,17 +978,16 @@ class GraphRouter(BaseRouterV3):
             The endpoints returns an error if there are no entities and relationships extractions present for the document.
             """
 
-            # check permissions
-            if not await self.services["management"].has_document_access(
-                auth_user, document_id
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
             ):
                 raise R2RException(
                     message="You do not have permission to add this document to the graph.",
                     status_code=403,
                 )
 
-            if not await self.services["management"].has_graph_access(
-                auth_user, id
+            if not await self.services["management"].has_document_access(
+                auth_user, document_id
             ):
                 raise R2RException(
                     message="You do not have permission to add this document to the graph.",
@@ -1109,17 +1060,16 @@ class GraphRouter(BaseRouterV3):
             This endpoint removes all entities and relationships from the document in the graph.
             """
 
-            # check permissions
-            if not await self.services["management"].has_document_access(
-                auth_user, document_id
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
             ):
                 raise R2RException(
                     message="You do not have permission to remove this document from the graph.",
                     status_code=403,
                 )
 
-            if not await self.services["management"].has_graph_access(
-                auth_user, id
+            if not await self.services["management"].has_document_access(
+                auth_user, document_id
             ):
                 raise R2RException(
                     message="You do not have permission to remove this document from the graph.",
@@ -1194,7 +1144,14 @@ class GraphRouter(BaseRouterV3):
             The endpoints returns an error if there are no entities and relationships extractions present for any of the documents in the collection.
             """
 
-            # check permissions
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    message="You do not have permission to add this collection to the graph.",
+                    status_code=403,
+                )
+
             if not await self.services["management"].has_collection_access(
                 auth_user, collection_id
             ):
@@ -1207,7 +1164,6 @@ class GraphRouter(BaseRouterV3):
                 graph_id=id,
                 collection_id=collection_id,
             )
-
 
         @self.router.delete(
             "/graphs/{id}/collections/{collection_id}",
@@ -1268,7 +1224,14 @@ class GraphRouter(BaseRouterV3):
             This endpoint removes all entities and relationships from all documents in the collection in the graph.
             """
 
-            # check permissions
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    message="You do not have permission to remove this collection from the graph.",
+                    status_code=403,
+                )
+
             if not await self.services["management"].has_collection_access(
                 auth_user, collection_id
             ):

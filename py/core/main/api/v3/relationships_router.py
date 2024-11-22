@@ -263,11 +263,6 @@ class RelationshipsRouter(BaseRouterV3):
             """
             Creates a new relationship in the database.
             """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
-
             relationships = await self.services["kg"].create_relationships_v3(
                 subject=subject,
                 predicate=predicate,
@@ -363,9 +358,13 @@ class RelationshipsRouter(BaseRouterV3):
 
             Any fields not included in the update request will retain their existing values.
             """
-            if not auth_user.is_superuser:
+
+            if not await self.services["management"].has_relationship_access(
+                auth_user, id
+            ):
                 raise R2RException(
-                    "Only superusers can access this endpoint.", 403
+                    "You do not have permission to update this relationship.",
+                    403,
                 )
 
             return await self.services["kg"].update_relationship_v3(
@@ -434,9 +433,13 @@ class RelationshipsRouter(BaseRouterV3):
 
             This operation cannot be undone.
             """
-            if not auth_user.is_superuser:
+
+            if not await self.services["management"].has_relationship_access(
+                auth_user, id
+            ):
                 raise R2RException(
-                    "Only superusers can access this endpoint.", 403
+                    "You do not have permission to delete this relationship.",
+                    403,
                 )
 
             await self.services["kg"].delete_relationship_v3(

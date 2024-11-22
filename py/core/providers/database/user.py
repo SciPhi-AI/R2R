@@ -705,14 +705,7 @@ class PostgresUserHandler(UserHandler):
         if auth_user.is_superuser:
             return True
 
-        query = f"""
-            SELECT 1 FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} WHERE user_id = $1 AND $2 = ANY(graph_ids)
-        """
-        result = await self.connection_manager.fetchrow_query(
-            query, [auth_user.id, graph_id]
-        )
-
-        return result is not None
+        return graph_id in auth_user.graph_ids
 
     async def has_collection_access(
         self, auth_user, collection_id: UUID
@@ -724,18 +717,51 @@ class PostgresUserHandler(UserHandler):
         if auth_user.is_superuser:
             return True
 
-        query = f"""
-            SELECT 1 FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} WHERE user_id = $1 AND $2 = ANY(collection_ids)
-        """
-        result = await self.connection_manager.fetchrow_query(
-            query, [auth_user.id, collection_id]
-        )
-        return result is not None
+        return collection_id in auth_user.collection_ids
 
     async def has_entity_access(self, auth_user, entity_id: UUID) -> bool:
         """
         Check if the user has access to an entity.
         """
+
+        if auth_user.is_superuser:
+            return True
+
+        user_id = auth_user.id
+
+        # retrieve entity data
+        QUERY = f"""
+            SELECT user_id, document_ids, graph_ids FROM {self._get_table_name("entity")} WHERE id = $1
+        """
+        result = await self.connection_manager.fetchrow_query(
+            QUERY, [entity_id]
+        )
+
+        if not result:
+            raise R2RException(status_code=404, message="Entity not found")
+        else:
+            user_id = result["user_id"]
+            document_ids = result["document_ids"]
+            graph_ids = result["graph_ids"]
+
+        # check if the user created the entity
+        if user_id == user_id:
+            return True
+
+        # check if the user has access to the graph
+        # graph_ids is usually the smaller list so convert it to a set
+        if graph_ids:
+            if set(graph_ids).intersection(auth_user.graph_ids):
+                return True
+
+        # check if the user has access to all the documents that created this entity
+        has_access_to_all_documents = True
+        for document_id in document_ids:
+            if not await self.has_document_access(auth_user, document_id):
+                has_access_to_all_documents = False
+                break
+
+        return has_access_to_all_documents
 
     async def has_relationship_access(
         self, auth_user, relationship_id: UUID
@@ -743,12 +769,43 @@ class PostgresUserHandler(UserHandler):
         """
         Check if the user has access to a relationship.
         """
-        raise NotImplementedError
 
-    async def has_community_access(
-        self, auth_user, community_id: UUID
-    ) -> bool:
+        if auth_user.is_superuser:
+            return True
+
+        user_id = auth_user.id
+
+        # retrieve relationship data
+        QUERY = f"""
+            SELECT user_id, document_ids, graph_ids FROM {self._get_table_name("relationship")} WHERE id = $1
         """
-        Check if the user has access to a community.
-        """
-        raise NotImplementedError
+        result = await self.connection_manager.fetchrow_query(
+            QUERY, [relationship_id]
+        )
+
+        if not result:
+            raise R2RException(
+                status_code=404, message="Relationship not found"
+            )
+        else:
+            user_id = result["user_id"]
+            document_ids = result["document_ids"]
+            graph_ids = result["graph_ids"]
+
+        # check if the user has access to the graph
+        if graph_ids:
+            if set(graph_ids).intersection(auth_user.graph_ids):
+                return True
+
+        # check if the user created the relationship
+        if user_id == user_id:
+            return True
+
+        # check if the user has access to all the documents that created this relationship
+        has_access_to_all_documents = True
+        for document_id in document_ids:
+            if not await self.has_document_access(auth_user, document_id):
+                has_access_to_all_documents = False
+                break
+
+        return has_access_to_all_documents

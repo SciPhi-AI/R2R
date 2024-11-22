@@ -995,7 +995,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
         graph_id: UUID,
         relationship_id: UUID,
     ) -> None:
-        
+
         # First, check if the relationship exists
         relationship_check_query = f"""
             SELECT graph_ids FROM {self._get_table_name("relationship")}
@@ -1051,7 +1051,10 @@ class PostgresRelationshipHandler(RelationshipHandler):
             )
 
         # Check if graph_id exists in graph_ids
-        if not relationship["graph_ids"] or graph_id not in relationship["graph_ids"]:
+        if (
+            not relationship["graph_ids"]
+            or graph_id not in relationship["graph_ids"]
+        ):
             raise R2RException(
                 message="Relationship is not in the graph",
                 status_code=404,
@@ -1067,6 +1070,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
         await self.connection_manager.fetchrow_query(
             remove_query, [graph_id, relationship_id]
         )
+
 
 class PostgresCommunityHandler(CommunityHandler):
 
@@ -1286,10 +1290,8 @@ class PostgresCommunityHandler(CommunityHandler):
                 detail=f"An error occurred while updating the community: {e}",
             )
 
-    async def delete(
-        self, graph_id: UUID, community_id: UUID
-    ) -> None:
-        
+    async def delete(self, graph_id: UUID, community_id: UUID) -> None:
+
         QUERY = f"""
             DELETE FROM {self._get_table_name("graph_community")} WHERE id = $1
         """
@@ -1775,7 +1777,9 @@ class PostgresGraphHandler(GraphHandler):
                     QUERY, [graph_id, document_id]
                 )
 
-        return {"message": "Entities and relationships from the documents added to graph successfully"}
+        return {
+            "message": "Entities and relationships from the documents added to graph successfully"
+        }
 
     async def remove_documents_from_graph(
         self, graph_id: UUID, document_ids: list[UUID]
@@ -1843,11 +1847,13 @@ class PostgresGraphHandler(GraphHandler):
                 QUERY, [graph_id, collection_id]
             )
 
-        return {"message": "Entities and relationships from the collection added to graph successfully"}
+        return {
+            "message": "Entities and relationships from the collection added to graph successfully"
+        }
 
     async def remove_collection_from_graph(
         self, graph_id: UUID, collection_id: UUID
-    ) -> dict[str, str]:
+    ):
         """
         Remove all entities and relationships for this collection from the graph.
         """
@@ -1865,8 +1871,6 @@ class PostgresGraphHandler(GraphHandler):
             await self.connection_manager.execute_query(
                 QUERY, [graph_id, collection_id]
             )
-
-        return {"message": "Entities and relationships from the collection removed from graph successfully"}
 
     async def add_entities_v3(
         self, id: UUID, entity_ids: list[UUID], copy_data: bool = True

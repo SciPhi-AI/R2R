@@ -256,7 +256,15 @@ class EntitiesRouter(BaseRouterV3):
             """
             Retrieves detailed information about a specific entity by ID.
             """
-            # FIXME: This is unacceptable. We need to check if the user has access to the entity.
+
+            if not await self.services["management"].has_entity_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    "You do not have permission to access this entity.",
+                    403,
+                )
+
             list_entities_response = await self.services["kg"].list_entities(
                 user_ids=None,
                 entity_ids=[id],
@@ -319,10 +327,13 @@ class EntitiesRouter(BaseRouterV3):
 
             However, this will not remove any relationships or communities that the entity is part of.
             """
-            # FIXME: This is unacceptable. We need to check if the user has access to the entity.
-            if not auth_user.is_superuser:
+
+            if not await self.services["management"].has_entity_access(
+                auth_user, id
+            ):
                 raise R2RException(
-                    "Only superusers can access this endpoint.", 403
+                    "You do not have permission to delete this entity.",
+                    403,
                 )
 
             await self.services["kg"].delete_entity_v3(id=id)
@@ -402,7 +413,14 @@ class EntitiesRouter(BaseRouterV3):
             This endpoint allows updating the an existing entity.
             The user must have appropriate permissions to modify the entity.
             """
-            # FIXME: This is unacceptable. We need to check if the user has access to the entity.
+
+            if not await self.services["management"].has_entity_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    "You do not have permission to update this entity.",
+                    403,
+                )
 
             return await self.services["kg"].update_entity(
                 entity_id=id,

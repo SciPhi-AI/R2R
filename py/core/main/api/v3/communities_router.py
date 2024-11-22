@@ -299,6 +299,15 @@ class CommunitiesRouter(BaseRouterV3):
             The created communities will be integrated with any existing automatically detected communities
             in the graph's community structure.
             """
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    "You do not have permission to create a community in this graph.",
+                    403,
+                )
+
             return await self.services["kg"].create_community_v3(
                 graph_id=id,
                 name=name,
@@ -389,9 +398,13 @@ class CommunitiesRouter(BaseRouterV3):
             """
             Lists all communities in the graph with pagination support.
             """
-            if not auth_user.is_superuser:
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
                 raise R2RException(
-                    "Only superusers can access this endpoint.", 403
+                    "You do not have permission to access this community.",
+                    403,
                 )
 
             list_communities_response = await self.services[
@@ -464,9 +477,13 @@ class CommunitiesRouter(BaseRouterV3):
             """
             Retrieves a specific community by its ID.
             """
-            if not auth_user.is_superuser:
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
                 raise R2RException(
-                    "Only superusers can access this endpoint.", 403
+                    "You do not have permission to access this community.",
+                    403,
                 )
 
             list_communities_response = await self.services[
@@ -537,6 +554,14 @@ class CommunitiesRouter(BaseRouterV3):
             """
             Deletes a community from the graph by its ID.
             """
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    "You do not have permission to delete this community.",
+                    403,
+                )
 
             await self.services["kg"].delete_community_v3(
                 graph_id=id,
@@ -611,9 +636,13 @@ class CommunitiesRouter(BaseRouterV3):
             """
             Updates an existing community's metadata and properties.
             """
-            if not auth_user.is_superuser:
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
                 raise R2RException(
-                    "Only superusers can update communities", 403
+                    "You do not have permission to update this community.",
+                    403,
                 )
 
             return await self.services["kg"].update_community_v3(

@@ -338,18 +338,18 @@ class KgService(Service):
             offset=offset or 0,
             limit=limit or -1,
         )
-    
+
     @telemetry_event("add_relationship_to_graph")
     async def add_relationship_to_graph(
         self,
         graph_id: UUID,
         relationship_id: UUID,
     ) -> dict[str, str]:
-        
+
         await self.providers.database.graph_handler.relationships.add_to_graph(
             graph_id=graph_id, relationship_id=relationship_id
         )
-        
+
         return {"message": "Relationship added to graph successfully"}
 
     @telemetry_event("remove_relationship_from_graph")
@@ -938,7 +938,9 @@ class KgService(Service):
             document_ids=document_ids,
         )
 
-        return {"message": "All entities and relationships from the documents have been added to the graph."}
+        return {
+            "message": "All entities and relationships from the documents have been added to the graph."
+        }
 
     async def remove_documents_from_graph(
         self, graph_id: UUID, document_ids: list[UUID]
@@ -957,7 +959,9 @@ class KgService(Service):
             collection_id=collection_id,
         )
 
-        return {"message": "All entities and relationships from the collection have been added to the graph."}
+        return {
+            "message": "All entities and relationships from the collection have been added to the graph."
+        }
 
     async def remove_collection_from_graph(
         self, graph_id: UUID, collection_id: UUID
