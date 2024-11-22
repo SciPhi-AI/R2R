@@ -4,12 +4,7 @@ from typing import Optional
 from uuid import UUID
 
 from shared.api.models.base import WrappedBooleanResponse
-from shared.api.models.management.responses import (
-    WrappedChunksResponse,
-    WrappedCollectionsResponse,
-    WrappedDocumentResponse,
-    WrappedDocumentsResponse,
-)
+
 from shared.api.models.kg.responses import (
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,

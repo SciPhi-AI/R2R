@@ -20,9 +20,11 @@ from .v3 import (
     CollectionsSDK,
     ConversationsSDK,
     DocumentsSDK,
+    EntitiesSDK,
     GraphsSDK,
     IndicesSDK,
     PromptsSDK,
+    RelationshipsSDK,
     RetrievalSDK,
     SystemSDK,
     UsersSDK,
@@ -56,6 +58,8 @@ class R2RAsyncClient(
         self.conversations = ConversationsSDK(self)
         self.documents = DocumentsSDK(self)
         self.graphs = GraphsSDK(self)
+        self.entities = EntitiesSDK(self)
+        self.relationships = RelationshipsSDK(self)
         self.indices = IndicesSDK(self)
         self.prompts = PromptsSDK(self)
         self.retrieval = RetrievalSDK(self)
