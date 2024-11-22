@@ -8,6 +8,7 @@ import {
   WrappedDocumentsResponse,
   WrappedIngestionResponse,
 } from "../../types";
+import { feature } from "../../feature";
 
 let fs: any;
 if (typeof window === "undefined") {
@@ -32,6 +33,7 @@ export class DocumentsClient {
    * @param runWithOrchestration Optional flag to run with orchestration
    * @returns
    */
+  @feature("documents.create")
   async create(options: {
     file?: FileInput;
     content?: string;
@@ -144,6 +146,7 @@ export class DocumentsClient {
    * @param runWithOrchestration Whether to run with orchestration
    * @returns
    */
+  @feature("documents.update")
   async update(options: {
     id: string;
     file?: FileInput;
@@ -236,6 +239,7 @@ export class DocumentsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("documents.retrieve")
   async retrieve(options: { id: string }): Promise<WrappedDocumentResponse> {
     return this.client.makeRequest("GET", `documents/${options.id}`);
   }
@@ -247,6 +251,7 @@ export class DocumentsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("documents.list")
   async list(options?: {
     ids?: string[];
     offset?: number;
@@ -271,6 +276,7 @@ export class DocumentsClient {
    * @param id ID of document to download
    * @returns
    */
+  @feature("documents.download")
   async download(options: { id: string }): Promise<any> {
     return this.client.makeRequest("GET", `documents/${options.id}/download`, {
       responseType: "blob",
@@ -282,6 +288,7 @@ export class DocumentsClient {
    * @param id ID of document to delete
    * @returns
    */
+  @feature("documents.delete")
   async delete(options: { id: string }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", `documents/${options.id}`);
   }
@@ -294,6 +301,7 @@ export class DocumentsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("documents.listChunks")
   async listChunks(options: {
     id: string;
     includeVectors?: boolean;
@@ -318,6 +326,7 @@ export class DocumentsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("documents.listCollections")
   async listCollections(options: {
     id: string;
     offset?: number;
@@ -337,6 +346,7 @@ export class DocumentsClient {
     );
   }
 
+  @feature("documents.deleteByFilter")
   async deleteByFilter(options: {
     filters: Record<string, any>;
   }): Promise<WrappedBooleanResponse> {
@@ -345,6 +355,7 @@ export class DocumentsClient {
     });
   }
 
+  @feature("documents.extract")
   async extract(options: {
     id: string;
     runType?: string;

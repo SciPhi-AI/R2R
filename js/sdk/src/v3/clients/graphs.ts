@@ -1,3 +1,4 @@
+import { feature } from "../../feature";
 import { r2rClient } from "../../r2rClient";
 import {
   WrappedGraphResponse,
@@ -21,6 +22,7 @@ export class GraphsClient {
    * @param description Optional description of the graph
    * @returns The created graph
    */
+  @feature("graphs.create")
   async create(options: {
     name: string;
     description?: string;
@@ -37,6 +39,7 @@ export class GraphsClient {
    * @param limit Optional limit for pagination
    * @returns
    */
+  @feature("graphs.list")
   async list(options?: {
     ids?: string[];
     offset?: number;
@@ -61,6 +64,7 @@ export class GraphsClient {
    * @param id Graph ID to retrieve
    * @returns
    */
+  @feature("graphs.retrieve")
   async retrieve(options: { id: string }): Promise<WrappedGraphResponse> {
     return this.client.makeRequest("GET", `graphs/${options.id}`);
   }
@@ -72,6 +76,7 @@ export class GraphsClient {
    * @param description Optional new description for the graph
    * @returns
    */
+  @feature("graphs.update")
   async update(options: {
     id: string;
     name?: string;
@@ -92,6 +97,7 @@ export class GraphsClient {
    * @param options
    * @returns
    */
+  @feature("graphs.delete")
   async delete(options: { id: string }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", `graphs/${options.id}`);
   }
@@ -103,6 +109,7 @@ export class GraphsClient {
    * @param entityId Entity ID to add
    * @returns
    */
+  @feature("graphs.addEntity")
   async addEntity(options: {
     id: string;
     entityId: string;
@@ -119,6 +126,7 @@ export class GraphsClient {
    * @param entityId Entity ID to remove
    * @returns
    */
+  @feature("graphs.removeEntity")
   async removeEntity(options: {
     id: string;
     entityId: string;
@@ -136,6 +144,7 @@ export class GraphsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("graphs.listEntities")
   async listEntities(options: {
     id: string;
     offset?: number;
@@ -157,6 +166,7 @@ export class GraphsClient {
    * @param entityId Entity ID to retrieve
    * @returns
    */
+  @feature("graphs.getEntity")
   async getEntity(options: {
     id: string;
     entityId: string;
@@ -174,6 +184,7 @@ export class GraphsClient {
    * @param relationshipId Relationship ID to add
    * @returns
    */
+  @feature("graphs.addRelationship")
   async addRelationship(options: {
     id: string;
     relationshipId: string;
@@ -190,6 +201,7 @@ export class GraphsClient {
    * @param relationshipId Relationship ID to remove
    * @returns
    */
+  @feature("graphs.removeRelationship")
   async removeRelationship(options: {
     id: string;
     relationshipId: string;
@@ -207,6 +219,7 @@ export class GraphsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("graphs.listRelationships")
   async listRelationships(options: {
     id: string;
     offset?: number;
@@ -232,6 +245,7 @@ export class GraphsClient {
    * @param relationshipId Relationship ID to retrieve
    * @returns
    */
+  @feature("graphs.getRelationship")
   async getRelationship(options: {
     id: string;
     relationshipId: string;
@@ -249,6 +263,7 @@ export class GraphsClient {
    * @param communityId Community ID to add
    * @returns
    */
+  @feature("graphs.addCommunity")
   async addCommunity(options: {
     id: string;
     communityId: string;
@@ -265,6 +280,7 @@ export class GraphsClient {
    * @param communityId Community ID to remove
    * @returns
    */
+  @feature("graphs.removeCommunity")
   async removeCommunity(options: {
     id: string;
     communityId: string;
@@ -282,6 +298,7 @@ export class GraphsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("graphs.listCommunities")
   async listCommunities(options: {
     id: string;
     offset?: number;
@@ -303,6 +320,7 @@ export class GraphsClient {
    * @param communityId Community ID to retrieve
    * @returns
    */
+  @feature("graphs.getCommunity")
   async getCommunity(options: {
     id: string;
     communityId: string;

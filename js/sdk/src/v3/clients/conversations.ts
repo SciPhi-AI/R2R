@@ -1,3 +1,4 @@
+import { feature } from "../../feature";
 import { r2rClient } from "../../r2rClient";
 import {
   WrappedBooleanResponse,
@@ -15,6 +16,7 @@ export class ConversationsClient {
    * Create a new conversation.
    * @returns
    */
+  @feature("conversations.create")
   async create(): Promise<WrappedConversationResponse> {
     return this.client.makeRequest("POST", "conversations");
   }
@@ -26,6 +28,7 @@ export class ConversationsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("conversations.list")
   async list(options?: {
     ids?: string[];
     offset?: number;
@@ -51,6 +54,7 @@ export class ConversationsClient {
    * @param branchID The ID of the branch to retrieve
    * @returns
    */
+  @feature("conversations.retrieve")
   async retrieve(options: {
     id: string;
     branchID?: string;
@@ -69,6 +73,7 @@ export class ConversationsClient {
    * @param id The ID of the conversation to delete
    * @returns
    */
+  @feature("conversations.delete")
   async delete(options: { id: string }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", `conversations/${options.id}`);
   }
@@ -82,6 +87,7 @@ export class ConversationsClient {
    * @param metadata Additional metadata to attach to the message
    * @returns
    */
+  @feature("conversations.addMessage")
   async addMessage(options: {
     id: string;
     content: string;
@@ -112,6 +118,7 @@ export class ConversationsClient {
    * @param content The new content of the message
    * @returns
    */
+  @feature("conversations.updateMessage")
   async updateMessage(options: {
     id: string;
     messageID: string;
@@ -135,6 +142,7 @@ export class ConversationsClient {
    * @param id The ID of the conversation to list branches for
    * @returns
    */
+  @feature("conversations.listBranches")
   async listBranches(options: {
     id: string;
     offset?: number;
