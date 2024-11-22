@@ -90,6 +90,59 @@ class CommunitiesSDK:
             f"graphs/{str(id)}/communities/{str(community_id)}",
             version="v3",
         )
+    
+    async def update(
+        self,
+        id: str | UUID,
+        community_id: str | UUID,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        findings: Optional[list[str]] = None,
+        level: Optional[int] = None,
+        rating: Optional[float] = None,
+        rating_explanation: Optional[str] = None,
+        attributes: Optional[dict] = None,
+    ) -> WrappedCommunityResponse:
+        """
+        Update a specific community by ID.
+
+        Args:
+            id (str | UUID): The ID of the graph to update communities for.
+            community_id (str | UUID): The ID of the community to update.
+            name (Optional[str]): The name of the community.
+            summary (Optional[str]): The summary of the community.
+            findings (Optional[list[str]]): The findings of the community.
+            level (Optional[int]): The level of the community.
+            rating (Optional[float]): The rating of the community.
+            rating_explanation (Optional[str]): The rating explanation of the community.
+            attributes (Optional[dict]): The attributes of the community.
+
+        Returns:
+            dict: Updated results containing entity information.
+        """
+
+        data = {}
+        if name:
+            data["name"] = name
+        if summary:
+            data["summary"] = summary
+        if findings:
+            data["findings"] = findings
+        if level:
+            data["level"] = level
+        if rating:
+            data["rating"] = rating
+        if rating_explanation:
+            data["rating_explanation"] = rating_explanation
+        if attributes:
+            data["attributes"] = attributes
+
+        return await self.client._make_request(
+            "POST",
+            f"graphs/{str(id)}/communities/{str(community_id)}",
+            data=data,
+            version="v3",
+        )
 
     async def list(
         self,
@@ -144,55 +197,3 @@ class CommunitiesSDK:
             version="v3",
         )
 
-    async def update(
-        self,
-        id: str | UUID,
-        community_id: str | UUID,
-        name: Optional[str] = None,
-        summary: Optional[str] = None,
-        findings: Optional[list[str]] = None,
-        level: Optional[int] = None,
-        rating: Optional[float] = None,
-        rating_explanation: Optional[str] = None,
-        attributes: Optional[dict] = None,
-    ) -> WrappedCommunityResponse:
-        """
-        Update a specific community by ID.
-
-        Args:
-            id (str | UUID): The ID of the graph to update communities for.
-            community_id (str | UUID): The ID of the community to update.
-            name (Optional[str]): The name of the community.
-            summary (Optional[str]): The summary of the community.
-            findings (Optional[list[str]]): The findings of the community.
-            level (Optional[int]): The level of the community.
-            rating (Optional[float]): The rating of the community.
-            rating_explanation (Optional[str]): The rating explanation of the community.
-            attributes (Optional[dict]): The attributes of the community.
-
-        Returns:
-            dict: Updated results containing entity information.
-        """
-
-        data = {}
-        if name:
-            data["name"] = name
-        if summary:
-            data["summary"] = summary
-        if findings:
-            data["findings"] = findings
-        if level:
-            data["level"] = level
-        if rating:
-            data["rating"] = rating
-        if rating_explanation:
-            data["rating_explanation"] = rating_explanation
-        if attributes:
-            data["attributes"] = attributes
-
-        return await self.client._make_request(
-            "POST",
-            f"graphs/{str(id)}/communities/{str(community_id)}",
-            data=data,
-            version="v3",
-        )
