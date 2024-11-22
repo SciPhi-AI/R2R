@@ -339,6 +339,29 @@ class KgService(Service):
             limit=limit or -1,
         )
 
+    @telemetry_event("add_relationship_to_graph")
+    async def add_relationship_to_graph(
+        self,
+        graph_id: UUID,
+        relationship_id: UUID,
+    ) -> dict[str, str]:
+
+        await self.providers.database.graph_handler.relationships.add_to_graph(
+            graph_id=graph_id, relationship_id=relationship_id
+        )
+
+        return {"message": "Relationship added to graph successfully"}
+
+    @telemetry_event("remove_relationship_from_graph")
+    async def remove_relationship_from_graph(
+        self,
+        graph_id: UUID,
+        relationship_id: UUID,
+    ):
+        return await self.providers.database.graph_handler.relationships.remove_from_graph(
+            graph_id=graph_id, relationship_id=relationship_id
+        )
+
     ################### COMMUNITIES ###################
 
     @telemetry_event("create_community_v3")
@@ -412,27 +435,29 @@ class KgService(Service):
         self,
         graph_id: UUID,
         community_id: UUID,
-        user_id: UUID,
         **kwargs,
     ):
         return await self.providers.database.graph_handler.communities.delete(
             graph_id=graph_id,
             community_id=community_id,
-            user_id=user_id,
         )
 
     @telemetry_event("list_communities_v3")
     async def list_communities_v3(
         self,
-        id: UUID,
+        graph_id: UUID,
         offset: int,
         limit: int,
+        filter_community_ids: Optional[list[UUID]] = None,
+        filter_user_ids: Optional[list[UUID]] = None,
         **kwargs,
     ):
-        return await self.providers.database.graph_handler.communities.get(
-            id=id,
+        return await self.providers.database.graph_handler.communities.list_communities(
+            graph_id=graph_id,
             offset=offset,
             limit=limit,
+            filter_community_ids=filter_community_ids,
+            filter_user_ids=filter_user_ids,
         )
 
     # TODO: deprecate this
@@ -906,34 +931,43 @@ class KgService(Service):
 
     async def add_documents_to_graph(
         self, graph_id: UUID, document_ids: list[UUID]
-    ) -> None:
-        return (
-            await self.providers.database.graph_handler.add_documents_to_graph(
-                graph_id=graph_id,
-                document_ids=document_ids,
-            )
+    ) -> dict:
+
+        await self.providers.database.graph_handler.add_documents_to_graph(
+            graph_id=graph_id,
+            document_ids=document_ids,
         )
+
+        return {
+            "message": "All entities and relationships from the documents have been added to the graph."
+        }
 
     async def remove_documents_from_graph(
         self, graph_id: UUID, document_ids: list[UUID]
     ) -> None:
-        return await self.providers.database.graph_handler.remove_documents_from_graph(
+
+        await self.providers.database.graph_handler.remove_documents_from_graph(
             graph_id=graph_id,
             document_ids=document_ids,
         )
 
     async def add_collection_to_graph(
         self, graph_id: UUID, collection_id: UUID
-    ) -> None:
-        return await self.providers.database.graph_handler.add_collection_to_graph(
+    ) -> dict:
+        await self.providers.database.graph_handler.add_collection_to_graph(
             graph_id=graph_id,
             collection_id=collection_id,
         )
 
+        return {
+            "message": "All entities and relationships from the collection have been added to the graph."
+        }
+
     async def remove_collection_from_graph(
         self, graph_id: UUID, collection_id: UUID
     ) -> None:
-        return await self.providers.database.graph_handler.remove_collection_from_graph(
+
+        await self.providers.database.graph_handler.remove_collection_from_graph(
             graph_id=graph_id,
             collection_id=collection_id,
         )

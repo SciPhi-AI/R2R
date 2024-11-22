@@ -176,7 +176,6 @@ class PostgresEntityHandler(EntityHandler):
             description_embedding: Embedding of the description
             attributes: Attributes of the entity
             user_id: User ID of the creator
-            last_modified_by: User ID of the last modifier
             entity_table_name: Name of the table to insert the entity into
         """
 
@@ -429,54 +428,6 @@ class PostgresEntityHandler(EntityHandler):
                 status_code=500,
                 detail=f"An error occurred while updating the entity: {e}",
             )
-
-    async def _check_permissions(
-        self,
-        id: UUID,
-        user_id: UUID,
-    ) -> bool:
-
-        # check if the user created the entity
-        QUERY = f"""
-            SELECT user_id, graph_ids FROM {self._get_table_name("entity")} WHERE id = $1
-        """
-        user_id, document_ids, graph_ids = (
-            await self.connection_manager.fetch_query(QUERY, [id])
-        )
-
-        if user_id == user_id:
-            return True
-
-        # check if the user has access to the graph, so somoene shared the graph with the user
-        if graph_ids:
-            QUERY = f"""
-                SELECT user_ids from {self._get_table_name("graph")} WHERE id = ANY($1)
-            """
-            user_ids = await self.connection_manager.fetch_query(
-                QUERY, graph_ids
-            )
-            if user_id in user_ids:
-                return True
-
-        # check if the user has access all the documents that created this entity
-        # Can be made more efficient by using a single query
-        has_access_to_all_documents = True
-        for document_id in document_ids:
-            QUERY = f"""
-                SELECT c.user_ids
-                FROM {self._get_table_name("document_info")} d
-                JOIN {self._get_table_name("collection")} c ON c.id = ANY(d.collection_ids)
-                WHERE d.document_id = $1 AND $2 = ANY(c.user_ids)
-            """
-            has_access = await self.connection_manager.fetch_query(
-                QUERY, [document_id, user_id]
-            )
-
-            if not has_access:
-                has_access_to_all_documents = False
-                break
-
-        return has_access_to_all_documents
 
     async def delete(self, entity_id: UUID) -> None:
         query = f"""
@@ -991,63 +942,85 @@ class PostgresRelationshipHandler(RelationshipHandler):
         """
         await self.connection_manager.fetchrow_query(QUERY, [id])
 
-    async def _check_permissions(
-        self, relationship_ids: list[UUID], auth_user_id: UUID
-    ) -> bool:
-        raise NotImplementedError("This is not implemented yet.")
-
     async def add_to_graph(
         self,
         graph_id: UUID,
-        relationship_ids: list[UUID],
-        auth_user: Optional[Any] = None,
+        relationship_id: UUID,
     ) -> None:
 
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(
-                relationship_ids, auth_user.id
-            ):
-                raise R2RException(
-                    "You do not have permission to add this relationship to the graph.",
-                    403,
-                )
-
-        QUERY = f"""
-            UPDATE {self._get_table_name("graph_relationship")}
-            SET graph_ids = CASE
-                WHEN graph_ids IS NULL THEN ARRAY[$1]
-                WHEN NOT ($1 = ANY(graph_ids)) THEN array_append(graph_ids, $1)
-                ELSE graph_ids
-            END
-            WHERE id = ANY($2)
+        # First, check if the relationship exists
+        relationship_check_query = f"""
+            SELECT graph_ids FROM {self._get_table_name("relationship")}
+            WHERE id = $1
         """
-        return await self.connection_manager.execute_query(
-            QUERY, [graph_id, relationship_ids]
+        relationship = await self.connection_manager.fetchrow_query(
+            relationship_check_query, [relationship_id]
+        )
+
+        if not relationship:
+            raise R2RException(
+                message="Relationship not found",
+                status_code=404,
+            )
+
+        # Check if graph_id already exists in graph_ids
+        if relationship["graph_ids"] and graph_id in relationship["graph_ids"]:
+            raise R2RException(
+                message="Relationship already exists in the graph",
+                status_code=409,
+            )
+
+        # Add to graph_ids
+        assign_query = f"""
+            UPDATE {self._get_table_name("relationship")}
+            SET graph_ids = array_append(graph_ids, $1)
+            where id = $2
+            RETURNING id
+        """
+        await self.connection_manager.fetchrow_query(
+            assign_query, [graph_id, relationship_id]
         )
 
     async def remove_from_graph(
         self,
         graph_id: UUID,
         relationship_id: UUID,
-        auth_user: Optional[Any] = None,
     ) -> None:
 
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(
-                relationship_id, auth_user.id
-            ):
-                raise R2RException(
-                    "You do not have permission to remove this relationship from the graph.",
-                    403,
-                )
+        # First, check if the relationship exists
+        relationship_check_query = f"""
+            SELECT graph_ids FROM {self._get_table_name("relationship")}
+            WHERE id = $1
+        """
+        relationship = await self.connection_manager.fetchrow_query(
+            relationship_check_query, [relationship_id]
+        )
 
-        QUERY = f"""
-            UPDATE {self._get_table_name("graph_relationship")}
+        if not relationship:
+            raise R2RException(
+                message="Relationship not found",
+                status_code=404,
+            )
+
+        # Check if graph_id exists in graph_ids
+        if (
+            not relationship["graph_ids"]
+            or graph_id not in relationship["graph_ids"]
+        ):
+            raise R2RException(
+                message="Relationship is not in the graph",
+                status_code=404,
+            )
+
+        # Remove from graph_ids
+        remove_query = f"""
+            UPDATE {self._get_table_name("relationship")}
             SET graph_ids = array_remove(graph_ids, $1)
             WHERE id = $2
+            RETURNING id
         """
-        return await self.connection_manager.execute_query(
-            QUERY, [graph_id, relationship_id]
+        await self.connection_manager.fetchrow_query(
+            remove_query, [graph_id, relationship_id]
         )
 
 
@@ -1269,16 +1242,7 @@ class PostgresCommunityHandler(CommunityHandler):
                 detail=f"An error occurred while updating the community: {e}",
             )
 
-    async def delete(
-        self, graph_id: UUID, community_id: UUID, auth_user: Any
-    ) -> None:
-
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(graph_id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to delete this community.",
-                    403,
-                )
+    async def delete(self, graph_id: UUID, community_id: UUID) -> None:
 
         QUERY = f"""
             DELETE FROM {self._get_table_name("graph_community")} WHERE id = $1
@@ -1297,6 +1261,10 @@ class PostgresCommunityHandler(CommunityHandler):
         conditions = []
         params: list[Any] = []
         param_index = 1
+
+        conditions.append(f"graph_id = ${param_index}")
+        params.append(graph_id)
+        param_index += 1
 
         if filter_community_ids:
             conditions.append(f"id = ANY(${param_index})")
@@ -1710,7 +1678,7 @@ class PostgresGraphHandler(GraphHandler):
 
     async def add_documents_to_graph(
         self, graph_id: UUID, document_ids: list[UUID]
-    ) -> bool:
+    ) -> dict[str, str]:
 
         # Get count of entities for each document
         for document_id in document_ids:
@@ -1761,7 +1729,9 @@ class PostgresGraphHandler(GraphHandler):
                     QUERY, [graph_id, document_id]
                 )
 
-        return True
+        return {
+            "message": "Entities and relationships from the documents added to graph successfully"
+        }
 
     async def remove_documents_from_graph(
         self, graph_id: UUID, document_ids: list[UUID]
@@ -1784,7 +1754,7 @@ class PostgresGraphHandler(GraphHandler):
 
     async def add_collection_to_graph(
         self, graph_id: UUID, collection_id: UUID
-    ) -> bool:
+    ) -> dict[str, str]:
         """
         Add all entities and relationships for this collection to the graph.
         """
@@ -1829,11 +1799,13 @@ class PostgresGraphHandler(GraphHandler):
                 QUERY, [graph_id, collection_id]
             )
 
-        return True
+        return {
+            "message": "Entities and relationships from the collection added to graph successfully"
+        }
 
     async def remove_collection_from_graph(
         self, graph_id: UUID, collection_id: UUID
-    ) -> bool:
+    ):
         """
         Remove all entities and relationships for this collection from the graph.
         """
@@ -1851,8 +1823,6 @@ class PostgresGraphHandler(GraphHandler):
             await self.connection_manager.execute_query(
                 QUERY, [graph_id, collection_id]
             )
-
-        return True
 
     async def add_entities_v3(
         self, id: UUID, entity_ids: list[UUID], copy_data: bool = True

@@ -299,6 +299,15 @@ class CommunitiesRouter(BaseRouterV3):
             The created communities will be integrated with any existing automatically detected communities
             in the graph's community structure.
             """
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    "You do not have permission to create a community in this graph.",
+                    403,
+                )
+
             return await self.services["kg"].create_community_v3(
                 graph_id=id,
                 name=name,
@@ -325,7 +334,24 @@ class CommunitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.get(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            result = client.graphs.communities.list(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = client.graphs.communities.list(
+                                    id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                                );
+                            }
+                            main();
                             """
                         ),
                     },
@@ -372,14 +398,18 @@ class CommunitiesRouter(BaseRouterV3):
             """
             Lists all communities in the graph with pagination support.
             """
-            if not auth_user.is_superuser:
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
                 raise R2RException(
-                    "Only superusers can access this endpoint.", 403
+                    "You do not have permission to access this community.",
+                    403,
                 )
 
             list_communities_response = await self.services[
                 "kg"
-            ].providers.database.graph_handler.communities.list_communities(
+            ].list_communities_v3(
                 graph_id=id,
                 filter_community_ids=community_ids,
                 filter_user_ids=[auth_user.id],
@@ -405,7 +435,7 @@ class CommunitiesRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.get(
+                            result = client.graphs.communities.retrieve(
                                 id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
                                 community_id="123e4567-e89b-12d3-a456-426614174000"
                             )
@@ -419,7 +449,7 @@ class CommunitiesRouter(BaseRouterV3):
                             const { r2rClient } = require("r2r-js");
                             const client = new r2rClient("http://localhost:7272");
                             function main() {
-                                const response = client.graphs.communities.get(
+                                const response = client.graphs.communities.retrieve(
                                     id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
                                     community_id="123e4567-e89b-12d3-a456-426614174000"
                                 );
@@ -447,9 +477,13 @@ class CommunitiesRouter(BaseRouterV3):
             """
             Retrieves a specific community by its ID.
             """
-            if not auth_user.is_superuser:
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
                 raise R2RException(
-                    "Only superusers can access this endpoint.", 403
+                    "You do not have permission to access this community.",
+                    403,
                 )
 
             list_communities_response = await self.services[
@@ -467,6 +501,42 @@ class CommunitiesRouter(BaseRouterV3):
         @self.router.delete(
             "/graphs/{id}/communities/{community_id}",
             summary="Delete a community",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.communities.delete(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                community_id="123e4567-e89b-12d3-a456-426614174000"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+                            const client = new r2rClient("http://localhost:7272");
+                            function main() {
+                                const response = client.graphs.communities.delete(
+                                    id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    community_id="123e4567-e89b-12d3-a456-426614174000"
+                                );
+                            }
+                            main();
+                            """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def delete_community(
@@ -481,12 +551,23 @@ class CommunitiesRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedBooleanResponse:
+            """
+            Deletes a community from the graph by its ID.
+            """
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
+                raise R2RException(
+                    "You do not have permission to delete this community.",
+                    403,
+                )
 
             await self.services["kg"].delete_community_v3(
                 graph_id=id,
                 community_id=community_id,
-                auth_user=auth_user,
             )
+
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
@@ -555,9 +636,13 @@ class CommunitiesRouter(BaseRouterV3):
             """
             Updates an existing community's metadata and properties.
             """
-            if not auth_user.is_superuser:
+
+            if not await self.services["management"].has_graph_access(
+                auth_user, id
+            ):
                 raise R2RException(
-                    "Only superusers can update communities", 403
+                    "You do not have permission to update this community.",
+                    403,
                 )
 
             return await self.services["kg"].update_community_v3(

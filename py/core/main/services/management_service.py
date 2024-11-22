@@ -805,6 +805,24 @@ class ManagementService(Service):
     async def delete_conversation(self, conversation_id: str, auth_user=None):
         await self.logging_connection.delete_conversation(conversation_id)
 
+    @telemetry_event("HasEntityAccess")
+    async def has_entity_access(self, auth_user, entity_id: UUID) -> bool:
+        return await self.providers.database.user_handler.has_entity_access(
+            auth_user=auth_user,
+            entity_id=entity_id,
+        )
+
+    @telemetry_event("HasRelationshipAccess")
+    async def has_relationship_access(
+        self, auth_user, relationship_id: UUID
+    ) -> bool:
+        return (
+            await self.providers.database.user_handler.has_relationship_access(
+                auth_user=auth_user,
+                relationship_id=relationship_id,
+            )
+        )
+
     @telemetry_event("HasDocumentAccess")
     async def has_document_access(self, auth_user, document_id: UUID) -> bool:
         return await self.providers.database.user_handler.has_document_access(
