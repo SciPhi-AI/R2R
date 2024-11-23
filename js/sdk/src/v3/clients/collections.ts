@@ -212,7 +212,7 @@ export class CollectionsClient {
   }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest(
       "DELETE",
-      `collecstions/${options.id}/users/${options.userId}`,
+      `collections/${options.id}/users/${options.userId}`,
     );
   }
 }
