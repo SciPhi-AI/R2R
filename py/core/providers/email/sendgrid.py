@@ -3,8 +3,7 @@ import os
 from typing import Optional, Dict
 
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Content
-
+from sendgrid.helpers.mail import Mail, Content, From
 from core.base import EmailConfig, EmailProvider
 
 logger = logging.getLogger(__name__)
@@ -28,6 +27,7 @@ class SendGridEmailProvider(EmailProvider):
         self.verify_email_template_id = config.verify_email_template_id
         self.reset_password_template_id = config.reset_password_template_id
         self.client = SendGridAPIClient(api_key=self.api_key)
+        self.email_name = config.email_name
 
     async def send_email(
         self,
@@ -41,8 +41,8 @@ class SendGridEmailProvider(EmailProvider):
         try:
             logger.info("Preparing SendGrid message...")
             message = Mail(
-                from_email=self.from_email,
-                to_emails=to_email,
+                from_email=From(self.from_email,self.email_name),
+                to_emails=to_email
             )
 
             if template_id:
