@@ -422,7 +422,7 @@ class IngestionRouter(BaseRouter):
                 "metadata": metadata or {},
                 "user": auth_user.model_dump_json(),
                 "collection_ids": (
-                    [str(cid) for cid in collection_ids[it]] if collection_ids else None
+                    [str(cid) for cid in collection_ids] if collection_ids else None
                 ),
             }
             if run_with_orchestration:
