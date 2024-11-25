@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional, Dict
+from typing import Optional
 
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Content, From
@@ -21,13 +21,15 @@ class SendGridEmailProvider(EmailProvider):
         self.from_email = config.from_email or os.getenv("R2R_FROM_EMAIL")
         if not self.from_email or not isinstance(self.from_email, str):
             raise ValueError("A valid from email is required.")
-        self.frontend_url = config.frontend_url or os.getenv("R2R_FRONTEND_URL")
+        self.frontend_url = config.frontend_url or os.getenv(
+            "R2R_FRONTEND_URL"
+        )
         if not self.frontend_url or not isinstance(self.frontend_url, str):
             raise ValueError("A valid frontend URL is required.")
         self.verify_email_template_id = config.verify_email_template_id
         self.reset_password_template_id = config.reset_password_template_id
         self.client = SendGridAPIClient(api_key=self.api_key)
-        self.email_name = config.email_name
+        self.sender_name = config.sender_name
 
     async def send_email(
         self,
@@ -36,13 +38,13 @@ class SendGridEmailProvider(EmailProvider):
         body: Optional[str] = None,
         html_body: Optional[str] = None,
         template_id: Optional[str] = None,
-        dynamic_template_data: Optional[Dict] = None,
+        dynamic_template_data: Optional[dict] = None,
     ) -> None:
         try:
             logger.info("Preparing SendGrid message...")
             message = Mail(
-                from_email=From(self.from_email,self.email_name),
-                to_emails=to_email
+                from_email=From(self.from_email, self.sender_name),
+                to_emails=to_email,
             )
 
             if template_id:
@@ -51,7 +53,9 @@ class SendGridEmailProvider(EmailProvider):
                 message.dynamic_template_data = dynamic_template_data or {}
             else:
                 if not subject:
-                    raise ValueError("Subject is required when not using a template")
+                    raise ValueError(
+                        "Subject is required when not using a template"
+                    )
                 message.subject = subject
 
                 # Add plain text content
@@ -63,10 +67,13 @@ class SendGridEmailProvider(EmailProvider):
 
             # Send email
             import asyncio
+
             response = await asyncio.to_thread(self.client.send, message)
 
             if response.status_code >= 400:
-                raise RuntimeError(f"Failed to send email: {response.status_code}")
+                raise RuntimeError(
+                    f"Failed to send email: {response.status_code}"
+                )
 
             if response.status_code == 202:
                 logger.info("Message sent successfully!")
@@ -81,20 +88,20 @@ class SendGridEmailProvider(EmailProvider):
             raise RuntimeError(error_msg) from e
 
     async def send_verification_email(
-        self, 
-        to_email: str, 
-        verification_code: str, 
-        dynamic_template_data: Optional[Dict] = None,
+        self,
+        to_email: str,
+        verification_code: str,
+        dynamic_template_data: Optional[dict] = None,
     ) -> None:
-        try: 
+        try:
             if self.verify_email_template_id:
                 # Use dynamic template
                 dynamic_data = {
-                    "url": f"{self.frontend_url or self.config.app_url}/verify-email?token={verification_code}&email={to_email}",
+                    "url": f"{self.frontend_url}/verify-email?token={verification_code}&email={to_email}",
                 }
-                
+
                 if dynamic_template_data:
-                    dynamic_data.update(dynamic_template_data)
+                    dynamic_data |= dynamic_template_data
 
                 await self.send_email(
                     to_email=to_email,
@@ -129,23 +136,22 @@ class SendGridEmailProvider(EmailProvider):
             error_msg = f"Failed to send email to {to_email}: {str(e)}"
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
-                
-                
+
     async def send_password_reset_email(
-        self, 
-        to_email: str, 
-        reset_token: str, 
-        dynamic_template_data: Optional[Dict] = None,
+        self,
+        to_email: str,
+        reset_token: str,
+        dynamic_template_data: Optional[dict] = None,
     ) -> None:
         try:
             if self.reset_password_template_id:
                 # Use dynamic template
                 dynamic_data = {
-                    "url": f"{self.frontend_url or self.config.app_url}/reset-password?token={reset_token}",
+                    "url": f"{self.frontend_url}/reset-password?token={reset_token}",
                 }
-        
+
                 if dynamic_template_data:
-                    dynamic_data.update(dynamic_template_data)
+                    dynamic_data |= dynamic_template_data
 
                 await self.send_email(
                     to_email=to_email,

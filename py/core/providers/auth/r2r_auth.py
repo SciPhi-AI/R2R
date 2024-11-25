@@ -158,8 +158,12 @@ class R2RAuthProvider(AuthProvider):
             new_user.verification_code_expiry = expiry
 
             # Safely get first name, defaulting to email if name is None
-            first_name = new_user.name.split(" ")[0] if new_user.name else email.split("@")[0]
-            
+            first_name = (
+                new_user.name.split(" ")[0]
+                if new_user.name
+                else email.split("@")[0]
+            )
+
             await self.email_provider.send_verification_email(
                 new_user.email, verification_code, {"first_name": first_name}
             )
@@ -309,8 +313,12 @@ class R2RAuthProvider(AuthProvider):
         )
 
         # Safely get first name, defaulting to email if name is None
-        first_name = user.name.split(" ")[0] if user.name else email.split("@")[0]
-        await self.email_provider.send_password_reset_email(email, reset_token, {"first_name": first_name})
+        first_name = (
+            user.name.split(" ")[0] if user.name else email.split("@")[0]
+        )
+        await self.email_provider.send_password_reset_email(
+            email, reset_token, {"first_name": first_name}
+        )
 
         return {"message": "If the email exists, a reset link has been sent"}
 
@@ -359,7 +367,9 @@ class R2RAuthProvider(AuthProvider):
         )
 
         # Safely get first name, defaulting to email if name is None
-        first_name = user.name.split(" ")[0] if user.name else email.split("@")[0]
+        first_name = (
+            user.name.split(" ")[0] if user.name else email.split("@")[0]
+        )
         # Send verification email
         await self.email_provider.send_verification_email(
             email, verification_code, {"first_name": first_name}

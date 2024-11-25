@@ -1730,7 +1730,7 @@ def test_conversation_history_sdk():
         )
         sys.exit(1)
 
-    for i, (message_id, message) in enumerate(conversation["results"]):
+    for i, message in enumerate(conversation["results"]):
         if (
             message["role"] != messages[i]["role"]
             or message["content"] != messages[i]["content"]
@@ -1765,7 +1765,7 @@ def test_conversation_history_sdk():
         )
         sys.exit(1)
 
-    for i, (message_id, message) in enumerate(conversation["results"]):
+    for i, message in enumerate(conversation["results"]):
         if i < len(messages):
             if (
                 message["role"] != messages[i]["role"]

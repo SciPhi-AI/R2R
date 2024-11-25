@@ -58,7 +58,9 @@ class R2RProviderFactory:
         crypto_provider: BCryptProvider,
         database_provider: PostgresDBProvider,
         email_provider: Union[
-            AsyncSMTPEmailProvider, ConsoleMockEmailProvider, SendGridEmailProvider
+            AsyncSMTPEmailProvider,
+            ConsoleMockEmailProvider,
+            SendGridEmailProvider,
         ],
         *args,
         **kwargs,
@@ -237,7 +239,9 @@ class R2RProviderFactory:
     @staticmethod
     async def create_email_provider(
         email_config: Optional[EmailConfig] = None, *args, **kwargs
-    ) -> Union[AsyncSMTPEmailProvider, ConsoleMockEmailProvider, SendGridEmailProvider]:
+    ) -> Union[
+        AsyncSMTPEmailProvider, ConsoleMockEmailProvider, SendGridEmailProvider
+    ]:
         """Creates an email provider based on configuration."""
         if not email_config:
             raise ValueError(
@@ -263,7 +267,11 @@ class R2RProviderFactory:
         crypto_provider_override: Optional[BCryptProvider] = None,
         database_provider_override: Optional[PostgresDBProvider] = None,
         email_provider_override: Optional[
-            Union[AsyncSMTPEmailProvider, ConsoleMockEmailProvider, SendGridEmailProvider]
+            Union[
+                AsyncSMTPEmailProvider,
+                ConsoleMockEmailProvider,
+                SendGridEmailProvider,
+            ]
         ] = None,
         embedding_provider_override: Optional[
             Union[

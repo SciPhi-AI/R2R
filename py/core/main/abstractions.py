@@ -39,7 +39,9 @@ class R2RProviders(BaseModel):
         HatchetOrchestrationProvider, SimpleOrchestrationProvider
     ]
     logging: SqlitePersistentLoggingProvider
-    email: Union[AsyncSMTPEmailProvider, ConsoleMockEmailProvider, SendGridEmailProvider]
+    email: Union[
+        AsyncSMTPEmailProvider, ConsoleMockEmailProvider, SendGridEmailProvider
+    ]
 
     class Config:
         arbitrary_types_allowed = True
