@@ -106,6 +106,7 @@ async def search(ctx, query, **kwargs):
     }
 
     with timer():
+        print("kg_search_settings = ", kg_search_settings)
         results = await client.retrieval.search(
             query,
             vector_search_settings,

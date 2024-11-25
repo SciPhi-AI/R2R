@@ -80,6 +80,7 @@ class Relationship(R2RSerializable):
     weight: float | None = 1.0
     chunk_ids: list[UUID] = []
     parent_id: Optional[UUID] = None
+    description_embedding: Optional[list[float] | str] = None
 
     metadata: Optional[dict[str, Any] | str] = None
 

@@ -402,7 +402,7 @@ class KGSearchSettings(R2RSerializable):
     local_search_limits: dict[str, int] = Field(
         alias="localSearchLimits",
         default={
-            "__Entity__": 20,
+            "entity": 20,
             "__Relationship__": 20,
             "__Community__": 20,
         },
@@ -419,7 +419,7 @@ class KGSearchSettings(R2RSerializable):
             "max_community_description_length": 65536,
             "max_llm_queries_for_global_search": 250,
             "local_search_limits": {
-                "__Entity__": 20,
+                "entity": 20,
                 "__Relationship__": 20,
                 "__Community__": 20,
             },

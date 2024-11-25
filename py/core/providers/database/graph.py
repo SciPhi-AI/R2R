@@ -363,6 +363,8 @@ class PostgresRelationshipHandler(RelationshipHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.project_name: str = kwargs.get("project_name")  # type: ignore
         self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
+        self.dimension: int = kwargs.get("dimension")  # type: ignore
+        self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
 
     def _get_table_name(self, table: str) -> str:
         """Get the fully qualified table name."""
@@ -396,7 +398,9 @@ class PostgresRelationshipHandler(RelationshipHandler):
         for store_type in StoreType:
             table_name = self._get_relationship_table_for_store(store_type)
             parent_constraint = self._get_parent_constraint(store_type)
-
+            vector_column_str = _decorate_vector_type(
+                f"({self.dimension})", self.quantization_type
+            )
             QUERY = f"""
                 CREATE TABLE IF NOT EXISTS {self._get_table_name(table_name)} (
                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -404,6 +408,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
                     predicate TEXT NOT NULL,
                     object TEXT NOT NULL,
                     description TEXT,
+                    description_embedding {vector_column_str},
                     subject_id UUID,
                     object_id UUID,
                     weight FLOAT DEFAULT 1.0,
@@ -1158,7 +1163,7 @@ class PostgresCommunityHandler(CommunityHandler):
             findings TEXT[] NOT NULL,
             rating FLOAT NOT NULL,
             rating_explanation TEXT NOT NULL,
-            embedding {vector_column_str} NOT NULL,
+            description_embedding {vector_column_str} NOT NULL,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             created_by UUID REFERENCES {self._get_table_name("users")}(user_id),
@@ -1614,6 +1619,7 @@ class PostgresGraphHandler(GraphHandler):
         limit: int,
         filter_user_ids: Optional[list[UUID]] = None,
         filter_graph_ids: Optional[list[UUID]] = None,
+        filter_collection_id: Optional[UUID] = None,
     ) -> dict[str, list[GraphResponse] | int]:
         conditions = []
         params: list[Any] = []
@@ -1629,16 +1635,26 @@ class PostgresGraphHandler(GraphHandler):
             params.append(filter_user_ids)
             param_index += 1
 
+        if filter_collection_id:
+            conditions.append(f"collection_id = ${param_index}")
+            params.append(filter_collection_id)
+            param_index += 1
+
         where_clause = (
             f"WHERE {' AND '.join(conditions)}" if conditions else ""
         )
 
         query = f"""
-            SELECT
-                id, user_id, collection_id, name, description, status, created_at, updated_at, document_ids,
-                COUNT(*) OVER() as total_entries
-            FROM {self._get_table_name("graph")}
-            {where_clause}
+            WITH RankedGraphs AS (
+                SELECT
+                    id, user_id, collection_id, name, description, status, created_at, updated_at, document_ids,
+                    COUNT(*) OVER() as total_entries,
+                    ROW_NUMBER() OVER (PARTITION BY collection_id ORDER BY created_at DESC) as rn
+                FROM {self._get_table_name("graph")}
+                {where_clause}
+            )
+            SELECT * FROM RankedGraphs
+            WHERE rn = 1
             ORDER BY created_at DESC
             OFFSET ${param_index} LIMIT ${param_index + 1}
         """
@@ -2768,34 +2784,34 @@ class PostgresGraphHandler(GraphHandler):
     async def has_document(self, graph_id: UUID, document_id: UUID) -> bool:
         """
         Check if a document exists in the graph's document_ids array.
-        
+
         Args:
             graph_id (UUID): ID of the graph to check
             document_id (UUID): ID of the document to look for
-            
+
         Returns:
             bool: True if document exists in graph, False otherwise
-            
+
         Raises:
             R2RException: If graph not found
         """
         QUERY = f"""
             SELECT EXISTS (
-                SELECT 1 
+                SELECT 1
                 FROM {self._get_table_name("graph")}
-                WHERE id = $1 
-                AND document_ids IS NOT NULL 
+                WHERE id = $1
+                AND document_ids IS NOT NULL
                 AND $2 = ANY(document_ids)
             ) as exists;
         """
-        
+
         result = await self.connection_manager.fetchrow_query(
             QUERY, [graph_id, document_id]
         )
-        
+
         if result is None:
             raise R2RException(f"Graph {graph_id} not found", 404)
-            
+
         return result["exists"]
 
     ####################### COMMUNITY METHODS #######################
@@ -3239,28 +3255,29 @@ class PostgresGraphHandler(GraphHandler):
     async def graph_search(  # type: ignore
         self, query: str, **kwargs: Any
     ) -> AsyncGenerator[Any, None]:
+        print("in graph search...")
 
         query_embedding = kwargs.get("query_embedding", None)
-        search_type = kwargs.get("search_type", "__Entity__")
+        search_type = kwargs.get("search_type", "entity")
         embedding_type = kwargs.get("embedding_type", "description_embedding")
         property_names = kwargs.get("property_names", ["name", "description"])
         filters = kwargs.get("filters", {})
         entities_level = kwargs.get("entities_level", DataLevel.DOCUMENT)
         limit = kwargs.get("limit", 10)
 
-        table_name = ""
-        if search_type == "__Entity__":
-            table_name = (
-                "collection_entity"
-                if entities_level == DataLevel.COLLECTION
-                else "entity"
-            )
-        elif search_type == "__Relationship__":
-            table_name = "relationship"
-        elif search_type == "__Community__":
-            table_name = "graph_community"
-        else:
-            raise ValueError(f"Invalid search type: {search_type}")
+        table_name = "graph_entity"
+        # if search_type == "entity":
+        #     table_name = (
+        #         "collection_entity"
+        #         if entities_level == DataLevel.COLLECTION
+        #         else "entity"
+        #     )
+        # elif search_type == "__Relationship__":
+        #     table_name = "relationship"
+        # elif search_type == "__Community__":
+        #     table_name = "graph_community"
+        # else:
+        #     raise ValueError(f"Invalid search type: {search_type}")
 
         property_names_str = ", ".join(property_names)
 
@@ -3276,7 +3293,7 @@ class PostgresGraphHandler(GraphHandler):
             ):
                 logger.info(f"Searching in collection ids: {filter_ids}")
 
-            elif search_type in ["__Entity__", "__Relationship__"]:
+            elif search_type in ["entity", "__Relationship__"]:
                 filter_query = "WHERE document_id = ANY($3)"
                 # TODO - This seems like a hack, we will need a better way to filter by collection ids for entities and relationships
                 query = f"""
@@ -3293,7 +3310,7 @@ class PostgresGraphHandler(GraphHandler):
         QUERY = f"""
             SELECT {property_names_str} FROM {self._get_table_name(table_name)} {filter_query} ORDER BY {embedding_type} <=> $1 LIMIT $2;
         """
-
+        print("QUERY = ", QUERY)
         if filter_query != "":
             results = await self.connection_manager.fetch_query(
                 QUERY, (str(query_embedding), limit, filter_ids)

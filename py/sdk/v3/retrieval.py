@@ -42,6 +42,7 @@ class RetrievalSDK:
         if kg_search_settings and not isinstance(kg_search_settings, dict):
             kg_search_settings = kg_search_settings.model_dump()
 
+        print("calling with kg_search_settings = ", kg_search_settings)
         data = {
             "query": query,
             "vector_search_settings": vector_search_settings,

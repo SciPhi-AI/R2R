@@ -226,21 +226,37 @@ class GraphRouter(BaseRouterV3):
             This is the first step in building a knowledge graph. After creating the graph, you can:
 
             1. Add data to the graph:
-               - Manually add entities and relationships via the /entities and /relationships endpoints
-               - Automatically extract entities and relationships from documents via the /graphs/{id}/documents endpoint
+            - Manually add entities and relationships via the /entities and /relationships endpoints
+            - Automatically extract entities and relationships from documents via the /graphs/{id}/documents endpoint
 
             2. Build communities:
-               - Build communities of related entities via the /graphs/{id}/communities/build endpoint
+            - Build communities of related entities via the /graphs/{id}/communities/build endpoint
 
             3. Update graph metadata:
-               - Modify the graph name, description and settings via the /graphs/{id} endpoint
+            - Modify the graph name, description and settings via the /graphs/{id} endpoint
 
             The graph ID returned by this endpoint is required for all subsequent operations on the graph.
+
+            Raises:
+                R2RException: If a graph already exists for the given collection.
             """
 
             collection_id = await self._get_collection_id(
                 collection_id, auth_user
             )
+
+            # Check if a graph already exists for this collection
+            existing_graphs = await self.services["kg"].list_graphs(
+                collection_id=collection_id,
+                offset=0,
+                limit=1,
+            )
+
+            if existing_graphs["total_entries"] > 0:
+                raise R2RException(
+                    f"A graph already exists for collection {collection_id}. Only one graph per collection is allowed.",
+                    409,  # HTTP 409 Conflict status code
+                )
 
             return await self.services["kg"].create_new_graph(
                 user_id=auth_user.id,
@@ -1291,10 +1307,18 @@ class GraphRouter(BaseRouterV3):
                 raise R2RException("Graph not found", 404)
             collection_id = list_graphs_response["results"][0].collection_id
             documents = []
-            document_req = (await self.providers.database.collections_handler.documents_in_collection(collection_id, offset=0, limit=100))["results"]
+            document_req = (
+                await self.providers.database.collections_handler.documents_in_collection(
+                    collection_id, offset=0, limit=100
+                )
+            )["results"]
             documents.extend(document_req)
             while len(document_req) == 100:
-                document_req = (await self.providers.database.collections_handler.documents_in_collection(collection_id, offset=len(documents), limit=100))["results"]
+                document_req = (
+                    await self.providers.database.collections_handler.documents_in_collection(
+                        collection_id, offset=len(documents), limit=100
+                    )
+                )["results"]
                 documents.extend(document_req)
 
             success = False
@@ -1302,28 +1326,46 @@ class GraphRouter(BaseRouterV3):
             for document in documents:
                 if (
                     not auth_user.is_superuser
-                    and document.id not in auth_user.document_ids # TODO - extend to include checks on collections
+                    and document.id
+                    not in auth_user.document_ids  # TODO - extend to include checks on collections
                 ):
                     raise R2RException(
                         f"The currently authenticated user does not have access to document {document.id}",
                         403,
                     )
-                entities = await self.providers.database.graph_handler.entities.get(document.id, store_type="document")
-                has_document = await self.providers.database.graph_handler.has_document(id, document.id)
+                entities = (
+                    await self.providers.database.graph_handler.entities.get(
+                        document.id, store_type="document"
+                    )
+                )
+                has_document = (
+                    await self.providers.database.graph_handler.has_document(
+                        id, document.id
+                    )
+                )
                 if has_document:
-                    logger.info(f"Document {document.id} is already in graph {id}, skipping")
+                    logger.info(
+                        f"Document {document.id} is already in graph {id}, skipping"
+                    )
                     continue
                 if len(entities[0]) == 0:
-                    logger.warning(f"Document {document.id} has no entities, extraction may not have been called")
+                    logger.warning(
+                        f"Document {document.id} has no entities, extraction may not have been called"
+                    )
                     continue
-                
+
                 success = (
                     await self.providers.database.graph_handler.add_documents(
-                        id=id, document_ids=[document.id] # [doc.id for doc in documents]
+                        id=id,
+                        document_ids=[
+                            document.id
+                        ],  # [doc.id for doc in documents]
                     )
                 )
             if not success:
-                logger.warning(f"No documents were added to graph {id}, marking as failed.")
+                logger.warning(
+                    f"No documents were added to graph {id}, marking as failed."
+                )
 
             return GenericBooleanResponse(success=success)
 

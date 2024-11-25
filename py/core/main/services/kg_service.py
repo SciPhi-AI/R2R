@@ -473,12 +473,14 @@ class KgService(Service):
         limit: int,
         user_ids: Optional[list[UUID]] = None,
         graph_ids: Optional[list[UUID]] = None,
+        collection_id: Optional[UUID] = None,
     ) -> dict[str, list[GraphResponse] | int]:
         return await self.providers.database.graph_handler.list_graphs(
             offset=offset,
             limit=limit,
             filter_user_ids=user_ids,
             filter_graph_ids=graph_ids,
+            filter_collection_id=collection_id,
         )
 
     @telemetry_event("get_graphs")
@@ -1082,7 +1084,7 @@ class KgService(Service):
                 )
                 relationship_pattern = r'\("relationship"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\${4}(\d+(?:\.\d+)?)\)'
 
-                def parse_fn(response_str: str) -> Any:
+                async def parse_fn(response_str: str) -> Any:
                     entities = re.findall(entity_pattern, response_str)
 
                     if (
@@ -1104,6 +1106,11 @@ class KgService(Service):
                         entity_value = entity[0]
                         entity_category = entity[1]
                         entity_description = entity[2]
+                        description_embedding = (
+                            await self.providers.embedding.async_get_embedding(
+                                entity_description
+                            )
+                        )
                         entities_arr.append(
                             Entity(
                                 category=entity_category,
@@ -1111,6 +1118,7 @@ class KgService(Service):
                                 name=entity_value,
                                 parent_id=chunks[0].document_id,
                                 chunk_ids=[chunk.id for chunk in chunks],
+                                description_embedding=description_embedding,
                                 attributes={},
                             )
                         )
@@ -1122,6 +1130,11 @@ class KgService(Service):
                         predicate = relationship[2]
                         description = relationship[3]
                         weight = float(relationship[4])
+                        relationship_embedding = (
+                            await self.providers.embedding.async_get_embedding(
+                                description
+                            )
+                        )
 
                         # check if subject and object are in entities_dict
                         relations_arr.append(
@@ -1134,12 +1147,13 @@ class KgService(Service):
                                 parent_id=chunks[0].document_id,
                                 chunk_ids=[chunk.id for chunk in chunks],
                                 attributes={},
+                                description_embedding=relationship_embedding,
                             )
                         )
 
                     return entities_arr, relations_arr
 
-                entities, relationships = parse_fn(kg_extraction)
+                entities, relationships = await parse_fn(kg_extraction)
                 return KGExtraction(
                     entities=entities,
                     relationships=relationships,

@@ -119,7 +119,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                         "temperature": 0.7,
                                     },
                                     "local_search_limits": {
-                                        "__Entity__": 20,
+                                        "entity": 20,
                                         "__Relationship__": 20,
                                         "__Community__": 20,
                                     },
@@ -156,7 +156,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                             temperature: 0.7
                                         },
                                         localSearchLimits: {
-                                            __Entity__: 20,
+                                            entity: 20,
                                             __Relationship__: 20,
                                             __Community__: 20
                                         },
@@ -202,7 +202,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                         "temperature": 0.7
                                     },
                                     "local_search_limits": {
-                                        "__Entity__": 20,
+                                        "entity": 20,
                                         "__Relationship__": 20,
                                         "__Community__": 20
                                     },
@@ -228,7 +228,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 description="Settings for vector-based search",
             ),
             kg_search_settings: KGSearchSettings = Body(
-                alias="kgSearchSettings",
+                # alias="kgSearchSettings",
                 default_factory=KGSearchSettings,
                 description="Settings for knowledge graph search",
             ),
@@ -247,9 +247,12 @@ class RetrievalRouterV3(BaseRouterV3):
                 auth_user, vector_search_settings
             )
 
+            print("kg_search_settings = ", kg_search_settings)
             kg_search_settings.filters = self._select_filters(
                 auth_user, kg_search_settings
             )
+            print("vector_search_settings = ", vector_search_settings)
+            print("kg_search_settings = ", kg_search_settings)
 
             results = await self.services["retrieval"].search(
                 query=query,
@@ -325,7 +328,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                             temperature: 0.7
                                         },
                                         local_search_limits: {
-                                            __Entity__: 20,
+                                            entity: 20,
                                             __Relationship__: 20,
                                             __Community__: 20
                                         },

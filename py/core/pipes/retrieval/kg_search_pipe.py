@@ -102,15 +102,16 @@ class KGSearchSearchPipe(GeneratorPipe):
     ) -> AsyncGenerator[KGSearchResult, None]:
         # search over communities and
         # do 3 searches. One over entities, one over relationships, one over communities
-
+        print("kg_search_settings = ", kg_search_settings)
+        print("doing local search...")
         async for message in input.message:
             query_embedding = (
                 await self.embedding_provider.async_get_embedding(message)
             )
 
             # entity search
-            search_type = "__Entity__"
-            async for search_result in await self.database_provider.graph_handler.graph_search(  # type: ignore
+            search_type = "entity"
+            async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
                 message,
                 search_type=search_type,
                 search_type_limits=kg_search_settings.local_search_limits[
@@ -125,6 +126,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                 filters=kg_search_settings.filters,
                 entities_level=kg_search_settings.entities_level,
             ):
+                print("entity search result = ", search_result)
                 yield KGSearchResult(
                     content=KGEntityResult(
                         name=search_result["name"],
@@ -166,39 +168,39 @@ class KGSearchSearchPipe(GeneratorPipe):
             #     )
 
             # community search
-            search_type = "__Community__"
-            async for search_result in await self.database_provider.graph_handler.graph_search(  # type: ignore
-                message,
-                search_type=search_type,
-                search_type_limits=kg_search_settings.local_search_limits[
-                    search_type
-                ],
-                embedding_type="embedding",
-                query_embedding=query_embedding,
-                property_names=[
-                    "community_number",
-                    "name",
-                    "findings",
-                    "rating",
-                    "rating_explanation",
-                    "summary",
-                ],
-                filters=kg_search_settings.filters,
-            ):
-                yield KGSearchResult(
-                    content=KGCommunityResult(
-                        name=search_result["name"],
-                        summary=search_result["summary"],
-                        rating=search_result["rating"],
-                        rating_explanation=search_result["rating_explanation"],
-                        findings=search_result["findings"],
-                    ),
-                    method=KGSearchMethod.LOCAL,
-                    result_type=KGSearchResultType.COMMUNITY,
-                    metadata={
-                        "associated_query": message,
-                    },
-                )
+            # search_type = "__Community__"
+            # async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
+            #     message,
+            #     search_type=search_type,
+            #     search_type_limits=kg_search_settings.local_search_limits[
+            #         search_type
+            #     ],
+            #     embedding_type="embedding",
+            #     query_embedding=query_embedding,
+            #     property_names=[
+            #         "community_number",
+            #         "name",
+            #         "findings",
+            #         "rating",
+            #         "rating_explanation",
+            #         "summary",
+            #     ],
+            #     filters=kg_search_settings.filters,
+            # ):
+            #     yield KGSearchResult(
+            #         content=KGCommunityResult(
+            #             name=search_result["name"],
+            #             summary=search_result["summary"],
+            #             rating=search_result["rating"],
+            #             rating_explanation=search_result["rating_explanation"],
+            #             findings=search_result["findings"],
+            #         ),
+            #         method=KGSearchMethod.LOCAL,
+            #         result_type=KGSearchResultType.COMMUNITY,
+            #         metadata={
+            #             "associated_query": message,
+            #         },
+            #     )
 
     async def _run_logic(  # type: ignore
         self,
@@ -209,13 +211,8 @@ class KGSearchSearchPipe(GeneratorPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[KGSearchResult, None]:
-        kg_search_type = kg_search_settings.kg_search_type
 
-        if kg_search_type == "local":
-            logger.info("Performing KG local search")
-            async for result in self.local_search(
-                input, state, run_id, kg_search_settings
-            ):
-                yield result
-        else:
-            raise ValueError(f"Unsupported KG search type: {kg_search_type}")
+        async for result in self.local_search(
+            input, state, run_id, kg_search_settings
+        ):
+            yield result
