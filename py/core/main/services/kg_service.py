@@ -92,7 +92,7 @@ class KgService(Service):
 
             await self.providers.database.set_workflow_status(
                 id=document_id,
-                status_type="kg_extraction_status",
+                status_type="extraction_status",
                 status=KGExtractionStatus.PROCESSING,
             )
 
@@ -126,7 +126,7 @@ class KgService(Service):
             logger.error(f"KGService: Error in kg_extraction: {e}")
             await self.providers.database.set_workflow_status(
                 id=document_id,
-                status_type="kg_extraction_status",
+                status_type="extraction_status",
                 status=KGExtractionStatus.FAILED,
             )
             raise e
@@ -527,7 +527,7 @@ class KgService(Service):
             ]
 
         return await self.providers.database.get_document_ids_by_status(
-            status_type="kg_extraction_status",
+            status_type="extraction_status",
             status=[str(ele) for ele in document_status_filter],
             collection_id=collection_id,
         )
@@ -594,7 +594,7 @@ class KgService(Service):
 
         await self.providers.database.set_workflow_status(
             id=document_id,
-            status_type="kg_extraction_status",
+            status_type="extraction_status",
             status=KGExtractionStatus.SUCCESS,
         )
 

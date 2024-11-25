@@ -267,6 +267,7 @@ class GraphResponse(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+    document_ids: list[UUID]
 
 
 # Graph Responses

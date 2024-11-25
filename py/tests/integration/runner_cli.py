@@ -103,7 +103,7 @@ def test_document_overview_sample_file_cli():
         "title": "aristotle.txt",
         "document_type": "txt",
         "ingestion_status": "success",
-        "kg_extraction_status": "pending",
+        "extraction_status": "pending",
         "version": "v0",
         "metadata": {"title": "aristotle.txt", "version": "v0"},
     }

@@ -1437,7 +1437,7 @@ class PostgresGraphHandler(GraphHandler):
             INSERT INTO {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
             (id, user_id, collection_id, name, description, status)
             VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id, user_id, collection_id, name, description, status, created_at, updated_at
+            RETURNING id, user_id, collection_id, name, description, status, created_at, updated_at, document_ids
         """
         params = [
             graph_id,
@@ -1463,6 +1463,7 @@ class PostgresGraphHandler(GraphHandler):
                 status=result["status"],
                 created_at=result["created_at"],
                 updated_at=result["updated_at"],
+                document_ids=result["document_ids"] or [],
             )
         except UniqueViolationError:
             raise R2RException(
@@ -1634,7 +1635,7 @@ class PostgresGraphHandler(GraphHandler):
 
         query = f"""
             SELECT
-                id, user_id, collection_id, name, description, status, created_at, updated_at,
+                id, user_id, collection_id, name, description, status, created_at, updated_at, document_ids,
                 COUNT(*) OVER() as total_entries
             FROM {self._get_table_name("graph")}
             {where_clause}
@@ -1654,6 +1655,7 @@ class PostgresGraphHandler(GraphHandler):
             graphs = [
                 GraphResponse(
                     id=row["id"],
+                    document_ids=row["document_ids"] or [],
                     user_id=row["user_id"],
                     name=row["name"],
                     collection_id=row["collection_id"],
@@ -2064,7 +2066,7 @@ class PostgresGraphHandler(GraphHandler):
             UPDATE {self._get_table_name("graph")}
             SET {', '.join(update_fields)}
             WHERE id = ${param_index}
-            RETURNING id, user_id, name, description, status, created_at, updated_at, collection_id
+            RETURNING id, user_id, name, description, status, created_at, updated_at, collection_id, document_ids,
         """
 
         try:
@@ -2083,6 +2085,7 @@ class PostgresGraphHandler(GraphHandler):
                 description=result["description"],
                 status=result["status"],
                 created_at=result["created_at"],
+                document_ids=result["document_ids"] or [],
                 updated_at=result["updated_at"],
             )
         except Exception as e:
@@ -2762,6 +2765,39 @@ class PostgresGraphHandler(GraphHandler):
 
     #     return {"relationships": relationships, "total_entries": total_entries}
 
+    async def has_document(self, graph_id: UUID, document_id: UUID) -> bool:
+        """
+        Check if a document exists in the graph's document_ids array.
+        
+        Args:
+            graph_id (UUID): ID of the graph to check
+            document_id (UUID): ID of the document to look for
+            
+        Returns:
+            bool: True if document exists in graph, False otherwise
+            
+        Raises:
+            R2RException: If graph not found
+        """
+        QUERY = f"""
+            SELECT EXISTS (
+                SELECT 1 
+                FROM {self._get_table_name("graph")}
+                WHERE id = $1 
+                AND document_ids IS NOT NULL 
+                AND $2 = ANY(document_ids)
+            ) as exists;
+        """
+        
+        result = await self.connection_manager.fetchrow_query(
+            QUERY, [graph_id, document_id]
+        )
+        
+        if result is None:
+            raise R2RException(f"Graph {graph_id} not found", 404)
+            
+        return result["exists"]
+
     ####################### COMMUNITY METHODS #######################
 
     async def check_communities_exist(
@@ -2989,7 +3025,7 @@ class PostgresGraphHandler(GraphHandler):
 
             # setting the kg_creation_status to PENDING for this collection.
             QUERY = f"""
-                UPDATE {self._get_table_name("document_info")} SET kg_extraction_status = $1 WHERE $2::uuid = ANY(collection_ids)
+                UPDATE {self._get_table_name("document_info")} SET extraction_status = $1 WHERE $2::uuid = ANY(collection_ids)
             """
             await self.connection_manager.execute_query(
                 QUERY, [KGExtractionStatus.PENDING, collection_id]
@@ -3145,7 +3181,7 @@ class PostgresGraphHandler(GraphHandler):
     async def get_graph_status(self, collection_id: UUID) -> dict:
         # check document_info table for the documents in the collection and return the status of each document
         kg_extraction_statuses = await self.connection_manager.fetch_query(
-            f"SELECT document_id, kg_extraction_status FROM {self._get_table_name('document_info')} WHERE collection_id = $1",
+            f"SELECT document_id, extraction_status FROM {self._get_table_name('document_info')} WHERE collection_id = $1",
             [collection_id],
         )
 
@@ -3481,7 +3517,7 @@ class PostgresGraphHandler(GraphHandler):
             communities_dict[community["node"]].append(community)
 
         QUERY = f"""
-            SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids) and kg_extraction_status = $2
+            SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids) and extraction_status = $2
         """
 
         new_document_ids = await self.connection_manager.fetch_query(

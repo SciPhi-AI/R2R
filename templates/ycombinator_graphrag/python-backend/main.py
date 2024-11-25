@@ -78,15 +78,15 @@ def create_graph():
     print("Creating graph...")
     entity_types = ["ORGANIZATION", "GEO", "PERSON", "INDUSTRY_SECTOR", "PRODUCT", "COMPETITOR", "TECHNOLOGY", "ACQUISITION", "INVESTOR", ]
     documents_overview = client.documents_overview(limit=1000)['results']
-    document_ids = [document.get("id") for document in documents_overview if document.get("kg_extraction_status") in ["pending", "failed", "enrichment_failure"]]
+    document_ids = [document.get("id") for document in documents_overview if document.get("extraction_status") in ["pending", "failed", "enrichment_failure"]]
     client.create_graph(document_ids = document_ids)
-    wait_till_ready("kg_extraction_status", "success")
+    wait_till_ready("extraction_status", "success")
 
 
 def enrich_graph():
     print("Enriching graph...")
     client.enrich_graph()
-    wait_till_ready("kg_extraction_status", "enriched")
+    wait_till_ready("extraction_status", "enriched")
 
 def update_prompts():
     print("Updating prompts...")

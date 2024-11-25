@@ -60,7 +60,7 @@ class PostgresDocumentHandler(DocumentHandler):
                 version TEXT,
                 size_in_bytes INT,
                 ingestion_status TEXT DEFAULT 'pending',
-                kg_extraction_status TEXT DEFAULT 'pending',
+                extraction_status TEXT DEFAULT 'pending',
                 created_at TIMESTAMPTZ DEFAULT NOW(),
                 updated_at TIMESTAMPTZ DEFAULT NOW(),
                 ingestion_attempt_number INT DEFAULT 0,
@@ -134,7 +134,7 @@ class PostgresDocumentHandler(DocumentHandler):
                                 UPDATE {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
                                 SET collection_ids = $1, user_id = $2, type = $3, metadata = $4,
                                     title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
-                                    kg_extraction_status = $9, updated_at = $10, ingestion_attempt_number = $11,
+                                    extraction_status = $9, updated_at = $10, ingestion_attempt_number = $11,
                                     summary = $12, summary_embedding = $13
                                 WHERE document_id = $14
                                 """
@@ -148,7 +148,7 @@ class PostgresDocumentHandler(DocumentHandler):
                                     db_entry["version"],
                                     db_entry["size_in_bytes"],
                                     db_entry["ingestion_status"],
-                                    db_entry["kg_extraction_status"],
+                                    db_entry["extraction_status"],
                                     db_entry["updated_at"],
                                     new_attempt_number,
                                     db_entry["summary"],
@@ -160,7 +160,7 @@ class PostgresDocumentHandler(DocumentHandler):
                                 insert_query = f"""
                                 INSERT INTO {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
                                 (document_id, collection_ids, user_id, type, metadata, title, version,
-                                size_in_bytes, ingestion_status, kg_extraction_status, created_at,
+                                size_in_bytes, ingestion_status, extraction_status, created_at,
                                 updated_at, ingestion_attempt_number, summary, summary_embedding)
                                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                                 """
@@ -175,7 +175,7 @@ class PostgresDocumentHandler(DocumentHandler):
                                     db_entry["version"],
                                     db_entry["size_in_bytes"],
                                     db_entry["ingestion_status"],
-                                    db_entry["kg_extraction_status"],
+                                    db_entry["extraction_status"],
                                     db_entry["created_at"],
                                     db_entry["updated_at"],
                                     db_entry["ingestion_attempt_number"],
@@ -308,7 +308,7 @@ class PostgresDocumentHandler(DocumentHandler):
         """
         if status_type == "ingestion":
             return IngestionStatus
-        elif status_type == "kg_extraction_status":
+        elif status_type == "extraction_status":
             return KGExtractionStatus
         elif status_type == "kg_enrichment_status":
             return KGEnrichmentStatus
@@ -424,7 +424,7 @@ class PostgresDocumentHandler(DocumentHandler):
 
         # query = f"""
         #     SELECT document_id, collection_ids, user_id, type, metadata, title, version,
-        #         size_in_bytes, ingestion_status, kg_extraction_status, created_at, updated_at,
+        #         size_in_bytes, ingestion_status, extraction_status, created_at, updated_at,
         #         summary, summary_embedding,
         #         COUNT(*) OVER() AS total_entries
         #     {base_query}
@@ -454,14 +454,14 @@ class PostgresDocumentHandler(DocumentHandler):
         if has_new_columns:
             select_fields = """
                 SELECT document_id, collection_ids, user_id, type, metadata, title, version,
-                    size_in_bytes, ingestion_status, kg_extraction_status, created_at, updated_at,
+                    size_in_bytes, ingestion_status, extraction_status, created_at, updated_at,
                     summary, summary_embedding,
                     COUNT(*) OVER() AS total_entries
             """
         else:
             select_fields = """
                 SELECT document_id, collection_ids, user_id, type, metadata, title, version,
-                    size_in_bytes, ingestion_status, kg_extraction_status, created_at, updated_at,
+                    size_in_bytes, ingestion_status, extraction_status, created_at, updated_at,
                     COUNT(*) OVER() AS total_entries
             """
 
@@ -520,8 +520,8 @@ class PostgresDocumentHandler(DocumentHandler):
                         ingestion_status=IngestionStatus(
                             row["ingestion_status"]
                         ),
-                        kg_extraction_status=KGExtractionStatus(
-                            row["kg_extraction_status"]
+                        extraction_status=KGExtractionStatus(
+                            row["extraction_status"]
                         ),
                         created_at=row["created_at"],
                         updated_at=row["updated_at"],
@@ -573,7 +573,7 @@ class PostgresDocumentHandler(DocumentHandler):
                 version,
                 size_in_bytes,
                 ingestion_status,
-                kg_extraction_status,
+                extraction_status,
                 created_at,
                 updated_at,
                 summary,
@@ -613,8 +613,8 @@ class PostgresDocumentHandler(DocumentHandler):
                 version=row["version"],
                 size_in_bytes=row["size_in_bytes"],
                 ingestion_status=IngestionStatus(row["ingestion_status"]),
-                kg_extraction_status=KGExtractionStatus(
-                    row["kg_extraction_status"]
+                extraction_status=KGExtractionStatus(
+                    row["extraction_status"]
                 ),
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
@@ -664,7 +664,7 @@ class PostgresDocumentHandler(DocumentHandler):
                 version,
                 size_in_bytes,
                 ingestion_status,
-                kg_extraction_status,
+                extraction_status,
                 created_at,
                 updated_at,
                 summary,
@@ -702,8 +702,8 @@ class PostgresDocumentHandler(DocumentHandler):
                 version=row["version"],
                 size_in_bytes=row["size_in_bytes"],
                 ingestion_status=IngestionStatus(row["ingestion_status"]),
-                kg_extraction_status=KGExtractionStatus(
-                    row["kg_extraction_status"]
+                extraction_status=KGExtractionStatus(
+                    row["extraction_status"]
                 ),
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],

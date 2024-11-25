@@ -125,7 +125,7 @@ async def postgres_db_provider(
         version="1.0",
         size_in_bytes=1024,
         ingestion_status=IngestionStatus.PENDING,
-        kg_extraction_status=KGExtractionStatus.PENDING,
+        extraction_status=KGExtractionStatus.PENDING,
     )
     await db.upsert_documents_overview(document_info)
     yield db

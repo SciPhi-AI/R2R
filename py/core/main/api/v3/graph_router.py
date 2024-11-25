@@ -1206,8 +1206,8 @@ class GraphRouter(BaseRouterV3):
             )
 
         @self.router.post(
-            "/graphs/{id}/initialize",
-            summary="Initialize graph",
+            "/graphs/{id}/pull",
+            summary="Pull latest entities to the graph",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -1246,7 +1246,7 @@ class GraphRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def initialize(
+        async def pull(
             id: UUID = Path(
                 ..., description="The ID of the graph to initialize."
             ),
@@ -1287,22 +1287,18 @@ class GraphRouter(BaseRouterV3):
                 offset=0,
                 limit=1,
             )
-            print("list_graphs_response = ", list_graphs_response)
             if len(list_graphs_response["results"]) == 0:
                 raise R2RException("Graph not found", 404)
             collection_id = list_graphs_response["results"][0].collection_id
-            print('collection_id = ', collection_id)
             documents = []
-            document_ids_req = (await self.providers.database.collections_handler.documents_in_collection(collection_id, offset=0, limit=100))["results"]
-            while len(document_ids_req) == 100:
-                documents.extend(document_ids_req)
-                documents_req = (await self.providers.database.collections_handler.documents_in_collection(collection_id, offset=len(document_ids), limit=100))["results"]
-            
-            documents.extend(document_ids_req)
+            document_req = (await self.providers.database.collections_handler.documents_in_collection(collection_id, offset=0, limit=100))["results"]
+            documents.extend(document_req)
+            while len(document_req) == 100:
+                document_req = (await self.providers.database.collections_handler.documents_in_collection(collection_id, offset=len(documents), limit=100))["results"]
+                documents.extend(document_req)
 
-            # print('document_ids = ', document_ids)
+            success = False
 
-            # Check user permissions for documents
             for document in documents:
                 if (
                     not auth_user.is_superuser
@@ -1312,12 +1308,22 @@ class GraphRouter(BaseRouterV3):
                         f"The currently authenticated user does not have access to document {document.id}",
                         403,
                     )
-
-            success = (
-                await self.providers.database.graph_handler.add_documents(
-                    id=id, document_ids=[doc.id for doc in documents]
+                entities = await self.providers.database.graph_handler.entities.get(document.id, store_type="document")
+                has_document = await self.providers.database.graph_handler.has_document(id, document.id)
+                if has_document:
+                    logger.info(f"Document {document.id} is already in graph {id}, skipping")
+                    continue
+                if len(entities[0]) == 0:
+                    logger.warning(f"Document {document.id} has no entities, extraction may not have been called")
+                    continue
+                
+                success = (
+                    await self.providers.database.graph_handler.add_documents(
+                        id=id, document_ids=[document.id] # [doc.id for doc in documents]
+                    )
                 )
-            )
+            if not success:
+                logger.warning(f"No documents were added to graph {id}, marking as failed.")
 
             return GenericBooleanResponse(success=success)
 

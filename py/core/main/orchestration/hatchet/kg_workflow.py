@@ -146,7 +146,7 @@ def hatchet_kg_factory(
             try:
                 await self.kg_service.providers.database.set_workflow_status(
                     id=uuid.UUID(document_id),
-                    status_type="kg_extraction_status",
+                    status_type="extraction_status",
                     status=KGExtractionStatus.FAILED,
                 )
                 context.log(
@@ -464,14 +464,14 @@ def hatchet_kg_factory(
             # set status to success
             # for all documents in the collection, set kg_creation_status to ENRICHED
             document_ids = await self.kg_service.providers.database.get_document_ids_by_status(
-                status_type="kg_extraction_status",
+                status_type="extraction_status",
                 status=KGExtractionStatus.SUCCESS,
                 collection_id=collection_id,
             )
 
             await self.kg_service.providers.database.set_workflow_status(
                 id=document_ids,
-                status_type="kg_extraction_status",
+                status_type="extraction_status",
                 status=KGExtractionStatus.ENRICHED,
             )
 

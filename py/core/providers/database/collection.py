@@ -243,7 +243,7 @@ class PostgresCollectionHandler(CollectionsHandler):
             raise R2RException(status_code=404, message="Collection not found")
         query = f"""
             SELECT d.document_id, d.user_id, d.type, d.metadata, d.title, d.version,
-                d.size_in_bytes, d.ingestion_status, d.kg_extraction_status, d.created_at, d.updated_at,
+                d.size_in_bytes, d.ingestion_status, d.extraction_status, d.created_at, d.updated_at,
                 COUNT(*) OVER() AS total_entries
             FROM {self._get_table_name('document_info')} d
             WHERE $1 = ANY(d.collection_ids)
@@ -268,8 +268,8 @@ class PostgresCollectionHandler(CollectionsHandler):
                 version=row["version"],
                 size_in_bytes=row["size_in_bytes"],
                 ingestion_status=IngestionStatus(row["ingestion_status"]),
-                kg_extraction_status=KGExtractionStatus(
-                    row["kg_extraction_status"]
+                extraction_status=KGExtractionStatus(
+                    row["extraction_status"]
                 ),
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],

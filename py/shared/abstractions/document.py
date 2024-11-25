@@ -192,7 +192,7 @@ class DocumentResponse(R2RSerializable):
     version: str
     size_in_bytes: Optional[int]
     ingestion_status: IngestionStatus = IngestionStatus.PENDING
-    kg_extraction_status: KGExtractionStatus = KGExtractionStatus.PENDING
+    extraction_status: KGExtractionStatus = KGExtractionStatus.PENDING
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     ingestion_attempt_number: Optional[int] = None
@@ -218,7 +218,7 @@ class DocumentResponse(R2RSerializable):
             "version": self.version,
             "size_in_bytes": self.size_in_bytes,
             "ingestion_status": self.ingestion_status.value,
-            "kg_extraction_status": self.kg_extraction_status.value,
+            "extraction_status": self.extraction_status.value,
             "created_at": self.created_at or now,
             "updated_at": self.updated_at or now,
             "ingestion_attempt_number": self.ingestion_attempt_number or 0,
