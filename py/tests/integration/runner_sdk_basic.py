@@ -2221,10 +2221,10 @@ if __name__ == "__main__":
     globals()[test_function]()
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Please specify a test function to run")
-        sys.exit(1)
+# if __name__ == "__main__":
+#     if len(sys.argv) < 2:
+#         print("Please specify a test function to run")
+#         sys.exit(1)
 
-    test_function = sys.argv[1]
-    globals()[test_function]()
+#     test_function = sys.argv[1]
+#     globals()[test_function]()
