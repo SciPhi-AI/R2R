@@ -85,7 +85,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
     expect(response.results).toBeDefined();
   }, 30000);
 
-  test("Streaming RAG", async () => {
+  test("Streaming agent", async () => {
     const stream = await client.retrieval.agent({
       message: message,
       ragGenerationConfig: {
