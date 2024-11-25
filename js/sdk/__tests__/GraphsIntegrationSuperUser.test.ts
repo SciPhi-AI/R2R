@@ -24,7 +24,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     graph1Id = response.results.id;
     expect(graph1Id).toEqual(response.results.id);
     expect(response.results.name).toEqual("Graph 1");
-    expect(response.results.description).toBe(null);
+    expect(response.results.description).toBe("");
   });
 
   test("Create a graph with name and description", async () => {
@@ -48,7 +48,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     const response = await client.graphs.retrieve({ id: graph1Id });
     expect(response.results).toBeDefined();
     expect(response.results.name).toEqual("Graph 1");
-    expect(response.results.description).toBe(null);
+    expect(response.results.description).toBe("");
   });
 
   test("Retrieve graph 2", async () => {
@@ -67,7 +67,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     expect(response.results.name).toEqual("Graph 1 Updated");
   });
 
-  test("Update the desription graph 2", async () => {
+  test("Update the description graph 2", async () => {
     const response = await client.graphs.update({
       id: graph2Id,
       description: "Graph 2 Updated",
