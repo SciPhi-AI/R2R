@@ -675,7 +675,7 @@ class ManagementService(Service):
         branch_id: Optional[str] = None,
         auth_user=None,
     ) -> Tuple[str, list[Message], list[dict]]:
-        return await self.logging_connection.get_conversation(
+        return await self.logging_connection.get_conversation(  # type: ignore
             conversation_id, branch_id
         )
 

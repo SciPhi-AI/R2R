@@ -201,7 +201,9 @@ class IngestionRouter(BaseRouter):
                     "user": auth_user.model_dump_json(),
                     "size_in_bytes": content_length,
                     "collection_ids": (
-                        [str(cid) for cid in collection_ids[it]] if collection_ids else None
+                        [str(cid) for cid in collection_ids[it]]
+                        if collection_ids
+                        else None
                     ),
                     "is_update": False,
                 }
@@ -341,7 +343,9 @@ class IngestionRouter(BaseRouter):
                 "user": auth_user.model_dump_json(),
                 "is_update": True,
                 "collection_ids": (
-                    [str(cid) for cid in collection_ids[it]] if collection_ids else None
+                    [str(cid) for cid in collection_ids[it]]
+                    if collection_ids
+                    else None
                 ),
             }
 
@@ -422,7 +426,9 @@ class IngestionRouter(BaseRouter):
                 "metadata": metadata or {},
                 "user": auth_user.model_dump_json(),
                 "collection_ids": (
-                    [str(cid) for cid in collection_ids] if collection_ids else None
+                    [str(cid) for cid in collection_ids]
+                    if collection_ids
+                    else None
                 ),
             }
             if run_with_orchestration:

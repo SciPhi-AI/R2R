@@ -1731,9 +1731,12 @@ def test_conversation_history_sdk():
         sys.exit(1)
 
     for i, message in enumerate(conversation["results"]):
+        message_role = message[1].get("role")
+        message_content = message[1].get("content")
+
         if (
-            message["role"] != messages[i]["role"]
-            or message["content"] != messages[i]["content"]
+            message_role != messages[i]["role"]
+            or message_content != messages[i]["content"]
         ):
             print(
                 "Conversation history test failed: Incorrect message content or role"
@@ -1766,22 +1769,25 @@ def test_conversation_history_sdk():
         sys.exit(1)
 
     for i, message in enumerate(conversation["results"]):
+        message_role = message[1].get("role")
+        message_content = message[1].get("content")
+
         if i < len(messages):
             if (
-                message["role"] != messages[i]["role"]
-                or message["content"] != messages[i]["content"]
+                message_role != messages[i]["role"]
+                or message_content != messages[i]["content"]
             ):
                 print(
                     "Conversation history test failed: Incorrect message content or role"
                 )
                 sys.exit(1)
         else:
-            if message["role"] != "assistant":
+            if message_role != "assistant":
                 print(
                     "Conversation history test failed: Incorrect message role for assistant response"
                 )
                 sys.exit(1)
-            if response["messages"][-1]["content"] != message["content"]:
+            if response["messages"][-1]["content"] != message_content:
                 print(
                     "Conversation history test failed: Incorrect assistant response content"
                 )
@@ -2215,10 +2221,10 @@ if __name__ == "__main__":
     globals()[test_function]()
 
 
-# if __name__ == "__main__":
-#     if len(sys.argv) < 2:
-#         print("Please specify a test function to run")
-#         sys.exit(1)
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Please specify a test function to run")
+        sys.exit(1)
 
-#     test_function = sys.argv[1]
-#     globals()[test_function]()
+    test_function = sys.argv[1]
+    globals()[test_function]()
