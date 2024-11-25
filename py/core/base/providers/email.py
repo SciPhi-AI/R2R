@@ -18,6 +18,7 @@ class EmailConfig(ProviderConfig):
     verify_email_template_id: Optional[str] = None
     reset_password_template_id: Optional[str] = None
     frontend_url: Optional[str] = None
+    email_name: Optional[str] = None
     @property
     def supported_providers(self) -> list[str]:
         return [
