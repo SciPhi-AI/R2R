@@ -284,6 +284,16 @@ class KgService(Service):
         relationships: list[Relationship],
         **kwargs,
     ):
+        for relationship in relationships:
+            if relationship.description:
+                relationships.description_embedding = str(
+                    await self.providers.embedding.async_get_embedding(
+                        relationship.description
+                    )
+                )
+
+        print("relationships = ", relationships)
+
         return (
             await self.providers.database.graph_handler.relationships.create(
                 relationships

@@ -231,13 +231,12 @@ async def ingest_files_from_urls(client, urls):
             files_to_ingest.append(temp_file.name)
             metadatas.append({"title": filename})
             # TODO: use the utils function generate_document_id
-            document_ids.append(uuid.uuid5(uuid.NAMESPACE_DNS, url))
+            document_ids.append(str(uuid.uuid5(uuid.NAMESPACE_DNS, url)))
 
         for it, file in enumerate(files_to_ingest):
             click.echo(f"Ingesting file: {file}")
             response = await client.documents.create(
-                file,
-                metadata=metadatas[it],  # document_id=document_ids[it]
+                file, metadata=metadatas[it], id=document_ids[it]
             )
 
         return response["results"]

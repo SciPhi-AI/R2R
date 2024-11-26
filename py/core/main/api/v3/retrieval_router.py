@@ -117,7 +117,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     },
                                     "graph_search_limits": {
                                         "entity": 20,
-                                        "__Relationship__": 20,
+                                        "relationship": 20,
                                         "__Community__": 20,
                                     },
                                     "max_community_description_length": 65536,
@@ -154,7 +154,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                         },
                                         localSearchLimits: {
                                             entity: 20,
-                                            __Relationship__: 20,
+                                            relationship: 20,
                                             __Community__: 20
                                         },
                                         maxCommunityDescriptionLength: 65536,
@@ -200,7 +200,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     },
                                     "graph_search_limits": {
                                         "entity": 20,
-                                        "__Relationship__": 20,
+                                        "relationship": 20,
                                         "__Community__": 20
                                     },
                                     "max_community_description_length": 65536,
@@ -313,7 +313,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                         },
                                         graph_search_limits: {
                                             entity: 20,
-                                            __Relationship__: 20,
+                                            relationship: 20,
                                             __Community__: 20
                                         },
                                         max_community_description_length: 65536,

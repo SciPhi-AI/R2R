@@ -14,6 +14,7 @@ from core.base.abstractions import (
     GraphSearchSettings,
     KGCommunityResult,
     KGEntityResult,
+    KGRelationshipResult,
     KGSearchMethod,
     KGSearchResultType,
     SearchSettings,
@@ -127,46 +128,54 @@ class KGSearchSearchPipe(GeneratorPipe):
                 ],
                 filters=search_settings.filters,
             ):
-                print("entity search result = ", search_result)
+                print("search_result = ", search_result)
                 yield GraphSearchResult(
                     content=KGEntityResult(
                         name=search_result["name"],
                         description=search_result["description"],
                     ),
-                    method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.ENTITY,
-                    chunk_ids=search_result["chunk_ids"],
+                    score=search_result["similarity_score"],
+                    # chunk_ids=search_result["chunk_ids"],
                     metadata={"associated_query": message},
                 )
 
-            # relationship search
-            # disabled for now. We will check evaluations and see if we need it
-            # search_type = "__Relationship__"
-            # async for search_result in self.database_provider.graph_search(  # type: ignore
-            #     input,
-            #     search_type=search_type,
-            #     search_type_limits=graph_search_settings.graph_search_limits[
-            #         search_type
-            #     ],
-            #     query_embedding=query_embedding,
-            #     property_names=[
-            #         "name",
-            #         "description",
-            #         "chunk_ids",
-            #         "document_ids",
-            #     ],
-            # ):
-            #     yield GraphSearchResult(
-            #         content=KGRelationshipResult(
-            #             name=search_result["name"],
-            #             description=search_result["description"],
-            #         ),
-            #         method=KGSearchMethod.LOCAL,
-            #         result_type=KGSearchResultType.RELATIONSHIP,
-            #         # chunk_ids=search_result["chunk_ids"],
-            #         # document_ids=search_result["document_ids"],
-            #         metadata={"associated_query": message},
-            #     )
+            # # relationship search
+            # # disabled for now. We will check evaluations and see if we need it
+            search_type = "relationship"
+            async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
+                input,
+                search_type=search_type,
+                search_type_limits=search_settings.graph_settings.graph_search_limits.get(
+                    search_type, base_limit
+                ),
+                query_embedding=query_embedding,
+                property_names=[
+                    # "name",
+                    "subject",
+                    "predicate",
+                    "object",
+                    # "name",
+                    "description",
+                    # "chunk_ids",
+                    # "document_ids",
+                ],
+            ):
+                print("search_result = ", search_result)
+                yield GraphSearchResult(
+                    content=KGRelationshipResult(
+                        # name=search_result["name"],
+                        subject=search_result["subject"],
+                        predicate=search_result["predicate"],
+                        object=search_result["object"],
+                        description=search_result["description"],
+                    ),
+                    result_type=KGSearchResultType.RELATIONSHIP,
+                    score=search_result["similarity_score"],
+                    # chunk_ids=search_result["chunk_ids"],
+                    # document_ids=search_result["document_ids"],
+                    metadata={"associated_query": message},
+                )
 
             # community search
             # search_type = "__Community__"

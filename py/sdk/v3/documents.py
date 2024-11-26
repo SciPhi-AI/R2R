@@ -4,13 +4,13 @@ from typing import Optional
 from uuid import UUID
 
 from shared.api.models.base import WrappedBooleanResponse
+from shared.api.models.ingestion.responses import WrappedIngestionResponse
 from shared.api.models.management.responses import (
     WrappedChunksResponse,
     WrappedCollectionsResponse,
     WrappedDocumentResponse,
     WrappedDocumentsResponse,
 )
-from shared.api.models.ingestion.responses import WrappedIngestionResponse
 
 
 class DocumentsSDK:
@@ -52,7 +52,7 @@ class DocumentsSDK:
         files = None
 
         if id:
-            data["id"] = json.dumps(str(id))
+            data["id"] = str(id)  # json.dumps(str(id))
         if metadata:
             data["metadata"] = json.dumps(metadata)
         if ingestion_config:
@@ -64,6 +64,7 @@ class DocumentsSDK:
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
 
+        print("data = ", data)
         if file_path:
             # Create a new file instance that will remain open during the request
             file_instance = open(file_path, "rb")

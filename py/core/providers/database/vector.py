@@ -339,6 +339,7 @@ class PostgresChunkHandler(ChunkHandler):
                     search_settings.filters, params
                 )
                 where_clause = f"WHERE {where_clause}"
+                print("search_settings = ", search_settings)
 
             # First stage: Get candidates using binary search
             query = f"""

@@ -80,9 +80,15 @@ class KGEntityResult(R2RSerializable):
 
 
 class KGRelationshipResult(R2RSerializable):
-    name: str
-    description: str
+    # name: str
+    subject: str
+    predicate: str
+    object: str
     metadata: Optional[dict[str, Any]] = None
+    score: Optional[float] = None
+    # name: str
+    # description: str
+    # metadata: Optional[dict[str, Any]] = None
 
     class Config:
         json_schema_extra = {
@@ -134,6 +140,7 @@ class GraphSearchResult(R2RSerializable):
     result_type: Optional[KGSearchResultType] = None
     chunk_ids: Optional[list[UUID]] = None
     metadata: dict[str, Any] = {}
+    score: Optional[float] = None
 
     class Config:
         json_schema_extra = {
@@ -369,7 +376,7 @@ class SearchSettings(R2RSerializable):
                 "max_llm_queries_for_global_search": 250,
                 "graph_search_limits": {
                     "entity": 20,
-                    "__Relationship__": 20,
+                    "relationship": 20,
                     "__Community__": 20,
                 },
             },
@@ -622,7 +629,7 @@ class SearchSettings(R2RSerializable):
 #         alias="localSearchLimits",
 #         default={
 #             "entity": 20,
-#             "__Relationship__": 20,
+#             "relationship": 20,
 #             "__Community__": 20,
 #         },
 #     )
@@ -639,7 +646,7 @@ class SearchSettings(R2RSerializable):
 #             "max_llm_queries_for_global_search": 250,
 #             "graph_search_limits": {
 #                 "entity": 20,
-#                 "__Relationship__": 20,
+#                 "relationship": 20,
 #                 "__Community__": 20,
 #             },
 #         }

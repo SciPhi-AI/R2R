@@ -451,6 +451,10 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 except json.JSONDecodeError:
                     pass
 
+            description_embedding = relationship.description_embedding
+            if isinstance(description_embedding, list):
+                description_embedding = str(description_embedding)
+
             value = (
                 relationship.subject,
                 relationship.predicate,
@@ -461,6 +465,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 relationship.weight,
                 relationship.chunk_ids,
                 relationship.parent_id,
+                description_embedding,
                 json.dumps(metadata) if metadata else None,
             )
             values.append(value)
@@ -468,8 +473,8 @@ class PostgresRelationshipHandler(RelationshipHandler):
         QUERY = f"""
             INSERT INTO {self._get_table_name(table_name)}
             (subject, predicate, object, description, subject_id, object_id,
-             weight, chunk_ids, parent_id, metadata)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+             weight, chunk_ids, parent_id, description_embedding, metadata)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING id
         """
 
@@ -1754,11 +1759,11 @@ class PostgresGraphHandler(GraphHandler):
         RELATIONSHIP_COPY_QUERY = f"""
             INSERT INTO {self._get_table_name("graph_relationship")} (
                 subject, predicate, object, description, subject_id, object_id,
-                weight, chunk_ids, parent_id, metadata
+                weight, chunk_ids, parent_id, metadata, description_embedding
             )
             SELECT
                 subject, predicate, object, description, subject_id, object_id,
-                weight, chunk_ids, $1, metadata
+                weight, chunk_ids, $1, metadata, description_embedding
             FROM {self._get_table_name("document_relationship")}
             WHERE parent_id = ANY($2)
         """
@@ -3247,9 +3252,12 @@ class PostgresGraphHandler(GraphHandler):
 
     ####################### GRAPH SEARCH METHODS #######################
 
-    async def graph_search(  # type: ignore
+    async def graph_search(
         self, query: str, **kwargs: Any
     ) -> AsyncGenerator[Any, None]:
+        """
+        Perform semantic search with similarity scores while maintaining exact same structure.
+        """
         print("in graph search...")
 
         query_embedding = kwargs.get("query_embedding", None)
@@ -3257,45 +3265,44 @@ class PostgresGraphHandler(GraphHandler):
         embedding_type = kwargs.get("embedding_type", "description_embedding")
         property_names = kwargs.get("property_names", ["name", "description"])
         filters = kwargs.get("filters", {})
+        print("filters = ", filters)
         limit = kwargs.get("limit", 10)
 
         print("kwargs = ", kwargs)
 
-        table_name = "graph_entity"
+        table_name = f"graph_{search_type}"
         property_names_str = ", ".join(property_names)
 
         collection_ids_dict = filters.get("collection_ids", {})
-        print("filters = ", filters)
-        print("collection_ids_dict = ", collection_ids_dict)
         filter_query = ""
         if collection_ids_dict:
             filter_query = "WHERE collection_id = ANY($3)"
             filter_ids = collection_ids_dict["$overlap"]
 
-            if (
-                search_type == "__Community__"
-                or table_name == "collection_entity"
-            ):
-                logger.info(f"Searching in collection ids: {filter_ids}")
+            filter_query = "WHERE document_id = ANY($3)"
+            # TODO - This seems like a hack, we will need a better way to filter by collection ids for entities and relationships
+            query = f"""
+                SELECT distinct document_id FROM {self._get_table_name('document_info')} WHERE $1 = ANY(collection_ids)
+            """
+            filter_ids = [
+                doc_id["document_id"]
+                for doc_id in await self.connection_manager.fetch_query(
+                    query, filter_ids
+                )
+            ]
+            logger.info(f"Searching in document ids: {filter_ids}")
 
-            elif search_type in ["entity", "__Relationship__"]:
-                filter_query = "WHERE document_id = ANY($3)"
-                # TODO - This seems like a hack, we will need a better way to filter by collection ids for entities and relationships
-                query = f"""
-                    SELECT distinct document_id FROM {self._get_table_name('document_info')} WHERE $1 = ANY(collection_ids)
-                """
-                filter_ids = [
-                    doc_id["document_id"]
-                    for doc_id in await self.connection_manager.fetch_query(
-                        query, filter_ids
-                    )
-                ]
-                logger.info(f"Searching in document ids: {filter_ids}")
-
+        # Modified query to include similarity score while keeping same structure
         QUERY = f"""
-            SELECT {property_names_str} FROM {self._get_table_name(table_name)} {filter_query} ORDER BY {embedding_type} <=> $1 LIMIT $2;
+            SELECT
+                {property_names_str},
+                ({embedding_type} <=> $1) as similarity_score
+            FROM {self._get_table_name(table_name)} {filter_query}
+            ORDER BY {embedding_type} <=> $1
+            LIMIT $2;
         """
         print("QUERY = ", QUERY)
+
         if filter_query != "":
             results = await self.connection_manager.fetch_query(
                 QUERY, (str(query_embedding), limit, filter_ids)
@@ -3306,10 +3313,77 @@ class PostgresGraphHandler(GraphHandler):
             )
 
         for result in results:
-            yield {
+            output = {
                 property_name: result[property_name]
                 for property_name in property_names
             }
+            print("result = ", result)
+            output["similarity_score"] = 1 - float(result["similarity_score"])
+            yield output
+
+    # async def graph_search(  # type: ignore
+    #     self, query: str, **kwargs: Any
+    # ) -> AsyncGenerator[Any, None]:
+    #     print("in graph search...")
+
+    #     query_embedding = kwargs.get("query_embedding", None)
+    #     search_type = kwargs.get("search_type", "entity")
+    #     embedding_type = kwargs.get("embedding_type", "description_embedding")
+    #     property_names = kwargs.get("property_names", ["name", "description"])
+    #     filters = kwargs.get("filters", {})
+    #     limit = kwargs.get("limit", 10)
+
+    #     print("kwargs = ", kwargs)
+
+    #     table_name = "graph_entity"
+    #     property_names_str = ", ".join(property_names)
+
+    #     collection_ids_dict = filters.get("collection_ids", {})
+    #     print("filters = ", filters)
+    #     print("collection_ids_dict = ", collection_ids_dict)
+    #     filter_query = ""
+    #     if collection_ids_dict:
+    #         filter_query = "WHERE collection_id = ANY($3)"
+    #         filter_ids = collection_ids_dict["$overlap"]
+
+    #         if (
+    #             search_type == "__Community__"
+    #             or table_name == "collection_entity"
+    #         ):
+    #             logger.info(f"Searching in collection ids: {filter_ids}")
+
+    #         elif search_type in ["entity", "relationship"]:
+    #             filter_query = "WHERE document_id = ANY($3)"
+    #             # TODO - This seems like a hack, we will need a better way to filter by collection ids for entities and relationships
+    #             query = f"""
+    #                 SELECT distinct document_id FROM {self._get_table_name('document_info')} WHERE $1 = ANY(collection_ids)
+    #             """
+    #             filter_ids = [
+    #                 doc_id["document_id"]
+    #                 for doc_id in await self.connection_manager.fetch_query(
+    #                     query, filter_ids
+    #                 )
+    #             ]
+    #             logger.info(f"Searching in document ids: {filter_ids}")
+
+    #     QUERY = f"""
+    #         SELECT {property_names_str} FROM {self._get_table_name(table_name)} {filter_query} ORDER BY {embedding_type} <=> $1 LIMIT $2;
+    #     """
+    #     print("QUERY = ", QUERY)
+    #     if filter_query != "":
+    #         results = await self.connection_manager.fetch_query(
+    #             QUERY, (str(query_embedding), limit, filter_ids)
+    #         )
+    #     else:
+    #         results = await self.connection_manager.fetch_query(
+    #             QUERY, (str(query_embedding), limit)
+    #         )
+
+    #     for result in results:
+    #         yield {
+    #             property_name: result[property_name]
+    #             for property_name in property_names
+    #         }
 
     ####################### GRAPH CLUSTERING METHODS #######################
 
