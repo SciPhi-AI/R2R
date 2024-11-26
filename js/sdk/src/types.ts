@@ -86,8 +86,8 @@ export interface DocumentResponse {
   size_in_bytes?: number;
   ingestion_status: string;
   kg_extraction_status: string;
-  created_date: string;
-  updated_date: string;
+  created_at: string;
+  updated_at: string;
   ingestion_attempt_number?: number;
   summary?: string;
   summary_embedding?: string;
@@ -157,9 +157,20 @@ export interface PromptResponse {
   input_types: string[];
 }
 
-//TODO: Sync this with the finished API response model
 // Relationship types
-export interface RelationshipResponse {}
+export interface RelationshipResponse {
+  id: string;
+  subject: string;
+  predicate: string;
+  object: string;
+  description?: string;
+  subject_id: string;
+  object_id: string;
+  weight: number;
+  chunk_ids: string[];
+  parent_id: string;
+  metadata: Record<string, any>;
+}
 
 // Retrieval types
 export interface VectorSearchResult {

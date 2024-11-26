@@ -69,7 +69,6 @@ class Entity(R2RSerializable):
 class Relationship(R2RSerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
-    # id is Union of UUID and int for backwards compatibility
     id: Optional[UUID] = None
     subject: str
     predicate: str
