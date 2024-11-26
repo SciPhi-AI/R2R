@@ -1,15 +1,11 @@
 from __future__ import annotations  # for Python 3.10+
-from typing_extensions import deprecated
+
 import logging
 from typing import AsyncGenerator, Optional
 
-from ..models import (
-    GenerationConfig,
-    KGSearchSettings,
-    Message,
-    RAGResponse,
-    SearchSettings,
-)
+from typing_extensions import deprecated
+
+from ..models import GenerationConfig, Message, RAGResponse, SearchSettings
 
 logger = logging.getLogger()
 
@@ -18,25 +14,24 @@ class SyncRetrievalMixins:
     def search_documents(
         self,
         query: str,
-        settings: Optional[dict] = None,
+        search_settings: Optional[dict | SearchSettings] = None,
     ):
         """
         Conduct a vector and/or KG search.
 
         Args:
             query (str): The query to search for.
-            vector_search_settings (Optional[Union[dict, SearchSettings]]): Vector search settings.
-            kg_search_settings (Optional[Union[dict, KGSearchSettings]]): KG search settings.
+            search_settings (Optional[Union[dict, SearchSettings]]): Vector search settings.
 
         Returns:
             SearchResponse: The search response.
         """
-        if settings and not isinstance(settings, dict):
-            settings = settings.model_dump()
+        if search_settings and not isinstance(search_settings, dict):
+            search_settings = search_settings.model_dump()
 
         data = {
             "query": query,
-            "settings": settings,
+            "search_settings": search_settings,
         }
         return self._make_request("POST", "search_documents", json=data)  # type: ignore
 
@@ -44,31 +39,24 @@ class SyncRetrievalMixins:
     def search(
         self,
         query: str,
-        vector_search_settings: Optional[dict | SearchSettings] = None,
-        kg_search_settings: Optional[dict | KGSearchSettings] = None,
+        search_settings: Optional[dict | SearchSettings] = None,
     ):
         """
         Conduct a vector and/or KG search.
 
         Args:
             query (str): The query to search for.
-            vector_search_settings (Optional[Union[dict, SearchSettings]]): Vector search settings.
-            kg_search_settings (Optional[Union[dict, KGSearchSettings]]): KG search settings.
+            search_settings (Optional[Union[dict, SearchSettings]]): Vector search settings.
 
         Returns:
             CombinedSearchResponse: The search response.
         """
-        if vector_search_settings and not isinstance(
-            vector_search_settings, dict
-        ):
-            vector_search_settings = vector_search_settings.model_dump()
-        if kg_search_settings and not isinstance(kg_search_settings, dict):
-            kg_search_settings = kg_search_settings.model_dump()
+        if search_settings and not isinstance(search_settings, dict):
+            search_settings = search_settings.model_dump()
 
         data = {
             "query": query,
-            "vector_search_settings": vector_search_settings,
-            "kg_search_settings": kg_search_settings,
+            "search_settings": search_settings,
         }
         return self._make_request("POST", "search", json=data)  # type: ignore
 
@@ -98,8 +86,7 @@ class SyncRetrievalMixins:
         self,
         query: str,
         rag_generation_config: Optional[dict | GenerationConfig] = None,
-        vector_search_settings: Optional[dict | SearchSettings] = None,
-        kg_search_settings: Optional[dict | KGSearchSettings] = None,
+        search_settings: Optional[dict | SearchSettings] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
     ) -> RAGResponse | AsyncGenerator[RAGResponse, None]:
@@ -109,8 +96,7 @@ class SyncRetrievalMixins:
         Args:
             query (str): The query to search for.
             rag_generation_config (Optional[Union[dict, GenerationConfig]]): RAG generation configuration.
-            vector_search_settings (Optional[Union[dict, SearchSettings]]): Vector search settings.
-            kg_search_settings (Optional[Union[dict, KGSearchSettings]]): KG search settings.
+            search_settings (Optional[Union[dict, SearchSettings]]): Vector search settings.
             task_prompt_override (Optional[str]): Task prompt override.
             include_title_if_available (Optional[bool]): Include the title if available.
 
@@ -121,18 +107,13 @@ class SyncRetrievalMixins:
             rag_generation_config, dict
         ):
             rag_generation_config = rag_generation_config.model_dump()
-        if vector_search_settings and not isinstance(
-            vector_search_settings, dict
-        ):
-            vector_search_settings = vector_search_settings.model_dump()
-        if kg_search_settings and not isinstance(kg_search_settings, dict):
-            kg_search_settings = kg_search_settings.model_dump()
+        if search_settings and not isinstance(search_settings, dict):
+            search_settings = search_settings.model_dump()
 
         data = {
             "query": query,
             "rag_generation_config": rag_generation_config,
-            "vector_search_settings": vector_search_settings,
-            "kg_search_settings": kg_search_settings,
+            "search_settings": search_settings,
             "task_prompt_override": task_prompt_override,
             "include_title_if_available": include_title_if_available,
         }
@@ -149,8 +130,7 @@ class SyncRetrievalMixins:
         self,
         message: Optional[dict | Message] = None,
         rag_generation_config: Optional[dict | GenerationConfig] = None,
-        vector_search_settings: Optional[dict | SearchSettings] = None,
-        kg_search_settings: Optional[dict | KGSearchSettings] = None,
+        search_settings: Optional[dict | SearchSettings] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
         conversation_id: Optional[str] = None,
@@ -164,8 +144,8 @@ class SyncRetrievalMixins:
         Args:
             messages (List[Union[dict, Message]]): The messages to send to the agent.
             rag_generation_config (Optional[Union[dict, GenerationConfig]]): RAG generation configuration.
-            vector_search_settings (Optional[Union[dict, SearchSettings]]): Vector search settings.
-            kg_search_settings (Optional[Union[dict, KGSearchSettings]]): KG search settings.
+            chunk_search_settings (Optional[Union[dict, SearchSettings]]): Vector search settings.
+            graph_search_settings (Optional[Union[dict, GraphSearchSettings]]): KG search settings.
             task_prompt_override (Optional[str]): Task prompt override.
             include_title_if_available (Optional[bool]): Include the title if available.
 
@@ -180,17 +160,12 @@ class SyncRetrievalMixins:
             rag_generation_config, dict
         ):
             rag_generation_config = rag_generation_config.model_dump()
-        if vector_search_settings and not isinstance(
-            vector_search_settings, dict
-        ):
-            vector_search_settings = vector_search_settings.model_dump()
-        if kg_search_settings and not isinstance(kg_search_settings, dict):
-            kg_search_settings = kg_search_settings.model_dump()
+        if search_settings and not isinstance(search_settings, dict):
+            search_settings = search_settings.model_dump()
 
         data = {
             "rag_generation_config": rag_generation_config or {},
-            "vector_search_settings": vector_search_settings or {},
-            "kg_search_settings": kg_search_settings,
+            "search_settings": search_settings or {},
             "task_prompt_override": task_prompt_override,
             "include_title_if_available": include_title_if_available,
             "conversation_id": conversation_id,

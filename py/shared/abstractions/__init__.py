@@ -14,21 +14,20 @@ from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import R2RDocumentProcessingError, R2RException
 from .graph import (
     Community,
-    Community,
     Entity,
     EntityType,
     KGExtraction,
-    RelationshipType,
     Relationship,
+    RelationshipType,
 )
 from .kg import (
+    GraphBuildSettings,
+    GraphCommunitySettings,
+    GraphEntitySettings,
+    GraphRelationshipSettings,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
-    GraphEntitySettings,
-    GraphRelationshipSettings,
-    GraphCommunitySettings,
-    GraphBuildSettings,
     KGRunType,
 )
 from .llm import (
@@ -42,17 +41,18 @@ from .llm import (
 from .prompt import Prompt
 from .search import (
     AggregateSearchResult,
+    ChunkSearchResult,
+    ChunkSearchSettings,
+    GraphSearchResult,
+    GraphSearchSettings,
     HybridSearchSettings,
     KGCommunityResult,
     KGEntityResult,
     KGGlobalResult,
     KGRelationshipResult,
     KGSearchMethod,
-    KGSearchResult,
     KGSearchResultType,
-    KGSearchSettings,
     SearchSettings,
-    VectorSearchResult,
 )
 from .user import Token, TokenData, UserStats
 from .vector import (
@@ -109,15 +109,16 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
-    "KGSearchResult",
+    "GraphSearchResult",
     "KGSearchMethod",
     "KGSearchResultType",
     "KGEntityResult",
     "KGRelationshipResult",
     "KGCommunityResult",
     "KGGlobalResult",
-    "KGSearchSettings",
-    "VectorSearchResult",
+    "GraphSearchSettings",
+    "ChunkSearchSettings",
+    "ChunkSearchResult",
     "SearchSettings",
     "HybridSearchSettings",
     # KG abstractions

@@ -27,7 +27,7 @@ import {
   TokenInfo,
   Message,
   RefreshTokenResponse,
-  VectorSearchSettings,
+  ChunkSearchSettings,
   KGSearchSettings,
   KGRunType,
   KGCreationSettings,
@@ -1866,7 +1866,7 @@ export class r2rClient extends BaseClient {
   @feature("searchDocuments")
   async searchDocuments(
     query: string,
-    vector_search_settings?: VectorSearchSettings | Record<string, any>,
+    vector_search_settings?: ChunkSearchSettings | Record<string, any>,
   ): Promise<any> {
     this._ensureAuthenticated();
     const json_data: Record<string, any> = {
@@ -1894,7 +1894,7 @@ export class r2rClient extends BaseClient {
   @feature("search")
   async search(
     query: string,
-    vector_search_settings?: VectorSearchSettings | Record<string, any>,
+    vector_search_settings?: ChunkSearchSettings | Record<string, any>,
     kg_search_settings?: KGSearchSettings | Record<string, any>,
   ): Promise<any> {
     this._ensureAuthenticated();
@@ -1926,7 +1926,7 @@ export class r2rClient extends BaseClient {
   @feature("rag")
   async rag(
     query: string,
-    vector_search_settings?: VectorSearchSettings | Record<string, any>,
+    vector_search_settings?: ChunkSearchSettings | Record<string, any>,
     kg_search_settings?: KGSearchSettings | Record<string, any>,
     rag_generation_config?: GenerationConfig | Record<string, any>,
     task_prompt_override?: string,
@@ -1987,7 +1987,7 @@ export class r2rClient extends BaseClient {
   async agent(
     messages: Message[],
     rag_generation_config?: GenerationConfig | Record<string, any>,
-    vector_search_settings?: VectorSearchSettings | Record<string, any>,
+    vector_search_settings?: ChunkSearchSettings | Record<string, any>,
     kg_search_settings?: KGSearchSettings | Record<string, any>,
     task_prompt_override?: string,
     include_title_if_available?: boolean,

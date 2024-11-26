@@ -6,11 +6,11 @@ from uuid import UUID
 from core.base import (
     AsyncPipe,
     AsyncState,
+    ChunkSearchResult,
     DatabaseProvider,
     EmbeddingProvider,
     EmbeddingPurpose,
     SearchSettings,
-    VectorSearchResult,
 )
 
 from ..abstractions.search_pipe import SearchPipe
@@ -47,7 +47,7 @@ class VectorSearchPipe(SearchPipe):
         search_settings: SearchSettings,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[VectorSearchResult, None]:
+    ) -> AsyncGenerator[ChunkSearchResult, None]:
         search_settings.filters = (
             search_settings.filters or self.config.filters
         )
@@ -58,18 +58,32 @@ class VectorSearchPipe(SearchPipe):
             purpose=EmbeddingPurpose.QUERY,
         )
 
-        search_results = await (
-            self.database_provider.hybrid_search(
+        if (
+            search_settings.use_fulltext_search
+            and search_settings.use_semantic_search
+        ):
+
+            search_results = await self.database_provider.hybrid_search(
                 query_vector=query_vector,
                 query_text=message,
                 search_settings=search_settings,
             )
-            if search_settings.use_hybrid_search
-            else self.database_provider.semantic_search(
+        elif search_settings.use_fulltext_search:
+            search_results = await self.database_provider.full_text_search(
                 query_vector=query_vector,
                 search_settings=search_settings,
             )
-        )
+
+        elif search_settings.use_semantic_search:
+            search_results = await self.database_provider.semantic_search(
+                query_vector=query_vector,
+                search_settings=search_settings,
+            )
+        else:
+            raise ValueError(
+                "At least one of use_fulltext_search or use_semantic_search must be True"
+            )
+
         reranked_results = await self.embedding_provider.arerank(
             query=message,
             results=search_results,
@@ -91,10 +105,10 @@ class VectorSearchPipe(SearchPipe):
         input: AsyncPipe.Input,
         state: AsyncState,
         run_id: UUID,
-        vector_search_settings: SearchSettings = SearchSettings(),
+        search_settings: SearchSettings = SearchSettings(),
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[VectorSearchResult, None]:
+    ) -> AsyncGenerator[ChunkSearchResult, None]:
         async for search_request in input.message:
             await self.enqueue_log(
                 run_id=run_id, key="search_query", value=search_request
@@ -103,7 +117,7 @@ class VectorSearchPipe(SearchPipe):
             search_results = []
             async for result in self.search(
                 search_request,
-                vector_search_settings,
+                search_settings,
                 *args,
                 **kwargs,
             ):

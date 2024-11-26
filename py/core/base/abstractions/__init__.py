@@ -22,27 +22,26 @@ from shared.abstractions.exception import (
 from shared.abstractions.graph import (
     Community,
     CommunityInfo,
-    Community,
-    Entity,
     DataLevel,
+    Entity,
     EntityType,
     Graph,
     KGExtraction,
-    RelationshipType,
     Relationship,
+    RelationshipType,
 )
 from shared.abstractions.ingestion import (
     ChunkEnrichmentSettings,
     ChunkEnrichmentStrategy,
 )
 from shared.abstractions.kg import (
+    GraphBuildSettings,
+    GraphCommunitySettings,
+    GraphEntitySettings,
+    GraphRelationshipSettings,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
-    GraphBuildSettings,
-    GraphEntitySettings,
-    GraphRelationshipSettings,
-    GraphCommunitySettings,
     KGEntityDeduplicationType,
     KGRunType,
 )
@@ -57,17 +56,18 @@ from shared.abstractions.llm import (
 from shared.abstractions.prompt import Prompt
 from shared.abstractions.search import (
     AggregateSearchResult,
+    ChunkSearchResult,
+    ChunkSearchSettings,
+    GraphSearchResult,
+    GraphSearchSettings,
     HybridSearchSettings,
     KGCommunityResult,
     KGEntityResult,
     KGGlobalResult,
     KGRelationshipResult,
     KGSearchMethod,
-    KGSearchResult,
     KGSearchResultType,
-    KGSearchSettings,
     SearchSettings,
-    VectorSearchResult,
 )
 from shared.abstractions.user import Token, TokenData, UserStats
 from shared.abstractions.vector import (
@@ -130,15 +130,16 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
-    "KGSearchResult",
+    "GraphSearchResult",
     "KGSearchMethod",
     "KGSearchResultType",
     "KGEntityResult",
     "KGRelationshipResult",
     "KGCommunityResult",
     "KGGlobalResult",
-    "KGSearchSettings",
-    "VectorSearchResult",
+    "GraphSearchSettings",
+    "ChunkSearchSettings",
+    "ChunkSearchResult",
     "SearchSettings",
     "HybridSearchSettings",
     # KG abstractions

@@ -1,21 +1,21 @@
+import json
 import logging
 import textwrap
-
-import json
-
+from copy import copy
 from typing import Any, Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
 from core.base import (
-    KGSearchSettings,
+    ChunkResponse,
+    ChunkSearchSettings,
+    GraphSearchSettings,
     R2RException,
     RunType,
+    SearchSettings,
     UnprocessedChunk,
     UpdateChunk,
-    SearchSettings,
-    ChunkResponse,
 )
 from core.base.api.models import (
     GenericBooleanResponse,
@@ -31,7 +31,6 @@ from core.providers import (
 from core.utils import generate_id
 
 from .base_router import BaseRouterV3
-
 
 logger = logging.getLogger()
 
@@ -53,22 +52,17 @@ class ChunksRouter(BaseRouterV3):
     def _select_filters(
         self,
         auth_user: Any,
-        search_settings: SearchSettings | KGSearchSettings,
+        search_settings: SearchSettings,
     ) -> dict[str, Any]:
-        selected_collections = {
-            str(cid) for cid in set(search_settings.selected_collection_ids)
-        }
 
-        if auth_user.is_superuser:
-            if selected_collections:
-                # For superusers, we only filter by selected collections
-                filters = {
-                    "collection_ids": {"$overlap": list(selected_collections)}
-                }
-            else:
-                filters = {}
-        else:
+        filters = copy(search_settings.filters)
+        selected_collections = None
+        if not auth_user.is_superuser:
             user_collections = set(auth_user.collection_ids)
+            for key in filters.keys():
+                if "collection_ids" in key:
+                    selected_collections = set(filters[key]["$overlap"])
+                    break
 
             if selected_collections:
                 allowed_collections = user_collections.intersection(
@@ -77,7 +71,7 @@ class ChunksRouter(BaseRouterV3):
             else:
                 allowed_collections = user_collections
             # for non-superusers, we filter by user_id and selected & allowed collections
-            filters = {
+            collection_filters = {
                 "$or": [
                     {"user_id": {"$eq": auth_user.id}},
                     {
@@ -88,8 +82,9 @@ class ChunksRouter(BaseRouterV3):
                 ]  # type: ignore
             }
 
-        if search_settings.filters != {}:
-            filters = {"$and": [filters, search_settings.filters]}  # type: ignore
+            filters.pop("collection_ids", None)
+
+            filters = {"$and": [collection_filters, filters]}  # type: ignore
 
         return filters
 
@@ -288,7 +283,7 @@ class ChunksRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             results = client.chunks.search(
                                 query="search query",
-                                vector_search_settings={
+                                search_settings={
                                     "limit": 10,
                                     "min_score": 0.7
                                 }
@@ -302,7 +297,7 @@ class ChunksRouter(BaseRouterV3):
         @self.base_endpoint
         async def search_chunks(
             query: str = Body(...),
-            vector_search_settings: SearchSettings = Body(
+            search_settings: SearchSettings = Body(
                 default_factory=SearchSettings,
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
@@ -317,18 +312,17 @@ class ChunksRouter(BaseRouterV3):
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
             """
 
-            vector_search_settings.filters = self._select_filters(
-                auth_user, vector_search_settings
+            search_settings.filters = self._select_filters(
+                auth_user, search_settings
             )
 
-            kg_search_settings = KGSearchSettings(use_kg_search=False)
+            search_settings.graph_settings = GraphSearchSettings(enabled=False)
 
             results = await self.services["retrieval"].search(
                 query=query,
-                vector_search_settings=vector_search_settings,
-                kg_search_settings=kg_search_settings,
+                search_settings=search_settings,
             )
-            return results["vector_search_results"]
+            return results["chunk_search_results"]
 
         @self.router.get(
             "/chunks/{id}",

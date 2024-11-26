@@ -73,9 +73,10 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
-    "KGSearchResult",
-    "KGSearchSettings",
-    "VectorSearchResult",
+    "GraphSearchResult",
+    "ChunkSearchSettings",
+    "GraphSearchSettings",
+    "ChunkSearchResult",
     "SearchSettings",
     "HybridSearchSettings",
     # User abstractions

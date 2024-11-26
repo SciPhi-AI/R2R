@@ -73,57 +73,39 @@ def retrieval():
 async def search(ctx, query, **kwargs):
     """Perform a search query."""
     client: R2RAsyncClient = ctx.obj
-    vector_search_settings = {
+    search_settings = {
         k: v
         for k, v in kwargs.items()
         if k
         in [
-            "use_vector_search",
             "filters",
             "limit",
-            "use_hybrid_search",
-            "selected_collection_ids",
             "search_strategy",
         ]
         and v is not None
     }
 
-    kg_search_settings = {
-        k: v
-        for k, v in kwargs.items()
-        if k
-        in [
-            "use_kg_search",
-            "kg_search_type",
-            "kg_search_level",
-            "generation_config",
-            "entity_types",
-            "relationships",
-            "max_community_description_length",
-            "local_search_limits",
-        ]
-        and v is not None
-    }
-
     with timer():
-        print("kg_search_settings = ", kg_search_settings)
+        print("kg_search_settings = ", search_settings)
         results = await client.retrieval.search(
             query,
-            vector_search_settings,
-            kg_search_settings,
+            search_settings,
         )
 
         if isinstance(results, dict) and "results" in results:
             results = results["results"]
 
-        if "vector_search_results" in results:
+        if "chunk_search_results" in results:
             click.echo("Vector search results:")
-            for result in results["vector_search_results"]:
+            for result in results["chunk_search_results"]:
                 click.echo(json.dumps(result, indent=2))
 
-        if "kg_search_results" in results and results["kg_search_results"]:
+        if (
+            "graph_search_results" in results
+            and results["graph_search_results"]
+        ):
             click.echo("KG search results:")
-            for result in results["kg_search_results"]:
+            for result in results["graph_search_results"]:
                 click.echo(json.dumps(result, indent=2))
 
 
@@ -215,7 +197,7 @@ async def rag(ctx, query, **kwargs):
             "entity_types",
             "relationships",
             "max_community_description_length",
-            "local_search_limits",
+            "graph_search_limits",
         ]
         and v is not None
     }

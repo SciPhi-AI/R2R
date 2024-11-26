@@ -2,7 +2,7 @@ import { r2rClient } from "../../r2rClient";
 
 import {
   Message,
-  VectorSearchSettings,
+  ChunkSearchSettings,
   KGSearchSettings,
   GenerationConfig,
 } from "../../models";
@@ -12,7 +12,7 @@ export class RetrievalClient {
 
   async search(options: {
     query: string;
-    vectorSearchSettings?: VectorSearchSettings | Record<string, any>;
+    vectorSearchSettings?: ChunkSearchSettings | Record<string, any>;
     kgSearchSettings?: KGSearchSettings | Record<string, any>;
   }): Promise<any> {
     const data = {
@@ -33,7 +33,7 @@ export class RetrievalClient {
   async rag(options: {
     query: string;
     ragGenerationConfig?: GenerationConfig | Record<string, any>;
-    vectorSearchSettings?: VectorSearchSettings | Record<string, any>;
+    vectorSearchSettings?: ChunkSearchSettings | Record<string, any>;
     kgSearchSettings?: KGSearchSettings | Record<string, any>;
     taskPromptOverride?: string;
     includeTitleIfAvailable?: boolean;
@@ -85,7 +85,7 @@ export class RetrievalClient {
   async agent(options: {
     messages: Message[];
     ragGenerationConfig?: GenerationConfig | Record<string, any>;
-    vectorSearchSettings?: VectorSearchSettings | Record<string, any>;
+    vectorSearchSettings?: ChunkSearchSettings | Record<string, any>;
     kgSearchSettings?: KGSearchSettings | Record<string, any>;
     taskPromptOverride?: string;
     includeTitleIfAvailable?: boolean;

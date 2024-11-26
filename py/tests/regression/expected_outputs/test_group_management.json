@@ -116,7 +116,7 @@
             }
           }
         ],
-        "kg_search_results": []
+        "graph_search_results": []
       }
     },
     "user_2_ingest": {
@@ -158,7 +158,7 @@
             }
           }
         ],
-        "kg_search_results": []
+        "graph_search_results": []
       }
     }
   },

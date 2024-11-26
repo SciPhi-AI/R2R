@@ -155,7 +155,7 @@ export interface KGSearchResult {
 
 export interface CombinedSearchResponse {
   vector_search_results: VectorSearchResult[];
-  kg_search_results?: KGSearchResult[];
+  graph_search_results?: KGSearchResult[];
 }
 
 // System types

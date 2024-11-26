@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from core.base.abstractions import (
+    ChunkSearchResult,
     Community,
     CommunityInfo,
     DocumentResponse,
@@ -25,7 +26,6 @@ from core.base.abstractions import (
     SearchSettings,
     UserStats,
     VectorEntry,
-    VectorSearchResult,
     VectorTableName,
 )
 from core.base.api.models import (
@@ -48,11 +48,11 @@ from uuid import UUID
 from ..abstractions import (
     Community,
     Entity,
+    GraphSearchSettings,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
     KGExtraction,
-    KGSearchSettings,
     Relationship,
     RelationshipType,
 )
@@ -125,7 +125,7 @@ class DatabaseConfig(ProviderConfig):
     kg_entity_deduplication_settings: KGEntityDeduplicationSettings = (
         KGEntityDeduplicationSettings()
     )
-    kg_search_settings: KGSearchSettings = KGSearchSettings()
+    graph_search_settings: GraphSearchSettings = GraphSearchSettings()
 
     def __post_init__(self):
         self.validate_config()
@@ -476,7 +476,7 @@ class UserHandler(Handler):
         pass
 
 
-class VectorHandler(Handler):
+class ChunkHandler(Handler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -491,13 +491,13 @@ class VectorHandler(Handler):
     @abstractmethod
     async def semantic_search(
         self, query_vector: list[float], search_settings: SearchSettings
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         pass
 
     @abstractmethod
     async def full_text_search(
         self, query_text: str, search_settings: SearchSettings
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         pass
 
     @abstractmethod
@@ -508,7 +508,7 @@ class VectorHandler(Handler):
         search_settings: SearchSettings,
         *args,
         **kwargs,
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         pass
 
     @abstractmethod
@@ -951,7 +951,7 @@ class DatabaseProvider(Provider):
     collections_handler: CollectionsHandler
     token_handler: TokenHandler
     user_handler: UserHandler
-    vector_handler: VectorHandler
+    vector_handler: ChunkHandler
     graph_handler: GraphHandler
     prompt_handler: PromptHandler
     file_handler: FileHandler
@@ -1244,14 +1244,14 @@ class DatabaseProvider(Provider):
 
     async def semantic_search(
         self, query_vector: list[float], search_settings: SearchSettings
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         return await self.vector_handler.semantic_search(
             query_vector, search_settings
         )
 
     async def full_text_search(
         self, query_text: str, search_settings: SearchSettings
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         return await self.vector_handler.full_text_search(
             query_text, search_settings
         )
@@ -1263,7 +1263,7 @@ class DatabaseProvider(Provider):
         search_settings: SearchSettings,
         *args,
         **kwargs,
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         return await self.vector_handler.hybrid_search(
             query_text, query_vector, search_settings, *args, **kwargs
         )

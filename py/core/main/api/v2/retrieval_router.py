@@ -1,4 +1,5 @@
 import asyncio
+from copy import copy
 from pathlib import Path
 from typing import Any, Optional
 from uuid import UUID
@@ -9,7 +10,7 @@ from fastapi.responses import StreamingResponse
 
 from core.base import (
     GenerationConfig,
-    KGSearchSettings,
+    GraphSearchSettings,
     Message,
     R2RException,
     SearchSettings,
@@ -57,22 +58,17 @@ class RetrievalRouter(BaseRouter):
     def _select_filters(
         self,
         auth_user: Any,
-        search_settings: SearchSettings | KGSearchSettings,
+        search_settings: SearchSettings,
     ) -> dict[str, Any]:
-        selected_collections = {
-            str(cid) for cid in set(search_settings.selected_collection_ids)
-        }
 
-        if auth_user.is_superuser:
-            if selected_collections:
-                # For superusers, we only filter by selected collections
-                filters = {
-                    "collection_ids": {"$overlap": list(selected_collections)}
-                }
-            else:
-                filters = {}
-        else:
+        filters = copy(search_settings.filters)
+        selected_collections = None
+        if not auth_user.is_superuser:
             user_collections = set(auth_user.collection_ids)
+            for key in filters.keys():
+                if "collection_ids" in key:
+                    selected_collections = set(filters[key]["$overlap"])
+                    break
 
             if selected_collections:
                 allowed_collections = user_collections.intersection(
@@ -81,7 +77,7 @@ class RetrievalRouter(BaseRouter):
             else:
                 allowed_collections = user_collections
             # for non-superusers, we filter by user_id and selected & allowed collections
-            filters = {
+            collection_filters = {
                 "$or": [
                     {"user_id": {"$eq": auth_user.id}},
                     {
@@ -92,8 +88,9 @@ class RetrievalRouter(BaseRouter):
                 ]  # type: ignore
             }
 
-        if search_settings.filters != {}:
-            filters = {"$and": [filters, search_settings.filters]}  # type: ignore
+            filters.pop("collection_ids", None)
+
+            filters = {"$and": [collection_filters, filters]}  # type: ignore
 
         return filters
 
@@ -147,13 +144,9 @@ class RetrievalRouter(BaseRouter):
             query: str = Body(
                 ..., description=search_descriptions.get("query")
             ),
-            vector_search_settings: SearchSettings = Body(
+            search_settings: SearchSettings = Body(
                 default_factory=SearchSettings,
-                description=search_descriptions.get("vector_search_settings"),
-            ),
-            kg_search_settings: KGSearchSettings = Body(
-                default_factory=KGSearchSettings,
-                description=search_descriptions.get("kg_search_settings"),
+                description=search_descriptions.get("search_settings"),
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
         ) -> WrappedSearchResponse:  # type: ignore
@@ -167,20 +160,12 @@ class RetrievalRouter(BaseRouter):
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
             """
 
-            vector_search_settings.filters = self._select_filters(
-                auth_user, vector_search_settings
+            search_settings.filters = self._select_filters(
+                auth_user, search_settings
             )
-
-            print("vector_search_settings = ", vector_search_settings)
-            kg_search_settings.filters = self._select_filters(
-                auth_user, kg_search_settings
-            )
-            print("kg_search_settings = ", kg_search_settings)
-
             results = await self.service.search(
                 query=query,
-                vector_search_settings=vector_search_settings,
-                kg_search_settings=kg_search_settings,
+                search_settings=search_settings,
             )
             return results
 
@@ -194,13 +179,9 @@ class RetrievalRouter(BaseRouter):
         @self.base_endpoint
         async def rag_app(
             query: str = Body(..., description=rag_descriptions.get("query")),
-            vector_search_settings: SearchSettings = Body(
+            search_settings: SearchSettings = Body(
                 default_factory=SearchSettings,
-                description=rag_descriptions.get("vector_search_settings"),
-            ),
-            kg_search_settings: KGSearchSettings = Body(
-                default_factory=KGSearchSettings,
-                description=rag_descriptions.get("kg_search_settings"),
+                description=search_descriptions.get("search_settings"),
             ),
             rag_generation_config: GenerationConfig = Body(
                 default_factory=GenerationConfig,
@@ -225,14 +206,13 @@ class RetrievalRouter(BaseRouter):
             The generation process can be customized using the rag_generation_config parameter.
             """
 
-            vector_search_settings.filters = self._select_filters(
-                auth_user, vector_search_settings
+            search_settings.filters = self._select_filters(
+                auth_user, search_settings
             )
 
             response = await self.service.rag(
                 query=query,
-                vector_search_settings=vector_search_settings,
-                kg_search_settings=kg_search_settings,
+                search_settings=search_settings,
                 rag_generation_config=rag_generation_config,
                 task_prompt_override=task_prompt_override,
                 include_title_if_available=include_title_if_available,
@@ -268,13 +248,9 @@ class RetrievalRouter(BaseRouter):
                 description=agent_descriptions.get("messages"),
                 deprecated=True,
             ),
-            vector_search_settings: SearchSettings = Body(
+            search_settings: SearchSettings = Body(
                 default_factory=SearchSettings,
-                description=agent_descriptions.get("vector_search_settings"),
-            ),
-            kg_search_settings: KGSearchSettings = Body(
-                default_factory=KGSearchSettings,
-                description=agent_descriptions.get("kg_search_settings"),
+                description=search_descriptions.get("search_settings"),
             ),
             rag_generation_config: GenerationConfig = Body(
                 default_factory=GenerationConfig,
@@ -309,17 +285,15 @@ class RetrievalRouter(BaseRouter):
             task_prompt_override parameters.
             """
 
-            vector_search_settings.filters = self._select_filters(
-                auth_user, vector_search_settings
+            search_settings.filters = self._select_filters(
+                auth_user, search_settings
             )
 
-            kg_search_settings.filters = vector_search_settings.filters
             try:
                 response = await self.service.agent(
                     message=message,
                     messages=messages,
-                    vector_search_settings=vector_search_settings,
-                    kg_search_settings=kg_search_settings,
+                    search_settings=search_settings,
                     rag_generation_config=rag_generation_config,
                     task_prompt_override=task_prompt_override,
                     include_title_if_available=include_title_if_available,

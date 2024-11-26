@@ -10,12 +10,13 @@ from core.base import (
     EmbeddingProvider,
 )
 from core.base.abstractions import (
+    GraphSearchResult,
+    GraphSearchSettings,
     KGCommunityResult,
     KGEntityResult,
     KGSearchMethod,
-    KGSearchResult,
     KGSearchResultType,
-    KGSearchSettings,
+    SearchSettings,
 )
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
@@ -91,18 +92,18 @@ class KGSearchSearchPipe(GeneratorPipe):
         )
         return responses
 
-    async def local_search(
+    async def search(
         self,
         input: GeneratorPipe.Input,
         state: AsyncState,
         run_id: UUID,
-        kg_search_settings: KGSearchSettings,
+        search_settings: SearchSettings,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[KGSearchResult, None]:
+    ) -> AsyncGenerator[GraphSearchResult, None]:
         # search over communities and
         # do 3 searches. One over entities, one over relationships, one over communities
-        print("kg_search_settings = ", kg_search_settings)
+        print("graph_search_settings = ", search_settings)
         print("doing local search...")
         async for message in input.message:
             query_embedding = (
@@ -111,23 +112,23 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # entity search
             search_type = "entity"
+            base_limit = search_settings.limit
             async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
                 message,
                 search_type=search_type,
-                search_type_limits=kg_search_settings.local_search_limits[
-                    search_type
-                ],
+                search_type_limits=search_settings.graph_settings.graph_search_limits.get(
+                    search_type, base_limit
+                ),
                 query_embedding=query_embedding,
                 property_names=[
                     "name",
                     "description",
                     "chunk_ids",
                 ],
-                filters=kg_search_settings.filters,
-                entities_level=kg_search_settings.entities_level,
+                filters=search_settings.filters,
             ):
                 print("entity search result = ", search_result)
-                yield KGSearchResult(
+                yield GraphSearchResult(
                     content=KGEntityResult(
                         name=search_result["name"],
                         description=search_result["description"],
@@ -144,7 +145,7 @@ class KGSearchSearchPipe(GeneratorPipe):
             # async for search_result in self.database_provider.graph_search(  # type: ignore
             #     input,
             #     search_type=search_type,
-            #     search_type_limits=kg_search_settings.local_search_limits[
+            #     search_type_limits=graph_search_settings.graph_search_limits[
             #         search_type
             #     ],
             #     query_embedding=query_embedding,
@@ -155,7 +156,7 @@ class KGSearchSearchPipe(GeneratorPipe):
             #         "document_ids",
             #     ],
             # ):
-            #     yield KGSearchResult(
+            #     yield GraphSearchResult(
             #         content=KGRelationshipResult(
             #             name=search_result["name"],
             #             description=search_result["description"],
@@ -172,7 +173,7 @@ class KGSearchSearchPipe(GeneratorPipe):
             # async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
             #     message,
             #     search_type=search_type,
-            #     search_type_limits=kg_search_settings.local_search_limits[
+            #     search_type_limits=graph_search_settings.graph_search_limits[
             #         search_type
             #     ],
             #     embedding_type="embedding",
@@ -185,9 +186,9 @@ class KGSearchSearchPipe(GeneratorPipe):
             #         "rating_explanation",
             #         "summary",
             #     ],
-            #     filters=kg_search_settings.filters,
+            #     filters=graph_search_settings.filters,
             # ):
-            #     yield KGSearchResult(
+            #     yield GraphSearchResult(
             #         content=KGCommunityResult(
             #             name=search_result["name"],
             #             summary=search_result["summary"],
@@ -207,12 +208,10 @@ class KGSearchSearchPipe(GeneratorPipe):
         input: GeneratorPipe.Input,
         state: AsyncState,
         run_id: UUID,
-        kg_search_settings: KGSearchSettings,
+        search_settings: GraphSearchSettings,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[KGSearchResult, None]:
+    ) -> AsyncGenerator[GraphSearchResult, None]:
 
-        async for result in self.local_search(
-            input, state, run_id, kg_search_settings
-        ):
+        async for result in self.search(input, state, run_id, search_settings):
             yield result

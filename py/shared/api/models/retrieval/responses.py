@@ -2,17 +2,17 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
-from shared.abstractions import KGSearchResult, Message, VectorSearchResult
+from shared.abstractions import ChunkSearchResult, GraphSearchResult, Message
 from shared.abstractions.llm import LLMChatCompletion
 from shared.api.models.base import ResultsWrapper
 
 
 class CombinedSearchResponse(BaseModel):
-    vector_search_results: list[VectorSearchResult] = Field(
+    chunk_search_results: list[ChunkSearchResult] = Field(
         ...,
         description="List of vector search results",
     )
-    kg_search_results: Optional[list[KGSearchResult]] = Field(
+    graph_search_results: Optional[list[GraphSearchResult]] = Field(
         None,
         description="Knowledge graph search results, if applicable",
     )
@@ -20,11 +20,11 @@ class CombinedSearchResponse(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "vector_search_results": [
-                    VectorSearchResult.Config.json_schema_extra,
+                "chunk_search_results": [
+                    ChunkSearchResult.Config.json_schema_extra,
                 ],
-                "kg_search_results": [
-                    KGSearchResult.Config.json_schema_extra,
+                "graph_search_results": [
+                    GraphSearchResult.Config.json_schema_extra,
                 ],
             }
         }
@@ -58,11 +58,11 @@ class RAGResponse(BaseModel):
                     ],
                 },
                 "search_results": {
-                    "vector_search_results": [
-                        VectorSearchResult.Config.json_schema_extra,
+                    "chunk_search_results": [
+                        ChunkSearchResult.Config.json_schema_extra,
                     ],
-                    "kg_search_results": [
-                        KGSearchResult.Config.json_schema_extra,
+                    "graph_search_results": [
+                        GraphSearchResult.Config.json_schema_extra,
                     ],
                 },
             }
@@ -126,7 +126,7 @@ class DocumentSearchResult(BaseModel):
 
 WrappedCompletionResponse = ResultsWrapper[LLMChatCompletion]
 # Create wrapped versions of the responses
-WrappedVectorSearchResponse = ResultsWrapper[list[VectorSearchResult]]
+WrappedVectorSearchResponse = ResultsWrapper[list[ChunkSearchResult]]
 WrappedSearchResponse = ResultsWrapper[CombinedSearchResponse]
 WrappedDocumentSearchResponse = ResultsWrapper[list[DocumentSearchResult]]
 WrappedRAGResponse = ResultsWrapper[RAGResponse]

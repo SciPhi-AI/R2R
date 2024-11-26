@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from ..base.abstractions import (
     GenerationConfig,
-    KGSearchSettings,
+    GraphSearchSettings,
     SearchSettings,
 )
 from ..base.logger.base import RunType
@@ -34,8 +34,7 @@ class RAGPipeline(AsyncPipeline):
         input: Any,
         state: Optional[AsyncState],
         run_manager: Optional[RunManager] = None,
-        vector_search_settings: SearchSettings = SearchSettings(),
-        kg_search_settings: KGSearchSettings = KGSearchSettings(),
+        search_settings: SearchSettings = SearchSettings(),
         rag_generation_config: GenerationConfig = GenerationConfig(),
         *args: Any,
         **kwargs: Any,
@@ -62,8 +61,7 @@ class RAGPipeline(AsyncPipeline):
                 async for query in input:
                     input_kwargs = {
                         **kwargs,
-                        "vector_search_settings": vector_search_settings,
-                        "kg_search_settings": kg_search_settings,
+                        "search_settings": search_settings,
                     }
                     task = asyncio.create_task(
                         self._search_pipeline.run(

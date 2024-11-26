@@ -552,13 +552,6 @@ class PostgresDocumentHandler(DocumentHandler):
             )
             where_clauses.append(filter_clause)
 
-        # Handle collection filtering
-        if search_settings.selected_collection_ids:
-            where_clauses.append("collection_ids && $" + str(len(params) + 1))
-            params.append(
-                [str(ele) for ele in search_settings.selected_collection_ids]  # type: ignore
-            )
-
         where_clause = " AND ".join(where_clauses)
 
         query = f"""
@@ -642,11 +635,6 @@ class PostgresDocumentHandler(DocumentHandler):
                 search_settings.filters, params
             )
             where_clauses.append(filter_clause)
-
-        # Handle collection filtering
-        if search_settings.selected_collection_ids:
-            where_clauses.append("collection_ids && $" + str(len(params) + 1))
-            params.append([str(ele) for ele in search_settings.selected_collection_ids])  # type: ignore
 
         where_clause = " AND ".join(where_clauses)
 
@@ -832,7 +820,7 @@ class PostgresDocumentHandler(DocumentHandler):
             return await self.hybrid_document_search(
                 query_text, query_embedding, search_settings
             )
-        elif search_settings.use_vector_search:
+        elif search_settings.use_semantic_search:
             if query_embedding is None:
                 raise ValueError(
                     "query_embedding is required for vector search"

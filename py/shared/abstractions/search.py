@@ -12,7 +12,7 @@ from .llm import GenerationConfig
 from .vector import IndexMeasure
 
 
-class VectorSearchResult(R2RSerializable):
+class ChunkSearchResult(R2RSerializable):
     """Result of a search operation."""
 
     chunk_id: UUID
@@ -24,7 +24,7 @@ class VectorSearchResult(R2RSerializable):
     metadata: dict[str, Any]
 
     def __str__(self) -> str:
-        return f"VectorSearchResult(id={self.chunk_id}, document_id={self.document_id}, score={self.score})"
+        return f"ChunkSearchResult(id={self.chunk_id}, document_id={self.document_id}, score={self.score})"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -124,8 +124,7 @@ class KGGlobalResult(R2RSerializable):
         }
 
 
-class KGSearchResult(R2RSerializable):
-    method: KGSearchMethod
+class GraphSearchResult(R2RSerializable):
     content: (
         KGEntityResult
         | KGRelationshipResult
@@ -138,7 +137,6 @@ class KGSearchResult(R2RSerializable):
 
     class Config:
         json_schema_extra = {
-            "method": "local",
             "content": KGEntityResult.Config.json_schema_extra,
             "result_type": "entity",
             "chunk_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
@@ -149,27 +147,41 @@ class KGSearchResult(R2RSerializable):
 class AggregateSearchResult(R2RSerializable):
     """Result of an aggregate search operation."""
 
-    vector_search_results: Optional[list[VectorSearchResult]]
-    kg_search_results: Optional[list[KGSearchResult]] = None
+    chunk_search_results: Optional[list[ChunkSearchResult]]
+    graph_search_results: Optional[list[GraphSearchResult]] = None
 
     def __str__(self) -> str:
-        return f"AggregateSearchResult(vector_search_results={self.vector_search_results}, kg_search_results={self.kg_search_results})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results})"
 
     def __repr__(self) -> str:
-        return f"AggregateSearchResult(vector_search_results={self.vector_search_results}, kg_search_results={self.kg_search_results})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results})"
 
     def as_dict(self) -> dict:
         return {
-            "vector_search_results": (
-                [result.as_dict() for result in self.vector_search_results]
-                if self.vector_search_results
+            "chunk_search_results": (
+                [result.as_dict() for result in self.chunk_search_results]
+                if self.chunk_search_results
                 else []
             ),
-            "kg_search_results": self.kg_search_results or None,
+            "graph_search_results": self.graph_search_results or None,
         }
 
 
+from enum import Enum
+from typing import Any, Optional
+from uuid import UUID
+
+from pydantic import Field
+
+from .base import R2RSerializable
+from .graph import DataLevel
+from .llm import GenerationConfig
+from .vector import IndexMeasure
+
+
 class HybridSearchSettings(R2RSerializable):
+    """Settings for hybrid search combining full-text and semantic search."""
+
     full_text_weight: float = Field(
         default=1.0, description="Weight to apply to full text search"
     )
@@ -185,76 +197,13 @@ class HybridSearchSettings(R2RSerializable):
     )
 
 
-class SearchSettings(R2RSerializable):
-    use_vector_search: bool = Field(
-        default=True,
-        description="Whether to use vector search",
-        alias="useVectorSearch",
-    )
-    use_hybrid_search: bool = Field(
-        default=False,
-        description="Whether to perform a hybrid search (combining vector and keyword search)",
-        alias="useHybridSearch",
-    )
-    filters: dict[str, Any] = Field(
-        default_factory=dict,
-        alias="search_filters",
-        description="""Filters to apply to the vector search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+class ChunkSearchSettings(R2RSerializable):
+    """Settings specific to chunk/vector search."""
 
-      Commonly seen filters include operations include the following:
-
-        `{"document_id": {"$eq": "9fbe403b-..."}}`
-
-        `{"document_id": {"$in": ["9fbe403b-...", "3e157b3a-..."]}}`
-
-        `{"collection_ids": {"$overlap": ["122fdf6a-...", "..."]}}`
-
-        `{"$and": {"$document_id": ..., "collection_ids": ...}}`""",
-    )
-    search_filters: dict[str, Any] = Field(
-        default_factory=dict,
-        deprecated=True,
-        description="Deprecated. Use 'filters' instead.",
-    )
-    limit: int = Field(
-        default=10,
-        description="Maximum number of results to return",
-        alias="search_limit",
-        ge=1,
-        le=1_000,
-    )
-    search_limit: int = Field(
-        alias="searchLimit",
-        default=10,
-        description="Deprecated. Use 'limit' instead.",
-        ge=1,
-        le=1_000,
-        deprecated=True,
-    )
-    offset: int = Field(
-        default=0,
-        ge=0,
-        description="Offset to paginate search results",
-    )
-    selected_collection_ids: list[UUID] = Field(
-        alias="selectedCollectionIds",
-        default_factory=list,
-        description="Collection IDs to search for",
-    )
     index_measure: IndexMeasure = Field(
         alias="indexMeasure",
         default=IndexMeasure.cosine_distance,
         description="The distance measure to use for indexing",
-    )
-    include_values: bool = Field(
-        alias="includeValues",
-        default=True,
-        description="Whether to include search score values in the search results",
-    )
-    include_metadatas: bool = Field(
-        alias="includeMetadatas",
-        default=True,
-        description="Whether to include element metadata in the search results",
     )
     probes: int = Field(
         default=10,
@@ -265,73 +214,73 @@ class SearchSettings(R2RSerializable):
         default=40,
         description="Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed.",
     )
-    hybrid_search_settings: HybridSearchSettings = Field(
-        alias="hybridSearchSettings",
-        default=HybridSearchSettings(),
-        description="Settings for hybrid search",
+
+
+class GraphSearchSettings(R2RSerializable):
+    """Settings specific to knowledge graph search."""
+
+    kg_search_type: str = Field(
+        alias="kgSearchType",
+        default="local",
+        description="KG search type ('global' or 'local')",
     )
-    search_strategy: str = Field(
-        alias="searchStrategy",
-        default="vanilla",
-        description="Search strategy to use (e.g., 'default', 'query_fusion', 'hyde')",
+    kg_search_level: Optional[str] = Field(
+        alias="kgSearchLevel",
+        default=None,
+        description="KG search level",
     )
-
-    class Config:
-        populate_by_name = True
-        json_encoders = {UUID: str}
-        json_schema_extra = {
-            "use_vector_search": True,
-            "use_hybrid_search": True,
-            "filters": {"category": "technology"},
-            "limit": 20,
-            "offset": 0,
-            "selected_collection_ids": [
-                "2acb499e-8428-543b-bd85-0d9098718220",
-                "3e157b3a-8469-51db-90d9-52e7d896b49b",
-            ],
-            "index_measure": "cosine_distance",
-            "include_metadata": True,
-            "probes": 10,
-            "ef_search": 40,
-            "hybrid_search_settings": {
-                "full_text_weight": 1.0,
-                "semantic_weight": 5.0,
-                "full_text_limit": 200,
-                "rrf_k": 50,
-            },
-        }
-
-    def model_dump(self, *args, **kwargs):
-        dump = super().model_dump(*args, **kwargs)
-        dump["selected_collection_ids"] = [
-            str(uuid) for uuid in dump["selected_collection_ids"]
-        ]
-        return dump
-
-    def __init__(self, **data):
-        # Either filters or search filters is supported
-        data["filters"] = {
-            **data.get("filters", {}),
-            **data.get("search_filters", {}),
-        }
-        data["search_filters"] = {
-            **data.get("filters", {}),
-            **data.get("search_filters", {}),
-        }
-        super().__init__(**data)
-
-
-class KGSearchSettings(R2RSerializable):
-
-    entities_level: DataLevel = Field(
-        alias="dataLevel",
-        default=DataLevel.DOCUMENT,
-        description="The level of entities to search for",
+    generation_config: GenerationConfig = Field(
+        alias="generationConfig",
+        default_factory=GenerationConfig,
+        description="Configuration for text generation during graph search.",
+    )
+    graphrag_map_system: str = Field(
+        alias="graphragMapSystem",
+        default="graphrag_map_system",
+        description="The system prompt for the graphrag map prompt.",
+    )
+    graphrag_reduce_system: str = Field(
+        alias="graphragReduceSystem",
+        default="graphrag_reduce_system",
+        description="The system prompt for the graphrag reduce prompt.",
+    )
+    max_community_description_length: int = Field(
+        alias="maxCommunityDescriptionLength",
+        default=65536,
+    )
+    max_llm_queries_for_global_search: int = Field(
+        alias="maxLLMQueriesForGlobalSearch",
+        default=250,
+    )
+    graph_search_limits: dict[str, int] = Field(
+        alias="localSearchLimits",
+        default={},
+    )
+    enabled: bool = Field(
+        default=True,
+        description="Whether to enable graph search",
     )
 
+
+class SearchSettings(R2RSerializable):
+    """Main search settings class that combines shared settings with specialized settings for chunks and KG."""
+
+    # Search type flags
+    use_semantic_search: bool = Field(
+        default=True,
+        description="Whether to use semantic search",
+        alias="useSemanticSearch",
+    )
+    use_fulltext_search: bool = Field(
+        default=False,
+        description="Whether to use full-text search",
+        alias="useFulltextSearch",
+    )
+
+    # Common search parameters
     filters: dict[str, Any] = Field(
         default_factory=dict,
-        description="""Filters to apply to the vector search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+        description="""Filters to apply to the search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
 
       Commonly seen filters include operations include the following:
 
@@ -343,96 +292,366 @@ class KGSearchSettings(R2RSerializable):
 
         `{"$and": {"$document_id": ..., "collection_ids": ...}}`""",
     )
-
-    search_filters: dict[str, Any] = Field(
-        default_factory=dict,
-        alias="search_filters",
+    limit: int = Field(
+        default=10,
+        description="Maximum number of results to return",
+        ge=1,
+        le=1_000,
+    )
+    offset: int = Field(
+        default=0,
+        ge=0,
+        description="Offset to paginate search results",
+    )
+    include_metadatas: bool = Field(
+        alias="includeMetadatas",
+        default=True,
+        description="Whether to include element metadata in the search results",
+    )
+    include_scores: bool = Field(
+        alias="includeScores",
+        default=True,
+        description="Whether to include search score values in the search results",
     )
 
-    selected_collection_ids: list[UUID] = Field(
-        alias="selectedCollectionIds",
-        default_factory=list,
-        description="Collection IDs to search for",
+    # Search strategy and settings
+    search_strategy: str = Field(
+        alias="searchStrategy",
+        default="vanilla",
+        description="Search strategy to use (e.g., 'default', 'query_fusion', 'hyde')",
+    )
+    hybrid_search_settings: HybridSearchSettings = Field(
+        alias="hybridSearchSettings",
+        default_factory=HybridSearchSettings,
+        description="Settings for hybrid search (only used if `use_semantic_search` and `use_fulltext_search` are both true)",
     )
 
-    graphrag_map_system: str = Field(
-        alias="graphragMapSystem",
-        default="graphrag_map_system",
-        description="The system prompt for the graphrag map prompt.",
+    # Specialized settings
+    chunk_settings: ChunkSearchSettings = Field(
+        default_factory=ChunkSearchSettings,
+        description="Settings specific to chunk/vector search",
     )
-
-    graphrag_reduce_system: str = Field(
-        alias="graphragReduceSystem",
-        default="graphrag_reduce_system",
-        description="The system prompt for the graphrag reduce prompt.",
-    )
-
-    use_kg_search: bool = Field(
-        alias="useKGSearch",
-        default=False,
-        description="Whether to use KG search",
-    )
-    kg_search_type: str = Field(
-        alias="kgSearchType",
-        default="local",
-        description="KG search type",
-    )  # 'global' or 'local'
-    kg_search_level: Optional[str] = Field(
-        alias="kgSearchLevel",
-        default=None,
-        description="KG search level",
-    )
-    generation_config: GenerationConfig = Field(
-        alias="generationConfig",
-        default_factory=GenerationConfig,
-        description="Configuration for text generation during graph search.",
-    )
-
-    # TODO: add these back in
-    # entity_types: list = []
-    # relationships: list = []
-    max_community_description_length: int = Field(
-        alias="maxCommunityDescriptionLength",
-        default=65536,
-    )
-    max_llm_queries_for_global_search: int = Field(
-        alias="maxLLMQueriesForGlobalSearch",
-        default=250,
-    )
-    local_search_limits: dict[str, int] = Field(
-        alias="localSearchLimits",
-        default={
-            "entity": 20,
-            "__Relationship__": 20,
-            "__Community__": 20,
-        },
+    graph_settings: GraphSearchSettings = Field(
+        default_factory=GraphSearchSettings,
+        description="Settings specific to knowledge graph search",
     )
 
     class Config:
         populate_by_name = True
         json_encoders = {UUID: str}
         json_schema_extra = {
+            "use_semantic_search": True,
+            "use_semantic_search": True,
+            "use_fulltext_search": False,
+            "use_hybrid_search": True,
             "use_kg_search": True,
-            "kg_search_type": "local",
-            "kg_search_level": "0",
-            "generation_config": GenerationConfig.Config.json_schema_extra,
-            "max_community_description_length": 65536,
-            "max_llm_queries_for_global_search": 250,
-            "local_search_limits": {
-                "entity": 20,
-                "__Relationship__": 20,
-                "__Community__": 20,
+            "filters": {"category": "technology"},
+            "limit": 20,
+            "offset": 0,
+            "search_strategy": "vanilla",
+            "hybrid_search_settings": {
+                "full_text_weight": 1.0,
+                "semantic_weight": 5.0,
+                "full_text_limit": 200,
+                "rrf_k": 50,
+            },
+            "chunk_settings": {
+                "index_measure": "cosine_distance",
+                "include_metadata": True,
+                "probes": 10,
+                "ef_search": 40,
+            },
+            "graph_settings": {
+                "kg_search_type": "local",
+                "kg_search_level": "0",
+                "generation_config": GenerationConfig.Config.json_schema_extra,
+                "max_community_description_length": 65536,
+                "max_llm_queries_for_global_search": 250,
+                "graph_search_limits": {
+                    "entity": 20,
+                    "__Relationship__": 20,
+                    "__Community__": 20,
+                },
             },
         }
 
     def __init__(self, **data):
-        # Either filters or search filters is supported
+        # Handle legacy search_filters field
         data["filters"] = {
             **data.get("filters", {}),
             **data.get("search_filters", {}),
         }
-        data["search_filters"] = {
-            **data.get("filters", {}),
-            **data.get("search_filters", {}),
-        }
         super().__init__(**data)
+
+    def model_dump(self, *args, **kwargs):
+        dump = super().model_dump(*args, **kwargs)
+        return dump
+
+
+# class HybridSearchSettings(R2RSerializable):
+#     full_text_weight: float = Field(
+#         default=1.0, description="Weight to apply to full text search"
+#     )
+#     semantic_weight: float = Field(
+#         default=5.0, description="Weight to apply to semantic search"
+#     )
+#     full_text_limit: int = Field(
+#         default=200,
+#         description="Maximum number of results to return from full text search",
+#     )
+#     rrf_k: int = Field(
+#         default=50, description="K-value for RRF (Rank Reciprocal Fusion)"
+#     )
+
+
+# class SearchSettings(R2RSerializable):
+#     use_semantic_search: bool = Field(
+#         default=True,
+#         description="Whether to use vector search",
+#         alias="useVectorSearch",
+#     )
+#     use_hybrid_search: bool = Field(
+#         default=False,
+#         description="Whether to perform a hybrid search (combining vector and keyword search)",
+#         alias="useHybridSearch",
+#     )
+#     filters: dict[str, Any] = Field(
+#         default_factory=dict,
+#         alias="search_filters",
+#         description="""Filters to apply to the vector search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+
+#       Commonly seen filters include operations include the following:
+
+#         `{"document_id": {"$eq": "9fbe403b-..."}}`
+
+#         `{"document_id": {"$in": ["9fbe403b-...", "3e157b3a-..."]}}`
+
+#         `{"collection_ids": {"$overlap": ["122fdf6a-...", "..."]}}`
+
+#         `{"$and": {"$document_id": ..., "collection_ids": ...}}`""",
+#     )
+#     search_filters: dict[str, Any] = Field(
+#         default_factory=dict,
+#         deprecated=True,
+#         description="Deprecated. Use 'filters' instead.",
+#     )
+#     limit: int = Field(
+#         default=10,
+#         description="Maximum number of results to return",
+#         alias="search_limit",
+#         ge=1,
+#         le=1_000,
+#     )
+#     search_limit: int = Field(
+#         alias="searchLimit",
+#         default=10,
+#         description="Deprecated. Use 'limit' instead.",
+#         ge=1,
+#         le=1_000,
+#         deprecated=True,
+#     )
+#     offset: int = Field(
+#         default=0,
+#         ge=0,
+#         description="Offset to paginate search results",
+#     )
+#     selected_collection_ids: list[UUID] = Field(
+#         alias="selectedCollectionIds",
+#         default_factory=list,
+#         description="Collection IDs to search for",
+#     )
+#     index_measure: IndexMeasure = Field(
+#         alias="indexMeasure",
+#         default=IndexMeasure.cosine_distance,
+#         description="The distance measure to use for indexing",
+#     )
+#     include_values: bool = Field(
+#         alias="includeScores",
+#         default=True,
+#         description="Whether to include search score values in the search results",
+#     )
+#     include_metadatas: bool = Field(
+#         alias="includeMetadatas",
+#         default=True,
+#         description="Whether to include element metadata in the search results",
+#     )
+#     probes: int = Field(
+#         default=10,
+#         description="Number of ivfflat index lists to query. Higher increases accuracy but decreases speed.",
+#     )
+#     ef_search: int = Field(
+#         alias="efSearch",
+#         default=40,
+#         description="Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed.",
+#     )
+#     hybrid_search_settings: HybridSearchSettings = Field(
+#         alias="hybridSearchSettings",
+#         default=HybridSearchSettings(),
+#         description="Settings for hybrid search",
+#     )
+#     search_strategy: str = Field(
+#         alias="searchStrategy",
+#         default="vanilla",
+#         description="Search strategy to use (e.g., 'default', 'query_fusion', 'hyde')",
+#     )
+
+#     class Config:
+#         populate_by_name = True
+#         json_encoders = {UUID: str}
+#         json_schema_extra = {
+#             "use_semantic_search": True,
+#             "use_hybrid_search": True,
+#             "filters": {"category": "technology"},
+#             "limit": 20,
+#             "offset": 0,
+#             "selected_collection_ids": [
+#                 "2acb499e-8428-543b-bd85-0d9098718220",
+#                 "3e157b3a-8469-51db-90d9-52e7d896b49b",
+#             ],
+#             "index_measure": "cosine_distance",
+#             "include_metadata": True,
+#             "probes": 10,
+#             "ef_search": 40,
+#             "hybrid_search_settings": {
+#                 "full_text_weight": 1.0,
+#                 "semantic_weight": 5.0,
+#                 "full_text_limit": 200,
+#                 "rrf_k": 50,
+#             },
+#         }
+
+#     def model_dump(self, *args, **kwargs):
+#         dump = super().model_dump(*args, **kwargs)
+#         dump["selected_collection_ids"] = [
+#             str(uuid) for uuid in dump["selected_collection_ids"]
+#         ]
+#         return dump
+
+#     def __init__(self, **data):
+#         # Either filters or search filters is supported
+#         data["filters"] = {
+#             **data.get("filters", {}),
+#             **data.get("search_filters", {}),
+#         }
+#         data["search_filters"] = {
+#             **data.get("filters", {}),
+#             **data.get("search_filters", {}),
+#         }
+#         super().__init__(**data)
+
+
+# class GraphSearchSettings(R2RSerializable):
+
+#     entities_level: DataLevel = Field(
+#         alias="dataLevel",
+#         default=DataLevel.DOCUMENT,
+#         description="The level of entities to search for",
+#     )
+
+#     filters: dict[str, Any] = Field(
+#         default_factory=dict,
+#         description="""Filters to apply to the vector search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+
+#       Commonly seen filters include operations include the following:
+
+#         `{"document_id": {"$eq": "9fbe403b-..."}}`
+
+#         `{"document_id": {"$in": ["9fbe403b-...", "3e157b3a-..."]}}`
+
+#         `{"collection_ids": {"$overlap": ["122fdf6a-...", "..."]}}`
+
+#         `{"$and": {"$document_id": ..., "collection_ids": ...}}`""",
+#     )
+
+#     search_filters: dict[str, Any] = Field(
+#         default_factory=dict,
+#         alias="search_filters",
+#     )
+
+#     selected_collection_ids: list[UUID] = Field(
+#         alias="selectedCollectionIds",
+#         default_factory=list,
+#         description="Collection IDs to search for",
+#     )
+
+#     graphrag_map_system: str = Field(
+#         alias="graphragMapSystem",
+#         default="graphrag_map_system",
+#         description="The system prompt for the graphrag map prompt.",
+#     )
+
+#     graphrag_reduce_system: str = Field(
+#         alias="graphragReduceSystem",
+#         default="graphrag_reduce_system",
+#         description="The system prompt for the graphrag reduce prompt.",
+#     )
+
+#     use_kg_search: bool = Field(
+#         alias="useKGSearch",
+#         default=False,
+#         description="Whether to use KG search",
+#     )
+#     kg_search_type: str = Field(
+#         alias="kgSearchType",
+#         default="local",
+#         description="KG search type",
+#     )  # 'global' or 'local'
+#     kg_search_level: Optional[str] = Field(
+#         alias="kgSearchLevel",
+#         default=None,
+#         description="KG search level",
+#     )
+#     generation_config: GenerationConfig = Field(
+#         alias="generationConfig",
+#         default_factory=GenerationConfig,
+#         description="Configuration for text generation during graph search.",
+#     )
+
+#     # TODO: add these back in
+#     # entity_types: list = []
+#     # relationships: list = []
+#     max_community_description_length: int = Field(
+#         alias="maxCommunityDescriptionLength",
+#         default=65536,
+#     )
+#     max_llm_queries_for_global_search: int = Field(
+#         alias="maxLLMQueriesForGlobalSearch",
+#         default=250,
+#     )
+#     graph_search_limits: dict[str, int] = Field(
+#         alias="localSearchLimits",
+#         default={
+#             "entity": 20,
+#             "__Relationship__": 20,
+#             "__Community__": 20,
+#         },
+#     )
+
+#     class Config:
+#         populate_by_name = True
+#         json_encoders = {UUID: str}
+#         json_schema_extra = {
+#             "use_kg_search": True,
+#             "kg_search_type": "local",
+#             "kg_search_level": "0",
+#             "generation_config": GenerationConfig.Config.json_schema_extra,
+#             "max_community_description_length": 65536,
+#             "max_llm_queries_for_global_search": 250,
+#             "graph_search_limits": {
+#                 "entity": 20,
+#                 "__Relationship__": 20,
+#                 "__Community__": 20,
+#             },
+#         }
+
+#     def __init__(self, **data):
+#         # Either filters or search filters is supported
+#         data["filters"] = {
+#             **data.get("filters", {}),
+#             **data.get("search_filters", {}),
+#         }
+#         data["search_filters"] = {
+#             **data.get("filters", {}),
+#             **data.get("search_filters", {}),
+#         }
+#         super().__init__(**data)
