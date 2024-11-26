@@ -812,7 +812,10 @@ class PostgresDocumentHandler(DocumentHandler):
         if search_settings is None:
             search_settings = SearchSettings()
 
-        if search_settings.use_hybrid_search:
+        if (
+            search_settings.use_semantic_search
+            and search_settings.use_fulltext_search
+        ) or search_settings.use_hybrid_search:
             if query_embedding is None:
                 raise ValueError(
                     "query_embedding is required for hybrid search"

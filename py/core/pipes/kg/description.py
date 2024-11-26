@@ -92,9 +92,6 @@ class KGEntityDescriptionPipe(AsyncPipe):
                 for chunk_id in entity.chunk_ids:
                     unique_chunk_ids.add(chunk_id)
 
-            # import pdb; pdb.set_trace()
-            print("entities[0] = ", entities[0])
-
             out_entity = entities[0]
             if not out_entity.description:
                 out_entity.description = (
