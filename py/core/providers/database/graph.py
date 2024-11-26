@@ -3265,6 +3265,8 @@ class PostgresGraphHandler(GraphHandler):
         property_names_str = ", ".join(property_names)
 
         collection_ids_dict = filters.get("collection_ids", {})
+        print("filters = ", filters)
+        print("collection_ids_dict = ", collection_ids_dict)
         filter_query = ""
         if collection_ids_dict:
             filter_query = "WHERE collection_id = ANY($3)"

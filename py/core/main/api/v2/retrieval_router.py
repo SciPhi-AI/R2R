@@ -15,9 +15,9 @@ from core.base import (
     SearchSettings,
 )
 from core.base.api.models import (
+    WrappedAgentResponse,
     WrappedCompletionResponse,
     WrappedDocumentSearchResponse,
-    WrappedAgentResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
@@ -171,9 +171,11 @@ class RetrievalRouter(BaseRouter):
                 auth_user, vector_search_settings
             )
 
+            print("vector_search_settings = ", vector_search_settings)
             kg_search_settings.filters = self._select_filters(
                 auth_user, kg_search_settings
             )
+            print("kg_search_settings = ", kg_search_settings)
 
             results = await self.service.search(
                 query=query,

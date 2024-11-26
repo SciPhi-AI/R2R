@@ -554,7 +554,7 @@ class ManagementService(Service):
         print("create collection result = ", result)
         graph_result = await self.providers.database.graph_handler.create(
             collection_id=result.id,
-            user_id=user_id,
+            # user_id=user_id,
             name=name,
             description=description,
             graph_id=result.id,
