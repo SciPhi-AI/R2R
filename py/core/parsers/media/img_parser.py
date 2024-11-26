@@ -45,7 +45,6 @@ class ImageParser(AsyncParser[DataType]):
 
         Args:
             data: Image data (bytes or base64 string)
-            chunk_size: Size of text chunks to yield
             *args, **kwargs: Additional arguments passed to the completion call
 
         Yields:
