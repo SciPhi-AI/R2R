@@ -75,6 +75,9 @@ class VectorSearchPipe(SearchPipe):
             )
 
         elif search_settings.use_semantic_search:
+            print(
+                "performing semantic search, search_settings:", search_settings
+            )
             search_results = await self.database_provider.semantic_search(
                 query_vector=query_vector,
                 search_settings=search_settings,
