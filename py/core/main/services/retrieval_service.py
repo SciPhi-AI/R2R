@@ -96,7 +96,6 @@ class RetrievalService(Service):
                 "run_manager": self.run_manager,
                 **kwargs,
             }
-            print("kwargs = ", kwargs)
             results = await self.pipelines.search_pipeline.run(
                 *args,
                 **merged_kwargs,

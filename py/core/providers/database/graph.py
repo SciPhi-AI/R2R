@@ -4,7 +4,7 @@ import json
 import logging
 import time
 from enum import Enum
-from typing import Any, AsyncGenerator, Optional, Tuple
+from typing import Any, AsyncGenerator, Optional, Tuple, Union
 from uuid import UUID, uuid4
 
 import asyncpg
@@ -3252,6 +3252,123 @@ class PostgresGraphHandler(GraphHandler):
 
     ####################### GRAPH SEARCH METHODS #######################
 
+    def _build_filters(
+        self, filters: dict, parameters: list[Union[str, int, bytes]]
+    ) -> str:
+        # COLUMN_VARS = [
+        #     # "chunk_id",
+        #     # "document_id",
+        #     # "user_id",
+        #     "collection_ids",
+        # ]
+
+        def parse_condition(key: str, value: Any) -> str:  # type: ignore
+            # nonlocal parameters
+            if key == "collection_ids":
+                if isinstance(value, dict):
+                    op, clause = next(iter(value.items()))
+                    if op == "$overlap":
+                        # Match if collection_id equals any of the provided IDs
+                        parameters.append(clause)  # Add the whole array of IDs
+                        print("clause = ", clause)
+                        print("key = ", key)
+                        print("value = ", value)
+
+                        return f"parent_id = ANY(${len(parameters)})"  # TODO - this is hard coded to assume graph id - collection id
+                raise Exception(
+                    "Unknown filter for `collection_ids`, only `$overlap` is supported"
+                )
+
+            else:
+                # Handle JSON-based filters
+                json_col = "metadata"
+                if key.startswith("metadata."):
+                    key = key.split("metadata.")[1]
+                if isinstance(value, dict):
+                    op, clause = next(iter(value.items()))
+                    if op not in (
+                        "$eq",
+                        "$ne",
+                        "$lt",
+                        "$lte",
+                        "$gt",
+                        "$gte",
+                        "$in",
+                        "$contains",
+                    ):
+                        raise Exception("unknown operator")
+
+                    if op == "$eq":
+                        parameters.append(json.dumps(clause))
+                        return (
+                            f"{json_col}->'{key}' = ${len(parameters)}::jsonb"
+                        )
+                    elif op == "$ne":
+                        parameters.append(json.dumps(clause))
+                        return (
+                            f"{json_col}->'{key}' != ${len(parameters)}::jsonb"
+                        )
+                    elif op == "$lt":
+                        parameters.append(json.dumps(clause))
+                        return f"({json_col}->'{key}')::float < (${len(parameters)}::jsonb)::float"
+                    elif op == "$lte":
+                        parameters.append(json.dumps(clause))
+                        return f"({json_col}->'{key}')::float <= (${len(parameters)}::jsonb)::float"
+                    elif op == "$gt":
+                        parameters.append(json.dumps(clause))
+                        return f"({json_col}->'{key}')::float > (${len(parameters)}::jsonb)::float"
+                    elif op == "$gte":
+                        parameters.append(json.dumps(clause))
+                        return f"({json_col}->'{key}')::float >= (${len(parameters)}::jsonb)::float"
+                    elif op == "$in":
+                        if not isinstance(clause, list):
+                            raise Exception(
+                                "argument to $in filter must be a list"
+                            )
+                        parameters.append(json.dumps(clause))
+                        return f"{json_col}->'{key}' = ANY(SELECT jsonb_array_elements(${len(parameters)}::jsonb))"
+                    elif op == "$contains":
+                        if not isinstance(clause, (int, str, float, list)):
+                            raise Exception(
+                                "argument to $contains filter must be a scalar or array"
+                            )
+                        parameters.append(json.dumps(clause))
+                        return (
+                            f"{json_col}->'{key}' @> ${len(parameters)}::jsonb"
+                        )
+
+        def parse_filter(filter_dict: dict) -> str:
+            filter_conditions = []
+            for key, value in filter_dict.items():
+                if key == "$and":
+                    and_conditions = [
+                        parse_filter(f) for f in value if f
+                    ]  # Skip empty dictionaries
+                    if and_conditions:
+                        filter_conditions.append(
+                            f"({' AND '.join(and_conditions)})"
+                        )
+                elif key == "$or":
+                    or_conditions = [
+                        parse_filter(f) for f in value if f
+                    ]  # Skip empty dictionaries
+                    if or_conditions:
+                        filter_conditions.append(
+                            f"({' OR '.join(or_conditions)})"
+                        )
+                else:
+                    filter_conditions.append(parse_condition(key, value))
+
+            # Check if there is only a single condition
+            if len(filter_conditions) == 1:
+                return filter_conditions[0]
+            else:
+                return " AND ".join(filter_conditions)
+
+        where_clause = parse_filter(filters)
+
+        return where_clause
+
     async def graph_search(
         self, query: str, **kwargs: Any
     ) -> AsyncGenerator[Any, None]:
@@ -3268,49 +3385,55 @@ class PostgresGraphHandler(GraphHandler):
         print("filters = ", filters)
         limit = kwargs.get("limit", 10)
 
-        print("kwargs = ", kwargs)
-
         table_name = f"graph_{search_type}"
+        # if  "collection_id" in filters and "collection_ids" not in property_names:
+        #     property_names.append("collection_id")
         property_names_str = ", ".join(property_names)
 
-        collection_ids_dict = filters.get("collection_ids", {})
-        filter_query = ""
-        if collection_ids_dict:
-            filter_query = "WHERE collection_id = ANY($3)"
-            filter_ids = collection_ids_dict["$overlap"]
+        # collection_ids_dict = filters.get("collection_ids", {})
+        # filter_query = ""
+        # if collection_ids_dict:
+        #     filter_query = "WHERE collection_id = ANY($3)"
+        #     filter_ids = collection_ids_dict["$overlap"]
 
-            filter_query = "WHERE document_id = ANY($3)"
-            # TODO - This seems like a hack, we will need a better way to filter by collection ids for entities and relationships
-            query = f"""
-                SELECT distinct document_id FROM {self._get_table_name('document_info')} WHERE $1 = ANY(collection_ids)
-            """
-            filter_ids = [
-                doc_id["document_id"]
-                for doc_id in await self.connection_manager.fetch_query(
-                    query, filter_ids
-                )
-            ]
-            logger.info(f"Searching in document ids: {filter_ids}")
+        #     filter_query = "WHERE document_id = ANY($3)"
+        #     # TODO - This seems like a hack, we will need a better way to filter by collection ids for entities and relationships
+        #     query = f"""
+        #         SELECT distinct document_id FROM {self._get_table_name('document_info')} WHERE $1 = ANY(collection_ids)
+        #     """
+        #     filter_ids = [
+        #         doc_id["document_id"]
+        #         for doc_id in await self.connection_manager.fetch_query(
+        #             query, filter_ids
+        #         )
+        #     ]
+        #     logger.info(f"Searching in document ids: {filter_ids}")
+        where_clause = ""
+        params: list[Union[str, int, bytes]] = [str(query_embedding), limit]
+        if filters:
+            where_clause = self._build_filters(filters, params)
+            where_clause = f"WHERE {where_clause}"
 
         # Modified query to include similarity score while keeping same structure
         QUERY = f"""
             SELECT
                 {property_names_str},
                 ({embedding_type} <=> $1) as similarity_score
-            FROM {self._get_table_name(table_name)} {filter_query}
+            FROM {self._get_table_name(table_name)} {where_clause}
             ORDER BY {embedding_type} <=> $1
             LIMIT $2;
         """
         print("QUERY = ", QUERY)
+        print("params = ", params)
 
-        if filter_query != "":
-            results = await self.connection_manager.fetch_query(
-                QUERY, (str(query_embedding), limit, filter_ids)
-            )
-        else:
-            results = await self.connection_manager.fetch_query(
-                QUERY, (str(query_embedding), limit)
-            )
+        # if filter_query != "":
+        #     results = await self.connection_manager.fetch_query(
+        #         QUERY, (str(query_embedding), limit, filter_ids)
+        #     )
+        # else:
+        results = await self.connection_manager.fetch_query(
+            QUERY, tuple(params)
+        )
 
         for result in results:
             output = {

@@ -64,7 +64,6 @@ class DocumentsSDK:
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
 
-        print("data = ", data)
         if file_path:
             # Create a new file instance that will remain open during the request
             file_instance = open(file_path, "rb")
