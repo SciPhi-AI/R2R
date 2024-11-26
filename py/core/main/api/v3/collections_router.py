@@ -8,7 +8,6 @@ from fastapi import Body, Depends, Path, Query
 from core.base import R2RException, RunType
 from core.base.api.models import (
     GenericBooleanResponse,
-    GenericMessageResponse,
     WrappedBooleanResponse,
     WrappedCollectionResponse,
     WrappedCollectionsResponse,

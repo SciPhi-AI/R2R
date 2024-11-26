@@ -17,12 +17,8 @@ from shared.api.models.ingestion.responses import (
     WrappedUpdateResponse,
 )
 from shared.api.models.kg.responses import (
-    KGCreationResponse,
     KGEnrichmentResponse,
-    KGEntityDeduplicationResponse,
-    WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
-    WrappedKGEntityDeduplicationResponse,
     # TODO: Need to review anything above this
     GraphResponse,
     WrappedGraphResponse,
@@ -86,12 +82,8 @@ __all__ = [
     "WrappedUpdateResponse",
     "WrappedMetadataUpdateResponse",
     # Restructure Responses
-    "KGCreationResponse",
     "KGEnrichmentResponse",
-    "KGEntityDeduplicationResponse",
-    "WrappedKGCreationResponse",
     "WrappedKGEnrichmentResponse",
-    "WrappedKGEntityDeduplicationResponse",
     # TODO: Need to review anything above this
     "GraphResponse",
     "WrappedGraphResponse",

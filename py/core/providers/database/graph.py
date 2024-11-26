@@ -2084,7 +2084,7 @@ class PostgresGraphHandler(GraphHandler):
             UPDATE {self._get_table_name("graph")}
             SET {', '.join(update_fields)}
             WHERE id = ${param_index}
-            RETURNING id, name, description, status, created_at, updated_at, collection_id, document_ids,
+            RETURNING id, name, description, status, created_at, updated_at, collection_id, document_ids
         """
 
         try:

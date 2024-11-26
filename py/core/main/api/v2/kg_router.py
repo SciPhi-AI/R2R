@@ -10,10 +10,7 @@ from core.base import Workflow
 from core.base.abstractions import DataLevel, KGRunType
 from core.base.api.models import (
     WrappedCommunitiesResponse,
-    WrappedKGCreationResponse,
-    WrappedKGEnrichmentResponse,
     WrappedEntitiesResponse,
-    WrappedKGEntityDeduplicationResponse,
     WrappedRelationshipsResponse,
     WrappedKGTunePromptResponse,
 )
@@ -105,7 +102,7 @@ class KGRouter(BaseRouter):
             ),
             run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ):  #  -> WrappedKGCreationResponse:  # type: ignore
+        ):
             """
             Creating a graph on your documents. This endpoint takes input a list of document ids and KGCreationSettings.
             If document IDs are not provided, the graph will be created on all documents in the system.
@@ -186,7 +183,7 @@ class KGRouter(BaseRouter):
             ),
             run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ):  # -> WrappedKGEnrichmentResponse:
+        ):
             """
             This endpoint enriches the graph with additional information.
             It creates communities of nodes based on their similarity and adds embeddings to the graph.
@@ -395,7 +392,7 @@ class KGRouter(BaseRouter):
                 None, description="Settings for the deduplication process."
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGEntityDeduplicationResponse:
+        ):
             """
             Deduplicate entities in the knowledge graph.
             """

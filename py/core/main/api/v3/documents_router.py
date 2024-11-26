@@ -14,7 +14,6 @@ from pydantic import Json
 from core.base import R2RException, RunType, generate_document_id
 from core.base.abstractions import (
     Entity,
-    GraphBuildSettings,
     KGCreationSettings,
     KGRunType,
     Relationship,
@@ -28,7 +27,6 @@ from core.base.api.models import (
     WrappedDocumentResponse,
     WrappedDocumentsResponse,
     WrappedIngestionResponse,
-    WrappedKGCreationResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -1257,7 +1255,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Whether to run the entities and relationships extraction process with orchestration.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGCreationResponse:  # type: ignore
+        ):
             """
             Extracts entities and relationships from a document.
                 The entities and relationships extraction process involves:

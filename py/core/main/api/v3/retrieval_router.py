@@ -220,7 +220,6 @@ class RetrievalRouterV3(BaseRouterV3):
                 description="Search query to find relevant documents",
             ),
             search_settings: SearchSettings = Body(
-                alias="searchSettings",
                 default_factory=SearchSettings,
                 description="Settings for vector-based search",
             ),
@@ -379,22 +378,18 @@ class RetrievalRouterV3(BaseRouterV3):
         async def rag_app(
             query: str = Body(...),
             search_settings: SearchSettings = Body(
-                alias="searchSettings",
                 default_factory=SearchSettings,
                 description="Settings for vector-based search",
             ),
             rag_generation_config: GenerationConfig = Body(
-                alias="ragGenerationConfig",
                 default_factory=GenerationConfig,
                 description="Configuration for RAG generation",
             ),
             task_prompt_override: Optional[str] = Body(
-                alias="taskPromptOverride",
                 default=None,
                 description="Optional custom prompt to override default",
             ),
             include_title_if_available: bool = Body(
-                alias="includeTitleIfAvailable",
                 default=False,
                 description="Include document titles in responses when available",
             ),
@@ -564,32 +559,26 @@ class RetrievalRouterV3(BaseRouterV3):
                 description="List of messages (deprecated, use message instead)",
             ),
             search_settings: SearchSettings = Body(
-                alias="searchSettings",
                 default_factory=SearchSettings,
                 description="Settings for vector-based search",
             ),
             rag_generation_config: GenerationConfig = Body(
-                alias="ragGenerationConfig",
                 default_factory=GenerationConfig,
                 description="Configuration for RAG generation",
             ),
             task_prompt_override: Optional[str] = Body(
-                alias="taskPromptOverride",
                 default=None,
                 description="Optional custom prompt to override default",
             ),
             include_title_if_available: bool = Body(
-                alias="includeTitleIfAvailable",
                 default=True,
                 description="Include document titles in responses when available",
             ),
             conversation_id: Optional[UUID] = Body(
-                alias="conversationId",
                 default=None,
                 description="ID of the conversation",
             ),
             branch_id: Optional[UUID] = Body(
-                alias="branchId",
                 default=None,
                 description="ID of the conversation branch",
             ),
@@ -770,7 +759,6 @@ class RetrievalRouterV3(BaseRouterV3):
                 ],
             ),
             generation_config: GenerationConfig = Body(
-                alias="generationConfig",
                 default_factory=GenerationConfig,
                 description="Configuration for text generation",
                 example={

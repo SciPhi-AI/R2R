@@ -16,19 +16,14 @@ from core.base.abstractions import (
 )
 from core.base.api.models import (
     GenericBooleanResponse,
-    GenericMessageResponse,
-    PaginatedResultsWrapper,
     WrappedBooleanResponse,
     WrappedCommunitiesResponse,
     WrappedCommunityResponse,
     WrappedEntitiesResponse,
     WrappedEntityResponse,
-    WrappedGenericMessageResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
-    WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
-    WrappedKGEntityDeduplicationResponse,
     WrappedKGTunePromptResponse,
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,
@@ -87,7 +82,7 @@ class GraphRouter(BaseRouterV3):
         run_type: Optional[KGRunType] = KGRunType.ESTIMATE,
         run_with_orchestration: bool = True,
         auth_user=None,
-    ) -> WrappedKGEntityDeduplicationResponse:
+    ):
         """Deduplicates entities in the knowledge graph using LLM-based analysis.
 
         The deduplication process:
@@ -600,7 +595,7 @@ class GraphRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[Entity]]:
+        ) -> WrappedEntitiesResponse:
             """Lists all entities in the graph with pagination support."""
             # return await self.services["kg"].get_entities(
             #     id, offset, limit, auth_user
@@ -610,8 +605,8 @@ class GraphRouter(BaseRouterV3):
                     collection_id, offset, limit
                 )
             )
-            print("entities = ", entities)
-            return entities, {
+
+            return entities, {  # type: ignore
                 "total_entries": count,
             }
 
@@ -624,7 +619,7 @@ class GraphRouter(BaseRouterV3):
             ),
             entity: Entity = Body(..., description="The entity to create"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):  # -> WrappedEntityResponse:
+        ) -> WrappedEntityResponse:
             """Creates a new entity in the graph."""
             if (
                 not auth_user.is_superuser
@@ -757,7 +752,7 @@ class GraphRouter(BaseRouterV3):
             await self.providers.database.graph_handler.entities.delete(
                 collection_id, [entity_id], "graph"
             )
-            return {"success": True}
+            return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.get("/graphs/{collection_id}/relationships")
         @self.base_endpoint
@@ -778,7 +773,7 @@ class GraphRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[Relationship]]:
+        ) -> WrappedRelationshipsResponse:
             """
             Lists all relationships in the graph with pagination support.
             """
@@ -801,7 +796,7 @@ class GraphRouter(BaseRouterV3):
                 )
             )
 
-            return relationships, {
+            return relationships, {  # type: ignore
                 "total_entries": count,
             }
 
@@ -863,7 +858,7 @@ class GraphRouter(BaseRouterV3):
                 ..., description="The updated relationship object."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):  #  -> WrappedRelationshipResponse:
+        ) -> WrappedRelationshipResponse:
             """Updates an existing relationship in the graph."""
             relationship.id = relationship_id
             relationship.parent_id = relationship.parent_id or collection_id
@@ -895,7 +890,7 @@ class GraphRouter(BaseRouterV3):
             await self.providers.database.graph_handler.relationships.delete(
                 collection_id, [relationship_id], "graph"
             )
-            return {"success": True}
+            return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
             "/graphs/{collection_id}/communities/build",
@@ -1388,7 +1383,7 @@ class GraphRouter(BaseRouterV3):
                     f"No documents were added to graph {collection_id}, marking as failed."
                 )
 
-            return GenericBooleanResponse(success=success)
+            return GenericBooleanResponse(success=success)  # type: ignore
 
         @self.router.delete(
             "/graphs/{collection_id}/documents/{document_id}",
@@ -1460,4 +1455,4 @@ class GraphRouter(BaseRouterV3):
                 )
             )
 
-            return GenericBooleanResponse(success=success)
+            return GenericBooleanResponse(success=success)  # type: ignore

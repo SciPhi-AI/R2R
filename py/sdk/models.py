@@ -23,9 +23,7 @@ from shared.abstractions import (
 )
 from shared.api.models import (
     CombinedSearchResponse,
-    KGCreationResponse,
     KGEnrichmentResponse,
-    KGEntityDeduplicationResponse,
     RAGResponse,
     UserResponse,
 )
@@ -52,8 +50,6 @@ __all__ = [
     "ChunkSearchResult",
     "SearchSettings",
     "KGEntityDeduplicationSettings",
-    "KGEntityDeduplicationResponse",
-    "KGCreationResponse",
     "KGEnrichmentResponse",
     "RAGResponse",
     "CombinedSearchResponse",
