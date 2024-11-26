@@ -139,9 +139,20 @@ class KGSearchSearchPipe(GeneratorPipe):
                         description=search_result["description"],
                     ),
                     result_type=KGSearchResultType.ENTITY,
-                    score=search_result["similarity_score"],
+                    score=(
+                        search_result["similarity_score"]
+                        if search_settings.include_scores
+                        else None
+                    ),
                     # chunk_ids=search_result["chunk_ids"],
-                    metadata={"associated_query": message},
+                    metadata=(
+                        {
+                            "associated_query": message,
+                            **(search_result["metadata"] or {}),
+                        }
+                        if search_settings.include_metadatas
+                        else None
+                    ),
                 )
 
             # # relationship search
@@ -178,10 +189,21 @@ class KGSearchSearchPipe(GeneratorPipe):
                         description=search_result["description"],
                     ),
                     result_type=KGSearchResultType.RELATIONSHIP,
-                    score=search_result["similarity_score"],
+                    score=(
+                        search_result["similarity_score"]
+                        if search_settings.include_scores
+                        else None
+                    ),
                     # chunk_ids=search_result["chunk_ids"],
                     # document_ids=search_result["document_ids"],
-                    metadata={"associated_query": message},
+                    metadata=(
+                        {
+                            "associated_query": message,
+                            **(search_result["metadata"] or {}),
+                        }
+                        if search_settings.include_metadatas
+                        else None
+                    ),
                 )
 
             # community search

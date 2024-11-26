@@ -2887,6 +2887,9 @@ class PostgresGraphHandler(GraphHandler):
         search_type = kwargs.get("search_type", "entity")
         embedding_type = kwargs.get("embedding_type", "description_embedding")
         property_names = kwargs.get("property_names", ["name", "description"])
+        if "metadata" not in property_names:
+            property_names.append("metadata")
+
         filters = kwargs.get("filters", {})
         print("filters = ", filters)
         limit = kwargs.get("limit", 10)
@@ -2906,7 +2909,6 @@ class PostgresGraphHandler(GraphHandler):
         if filters:
             where_clause = self._build_filters(filters, params)
             where_clause = f"WHERE {where_clause}"
-
         # Modified query to include similarity score while keeping same structure
         QUERY = f"""
             SELECT
@@ -2926,6 +2928,7 @@ class PostgresGraphHandler(GraphHandler):
                 for property_name in property_names
             }
             output["similarity_score"] = 1 - float(result["similarity_score"])
+            print("output = ", output)
             yield output
 
     ####################### GRAPH CLUSTERING METHODS #######################
