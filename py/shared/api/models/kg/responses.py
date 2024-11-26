@@ -261,7 +261,6 @@ WrappedKGEntityDeduplicationResponse = ResultsWrapper[
 class GraphResponse(BaseModel):
     id: UUID
     collection_id: UUID
-    user_id: UUID
     name: str
     description: Optional[str]
     status: str

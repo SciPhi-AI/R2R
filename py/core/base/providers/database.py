@@ -2,13 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from io import BytesIO
-from typing import (
-    Any,
-    BinaryIO,
-    Optional,
-    Sequence,
-    Tuple,
-)
+from typing import Any, BinaryIO, Optional, Sequence, Tuple
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -1045,6 +1039,7 @@ class DatabaseProvider(Provider):
         description: str = "",
         collection_id: Optional[UUID] = None,
     ) -> CollectionResponse:
+        print("create_collection in database being called...")
         return await self.collections_handler.create_collection(
             user_id=user_id,
             name=name,

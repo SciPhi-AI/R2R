@@ -183,12 +183,28 @@ def hatchet_ingestion_factory(
                     for collection_id in collection_ids:
                         try:
                             # FIXME: Right now we just throw a warning if the collection already exists, but we should probably handle this more gracefully
-                            await service.providers.database.create_collection(
+                            # await service.providers.database.create_collection(
+                            #     user_id=document_info.user_id,
+                            #     name=document_info.title or "N/A",
+                            #     description="",
+                            #     collection_id=collection_id,
+                            # )
+                            name = document_info.title or "N/A"
+                            description = ""
+                            result = await self.providers.database.create_collection(
                                 user_id=document_info.user_id,
-                                name=document_info.title,
-                                description="",
+                                name=name,
+                                description=description,
                                 collection_id=collection_id,
                             )
+                            print("create collection result = ", result)
+                            await self.providers.database.graph_handler.create(
+                                collection_id=collection_id,
+                                name=name,
+                                description=description,
+                                graph_id=collection_id,
+                            )
+
                         except Exception as e:
                             logger.warning(
                                 f"Warning, could not create collection with error: {str(e)}"
@@ -512,12 +528,21 @@ def hatchet_ingestion_factory(
                 else:
                     for collection_id in collection_ids:
                         try:
+                            name = document_info.title or "N/A"
+                            description = ""
                             await service.providers.database.create_collection(
                                 user_id=document_info.user_id,
-                                name=document_info.title or "N/A",
-                                description="",
+                                name=name,
+                                description=description,
                                 collection_id=collection_id,
                             )
+                            await self.providers.database.graph_handler.create(
+                                collection_id=collection_id,
+                                name=name,
+                                description=description,
+                                graph_id=collection_id,
+                            )
+
                         except Exception as e:
                             logger.warning(
                                 f"Warning, could not create collection with error: {str(e)}"

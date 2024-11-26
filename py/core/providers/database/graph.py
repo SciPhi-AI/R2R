@@ -1143,7 +1143,7 @@ class PostgresCommunityHandler(CommunityHandler):
             relationship_ids INT[] NOT NULL,
             graph_id UUID,
             collection_id UUID,
-            UNIQUE (graph_id, node, cluster, level)
+            UNIQUE (graph_id, collection_id, node, cluster, level)
         );"""
 
         await self.connection_manager.execute_query(query)
@@ -1166,11 +1166,11 @@ class PostgresCommunityHandler(CommunityHandler):
             description_embedding {vector_column_str} NOT NULL,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            created_by UUID REFERENCES {self._get_table_name("users")}(user_id),
-            updated_by UUID REFERENCES {self._get_table_name("users")}(user_id),
             metadata JSONB,
             UNIQUE (community_number, level, graph_id, collection_id)
         );"""
+        # created_by UUID REFERENCES {self._get_table_name("users")}(user_id),
+        # updated_by UUID REFERENCES {self._get_table_name("users")}(user_id),
 
         await self.connection_manager.execute_query(query)
 
@@ -1396,7 +1396,6 @@ class PostgresGraphHandler(GraphHandler):
         QUERY = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("graph")} (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                user_id UUID NOT NULL,
                 collection_id UUID NOT NULL,
                 name TEXT NOT NULL,
                 description TEXT,
@@ -1414,8 +1413,6 @@ class PostgresGraphHandler(GraphHandler):
 
             CREATE INDEX IF NOT EXISTS graph_collection_id_idx
                 ON {self._get_table_name("graph")} (collection_id);
-            CREATE INDEX IF NOT EXISTS graph_user_id_idx
-                ON {self._get_table_name("graph")} (user_id);
         """
 
         await self.connection_manager.execute_query(QUERY)
@@ -1426,13 +1423,13 @@ class PostgresGraphHandler(GraphHandler):
 
     async def create(
         self,
-        user_id: UUID,
         collection_id: UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
         graph_id: Optional[UUID] = None,
         status: str = "pending",
     ) -> GraphResponse:
+        print("create in graph being called....")
         """Create a new graph associated with a collection."""
         graph_id = graph_id or uuid4()
         name = name or f"Graph {graph_id}"
@@ -1440,13 +1437,12 @@ class PostgresGraphHandler(GraphHandler):
 
         query = f"""
             INSERT INTO {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
-            (id, user_id, collection_id, name, description, status)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id, user_id, collection_id, name, description, status, created_at, updated_at, document_ids
+            (id, collection_id, name, description, status)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id, collection_id, name, description, status, created_at, updated_at, document_ids
         """
         params = [
             graph_id,
-            user_id,
             collection_id,
             name,
             description,
@@ -1461,7 +1457,6 @@ class PostgresGraphHandler(GraphHandler):
 
             return GraphResponse(
                 id=result["id"],
-                user_id=result["user_id"],
                 collection_id=result["collection_id"],
                 name=result["name"],
                 description=result["description"],
@@ -1617,7 +1612,7 @@ class PostgresGraphHandler(GraphHandler):
         self,
         offset: int,
         limit: int,
-        filter_user_ids: Optional[list[UUID]] = None,
+        # filter_user_ids: Optional[list[UUID]] = None,
         filter_graph_ids: Optional[list[UUID]] = None,
         filter_collection_id: Optional[UUID] = None,
     ) -> dict[str, list[GraphResponse] | int]:
@@ -1630,10 +1625,10 @@ class PostgresGraphHandler(GraphHandler):
             params.append(filter_graph_ids)
             param_index += 1
 
-        if filter_user_ids:
-            conditions.append(f"user_id = ANY(${param_index})")
-            params.append(filter_user_ids)
-            param_index += 1
+        # if filter_user_ids:
+        #     conditions.append(f"user_id = ANY(${param_index})")
+        #     params.append(filter_user_ids)
+        #     param_index += 1
 
         if filter_collection_id:
             conditions.append(f"collection_id = ${param_index}")
@@ -1647,7 +1642,7 @@ class PostgresGraphHandler(GraphHandler):
         query = f"""
             WITH RankedGraphs AS (
                 SELECT
-                    id, user_id, collection_id, name, description, status, created_at, updated_at, document_ids,
+                    id, collection_id, name, description, status, created_at, updated_at, document_ids,
                     COUNT(*) OVER() as total_entries,
                     ROW_NUMBER() OVER (PARTITION BY collection_id ORDER BY created_at DESC) as rn
                 FROM {self._get_table_name("graph")}
@@ -1660,6 +1655,8 @@ class PostgresGraphHandler(GraphHandler):
         """
 
         params.extend([offset, limit])
+        print("query =  ", query)
+        print("params =  ", params)
 
         try:
             results = await self.connection_manager.fetch_query(query, params)
@@ -1672,7 +1669,6 @@ class PostgresGraphHandler(GraphHandler):
                 GraphResponse(
                     id=row["id"],
                     document_ids=row["document_ids"] or [],
-                    user_id=row["user_id"],
                     name=row["name"],
                     collection_id=row["collection_id"],
                     description=row["description"],
@@ -2082,7 +2078,7 @@ class PostgresGraphHandler(GraphHandler):
             UPDATE {self._get_table_name("graph")}
             SET {', '.join(update_fields)}
             WHERE id = ${param_index}
-            RETURNING id, user_id, name, description, status, created_at, updated_at, collection_id, document_ids,
+            RETURNING id, name, description, status, created_at, updated_at, collection_id, document_ids,
         """
 
         try:
@@ -2095,7 +2091,6 @@ class PostgresGraphHandler(GraphHandler):
 
             return GraphResponse(
                 id=result["id"],
-                user_id=result["user_id"],
                 collection_id=result["collection_id"],
                 name=result["name"],
                 description=result["description"],
@@ -3262,23 +3257,11 @@ class PostgresGraphHandler(GraphHandler):
         embedding_type = kwargs.get("embedding_type", "description_embedding")
         property_names = kwargs.get("property_names", ["name", "description"])
         filters = kwargs.get("filters", {})
-        entities_level = kwargs.get("entities_level", DataLevel.DOCUMENT)
         limit = kwargs.get("limit", 10)
 
-        table_name = "graph_entity"
-        # if search_type == "entity":
-        #     table_name = (
-        #         "collection_entity"
-        #         if entities_level == DataLevel.COLLECTION
-        #         else "entity"
-        #     )
-        # elif search_type == "__Relationship__":
-        #     table_name = "relationship"
-        # elif search_type == "__Community__":
-        #     table_name = "graph_community"
-        # else:
-        #     raise ValueError(f"Invalid search type: {search_type}")
+        print("kwargs = ", kwargs)
 
+        table_name = "graph_entity"
         property_names_str = ", ".join(property_names)
 
         collection_ids_dict = filters.get("collection_ids", {})

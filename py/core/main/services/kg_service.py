@@ -452,33 +452,34 @@ class KgService(Service):
             limit=limit or -1,
         )
 
-    @telemetry_event("create_new_graph")
-    async def create_new_graph(
-        self,
-        collection_id: UUID,
-        user_id: UUID,
-        name: Optional[str],
-        description: str = "",
-    ) -> GraphResponse:
-        return await self.providers.database.graph_handler.create(
-            collection_id=collection_id,
-            user_id=user_id,
-            name=name,
-            description=description,
-        )
+    # @telemetry_event("create_new_graph")
+    # async def create_new_graph(
+    #     self,
+    #     collection_id: UUID,
+    #     user_id: UUID,
+    #     name: Optional[str],
+    #     description: str = "",
+    # ) -> GraphResponse:
+    #     return await self.providers.database.graph_handler.create(
+    #         collection_id=collection_id,
+    #         user_id=user_id,
+    #         name=name,
+    #         description=description,
+    #         graph_id=collection_id,
+    #     )
 
     async def list_graphs(
         self,
         offset: int,
         limit: int,
-        user_ids: Optional[list[UUID]] = None,
+        # user_ids: Optional[list[UUID]] = None,
         graph_ids: Optional[list[UUID]] = None,
         collection_id: Optional[UUID] = None,
     ) -> dict[str, list[GraphResponse] | int]:
         return await self.providers.database.graph_handler.list_graphs(
             offset=offset,
             limit=limit,
-            filter_user_ids=user_ids,
+            # filter_user_ids=user_ids,
             filter_graph_ids=graph_ids,
             filter_collection_id=collection_id,
         )

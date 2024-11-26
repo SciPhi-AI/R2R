@@ -82,7 +82,7 @@ class GraphRouter(BaseRouterV3):
 
     async def _deduplicate_entities(
         self,
-        id: UUID,
+        collection_id: UUID,
         settings,
         run_type: Optional[KGRunType] = KGRunType.ESTIMATE,
         run_with_orchestration: bool = True,
@@ -129,11 +129,11 @@ class GraphRouter(BaseRouterV3):
         # Return cost estimate if requested
         if run_type == KGRunType.ESTIMATE:
             return await self.services["kg"].get_deduplication_estimate(
-                id, server_settings
+                collection_id, server_settings
             )
 
         workflow_input = {
-            "graph_id": str(id),
+            "graph_id": str(collection_id),
             "kg_entity_deduplication_settings": server_settings.model_dump_json(),
             "user": auth_user.model_dump_json(),
         }
@@ -161,109 +161,109 @@ class GraphRouter(BaseRouterV3):
         return collection_id
 
     def _setup_routes(self):
-        @self.router.post(
-            "/graphs",
-            summary="Create a new graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {  # TODO: Verify
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
+        # @self.router.post(
+        #     "/graphs",
+        #     summary="Create a new graph",
+        #     openapi_extra={
+        #         "x-codeSamples": [
+        #             {  # TODO: Verify
+        #                 "lang": "Python",
+        #                 "source": textwrap.dedent(
+        #                     """
+        #                     from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
+        #                     client = R2RClient("http://localhost:7272")
+        #                     # when using auth, do client.login(...)
 
-                            result = client.graphs.create(
-                                graph={
-                                    "name": "New Graph",
-                                    "description": "New Description"
-                                }
-                            )
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
-                            const { r2rClient } = require("r2r-js");
+        #                     result = client.graphs.create(
+        #                         graph={
+        #                             "name": "New Graph",
+        #                             "description": "New Description"
+        #                         }
+        #                     )
+        #                     """
+        #                 ),
+        #             },
+        #             {
+        #                 "lang": "JavaScript",
+        #                 "source": textwrap.dedent(
+        #                     """
+        #                     const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+        #                     const client = new r2rClient("http://localhost:7272");
 
-                            function main() {
-                                const response = await client.documents.create({
-                                    name: "New Graph",
-                                    description: "New Description",
-                                });
-                            }
+        #                     function main() {
+        #                         const response = await client.documents.create({
+        #                             name: "New Graph",
+        #                             description: "New Description",
+        #                         });
+        #                     }
 
-                            main();
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def create_graph(
-            collection_id: Optional[UUID] = Body(
-                None,
-                description="Collection ID to associate with the graph. If not provided, uses user's default collection.",
-            ),
-            name: Optional[str] = Body(
-                None, description="The name of the graph"
-            ),
-            description: Optional[str] = Body(
-                None, description="An optional description of the graph"
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedGraphResponse:
-            """
-            Creates a new empty graph.
+        #                     main();
+        #                     """
+        #                 ),
+        #             },
+        #         ]
+        #     },
+        # )
+        # @self.base_endpoint
+        # async def create_graph(
+        #     collection_id: Optional[UUID] = Body(
+        #         None,
+        #         description="Collection ID to associate with the graph. If not provided, uses user's default collection.",
+        #     ),
+        #     name: Optional[str] = Body(
+        #         None, description="The name of the graph"
+        #     ),
+        #     description: Optional[str] = Body(
+        #         None, description="An optional description of the graph"
+        #     ),
+        #     auth_user=Depends(self.providers.auth.auth_wrapper),
+        # ) -> WrappedGraphResponse:
+        #     """
+        #     Creates a new empty graph.
 
-            This is the first step in building a knowledge graph. After creating the graph, you can:
+        #     This is the first step in building a knowledge graph. After creating the graph, you can:
 
-            1. Add data to the graph:
-            - Manually add entities and relationships via the /entities and /relationships endpoints
-            - Automatically extract entities and relationships from documents via the /graphs/{id}/documents endpoint
+        #     1. Add data to the graph:
+        #     - Manually add entities and relationships via the /entities and /relationships endpoints
+        #     - Automatically extract entities and relationships from documents via the /graphs/{id}/documents endpoint
 
-            2. Build communities:
-            - Build communities of related entities via the /graphs/{id}/communities/build endpoint
+        #     2. Build communities:
+        #     - Build communities of related entities via the /graphs/{collection_id}/communities/build endpoint
 
-            3. Update graph metadata:
-            - Modify the graph name, description and settings via the /graphs/{id} endpoint
+        #     3. Update graph metadata:
+        #     - Modify the graph name, description and settings via the /graphs/{collection_id} endpoint
 
-            The graph ID returned by this endpoint is required for all subsequent operations on the graph.
+        #     The graph ID returned by this endpoint is required for all subsequent operations on the graph.
 
-            Raises:
-                R2RException: If a graph already exists for the given collection.
-            """
+        #     Raises:
+        #         R2RException: If a graph already exists for the given collection.
+        #     """
 
-            collection_id = await self._get_collection_id(
-                collection_id, auth_user
-            )
+        #     collection_id = await self._get_collection_id(
+        #         collection_id, auth_user
+        #     )
 
-            # Check if a graph already exists for this collection
-            existing_graphs = await self.services["kg"].list_graphs(
-                collection_id=collection_id,
-                offset=0,
-                limit=1,
-            )
+        #     # Check if a graph already exists for this collection
+        #     existing_graphs = await self.services["kg"].list_graphs(
+        #         collection_id=collection_id,
+        #         offset=0,
+        #         limit=1,
+        #     )
 
-            if existing_graphs["total_entries"] > 0:
-                raise R2RException(
-                    f"A graph already exists for collection {collection_id}. Only one graph per collection is allowed.",
-                    409,  # HTTP 409 Conflict status code
-                )
+        #     if existing_graphs["total_entries"] > 0:
+        #         raise R2RException(
+        #             f"A graph already exists for collection {collection_id}. Only one graph per collection is allowed.",
+        #             409,  # HTTP 409 Conflict status code
+        #         )
 
-            return await self.services["kg"].create_new_graph(
-                user_id=auth_user.id,
-                collection_id=collection_id,
-                name=name,
-                description=description,
-            )
+        #     return await self.services["kg"].create_new_graph(
+        #         user_id=auth_user.id,
+        #         collection_id=collection_id,
+        #         name=name,
+        #         description=description,
+        #     )
 
         @self.router.get(
             "/graphs",
@@ -309,7 +309,7 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def list_graphs(
-            ids: list[str] = Query(
+            collection_ids: list[str] = Query(
                 [],
                 description="A list of graph IDs to retrieve. If not provided, all graphs will be returned.",
             ),
@@ -338,10 +338,10 @@ class GraphRouter(BaseRouterV3):
                 None if auth_user.is_superuser else [auth_user.id]
             )
 
-            graph_uuids = [UUID(graph_id) for graph_id in ids]
+            graph_uuids = [UUID(graph_id) for graph_id in collection_ids]
 
             list_graphs_response = await self.services["kg"].list_graphs(
-                user_ids=requesting_user_id,
+                # user_ids=requesting_user_id,
                 graph_ids=graph_uuids,
                 offset=offset,
                 limit=limit,
@@ -353,7 +353,7 @@ class GraphRouter(BaseRouterV3):
             )
 
         @self.router.get(
-            "/graphs/{id}",
+            "/graphs/{collection_id}",
             summary="Retrieve graph details",
             openapi_extra={
                 "x-codeSamples": [
@@ -367,7 +367,7 @@ class GraphRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.graphs.get(
-                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )"""
                         ),
                     },
@@ -381,7 +381,7 @@ class GraphRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.graphs.retrieve({
-                                    id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                                    collection_id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                                 });
                             }
 
@@ -402,29 +402,32 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def get_graph(
-            id: UUID = Path(...),
+            collection_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedGraphResponse:
             """
             Retrieves detailed information about a specific graph by ID.
             """
-            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the specified collection.",
                     403,
                 )
 
             list_graphs_response = await self.services["kg"].list_graphs(
-                user_ids=None,
-                graph_ids=[id],
+                # user_ids=None,
+                graph_ids=[collection_id],
                 offset=0,
                 limit=1,
             )
             return list_graphs_response["results"][0]
 
-        @self.router.delete(
-            "/graphs/{id}",
-            summary="Delete a graph",
+        @self.router.post(
+            "/graphs/{collection_id}/reset",
+            summary="Reset a graph back to the initial state.",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -436,8 +439,8 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.delete(
-                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                            result = client.graphs.reset(
+                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                             )"""
                         ),
                     },
@@ -450,8 +453,8 @@ class GraphRouter(BaseRouterV3):
                             const client = new r2rClient("http://localhost:7272");
 
                             function main() {
-                                const response = await client.graphs.delete({
-                                    id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                                const response = await client.graphs.reset({
+                                    collection_id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                                 });
                             }
 
@@ -463,7 +466,7 @@ class GraphRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X DELETE "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7" \\
+                            curl -X POST "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/reset" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" """
                         ),
                     },
@@ -471,8 +474,8 @@ class GraphRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def delete(
-            id: UUID = Path(...),
+        async def reset(
+            collection_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedBooleanResponse:
             """
@@ -484,18 +487,21 @@ class GraphRouter(BaseRouterV3):
             and must be deleted separately using the /entities and /relationships
             endpoints.
             """
-            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the specified collection.",
                     403,
                 )
 
-            await self.services["kg"].delete_graph_v3(id=id)
+            await self.services["kg"].delete_graph_v3(id=collection_id)
             return GenericBooleanResponse(success=True)  # type: ignore
 
         # update graph
         @self.router.post(
-            "/graphs/{id}",
+            "/graphs/{collection_id}",
             summary="Update graph",
             openapi_extra={
                 "x-codeSamples": [
@@ -509,7 +515,7 @@ class GraphRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.graphs.update(
-                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 graph={
                                     "name": "New Name",
                                     "description": "New Description"
@@ -527,7 +533,7 @@ class GraphRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.graphs.update({
-                                    id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                    collection_id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                     name: "New Name",
                                     description: "New Description",
                                 });
@@ -542,9 +548,9 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def update_graph(
-            id: UUID = Path(
+            collection_id: UUID = Path(
                 ...,
-                description="The unique identifier of the graph to update",
+                description="The collection ID corresponding to the graph to update",
             ),
             name: Optional[str] = Body(
                 None, description="The name of the graph"
@@ -562,7 +568,7 @@ class GraphRouter(BaseRouterV3):
             """
             if (
                 not auth_user.is_superuser
-                and id not in auth_user.collection_ids
+                and collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the specified collection.",
@@ -570,16 +576,17 @@ class GraphRouter(BaseRouterV3):
                 )
 
             return await self.services["kg"].update_graph(  # type: ignore
-                id,
+                collection_id,
                 name=name,
                 description=description,
             )
 
-        @self.router.get("/graphs/{id}/entities")
+        @self.router.get("/graphs/{collection_id}/entities")
         @self.base_endpoint
         async def get_entities(
-            id: UUID = Path(
-                ..., description="The ID of the graph to list entities from."
+            collection_id: UUID = Path(
+                ...,
+                description="The collection ID corresponding to the graph to list entities from.",
             ),
             offset: int = Query(
                 0,
@@ -600,7 +607,7 @@ class GraphRouter(BaseRouterV3):
             # )
             entities, count = (
                 await self.providers.database.graph_handler.get_entities(
-                    id, offset, limit
+                    collection_id, offset, limit
                 )
             )
             print("entities = ", entities)
@@ -608,24 +615,28 @@ class GraphRouter(BaseRouterV3):
                 "total_entries": count,
             }
 
-        @self.router.post("/graphs/{id}/entities")
+        @self.router.post("/graphs/{collection_id}/entities")
         @self.base_endpoint
         async def create_entity(
-            id: UUID = Path(
-                ..., description="The ID of the graph to add the entity to."
+            collection_id: UUID = Path(
+                ...,
+                description="The collection ID corresponding to the graph to add the entity to.",
             ),
             entity: Entity = Body(..., description="The entity to create"),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):  # -> WrappedEntityResponse:
             """Creates a new entity in the graph."""
-            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
                 raise R2RException(
                     "The currently authenticated user does not have access to this graph.",
                     403,
                 )
 
             # Set parent ID to graph ID
-            entity.parent_id = id
+            entity.parent_id = collection_id
 
             # Create entity
             created_ids = (
@@ -639,19 +650,21 @@ class GraphRouter(BaseRouterV3):
                 raise R2RException("Failed to create entity", 500)
 
             result = await self.providers.database.graph_handler.entities.get(
-                parent_id=id, store_type="graph", entity_ids=[created_ids[0]]
+                parent_id=collection_id,
+                store_type="graph",
+                entity_ids=[created_ids[0]],
             )
             print("result = ", result)
             if len(result) == 0:
                 raise R2RException("Failed to create entity", 500)
             return result[0]
 
-        @self.router.post("/graphs/{id}/relationships")
+        @self.router.post("/graphs/{collection_id}/relationships")
         @self.base_endpoint
         async def create_relationship(
-            id: UUID = Path(
+            collection_id: UUID = Path(
                 ...,
-                description="The ID of the graph to add the relationship to.",
+                description="The collection ID corresponding to the graph to add the relationship to.",
             ),
             relationship: Relationship = Body(
                 ..., description="The relationship to create"
@@ -659,14 +672,17 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipResponse:
             """Creates a new relationship in the graph."""
-            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
                 raise R2RException(
                     "The currently authenticated user does not have access to this graph.",
                     403,
                 )
 
             # Set parent ID to graph ID
-            relationship.parent_id = id
+            relationship.parent_id = collection_id
 
             # Create relationship
             await self.providers.database.graph_handler.relationships.create(
@@ -675,11 +691,12 @@ class GraphRouter(BaseRouterV3):
 
             return relationship
 
-        @self.router.get("/graphs/{id}/entities/{entity_id}")
+        @self.router.get("/graphs/{collection_id}/entities/{entity_id}")
         @self.base_endpoint
         async def get_entity(
-            id: UUID = Path(
-                ..., description="The ID of the graph containing the entity."
+            collection_id: UUID = Path(
+                ...,
+                description="The collection ID corresponding to the graph containing the entity.",
             ),
             entity_id: UUID = Path(
                 ..., description="The ID of the entity to retrieve."
@@ -689,17 +706,18 @@ class GraphRouter(BaseRouterV3):
             """Retrieves a specific entity by its ID."""
             # Note: The original was missing implementation, so assuming similar pattern to relationships
             result = await self.providers.database.graph_handler.entities.get(
-                id, "graph", entity_ids=[entity_id]
+                collection_id, "graph", entity_ids=[entity_id]
             )
             if len(result) == 0 or len(result[0]) == 0:
                 raise R2RException("Entity not found", 404)
             return result[0][0]
 
-        @self.router.post("/graphs/{id}/entities/{entity_id}")
+        @self.router.post("/graphs/{collection_id}/entities/{entity_id}")
         @self.base_endpoint
         async def update_entity(
-            id: UUID = Path(
-                ..., description="The ID of the graph containing the entity."
+            collection_id: UUID = Path(
+                ...,
+                description="The collection ID corresponding to the graph containing the entity.",
             ),
             entity_id: UUID = Path(
                 ..., description="The ID of the entity to update."
@@ -712,7 +730,7 @@ class GraphRouter(BaseRouterV3):
             """Updates an existing entity in the graph."""
             entity.id = entity_id
             entity.parent_id = (
-                entity.parent_id or id
+                entity.parent_id or collection_id
             )  # Set parent ID to graph ID
             results = await self.providers.database.graph_handler.entities.update(
                 [entity],
@@ -722,12 +740,12 @@ class GraphRouter(BaseRouterV3):
             print("results = ", results)
             return entity
 
-        @self.router.delete("/graphs/{id}/entities/{entity_id}")
+        @self.router.delete("/graphs/{collection_id}/entities/{entity_id}")
         @self.base_endpoint
         async def delete_entity(
-            id: UUID = Path(
+            collection_id: UUID = Path(
                 ...,
-                description="The ID of the graph to remove the entity from.",
+                description="The collection ID corresponding to the graph to remove the entity from.",
             ),
             entity_id: UUID = Path(
                 ...,
@@ -737,16 +755,16 @@ class GraphRouter(BaseRouterV3):
         ) -> WrappedBooleanResponse:
             """Removes an entity from the graph."""
             await self.providers.database.graph_handler.entities.delete(
-                id, [entity_id], "graph"
+                collection_id, [entity_id], "graph"
             )
             return {"success": True}
 
-        @self.router.get("/graphs/{id}/relationships")
+        @self.router.get("/graphs/{collection_id}/relationships")
         @self.base_endpoint
         async def get_relationships(
-            id: UUID = Path(
+            collection_id: UUID = Path(
                 ...,
-                description="The ID of the graph to list relationships from.",
+                description="The collection ID corresponding to the graph to list relationships from.",
             ),
             offset: int = Query(
                 0,
@@ -763,18 +781,12 @@ class GraphRouter(BaseRouterV3):
         ) -> PaginatedResultsWrapper[list[Relationship]]:
             """
             Lists all relationships in the graph with pagination support.
-
-            Args:
-                id: UUID of the graph
-                offset: Number of records to skip
-                limit: Maximum number of records to return
-                auth_user: Authenticated user
-
-            Returns:
-                Paginated list of relationships
             """
             # Permission check
-            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
                 raise R2RException(
                     "The currently authenticated user does not have access to this graph.",
                     403,
@@ -782,7 +794,7 @@ class GraphRouter(BaseRouterV3):
 
             relationships, count = (
                 await self.providers.database.graph_handler.relationships.get(
-                    parent_id=id,
+                    parent_id=collection_id,
                     store_type="graph",
                     offset=offset,
                     limit=limit,
@@ -793,12 +805,12 @@ class GraphRouter(BaseRouterV3):
                 "total_entries": count,
             }
 
-        @self.router.post("/graphs/{id}/relationships")
+        @self.router.post("/graphs/{collection_id}/relationships")
         @self.base_endpoint
         async def create_relationship(
-            id: UUID = Path(
+            collection_id: UUID = Path(
                 ...,
-                description="The ID of the graph to add the relationship to.",
+                description="The collection ID corresponding to the graph to add the relationship to.",
             ),
             relationship_ids: list[UUID] = Body(
                 ...,
@@ -808,15 +820,17 @@ class GraphRouter(BaseRouterV3):
         ) -> WrappedRelationshipResponse:
             """Creates a new relationship in the graph."""
             return await self.providers.database.graph_handler.relationships.add_to_graph(
-                id, relationship_ids, "graph"
+                collection_id, relationship_ids, "graph"
             )
 
-        @self.router.get("/graphs/{id}/relationships/{relationship_id}")
+        @self.router.get(
+            "/graphs/{collection_id}/relationships/{relationship_id}"
+        )
         @self.base_endpoint
         async def get_relationship(
-            id: UUID = Path(
+            collection_id: UUID = Path(
                 ...,
-                description="The ID of the graph containing the relationship.",
+                description="The collection ID corresponding to the graph containing the relationship.",
             ),
             relationship_id: UUID = Path(
                 ..., description="The ID of the relationship to retrieve."
@@ -826,19 +840,21 @@ class GraphRouter(BaseRouterV3):
             """Retrieves a specific relationship by its ID."""
             results = (
                 await self.providers.database.graph_handler.relationships.get(
-                    id, "graph", relationship_ids=[relationship_id]
+                    collection_id, "graph", relationship_ids=[relationship_id]
                 )
             )
             if len(results) == 0 or len(results[0]) == 0:
                 raise R2RException("Relationship not found", 404)
             return results[0][0]
 
-        @self.router.post("/graphs/{id}/relationships/{relationship_id}")
+        @self.router.post(
+            "/graphs/{collection_id}/relationships/{relationship_id}"
+        )
         @self.base_endpoint
         async def update_relationship(
-            id: UUID = Path(
+            collection_id: UUID = Path(
                 ...,
-                description="The ID of the graph containing the relationship.",
+                description="The collection ID corresponding to the graph containing the relationship.",
             ),
             relationship_id: UUID = Path(
                 ..., description="The ID of the relationship to update."
@@ -850,17 +866,19 @@ class GraphRouter(BaseRouterV3):
         ):  #  -> WrappedRelationshipResponse:
             """Updates an existing relationship in the graph."""
             relationship.id = relationship_id
-            relationship.parent_id = relationship.parent_id or id
+            relationship.parent_id = relationship.parent_id or collection_id
             return await self.providers.database.graph_handler.relationships.update(
                 [relationship], "graph"
             )
 
-        @self.router.delete("/graphs/{id}/relationships/{relationship_id}")
+        @self.router.delete(
+            "/graphs/{collection_id}/relationships/{relationship_id}"
+        )
         @self.base_endpoint
         async def delete_relationship(
-            id: UUID = Path(
+            collection_id: UUID = Path(
                 ...,
-                description="The ID of the graph to remove the relationship from.",
+                description="The collection ID corresponding to the graph to remove the relationship from.",
             ),
             relationship_id: UUID = Path(
                 ...,
@@ -875,12 +893,12 @@ class GraphRouter(BaseRouterV3):
             #     id, relationship_id, auth_user
             # )
             await self.providers.database.graph_handler.relationships.delete(
-                id, [relationship_id], "graph"
+                collection_id, [relationship_id], "graph"
             )
             return {"success": True}
 
         @self.router.post(
-            "/graphs/{id}/communities/build",
+            "/graphs/{collection_id}/communities/build",
             summary="Builds the graph communities",
             openapi_extra={
                 "x-codeSamples": [
@@ -893,7 +911,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.build(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            result = client.graphs.communities.build(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
                             """
                         ),
                     },
@@ -903,7 +921,7 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_communities(
-            id: UUID = Path(...),
+            collection_id: UUID = Path(...),
             settings: Optional[dict] = Body(None),
             run_type: Optional[KGRunType] = Query(
                 description="Run type for the graph creation process.",
@@ -931,7 +949,7 @@ class GraphRouter(BaseRouterV3):
             """
 
             return await self._create_communities(
-                graph_id=id,
+                graph_id=collection_id,
                 settings=settings,
                 run_type=run_type,
                 run_with_orchestration=run_with_orchestration,
@@ -939,7 +957,7 @@ class GraphRouter(BaseRouterV3):
             )
 
         @self.router.post(
-            "/graphs/{id}/communities",
+            "/graphs/{collection_id}/communities",
             summary="Create a new community",
             openapi_extra={
                 "x-codeSamples": [
@@ -952,7 +970,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.create(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", communities=[community1, community2])
+                            result = client.graphs.communities.create(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", communities=[community1, community2])
                             """
                         ),
                     },
@@ -961,9 +979,9 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_communities(
-            id: UUID = Path(
+            collection_id: UUID = Path(
                 ...,
-                description="The ID of the graph to create the community in.",
+                description="The collection ID corresponding to the graph to create the community in.",
             ),
             name: str = Body(..., description="The name of the community"),
             summary: str = Body(..., description="A summary of the community"),
@@ -1002,7 +1020,7 @@ class GraphRouter(BaseRouterV3):
             in the graph's community structure.
             """
             return await self.services["kg"].create_community_v3(
-                graph_id=id,
+                graph_id=collection_id,
                 name=name,
                 summary=summary,
                 findings=findings,
@@ -1014,7 +1032,7 @@ class GraphRouter(BaseRouterV3):
             )
 
         @self.router.get(
-            "/graphs/{id}/communities",
+            "/graphs/{collection_id}/communities",
             summary="List communities",
             openapi_extra={
                 "x-codeSamples": [
@@ -1027,7 +1045,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.get(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            result = client.graphs.communities.get(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
                             """
                         ),
                     },
@@ -1037,9 +1055,9 @@ class GraphRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_communities(
             request: Request,
-            id: UUID = Path(
+            collection_id: UUID = Path(
                 ...,
-                description="The ID of the graph to get communities for.",
+                description="The collection ID corresponding to the graph to get communities for.",
             ),
             offset: int = Query(
                 0,
@@ -1067,7 +1085,7 @@ class GraphRouter(BaseRouterV3):
             communities, count = await self.services[
                 "kg"
             ].providers.database.graph_handler.communities.get(
-                graph_id=id,
+                graph_id=collection_id,
                 offset=offset,
                 limit=limit,
                 auth_user=auth_user,
@@ -1078,7 +1096,7 @@ class GraphRouter(BaseRouterV3):
             }
 
         @self.router.get(
-            "/graphs/{id}/communities/{community_id}",
+            "/graphs/{collection_id}/communities/{community_id}",
             summary="Retrieve a community",
             openapi_extra={
                 "x-codeSamples": [
@@ -1091,7 +1109,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.get(id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            result = client.graphs.communities.get(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
                             """
                         ),
                     },
@@ -1101,7 +1119,7 @@ class GraphRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_community(
             request: Request,
-            id: UUID = Path(
+            collection_id: UUID = Path(
                 ...,
                 description="The ID of the collection to get communities for.",
             ),
@@ -1124,7 +1142,7 @@ class GraphRouter(BaseRouterV3):
             return await self.services[
                 "kg"
             ].providers.database.graph_handler.communities.get(
-                graph_id=id,
+                graph_id=collection_id,
                 community_id=community_id,
                 auth_user=auth_user,
                 offset=0,
@@ -1132,15 +1150,15 @@ class GraphRouter(BaseRouterV3):
             )
 
         @self.router.delete(
-            "/graphs/{id}/communities/{community_id}",
+            "/graphs/{collection_id}/communities/{community_id}",
             summary="Delete a community",
         )
         @self.base_endpoint
         async def delete_community(
             request: Request,
-            id: UUID = Path(
+            collection_id: UUID = Path(
                 ...,
-                description="The ID of the graph to delete the community from.",
+                description="The collection ID corresponding to the graph to delete the community from.",
             ),
             community_id: UUID = Path(
                 ...,
@@ -1153,14 +1171,14 @@ class GraphRouter(BaseRouterV3):
                     "Only superusers can access this endpoint.", 403
                 )
             await self.services["kg"].delete_community_v3(
-                graph_id=id,
+                graph_id=collection_id,
                 community_id=community_id,
                 auth_user=auth_user,
             )
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
-            "/graphs/{id}/communities/{community_id}",
+            "/graphs/{collection_id}/communities/{community_id}",
             summary="Update community",
             openapi_extra={
                 "x-codeSamples": [
@@ -1174,7 +1192,7 @@ class GraphRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.graphs.update_community(
-                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 community_update={
                                     "metadata": {
                                         "topic": "Technology",
@@ -1189,7 +1207,7 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def update_community(
-            id: UUID = Path(...),
+            collection_id: UUID = Path(...),
             community_id: UUID = Path(...),
             name: Optional[str] = Body(None),
             summary: Optional[str] = Body(None),
@@ -1209,7 +1227,7 @@ class GraphRouter(BaseRouterV3):
                 )
 
             return await self.services["kg"].update_community_v3(
-                id=id,
+                id=collection_id,
                 community_id=community_id,
                 name=name,
                 summary=summary,
@@ -1222,7 +1240,7 @@ class GraphRouter(BaseRouterV3):
             )
 
         @self.router.post(
-            "/graphs/{id}/pull",
+            "/graphs/{collection_id}/pull",
             summary="Pull latest entities to the graph",
             openapi_extra={
                 "x-codeSamples": [
@@ -1236,7 +1254,7 @@ class GraphRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.graphs.initialize(
-                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )"""
                         ),
                     },
@@ -1250,7 +1268,7 @@ class GraphRouter(BaseRouterV3):
 
                             async function main() {
                                 const response = await client.graphs.addDocuments({
-                                    id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                                    collection_id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                                 });
                             }
 
@@ -1263,7 +1281,7 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def pull(
-            id: UUID = Path(
+            collection_id: UUID = Path(
                 ..., description="The ID of the graph to initialize."
             ),
             # document_ids: list[UUID] = Body(
@@ -1292,14 +1310,17 @@ class GraphRouter(BaseRouterV3):
             The user must have access to both the graph and the documents being added.
             """
             # Check user permissions for graph
-            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the specified graph.",
                     403,
                 )
             list_graphs_response = await self.services["kg"].list_graphs(
                 # user_ids=None,
-                graph_ids=[id],
+                graph_ids=[collection_id],
                 offset=0,
                 limit=1,
             )
@@ -1340,12 +1361,12 @@ class GraphRouter(BaseRouterV3):
                 )
                 has_document = (
                     await self.providers.database.graph_handler.has_document(
-                        id, document.id
+                        collection_id, document.id
                     )
                 )
                 if has_document:
                     logger.info(
-                        f"Document {document.id} is already in graph {id}, skipping"
+                        f"Document {document.id} is already in graph {collection_id}, skipping"
                     )
                     continue
                 if len(entities[0]) == 0:
@@ -1356,7 +1377,7 @@ class GraphRouter(BaseRouterV3):
 
                 success = (
                     await self.providers.database.graph_handler.add_documents(
-                        id=id,
+                        id=collection_id,
                         document_ids=[
                             document.id
                         ],  # [doc.id for doc in documents]
@@ -1364,13 +1385,13 @@ class GraphRouter(BaseRouterV3):
                 )
             if not success:
                 logger.warning(
-                    f"No documents were added to graph {id}, marking as failed."
+                    f"No documents were added to graph {collection_id}, marking as failed."
                 )
 
             return GenericBooleanResponse(success=success)
 
         @self.router.delete(
-            "/graphs/{id}/documents/{document_id}",
+            "/graphs/{collection_id}/documents/{document_id}",
             summary="Remove document from graph",
             openapi_extra={
                 "x-codeSamples": [
@@ -1384,7 +1405,7 @@ class GraphRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.graphs.remove_document(
-                                id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 document_id="f98db41a-5555-4444-3333-222222222222"
                             )"""
                         ),
@@ -1394,7 +1415,7 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def remove_document(
-            id: UUID = Path(
+            collection_id: UUID = Path(
                 ...,
                 description="The ID of the graph to remove the document from.",
             ),
@@ -1413,7 +1434,10 @@ class GraphRouter(BaseRouterV3):
             The user must have access to both the graph and the document being removed.
             """
             # Check user permissions for graph
-            if not auth_user.is_superuser and id not in auth_user.graph_ids:
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the specified graph.",
                     403,
@@ -1431,7 +1455,7 @@ class GraphRouter(BaseRouterV3):
 
             success = (
                 await self.providers.database.graph_handler.remove_documents(
-                    id=id,
+                    id=collection_id,
                     document_ids=[document_id],  # , delete_data=delete_data
                 )
             )

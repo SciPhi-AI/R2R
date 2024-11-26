@@ -546,11 +546,22 @@ class ManagementService(Service):
         name: Optional[str] = None,
         description: str = "",
     ) -> CollectionResponse:
-        return await self.providers.database.create_collection(
+        result = await self.providers.database.create_collection(
             user_id=user_id,
             name=name,
             description=description,
         )
+        print("create collection result = ", result)
+        graph_result = await self.providers.database.graph_handler.create(
+            collection_id=result.id,
+            user_id=user_id,
+            name=name,
+            description=description,
+            graph_id=result.id,
+        )
+        print("graph_result = ", graph_result)
+
+        return result
 
     @telemetry_event("UpdateCollection")
     async def update_collection(

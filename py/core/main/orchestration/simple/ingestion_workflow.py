@@ -93,10 +93,23 @@ def simple_ingestion_factory(service: IngestionService):
                     for collection_id in collection_ids:
                         try:
                             # FIXME: Right now we just throw a warning if the collection already exists, but we should probably handle this more gracefully
-                            await service.providers.database.create_collection(
-                                name=document_info.title,
+                            name = document_info.title or "N/A"
+                            description = ""
+
+                            name = document_info.title or "N/A"
+                            description = ""
+                            result = await service.providers.database.create_collection(
+                                user_id=document_info.user_id,
+                                name=name,
+                                description=description,
                                 collection_id=collection_id,
-                                description="",
+                            )
+                            print("create collection result = ", result)
+                            await service.providers.database.graph_handler.create(
+                                collection_id=collection_id,
+                                name=name,
+                                description=description,
+                                graph_id=collection_id,
                             )
                         except Exception as e:
                             logger.warning(
@@ -287,10 +300,21 @@ def simple_ingestion_factory(service: IngestionService):
                 else:
                     for collection_id in collection_ids:
                         try:
-                            await service.providers.database.create_collection(
-                                name=document_info.title,
+
+                            name = document_info.title or "N/A"
+                            description = ""
+                            result = await service.providers.database.create_collection(
+                                user_id=document_info.user_id,
+                                name=name,
+                                description=description,
                                 collection_id=collection_id,
-                                description="",
+                            )
+                            print("create collection result = ", result)
+                            await service.providers.database.graph_handler.create(
+                                collection_id=collection_id,
+                                name=name,
+                                description=description,
+                                graph_id=collection_id,
                             )
                         except Exception as e:
                             logger.warning(
