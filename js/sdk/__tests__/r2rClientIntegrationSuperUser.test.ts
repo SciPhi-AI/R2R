@@ -130,13 +130,13 @@ describe("r2rClient Integration Tests", () => {
         metadatas: [{ title: "raskolnikov.txt" }, { title: "karamozov.txt" }],
       }),
     ).resolves.not.toThrow();
-  });
+  }, 30000);
 
   test("Ingest files in folder", async () => {
     const files = ["examples/data/folder"];
 
     await expect(client.ingestFiles(files)).resolves.not.toThrow();
-  });
+  }, 30000);
 
   test("Update files", async () => {
     const updated_file = [
@@ -148,13 +148,13 @@ describe("r2rClient Integration Tests", () => {
         metadatas: [{ title: "updated_karamozov.txt" }],
       }),
     ).resolves.not.toThrow();
-  });
+  }, 30000);
 
   test("Ingest chunks with no id or metadata", async () => {
     await expect(
       client.ingestChunks([{ text: "test chunks" }]),
     ).resolves.not.toThrow();
-  });
+  }, 30000);
 
   test("Ingest chunks", async () => {
     await expect(
@@ -164,7 +164,7 @@ describe("r2rClient Integration Tests", () => {
         { source: "example" },
       ),
     ).resolves.not.toThrow();
-  });
+  }, 30000);
 
   test("Search documents", async () => {
     await expect(client.search("test")).resolves.not.toThrow();

@@ -201,7 +201,9 @@ class IngestionRouter(BaseRouter):
                     "user": auth_user.model_dump_json(),
                     "size_in_bytes": content_length,
                     "collection_ids": (
-                        collection_ids[it] if collection_ids else None
+                        [str(cid) for cid in collection_ids[it]]
+                        if collection_ids
+                        else None
                     ),
                     "is_update": False,
                 }
@@ -340,7 +342,11 @@ class IngestionRouter(BaseRouter):
                 "ingestion_config": ingestion_config,
                 "user": auth_user.model_dump_json(),
                 "is_update": True,
-                "collection_ids": collection_ids,
+                "collection_ids": (
+                    [str(cid) for cid in collection_ids[it]]
+                    if collection_ids
+                    else None
+                ),
             }
 
             if run_with_orchestration:
@@ -419,7 +425,11 @@ class IngestionRouter(BaseRouter):
                 "chunks": [chunk.model_dump() for chunk in chunks],
                 "metadata": metadata or {},
                 "user": auth_user.model_dump_json(),
-                "collection_ids": collection_ids,
+                "collection_ids": (
+                    [str(cid) for cid in collection_ids]
+                    if collection_ids
+                    else None
+                ),
             }
             if run_with_orchestration:
                 raw_message = await self.orchestration_provider.run_workflow(
