@@ -114,10 +114,13 @@ class KGSearchSearchPipe(GeneratorPipe):
             # entity search
             search_type = "entity"
             base_limit = search_settings.limit
+
+            if search_type not in search_settings.graph_settings.limits:
+                logger.warning(f"No limit set for graph search type {search_type}, defaulting to {base_limit}")
             async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
                 message,
                 search_type=search_type,
-                search_type_limits=search_settings.graph_settings.graph_search_limits.get(
+                limit=search_settings.graph_settings.limits.get(
                     search_type, base_limit
                 ),
                 query_embedding=query_embedding,
@@ -128,7 +131,6 @@ class KGSearchSearchPipe(GeneratorPipe):
                 ],
                 filters=search_settings.filters,
             ):
-                print("search_result = ", search_result)
                 yield GraphSearchResult(
                     content=KGEntityResult(
                         name=search_result["name"],
@@ -143,10 +145,12 @@ class KGSearchSearchPipe(GeneratorPipe):
             # # relationship search
             # # disabled for now. We will check evaluations and see if we need it
             search_type = "relationship"
+            if search_type not in search_settings.graph_settings.limits:
+                logger.warning(f"No limit set for graph search type {search_type}, defaulting to {base_limit}")
             async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
                 input,
                 search_type=search_type,
-                search_type_limits=search_settings.graph_settings.graph_search_limits.get(
+                limit=search_settings.graph_settings.limits.get(
                     search_type, base_limit
                 ),
                 query_embedding=query_embedding,
@@ -161,7 +165,6 @@ class KGSearchSearchPipe(GeneratorPipe):
                     # "document_ids",
                 ],
             ):
-                print("search_result = ", search_result)
                 yield GraphSearchResult(
                     content=KGRelationshipResult(
                         # name=search_result["name"],
@@ -182,7 +185,7 @@ class KGSearchSearchPipe(GeneratorPipe):
             # async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
             #     message,
             #     search_type=search_type,
-            #     search_type_limits=graph_search_settings.graph_search_limits[
+            #     search_type_limits=graph_search_settings.limits[
             #         search_type
             #     ],
             #     embedding_type="embedding",

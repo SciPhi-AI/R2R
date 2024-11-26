@@ -292,8 +292,6 @@ class PostgresEntityHandler(EntityHandler):
             result = await self.connection_manager.fetchrow_query(
                 QUERY, params
             )
-            print("result = ", result)
-
             if not result:
                 raise R2RException(
                     f"Entity {entity.id} not found in {store_type} store or no permission to update",
@@ -696,428 +694,6 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 )
 
         return [row["id"] for row in results]
-
-
-# class PostgresRelationshipHandler(RelationshipHandler):
-#     def __init__(self, *args: Any, **kwargs: Any) -> None:
-#         self.project_name: str = kwargs.get("project_name")  # type: ignore
-#         self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
-
-#     def _get_table_name(self, table: str) -> str:
-#         """Get the fully qualified table name."""
-#         return f'"{self.project_name}"."{table}"'
-
-#     def _get_relationship_table_for_store(self, store_type: StoreType) -> str:
-#         """Get the appropriate table name for the store type."""
-#         if isinstance(store_type, StoreType):
-#             store_type = store_type.value
-#         return f"{store_type}_relationship"
-
-#     def _get_parent_constraint(self, store_type: StoreType) -> str:
-#         """Get the appropriate foreign key constraint for the store type."""
-#         if store_type == StoreType.GRAPH:
-#             return f"""
-#                 CONSTRAINT fk_graph
-#                     FOREIGN KEY(parent_id)
-#                     REFERENCES {self._get_table_name("graph")}(id)
-#                     ON DELETE CASCADE
-#             """
-#         else:
-#             return f"""
-#                 CONSTRAINT fk_document
-#                     FOREIGN KEY(parent_id)
-#                     REFERENCES {self._get_table_name("document_info")}(document_id)
-#                     ON DELETE CASCADE
-#             """
-
-#     async def create_tables(self) -> None:
-#         """Create separate tables for graph and document relationships."""
-#         for store_type in StoreType:
-#             table_name = self._get_relationship_table_for_store(store_type)
-#             parent_constraint = self._get_parent_constraint(store_type)
-
-#             QUERY = f"""
-#                 CREATE TABLE IF NOT EXISTS {self._get_table_name(table_name)} (
-#                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-#                     subject TEXT NOT NULL,
-#                     predicate TEXT NOT NULL,
-#                     object TEXT NOT NULL,
-#                     description TEXT,
-#                     subject_id UUID,
-#                     object_id UUID,
-#                     weight FLOAT DEFAULT 1.0,
-#                     chunk_ids UUID[],
-#                     parent_id UUID NOT NULL,
-#                     metadata JSONB,
-#                     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-#                     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-#                     {parent_constraint}
-#                 );
-
-#                 CREATE INDEX IF NOT EXISTS {table_name}_subject_idx
-#                     ON {self._get_table_name(table_name)} (subject);
-#                 CREATE INDEX IF NOT EXISTS {table_name}_object_idx
-#                     ON {self._get_table_name(table_name)} (object);
-#                 CREATE INDEX IF NOT EXISTS {table_name}_predicate_idx
-#                     ON {self._get_table_name(table_name)} (predicate);
-#                 CREATE INDEX IF NOT EXISTS {table_name}_parent_id_idx
-#                     ON {self._get_table_name(table_name)} (parent_id);
-#                 CREATE INDEX IF NOT EXISTS {table_name}_subject_id_idx
-#                     ON {self._get_table_name(table_name)} (subject_id);
-#                 CREATE INDEX IF NOT EXISTS {table_name}_object_id_idx
-#                     ON {self._get_table_name(table_name)} (object_id);
-#             """
-#             await self.connection_manager.execute_query(QUERY)
-
-#     async def create(
-#         self, relationships: list[Relationship], store_type: StoreType
-#     ) -> None:
-#         """Create new relationships in the specified store."""
-#         table_name = self._get_relationship_table_for_store(store_type)
-#         values = []
-
-#         for rel in relationships:
-#             metadata = rel.metadata
-#             if isinstance(metadata, str):
-#                 try:
-#                     metadata = json.loads(metadata)
-#                 except json.JSONDecodeError:
-#                     pass
-
-#             values.append(
-#                 (
-#                     rel.subject,
-#                     rel.predicate,
-#                     rel.object,
-#                     rel.description,
-#                     rel.subject_id,
-#                     rel.object_id,
-#                     rel.weight,
-#                     rel.chunk_ids,
-#                     rel.parent_id,
-#                     json.dumps(metadata) if metadata else None,
-#                 )
-#             )
-
-#         QUERY = f"""
-#             INSERT INTO {self._get_table_name(table_name)}
-#             (subject, predicate, object, description, subject_id, object_id,
-#              weight, chunk_ids, parent_id, metadata)
-#             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-#         """
-
-#         await self.connection_manager.execute_many(QUERY, values)
-
-#     async def get(
-#         self,
-#         parent_id: UUID,
-#         store_type: StoreType,
-#         offset: int = 0,
-#         limit: int = 100,
-#         relationship_ids: Optional[list[UUID]] = None,
-#         entity_names: Optional[list[str]] = None,
-#         relationship_types: Optional[list[str]] = None,
-#         include_metadata: bool = False,
-#     ) -> tuple[list[Relationship], int]:
-#         """
-#         Get relationships from the specified store.
-
-#         Args:
-#             parent_id (UUID): Parent ID (graph_id or document_id)
-#             store_type (StoreType): Type of store (graph or document)
-#             offset (int): Number of records to skip
-#             limit (int): Maximum number of records to return (-1 for no limit)
-#             relationship_ids (Optional[list[UUID]]): Optional list of specific relationship IDs to retrieve
-#             entity_names (Optional[list[str]]): Optional list of entity names to filter by (matches subject or object)
-#             relationship_types (Optional[list[str]]): Optional list of relationship types (predicates) to filter by
-#             include_metadata (bool): Whether to include metadata in the response
-
-#         Returns:
-#             tuple[list[Relationship], int]: Tuple containing list of relationships and total count
-#         """
-#         table_name = self._get_relationship_table_for_store(store_type)
-
-#         conditions = ["parent_id = $1"]
-#         params = [parent_id]
-#         param_index = 2
-
-#         if relationship_ids:
-#             conditions.append(f"id = ANY(${param_index})")
-#             params.append(relationship_ids)
-#             param_index += 1
-
-#         if entity_names:
-#             conditions.append(f"(subject = ANY(${param_index}) OR object = ANY(${param_index}))")
-#             params.append(entity_names)
-#             param_index += 1
-
-#         if relationship_types:
-#             conditions.append(f"predicate = ANY(${param_index})")
-#             params.append(relationship_types)
-#             param_index += 1
-
-#         select_fields = """
-#             id, subject, predicate, object, description,
-#             subject_id, object_id, weight, chunk_ids,
-#             parent_id
-#         """
-#         if include_metadata:
-#             select_fields += ", metadata"
-
-#         # Count query - uses the same conditions but without pagination params
-#         COUNT_QUERY = f"""
-#             SELECT COUNT(*)
-#             FROM {self._get_table_name(table_name)}
-#             WHERE {' AND '.join(conditions)}
-#         """
-#         count_params = params[: param_index - 1]
-#         count = (await self.connection_manager.fetch_query(COUNT_QUERY, count_params))[0]["count"]
-
-#         # Main query for fetching relationships with pagination
-#         QUERY = f"""
-#             SELECT {select_fields}
-#             FROM {self._get_table_name(table_name)}
-#             WHERE {' AND '.join(conditions)}
-#             ORDER BY created_at
-#             OFFSET ${param_index}
-#         """
-#         params.append(offset)
-#         param_index += 1
-
-#         if limit != -1:
-#             QUERY += f" LIMIT ${param_index}"
-#             params.append(limit)
-
-#         rows = await self.connection_manager.fetch_query(QUERY, params)
-
-#         relationships = []
-#         for row in rows:
-#             # Convert the Record to a dictionary
-#             relationship_dict = dict(row)
-
-#             # Process metadata if it exists and is a string
-#             if include_metadata and isinstance(relationship_dict["metadata"], str):
-#                 try:
-#                     relationship_dict["metadata"] = json.loads(relationship_dict["metadata"])
-#                 except json.JSONDecodeError:
-#                     pass
-
-#             relationships.append(Relationship(**relationship_dict))
-
-#         return relationships, count
-
-#     # async def get(
-#     #     self,
-#     #     parent_id: UUID,
-#     #     store_type: StoreType,
-#     #     entity_names: Optional[list[str]] = None,
-#     #     relationship_types: Optional[list[str]] = None,
-#     #     offset: int = 0,
-#     #     limit: int = -1,
-#     #     relationship_id: Optional[UUID] = None,
-#     # ):
-#     #     """Get relationships from the specified store."""
-#     #     table_name = self._get_relationship_table_for_store(store_type)
-
-#     #     conditions = ["parent_id = $1"]
-#     #     params = [parent_id]
-#     #     param_index = 2
-
-#     #     if relationship_id:
-#     #         conditions.append(f"id = ${param_index}")
-#     #         params.append(relationship_id)
-#     #         param_index += 1
-
-#     #         QUERY = f"""
-#     #             SELECT
-#     #                 id, subject, predicate, object, description,
-#     #                 subject_id, object_id, weight, chunk_ids,
-#     #                 parent_id, metadata
-#     #             FROM {self._get_table_name(table_name)}
-#     #             WHERE {' AND '.join(conditions)}
-#     #         """
-
-#     #         result = await self.connection_manager.fetchrow_query(
-#     #             QUERY, params
-#     #         )
-#     #         if not result:
-#     #             raise R2RException(
-#     #                 f"Relationship not found in {store_type.value} store", 404
-#     #             )
-#     #         return Relationship(**result)
-
-#     #     if entity_names:
-#     #         conditions.append(
-#     #             f"(subject = ANY(${param_index}) OR object = ANY(${param_index}))"
-#     #         )
-#     #         params.append(entity_names)
-#     #         param_index += 1
-
-#     #     if relationship_types:
-#     #         conditions.append(f"predicate = ANY(${param_index})")
-#     #         params.append(relationship_types)
-#     #         param_index += 1
-
-#     #     # Get total count using the same conditions but without pagination params
-#     #     COUNT_QUERY = f"""
-#     #         SELECT COUNT(*)
-#     #         FROM {self._get_table_name(table_name)}
-#     #         WHERE {' AND '.join(conditions)}
-#     #     """
-
-#     #     # Use the params without pagination parameters
-#     #     count = (
-#     #         await self.connection_manager.fetch_query(COUNT_QUERY, params)
-#     #     )[0]["count"]
-
-#     #     # Main query for fetching relationships with pagination
-#     #     QUERY = f"""
-#     #         SELECT
-#     #             id, subject, predicate, object, description,
-#     #             subject_id, object_id, weight, chunk_ids,
-#     #             parent_id, metadata
-#     #         FROM {self._get_table_name(table_name)}
-#     #         WHERE {' AND '.join(conditions)}
-#     #         ORDER BY created_at
-#     #         OFFSET ${param_index}
-#     #     """
-#     #     params.append(offset)
-#     #     param_index += 1
-
-#     #     if limit != -1:
-#     #         QUERY += f" LIMIT ${param_index}"
-#     #         params.append(limit)
-
-#     #     rows = await self.connection_manager.fetch_query(QUERY, params)
-
-#     #     relationships = []
-#     #     for row in rows:
-#     #         # if isinstance(row["metadata"], str):
-#     #         #     try:
-#     #         #         row["metadata"] = json.loads(row["metadata"])
-#     #         #     except json.JSONDecodeError:
-#     #         #         pass
-#     #         # relationships.append(Relationship(**row))
-#     #         relationship_dict = dict(row)
-#     #         if isinstance(relationship_dict["metadata"], str):
-#     #             try:
-#     #                 relationship_dict["metadata"] = json.loads(relationship_dict["metadata"])
-#     #             except json.JSONDecodeError:
-#     #                 pass
-#     #         relationships.append(Relationship(**relationship_dict))
-
-#     #     return relationships, count
-
-#     async def update(
-#         self, relationship: Relationship, store_type: StoreType
-#     ) -> UUID:
-#         """Update a relationship in the specified store."""
-#         if not relationship.id:
-#             raise ValueError("Relationship ID is required for update")
-
-#         table_name = self._get_relationship_table_for_store(store_type)
-
-#         metadata = relationship.metadata
-#         if isinstance(metadata, str):
-#             try:
-#                 metadata = json.loads(metadata)
-#             except json.JSONDecodeError:
-#                 pass
-
-#         QUERY = f"""
-#             UPDATE {self._get_table_name(table_name)}
-#             SET
-#                 subject = $1,
-#                 predicate = $2,
-#                 object = $3,
-#                 description = $4,
-#                 subject_id = $5,
-#                 object_id = $6,
-#                 weight = $7,
-#                 chunk_ids = $8,
-#                 metadata = $9,
-#                 updated_at = CURRENT_TIMESTAMP
-#             WHERE id = $10 AND parent_id = $11
-#             RETURNING id
-#         """
-
-#         result = await self.connection_manager.fetchrow_query(
-#             QUERY,
-#             [
-#                 relationship.subject,
-#                 relationship.predicate,
-#                 relationship.object,
-#                 relationship.description,
-#                 relationship.subject_id,
-#                 relationship.object_id,
-#                 relationship.weight,
-#                 relationship.chunk_ids,
-#                 json.dumps(metadata) if metadata else None,
-#                 relationship.id,
-#                 relationship.parent_id,
-#             ],
-#         )
-
-#         if not result:
-#             raise R2RException(
-#                 f"Relationship not found in {store_type.value} store or no permission to update",
-#                 404,
-#             )
-
-#         return result["id"]
-
-#     async def delete(
-#         self,
-#         parent_id: UUID,
-#         relationship_id: Optional[UUID] = None,
-#         store_type: StoreType = StoreType.GRAPH,
-#     ) -> list[UUID]:
-#         """
-#         Delete relationships from the specified store.
-#         If relationship_id is not provided, deletes all relationships for the given parent_id.
-
-#         Args:
-#             parent_id (UUID): Parent ID (graph_id or document_id)
-#             relationship_id (Optional[UUID]): Specific relationship ID to delete. If None, deletes all relationships for parent_id
-#             store_type (StoreType): Type of store (graph or document)
-
-#         Returns:
-#             list[UUID]: List of deleted relationship IDs
-
-#         Raises:
-#             R2RException: If a specific relationship was requested but not found
-#         """
-#         table_name = self._get_relationship_table_for_store(store_type)
-
-#         if relationship_id is None:
-#             # Delete all relationships for the parent_id
-#             QUERY = f"""
-#                 DELETE FROM {self._get_table_name(table_name)}
-#                 WHERE parent_id = $1
-#                 RETURNING id
-#             """
-#             results = await self.connection_manager.fetch_query(
-#                 QUERY, [parent_id]
-#             )
-#         else:
-#             # Delete specific relationship
-#             QUERY = f"""
-#                 DELETE FROM {self._get_table_name(table_name)}
-#                 WHERE id = $1 AND parent_id = $2
-#                 RETURNING id
-#             """
-#             results = await self.connection_manager.fetch_query(
-#                 QUERY, [relationship_id, parent_id]
-#             )
-
-#             # Check if the requested relationship was deleted
-#             if not results:
-#                 raise R2RException(
-#                     f"Relationship not found in {store_type.value} store or no permission to delete",
-#                     404,
-#                 )
-
-#         return [row["id"] for row in results]
 
 
 class PostgresCommunityHandler(CommunityHandler):
@@ -1660,8 +1236,6 @@ class PostgresGraphHandler(GraphHandler):
         """
 
         params.extend([offset, limit])
-        print("query =  ", query)
-        print("params =  ", params)
 
         try:
             results = await self.connection_manager.fetch_query(query, params)
@@ -2413,10 +1987,7 @@ class PostgresGraphHandler(GraphHandler):
             QUERY += f" LIMIT ${param_index}"
             params.append(limit)
 
-        print("QUERY = ", QUERY)
-        print("params = ", params)
         rows = await self.connection_manager.fetch_query(QUERY, params)
-        print("rows = ", rows)
 
         entities = []
         for row in rows:
@@ -2701,12 +2272,6 @@ class PostgresGraphHandler(GraphHandler):
 
         relationships = []
         for row in rows:
-            # if include_metadata and isinstance(row["metadata"], str):
-            #     try:
-            #         row["metadata"] = json.loads(row["metadata"])
-            #     except json.JSONDecodeError:
-            #         pass
-            # relationships.append(Relationship(**row))
             relationship_dict = dict(row)
             if isinstance(relationship_dict["metadata"], str):
                 try:
@@ -2718,68 +2283,6 @@ class PostgresGraphHandler(GraphHandler):
             relationships.append(Relationship(**relationship_dict))
 
         return relationships, count
-
-    # # DEPRECATED
-    # async def get_relationships(
-    #     self,
-    #     offset: int,
-    #     limit: int,
-    #     collection_id: Optional[UUID] = None,
-    #     entity_names: Optional[list[str]] = None,
-    #     relationship_ids: Optional[list[str]] = None,
-    # ) -> dict:
-    #     conditions = []
-    #     params: list = [str(collection_id)]
-    #     param_index = 2
-
-    #     if relationship_ids:
-    #         conditions.append(f"id = ANY(${param_index})")
-    #         params.append(relationship_ids)
-    #         param_index += 1
-
-    #     if entity_names:
-    #         conditions.append(
-    #             f"subject = ANY(${param_index}) or object = ANY(${param_index})"
-    #         )
-    #         params.append(entity_names)
-    #         param_index += 1
-
-    #     pagination_params = []
-    #     if offset:
-    #         pagination_params.append(f"OFFSET ${param_index}")
-    #         params.append(offset)
-    #         param_index += 1
-
-    #     if limit != -1:
-    #         pagination_params.append(f"LIMIT ${param_index}")
-    #         params.append(limit)
-    #         param_index += 1
-
-    #     pagination_clause = " ".join(pagination_params)
-
-    #     query = f"""
-    #         SELECT id, subject, predicate, object, description, chunk_ids, document_id
-    #         FROM {self._get_table_name("relationship")}
-    #         WHERE document_id = ANY(
-    #             SELECT document_id FROM {self._get_table_name("document_info")}
-    #             WHERE $1 = ANY(collection_ids)
-    #         )
-    #         {" AND " + " AND ".join(conditions) if conditions else ""}
-    #         ORDER BY id
-    #         {pagination_clause}
-    #     """
-
-    #     relationships = await self.connection_manager.fetch_query(
-    #         query, params
-    #     )
-    #     relationships = [
-    #         Relationship(**relationship) for relationship in relationships
-    #     ]
-    #     total_entries = await self.get_relationship_count(
-    #         collection_id=collection_id
-    #     )
-
-    #     return {"relationships": relationships, "total_entries": total_entries}
 
     async def has_document(self, graph_id: UUID, document_id: UUID) -> bool:
         """
@@ -3255,13 +2758,6 @@ class PostgresGraphHandler(GraphHandler):
     def _build_filters(
         self, filters: dict, parameters: list[Union[str, int, bytes]]
     ) -> str:
-        # COLUMN_VARS = [
-        #     # "chunk_id",
-        #     # "document_id",
-        #     # "user_id",
-        #     "collection_ids",
-        # ]
-
         def parse_condition(key: str, value: Any) -> str:  # type: ignore
             # nonlocal parameters
             if key == "collection_ids":
@@ -3277,6 +2773,18 @@ class PostgresGraphHandler(GraphHandler):
                         return f"parent_id = ANY(${len(parameters)})"  # TODO - this is hard coded to assume graph id - collection id
                 raise Exception(
                     "Unknown filter for `collection_ids`, only `$overlap` is supported"
+                )
+            elif key == "document_id":
+                logger.warning(
+                    "Filtering by `document_id` is not supported with graph search, ignoring."
+                )
+            elif key == "chunk_id":
+                logger.warning(
+                    "Filtering by `chunk_id` is not supported with graph search, ignoring."
+                )
+            elif key == "user_id":
+                logger.warning(
+                    "Filtering by `user_id` is not supported with graph search, ignoring. Use `collection_ids` instead."
                 )
 
             else:
@@ -3375,8 +2883,6 @@ class PostgresGraphHandler(GraphHandler):
         """
         Perform semantic search with similarity scores while maintaining exact same structure.
         """
-        print("in graph search...")
-
         query_embedding = kwargs.get("query_embedding", None)
         search_type = kwargs.get("search_type", "entity")
         embedding_type = kwargs.get("embedding_type", "description_embedding")
@@ -3384,30 +2890,15 @@ class PostgresGraphHandler(GraphHandler):
         filters = kwargs.get("filters", {})
         print("filters = ", filters)
         limit = kwargs.get("limit", 10)
+        use_fulltext_search = kwargs.get("use_fulltext_search", True)
+        use_hybrid_search = kwargs.get("use_hybrid_search", True)
+        if use_hybrid_search or use_fulltext_search:
+            logger.warning(
+                "Hybrid and fulltext search not supported for graph search, ignoring."
+            )
 
         table_name = f"graph_{search_type}"
-        # if  "collection_id" in filters and "collection_ids" not in property_names:
-        #     property_names.append("collection_id")
         property_names_str = ", ".join(property_names)
-
-        # collection_ids_dict = filters.get("collection_ids", {})
-        # filter_query = ""
-        # if collection_ids_dict:
-        #     filter_query = "WHERE collection_id = ANY($3)"
-        #     filter_ids = collection_ids_dict["$overlap"]
-
-        #     filter_query = "WHERE document_id = ANY($3)"
-        #     # TODO - This seems like a hack, we will need a better way to filter by collection ids for entities and relationships
-        #     query = f"""
-        #         SELECT distinct document_id FROM {self._get_table_name('document_info')} WHERE $1 = ANY(collection_ids)
-        #     """
-        #     filter_ids = [
-        #         doc_id["document_id"]
-        #         for doc_id in await self.connection_manager.fetch_query(
-        #             query, filter_ids
-        #         )
-        #     ]
-        #     logger.info(f"Searching in document ids: {filter_ids}")
         where_clause = ""
         params: list[Union[str, int, bytes]] = [str(query_embedding), limit]
         if filters:
@@ -3423,14 +2914,7 @@ class PostgresGraphHandler(GraphHandler):
             ORDER BY {embedding_type} <=> $1
             LIMIT $2;
         """
-        print("QUERY = ", QUERY)
-        print("params = ", params)
 
-        # if filter_query != "":
-        #     results = await self.connection_manager.fetch_query(
-        #         QUERY, (str(query_embedding), limit, filter_ids)
-        #     )
-        # else:
         results = await self.connection_manager.fetch_query(
             QUERY, tuple(params)
         )
@@ -3440,73 +2924,8 @@ class PostgresGraphHandler(GraphHandler):
                 property_name: result[property_name]
                 for property_name in property_names
             }
-            print("result = ", result)
             output["similarity_score"] = 1 - float(result["similarity_score"])
             yield output
-
-    # async def graph_search(  # type: ignore
-    #     self, query: str, **kwargs: Any
-    # ) -> AsyncGenerator[Any, None]:
-    #     print("in graph search...")
-
-    #     query_embedding = kwargs.get("query_embedding", None)
-    #     search_type = kwargs.get("search_type", "entity")
-    #     embedding_type = kwargs.get("embedding_type", "description_embedding")
-    #     property_names = kwargs.get("property_names", ["name", "description"])
-    #     filters = kwargs.get("filters", {})
-    #     limit = kwargs.get("limit", 10)
-
-    #     print("kwargs = ", kwargs)
-
-    #     table_name = "graph_entity"
-    #     property_names_str = ", ".join(property_names)
-
-    #     collection_ids_dict = filters.get("collection_ids", {})
-    #     print("filters = ", filters)
-    #     print("collection_ids_dict = ", collection_ids_dict)
-    #     filter_query = ""
-    #     if collection_ids_dict:
-    #         filter_query = "WHERE collection_id = ANY($3)"
-    #         filter_ids = collection_ids_dict["$overlap"]
-
-    #         if (
-    #             search_type == "__Community__"
-    #             or table_name == "collection_entity"
-    #         ):
-    #             logger.info(f"Searching in collection ids: {filter_ids}")
-
-    #         elif search_type in ["entity", "relationship"]:
-    #             filter_query = "WHERE document_id = ANY($3)"
-    #             # TODO - This seems like a hack, we will need a better way to filter by collection ids for entities and relationships
-    #             query = f"""
-    #                 SELECT distinct document_id FROM {self._get_table_name('document_info')} WHERE $1 = ANY(collection_ids)
-    #             """
-    #             filter_ids = [
-    #                 doc_id["document_id"]
-    #                 for doc_id in await self.connection_manager.fetch_query(
-    #                     query, filter_ids
-    #                 )
-    #             ]
-    #             logger.info(f"Searching in document ids: {filter_ids}")
-
-    #     QUERY = f"""
-    #         SELECT {property_names_str} FROM {self._get_table_name(table_name)} {filter_query} ORDER BY {embedding_type} <=> $1 LIMIT $2;
-    #     """
-    #     print("QUERY = ", QUERY)
-    #     if filter_query != "":
-    #         results = await self.connection_manager.fetch_query(
-    #             QUERY, (str(query_embedding), limit, filter_ids)
-    #         )
-    #     else:
-    #         results = await self.connection_manager.fetch_query(
-    #             QUERY, (str(query_embedding), limit)
-    #         )
-
-    #     for result in results:
-    #         yield {
-    #             property_name: result[property_name]
-    #             for property_name in property_names
-    #         }
 
     ####################### GRAPH CLUSTERING METHODS #######################
 
@@ -4040,67 +3459,3 @@ async def _add_objects(
 
     # Extract and return the IDs
     return [record["id"] for record in result]
-
-
-async def _update_object(
-    object: dict[str, Any],
-    full_table_name: str,
-    connection_manager: PostgresConnectionManager,
-    id_column: str = "id",
-    exclude_metadata: list[str] = [],
-) -> asyncpg.Record:
-    """
-    Update a single object in the specified table.
-
-    Args:
-        object: Dictionary containing the fields to update
-        full_table_name: Name of the table to update
-        connection_manager: Database connection manager
-        id_column: Name of the ID column to use in WHERE clause (default: "id")
-        exclude_metadata: List of metadata to exclude from update
-    """
-    # Get non-null metadata, excluding the ID and any excluded metadata
-    non_null_attrs = {
-        k: v
-        for k, v in object.items()
-        if v is not None and k != id_column and k not in exclude_metadata
-    }
-
-    # Create SET clause with placeholders
-    set_clause = ", ".join(
-        f"{k} = ${i+1}" for i, k in enumerate(non_null_attrs.keys())
-    )
-
-    QUERY = f"""
-        UPDATE {full_table_name}
-        SET {set_clause}
-        WHERE {id_column} = ${len(non_null_attrs) + 1}
-        RETURNING id
-    """
-
-    # Prepare parameters: values for SET clause + ID value for WHERE clause
-    params = [
-        (
-            json.dumps(v)
-            if isinstance(v, dict)
-            else str(v) if "embedding" in k else v
-        )
-        for k, v in non_null_attrs.items()
-    ]
-    params.append(object[id_column])
-
-    ret = await connection_manager.fetchrow_query(QUERY, tuple(params))  # type: ignore
-
-    return ret
-
-
-async def _delete_object(
-    object_id: UUID,
-    full_table_name: str,
-    connection_manager: PostgresConnectionManager,
-):
-    QUERY = f"""
-        DELETE FROM {full_table_name} WHERE id = $1
-        RETURNING id
-    """
-    return await connection_manager.fetchrow_query(QUERY, [object_id])

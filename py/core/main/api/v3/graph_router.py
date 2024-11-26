@@ -644,8 +644,6 @@ class GraphRouter(BaseRouterV3):
                     entities=[entity], store_type="graph"
                 )
             )
-
-            print("created_ids = ", created_ids)
             if not created_ids:
                 raise R2RException("Failed to create entity", 500)
 
@@ -654,7 +652,6 @@ class GraphRouter(BaseRouterV3):
                 store_type="graph",
                 entity_ids=[created_ids[0]],
             )
-            print("result = ", result)
             if len(result) == 0:
                 raise R2RException("Failed to create entity", 500)
             return result[0]

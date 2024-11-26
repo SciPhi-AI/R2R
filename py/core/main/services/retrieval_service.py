@@ -77,10 +77,12 @@ class RetrievalService(Service):
                 )
 
             if (
-                search_settings.use_semantic_search
-                and search_settings.use_fulltext_search
-                and not search_settings.hybrid_search_settings
-            ):
+                (
+                    search_settings.use_semantic_search
+                    and search_settings.use_fulltext_search
+                )
+                or search_settings.use_hybrid_search
+            ) and not search_settings.hybrid_search_settings:
                 raise R2RException(
                     status_code=400,
                     message="Hybrid search settings must be specified in the input configuration.",

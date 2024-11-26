@@ -115,7 +115,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                         "model": "gpt-4o-mini",
                                         "temperature": 0.7,
                                     },
-                                    "graph_search_limits": {
+                                    "limits": {
                                         "entity": 20,
                                         "relationship": 20,
                                         "__Community__": 20,
@@ -198,7 +198,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                         "model": "gpt-4o-mini",
                                         "temperature": 0.7
                                     },
-                                    "graph_search_limits": {
+                                    "limits": {
                                         "entity": 20,
                                         "relationship": 20,
                                         "__Community__": 20
@@ -313,7 +313,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                             model: "gpt-4o-mini",
                                             temperature: 0.7
                                         },
-                                        graph_search_limits: {
+                                        limits: {
                                             entity: 20,
                                             relationship: 20,
                                             __Community__: 20
