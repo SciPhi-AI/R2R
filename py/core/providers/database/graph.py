@@ -2898,6 +2898,8 @@ class PostgresGraphHandler(GraphHandler):
             )
 
         table_name = f"graph_{search_type}"
+        # if  "collection_id" in filters and "collection_ids" not in property_names:
+        #     property_names.append("collection_id")
         property_names_str = ", ".join(property_names)
         where_clause = ""
         params: list[Union[str, int, bytes]] = [str(query_embedding), limit]
@@ -2914,7 +2916,6 @@ class PostgresGraphHandler(GraphHandler):
             ORDER BY {embedding_type} <=> $1
             LIMIT $2;
         """
-
         results = await self.connection_manager.fetch_query(
             QUERY, tuple(params)
         )
