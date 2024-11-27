@@ -7,9 +7,6 @@ from fastapi import Body, Depends, Path, Query
 
 from core.base import R2RException, RunType
 from core.base.abstractions import (
-    DataLevel,
-    GraphBuildSettings,
-    KGCreationSettings,
     KGRunType,
 )
 from core.base.api.models import (
@@ -525,11 +522,11 @@ class GraphRouter(BaseRouterV3):
             name: str = Body(
                 ..., description="The name of the entity to create."
             ),
-            category: Optional[str] = Body(
-                None, description="The category of the entity to create."
-            ),
             description: Optional[str] = Body(
                 None, description="The description of the entity to create."
+            ),
+            category: Optional[str] = Body(
+                None, description="The category of the entity to create."
             ),
             metadata: Optional[dict] = Body(
                 None, description="The metadata of the entity to create."
@@ -546,26 +543,13 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            # Set parent ID to graph ID
-            entity.parent_id = collection_id
-
-            # Create entity
-            created_ids = (
-                await self.providers.database.graph_handler.entities.create(
-                    entities=[entity], store_type="graph"
-                )
-            )
-            if not created_ids:
-                raise R2RException("Failed to create entity", 500)
-
-            result = await self.providers.database.graph_handler.entities.get(
+            return await self.services["kg"].create_entity(
+                name=name,
+                description=description,
                 parent_id=collection_id,
-                store_type="graph",
-                entity_ids=[created_ids[0]],
+                category=category,
+                metadata=metadata,
             )
-            if len(result) == 0:
-                raise R2RException("Failed to create entity", 500)
-            return result[0]
 
         @self.router.post("/graphs/{collection_id}/relationships")
         @self.base_endpoint

@@ -604,7 +604,7 @@ class ChunkHandler(Handler):
 class EntityHandler(Handler):
 
     @abstractmethod
-    async def create(self, *args: Any, **kwargs: Any) -> None:
+    async def create(self, *args: Any, **kwargs: Any) -> Entity:
         """Create entities in storage."""
         pass
 

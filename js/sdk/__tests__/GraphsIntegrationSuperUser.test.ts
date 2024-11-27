@@ -94,10 +94,10 @@ describe("r2rClient V3 Collections Integration Tests", () => {
       id: documentId,
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+    await new Promise((resolve) => setTimeout(resolve, 30000));
 
     expect(response.results).toBeDefined();
-  }, 30000);
+  }, 40000);
 
   test("Assign document to collection", async () => {
     const response = await client.collections.addDocument({

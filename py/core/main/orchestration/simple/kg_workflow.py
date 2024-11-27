@@ -64,7 +64,6 @@ def simple_kg_factory(service: KgService):
                     document_id=document_id,
                     **input_data["kg_creation_settings"],
                 ):
-                    print("extraction = ", extraction)
                     extractions.append(extraction)
                 await service.store_kg_extractions(extractions)
 

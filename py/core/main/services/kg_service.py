@@ -134,14 +134,14 @@ class KgService(Service):
         return await _collect_results(result_gen)
 
     @telemetry_event("create_entities")
-    async def create_entities(
+    async def create_entity(
         self,
         name: str,
         description: str,
-        metadata: Optional[dict] = None,
+        parent_id: UUID,
         category: Optional[str] = None,
-        auth_user: Optional[Any] = None,
-    ):
+        metadata: Optional[dict] = None,
+    ) -> Entity:
 
         description_embedding = str(
             await self.providers.embedding.async_get_embedding(description)
@@ -149,11 +149,12 @@ class KgService(Service):
 
         return await self.providers.database.graph_handler.entities.create(
             name=name,
+            parent_id=parent_id,
+            store_type="graph",  # type: ignore
             category=category,
             description=description,
             description_embedding=description_embedding,
             metadata=metadata,
-            auth_user=auth_user,
         )
 
     @telemetry_event("list_entities")
@@ -1206,16 +1207,21 @@ class KgService(Service):
         total_entities, total_relationships = 0, 0
 
         for extraction in kg_extractions:
-            print("extraction = ", extraction)
-
             total_entities, total_relationships = (
                 total_entities + len(extraction.entities),
                 total_relationships + len(extraction.relationships),
             )
 
-            if extraction.entities:
+            for entity in extraction.entities:
                 await self.providers.database.graph_handler.entities.create(
-                    extraction.entities, store_type="document"
+                    name=entity.name,
+                    parent_id=entity.parent_id,
+                    store_type="document",  # type: ignore
+                    category=entity.category,
+                    description=entity.description,
+                    description_embedding=entity.description_embedding,
+                    chunk_ids=entity.chunk_ids,
+                    metadata=entity.metadata,
                 )
 
             if extraction.relationships:

@@ -119,48 +119,59 @@ class PostgresEntityHandler(EntityHandler):
             await self.connection_manager.execute_query(QUERY)
 
     async def create(
-        self, entities: list[Entity], store_type: StoreType
-    ) -> list[UUID]:
-        """Create multiple entities in the specified store."""
+        self,
+        name: str,
+        parent_id: UUID,
+        store_type: StoreType,
+        category: Optional[str] = None,
+        description: Optional[str] = None,
+        description_embedding: Optional[list[float] | str] = None,
+        chunk_ids: Optional[list[UUID]] = None,
+        metadata: Optional[dict[str, Any] | str] = None,
+    ) -> Entity:
+        """Create a new entity in the specified store."""
         table_name = self._get_entity_table_for_store(store_type)
-        values = []
-        results = []
 
-        for entity in entities:
-            metadata = entity.metadata
-            if isinstance(metadata, str):
-                try:
-                    metadata = json.loads(metadata)
-                except json.JSONDecodeError:
-                    pass
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except json.JSONDecodeError:
+                pass
 
-            description_embedding = entity.description_embedding
-            if isinstance(description_embedding, list):
-                description_embedding = str(description_embedding)
+        if isinstance(description_embedding, list):
+            description_embedding = str(description_embedding)
 
-            value = (
-                entity.name,
-                entity.category,
-                entity.description,
-                entity.parent_id,
-                description_embedding,
-                entity.chunk_ids,
-                json.dumps(metadata) if metadata else None,
-            )
-            values.append(value)
-
-        QUERY = f"""
+        query = f"""
             INSERT INTO {self._get_table_name(table_name)}
             (name, category, description, parent_id, description_embedding, chunk_ids, metadata)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id
+            RETURNING id, name, category, description, parent_id, chunk_ids, metadata
         """
 
-        for value in values:
-            result = await self.connection_manager.fetchrow_query(QUERY, value)
-            results.append(result["id"])
+        params = [
+            name,
+            category,
+            description,
+            parent_id,
+            description_embedding,
+            chunk_ids,
+            json.dumps(metadata) if metadata else None,
+        ]
 
-        return results
+        result = await self.connection_manager.fetchrow_query(
+            query=query,
+            params=params,
+        )
+
+        return Entity(
+            id=result["id"],
+            name=result["name"],
+            category=result["category"],
+            description=result["description"],
+            parent_id=result["parent_id"],
+            chunk_ids=result["chunk_ids"],
+            metadata=result["metadata"],
+        )
 
     async def get(
         self,

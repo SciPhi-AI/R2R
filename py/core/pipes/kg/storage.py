@@ -64,7 +64,7 @@ class KGStoragePipe(AsyncPipe):
                 if not extraction.entities[0].chunk_ids:
                     for i in range(len(extraction.entities)):
                         extraction.entities[i].chunk_ids = extraction.chunk_ids
-                        extraction.entities[i].document_id = (
+                        extraction.entities[i].parent_id = (
                             extraction.document_id
                         )
 
