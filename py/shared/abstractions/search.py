@@ -382,7 +382,7 @@ class SearchSettings(R2RSerializable):
                 "limits": {
                     "entity": 20,
                     "relationship": 20,
-                    "__Community__": 20,
+                    "community": 20,
                 },
             },
         }
@@ -635,7 +635,7 @@ class SearchSettings(R2RSerializable):
 #         default={
 #             "entity": 20,
 #             "relationship": 20,
-#             "__Community__": 20,
+#             "community": 20,
 #         },
 #     )
 
@@ -652,7 +652,7 @@ class SearchSettings(R2RSerializable):
 #             "limits": {
 #                 "entity": 20,
 #                 "relationship": 20,
-#                 "__Community__": 20,
+#                 "community": 20,
 #             },
 #         }
 

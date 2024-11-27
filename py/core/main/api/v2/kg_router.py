@@ -70,10 +70,10 @@ class KGRouter(BaseRouter):
             )
         else:
             workflow_messages["create-graph"] = (
-                "Graph created successfully, please run enrich-graph to enrich the graph for GraphRAG."
+                "Document entities and relationships extracted successfully. To generate GraphRAG communities, run cluster on the collection this document belongs to."
             )
             workflow_messages["enrich-graph"] = (
-                "Graph enriched successfully. You can view the communities at http://localhost:7272/v2/communities"
+                "Graph communities created successfully. You can view the communities at http://localhost:7272/v2/communities"
             )
             workflow_messages["entity-deduplication"] = (
                 "KG Entity Deduplication completed successfully."
@@ -240,7 +240,7 @@ class KGRouter(BaseRouter):
                     simple_kg = simple_kg_factory(self.service)
                     await simple_kg["enrich-graph"](workflow_input)
                     return {
-                        "message": "Graph enriched successfully.",
+                        "message": "Graph communities created successfully.",
                         "task_id": None,
                     }
 

@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import R2RException, RunType
+from core.base import R2RException, RunType, KGRunType
 from core.base.api.models import (
     GenericBooleanResponse,
     GenericMessageResponse,
@@ -19,6 +19,10 @@ from core.base.api.models import (
 from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
+)
+from core.utils import (
+    generate_default_user_collection_id,
+    update_settings_from_dict
 )
 
 from .base_router import BaseRouterV3
@@ -1018,3 +1022,79 @@ class CollectionsRouter(BaseRouterV3):
                 user_id, id
             )
             return GenericBooleanResponse(success=True)  # type: ignore
+
+
+        @self.router.post(
+            "/collections/{id}/cluster",
+        )
+        @self.base_endpoint
+        async def enrich_graph(
+            id: UUID = Path(
+                ..., description="The unique identifier of the collection"
+            ),
+            run_type: Optional[KGRunType] = Body(
+                default=KGRunType.ESTIMATE,
+                description="Run type for the graph enrichment process.",
+            ),
+            kg_enrichment_settings: Optional[dict] = Body(
+                default=None,
+                description="Settings for the graph enrichment process.",
+            ),
+            run_with_orchestration: Optional[bool] = Body(True),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):  # -> WrappedKGEnrichmentResponse:
+            """
+            This endpoint enriches the graph with additional information.
+            It creates communities of nodes based on their similarity and adds embeddings to the graph.
+            This step is necessary for GraphRAG to work.
+            """
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            # If no collection ID is provided, use the default user collection
+            id = generate_default_user_collection_id(
+                auth_user.id
+            )
+
+            # If no run type is provided, default to estimate
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
+
+            # Apply runtime settings overrides
+            server_kg_enrichment_settings = (
+                self.providers.database.config.kg_enrichment_settings
+            )
+            if kg_enrichment_settings:
+                server_kg_enrichment_settings = update_settings_from_dict(
+                    server_kg_enrichment_settings, kg_enrichment_settings
+                )
+
+            # If the run type is estimate, return an estimate of the enrichment cost
+            # if run_type is KGRunType.ESTIMATE:
+            #     return await self.services["kg"].get_enrichment_estimate(
+            #         collection_id=id,
+            #         kg_enrichment_settings=server_kg_enrichment_settings,
+            #     )
+
+            # Otherwise, run the enrichment workflow
+            # else:
+            #     if run_with_orchestration:
+            workflow_input = {
+                "collection_id": str(id),
+                "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
+                "user": auth_user.json(),
+            }
+
+            #         return await self.orchestration_provider.run_workflow(  # type: ignore
+            #             "enrich-graph", {"request": workflow_input}, {}
+            #         )
+            #     else:
+            from core.main.orchestration import simple_kg_factory
+
+            logger.info("Running enrich-graph without orchestration.")
+            simple_kg = simple_kg_factory(self.services["kg"])
+            await simple_kg["enrich-graph"](workflow_input)
+            return {
+                "message": "Graph communities created successfully.",
+                "task_id": None,
+            }

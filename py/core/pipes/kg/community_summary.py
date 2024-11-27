@@ -139,7 +139,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         max_summary_input_length: int,
         generation_config: GenerationConfig,
         collection_id: UUID | None,
-        graph_id: UUID | None,
+        # graph_id: UUID | None,
     ) -> dict:
         """
         Process a community by summarizing it and creating a summary embedding and storing it to a database.
@@ -149,7 +149,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             await self.database_provider.graph_handler.get_community_details(
                 community_number=community_number,
                 collection_id=collection_id,
-                graph_id=graph_id,
+                # graph_id=graph_id,
             )
         )
 
@@ -212,14 +212,14 @@ class KGCommunitySummaryPipe(AsyncPipe):
         community = Community(
             community_number=community_number,
             collection_id=collection_id,
-            graph_id=graph_id,
+            # graph_id=graph_id,
             level=community_level,
             name=name,
             summary=summary,
             rating=rating,
             rating_explanation=rating_explanation,
             findings=findings,
-            embedding=await self.embedding_provider.async_get_embedding(
+            description_embedding=await self.embedding_provider.async_get_embedding(
                 "Summary:\n"
                 + summary
                 + "\n\nFindings:\n"
@@ -227,6 +227,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
+        print('community = ', community)
         await self.database_provider.graph_handler.add_community(community)
 
         return {
@@ -253,7 +254,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         generation_config = input.message["generation_config"]
         max_summary_input_length = input.message["max_summary_input_length"]
         collection_id = input.message.get("collection_id", None)
-        graph_id = input.message.get("graph_id", None)
+        # graph_id = input.message.get("graph_id", None)
         community_summary_jobs = []
         logger = input.message.get("logger", logging.getLogger())
 
@@ -279,7 +280,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
                         max_summary_input_length=max_summary_input_length,
                         generation_config=generation_config,
                         collection_id=collection_id,
-                        graph_id=graph_id,
+                        # graph_id=graph_id,
                     )
                 )
 

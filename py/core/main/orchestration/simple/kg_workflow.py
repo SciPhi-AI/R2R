@@ -25,8 +25,8 @@ def simple_kg_factory(service: KgService):
             if key == "collection_id":
                 input_data[key] = uuid.UUID(value)
 
-            if key == "graph_id":
-                input_data[key] = uuid.UUID(value)
+            # if key == "graph_id":
+            #     input_data[key] = uuid.UUID(value)
 
             if key == "kg_creation_settings":
                 input_data[key] = json.loads(value)
@@ -87,12 +87,13 @@ def simple_kg_factory(service: KgService):
         try:
             num_communities = await service.kg_clustering(
                 collection_id=input_data.get("collection_id", None),
-                graph_id=input_data.get("graph_id", None),
+                # graph_id=input_data.get("graph_id", None),
                 **input_data["kg_enrichment_settings"],
             )
+            print('num_communities = ', num_communities)
             num_communities = num_communities[0]["num_communities"]
-            # TODO - Do not hardcode the number of parallel communities,
-            # make it a configurable parameter at runtime & add server-side defaults
+            # # TODO - Do not hardcode the number of parallel communities,
+            # # make it a configurable parameter at runtime & add server-side defaults
 
             if num_communities == 0:
                 raise R2RException("No communities found", 400)
@@ -115,20 +116,20 @@ def simple_kg_factory(service: KgService):
                     input_data=input_data_copy,
                 )
 
-            await service.providers.database.set_workflow_status(
-                id=input_data.get("collection_id", None),
-                status_type="kg_enrichment_status",
-                status=KGEnrichmentStatus.SUCCESS,
-            )
-            return {
-                "result": "successfully ran kg community summary workflows"
-            }
+            # await service.providers.database.set_workflow_status(
+            #     id=input_data.get("collection_id", None),
+            #     status_type="graph_cluster_status",
+            #     status=KGEnrichmentStatus.SUCCESS,
+            # )
+            # return {
+            #     "result": "successfully ran kg community summary workflows"
+            # }
 
         except Exception as e:
 
             await service.providers.database.set_workflow_status(
                 id=input_data.get("collection_id", None),
-                status_type="kg_enrichment_status",
+                status_type="graph_cluster_status",
                 status=KGEnrichmentStatus.FAILED,
             )
 
@@ -144,7 +145,7 @@ def simple_kg_factory(service: KgService):
             offset=input_data["offset"],
             limit=input_data["limit"],
             collection_id=input_data.get("collection_id", None),
-            graph_id=input_data.get("graph_id", None),
+            # graph_id=input_data.get("graph_id", None),
             **input_data["kg_enrichment_settings"],
         )
 

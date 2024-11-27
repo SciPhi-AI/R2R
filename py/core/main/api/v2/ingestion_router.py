@@ -64,12 +64,12 @@ class IngestionRouter(BaseRouter):
                 "ingest-files": (
                     "Ingest files task queued successfully."
                     if self.orchestration_provider.config.provider != "simple"
-                    else "Ingestion task completed successfully."
+                    else "Document created and ingested successfully."
                 ),
                 "ingest-chunks": (
                     "Ingest chunks task queued successfully."
                     if self.orchestration_provider.config.provider != "simple"
-                    else "Ingestion task completed successfully."
+                    else "Document created and ingested successfully."
                 ),
                 "update-files": (
                     "Update file task queued successfully."
@@ -236,7 +236,7 @@ class IngestionRouter(BaseRouter):
                     await simple_ingestor["ingest-files"](workflow_input)
                     messages.append(
                         {
-                            "message": "Ingestion task completed successfully.",
+                            "message": "Document created and ingested successfully.",
                             "document_id": str(document_id),
                             "task_id": None,
                         }
@@ -441,7 +441,7 @@ class IngestionRouter(BaseRouter):
                 await simple_ingestor["ingest-chunks"](workflow_input)
                 return [
                     {  # type: ignore
-                        "message": "Ingestion task completed successfully.",
+                        "message": "Document created and ingested successfully.",
                         "document_id": str(document_uuid),
                         "task_id": None,
                     }
@@ -486,7 +486,7 @@ class IngestionRouter(BaseRouter):
 
                 return [
                     {  # type: ignore
-                        "message": "Ingestion task completed successfully.",
+                        "message": "Document created and ingested successfully.",
                         "document_id": str(document_id),
                         "task_id": None,
                     }

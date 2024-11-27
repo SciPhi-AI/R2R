@@ -118,7 +118,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     "limits": {
                                         "entity": 20,
                                         "relationship": 20,
-                                        "__Community__": 20,
+                                        "community": 20,
                                     },
                                     "max_community_description_length": 65536,
                                     "max_llm_queries_for_global_search": 250
@@ -155,7 +155,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                         localSearchLimits: {
                                             entity: 20,
                                             relationship: 20,
-                                            __Community__: 20
+                                            community: 20
                                         },
                                         maxCommunityDescriptionLength: 65536,
                                         maxLlmQueriesForGlobalSearch: 250
@@ -201,7 +201,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     "limits": {
                                         "entity": 20,
                                         "relationship": 20,
-                                        "__Community__": 20
+                                        "community": 20
                                     },
                                     "max_community_description_length": 65536,
                                     "max_llm_queries_for_global_search": 250
@@ -316,7 +316,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                         limits: {
                                             entity: 20,
                                             relationship: 20,
-                                            __Community__: 20
+                                            community: 20
                                         },
                                         max_community_description_length: 65536,
                                         max_llm_queries_for_global_search: 250

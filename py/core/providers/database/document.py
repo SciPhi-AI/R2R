@@ -305,7 +305,7 @@ class PostgresDocumentHandler(DocumentHandler):
             return IngestionStatus
         elif status_type == "extraction_status":
             return KGExtractionStatus
-        elif status_type == "kg_enrichment_status":
+        elif status_type == "graph_cluster_status":
             return KGEnrichmentStatus
         else:
             raise R2RException(

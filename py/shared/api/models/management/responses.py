@@ -86,7 +86,7 @@ class CollectionResponse(BaseModel):
     user_id: Optional[UUID]
     name: str
     description: Optional[str]
-    kg_enrichment_status: str
+    graph_cluster_status: str
     created_at: datetime
     updated_at: datetime
     user_count: int
