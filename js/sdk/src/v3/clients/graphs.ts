@@ -19,7 +19,7 @@ export class GraphsClient {
 
   /**
    * List graphs with pagination and filtering options.
-   * @param ids Optional list of graph IDs to filter by
+   * @param collectionIds Optional list of collection IDs to filter by
    * @param offset Optional offset for pagination
    * @param limit Optional limit for pagination
    * @returns
@@ -36,7 +36,7 @@ export class GraphsClient {
     };
 
     if (options?.collectionIds && options.collectionIds.length > 0) {
-      params.ids = options.collectionIds;
+      params.collectionIds = options.collectionIds;
     }
 
     return this.client.makeRequest("GET", "graphs", {
@@ -62,9 +62,7 @@ export class GraphsClient {
    * This endpoint permanently removes the specified graph along with all
    * entities and relationships that belong to only this graph.
    *
-   * Entities and relationships extracted from documents are not deleted
-   * and must be deleted separately using the /entities and /relationships
-   * endpoints.
+   * Entities and relationships extracted from documents are not deleted.
    * @param collectionId The collection ID of the graph to delete
    * @returns
    */
@@ -72,19 +70,19 @@ export class GraphsClient {
   async reset(options: {
     collectionId: string;
   }): Promise<WrappedBooleanResponse> {
-    return this.client.makeRequest("DELETE", `graphs/${options.collectionId}`);
+    return this.client.makeRequest("POST", `graphs/${options.collectionId}/reset`);
   }
 
   /**
    * Update an existing graph.
-   * @param id Graph ID to update
+   * @param collectionId The collection ID corresponding to the graph to update.
    * @param name Optional new name for the graph
    * @param description Optional new description for the graph
    * @returns
    */
   @feature("graphs.update")
   async update(options: {
-    id: string;
+    collectionId: string;
     name?: string;
     description?: string;
   }): Promise<WrappedGraphResponse> {
@@ -93,7 +91,7 @@ export class GraphsClient {
       ...(options.description && { description: options.description }),
     };
 
-    return this.client.makeRequest("POST", `graphs/${options.id}`, {
+    return this.client.makeRequest("POST", `graphs/${options.collectionId}`, {
       data,
     });
   }
@@ -304,6 +302,51 @@ export class GraphsClient {
   }
 
   /**
+   * Creates communities in the graph by analyzing entity relationships and similarities.
+   *
+   * Communities are created through the following process:
+   *  1. Analyzes entity relationships and metadata to build a similarity graph
+   *  2. Applies advanced community detection algorithms (e.g. Leiden) to identify densely connected groups
+   *  3. Creates hierarchical community structure with multiple granularity levels
+   *  4. Generates natural language summaries and statistical insights for each community
+   *
+   * The resulting communities can be used to:
+   *  - Understand high-level graph structure and organization
+   *  - Identify key entity groupings and their relationships
+   *  - Navigate and explore the graph at different levels of detail
+   *  - Generate insights about entity clusters and their characteristics
+   *
+   * The community detection process is configurable through settings like:
+   *  - Community detection algorithm parameters
+   *  - Summary generation prompt
+   * @param collectionId The collection ID of the graph to create communities for
+   * @returns
+   */
+  @feature("communities.build")
+  async build(options: {
+    collection_id: string;
+    settings?: Record<string, any>;
+    runType?: string;
+    runWithOrchestration?: boolean;
+  }): Promise<WrappedBooleanResponse> {
+    const data = {
+      ...(options.settings && { settings: options.settings }),
+      ...(options.runType && { run_type: options.runType }),
+      ...(options.runWithOrchestration && {
+        run_with_orchestration: options.runWithOrchestration,
+      }),
+    };
+
+    return this.client.makeRequest(
+      "POST",
+      `graphs/${options.collection_id}/communities/build`,
+      {
+        data,
+      },
+    );
+  }
+
+  /**
    * List all communities in a graph.
    * @param collectionId Collection ID
    * @param offset Specifies the number of objects to skip. Defaults to 0.
@@ -387,6 +430,23 @@ export class GraphsClient {
   }
 
   /**
+   * Delete a community in a graph.
+   * @param collectionId The collection ID corresponding to the graph.
+   * @param communityId Community ID to delete
+   * @returns
+   */
+  @feature("graphs.deleteCommunity")
+  async deleteCommunity(options: {
+    collectionId: string;
+    communityId: string;
+  }): Promise<WrappedBooleanResponse> {
+    return this.client.makeRequest(
+      "DELETE",
+      `graphs/${options.collectionId}/communities/${options.communityId}`,
+    );
+  }
+
+  /**
    * Adds documents to a graph by copying their entities and relationships.
    *
    * This endpoint:
@@ -415,6 +475,29 @@ export class GraphsClient {
     return this.client.makeRequest(
       "POST",
       `graphs/${options.collectionId}/pull`,
+    );
+  }
+
+  /**
+   * Removes a document from a graph and removes any associated entities
+   *
+   * This endpoint:
+   *  1. Removes the document ID from the graph's document_ids array
+   *  2. Optionally deletes the document's copied entities and relationships
+   *
+   * The user must have access to both the graph and the document being removed.
+   * @param collectionId The collection ID of the graph to remove the document from
+   * @param documentId The document ID to remove
+   * @returns
+   */
+  @feature("graphs.removeDocument")
+  async removeDocument(options: {
+    collectionId: string;
+    documentId: string;
+  }): Promise<WrappedBooleanResponse> {
+    return this.client.makeRequest(
+      "DELETE",
+      `graphs/${options.collectionId}/documents/${options.documentId}`,
     );
   }
 }

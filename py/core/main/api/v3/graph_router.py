@@ -253,12 +253,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.create(
-                                graph={
-                                    "name": "New Graph",
-                                    "description": "New Description"
-                                }
-                            )
+                            result = client.graphs.list()
                             """
                         ),
                     },
@@ -271,7 +266,7 @@ class GraphRouter(BaseRouterV3):
                             const client = new r2rClient("http://localhost:7272");
 
                             function main() {
-                                const response = await client.graphs.list();
+                                const response = await client.graphs.list({});
                             }
 
                             main();
@@ -355,7 +350,7 @@ class GraphRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.graphs.retrieve({
-                                    collection_id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                                    collectionId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                                 });
                             }
 
@@ -428,7 +423,7 @@ class GraphRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.graphs.reset({
-                                    collection_id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                                    collectionId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                                 });
                             }
 
@@ -555,7 +550,44 @@ class GraphRouter(BaseRouterV3):
                 description=description,
             )
 
-        @self.router.get("/graphs/{collection_id}/entities")
+        @self.router.get(
+            "/graphs/{collection_id}/entities",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.get_entities(collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7")
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.get_entities({
+                                    collection_id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
         @self.base_endpoint
         async def get_entities(
             collection_id: UUID = Path(
@@ -665,7 +697,48 @@ class GraphRouter(BaseRouterV3):
 
             return relationship
 
-        @self.router.get("/graphs/{collection_id}/entities/{entity_id}")
+        @self.router.get(
+            "/graphs/{collection_id}/entities/{entity_id}",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.get_entity(
+                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                entity_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.get_entity({
+                                    collectionId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                    entityId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
         @self.base_endpoint
         async def get_entity(
             collection_id: UUID = Path(
@@ -714,7 +787,49 @@ class GraphRouter(BaseRouterV3):
             print("results = ", results)
             return entity
 
-        @self.router.delete("/graphs/{collection_id}/entities/{entity_id}")
+        @self.router.delete(
+            "/graphs/{collection_id}/entities/{entity_id}",
+            summary="Remove an entity",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.remove_entity(
+                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                entity_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.removeEntity({
+                                    collectionId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                    entityId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
         @self.base_endpoint
         async def delete_entity(
             collection_id: UUID = Path(
@@ -733,7 +848,45 @@ class GraphRouter(BaseRouterV3):
             )
             return GenericBooleanResponse(success=True)  # type: ignore
 
-        @self.router.get("/graphs/{collection_id}/relationships")
+        @self.router.get(
+            "/graphs/{collection_id}/relationships",
+            description="Lists all relationships in the graph with pagination support.",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.list_relationships(collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7")
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.listRelationships({
+                                    collectionId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
         @self.base_endpoint
         async def get_relationships(
             collection_id: UUID = Path(
@@ -798,7 +951,47 @@ class GraphRouter(BaseRouterV3):
             )
 
         @self.router.get(
-            "/graphs/{collection_id}/relationships/{relationship_id}"
+            "/graphs/{collection_id}/relationships/{relationship_id}",
+            description="Retrieves a specific relationship by its ID.",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.get_relationship(
+                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                relationship_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.getRelationship({
+                                    collectionId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                    relationshipId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                ],
+            },
         )
         @self.base_endpoint
         async def get_relationship(
@@ -846,7 +1039,47 @@ class GraphRouter(BaseRouterV3):
             )
 
         @self.router.delete(
-            "/graphs/{collection_id}/relationships/{relationship_id}"
+            "/graphs/{collection_id}/relationships/{relationship_id}",
+            description="Removes a relationship from the graph.",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.delete_relationship(
+                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                relationship_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.deleteRelationship({
+                                    collectionId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                    relationshipId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                ],
+            },
         )
         @self.base_endpoint
         async def delete_relationship(
@@ -889,8 +1122,25 @@ class GraphRouter(BaseRouterV3):
                             """
                         ),
                     },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.communities.build({
+                                    collectionId: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
                 ],
-                "operationId": "graphs_build_communities_v3_graphs__id__communities_build_graphs",
             },
         )
         @self.base_endpoint
@@ -903,7 +1153,8 @@ class GraphRouter(BaseRouterV3):
             run_with_orchestration: bool = Query(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedKGEnrichmentResponse:
-            """Creates communities in the graph by analyzing entity relationships and similarities.
+            """
+            Creates communities in the graph by analyzing entity relationships and similarities.
 
             Communities are created through the following process:
             1. Analyzes entity relationships and metadata to build a similarity graph
@@ -918,8 +1169,8 @@ class GraphRouter(BaseRouterV3):
             - Generate insights about entity clusters and their characteristics
 
             The community detection process is configurable through settings like:
-                - Community detection algorithm parameters
-                - Summary generation prompt
+            - Community detection algorithm parameters
+            - Summary generation prompt
             """
 
             return await self._create_communities(
@@ -1019,7 +1270,25 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.get(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            result = client.graphs.list_communities(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.listCommunities({
+                                    collectionId: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -1082,7 +1351,25 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.get(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            result = client.graphs.get_community(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.getCommunity({
+                                    collectionId: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -1124,6 +1411,45 @@ class GraphRouter(BaseRouterV3):
         @self.router.delete(
             "/graphs/{collection_id}/communities/{community_id}",
             summary="Delete a community",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.graphs.delete_community(
+                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                community_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.deleteCommunity({
+                                    collectionId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                    communityId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def delete_community(
@@ -1171,6 +1497,31 @@ class GraphRouter(BaseRouterV3):
                                     }
                                 }
                             )"""
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            async function main() {
+                                const response = await client.graphs.updateCommunity({
+                                    collectionId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                    communityId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                    communityUpdate: {
+                                        metadata: {
+                                            topic: "Technology",
+                                            description: "Tech companies and products"
+                                        }
+                                    }
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                 ]
@@ -1224,7 +1575,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.initialize(
+                            result = client.graphs.pull(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )"""
                         ),
@@ -1238,7 +1589,7 @@ class GraphRouter(BaseRouterV3):
                             const client = new r2rClient("http://localhost:7272");
 
                             async function main() {
-                                const response = await client.graphs.addDocuments({
+                                const response = await client.graphs.pull({
                                     collection_id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                                 });
                             }
@@ -1379,6 +1730,25 @@ class GraphRouter(BaseRouterV3):
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 document_id="f98db41a-5555-4444-3333-222222222222"
                             )"""
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            async function main() {
+                                const response = await client.graphs.removeDocument({
+                                    collectionId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+                                    documentId: "f98db41a-5555-4444-3333-222222222222"
+                                });
+                            }
+
+                            main();
+                            """
                         ),
                     },
                 ]
