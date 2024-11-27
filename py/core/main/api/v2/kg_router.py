@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 import yaml
@@ -12,9 +12,6 @@ from core.base.api.models import (
     WrappedCommunitiesResponse,
     WrappedEntitiesResponse,
     WrappedRelationshipsResponse,
-    WrappedKGCreationResponse,
-    WrappedKGEnrichmentResponse,
-    WrappedKGEntityDeduplicationResponse,
     WrappedKGTunePromptResponse,
     WrappedRelationshipsResponse,
 )
@@ -39,7 +36,7 @@ class KGRouter(BaseRouter):
         self,
         service: KgService,
         orchestration_provider: Optional[
-            Union[HatchetOrchestrationProvider, SimpleOrchestrationProvider]
+            HatchetOrchestrationProvider | SimpleOrchestrationProvider
         ] = None,
         run_type: RunType = RunType.KG,
     ):

@@ -4,7 +4,7 @@ import json
 import logging
 import time
 from enum import Enum
-from typing import Any, AsyncGenerator, List, Optional, Set, Tuple, Union
+from typing import Any, AsyncGenerator, Optional, Set, Tuple, Union
 from uuid import UUID, uuid4
 
 import asyncpg
@@ -2429,7 +2429,7 @@ class PostgresGraphHandler(GraphHandler):
     #     return [item["community_id"] for item in community_ids]
 
     async def check_communities_exist(
-        self, collection_id: UUID, community_ids: List[UUID]
+        self, collection_id: UUID, community_ids: list[UUID]
     ) -> Set[UUID]:
         """
         Check which communities already exist in the database.

@@ -1,29 +1,3 @@
-export interface Entity {
-  name: string;
-  id?: string;
-  category?: string;
-  description?: string;
-  parent_id?: string;
-  description_embedding?: string;
-  chunk_ids: string[];
-  metadata: Record<string, any>;
-}
-
-export interface Relationship {
-  id?: string;
-  subject: string;
-  predicate: string;
-  object: string;
-  description?: string;
-  subject_id?: string;
-  object_id?: string;
-  weight?: number;
-  chunk_ids: string[];
-  parent_id?: string;
-  description_embedding?: string;
-  metadata: Record<string, any>;
-}
-
 export interface UnprocessedChunk {
   id: string;
   document_id?: string;

@@ -10,8 +10,6 @@ import {
   WrappedRelationshipResponse,
   WrappedCommunitiesResponse,
   WrappedCommunityResponse,
-  Entity,
-  Relationship,
 } from "../../types";
 
 export class GraphsClient {

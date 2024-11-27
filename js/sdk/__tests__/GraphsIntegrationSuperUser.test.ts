@@ -123,13 +123,44 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     });
     expect(response.results).toBeDefined();
     expect(response.total_entries).toBeGreaterThanOrEqual(1);
-  });
+  }, 60000);
 
   test("Check that there are relationships in the graph", async () => {
     const response = await client.graphs.listRelationships({
       collectionId: collectionId,
     });
     expect(response.results).toBeDefined();
+    expect(response.total_entries).toBeGreaterThanOrEqual(1);
+  });
+
+  test("Check that there are no communities in the graph prior to building", async () => {
+    const response = await client.graphs.listCommunities({
+      collectionId: collectionId,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.entries).toHaveLength(0);
+  });
+
+  test("Build communities", async () => {
+    const response = await client.graphs.build({
+      collectionId: collectionId,
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 30000));
+
+    expect(response.results).toBeDefined();
+  });
+
+  test("Check that there are communities in the graph", async () => {
+    const response = await client.graphs.listCommunities({
+      collectionId: collectionId,
+    });
+
+    console.log("Communities: ", response);
+
+    expect(response.results).toBeDefined();
+    expect(response.total_entries).toBeGreaterThanOrEqual(1);
   });
 
   test("Create a new entity", async () => {
