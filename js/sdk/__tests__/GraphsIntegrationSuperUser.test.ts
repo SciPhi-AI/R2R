@@ -68,8 +68,8 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   test("List graphs", async () => {
     const response = await client.graphs.list({});
 
-        expect(response.results).toBeDefined();
-    });
+    expect(response.results).toBeDefined();
+  });
 
   test("Check that there are no entities in the graph", async () => {
     const response = await client.graphs.listEntities({

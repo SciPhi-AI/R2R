@@ -3,7 +3,6 @@ from uuid import UUID
 
 from shared.api.models.base import (
     WrappedBooleanResponse,
-    WrappedGenericMessageResponse,
 )
 
 from shared.api.models.kg.responses import (
@@ -13,8 +12,8 @@ from shared.api.models.kg.responses import (
     WrappedEntityResponse,
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,
-    # WrappedCommunitiesResponse,
-    # WrappedCommunityResponse,
+    WrappedCommunitiesResponse,
+    WrappedCommunityResponse,
 )
 
 
@@ -26,32 +25,9 @@ class GraphsSDK:
     def __init__(self, client):
         self.client = client
 
-    async def create(
-        self,
-        name: str,
-        description: Optional[str] = None,
-    ) -> WrappedGraphResponse:
-        """
-        Create a new graph.
-
-        Args:
-            name (str): Name of the graph
-            description (Optional[str]): Description of the graph
-
-        Returns:
-            dict: Created graph information
-        """
-        data = {"name": name, "description": description}
-        return await self.client._make_request(
-            "POST",
-            "graphs",
-            json=data,
-            version="v3",
-        )
-
     async def list(
         self,
-        ids: Optional[list[str | UUID]] = None,
+        collection_ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedGraphsResponse:
@@ -70,8 +46,8 @@ class GraphsSDK:
             "offset": offset,
             "limit": limit,
         }
-        if ids:
-            params["ids"] = ids
+        if collection_ids:
+            params["collection_ids"] = collection_ids
 
         return await self.client._make_request(
             "GET", "graphs", params=params, version="v3"
@@ -79,24 +55,46 @@ class GraphsSDK:
 
     async def retrieve(
         self,
-        id: str | UUID,
+        collection_id: str | UUID,
     ) -> WrappedGraphResponse:
         """
         Get detailed information about a specific graph.
 
         Args:
-            id (str | UUID): Graph ID to retrieve
+            collection_id (str | UUID): Graph ID to retrieve
 
         Returns:
             dict: Detailed graph information
         """
         return await self.client._make_request(
-            "GET", f"graphs/{str(id)}", version="v3"
+            "GET", f"graphs/{str(collection_id)}", version="v3"
+        )
+
+    async def reset(
+        self,
+        collection_id: str | UUID,
+    ) -> WrappedBooleanResponse:
+        """
+        Deletes a graph and all its associated data.
+
+        This endpoint permanently removes the specified graph along with all
+        entities and relationships that belong to only this graph.
+
+        Entities and relationships extracted from documents are not deleted.
+
+        Args:
+            collection_id (str | UUID): Graph ID to reset
+
+        Returns:
+            dict: Success message
+        """
+        return await self.client._make_request(
+            "POST", f"graphs/{str(collection_id)}/reset", version="v3"
         )
 
     async def update(
         self,
-        id: str | UUID,
+        collection_id: str | UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> WrappedGraphResponse:
@@ -104,7 +102,7 @@ class GraphsSDK:
         Update graph information.
 
         Args:
-            id (str | UUID): Graph ID to update
+            collection_id (str | UUID): The collection ID corresponding to the graph
             name (Optional[str]): Optional new name for the graph
             description (Optional[str]): Optional new description for the graph
 
@@ -119,74 +117,16 @@ class GraphsSDK:
 
         return await self.client._make_request(
             "POST",
-            f"graphs/{str(id)}",
+            f"graphs/{str(collection_id)}",
             json=data,
             version="v3",
         )
 
-    async def delete(
-        self,
-        id: str | UUID,
-    ) -> WrappedBooleanResponse:
-        """
-        Delete a graph.
-
-        Args:
-            id (str | UUID): Graph ID to delete
-
-        Returns:
-            bool: True if deletion was successful
-        """
-        result = await self.client._make_request(
-            "DELETE", f"graphs/{str(id)}", version="v3"
-        )
-        return result.get("results", True)
-
-    async def add_entity(
-        self,
-        id: str | UUID,
-        entity_id: str | UUID,
-    ) -> WrappedGenericMessageResponse:
-        """
-        Add an entity to a graph.
-
-        Args:
-            id (str | UUID): Graph ID to add entity to
-            entity_id (str | UUID): Entity ID to add to the graph
-
-        Returns:
-            dict: Success message
-        """
-        return await self.client._make_request(
-            "POST",
-            f"graphs/{str(id)}/entities/{str(entity_id)}",
-            version="v3",
-        )
-
-    async def remove_entity(
-        self,
-        id: str | UUID,
-        entity_id: str | UUID,
-    ) -> WrappedBooleanResponse:
-        """
-        Remove an entity from a graph.
-
-        Args:
-            id (str | UUID): Graph ID to remove entity from
-            entity_id (str | UUID): Entity ID to remove from the graph
-
-        Returns:
-            dict: Success message
-        """
-        return await self.client._make_request(
-            "DELETE",
-            f"graphs/{str(id)}/entities/{str(entity_id)}",
-            version="v3",
-        )
+    # TODO: create entity
 
     async def list_entities(
         self,
-        id: str | UUID,
+        collection_id: str | UUID,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedEntitiesResponse:
@@ -194,7 +134,7 @@ class GraphsSDK:
         List entities in a graph.
 
         Args:
-            id (str | UUID): Graph ID to list entities from
+            collection_id (str | UUID): Graph ID to list entities from
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
@@ -208,21 +148,21 @@ class GraphsSDK:
 
         return await self.client._make_request(
             "GET",
-            f"graphs/{str(id)}/entities",
+            f"graphs/{str(collection_id)}/entities",
             params=params,
             version="v3",
         )
 
     async def get_entity(
         self,
-        id: str | UUID,
+        collection_id: str | UUID,
         entity_id: str | UUID,
     ) -> WrappedEntityResponse:
         """
         Get entity information in a graph.
 
         Args:
-            id (str | UUID): Graph ID to get entity from
+            collection_id (str | UUID): The collection ID corresponding to the graph
             entity_id (str | UUID): Entity ID to get from the graph
 
         Returns:
@@ -230,55 +170,38 @@ class GraphsSDK:
         """
         return await self.client._make_request(
             "GET",
-            f"graphs/{str(id)}/entities/{str(entity_id)}",
+            f"graphs/{str(collection_id)}/entities/{str(entity_id)}",
             version="v3",
         )
 
-    async def add_relationship(
+    # TODO: update entity
+
+    async def remove_entity(
         self,
-        id: str | UUID,
-        relationship_id: str | UUID,
-    ) -> WrappedGenericMessageResponse:
-        """
-        Add a relationship to a graph.
-
-        Args:
-            id (str | UUID): Graph ID to add relationship to
-            relationship_id (str | UUID): Relationship ID to add to the graph
-
-        Returns:
-            dict: Success message
-        """
-        return await self.client._make_request(
-            "POST",
-            f"graphs/{str(id)}/relationships/{str(relationship_id)}",
-            version="v3",
-        )
-
-    async def remove_relationship(
-        self,
-        id: str | UUID,
-        relationship_id: str | UUID,
+        collection_id: str | UUID,
+        entity_id: str | UUID,
     ) -> WrappedBooleanResponse:
         """
-        Remove a relationship from a graph.
+        Remove an entity from a graph.
 
         Args:
-            id (str | UUID): Graph ID to remove relationship from
-            relationship_id (str | UUID): Relationship ID to remove from the graph
+            collection_id (str | UUID): The collection ID corresponding to the graph
+            entity_id (str | UUID): Entity ID to remove from the graph
 
         Returns:
             dict: Success message
         """
         return await self.client._make_request(
             "DELETE",
-            f"graphs/{str(id)}/relationships/{str(relationship_id)}",
+            f"graphs/{str(collection_id)}/entities/{str(entity_id)}",
             version="v3",
         )
 
+    # TODO: create relationship
+
     async def list_relationships(
         self,
-        id: str | UUID,
+        collection_id: str | UUID,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedRelationshipsResponse:
@@ -286,7 +209,7 @@ class GraphsSDK:
         List relationships in a graph.
 
         Args:
-            id (str | UUID): Graph ID to list relationships from
+            collection_id (str | UUID): The collection ID corresponding to the graph
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
@@ -300,21 +223,21 @@ class GraphsSDK:
 
         return await self.client._make_request(
             "GET",
-            f"graphs/{str(id)}/relationships",
+            f"graphs/{str(collection_id)}/relationships",
             params=params,
             version="v3",
         )
 
     async def get_relationship(
         self,
-        id: str | UUID,
+        collection_id: str | UUID,
         relationship_id: str | UUID,
     ) -> WrappedRelationshipResponse:
         """
         Get relationship information in a graph.
 
         Args:
-            id (str | UUID): Graph ID to get relationship from
+            collection_id (str | UUID): The collection ID corresponding to the graph
             relationship_id (str | UUID): Relationship ID to get from the graph
 
         Returns:
@@ -322,63 +245,78 @@ class GraphsSDK:
         """
         return await self.client._make_request(
             "GET",
-            f"graphs/{str(id)}/relationships/{str(relationship_id)}",
+            f"graphs/{str(collection_id)}/relationships/{str(relationship_id)}",
             version="v3",
         )
 
-    async def add_community(
+    # TODO: update relationship
+
+    async def remove_relationship(
         self,
-        id: str | UUID,
-        community_id: str | UUID,
-    ) -> WrappedGenericMessageResponse:
-        """
-        Add a community to a graph.
-
-        Args:
-            id (str | UUID): Graph ID to add community to
-            community_id (str | UUID): Community ID to add to the graph
-
-        Returns:
-            dict: Success message
-        """
-        return await self.client._make_request(
-            "POST",
-            f"graphs/{str(id)}/communities/{str(community_id)}",
-            version="v3",
-        )
-
-    async def remove_community(
-        self,
-        id: str | UUID,
-        community_id: str | UUID,
+        collection_id: str | UUID,
+        relationship_id: str | UUID,
     ) -> WrappedBooleanResponse:
         """
-        Remove a community from a graph.
+        Remove a relationship from a graph.
 
         Args:
-            id (str | UUID): Graph ID to remove community from
-            community_id (str | UUID): Community ID to remove from the graph
+            collection_id (str | UUID): The collection ID corresponding to the graph
+            relationship_id (str | UUID): Relationship ID to remove from the graph
 
         Returns:
             dict: Success message
         """
         return await self.client._make_request(
             "DELETE",
-            f"graphs/{str(id)}/communities/{str(community_id)}",
+            f"graphs/{str(collection_id)}/relationships/{str(relationship_id)}",
             version="v3",
         )
 
+    async def build(
+        self,
+        collection_id: str | UUID,
+        settings: dict,
+        run_type: str = "estimate",
+        run_with_orchestration: bool = True,
+    ) -> WrappedBooleanResponse:
+        """
+        Build a graph.
+
+        Args:
+            collection_id (str | UUID): The collection ID corresponding to the graph
+            settings (dict): Settings for the build
+            run_type (str, optional): Type of build to run. Defaults to "estimate".
+            run_with_orchestration (bool, optional): Whether to run with orchestration. Defaults to True.
+
+        Returns:
+            dict: Success message
+        """
+        data = {
+            "settings": settings,
+            "run_type": run_type,
+            "run_with_orchestration": run_with_orchestration,
+        }
+
+        return await self.client._make_request(
+            "POST",
+            f"graphs/{str(collection_id)}/build",
+            json=data,
+            version="v3",
+        )
+
+    # TODO: create community
+
     async def list_communities(
         self,
-        id: str | UUID,
+        collection_id: str | UUID,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ):  # -> WrappedCommunitiesResponse
+    ) -> WrappedCommunitiesResponse:
         """
         List communities in a graph.
 
         Args:
-            id (str | UUID): Graph ID to list communities from
+            collection_id (str | UUID): The collection ID corresponding to the graph
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
@@ -392,21 +330,21 @@ class GraphsSDK:
 
         return await self.client._make_request(
             "GET",
-            f"graphs/{str(id)}/communities",
+            f"graphs/{str(collection_id)}/communities",
             params=params,
             version="v3",
         )
 
     async def get_community(
         self,
-        id: str | UUID,
+        collection_id: str | UUID,
         community_id: str | UUID,
-    ):  # -> WrappedCommunityResponse
+    ) -> WrappedCommunityResponse:
         """
         Get community information in a graph.
 
         Args:
-            id (str | UUID): Graph ID to get community from
+            collection_id (str | UUID): The collection ID corresponding to the graph
             community_id (str | UUID): Community ID to get from the graph
 
         Returns:
@@ -414,6 +352,127 @@ class GraphsSDK:
         """
         return await self.client._make_request(
             "GET",
-            f"graphs/{str(id)}/communities/{str(community_id)}",
+            f"graphs/{str(collection_id)}/communities/{str(community_id)}",
+            version="v3",
+        )
+
+    async def update_community(
+        self,
+        collection_id: str | UUID,
+        community_id: str | UUID,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        findings: Optional[list[str]] = None,
+        rating: Optional[int] = None,
+        rating_explanation: Optional[str] = None,
+        level: Optional[int] = None,
+        attributes: Optional[dict] = None,
+    ) -> WrappedCommunityResponse:
+        """
+        Update community information.
+
+        Args:
+            collection_id (str | UUID): The collection ID corresponding to the graph
+            community_id (str | UUID): Community ID to update
+            name (Optional[str]): Optional new name for the community
+            summary (Optional[str]): Optional new summary for the community
+            findings (Optional[list[str]]): Optional new findings for the community
+            rating (Optional[int]): Optional new rating for the community
+            rating_explanation (Optional[str]): Optional new rating explanation for the community
+            level (Optional[int]): Optional new level for the community
+            attributes (Optional[dict]): Optional new attributes for the community
+
+        Returns:
+            dict: Updated community information
+        """
+        data = {}
+        if name is not None:
+            data["name"] = name
+        if summary is not None:
+            data["summary"] = summary
+        if findings is not None:
+            data["findings"] = findings
+        if rating is not None:
+            data["rating"] = rating
+        if rating_explanation is not None:
+            data["rating_explanation"] = rating_explanation
+        if level is not None:
+            data["level"] = level
+        if attributes is not None:
+            data["attributes"] = attributes
+
+        return await self.client._make_request(
+            "POST",
+            f"graphs/{str(collection_id)}/communities/{str(community_id)}",
+            json=data,
+            version="v3",
+        )
+
+    async def delete_community(
+        self,
+        collection_id: str | UUID,
+        community_id: str | UUID,
+    ) -> WrappedBooleanResponse:
+        """
+        Remove a community from a graph.
+
+        Args:
+            collection_id (str | UUID): The collection ID corresponding to the graph
+            community_id (str | UUID): Community ID to remove from the graph
+
+        Returns:
+            dict: Success message
+        """
+        return await self.client._make_request(
+            "DELETE",
+            f"graphs/{str(collection_id)}/communities/{str(community_id)}",
+            version="v3",
+        )
+
+    async def pull(
+        self,
+        collection_id: str | UUID,
+    ) -> WrappedBooleanResponse:
+        """
+        Adds documents to a graph by copying their entities and relationships.
+
+        This endpoint:
+            1. Copies document entities to the graph_entity table
+            2. Copies document relationships to the graph_relationship table
+            3. Associates the documents with the graph
+
+        When a document is added:
+            - Its entities and relationships are copied to graph-specific tables
+            - Existing entities/relationships are updated by merging their properties
+            - The document ID is recorded in the graph's document_ids array
+
+        Documents added to a graph will contribute their knowledge to:
+            - Graph analysis and querying
+            - Community detection
+            - Knowledge graph enrichment
+        """
+        return await self.client._make_request(
+            "POST",
+            f"graphs/{str(collection_id)}/pull",
+            version="v3",
+        )
+
+    async def remove_document(
+        self,
+        collection_id: str | UUID,
+        document_id: str | UUID,
+    ) -> WrappedBooleanResponse:
+        """
+        Removes a document from a graph and removes any associated entities
+
+        This endpoint:
+            1. Removes the document ID from the graph's document_ids array
+            2. Optionally deletes the document's copied entities and relationships
+
+        The user must have access to both the graph and the document being removed.
+        """
+        return await self.client._make_request(
+            "DELETE",
+            f"graphs/{str(collection_id)}/documents/{str(document_id)}",
             version="v3",
         )
