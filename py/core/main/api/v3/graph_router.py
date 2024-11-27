@@ -3,7 +3,7 @@ import textwrap
 from typing import Optional
 from uuid import UUID
 
-from fastapi import Body, Depends, Path, Query, Request
+from fastapi import Body, Depends, Path, Query
 
 from core.base import R2RException, RunType
 from core.base.abstractions import (
@@ -41,18 +41,6 @@ from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
 
-from enum import Enum
-
-
-class GraphObjectType(str, Enum):
-    ENTITIES = "entities"
-    RELATIONSHIPS = "relationships"
-    COLLECTIONS = "collections"
-    DOCUMENTS = "documents"
-
-    def __str__(self):
-        return self.value
-
 
 class GraphRouter(BaseRouterV3):
     def __init__(
@@ -65,15 +53,6 @@ class GraphRouter(BaseRouterV3):
         run_type: RunType = RunType.KG,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
-
-    def _get_path_level(self, request: Request) -> DataLevel:
-        path = request.url.path
-        if "/chunks/" in path:
-            return DataLevel.CHUNK
-        elif "/documents/" in path:
-            return DataLevel.DOCUMENT
-        else:
-            return DataLevel.GRAPH
 
     async def _deduplicate_entities(
         self,
@@ -1049,7 +1028,6 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def get_communities(
-            request: Request,
             collection_id: UUID = Path(
                 ...,
                 description="The collection ID corresponding to the graph to get communities for.",
@@ -1066,7 +1044,7 @@ class GraphRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedCommunitiesResponse:
             """
             Lists all communities in the graph with pagination support.
 
@@ -1086,7 +1064,7 @@ class GraphRouter(BaseRouterV3):
                 auth_user=auth_user,
             )
 
-            return communities, {
+            return communities, {  # type: ignore
                 "total_entries": count,
             }
 
@@ -1113,7 +1091,6 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def get_community(
-            request: Request,
             collection_id: UUID = Path(
                 ...,
                 description="The ID of the collection to get communities for.",
@@ -1123,7 +1100,7 @@ class GraphRouter(BaseRouterV3):
                 description="The ID of the community to get.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedCommunityResponse:
             """
             Retrieves a specific community by its ID.
 
@@ -1150,7 +1127,6 @@ class GraphRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def delete_community(
-            request: Request,
             collection_id: UUID = Path(
                 ...,
                 description="The collection ID corresponding to the graph to delete the community from.",
@@ -1212,7 +1188,7 @@ class GraphRouter(BaseRouterV3):
             level: Optional[int] = Body(None),
             attributes: Optional[dict] = Body(None),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedCommunityResponse:
             """
             Updates an existing community's metadata and properties.
             """

@@ -1120,7 +1120,6 @@ class PostgresRelationshipHandler(RelationshipHandler):
 #         return [row["id"] for row in results]
 
 
-
 class PostgresCommunityHandler(CommunityHandler):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
