@@ -260,8 +260,10 @@ class IngestionService(Service):
                     model=self.config.ingestion.document_summary_model
                 ),
             )
+            print("response = ", response)
 
             document_info.summary = response.choices[0].message.content  # type: ignore
+            print("document_info = ", document_info)
 
             if not document_info.summary:
                 raise ValueError("Expected a generated response.")

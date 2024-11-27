@@ -115,7 +115,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                         "model": "gpt-4o-mini",
                                         "temperature": 0.7,
                                     },
-                                    "graph_search_limits": {
+                                    "limits": {
                                         "entity": 20,
                                         "relationship": 20,
                                         "__Community__": 20,
@@ -198,7 +198,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                         "model": "gpt-4o-mini",
                                         "temperature": 0.7
                                     },
-                                    "graph_search_limits": {
+                                    "limits": {
                                         "entity": 20,
                                         "relationship": 20,
                                         "__Community__": 20
@@ -233,6 +233,8 @@ class RetrievalRouterV3(BaseRouterV3):
 
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
             """
+
+            print("search_settings = ", search_settings)
 
             search_settings.filters = self._select_filters(
                 auth_user, search_settings
@@ -310,7 +312,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                             model: "gpt-4o-mini",
                                             temperature: 0.7
                                         },
-                                        graph_search_limits: {
+                                        limits: {
                                             entity: 20,
                                             relationship: 20,
                                             __Community__: 20

@@ -98,7 +98,7 @@ async def search(ctx, query, **kwargs):
             "entity_types",
             "relationships",
             "max_community_description_length",
-            "graph_search_limits",
+            "limits",
         ]
         and v is not None
     }
@@ -217,7 +217,7 @@ async def rag(ctx, query, **kwargs):
             "entity_types",
             "relationships",
             "max_community_description_length",
-            "graph_search_limits",
+            "limits",
         ]
         and v is not None
     }

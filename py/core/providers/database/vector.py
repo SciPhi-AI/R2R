@@ -334,6 +334,8 @@ class PostgresChunkHandler(ChunkHandler):
             where_clause = ""
             params.append(stage1_param)
 
+            print("search_settings = ", search_settings)
+
             if search_settings.filters:
                 where_clause = self._build_filters(
                     search_settings.filters, params

@@ -259,7 +259,7 @@ class GraphSearchSettings(R2RSerializable):
         alias="maxLLMQueriesForGlobalSearch",
         default=250,
     )
-    graph_search_limits: dict[str, int] = Field(
+    limits: dict[str, int] = Field(
         alias="localSearchLimits",
         default={},
     )
@@ -273,6 +273,11 @@ class SearchSettings(R2RSerializable):
     """Main search settings class that combines shared settings with specialized settings for chunks and KG."""
 
     # Search type flags
+    use_hybrid_search: bool = Field(
+        default=False,
+        description="Whether to perform a hybrid search. This is equivalent to setting `use_semantic_search=True` and `use_fulltext_search=True`, e.g. combining vector and keyword search.",
+        alias="useHybridSearch",
+    )
     use_semantic_search: bool = Field(
         default=True,
         description="Whether to use semantic search",
@@ -374,7 +379,7 @@ class SearchSettings(R2RSerializable):
                 "generation_config": GenerationConfig.Config.json_schema_extra,
                 "max_community_description_length": 65536,
                 "max_llm_queries_for_global_search": 250,
-                "graph_search_limits": {
+                "limits": {
                     "entity": 20,
                     "relationship": 20,
                     "__Community__": 20,
@@ -625,7 +630,7 @@ class SearchSettings(R2RSerializable):
 #         alias="maxLLMQueriesForGlobalSearch",
 #         default=250,
 #     )
-#     graph_search_limits: dict[str, int] = Field(
+#     limits: dict[str, int] = Field(
 #         alias="localSearchLimits",
 #         default={
 #             "entity": 20,
@@ -644,7 +649,7 @@ class SearchSettings(R2RSerializable):
 #             "generation_config": GenerationConfig.Config.json_schema_extra,
 #             "max_community_description_length": 65536,
 #             "max_llm_queries_for_global_search": 250,
-#             "graph_search_limits": {
+#             "limits": {
 #                 "entity": 20,
 #                 "relationship": 20,
 #                 "__Community__": 20,

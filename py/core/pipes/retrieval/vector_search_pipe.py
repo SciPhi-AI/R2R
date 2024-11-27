@@ -61,7 +61,7 @@ class VectorSearchPipe(SearchPipe):
         if (
             search_settings.use_fulltext_search
             and search_settings.use_semantic_search
-        ):
+        ) or search_settings.use_hybrid_search:
 
             search_results = await self.database_provider.hybrid_search(
                 query_vector=query_vector,
@@ -70,11 +70,13 @@ class VectorSearchPipe(SearchPipe):
             )
         elif search_settings.use_fulltext_search:
             search_results = await self.database_provider.full_text_search(
-                query_vector=query_vector,
+                query_text=message,
                 search_settings=search_settings,
             )
-
         elif search_settings.use_semantic_search:
+            print(
+                "performing semantic search, search_settings:", search_settings
+            )
             search_results = await self.database_provider.semantic_search(
                 query_vector=query_vector,
                 search_settings=search_settings,

@@ -58,13 +58,11 @@ class DocumentsSDK:
         if ingestion_config:
             data["ingestion_config"] = json.dumps(ingestion_config)
         if collection_ids:
-            for cid in collection_ids:
-                data["collection_ids"] = str(cid)
-
+            collection_ids = [str(collection_id) for collection_id in collection_ids]  # type: ignore
+            data["collection_ids"] = json.dumps(collection_ids)
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
 
-        print("data = ", data)
         if file_path:
             # Create a new file instance that will remain open during the request
             file_instance = open(file_path, "rb")

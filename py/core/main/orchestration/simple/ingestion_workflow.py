@@ -90,14 +90,14 @@ def simple_ingestion_factory(service: IngestionService):
                         collection_id=collection_id,
                     )
                 else:
+                    print("collection_ids = ", collection_ids)
+
                     for collection_id in collection_ids:
                         try:
                             # FIXME: Right now we just throw a warning if the collection already exists, but we should probably handle this more gracefully
-                            name = document_info.title or "N/A"
-                            description = ""
+                            name = "My Collection"
+                            description = f"A collection started during {document_info.title} ingestion"
 
-                            name = document_info.title or "N/A"
-                            description = ""
                             result = await service.providers.database.create_collection(
                                 user_id=document_info.user_id,
                                 name=name,
@@ -116,10 +116,20 @@ def simple_ingestion_factory(service: IngestionService):
                                 f"Warning, could not create collection with error: {str(e)}"
                             )
 
+                        print(
+                            "Assigning docment to relational collection, collection_id = ",
+                            collection_id,
+                        )
+
                         await service.providers.database.assign_document_to_collection_relational(
                             document_id=document_info.id,
                             collection_id=collection_id,
                         )
+                        print(
+                            "Assigning docment to relational vector, collection_id = ",
+                            collection_id,
+                        )
+
                         await service.providers.database.assign_document_to_collection_vector(
                             document_id=document_info.id,
                             collection_id=collection_id,
@@ -298,6 +308,7 @@ def simple_ingestion_factory(service: IngestionService):
                         collection_id=collection_id,
                     )
                 else:
+                    print("collection_ids = ", collection_ids)
                     for collection_id in collection_ids:
                         try:
 
@@ -320,6 +331,10 @@ def simple_ingestion_factory(service: IngestionService):
                             logger.warning(
                                 f"Warning, could not create collection with error: {str(e)}"
                             )
+                        print(
+                            "Assigning docment to relational collection, collection_id = ",
+                            collection_id,
+                        )
 
                         await service.providers.database.assign_document_to_collection_relational(
                             document_id=document_info.id,
