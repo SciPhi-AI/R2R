@@ -260,7 +260,7 @@ class DocumentsRouter(BaseRouterV3):
                 )
                 await simple_ingestor["ingest-files"](workflow_input)
                 return {  # type: ignore
-                    "message": "Ingestion task completed successfully.",
+                    "message": "Document created and ingested successfully.",
                     "document_id": str(document_id),
                     "task_id": None,
                 }

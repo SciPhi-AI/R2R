@@ -12,10 +12,12 @@ from core.base.api.models import (
     WrappedCommunitiesResponse,
     WrappedEntitiesResponse,
     WrappedRelationshipsResponse,
+    WrappedKGCreationResponse,
+    WrappedKGEnrichmentResponse,
+    WrappedKGEntityDeduplicationResponse,
     WrappedKGTunePromptResponse,
+    WrappedRelationshipsResponse,
 )
-
-
 from core.base.logger.base import RunType
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -67,10 +69,10 @@ class KGRouter(BaseRouter):
             )
         else:
             workflow_messages["create-graph"] = (
-                "Graph created successfully, please run enrich-graph to enrich the graph for GraphRAG."
+                "Document entities and relationships extracted successfully. To generate GraphRAG communities, run cluster on the collection this document belongs to."
             )
             workflow_messages["enrich-graph"] = (
-                "Graph enriched successfully. You can view the communities at http://localhost:7272/v2/communities"
+                "Graph communities created successfully. You can view the communities at http://localhost:7272/v2/communities"
             )
             workflow_messages["entity-deduplication"] = (
                 "KG Entity Deduplication completed successfully."
@@ -237,7 +239,7 @@ class KGRouter(BaseRouter):
                     simple_kg = simple_kg_factory(self.service)
                     await simple_kg["enrich-graph"](workflow_input)
                     return {
-                        "message": "Graph enriched successfully.",
+                        "message": "Graph communities created successfully.",
                         "task_id": None,
                     }
 
@@ -345,7 +347,7 @@ class KGRouter(BaseRouter):
             levels: Optional[list[int]] = Query(
                 None, description="Levels to filter by."
             ),
-            community_numbers: Optional[list[int]] = Query(
+            community_ids: Optional[list[int]] = Query(
                 None, description="Community numbers to filter by."
             ),
             offset: int = Query(0, ge=0, description="Offset for pagination."),
@@ -372,7 +374,7 @@ class KGRouter(BaseRouter):
                 limit=limit,
                 collection_id=collection_id,
                 levels=levels,
-                community_numbers=community_numbers,
+                community_ids=community_ids,
             )
 
             return get_communities_response["communities"], {  # type: ignore

@@ -207,39 +207,49 @@ class KGSearchSearchPipe(GeneratorPipe):
                 )
 
             # community search
-            # search_type = "__Community__"
-            # async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
-            #     message,
-            #     search_type=search_type,
-            #     search_type_limits=graph_search_settings.limits[
-            #         search_type
-            #     ],
-            #     embedding_type="embedding",
-            #     query_embedding=query_embedding,
-            #     property_names=[
-            #         "community_number",
-            #         "name",
-            #         "findings",
-            #         "rating",
-            #         "rating_explanation",
-            #         "summary",
-            #     ],
-            #     filters=graph_search_settings.filters,
-            # ):
-            #     yield GraphSearchResult(
-            #         content=KGCommunityResult(
-            #             name=search_result["name"],
-            #             summary=search_result["summary"],
-            #             rating=search_result["rating"],
-            #             rating_explanation=search_result["rating_explanation"],
-            #             findings=search_result["findings"],
-            #         ),
-            #         method=KGSearchMethod.LOCAL,
-            #         result_type=KGSearchResultType.COMMUNITY,
-            #         metadata={
-            #             "associated_query": message,
-            #         },
-            #     )
+            search_type = "community"
+            async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
+                message,
+                search_type=search_type,
+                limit=search_settings.graph_settings.limits.get(
+                    search_type, base_limit
+                ),
+                # embedding_type="embedding",
+                query_embedding=query_embedding,
+                property_names=[
+                    "community_id",
+                    "name",
+                    "findings",
+                    "rating",
+                    "rating_explanation",
+                    "summary",
+                ],
+                filters=search_settings.filters,
+            ):
+                yield GraphSearchResult(
+                    content=KGCommunityResult(
+                        name=search_result["name"],
+                        summary=search_result["summary"],
+                        rating=search_result["rating"],
+                        rating_explanation=search_result["rating_explanation"],
+                        findings=search_result["findings"],
+                    ),
+                    # method=KGSearchMethod.LOCAL,
+                    result_type=KGSearchResultType.COMMUNITY,
+                    metadata=(
+                        {
+                            "associated_query": message,
+                            **(search_result["metadata"] or {}),
+                        }
+                        if search_settings.include_metadatas
+                        else None
+                    ),
+                    score=(
+                        search_result["similarity_score"]
+                        if search_settings.include_scores
+                        else None
+                    ),
+                )
 
     async def _run_logic(  # type: ignore
         self,

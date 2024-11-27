@@ -3,7 +3,7 @@ import json
 import logging
 from copy import deepcopy
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable, Optional
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.graph import EntityType, RelationshipType
@@ -103,15 +103,22 @@ if TYPE_CHECKING:
     from ..pipeline.base_pipeline import AsyncPipeline
 
 
-def _generate_id_from_label(label: str) -> UUID:
+def _generate_id_from_label(label) -> UUID:
     return uuid5(NAMESPACE_DNS, label)
 
 
-def generate_id() -> UUID:
+def generate_id(label: Optional[str] = None) -> UUID:
     """
     Generates a unique run id
     """
-    return _generate_id_from_label(str(uuid4()))
+    return _generate_id_from_label(label if label != None else str(uuid4()))
+
+
+# def generate_id(label: Optional[str]= None) -> UUID:
+#     """
+#     Generates a unique run id
+#     """
+#     return _generate_id_from_label(str(uuid4(label)))
 
 
 def generate_document_id(filename: str, user_id: UUID) -> UUID:

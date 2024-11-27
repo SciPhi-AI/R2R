@@ -484,7 +484,7 @@ class KgService(Service):
         self,
         collection_id: Optional[UUID] = None,
         levels: Optional[list[int]] = None,
-        community_numbers: Optional[list[int]] = None,
+        community_ids: Optional[list[int]] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
         **kwargs,
@@ -492,7 +492,7 @@ class KgService(Service):
         return await self.providers.database.graph_handler.get_communities(
             collection_id=collection_id,
             levels=levels,
-            community_numbers=community_numbers,
+            community_ids=community_ids,
             offset=offset or 0,
             limit=limit or -1,
         )
@@ -664,7 +664,7 @@ class KgService(Service):
     async def kg_clustering(
         self,
         collection_id: UUID,
-        graph_id: UUID,
+        # graph_id: UUID,
         generation_config: GenerationConfig,
         leiden_params: dict,
         **kwargs,
@@ -678,7 +678,7 @@ class KgService(Service):
             input=self.pipes.kg_clustering_pipe.Input(
                 message={
                     "collection_id": collection_id,
-                    "graph_id": graph_id,
+                    # "graph_id": graph_id,
                     "generation_config": generation_config,
                     "leiden_params": leiden_params,
                     "logger": logger,
@@ -697,7 +697,7 @@ class KgService(Service):
         max_summary_input_length: int,
         generation_config: GenerationConfig,
         collection_id: UUID | None,
-        graph_id: UUID | None,
+        # graph_id: UUID | None,
         **kwargs,
     ):
         summary_results = await self.pipes.kg_community_summary_pipe.run(
@@ -708,7 +708,7 @@ class KgService(Service):
                     "generation_config": generation_config,
                     "max_summary_input_length": max_summary_input_length,
                     "collection_id": collection_id,
-                    "graph_id": graph_id,
+                    # "graph_id": graph_id,
                     "logger": logger,
                 }
             ),

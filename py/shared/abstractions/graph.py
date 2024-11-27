@@ -88,14 +88,14 @@ class CommunityInfo(R2RSerializable):
     """A protocol for a community in the system."""
 
     node: str
-    cluster: int
+    cluster: UUID
     level: int
     id: Optional[UUID | int] = None
     parent_cluster: int | None
     is_final_cluster: bool
     graph_id: Optional[UUID] = None
     collection_id: Optional[UUID] = None  # for backwards compatibility
-    relationship_ids: Optional[list[int]] = None
+    relationship_ids: Optional[list[UUID]] = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -110,12 +110,12 @@ class Community(R2RSerializable):
 
     findings: list[str] = []
     id: Optional[int | UUID] = None
-    community_number: Optional[int] = None
+    community_id: Optional[UUID] = None
     graph_id: Optional[UUID] = None
     collection_id: Optional[UUID] = None
     rating: float | None = None
     rating_explanation: str | None = None
-    embedding: list[float] | None = None
+    description_embedding: list[float] | None = None
     attributes: dict[str, Any] | None = None
 
     def __init__(self, **kwargs):

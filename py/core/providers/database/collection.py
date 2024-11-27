@@ -46,7 +46,7 @@ class PostgresCollectionHandler(CollectionsHandler):
             user_id UUID,
             name TEXT NOT NULL,
             description TEXT,
-            kg_enrichment_status TEXT DEFAULT 'PENDING',
+            graph_cluster_status TEXT DEFAULT 'PENDING',
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
@@ -79,7 +79,7 @@ class PostgresCollectionHandler(CollectionsHandler):
             INSERT INTO {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
             (collection_id, user_id, name, description)
             VALUES ($1, $2, $3, $4)
-            RETURNING collection_id, user_id, name, description, kg_enrichment_status, created_at, updated_at
+            RETURNING collection_id, user_id, name, description, graph_cluster_status, created_at, updated_at
         """
         params = [
             collection_id or uuid4(),
@@ -103,7 +103,7 @@ class PostgresCollectionHandler(CollectionsHandler):
                 user_id=result["user_id"],
                 name=result["name"],
                 description=result["description"],
-                kg_enrichment_status=result["kg_enrichment_status"],
+                graph_cluster_status=result["graph_cluster_status"],
                 created_at=result["created_at"],
                 updated_at=result["updated_at"],
                 user_count=0,
@@ -150,7 +150,7 @@ class PostgresCollectionHandler(CollectionsHandler):
                 UPDATE {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
                 SET {', '.join(update_fields)}
                 WHERE collection_id = ${param_index}
-                RETURNING collection_id, user_id, name, description, kg_enrichment_status, created_at, updated_at
+                RETURNING collection_id, user_id, name, description, graph_cluster_status, created_at, updated_at
             )
             SELECT
                 uc.*,
@@ -159,7 +159,7 @@ class PostgresCollectionHandler(CollectionsHandler):
             FROM updated_collection uc
             LEFT JOIN {self._get_table_name('users')} u ON uc.collection_id = ANY(u.collection_ids)
             LEFT JOIN {self._get_table_name('document_info')} d ON uc.collection_id = ANY(d.collection_ids)
-            GROUP BY uc.collection_id, uc.user_id, uc.name, uc.description, uc.kg_enrichment_status, uc.created_at, uc.updated_at
+            GROUP BY uc.collection_id, uc.user_id, uc.name, uc.description, uc.graph_cluster_status, uc.created_at, uc.updated_at
         """
         try:
             result = await self.connection_manager.fetchrow_query(
@@ -175,7 +175,7 @@ class PostgresCollectionHandler(CollectionsHandler):
                 user_id=result["user_id"],
                 name=result["name"],
                 description=result["description"],
-                kg_enrichment_status=result["kg_enrichment_status"],
+                graph_cluster_status=result["graph_cluster_status"],
                 created_at=result["created_at"],
                 updated_at=result["updated_at"],
                 user_count=result["user_count"],
@@ -322,14 +322,14 @@ class PostgresCollectionHandler(CollectionsHandler):
                     c.description,
                     c.created_at,
                     c.updated_at,
-                    c.kg_enrichment_status,
+                    c.graph_cluster_status,
                     COUNT(DISTINCT u.user_id) FILTER (WHERE u.user_id IS NOT NULL) as user_count,
                     COUNT(DISTINCT d.document_id) FILTER (WHERE d.document_id IS NOT NULL) as document_count
                 FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} c
                 {user_join} {self._get_table_name('users')} u ON c.collection_id = ANY(u.collection_ids)
                 {document_join} {self._get_table_name('document_info')} d ON c.collection_id = ANY(d.collection_ids)
                 {where_clause}
-                GROUP BY c.collection_id, c.user_id, c.name, c.description, c.created_at, c.updated_at, c.kg_enrichment_status
+                GROUP BY c.collection_id, c.user_id, c.name, c.description, c.created_at, c.updated_at, c.graph_cluster_status
             )
             SELECT
                 *,
@@ -358,7 +358,7 @@ class PostgresCollectionHandler(CollectionsHandler):
                     user_id=row["user_id"],
                     name=row["name"],
                     description=row["description"],
-                    kg_enrichment_status=row["kg_enrichment_status"],
+                    graph_cluster_status=row["graph_cluster_status"],
                     created_at=row["created_at"],
                     updated_at=row["updated_at"],
                     user_count=row["user_count"],

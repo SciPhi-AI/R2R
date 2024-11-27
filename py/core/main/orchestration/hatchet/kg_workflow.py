@@ -252,7 +252,7 @@ def hatchet_kg_factory(
                     id=uuid.UUID(
                         context.workflow_input()["request"]["collection_id"]
                     ),
-                    status_type="kg_enrichment_status",
+                    status_type="graph_cluster_status",
                 )
             )
 
@@ -261,7 +261,7 @@ def hatchet_kg_factory(
                     id=uuid.UUID(
                         context.workflow_input()["request"]["collection_id"]
                     ),
-                    status_type="kg_enrichment_status",
+                    status_type="graph_cluster_status",
                     status=KGEnrichmentStatus.OUTDATED,
                 )
 
@@ -477,7 +477,7 @@ def hatchet_kg_factory(
 
             await self.kg_service.providers.database.set_workflow_status(
                 id=graph_id,
-                status_type="kg_enrichment_status",
+                status_type="graph_cluster_status",
                 status=KGEnrichmentStatus.SUCCESS,
             )
 
@@ -492,7 +492,7 @@ def hatchet_kg_factory(
             )
             await self.kg_service.providers.database.set_workflow_status(
                 id=uuid.UUID(collection_id),
-                status_type="kg_enrichment_status",
+                status_type="graph_cluster_status",
                 status=KGEnrichmentStatus.FAILED,
             )
 

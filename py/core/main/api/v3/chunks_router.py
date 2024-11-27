@@ -261,7 +261,7 @@ class ChunksRouter(BaseRouterV3):
                     await simple_ingestor["ingest-chunks"](workflow_input)
 
                     raw_message = {
-                        "message": "Ingestion task completed successfully.",
+                        "message": "Document created and ingested successfully.",
                         "document_id": str(document_id),
                         "task_id": None,
                     }
