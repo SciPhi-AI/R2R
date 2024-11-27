@@ -22,7 +22,7 @@ from core.providers import (
 )
 from core.utils import (
     generate_default_user_collection_id,
-    update_settings_from_dict
+    update_settings_from_dict,
 )
 
 from .base_router import BaseRouterV3
@@ -1023,7 +1023,6 @@ class CollectionsRouter(BaseRouterV3):
             )
             return GenericBooleanResponse(success=True)  # type: ignore
 
-
         @self.router.post(
             "/collections/{id}/cluster",
         )
@@ -1052,9 +1051,7 @@ class CollectionsRouter(BaseRouterV3):
                 logger.warning("Implement permission checks here.")
 
             # If no collection ID is provided, use the default user collection
-            id = generate_default_user_collection_id(
-                auth_user.id
-            )
+            id = generate_default_user_collection_id(auth_user.id)
 
             # If no run type is provided, default to estimate
             if not run_type:

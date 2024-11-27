@@ -4,7 +4,7 @@ import json
 import logging
 import time
 from enum import Enum
-from typing import Any, AsyncGenerator, Optional, Tuple, Union
+from typing import Any, AsyncGenerator, List, Optional, Set, Tuple, Union
 from uuid import UUID, uuid4
 
 import asyncpg
@@ -36,6 +36,7 @@ from core.base.providers.database import (
 from core.base.utils import (
     _decorate_vector_type,
     _get_str_estimation_output,
+    generate_id,
     llm_cost_per_million_tokens,
 )
 
@@ -717,7 +718,7 @@ class PostgresCommunityHandler(CommunityHandler):
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             sid SERIAL,
             node TEXT NOT NULL,
-            cluster INT NOT NULL,
+            cluster UUID NOT NULL,
             parent_cluster INT,
             level INT NOT NULL,
             is_final_cluster BOOLEAN NOT NULL,
@@ -737,7 +738,7 @@ class PostgresCommunityHandler(CommunityHandler):
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             graph_id UUID,
             collection_id UUID,
-            community_number INT,
+            community_id UUID,
             level INT NOT NULL,
             name TEXT NOT NULL,
             summary TEXT NOT NULL,
@@ -748,7 +749,7 @@ class PostgresCommunityHandler(CommunityHandler):
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             metadata JSONB,
-            UNIQUE (community_number, level, graph_id, collection_id)
+            UNIQUE (community_id, level, graph_id, collection_id)
         );"""
         # created_by UUID REFERENCES {self._get_table_name("users")}(user_id),
         # updated_by UUID REFERENCES {self._get_table_name("users")}(user_id),
@@ -2319,16 +2320,45 @@ class PostgresGraphHandler(GraphHandler):
 
     ####################### COMMUNITY METHODS #######################
 
+    # async def check_communities_exist(
+    #     self, collection_id: UUID, offset: int, limit: int
+    # ) -> list[int]:
+    #     QUERY = f"""
+    #         SELECT distinct community_id FROM {self._get_table_name("graph_community")} WHERE graph_id = $1 AND community_id >= $2 AND community_id < $3
+    #     """
+    #     community_ids = await self.connection_manager.fetch_query(
+    #         QUERY, [collection_id, offset, offset + limit]
+    #     )
+    #     return [item["community_id"] for item in community_ids]
+
     async def check_communities_exist(
-        self, collection_id: UUID, offset: int, limit: int
-    ) -> list[int]:
-        QUERY = f"""
-            SELECT distinct community_number FROM {self._get_table_name("graph_community")} WHERE graph_id = $1 AND community_number >= $2 AND community_number < $3
+        self, collection_id: UUID, community_ids: List[UUID]
+    ) -> Set[UUID]:
         """
-        community_numbers = await self.connection_manager.fetch_query(
-            QUERY, [collection_id, offset, offset + limit]
+        Check which communities already exist in the database.
+
+        Args:
+            collection_id: The collection ID
+            community_ids: List of community UUIDs to check
+
+        Returns:
+            Set of existing community UUIDs
+        """
+        print("collection_id = ", collection_id)
+        print("community_ids = ", community_ids)
+        QUERY = f"""
+            SELECT community_id
+            FROM {self._get_table_name("graph_community")}
+            WHERE collection_id = $1 AND community_id = ANY($2)
+        """
+        # import pdb; pdb.set_trace()
+
+        existing = await self.connection_manager.fetch_query(
+            QUERY, [collection_id, [str(ele) for ele in community_ids]]
         )
-        return [item["community_number"] for item in community_numbers]
+        print("existing = ", existing)
+
+        return {row["community_id"] for row in existing}
 
     async def add_community_info(
         self, communities: list[CommunityInfo]
@@ -2337,6 +2367,7 @@ class PostgresGraphHandler(GraphHandler):
             INSERT INTO {self._get_table_name("graph_community_info")} (node, cluster, parent_cluster, level, is_final_cluster, relationship_ids, collection_id, graph_id)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             """
+        print(f"Communities = {communities}")
         communities_tuples_list = [
             (
                 community.node,
@@ -2360,7 +2391,7 @@ class PostgresGraphHandler(GraphHandler):
         limit: int,
         collection_id: Optional[UUID] = None,
         levels: Optional[list[int]] = None,
-        community_numbers: Optional[list[int]] = None,
+        community_ids: Optional[list[UUID]] = None,
     ) -> dict:
         conditions = []
         params: list = [collection_id]
@@ -2371,9 +2402,9 @@ class PostgresGraphHandler(GraphHandler):
             params.append(levels)
             param_index += 1
 
-        if community_numbers is not None:
-            conditions.append(f"community_number = ANY(${param_index})")
-            params.append(community_numbers)
+        if community_ids is not None:
+            conditions.append(f"community_id = ANY(${param_index})")
+            params.append(community_ids)
             param_index += 1
 
         pagination_params = []
@@ -2390,11 +2421,11 @@ class PostgresGraphHandler(GraphHandler):
         pagination_clause = " ".join(pagination_params)
 
         query = f"""
-            SELECT id, community_number, collection_id, level, name, summary, findings, rating, rating_explanation, COUNT(*) OVER() AS total_entries
+            SELECT id, community_id, collection_id, level, name, summary, findings, rating, rating_explanation, COUNT(*) OVER() AS total_entries
             FROM {self._get_table_name('graph_community')}
             WHERE collection_id = $1
             {" AND " + " AND ".join(conditions) if conditions else ""}
-            ORDER BY community_number
+            ORDER BY community_id
             {pagination_clause}
         """
 
@@ -2409,7 +2440,7 @@ class PostgresGraphHandler(GraphHandler):
 
     async def get_community_details(
         self,
-        community_number: int,
+        community_id: int,
         collection_id: UUID | None,
         # graph_id: UUID | None,
     ) -> Tuple[int, list[Entity], list[Relationship]]:
@@ -2420,7 +2451,7 @@ class PostgresGraphHandler(GraphHandler):
         """
         level = (
             await self.connection_manager.fetch_query(
-                QUERY, [community_number, collection_id]
+                QUERY, [community_id, collection_id]
             )
         )[0]["level"]
 
@@ -2430,9 +2461,7 @@ class PostgresGraphHandler(GraphHandler):
             SELECT COUNT(*) FROM {self._get_table_name("graph_entity")} WHERE (parent_id = $1)
         """
         entity_count = (
-            await self.connection_manager.fetch_query(
-                query, [collection_id]
-            )
+            await self.connection_manager.fetch_query(query, [collection_id])
         )[0]["count"]
         table_name = "graph_entity" if entity_count > 0 else "entity"
 
@@ -2450,7 +2479,7 @@ class PostgresGraphHandler(GraphHandler):
             JOIN {self._get_table_name(table_name)} e ON e.name = nti.node;
         """
         entities = await self.connection_manager.fetch_query(
-            QUERY, [community_number, collection_id]
+            QUERY, [community_id, collection_id]
         )
         entities = [Entity(**entity) for entity in entities]
 
@@ -2466,7 +2495,7 @@ class PostgresGraphHandler(GraphHandler):
             JOIN {self._get_table_name("graph_relationship")} t ON t.id = ANY(nti.relationship_ids);
         """
         relationships = await self.connection_manager.fetch_query(
-            QUERY, [community_number, collection_id]
+            QUERY, [community_id, collection_id]
         )
 
         relationships = [
@@ -2494,7 +2523,7 @@ class PostgresGraphHandler(GraphHandler):
         QUERY = f"""
             INSERT INTO {self._get_table_name("graph_community")} ({columns})
             VALUES ({placeholders})
-            ON CONFLICT (community_number, level, graph_id, collection_id) DO UPDATE SET
+            ON CONFLICT (community_id, level, graph_id, collection_id) DO UPDATE SET
                 {conflict_columns}
             """
 
@@ -2619,15 +2648,15 @@ class PostgresGraphHandler(GraphHandler):
                 parent_id=collection_id,
                 store_type=StoreType.GRAPH,
                 offset=offset,
-                limit=page_size
+                limit=page_size,
             )
-            
+
             if not relationships:
                 break
-                
+
             all_relationships.extend(relationships)
             offset += len(relationships)
-            
+
             if offset >= count:
                 break
 
@@ -2635,10 +2664,10 @@ class PostgresGraphHandler(GraphHandler):
             f"Got {len(all_relationships)} relationships for {collection_id}"
         )
 
-        relationship_ids_cache = (await self._get_relationship_ids_cache(
+        relationship_ids_cache = await self._get_relationship_ids_cache(
             relationships
-        ))
-        print('relationship_ids_cache = ', relationship_ids_cache)
+        )
+        print("relationship_ids_cache = ", relationship_ids_cache)
 
         logger.info(f"Clustering with settings: {leiden_params}")
         # incremental clustering isn't enabled for v3 yet.
@@ -3003,29 +3032,27 @@ class PostgresGraphHandler(GraphHandler):
         # if graph_id is not None:
         #     conditions.append("graph_id = $2")
 
-        if conditions:
-            where_clause = " OR ".join(conditions)
-            QUERY = f"""
-                DELETE FROM {self._get_table_name("graph_community_info")} WHERE {where_clause}
-            """
-            await self.connection_manager.execute_query(
-                QUERY, [collection_id]
-            )
+        # if conditions:
+        #     where_clause = " OR ".join(conditions)
+        #     QUERY = f"""
+        #         DELETE FROM {self._get_table_name("graph_community_info")} WHERE {where_clause}
+        #     """
+        #     await self.connection_manager.execute_query(
+        #         QUERY, [collection_id]
+        #     )
 
-            QUERY = f"""
-                DELETE FROM {self._get_table_name("graph_community")} WHERE {where_clause}
-            """
-            await self.connection_manager.execute_query(
-                QUERY, [collection_id ]
-            )
+        #     QUERY = f"""
+        #         DELETE FROM {self._get_table_name("graph_community")} WHERE {where_clause}
+        #     """
+        #     await self.connection_manager.execute_query(
+        #         QUERY, [collection_id ]
+        #     )
 
         await asyncio.sleep(0.1)
 
         start_time = time.time()
 
-        logger.info(
-            f"Creating graph and clustering for {collection_id}"
-        )
+        logger.info(f"Creating graph and clustering for {collection_id}")
 
         hierarchical_communities = await self._create_graph_and_cluster(
             relationships=relationships,
@@ -3044,12 +3071,17 @@ class PostgresGraphHandler(GraphHandler):
         )
 
         # upsert the communities into the database.
-        print('relationship_ids(item.node) = ', relationship_ids(hierarchical_communities[0].node))
+        print(
+            "relationship_ids(item.node) = ",
+            relationship_ids(hierarchical_communities[0].node),
+        )
         print("community = ", hierarchical_communities[0])
+        print("cluster = ", hierarchical_communities[0].cluster)
         inputs = [
             CommunityInfo(
                 node=str(item.node),
-                cluster=item.cluster,
+                # cluster=item.cluster,
+                cluster=generate_id(f"{item.cluster}_{collection_id}"),
                 parent_cluster=item.parent_cluster,
                 level=item.level,
                 is_final_cluster=item.is_final_cluster,
@@ -3060,7 +3092,7 @@ class PostgresGraphHandler(GraphHandler):
             for item in hierarchical_communities
         ]
 
-        print('inputs = ', inputs)
+        print("inputs = ", inputs)
         await self.add_community_info(inputs)
 
         num_communities = (
@@ -3202,7 +3234,7 @@ class PostgresGraphHandler(GraphHandler):
 
         # delete the communities information for the updated communities
         QUERY = f"""
-            DELETE FROM {self._get_table_name("graph_community")} WHERE collection_id = $1 AND community_number = ANY($2)
+            DELETE FROM {self._get_table_name("graph_community")} WHERE collection_id = $1 AND community_id = ANY($2)
         """
         await self.connection_manager.execute_query(
             QUERY, [collection_id, updated_communities]
@@ -3217,7 +3249,10 @@ class PostgresGraphHandler(GraphHandler):
             community_info.append(
                 CommunityInfo(
                     node=community.node,
-                    cluster=community.cluster + max_cluster_id,
+                    # cluster=community.cluster + max_cluster_id,
+                    cluster=generate_id(
+                        f"{community.cluster + max_cluster_id}_{collection_id}"
+                    ),
                     parent_cluster=(
                         community.parent_cluster + max_cluster_id
                         if community.parent_cluster is not None

@@ -90,7 +90,7 @@ def simple_kg_factory(service: KgService):
                 # graph_id=input_data.get("graph_id", None),
                 **input_data["kg_enrichment_settings"],
             )
-            print('num_communities = ', num_communities)
+            print("num_communities = ", num_communities)
             num_communities = num_communities[0]["num_communities"]
             # # TODO - Do not hardcode the number of parallel communities,
             # # make it a configurable parameter at runtime & add server-side defaults

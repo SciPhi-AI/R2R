@@ -98,7 +98,7 @@ class CommunityInfo(R2RSerializable):
     """A protocol for a community in the system."""
 
     node: str
-    cluster: int
+    cluster: UUID
     level: int
     id: Optional[UUID | int] = None
     parent_cluster: int | None
@@ -120,7 +120,7 @@ class Community(R2RSerializable):
 
     findings: list[str] = []
     id: Optional[int | UUID] = None
-    community_number: Optional[int] = None
+    community_id: Optional[UUID] = None
     graph_id: Optional[UUID] = None
     collection_id: Optional[UUID] = None
     rating: float | None = None

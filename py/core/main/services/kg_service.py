@@ -449,7 +449,7 @@ class KgService(Service):
         self,
         collection_id: Optional[UUID] = None,
         levels: Optional[list[int]] = None,
-        community_numbers: Optional[list[int]] = None,
+        community_ids: Optional[list[int]] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
         **kwargs,
@@ -457,7 +457,7 @@ class KgService(Service):
         return await self.providers.database.graph_handler.get_communities(
             collection_id=collection_id,
             levels=levels,
-            community_numbers=community_numbers,
+            community_ids=community_ids,
             offset=offset or 0,
             limit=limit or -1,
         )

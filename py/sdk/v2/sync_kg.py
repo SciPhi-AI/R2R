@@ -141,7 +141,7 @@ class SyncKGMixins:
         self,
         collection_id: Optional[Union[UUID, str]] = None,
         levels: Optional[list[int]] = None,
-        community_numbers: Optional[list[int]] = None,
+        community_ids: Optional[list[UUID]] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> dict:
@@ -153,7 +153,7 @@ class SyncKGMixins:
             offset (int): The offset for pagination.
             limit (int): The limit for pagination.
             levels (Optional[List[int]]): Optional list of levels to filter by.
-            community_numbers (Optional[List[int]]): Optional list of community numbers to filter by.
+            community_ids (Optional[List[int]]): Optional list of community numbers to filter by.
 
         Returns:
             dict: A dictionary containing the retrieved communities.
@@ -162,7 +162,7 @@ class SyncKGMixins:
         params = {
             "collection_id": collection_id,
             "levels": levels,
-            "community_numbers": community_numbers,
+            "community_ids": community_ids,
             "offset": offset,
             "limit": limit,
         }

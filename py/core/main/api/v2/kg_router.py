@@ -10,15 +10,13 @@ from core.base import Workflow
 from core.base.abstractions import DataLevel, KGRunType
 from core.base.api.models import (
     WrappedCommunitiesResponse,
+    WrappedEntitiesResponse,
     WrappedKGCreationResponse,
     WrappedKGEnrichmentResponse,
-    WrappedEntitiesResponse,
     WrappedKGEntityDeduplicationResponse,
-    WrappedRelationshipsResponse,
     WrappedKGTunePromptResponse,
+    WrappedRelationshipsResponse,
 )
-
-
 from core.base.logger.base import RunType
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -348,7 +346,7 @@ class KGRouter(BaseRouter):
             levels: Optional[list[int]] = Query(
                 None, description="Levels to filter by."
             ),
-            community_numbers: Optional[list[int]] = Query(
+            community_ids: Optional[list[int]] = Query(
                 None, description="Community numbers to filter by."
             ),
             offset: int = Query(0, ge=0, description="Offset for pagination."),
@@ -375,7 +373,7 @@ class KGRouter(BaseRouter):
                 limit=limit,
                 collection_id=collection_id,
                 levels=levels,
-                community_numbers=community_numbers,
+                community_ids=community_ids,
             )
 
             return get_communities_response["communities"], {  # type: ignore

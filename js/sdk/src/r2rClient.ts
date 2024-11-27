@@ -1745,7 +1745,7 @@ export class r2rClient extends BaseClient {
    * @param offset The offset for pagination.
    * @param limit The limit for pagination.
    * @param levels Levels to filter by.
-   * @param community_numbers Community numbers to filter by.
+   * @param community_ids Community numbers to filter by.
    * @returns
    */
   @feature("getCommunities")
@@ -1754,7 +1754,7 @@ export class r2rClient extends BaseClient {
     offset?: number,
     limit?: number,
     levels?: number,
-    community_numbers?: number[],
+    community_ids?: number[],
   ): Promise<any> {
     this._ensureAuthenticated();
 
@@ -1771,8 +1771,8 @@ export class r2rClient extends BaseClient {
     if (levels !== undefined) {
       params.levels = levels;
     }
-    if (community_numbers !== undefined) {
-      params.community_numbers = community_numbers;
+    if (community_ids !== undefined) {
+      params.community_ids = community_ids;
     }
 
     return this._makeRequest("GET", `communities`, { params });

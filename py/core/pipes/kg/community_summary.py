@@ -13,8 +13,8 @@ from core.base import (
     CompletionProvider,
     EmbeddingProvider,
     GenerationConfig,
+    generate_id,
 )
-
 from core.base.abstractions import Entity, Relationship
 from core.providers.database import PostgresDBProvider
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
@@ -135,7 +135,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     async def process_community(
         self,
-        community_number: int,
+        community_id: int,
         max_summary_input_length: int,
         generation_config: GenerationConfig,
         collection_id: UUID | None,
@@ -147,7 +147,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         community_level, entities, relationships = (
             await self.database_provider.graph_handler.get_community_details(
-                community_number=community_number,
+                community_id=community_id,
                 collection_id=collection_id,
                 # graph_id=graph_id,
             )
@@ -155,7 +155,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         if entities == [] and relationships == []:
             raise ValueError(
-                f"Community {community_number} has no entities or relationships."
+                f"Community {community_id} has no entities or relationships."
             )
 
         for attempt in range(3):
@@ -189,7 +189,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
                     )
                 else:
                     raise ValueError(
-                        f"Failed to generate a summary for community {community_number} at level {community_level}."
+                        f"Failed to generate a summary for community {community_id} at level {community_level}."
                     )
 
                 description_dict = json.loads(description)
@@ -202,15 +202,15 @@ class KGCommunitySummaryPipe(AsyncPipe):
             except Exception as e:
                 if attempt == 2:
                     logger.error(
-                        f"KGCommunitySummaryPipe: Error generating community summary for community {community_number}: {e}"
+                        f"KGCommunitySummaryPipe: Error generating community summary for community {community_id}: {e}"
                     )
                     return {
-                        "community_number": community_number,
+                        "community_id": community_id,
                         "error": str(e),
                     }
 
         community = Community(
-            community_number=community_number,
+            community_id=community_id,
             collection_id=collection_id,
             # graph_id=graph_id,
             level=community_level,
@@ -227,11 +227,11 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
-        print('community = ', community)
+        print("community = ", community)
         await self.database_provider.graph_handler.add_community(community)
 
         return {
-            "community_number": community.community_number,
+            "community_id": community.community_id,
             "name": community.name,
         }
 
@@ -262,21 +262,29 @@ class KGCommunitySummaryPipe(AsyncPipe):
         logger.info(
             f"KGCommunitySummaryPipe: Checking if community summaries exist for communities {offset} to {offset + limit}"
         )
-        community_numbers_exist = (
+
+        community_ids = []
+        for community_num in range(offset, offset + limit):
+            community_id = generate_id(f"{community_num}_{collection_id}")
+            community_ids.append(community_id)
+
+        community_ids_exist = (
             await self.database_provider.graph_handler.check_communities_exist(
-                collection_id=collection_id, offset=offset, limit=limit
+                collection_id=collection_id,
+                community_ids=community_ids,  # offset=offset, limit=limit
             )
         )
 
         logger.info(
-            f"KGCommunitySummaryPipe: Community summaries exist for communities {len(community_numbers_exist)}"
+            f"KGCommunitySummaryPipe: Community summaries exist for total communities = {len(community_ids_exist)}"
         )
 
-        for community_number in range(offset, offset + limit):
-            if community_number not in community_numbers_exist:
+        for community_num in range(offset, offset + limit):
+            community_id = generate_id(f"{community_num}_{collection_id}")
+            if community_id not in community_ids_exist:
                 community_summary_jobs.append(
                     self.process_community(
-                        community_number=community_number,
+                        community_id=community_id,
                         max_summary_input_length=max_summary_input_length,
                         generation_config=generation_config,
                         collection_id=collection_id,
@@ -298,7 +306,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
             if "error" in summary:
                 logger.error(
-                    f"KGCommunitySummaryPipe: Error generating community summary for community {summary['community_number']}: {summary['error']}"
+                    f"KGCommunitySummaryPipe: Error generating community summary for community {summary['community_id']}: {summary['error']}"
                 )
                 total_errors += 1
                 continue
