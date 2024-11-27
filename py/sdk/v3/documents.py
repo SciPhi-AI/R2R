@@ -60,7 +60,6 @@ class DocumentsSDK:
         if collection_ids:
             collection_ids = [str(collection_id) for collection_id in collection_ids]  # type: ignore
             data["collection_ids"] = json.dumps(collection_ids)
-        print('data["collection_ids"] = ', data["collection_ids"])
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
 

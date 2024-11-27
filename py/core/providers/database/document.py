@@ -138,6 +138,7 @@ class PostgresDocumentHandler(DocumentHandler):
                                     summary = $12, summary_embedding = $13
                                 WHERE document_id = $14
                                 """
+                                print("db_entry = ", db_entry)
                                 await conn.execute(
                                     update_query,
                                     db_entry["collection_ids"],
@@ -197,12 +198,6 @@ class PostgresDocumentHandler(DocumentHandler):
                     else:
                         wait_time = 0.1 * (2**retries)  # Exponential backoff
                         await asyncio.sleep(wait_time)
-                except Exception as e:
-                    if 'column "summary"' in str(e):
-                        raise ValueError(
-                            "Document schema is missing 'summary' and 'summary_embedding' columns. Call `r2r db upgrade` to carry out the necessary migration."
-                        )
-                    raise
 
     async def delete_from_documents_overview(
         self, document_id: UUID, version: Optional[str] = None
@@ -421,49 +416,13 @@ class PostgresDocumentHandler(DocumentHandler):
 
         if conditions:
             base_query += " WHERE " + " AND ".join(conditions)
-
-        # query = f"""
-        #     SELECT document_id, collection_ids, user_id, type, metadata, title, version,
-        #         size_in_bytes, ingestion_status, extraction_status, created_at, updated_at,
-        #         summary, summary_embedding,
-        #         COUNT(*) OVER() AS total_entries
-        #     {base_query}
-        #     ORDER BY created_at DESC
-        #     OFFSET ${param_index}
-        # """
-
-        # First check if the new columns exist
-        try:
-            check_query = f"""
-            SELECT EXISTS (
-                SELECT 1
-                FROM information_schema.columns
-                WHERE table_name = '{self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}'
-                AND column_name = 'summary'
-            );
-            """
-            has_new_columns = await self.connection_manager.fetch_query(
-                check_query
-            )
-            has_new_columns = has_new_columns[0]["exists"]
-        except Exception as e:
-            logger.warning(f"Error checking for new columns: {e}")
-            has_new_columns = False
-
         # Construct the SELECT part of the query based on column existence
-        if has_new_columns:
-            select_fields = """
-                SELECT document_id, collection_ids, user_id, type, metadata, title, version,
-                    size_in_bytes, ingestion_status, extraction_status, created_at, updated_at,
-                    summary, summary_embedding,
-                    COUNT(*) OVER() AS total_entries
-            """
-        else:
-            select_fields = """
-                SELECT document_id, collection_ids, user_id, type, metadata, title, version,
-                    size_in_bytes, ingestion_status, extraction_status, created_at, updated_at,
-                    COUNT(*) OVER() AS total_entries
-            """
+        select_fields = """
+            SELECT document_id, collection_ids, user_id, type, metadata, title, version,
+                size_in_bytes, ingestion_status, extraction_status, created_at, updated_at,
+                summary, summary_embedding,
+                COUNT(*) OVER() AS total_entries
+        """
 
         query = f"""
             {select_fields}
@@ -506,7 +465,7 @@ class PostgresDocumentHandler(DocumentHandler):
                         logger.warning(
                             f"Failed to parse embedding for document {row['document_id']}: {e}"
                         )
-
+                print("row = ", row)
                 documents.append(
                     DocumentResponse(
                         id=row["document_id"],
