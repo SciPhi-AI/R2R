@@ -356,7 +356,7 @@ export class GraphsClient {
   }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest(
       "DELETE",
-      `graphs/${options.collectionId}/entities/${options.relationshipId}`,
+      `graphs/${options.collectionId}/relationships/${options.relationshipId}`,
     );
   }
 
@@ -383,7 +383,7 @@ export class GraphsClient {
    */
   @feature("graphs.build")
   async build(options: {
-    collection_id: string;
+    collectionId: string;
     settings?: Record<string, any>;
     runType?: string;
     runWithOrchestration?: boolean;
@@ -398,7 +398,7 @@ export class GraphsClient {
 
     return this.client.makeRequest(
       "POST",
-      `graphs/${options.collection_id}/communities/build`,
+      `graphs/${options.collectionId}/communities/build`,
       {
         data,
       },
@@ -483,7 +483,7 @@ export class GraphsClient {
     };
     return this.client.makeRequest(
       "POST",
-      `graphs/${options.collectionId}/entities/${options.communityId}`,
+      `graphs/${options.collectionId}/communities/${options.communityId}`,
       {
         data,
       },

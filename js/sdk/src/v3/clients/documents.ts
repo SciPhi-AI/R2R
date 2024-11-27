@@ -8,6 +8,7 @@ import {
   WrappedDocumentsResponse,
   WrappedEntitiesResponse,
   WrappedIngestionResponse,
+  WrappedRelationshipsResponse,
 } from "../../types";
 import { feature } from "../../feature";
 
@@ -435,7 +436,7 @@ export class DocumentsClient {
    * @param includeEmbeddings Whether to include vector embeddings in the response.
    * @param entityNames Filter relationships by specific entity names.
    * @param relationshipTypes Filter relationships by specific relationship types.
-   * @returns
+   * @returns WrappedRelationshipsResponse
    */
   @feature("documents.listRelationships")
   async listRelationships(options: {
@@ -445,7 +446,7 @@ export class DocumentsClient {
     includeVectors?: boolean;
     entityNames?: string[];
     relationshipTypes?: string[];
-  }): Promise<WrappedEntitiesResponse> {
+  }): Promise<WrappedRelationshipsResponse> {
     const params: Record<string, any> = {
       offset: options.offset ?? 0,
       limit: options.limit ?? 100,
