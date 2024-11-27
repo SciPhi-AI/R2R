@@ -46,7 +46,7 @@ export class GraphsClient {
 
   /**
    * Get detailed information about a specific graph.
-   * @param id Graph ID to retrieve
+   * @param collectionId The collection ID corresponding to the graph
    * @returns
    */
   @feature("graphs.retrieve")
@@ -63,19 +63,22 @@ export class GraphsClient {
    * entities and relationships that belong to only this graph.
    *
    * Entities and relationships extracted from documents are not deleted.
-   * @param collectionId The collection ID of the graph to delete
+   * @param collectionId The collection ID corresponding to the graph
    * @returns
    */
   @feature("graphs.reset")
   async reset(options: {
     collectionId: string;
   }): Promise<WrappedBooleanResponse> {
-    return this.client.makeRequest("POST", `graphs/${options.collectionId}/reset`);
+    return this.client.makeRequest(
+      "POST",
+      `graphs/${options.collectionId}/reset`,
+    );
   }
 
   /**
    * Update an existing graph.
-   * @param collectionId The collection ID corresponding to the graph to update.
+   * @param collectionId The collection ID corresponding to the graph
    * @param name Optional new name for the graph
    * @param description Optional new description for the graph
    * @returns
@@ -98,7 +101,7 @@ export class GraphsClient {
 
   /**
    * Creates a new entity in the graph.
-   * @param collectionId The collection ID corresponding to the graph to add the entity to.
+   * @param collectionId The collection ID corresponding to the graph
    * @param entity Entity to add
    * @returns
    */
@@ -118,7 +121,7 @@ export class GraphsClient {
 
   /**
    * List all entities in a graph.
-   * @param collectionId Collection ID
+   * @param collectionId The collection ID corresponding to the graph
    * @param offset Specifies the number of objects to skip. Defaults to 0.
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
@@ -145,7 +148,7 @@ export class GraphsClient {
 
   /**
    * Retrieve an entity from a graph.
-   * @param collectionId The collection ID corresponding to the graph to add the entity to.
+   * @param collectionId The collection ID corresponding to the graph
    * @param entityId Entity ID to retrieve
    * @returns
    */
@@ -162,7 +165,7 @@ export class GraphsClient {
 
   /**
    * Updates an existing entity in the graph.
-   * @param collectionId The collection ID corresponding to the graph to add the entity to.
+   * @param collectionId The collection ID corresponding to the graph
    * @param entityId Entity ID to update
    * @param entity Entity to update
    * @returns
@@ -184,7 +187,7 @@ export class GraphsClient {
 
   /**
    * Remove an entity from a graph.
-   * @param collectionId The collection ID corresponding to the graph to add the entity to.
+   * @param collectionId The collection ID corresponding to the graph
    * @param entityId Entity ID to remove
    * @returns
    */
@@ -200,7 +203,7 @@ export class GraphsClient {
   }
   /**
    * Creates a new relationship in the graph.
-   * @param collectionId The collection ID corresponding to the graph to add the entity to.
+   * @param collectionId The collection ID corresponding to the graph
    * @param relationship Relationship to add
    * @returns
    */
@@ -220,7 +223,7 @@ export class GraphsClient {
 
   /**
    * List all relationships in a graph.
-   * @param collectionId Collection ID
+   * @param collectionId The collection ID corresponding to the graph
    * @param offset Specifies the number of objects to skip. Defaults to 0.
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
@@ -247,7 +250,7 @@ export class GraphsClient {
 
   /**
    * Retrieve a relationship from a graph.
-   * @param collectionId The collection ID corresponding to the graph to add the entity to.
+   * @param collectionId The collection ID corresponding to the graph
    * @param relationshipId Relationship ID to retrieve
    * @returns
    */
@@ -264,7 +267,7 @@ export class GraphsClient {
 
   /**
    * Updates an existing relationship in the graph.
-   * @param collectionId The collection ID corresponding to the graph to add the entity to.
+   * @param collectionId The collection ID corresponding to the graph
    * @param relationshipId Relationship ID to update
    * @param relationship Relationship to update
    * @returns
@@ -286,7 +289,7 @@ export class GraphsClient {
 
   /**
    * Remove a relationship from a graph.
-   * @param collectionId The collection ID corresponding to the graph to add the entity to.
+   * @param collectionId The collection ID corresponding to the graph
    * @param relationshipId Entity ID to remove
    * @returns
    */
@@ -319,10 +322,10 @@ export class GraphsClient {
    * The community detection process is configurable through settings like:
    *  - Community detection algorithm parameters
    *  - Summary generation prompt
-   * @param collectionId The collection ID of the graph to create communities for
+   * @param collectionId The collection ID corresponding to the graph
    * @returns
    */
-  @feature("communities.build")
+  @feature("graphs.build")
   async build(options: {
     collection_id: string;
     settings?: Record<string, any>;
@@ -346,9 +349,11 @@ export class GraphsClient {
     );
   }
 
+  // TODO: Create community
+
   /**
    * List all communities in a graph.
-   * @param collectionId Collection ID
+   * @param collectionId The collection ID corresponding to the graph
    * @param offset Specifies the number of objects to skip. Defaults to 0.
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
@@ -375,7 +380,7 @@ export class GraphsClient {
 
   /**
    * Retrieve a community from a graph.
-   * @param collectionId The ID of the collection to get communities for.
+   * @param collectionId The collection ID corresponding to the graph
    * @param communityId Entity ID to retrieve
    * @returns
    */
@@ -392,10 +397,10 @@ export class GraphsClient {
 
   /**
    * Updates an existing community in the graph.
-   * @param collectionId The collection ID corresponding to the graph to add the entity to.
+   * @param collectionId The collection ID corresponding to the graph
    * @param communityId Community ID to update
    * @param entity Entity to update
-   * @returns WrappedEntityResponse
+   * @returns WrappedCommunityResponse
    */
   @feature("graphs.updateCommunity")
   async updateCommunity(options: {
@@ -408,7 +413,7 @@ export class GraphsClient {
     ratingExplanation?: string;
     level?: number;
     attributes?: Record<string, any>;
-  }): Promise<WrappedEntityResponse> {
+  }): Promise<WrappedCommunityResponse> {
     const data = {
       ...(options.name && { name: options.name }),
       ...(options.summary && { summary: options.summary }),
@@ -431,7 +436,7 @@ export class GraphsClient {
 
   /**
    * Delete a community in a graph.
-   * @param collectionId The collection ID corresponding to the graph.
+   * @param collectionId The collection ID corresponding to the graph
    * @param communityId Community ID to delete
    * @returns
    */
@@ -465,7 +470,7 @@ export class GraphsClient {
    *  - Knowledge graph enrichment
    *
    * The user must have access to both the graph and the documents being added.
-   * @param options
+   * @param collectionId The collection ID corresponding to the graph
    * @returns
    */
   @feature("graphs.pull")
@@ -486,7 +491,7 @@ export class GraphsClient {
    *  2. Optionally deletes the document's copied entities and relationships
    *
    * The user must have access to both the graph and the document being removed.
-   * @param collectionId The collection ID of the graph to remove the document from
+   * @param collectionId The collection ID corresponding to the graph
    * @param documentId The document ID to remove
    * @returns
    */
