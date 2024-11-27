@@ -558,6 +558,11 @@ class DocumentsRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
+            include_summary_embeddings: int = Query(
+                False,
+                description="Specifies whether or not to include embeddings of each document summary.",
+            ),
+
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedDocumentsResponse:
             """
@@ -585,6 +590,9 @@ class DocumentsRouter(BaseRouterV3):
                 offset=offset,
                 limit=limit,
             )
+            if not include_summary_embeddings:
+                for document in documents_overview_response["results"]:
+                    document.summary_embedding = None
 
             return (  # type: ignore
                 documents_overview_response["results"],
