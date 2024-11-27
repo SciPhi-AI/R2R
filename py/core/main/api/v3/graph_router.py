@@ -684,11 +684,11 @@ class GraphRouter(BaseRouterV3):
             name: Optional[str] = Body(
                 ..., description="The updated name of the entity."
             ),
-            category: Optional[str] = Body(
-                None, description="The updated category of the entity."
-            ),
             description: Optional[str] = Body(
                 None, description="The updated description of the entity."
+            ),
+            category: Optional[str] = Body(
+                None, description="The updated category of the entity."
             ),
             metadata: Optional[dict] = Body(
                 None, description="The updated metadata of the entity."
@@ -696,17 +696,15 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntityResponse:
             """Updates an existing entity in the graph."""
-            entity.id = entity_id
-            entity.parent_id = (
-                entity.parent_id or collection_id
-            )  # Set parent ID to graph ID
-            results = await self.providers.database.graph_handler.entities.update(
-                [entity],
-                store_type="graph",
-                # id, entity_id, entity, auth_user
+            # TODO: Implement permission check
+
+            return await self.services["kg"].update_entity(
+                entity_id=entity_id,
+                name=name,
+                category=category,
+                description=description,
+                metadata=metadata,
             )
-            print("results = ", results)
-            return entity
 
         @self.router.delete(
             "/graphs/{collection_id}/entities/{entity_id}",

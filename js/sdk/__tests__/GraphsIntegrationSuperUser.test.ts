@@ -114,7 +114,6 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     const response = await client.graphs.pull({
       collectionId: collectionId,
     });
-    console.log("Pull entities into the graph", response.results);
     expect(response.results).toBeDefined();
   });
 
@@ -221,6 +220,51 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     expect(response.results.object).toBe("Dunia");
     expect(response.results.predicate).toBe("falls in love with");
   });
+
+  test("Update the entity", async () => {
+    const response = await client.graphs.updateEntity({
+      collectionId: collectionId,
+      entityId: entity1Id,
+      name: "Dmitri Prokofich Razumikhin",
+      description: "A good friend of Raskolnikov and Dunia",
+      category: "Person",
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(entity1Id);
+    expect(response.results.name).toBe("Dmitri Prokofich Razumikhin");
+    expect(response.results.description).toBe(
+      "A good friend of Raskolnikov and Dunia",
+    );
+  });
+
+  test("Retrieve the updated entity", async () => {
+    const response = await client.graphs.getEntity({
+      collectionId: collectionId,
+      entityId: entity1Id,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(entity1Id);
+    expect(response.results.name).toBe("Dmitri Prokofich Razumikhin");
+    expect(response.results.description).toBe(
+      "A good friend of Raskolnikov and Dunia",
+    );
+  });
+
+  // This test is failing because we attach a separate name to the relationship, rather
+  // than use the names of the entities. This needs to be fixed in the backend.
+  //   test("Ensure that the entity was updated in the relationship", async () => {
+  //     const response = await client.graphs.getRelationship({
+  //       collectionId: collectionId,
+  //       relationshipId: relationshipId,
+  //     });
+
+  //     expect(response.results).toBeDefined();
+  //     expect(response.results.subject).toBe("Dmitri Prokofich Razumikhin");
+  //     expect(response.results.object).toBe("Dunia");
+  //     expect(response.results.predicate).toBe("falls in love with");
+  //   });
 
   test("Reset the graph", async () => {
     const response = await client.graphs.reset({

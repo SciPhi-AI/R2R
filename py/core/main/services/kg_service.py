@@ -181,31 +181,29 @@ class KgService(Service):
         )
 
     @telemetry_event("update_entity")
-    async def update_entity_v3(
+    async def update_entity(
         self,
-        id: UUID,
-        name: Optional[str],
-        category: Optional[str],
-        description: Optional[str],
-        attributes: Optional[dict],
-        auth_user: Optional[Any] = None,
+        entity_id: UUID,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        category: Optional[str] = None,
+        metadata: Optional[dict] = None,
     ):
 
+        description_embedding = None
         if description is not None:
             description_embedding = str(
                 await self.providers.embedding.async_get_embedding(description)
             )
-        else:
-            description_embedding = None
 
         return await self.providers.database.graph_handler.entities.update(
-            id=id,
+            entity_id=entity_id,
             name=name,
-            category=category,
             description=description,
+            category=category,
             description_embedding=description_embedding,
-            attributes=attributes,
-            auth_user=auth_user,
+            metadata=metadata,
+            store_type="graph",  # type: ignore
         )
 
     @telemetry_event("delete_entity")

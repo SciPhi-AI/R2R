@@ -255,63 +255,84 @@ class PostgresEntityHandler(EntityHandler):
         return entities, count
 
     async def update(
-        self, entities: list[Entity], store_type: StoreType
-    ) -> list[UUID]:
-        """Update multiple entities in the specified store."""
+        self,
+        entity_id: UUID,
+        store_type: StoreType,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        description_embedding: Optional[list[float] | str] = None,
+        category: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> Entity:
+        """Update an entity in the specified store."""
         table_name = self._get_entity_table_for_store(store_type)
-        results = []
+        update_fields = []
+        params: list = []
+        param_index = 1
 
-        print("entities = ", entities)
-        QUERY = f"""
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except json.JSONDecodeError:
+                pass
+
+        if name is not None:
+            update_fields.append(f"name = ${param_index}")
+            params.append(name)
+            param_index += 1
+
+        if description is not None:
+            update_fields.append(f"description = ${param_index}")
+            params.append(description)
+            param_index += 1
+
+        if description_embedding is not None:
+            update_fields.append(f"description_embedding = ${param_index}")
+            params.append(description_embedding)
+            param_index += 1
+
+        if category is not None:
+            update_fields.append(f"category = ${param_index}")
+            params.append(category)
+            param_index += 1
+
+        if metadata is not None:
+            update_fields.append(f"metadata = ${param_index}")
+            params.append(json.dumps(metadata))
+            param_index += 1
+
+        if not update_fields:
+            raise R2RException(status_code=400, message="No fields to update")
+
+        update_fields.append("updated_at = NOW()")
+        params.append(entity_id)
+
+        query = f"""
             UPDATE {self._get_table_name(table_name)}
-            SET
-                name = $1,
-                category = $2,
-                description = $3,
-                description_embedding = $4,
-                chunk_ids = $5,
-                metadata = $6,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = $7 AND parent_id = $8
-            RETURNING id
+            SET {', '.join(update_fields)}
+            WHERE id = ${param_index}
+            RETURNING id, name, category, description, parent_id, chunk_ids, metadata
         """
-
-        for entity in entities:
-            metadata = entity.metadata
-            if isinstance(metadata, str):
-                try:
-                    metadata = json.loads(metadata)
-                except json.JSONDecodeError:
-                    pass
-
-            description_embedding = entity.description_embedding
-            if isinstance(description_embedding, list):
-                description_embedding = str(description_embedding)
-
-            params = [
-                entity.name,
-                entity.category,
-                entity.description,
-                description_embedding,
-                entity.chunk_ids,
-                json.dumps(metadata) if metadata else None,
-                entity.id,
-                entity.parent_id,
-            ]
-            print("QUERY = ", QUERY)
-
+        try:
             result = await self.connection_manager.fetchrow_query(
-                QUERY, params
+                query=query,
+                params=params,
             )
-            if not result:
-                raise R2RException(
-                    f"Entity {entity.id} not found in {store_type} store or no permission to update",
-                    404,
-                )
 
-            results.append(result["id"])
-
-        return results
+            return Entity(
+                id=result["id"],
+                name=result["name"],
+                category=result["category"],
+                description=result["description"],
+                parent_id=result["parent_id"],
+                chunk_ids=result["chunk_ids"],
+                metadata=result["metadata"],
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while updating the entity: {e}",
+            )
 
     async def delete(
         self,

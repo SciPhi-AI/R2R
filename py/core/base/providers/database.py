@@ -614,7 +614,7 @@ class EntityHandler(Handler):
         pass
 
     @abstractmethod
-    async def update(self, *args: Any, **kwargs: Any) -> None:
+    async def update(self, *args: Any, **kwargs: Any) -> Entity:
         """Update entities in storage."""
         pass
 
@@ -636,7 +636,7 @@ class RelationshipHandler(Handler):
         pass
 
     @abstractmethod
-    async def update(self, *args: Any, **kwargs: Any) -> None:
+    async def update(self, *args: Any, **kwargs: Any) -> Relationship:
         """Update relationships in storage."""
         pass
 

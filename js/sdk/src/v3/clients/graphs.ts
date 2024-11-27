@@ -184,13 +184,23 @@ export class GraphsClient {
   async updateEntity(options: {
     collectionId: string;
     entityId: string;
-    entity: Entity;
+    name?: string;
+    description?: string;
+    category?: string;
+    metadata?: Record<string, any>;
   }): Promise<WrappedEntityResponse> {
+    const data = {
+      ...(options.name && { name: options.name }),
+      ...(options.description && { description: options.description }),
+      ...(options.category && { category: options.category }),
+      ...(options.metadata && { metadata: options.metadata }),
+    };
+
     return this.client.makeRequest(
       "POST",
       `graphs/${options.collectionId}/entities/${options.entityId}`,
       {
-        data: options.entity,
+        data,
       },
     );
   }
