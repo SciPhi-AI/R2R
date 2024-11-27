@@ -638,62 +638,108 @@ class PostgresRelationshipHandler(RelationshipHandler):
         return relationships, count
 
     async def update(
-        self, relationships: list[Relationship], store_type: StoreType
-    ) -> list[UUID]:
+        self,
+        relationship_id: UUID,
+        store_type: StoreType,
+        subject: Optional[str],
+        subject_id: Optional[UUID],
+        predicate: Optional[str],
+        object: Optional[str],
+        object_id: Optional[UUID],
+        description: Optional[str],
+        description_embedding: Optional[list[float] | str],
+        weight: Optional[float],
+        metadata: Optional[dict[str, Any] | str],
+    ) -> Relationship:
         """Update multiple relationships in the specified store."""
         table_name = self._get_relationship_table_for_store(store_type)
-        results = []
+        update_fields = []
+        params: list = []
+        param_index = 1
 
-        QUERY = f"""
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except json.JSONDecodeError:
+                pass
+
+        if subject is not None:
+            update_fields.append(f"subject = ${param_index}")
+            params.append(subject)
+            param_index += 1
+
+        if subject_id is not None:
+            update_fields.append(f"subject_id = ${param_index}")
+            params.append(subject_id)
+            param_index += 1
+
+        if predicate is not None:
+            update_fields.append(f"predicate = ${param_index}")
+            params.append(predicate)
+            param_index += 1
+
+        if object is not None:
+            update_fields.append(f"object = ${param_index}")
+            params.append(object)
+            param_index += 1
+
+        if object_id is not None:
+            update_fields.append(f"object_id = ${param_index}")
+            params.append(object_id)
+            param_index += 1
+
+        if description is not None:
+            update_fields.append(f"description = ${param_index}")
+            params.append(description)
+            param_index += 1
+
+        if description_embedding is not None:
+            update_fields.append(f"description_embedding = ${param_index}")
+            params.append(description_embedding)
+            param_index += 1
+
+        if weight is not None:
+            update_fields.append(f"weight = ${param_index}")
+            params.append(weight)
+            param_index += 1
+
+        if not update_fields:
+            raise R2RException(status_code=400, message="No fields to update")
+
+        update_fields.append("updated_at = NOW()")
+        params.append(relationship_id)
+
+        query = f"""
             UPDATE {self._get_table_name(table_name)}
-            SET
-                subject = $1,
-                predicate = $2,
-                object = $3,
-                description = $4,
-                subject_id = $5,
-                object_id = $6,
-                weight = $7,
-                chunk_ids = $8,
-                metadata = $9,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = $10 AND parent_id = $11
-            RETURNING id
+            SET {', '.join(update_fields)}
+            WHERE id = ${param_index}
+            RETURNING id, subject, predicate, object, description, subject_id, object_id, weight, chunk_ids, parent_id, metadata
         """
 
-        for relationship in relationships:
-            metadata = relationship.metadata
-            if isinstance(metadata, str):
-                try:
-                    metadata = json.loads(metadata)
-                except json.JSONDecodeError:
-                    pass
-
-            params = [
-                relationship.subject,
-                relationship.predicate,
-                relationship.object,
-                relationship.description,
-                relationship.subject_id,
-                relationship.object_id,
-                relationship.weight,
-                relationship.chunk_ids,
-                json.dumps(metadata) if metadata else None,
-                relationship.id,
-                relationship.parent_id,
-            ]
-
+        try:
             result = await self.connection_manager.fetchrow_query(
-                QUERY, params
+                query=query,
+                params=params,
             )
-            if not result:
-                raise R2RException(
-                    f"Relationship {relationship.id} not found in {store_type} store or no permission to update",
-                    404,
-                )
-            results.append(result["id"])
 
-        return results
+            return Relationship(
+                id=result["id"],
+                subject=result["subject"],
+                predicate=result["predicate"],
+                object=result["object"],
+                description=result["description"],
+                subject_id=result["subject_id"],
+                object_id=result["object_id"],
+                weight=result["weight"],
+                chunk_ids=result["chunk_ids"],
+                parent_id=result["parent_id"],
+                metadata=result["metadata"],
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while updating the relationship: {e}",
+            )
 
     async def delete(
         self,

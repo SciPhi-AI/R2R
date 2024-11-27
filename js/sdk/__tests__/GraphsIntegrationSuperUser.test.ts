@@ -266,6 +266,37 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   //     expect(response.results.predicate).toBe("falls in love with");
   //   });
 
+  test("Update the relationship", async () => {
+    const response = await client.graphs.updateRelationship({
+      collectionId: collectionId,
+      relationshipId: relationshipId,
+      subject: "Razumikhin",
+      subjectId: entity1Id,
+      predicate: "marries",
+      object: "Dunia",
+      objectId: entity2Id,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(relationshipId);
+    expect(response.results.subject).toBe("Razumikhin");
+    expect(response.results.object).toBe("Dunia");
+    expect(response.results.predicate).toBe("marries");
+  });
+
+  test("Retrieve the updated relationship", async () => {
+    const response = await client.graphs.getRelationship({
+      collectionId: collectionId,
+      relationshipId: relationshipId,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(relationshipId);
+    expect(response.results.subject).toBe("Razumikhin");
+    expect(response.results.object).toBe("Dunia");
+    expect(response.results.predicate).toBe("marries");
+  });
+
   test("Reset the graph", async () => {
     const response = await client.graphs.reset({
       collectionId: collectionId,

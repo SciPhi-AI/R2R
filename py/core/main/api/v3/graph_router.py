@@ -696,7 +696,14 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntityResponse:
             """Updates an existing entity in the graph."""
-            # TODO: Implement permission check
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
 
             return await self.services["kg"].update_entity(
                 entity_id=entity_id,
@@ -930,11 +937,17 @@ class GraphRouter(BaseRouterV3):
             subject: Optional[str] = Body(
                 ..., description="The updated subject of the relationship."
             ),
+            subject_id: Optional[UUID] = Body(
+                ..., description="The updated subject ID of the relationship."
+            ),
             predicate: Optional[str] = Body(
                 ..., description="The updated predicate of the relationship."
             ),
             object: Optional[str] = Body(
                 ..., description="The updated object of the relationship."
+            ),
+            object_id: Optional[UUID] = Body(
+                ..., description="The updated object ID of the relationship."
             ),
             description: Optional[str] = Body(
                 None,
@@ -949,10 +962,25 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipResponse:
             """Updates an existing relationship in the graph."""
-            relationship.id = relationship_id
-            relationship.parent_id = relationship.parent_id or collection_id
-            return await self.providers.database.graph_handler.relationships.update(
-                [relationship], "graph"
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
+
+            return await self.services["kg"].update_relationship(
+                relationship_id=relationship_id,
+                subject=subject,
+                subject_id=subject_id,
+                predicate=predicate,
+                object=object,
+                object_id=object_id,
+                description=description,
+                weight=weight,
+                metadata=metadata,
             )
 
         @self.router.delete(

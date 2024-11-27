@@ -188,7 +188,7 @@ class KgService(Service):
         description: Optional[str] = None,
         category: Optional[str] = None,
         metadata: Optional[dict] = None,
-    ):
+    ) -> Entity:
 
         description_embedding = None
         if description is not None:
@@ -327,15 +327,39 @@ class KgService(Service):
             )
         )
 
-    @telemetry_event("update_relationship_v3")
-    async def update_relationship_v3(
+    @telemetry_event("update_relationship")
+    async def update_relationship(
         self,
-        relationship: Relationship,
-        **kwargs,
-    ):
+        relationship_id: UUID,
+        subject: Optional[str] = None,
+        subject_id: Optional[UUID] = None,
+        predicate: Optional[str] = None,
+        object: Optional[str] = None,
+        object_id: Optional[UUID] = None,
+        description: Optional[str] = None,
+        weight: Optional[float] = None,
+        metadata: Optional[dict[str, Any] | str] = None,
+    ) -> Relationship:
+
+        description_embedding = None
+        if description is not None:
+            description_embedding = str(
+                await self.providers.embedding.async_get_embedding(description)
+            )
+
         return (
             await self.providers.database.graph_handler.relationships.update(
-                relationship
+                relationship_id=relationship_id,
+                subject=subject,
+                subject_id=subject_id,
+                predicate=predicate,
+                object=object,
+                object_id=object_id,
+                description=description,
+                description_embedding=description_embedding,
+                weight=weight,
+                metadata=metadata,
+                store_type="graph",  # type: ignore
             )
         )
 
