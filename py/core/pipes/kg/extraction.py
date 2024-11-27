@@ -143,7 +143,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
                                 category=entity_category,
                                 description=entity_description,
                                 name=entity_value,
-                                document_id=extractions[0].document_id,
+                                parent_id=extractions[0].document_id,
                                 chunk_ids=[
                                     extraction.id for extraction in extractions
                                 ],
@@ -167,7 +167,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
                                 object=object,
                                 description=description,
                                 weight=weight,
-                                document_id=extractions[0].document_id,
+                                parent_id=extractions[0].document_id,
                                 chunk_ids=[
                                     extraction.id for extraction in extractions
                                 ],

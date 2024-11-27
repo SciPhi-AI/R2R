@@ -16,6 +16,8 @@ from shared.api.models.kg.responses import (
     WrappedCommunityResponse,
 )
 
+_list = list  # Required for type hinting since we have a list method
+
 
 class GraphsSDK:
     """
@@ -362,7 +364,7 @@ class GraphsSDK:
         community_id: str | UUID,
         name: Optional[str] = None,
         summary: Optional[str] = None,
-        findings: Optional[list[str]] = None,
+        findings: Optional[_list[str]] = None,
         rating: Optional[int] = None,
         rating_explanation: Optional[str] = None,
         level: Optional[int] = None,
@@ -393,7 +395,7 @@ class GraphsSDK:
         if findings is not None:
             data["findings"] = findings
         if rating is not None:
-            data["rating"] = rating
+            data["rating"] = str(rating)
         if rating_explanation is not None:
             data["rating_explanation"] = rating_explanation
         if level is not None:

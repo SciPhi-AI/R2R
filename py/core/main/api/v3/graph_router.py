@@ -7,9 +7,7 @@ from fastapi import Body, Depends, Path, Query
 
 from core.base import R2RException, RunType
 from core.base.abstractions import (
-    Entity,
     KGRunType,
-    Relationship,
 )
 from core.base.api.models import (
     GenericBooleanResponse,
@@ -521,7 +519,18 @@ class GraphRouter(BaseRouterV3):
                 ...,
                 description="The collection ID corresponding to the graph to add the entity to.",
             ),
-            entity: Entity = Body(..., description="The entity to create"),
+            name: str = Body(
+                ..., description="The name of the entity to create."
+            ),
+            description: Optional[str] = Body(
+                None, description="The description of the entity to create."
+            ),
+            category: Optional[str] = Body(
+                None, description="The category of the entity to create."
+            ),
+            metadata: Optional[dict] = Body(
+                None, description="The metadata of the entity to create."
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntityResponse:
             """Creates a new entity in the graph."""
@@ -534,26 +543,13 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            # Set parent ID to graph ID
-            entity.parent_id = collection_id
-
-            # Create entity
-            created_ids = (
-                await self.providers.database.graph_handler.entities.create(
-                    entities=[entity], store_type="graph"
-                )
-            )
-            if not created_ids:
-                raise R2RException("Failed to create entity", 500)
-
-            result = await self.providers.database.graph_handler.entities.get(
+            return await self.services["kg"].create_entity(
+                name=name,
+                description=description,
                 parent_id=collection_id,
-                store_type="graph",
-                entity_ids=[created_ids[0]],
+                category=category,
+                metadata=metadata,
             )
-            if len(result) == 0:
-                raise R2RException("Failed to create entity", 500)
-            return result[0]
 
         @self.router.post("/graphs/{collection_id}/relationships")
         @self.base_endpoint
@@ -562,8 +558,32 @@ class GraphRouter(BaseRouterV3):
                 ...,
                 description="The collection ID corresponding to the graph to add the relationship to.",
             ),
-            relationship: Relationship = Body(
-                ..., description="The relationship to create"
+            subject: str = Body(
+                ..., description="The subject of the relationship to create."
+            ),
+            subject_id: UUID = Body(
+                ...,
+                description="The ID of the subject of the relationship to create.",
+            ),
+            predicate: str = Body(
+                ..., description="The predicate of the relationship to create."
+            ),
+            object: str = Body(
+                ..., description="The object of the relationship to create."
+            ),
+            object_id: UUID = Body(
+                ...,
+                description="The ID of the object of the relationship to create.",
+            ),
+            description: Optional[str] = Body(
+                None,
+                description="The description of the relationship to create.",
+            ),
+            weight: Optional[float] = Body(
+                None, description="The weight of the relationship to create."
+            ),
+            metadata: Optional[dict] = Body(
+                None, description="The metadata of the relationship to create."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipResponse:
@@ -577,15 +597,17 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            # Set parent ID to graph ID
-            relationship.parent_id = collection_id
-
-            # Create relationship
-            await self.providers.database.graph_handler.relationships.create(
-                relationships=[relationship], store_type="graph"
+            return await self.services["kg"].create_relationship(
+                subject=subject,
+                subject_id=subject_id,
+                predicate=predicate,
+                object=object,
+                object_id=object_id,
+                description=description,
+                weight=weight,
+                metadata=metadata,
+                parent_id=collection_id,
             )
-
-            return relationship
 
         @self.router.get(
             "/graphs/{collection_id}/entities/{entity_id}",
@@ -659,23 +681,37 @@ class GraphRouter(BaseRouterV3):
             entity_id: UUID = Path(
                 ..., description="The ID of the entity to update."
             ),
-            entity: Entity = Body(
-                ..., description="The updated entity object."
+            name: Optional[str] = Body(
+                ..., description="The updated name of the entity."
+            ),
+            description: Optional[str] = Body(
+                None, description="The updated description of the entity."
+            ),
+            category: Optional[str] = Body(
+                None, description="The updated category of the entity."
+            ),
+            metadata: Optional[dict] = Body(
+                None, description="The updated metadata of the entity."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntityResponse:
             """Updates an existing entity in the graph."""
-            entity.id = entity_id
-            entity.parent_id = (
-                entity.parent_id or collection_id
-            )  # Set parent ID to graph ID
-            results = await self.providers.database.graph_handler.entities.update(
-                [entity],
-                store_type="graph",
-                # id, entity_id, entity, auth_user
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
+
+            return await self.services["kg"].update_entity(
+                entity_id=entity_id,
+                name=name,
+                category=category,
+                description=description,
+                metadata=metadata,
             )
-            print("results = ", results)
-            return entity
 
         @self.router.delete(
             "/graphs/{collection_id}/entities/{entity_id}",
@@ -822,24 +858,6 @@ class GraphRouter(BaseRouterV3):
                 "total_entries": count,
             }
 
-        @self.router.post("/graphs/{collection_id}/relationships")
-        @self.base_endpoint
-        async def create_relationship(
-            collection_id: UUID = Path(
-                ...,
-                description="The collection ID corresponding to the graph to add the relationship to.",
-            ),
-            relationship_ids: list[UUID] = Body(
-                ...,
-                description="The IDs of the relationships to add to the graph.",
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedRelationshipResponse:
-            """Creates a new relationship in the graph."""
-            return await self.providers.database.graph_handler.relationships.add_to_graph(
-                collection_id, relationship_ids, "graph"
-            )
-
         @self.router.get(
             "/graphs/{collection_id}/relationships/{relationship_id}",
             description="Retrieves a specific relationship by its ID.",
@@ -916,16 +934,53 @@ class GraphRouter(BaseRouterV3):
             relationship_id: UUID = Path(
                 ..., description="The ID of the relationship to update."
             ),
-            relationship: Relationship = Body(
-                ..., description="The updated relationship object."
+            subject: Optional[str] = Body(
+                ..., description="The updated subject of the relationship."
+            ),
+            subject_id: Optional[UUID] = Body(
+                ..., description="The updated subject ID of the relationship."
+            ),
+            predicate: Optional[str] = Body(
+                ..., description="The updated predicate of the relationship."
+            ),
+            object: Optional[str] = Body(
+                ..., description="The updated object of the relationship."
+            ),
+            object_id: Optional[UUID] = Body(
+                ..., description="The updated object ID of the relationship."
+            ),
+            description: Optional[str] = Body(
+                None,
+                description="The updated description of the relationship.",
+            ),
+            weight: Optional[float] = Body(
+                None, description="The updated weight of the relationship."
+            ),
+            metadata: Optional[dict] = Body(
+                None, description="The updated metadata of the relationship."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipResponse:
             """Updates an existing relationship in the graph."""
-            relationship.id = relationship_id
-            relationship.parent_id = relationship.parent_id or collection_id
-            return await self.providers.database.graph_handler.relationships.update(
-                [relationship], "graph"
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
+
+            return await self.services["kg"].update_relationship(
+                relationship_id=relationship_id,
+                subject=subject,
+                subject_id=subject_id,
+                predicate=predicate,
+                object=object,
+                object_id=object_id,
+                description=description,
+                weight=weight,
+                metadata=metadata,
             )
 
         @self.router.delete(

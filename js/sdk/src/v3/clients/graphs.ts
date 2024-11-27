@@ -108,13 +108,23 @@ export class GraphsClient {
   @feature("graphs.createEntity")
   async createEntity(options: {
     collectionId: string;
-    entity: Entity;
+    name: string;
+    description?: string;
+    category?: string;
+    metadata?: Record<string, any>;
   }): Promise<WrappedEntityResponse> {
+    const data = {
+      name: options.name,
+      ...(options.description && { description: options.description }),
+      ...(options.category && { category: options.category }),
+      ...(options.metadata && { metadata: options.metadata }),
+    };
+
     return this.client.makeRequest(
       "POST",
       `graphs/${options.collectionId}/entities`,
       {
-        data: options.entity,
+        data,
       },
     );
   }
@@ -174,13 +184,23 @@ export class GraphsClient {
   async updateEntity(options: {
     collectionId: string;
     entityId: string;
-    entity: Entity;
+    name?: string;
+    description?: string;
+    category?: string;
+    metadata?: Record<string, any>;
   }): Promise<WrappedEntityResponse> {
+    const data = {
+      ...(options.name && { name: options.name }),
+      ...(options.description && { description: options.description }),
+      ...(options.category && { category: options.category }),
+      ...(options.metadata && { metadata: options.metadata }),
+    };
+
     return this.client.makeRequest(
       "POST",
       `graphs/${options.collectionId}/entities/${options.entityId}`,
       {
-        data: options.entity,
+        data,
       },
     );
   }
@@ -210,13 +230,31 @@ export class GraphsClient {
   @feature("graphs.createRelationship")
   async createRelationship(options: {
     collectionId: string;
-    relationship: Relationship;
+    subject: string;
+    subjectId: string;
+    predicate: string;
+    object: string;
+    objectId: string;
+    description?: string;
+    weight?: number;
+    metadata?: Record<string, any>;
   }): Promise<WrappedRelationshipResponse> {
+    const data = {
+      subject: options.subject,
+      subject_id: options.subjectId,
+      predicate: options.predicate,
+      object: options.object,
+      object_id: options.objectId,
+      ...(options.description && { description: options.description }),
+      ...(options.weight && { weight: options.weight }),
+      ...(options.metadata && { metadata: options.metadata }),
+    };
+
     return this.client.makeRequest(
       "POST",
       `graphs/${options.collectionId}/relationships`,
       {
-        data: options.relationship,
+        data,
       },
     );
   }
@@ -261,7 +299,7 @@ export class GraphsClient {
   }): Promise<WrappedRelationshipResponse> {
     return this.client.makeRequest(
       "GET",
-      `graphs/${options.collectionId}/entities/${options.relationshipId}`,
+      `graphs/${options.collectionId}/relationships/${options.relationshipId}`,
     );
   }
 
@@ -270,19 +308,37 @@ export class GraphsClient {
    * @param collectionId The collection ID corresponding to the graph
    * @param relationshipId Relationship ID to update
    * @param relationship Relationship to update
-   * @returns
+   * @returns WrappedRelationshipResponse
    */
   @feature("graphs.updateRelationship")
   async updateRelationship(options: {
     collectionId: string;
     relationshipId: string;
-    relationship: Relationship;
+    subject?: string;
+    subjectId?: string;
+    predicate?: string;
+    object?: string;
+    objectId?: string;
+    description?: string;
+    weight?: number;
+    metadata?: Record<string, any>;
   }): Promise<WrappedRelationshipResponse> {
+    const data = {
+      ...(options.subject && { subject: options.subject }),
+      ...(options.subjectId && { subject_id: options.subjectId }),
+      ...(options.predicate && { predicate: options.predicate }),
+      ...(options.object && { object: options.object }),
+      ...(options.objectId && { object_id: options.objectId }),
+      ...(options.description && { description: options.description }),
+      ...(options.weight && { weight: options.weight }),
+      ...(options.metadata && { metadata: options.metadata }),
+    };
+
     return this.client.makeRequest(
       "POST",
       `graphs/${options.collectionId}/relationships/${options.relationshipId}`,
       {
-        data: options.relationship,
+        data,
       },
     );
   }

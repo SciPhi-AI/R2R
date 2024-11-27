@@ -604,7 +604,7 @@ class ChunkHandler(Handler):
 class EntityHandler(Handler):
 
     @abstractmethod
-    async def create(self, *args: Any, **kwargs: Any) -> None:
+    async def create(self, *args: Any, **kwargs: Any) -> Entity:
         """Create entities in storage."""
         pass
 
@@ -614,7 +614,7 @@ class EntityHandler(Handler):
         pass
 
     @abstractmethod
-    async def update(self, *args: Any, **kwargs: Any) -> None:
+    async def update(self, *args: Any, **kwargs: Any) -> Entity:
         """Update entities in storage."""
         pass
 
@@ -626,7 +626,7 @@ class EntityHandler(Handler):
 
 class RelationshipHandler(Handler):
     @abstractmethod
-    async def create(self, *args: Any, **kwargs: Any) -> None:
+    async def create(self, *args: Any, **kwargs: Any) -> Relationship:
         """Add relationships to storage."""
         pass
 
@@ -636,7 +636,7 @@ class RelationshipHandler(Handler):
         pass
 
     @abstractmethod
-    async def update(self, *args: Any, **kwargs: Any) -> None:
+    async def update(self, *args: Any, **kwargs: Any) -> Relationship:
         """Update relationships in storage."""
         pass
 

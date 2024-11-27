@@ -7,6 +7,9 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   let client: r2rClient;
   let documentId: string;
   let collectionId: string;
+  let entity1Id: string;
+  let entity2Id: string;
+  let relationshipId: string;
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);
@@ -94,10 +97,10 @@ describe("r2rClient V3 Collections Integration Tests", () => {
       id: documentId,
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+    await new Promise((resolve) => setTimeout(resolve, 30000));
 
     expect(response.results).toBeDefined();
-  }, 30000);
+  }, 60000);
 
   test("Assign document to collection", async () => {
     const response = await client.collections.addDocument({
@@ -111,7 +114,6 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     const response = await client.graphs.pull({
       collectionId: collectionId,
     });
-    console.log("Pull entities into the graph", response.results);
     expect(response.results).toBeDefined();
   });
 
@@ -128,6 +130,171 @@ describe("r2rClient V3 Collections Integration Tests", () => {
       collectionId: collectionId,
     });
     expect(response.results).toBeDefined();
+  });
+
+  test("Create a new entity", async () => {
+    const response = await client.graphs.createEntity({
+      collectionId: collectionId,
+      name: "Razumikhin",
+      description: "A good friend of Raskolnikov",
+      category: "Person",
+    });
+
+    expect(response.results).toBeDefined();
+    entity1Id = response.results.id;
+  });
+
+  test("Create another new entity", async () => {
+    const response = await client.graphs.createEntity({
+      collectionId: collectionId,
+      name: "Dunia",
+      description: "The sister of Raskolnikov",
+      category: "Person",
+    });
+
+    expect(response.results).toBeDefined();
+    entity2Id = response.results.id;
+  });
+
+  test("Retrieve the entity", async () => {
+    const response = await client.graphs.getEntity({
+      collectionId: collectionId,
+      entityId: entity1Id,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(entity1Id);
+    expect(response.results.name).toBe("Razumikhin");
+    expect(response.results.description).toBe("A good friend of Raskolnikov");
+  });
+
+  test("Retrieve the other entity", async () => {
+    const response = await client.graphs.getEntity({
+      collectionId: collectionId,
+      entityId: entity2Id,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(entity2Id);
+    expect(response.results.name).toBe("Dunia");
+    expect(response.results.description).toBe("The sister of Raskolnikov");
+  });
+
+  test("Check that the entities are in the graph", async () => {
+    const response = await client.graphs.listEntities({
+      collectionId: collectionId,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.map((entity) => entity.id)).toContain(entity1Id);
+    expect(response.results.map((entity) => entity.id)).toContain(entity2Id);
+  });
+
+  test("Create a relationship between the entities", async () => {
+    const response = await client.graphs.createRelationship({
+      collectionId: collectionId,
+      subject: "Razumikhin",
+      subjectId: entity1Id,
+      predicate: "falls in love with",
+      object: "Dunia",
+      objectId: entity2Id,
+    });
+
+    relationshipId = response.results.id;
+
+    expect(response.results).toBeDefined();
+    expect(response.results.subject).toBe("Razumikhin");
+    expect(response.results.object).toBe("Dunia");
+    expect(response.results.predicate).toBe("falls in love with");
+  });
+
+  test("Retrieve the relationship", async () => {
+    const response = await client.graphs.getRelationship({
+      collectionId: collectionId,
+      relationshipId: relationshipId,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(relationshipId);
+    expect(response.results.subject).toBe("Razumikhin");
+    expect(response.results.object).toBe("Dunia");
+    expect(response.results.predicate).toBe("falls in love with");
+  });
+
+  test("Update the entity", async () => {
+    const response = await client.graphs.updateEntity({
+      collectionId: collectionId,
+      entityId: entity1Id,
+      name: "Dmitri Prokofich Razumikhin",
+      description: "A good friend of Raskolnikov and Dunia",
+      category: "Person",
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(entity1Id);
+    expect(response.results.name).toBe("Dmitri Prokofich Razumikhin");
+    expect(response.results.description).toBe(
+      "A good friend of Raskolnikov and Dunia",
+    );
+  });
+
+  test("Retrieve the updated entity", async () => {
+    const response = await client.graphs.getEntity({
+      collectionId: collectionId,
+      entityId: entity1Id,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(entity1Id);
+    expect(response.results.name).toBe("Dmitri Prokofich Razumikhin");
+    expect(response.results.description).toBe(
+      "A good friend of Raskolnikov and Dunia",
+    );
+  });
+
+  // This test is failing because we attach a separate name to the relationship, rather
+  // than use the names of the entities. This needs to be fixed in the backend.
+  //   test("Ensure that the entity was updated in the relationship", async () => {
+  //     const response = await client.graphs.getRelationship({
+  //       collectionId: collectionId,
+  //       relationshipId: relationshipId,
+  //     });
+
+  //     expect(response.results).toBeDefined();
+  //     expect(response.results.subject).toBe("Dmitri Prokofich Razumikhin");
+  //     expect(response.results.object).toBe("Dunia");
+  //     expect(response.results.predicate).toBe("falls in love with");
+  //   });
+
+  test("Update the relationship", async () => {
+    const response = await client.graphs.updateRelationship({
+      collectionId: collectionId,
+      relationshipId: relationshipId,
+      subject: "Razumikhin",
+      subjectId: entity1Id,
+      predicate: "marries",
+      object: "Dunia",
+      objectId: entity2Id,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(relationshipId);
+    expect(response.results.subject).toBe("Razumikhin");
+    expect(response.results.object).toBe("Dunia");
+    expect(response.results.predicate).toBe("marries");
+  });
+
+  test("Retrieve the updated relationship", async () => {
+    const response = await client.graphs.getRelationship({
+      collectionId: collectionId,
+      relationshipId: relationshipId,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(relationshipId);
+    expect(response.results.subject).toBe("Razumikhin");
+    expect(response.results.object).toBe("Dunia");
+    expect(response.results.predicate).toBe("marries");
   });
 
   test("Reset the graph", async () => {

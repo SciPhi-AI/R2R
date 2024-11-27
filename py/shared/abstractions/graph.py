@@ -36,23 +36,14 @@ class Entity(R2RSerializable):
     """An entity extracted from a document."""
 
     name: str
-    # id is Union of UUID and int for backwards compatibility
-    # we will migrate to UUID only in the future
-    # sid is also deprecated and needs to be removed in the future
-    id: Optional[UUID | int] = None
-    category: Optional[str] = None
     description: Optional[str] = None
-    parent_id: Optional[UUID] = None  # graph_id | document_id
-    # document_ids: list[UUID] = []
-    description_embedding: Optional[list[float] | str] = None
-
-    chunk_ids: Optional[list[UUID]] = []
-
-    # we don't use these yet
-    # name_embedding: Optional[list[float]] = None
-    # graph_embedding: Optional[list[float]] = None
-    # rank: Optional[int] = None
+    category: Optional[str] = None
     metadata: Optional[dict[str, Any] | str] = None
+
+    id: Optional[UUID] = None
+    parent_id: Optional[UUID] = None  # graph_id | document_id
+    description_embedding: Optional[list[float] | str] = None
+    chunk_ids: Optional[list[UUID]] = []
 
     def __str__(self):
         return f"{self.name}:{self.category}"
@@ -77,7 +68,7 @@ class Relationship(R2RSerializable):
     subject_id: Optional[UUID] = None
     object_id: Optional[UUID] = None
     weight: float | None = 1.0
-    chunk_ids: list[UUID] = []
+    chunk_ids: Optional[list[UUID]] = []
     parent_id: Optional[UUID] = None
     description_embedding: Optional[list[float] | str] = None
 

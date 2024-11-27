@@ -133,15 +133,15 @@ class KgService(Service):
 
         return await _collect_results(result_gen)
 
-    @telemetry_event("create_entities")
-    async def create_entities(
+    @telemetry_event("create_entity")
+    async def create_entity(
         self,
         name: str,
         description: str,
-        metadata: Optional[dict] = None,
+        parent_id: UUID,
         category: Optional[str] = None,
-        auth_user: Optional[Any] = None,
-    ):
+        metadata: Optional[dict] = None,
+    ) -> Entity:
 
         description_embedding = str(
             await self.providers.embedding.async_get_embedding(description)
@@ -149,11 +149,12 @@ class KgService(Service):
 
         return await self.providers.database.graph_handler.entities.create(
             name=name,
+            parent_id=parent_id,
+            store_type="graph",  # type: ignore
             category=category,
             description=description,
             description_embedding=description_embedding,
             metadata=metadata,
-            auth_user=auth_user,
         )
 
     @telemetry_event("list_entities")
@@ -180,31 +181,29 @@ class KgService(Service):
         )
 
     @telemetry_event("update_entity")
-    async def update_entity_v3(
+    async def update_entity(
         self,
-        id: UUID,
-        name: Optional[str],
-        category: Optional[str],
-        description: Optional[str],
-        attributes: Optional[dict],
-        auth_user: Optional[Any] = None,
-    ):
+        entity_id: UUID,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        category: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> Entity:
 
+        description_embedding = None
         if description is not None:
             description_embedding = str(
                 await self.providers.embedding.async_get_embedding(description)
             )
-        else:
-            description_embedding = None
 
         return await self.providers.database.graph_handler.entities.update(
-            id=id,
+            entity_id=entity_id,
             name=name,
-            category=category,
             description=description,
+            category=category,
             description_embedding=description_embedding,
-            attributes=attributes,
-            auth_user=auth_user,
+            metadata=metadata,
+            store_type="graph",  # type: ignore
         )
 
     @telemetry_event("delete_entity")
@@ -278,25 +277,38 @@ class KgService(Service):
             relationship_id=relationship_id,
         )
 
-    @telemetry_event("create_relationships_v3")
-    async def create_relationships_v3(
+    @telemetry_event("create_relationship")
+    async def create_relationship(
         self,
-        relationships: list[Relationship],
-        **kwargs,
-    ):
-        for relationship in relationships:
-            if relationship.description:
-                relationships.description_embedding = str(
-                    await self.providers.embedding.async_get_embedding(
-                        relationship.description
-                    )
-                )
-
-        print("relationships = ", relationships)
+        subject: str,
+        subject_id: UUID,
+        predicate: str,
+        object: str,
+        object_id: UUID,
+        parent_id: UUID,
+        description: str | None = None,
+        weight: float | None = 1.0,
+        metadata: Optional[dict[str, Any] | str] = None,
+    ) -> Relationship:
+        description_embedding = None
+        if description:
+            description_embedding = str(
+                await self.providers.embedding.async_get_embedding(description)
+            )
 
         return (
             await self.providers.database.graph_handler.relationships.create(
-                relationships
+                subject=subject,
+                subject_id=subject_id,
+                predicate=predicate,
+                object=object,
+                object_id=object_id,
+                parent_id=parent_id,
+                description=description,
+                description_embedding=description_embedding,
+                weight=weight,
+                metadata=metadata,
+                store_type="graph",  # type: ignore
             )
         )
 
@@ -310,21 +322,44 @@ class KgService(Service):
     ):
         return (
             await self.providers.database.graph_handler.relationships.delete(
-                level=level,
                 id=id,
                 relationship_id=relationship_id,
             )
         )
 
-    @telemetry_event("update_relationship_v3")
-    async def update_relationship_v3(
+    @telemetry_event("update_relationship")
+    async def update_relationship(
         self,
-        relationship: Relationship,
-        **kwargs,
-    ):
+        relationship_id: UUID,
+        subject: Optional[str] = None,
+        subject_id: Optional[UUID] = None,
+        predicate: Optional[str] = None,
+        object: Optional[str] = None,
+        object_id: Optional[UUID] = None,
+        description: Optional[str] = None,
+        weight: Optional[float] = None,
+        metadata: Optional[dict[str, Any] | str] = None,
+    ) -> Relationship:
+
+        description_embedding = None
+        if description is not None:
+            description_embedding = str(
+                await self.providers.embedding.async_get_embedding(description)
+            )
+
         return (
             await self.providers.database.graph_handler.relationships.update(
-                relationship
+                relationship_id=relationship_id,
+                subject=subject,
+                subject_id=subject_id,
+                predicate=predicate,
+                object=object,
+                object_id=object_id,
+                description=description,
+                description_embedding=description_embedding,
+                weight=weight,
+                metadata=metadata,
+                store_type="graph",  # type: ignore
             )
         )
 
@@ -1206,21 +1241,37 @@ class KgService(Service):
         total_entities, total_relationships = 0, 0
 
         for extraction in kg_extractions:
-            print("extraction = ", extraction)
-
             total_entities, total_relationships = (
                 total_entities + len(extraction.entities),
                 total_relationships + len(extraction.relationships),
             )
 
-            if extraction.entities:
+            for entity in extraction.entities:
                 await self.providers.database.graph_handler.entities.create(
-                    extraction.entities, store_type="document"
+                    name=entity.name,
+                    parent_id=entity.parent_id,
+                    store_type="document",  # type: ignore
+                    category=entity.category,
+                    description=entity.description,
+                    description_embedding=entity.description_embedding,
+                    chunk_ids=entity.chunk_ids,
+                    metadata=entity.metadata,
                 )
 
             if extraction.relationships:
-                await self.providers.database.graph_handler.relationships.create(
-                    extraction.relationships, store_type="document"
-                )
+                for relationship in extraction.relationships:
+                    await self.providers.database.graph_handler.relationships.create(
+                        subject=relationship.subject,
+                        subject_id=relationship.subject_id,
+                        predicate=relationship.predicate,
+                        object=relationship.object,
+                        object_id=relationship.object_id,
+                        parent_id=relationship.parent_id,
+                        description=relationship.description,
+                        description_embedding=relationship.description_embedding,
+                        weight=relationship.weight,
+                        metadata=relationship.metadata,
+                        store_type="document",  # type: ignore
+                    )
 
             return (total_entities, total_relationships)
