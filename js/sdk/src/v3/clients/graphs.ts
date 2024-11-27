@@ -289,7 +289,7 @@ export class GraphsClient {
   }): Promise<WrappedRelationshipResponse> {
     return this.client.makeRequest(
       "GET",
-      `graphs/${options.collectionId}/entities/${options.relationshipId}`,
+      `graphs/${options.collectionId}/relationships/${options.relationshipId}`,
     );
   }
 

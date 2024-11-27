@@ -606,6 +606,7 @@ class GraphRouter(BaseRouterV3):
                 description=description,
                 weight=weight,
                 metadata=metadata,
+                parent_id=collection_id,
             )
 
         @self.router.get(
