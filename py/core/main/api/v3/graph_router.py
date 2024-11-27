@@ -792,16 +792,16 @@ class GraphRouter(BaseRouterV3):
                 ..., description="The ID of the entity to update."
             ),
             name: Optional[str] = Body(
-                ..., description="The updated name of the entity to create."
+                ..., description="The updated name of the entity."
             ),
             category: Optional[str] = Body(
-                None, description="The category of the entity to create."
+                None, description="The updated category of the entity."
             ),
             description: Optional[str] = Body(
-                None, description="The description of the entity to create."
+                None, description="The updated description of the entity."
             ),
             metadata: Optional[dict] = Body(
-                None, description="The metadata of the entity to create."
+                None, description="The updated metadata of the entity."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntityResponse:
@@ -1058,23 +1058,23 @@ class GraphRouter(BaseRouterV3):
                 ..., description="The ID of the relationship to update."
             ),
             subject: Optional[str] = Body(
-                ..., description="The subject of the relationship to create."
+                ..., description="The updated subject of the relationship."
             ),
             predicate: Optional[str] = Body(
-                ..., description="The predicate of the relationship to create."
+                ..., description="The updated predicate of the relationship."
             ),
             object: Optional[str] = Body(
-                ..., description="The object of the relationship to create."
+                ..., description="The updated object of the relationship."
             ),
             description: Optional[str] = Body(
                 None,
-                description="The description of the relationship to create.",
+                description="The updated description of the relationship.",
             ),
             weight: Optional[float] = Body(
-                None, description="The weight of the relationship to create."
+                None, description="The updated weight of the relationship."
             ),
             metadata: Optional[dict] = Body(
-                None, description="The metadata of the relationship to create."
+                None, description="The updated metadata of the relationship."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipResponse:
