@@ -68,7 +68,7 @@ class Relationship(R2RSerializable):
     subject_id: Optional[UUID] = None
     object_id: Optional[UUID] = None
     weight: float | None = 1.0
-    chunk_ids: list[UUID] = []
+    chunk_ids: Optional[list[UUID]] = []
     parent_id: Optional[UUID] = None
     description_embedding: Optional[list[float] | str] = None
 

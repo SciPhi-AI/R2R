@@ -7,6 +7,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   let client: r2rClient;
   let documentId: string;
   let collectionId: string;
+  let entityId: string;
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);
@@ -97,7 +98,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     await new Promise((resolve) => setTimeout(resolve, 30000));
 
     expect(response.results).toBeDefined();
-  }, 40000);
+  }, 60000);
 
   test("Assign document to collection", async () => {
     const response = await client.collections.addDocument({
@@ -128,6 +129,39 @@ describe("r2rClient V3 Collections Integration Tests", () => {
       collectionId: collectionId,
     });
     expect(response.results).toBeDefined();
+  });
+
+  test("Create a new entity", async () => {
+    const response = await client.graphs.createEntity({
+      collectionId: collectionId,
+      name: "Razumikhin",
+      description: "A good friend of Raskolnikov",
+      category: "Person",
+    });
+
+    expect(response.results).toBeDefined();
+    entityId = response.results.id;
+  });
+
+  test("Retrieve the entity", async () => {
+    const response = await client.graphs.getEntity({
+      collectionId: collectionId,
+      entityId: entityId,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(entityId);
+    expect(response.results.name).toBe("Razumikhin");
+    expect(response.results.description).toBe("A good friend of Raskolnikov");
+  });
+
+  test("Check that the entity is in the graph", async () => {
+    const response = await client.graphs.listEntities({
+      collectionId: collectionId,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.map((entity) => entity.id)).toContain(entityId);
   });
 
   test("Reset the graph", async () => {

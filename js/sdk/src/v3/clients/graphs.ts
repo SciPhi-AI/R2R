@@ -108,13 +108,23 @@ export class GraphsClient {
   @feature("graphs.createEntity")
   async createEntity(options: {
     collectionId: string;
-    entity: Entity;
+    name: string;
+    description?: string;
+    category?: string;
+    metadata?: Record<string, any>;
   }): Promise<WrappedEntityResponse> {
+    const data = {
+      name: options.name,
+      ...(options.description && { description: options.description }),
+      ...(options.category && { category: options.category }),
+      ...(options.metadata && { metadata: options.metadata }),
+    };
+
     return this.client.makeRequest(
       "POST",
       `graphs/${options.collectionId}/entities`,
       {
-        data: options.entity,
+        data,
       },
     );
   }
@@ -210,13 +220,31 @@ export class GraphsClient {
   @feature("graphs.createRelationship")
   async createRelationship(options: {
     collectionId: string;
-    relationship: Relationship;
+    subject: string;
+    subjectId: string;
+    predicate: string;
+    object: string;
+    objectId: string;
+    description?: string;
+    weight?: number;
+    metadata?: Record<string, any>;
   }): Promise<WrappedRelationshipResponse> {
+    const data = {
+      subject: options.subject,
+      subject_id: options.subjectId,
+      predicate: options.predicate,
+      object: options.object,
+      object_id: options.objectId,
+      ...(options.description && { description: options.description }),
+      ...(options.weight && { weight: options.weight }),
+      ...(options.metadata && { metadata: options.metadata }),
+    };
+
     return this.client.makeRequest(
       "POST",
       `graphs/${options.collectionId}/relationships`,
       {
-        data: options.relationship,
+        data,
       },
     );
   }

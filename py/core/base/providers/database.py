@@ -626,7 +626,7 @@ class EntityHandler(Handler):
 
 class RelationshipHandler(Handler):
     @abstractmethod
-    async def create(self, *args: Any, **kwargs: Any) -> None:
+    async def create(self, *args: Any, **kwargs: Any) -> Relationship:
         """Add relationships to storage."""
         pass
 

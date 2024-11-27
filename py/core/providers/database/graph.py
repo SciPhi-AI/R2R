@@ -445,53 +445,72 @@ class PostgresRelationshipHandler(RelationshipHandler):
             await self.connection_manager.execute_query(QUERY)
 
     async def create(
-        self, relationships: list[Relationship], store_type: StoreType
-    ) -> list[UUID]:
-        """Create multiple relationships in the specified store."""
+        self,
+        subject: str,
+        subject_id: UUID,
+        predicate: str,
+        object: str,
+        object_id: UUID,
+        parent_id: UUID,
+        store_type: StoreType,
+        description: str | None = None,
+        weight: float | None = 1.0,
+        chunk_ids: Optional[list[UUID]] = None,
+        description_embedding: Optional[list[float] | str] = None,
+        metadata: Optional[dict[str, Any] | str] = None,
+    ) -> Relationship:
+        """Create a new relationship in the specified store."""
         table_name = self._get_relationship_table_for_store(store_type)
-        values = []
-        results = []
 
-        for relationship in relationships:
-            metadata = relationship.metadata
-            if isinstance(metadata, str):
-                try:
-                    metadata = json.loads(metadata)
-                except json.JSONDecodeError:
-                    pass
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except json.JSONDecodeError:
+                pass
 
-            description_embedding = relationship.description_embedding
-            if isinstance(description_embedding, list):
-                description_embedding = str(description_embedding)
+        if isinstance(description_embedding, list):
+            description_embedding = str(description_embedding)
 
-            value = (
-                relationship.subject,
-                relationship.predicate,
-                relationship.object,
-                relationship.description,
-                relationship.subject_id,
-                relationship.object_id,
-                relationship.weight,
-                relationship.chunk_ids,
-                relationship.parent_id,
-                description_embedding,
-                json.dumps(metadata) if metadata else None,
-            )
-            values.append(value)
-
-        QUERY = f"""
+        query = f"""
             INSERT INTO {self._get_table_name(table_name)}
             (subject, predicate, object, description, subject_id, object_id,
              weight, chunk_ids, parent_id, description_embedding, metadata)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING id
+            RETURNING id, subject, predicate, object, description, subject_id, object_id, weight, chunk_ids, parent_id, metadata
         """
 
-        for value in values:
-            result = await self.connection_manager.fetchrow_query(QUERY, value)
-            results.append(result["id"])
+        params = [
+            subject,
+            predicate,
+            object,
+            description,
+            subject_id,
+            object_id,
+            weight,
+            chunk_ids,
+            parent_id,
+            description_embedding,
+            json.dumps(metadata) if metadata else None,
+        ]
 
-        return results
+        result = await self.connection_manager.fetchrow_query(
+            query=query,
+            params=params,
+        )
+
+        return Relationship(
+            id=result["id"],
+            subject=result["subject"],
+            predicate=result["predicate"],
+            object=result["object"],
+            description=result["description"],
+            subject_id=result["subject_id"],
+            object_id=result["object_id"],
+            weight=result["weight"],
+            chunk_ids=result["chunk_ids"],
+            parent_id=result["parent_id"],
+            metadata=result["metadata"],
+        )
 
     async def get(
         self,

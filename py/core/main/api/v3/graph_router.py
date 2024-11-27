@@ -561,11 +561,19 @@ class GraphRouter(BaseRouterV3):
             subject: str = Body(
                 ..., description="The subject of the relationship to create."
             ),
+            subject_id: UUID = Body(
+                ...,
+                description="The ID of the subject of the relationship to create.",
+            ),
             predicate: str = Body(
                 ..., description="The predicate of the relationship to create."
             ),
             object: str = Body(
                 ..., description="The object of the relationship to create."
+            ),
+            object_id: UUID = Body(
+                ...,
+                description="The ID of the object of the relationship to create.",
             ),
             description: Optional[str] = Body(
                 None,
@@ -589,15 +597,16 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            # Set parent ID to graph ID
-            relationship.parent_id = collection_id
-
-            # Create relationship
-            await self.providers.database.graph_handler.relationships.create(
-                relationships=[relationship], store_type="graph"
+            return await self.services["kg"].create_relationship(
+                subject=subject,
+                subject_id=subject_id,
+                predicate=predicate,
+                object=object,
+                object_id=object_id,
+                description=description,
+                weight=weight,
+                metadata=metadata,
             )
-
-            return relationship
 
         @self.router.get(
             "/graphs/{collection_id}/entities/{entity_id}",
@@ -842,24 +851,6 @@ class GraphRouter(BaseRouterV3):
             return relationships, {  # type: ignore
                 "total_entries": count,
             }
-
-        @self.router.post("/graphs/{collection_id}/relationships")
-        @self.base_endpoint
-        async def create_relationship(
-            collection_id: UUID = Path(
-                ...,
-                description="The collection ID corresponding to the graph to add the relationship to.",
-            ),
-            relationship_ids: list[UUID] = Body(
-                ...,
-                description="The IDs of the relationships to add to the graph.",
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedRelationshipResponse:
-            """Creates a new relationship in the graph."""
-            return await self.providers.database.graph_handler.relationships.add_to_graph(
-                collection_id, relationship_ids, "graph"
-            )
 
         @self.router.get(
             "/graphs/{collection_id}/relationships/{relationship_id}",

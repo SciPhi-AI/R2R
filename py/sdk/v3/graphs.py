@@ -395,7 +395,7 @@ class GraphsSDK:
         if findings is not None:
             data["findings"] = findings
         if rating is not None:
-            data["rating"] = rating
+            data["rating"] = str(rating)
         if rating_explanation is not None:
             data["rating_explanation"] = rating_explanation
         if level is not None:

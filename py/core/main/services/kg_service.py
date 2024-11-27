@@ -133,7 +133,7 @@ class KgService(Service):
 
         return await _collect_results(result_gen)
 
-    @telemetry_event("create_entities")
+    @telemetry_event("create_entity")
     async def create_entity(
         self,
         name: str,
@@ -279,25 +279,38 @@ class KgService(Service):
             relationship_id=relationship_id,
         )
 
-    @telemetry_event("create_relationships_v3")
-    async def create_relationships_v3(
+    @telemetry_event("create_relationship")
+    async def create_relationship(
         self,
-        relationships: list[Relationship],
-        **kwargs,
-    ):
-        for relationship in relationships:
-            if relationship.description:
-                relationships.description_embedding = str(
-                    await self.providers.embedding.async_get_embedding(
-                        relationship.description
-                    )
-                )
-
-        print("relationships = ", relationships)
+        subject: str,
+        subject_id: UUID,
+        predicate: str,
+        object: str,
+        object_id: UUID,
+        parent_id: UUID,
+        description: str | None = None,
+        weight: float | None = 1.0,
+        metadata: Optional[dict[str, Any] | str] = None,
+    ) -> Relationship:
+        description_embedding = None
+        if description:
+            description_embedding = str(
+                await self.providers.embedding.async_get_embedding(description)
+            )
 
         return (
             await self.providers.database.graph_handler.relationships.create(
-                relationships
+                subject=subject,
+                subject_id=subject_id,
+                predicate=predicate,
+                object=object,
+                object_id=object_id,
+                parent_id=parent_id,
+                description=description,
+                description_embedding=description_embedding,
+                weight=weight,
+                metadata=metadata,
+                store_type="graph",  # type: ignore
             )
         )
 
@@ -311,7 +324,6 @@ class KgService(Service):
     ):
         return (
             await self.providers.database.graph_handler.relationships.delete(
-                level=level,
                 id=id,
                 relationship_id=relationship_id,
             )
@@ -1225,8 +1237,19 @@ class KgService(Service):
                 )
 
             if extraction.relationships:
-                await self.providers.database.graph_handler.relationships.create(
-                    extraction.relationships, store_type="document"
-                )
+                for relationship in extraction.relationships:
+                    await self.providers.database.graph_handler.relationships.create(
+                        subject=relationship.subject,
+                        subject_id=relationship.subject_id,
+                        predicate=relationship.predicate,
+                        object=relationship.object,
+                        object_id=relationship.object_id,
+                        parent_id=relationship.parent_id,
+                        description=relationship.description,
+                        description_embedding=relationship.description_embedding,
+                        weight=relationship.weight,
+                        metadata=relationship.metadata,
+                        store_type="document",  # type: ignore
+                    )
 
             return (total_entities, total_relationships)
