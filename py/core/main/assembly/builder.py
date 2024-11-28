@@ -11,6 +11,7 @@ from core.base import (
     DatabaseProvider,
     EmbeddingProvider,
     OrchestrationProvider,
+    UserManagementProvider,
     RunManager,
 )
 from core.pipelines import KGEnrichmentPipeline, RAGPipeline, SearchPipeline
@@ -47,6 +48,7 @@ class ProviderOverrides:
     llm: Optional[CompletionProvider] = None
     crypto: Optional[CryptoProvider] = None
     orchestration: Optional[OrchestrationProvider] = None
+    user_management: Optional[UserManagementProvider] = None
 
 
 @dataclass

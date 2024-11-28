@@ -1,10 +1,8 @@
 from shared.api.models.auth.responses import (
     GenericMessageResponse,
     TokenResponse,
-    UserResponse,
     WrappedGenericMessageResponse,
     WrappedTokenResponse,
-    WrappedUserResponse,
 )
 from shared.api.models.ingestion.responses import (
     IngestionResponse,
@@ -33,6 +31,7 @@ from shared.api.models.management.responses import (
     ScoreCompletionResponse,
     ServerStats,
     UserOverviewResponse,
+    UserResponse,
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
@@ -50,6 +49,7 @@ from shared.api.models.management.responses import (
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
     WrappedUsersInCollectionResponse,
+    WrappedUserResponse,
 )
 from shared.api.models.retrieval.responses import (
     RAGAgentResponse,
@@ -65,9 +65,7 @@ __all__ = [
     # Auth Responses
     "GenericMessageResponse",
     "TokenResponse",
-    "UserResponse",
     "WrappedTokenResponse",
-    "WrappedUserResponse",
     "WrappedGenericMessageResponse",
     # Ingestion Responses
     "IngestionResponse",
@@ -92,6 +90,7 @@ __all__ = [
     "CollectionResponse",
     "CollectionOverviewResponse",
     "ConversationOverviewResponse",
+    "UserResponse",
     "WrappedPromptMessageResponse",
     "WrappedServerStatsResponse",
     "WrappedLogResponse",
@@ -112,6 +111,7 @@ __all__ = [
     "WrappedDocumentChunkResponse",
     "WrappedCollectionOverviewResponse",
     "WrappedConversationsOverviewResponse",
+    "WrappedUserResponse",
     # Retrieval Responses
     "SearchResponse",
     "RAGResponse",

@@ -10,6 +10,7 @@ from core.base import (
     DatabaseProvider,
     PostgresConfigurationSettings,
     VectorQuantizationType,
+    UserManagementConfig,
 )
 from core.providers import BCryptProvider
 from core.providers.database.base import PostgresConnectionManager
@@ -22,6 +23,7 @@ from core.providers.database.prompt import PostgresPromptHandler
 from core.providers.database.tokens import PostgresTokenHandler
 from core.providers.database.user import PostgresUserHandler
 from core.providers.database.vector import PostgresVectorHandler
+from core.providers.user_management import R2RUserManagementProvider
 
 from .base import SemaphoreConnectionPool
 
@@ -73,6 +75,7 @@ class PostgresDBProvider(DatabaseProvider):
         config: DatabaseConfig,
         dimension: int,
         crypto_provider: BCryptProvider,
+        user_management_provider: R2RUserManagementProvider,
         quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
         *args,
         **kwargs,
@@ -124,6 +127,7 @@ class PostgresDBProvider(DatabaseProvider):
         self.conn = None
         self.config: DatabaseConfig = config
         self.crypto_provider = crypto_provider
+        self.user_management_provider = user_management_provider
         self.postgres_configuration_settings: PostgresConfigurationSettings = (
             self._get_postgres_configuration_settings(config)
         )
@@ -146,7 +150,10 @@ class PostgresDBProvider(DatabaseProvider):
             self.project_name, self.connection_manager, self.config
         )
         self.user_handler = PostgresUserHandler(
-            self.project_name, self.connection_manager, self.crypto_provider
+            self.project_name,
+            self.connection_manager,
+            self.crypto_provider,
+            self.user_management_provider,
         )
         self.vector_handler = PostgresVectorHandler(
             self.project_name,

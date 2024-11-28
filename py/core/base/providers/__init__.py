@@ -21,6 +21,7 @@ from .embedding import EmbeddingConfig, EmbeddingProvider
 from .ingestion import ChunkingStrategy, IngestionConfig, IngestionProvider
 from .llm import CompletionConfig, CompletionProvider
 from .orchestration import OrchestrationConfig, OrchestrationProvider, Workflow
+from .user_management import UserManagementConfig, UserManagementProvider
 
 __all__ = [
     # Auth provider
@@ -64,4 +65,7 @@ __all__ = [
     "OrchestrationConfig",
     "OrchestrationProvider",
     "Workflow",
+    # User management provider
+    "UserManagementConfig",
+    "UserManagementProvider",
 ]

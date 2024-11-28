@@ -23,6 +23,7 @@ from .orchestration import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
+from .user_management import R2RUserManagementProvider
 
 __all__ = [
     # Auth
@@ -54,4 +55,6 @@ __all__ = [
     "LiteLLMCompletionProvider",
     # Logging
     "SqlitePersistentLoggingProvider",
+    # User Management
+    "R2RUserManagementProvider",
 ]

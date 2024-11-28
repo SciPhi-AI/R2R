@@ -1,10 +1,8 @@
 from shared.api.models.auth.responses import (
     GenericMessageResponse,
     TokenResponse,
-    UserResponse,
     WrappedGenericMessageResponse,
     WrappedTokenResponse,
-    WrappedUserResponse,
 )
 from shared.api.models.ingestion.responses import (
     CreateVectorIndexResponse,
@@ -46,6 +44,7 @@ from shared.api.models.management.responses import (
     ScoreCompletionResponse,
     ServerStats,
     UserOverviewResponse,
+    UserResponse,
     WrappedAddUserResponse,
     WrappedAnalyticsResponse,
     WrappedAppSettingsResponse,
@@ -64,6 +63,7 @@ from shared.api.models.management.responses import (
     WrappedServerStatsResponse,
     WrappedUserCollectionResponse,
     WrappedUserOverviewResponse,
+    WrappedUserResponse,
     WrappedUsersInCollectionResponse,
     WrappedVerificationResult,
 )

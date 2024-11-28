@@ -18,6 +18,7 @@ from ..base.providers.embedding import EmbeddingConfig
 from ..base.providers.ingestion import IngestionConfig
 from ..base.providers.llm import CompletionConfig
 from ..base.providers.orchestration import OrchestrationConfig
+from ..base.providers.user_management import UserManagementConfig
 
 logger = logging.getLogger()
 
@@ -56,6 +57,7 @@ class R2RConfig:
         "database": ["provider"],
         "agent": ["generation_config"],
         "orchestration": ["provider"],
+        "user_management": ["default_role"],
     }
 
     app: AppConfig
@@ -69,6 +71,7 @@ class R2RConfig:
     logging: PersistentLoggingConfig
     agent: AgentConfig
     orchestration: OrchestrationConfig
+    user_management: UserManagementConfig
 
     def __init__(self, config_data: dict[str, Any]):
         """
@@ -122,6 +125,7 @@ class R2RConfig:
         self.logging = PersistentLoggingConfig.create(**self.logging, app=self.app)  # type: ignore
         self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore
         self.orchestration = OrchestrationConfig.create(**self.orchestration, app=self.app)  # type: ignore
+        self.user_management = UserManagementConfig.create(**self.user_management, app=self.app)  # type: ignore
 
         # override GenerationConfig defaults
         GenerationConfig.set_default(
