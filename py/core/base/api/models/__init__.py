@@ -24,6 +24,7 @@ from shared.api.models.kg.responses import (  # TODO: Need to review anything ab
     KGEnrichmentResponse,
     KGTunePromptResponse,
     Relationship,
+    GraphResponse,
     WrappedCommunitiesResponse,
     WrappedCommunityResponse,
     WrappedEntitiesResponse,
@@ -32,6 +33,8 @@ from shared.api.models.kg.responses import (  # TODO: Need to review anything ab
     WrappedKGTunePromptResponse,
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,
+    WrappedGraphResponse,
+    WrappedGraphsResponse,
 )
 from shared.api.models.management.responses import (  # Document Responses; Prompt Responses; Chunk Responses; Conversation Responses; User Responses; TODO: anything below this hasn't been reviewed
     AnalyticsResponse,

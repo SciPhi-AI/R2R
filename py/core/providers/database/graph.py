@@ -188,7 +188,7 @@ class PostgresEntityHandler(EntityHandler):
         table_name = self._get_entity_table_for_store(store_type)
 
         conditions = ["parent_id = $1"]
-        params = [parent_id]
+        params: list[Any] = [parent_id]
         param_index = 2
 
         if entity_ids:
@@ -311,7 +311,7 @@ class PostgresEntityHandler(EntityHandler):
         query = f"""
             UPDATE {self._get_table_name(table_name)}
             SET {', '.join(update_fields)}
-            WHERE id = ${param_index}
+            WHERE id = ${param_index}\
             RETURNING id, name, category, description, parent_id, chunk_ids, metadata
         """
         try:
@@ -848,8 +848,6 @@ class PostgresCommunityHandler(CommunityHandler):
             metadata JSONB,
             UNIQUE (community_id, level, graph_id, collection_id)
         );"""
-        # created_by UUID REFERENCES {self._get_table_name("users")}(user_id),
-        # updated_by UUID REFERENCES {self._get_table_name("users")}(user_id),
 
         await self.connection_manager.execute_query(query)
 
@@ -982,61 +980,83 @@ class PostgresCommunityHandler(CommunityHandler):
 
     async def get(
         self,
-        graph_id: UUID,
+        parent_id: UUID,
+        store_type: StoreType,
         offset: int,
         limit: int,
-        community_id: Optional[UUID] = None,
-        auth_user: Optional[Any] = None,
+        community_ids: Optional[list[UUID]] = None,
+        community_names: Optional[list[str]] = None,
+        include_embeddings: bool = False,
     ):
+        """Retrieve communities from the specified store."""
+        # Do we ever want to get communities from document store?
+        table_name = "graph_community"
 
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(graph_id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to access this graph.",
-                    403,
-                )
+        conditions = ["graph_id = $1"]
+        params: list[Any] = [parent_id]
+        param_index = 2
 
-        if community_id is None:
+        if community_ids:
+            conditions.append(f"id = ANY(${param_index})")
+            params.append(community_ids)
+            param_index += 1
 
-            QUERY = f"""
-                SELECT
-                    id, graph_id, name, summary, findings, rating, rating_explanation, level, metadata, created_by, updated_by, created_at, updated_at
-                FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
-                OFFSET $2 LIMIT $3
-            """
-            params = [graph_id, offset, limit]
-            communities = [
-                Community(**row)
-                for row in await self.connection_manager.fetch_query(
-                    QUERY, params
-                )
-            ]
+        if community_names:
+            conditions.append(f"name = ANY(${param_index})")
+            params.append(community_names)
+            param_index += 1
 
-            QUERY_COUNT = f"""
-                SELECT COUNT(*) FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
-            """
-            count = (
-                await self.connection_manager.fetch_query(
-                    QUERY_COUNT, [graph_id]
-                )
-            )[0]["count"]
+        select_fields = """
+            id, graph_id, name, summary, findings, rating,
+            rating_explanation, level, metadata, created_at, updated_at
+        """
+        if include_embeddings:
+            select_fields += ", description_embedding"
 
-            return communities, count
+        COUNT_QUERY = f"""
+            SELECT COUNT(*)
+            FROM {self._get_table_name(table_name)}
+            WHERE {' AND '.join(conditions)}
+        """
 
-        else:
-            QUERY = f"""
-                SELECT
-                    id, graph_id, name, summary, findings, rating, rating_explanation, level, metadata, created_by, updated_by, created_at, updated_at
-                FROM {self._get_table_name("graph_community")} WHERE graph_id = $1 AND id = $2
-            """
-            params = [graph_id, community_id]
-            return [
-                Community(
-                    **await self.connection_manager.fetchrow_query(
-                        QUERY, params
+        count = (
+            await self.connection_manager.fetch_query(
+                COUNT_QUERY, params[: param_index - 1]
+            )
+        )[0]["count"]
+
+        QUERY = f"""
+            SELECT {select_fields}
+            FROM {self._get_table_name(table_name)}
+            WHERE {' AND '.join(conditions)}
+            ORDER BY created_at
+            OFFSET ${param_index}
+        """
+        params.append(offset)
+        param_index += 1
+
+        if limit != -1:
+            QUERY += f" LIMIT ${param_index}"
+            params.append(limit)
+
+        rows = await self.connection_manager.fetch_query(QUERY, params)
+
+        communities = []
+        for row in rows:
+            community_dict = dict(row)
+
+            # Process metadata if it exists and is a string
+            if isinstance(community_dict["metadata"], str):
+                try:
+                    community_dict["metadata"] = json.loads(
+                        community_dict["metadata"]
                     )
-                )
-            ]
+                except json.JSONDecodeError:
+                    pass
+
+            communities.append(Community(**community_dict))
+
+        return communities, count
 
 
 class PostgresGraphHandler(GraphHandler):
@@ -2484,56 +2504,86 @@ class PostgresGraphHandler(GraphHandler):
 
     async def get_communities(
         self,
+        graph_id: UUID,
         offset: int,
         limit: int,
-        collection_id: Optional[UUID] = None,
-        levels: Optional[list[int]] = None,
         community_ids: Optional[list[UUID]] = None,
-    ) -> dict:
-        conditions = []
-        params: list = [collection_id]
+        levels: Optional[list[int]] = None,
+        include_embeddings: bool = False,
+    ) -> tuple[list[Community], int]:
+        """
+        Get communities for a graph.
+
+        Args:
+            graph_id: UUID of the graph
+            offset: Number of records to skip
+            limit: Maximum number of records to return (-1 for no limit)
+            community_ids: Optional list of community IDs to filter by
+            levels: Optional list of levels to filter by
+            include_embeddings: Whether to include embeddings in the response
+
+        Returns:
+            Tuple of (list of communities, total count)
+        """
+        conditions = ["graph_id = $1"]
+        params: list[Any] = [graph_id]
         param_index = 2
 
-        if levels is not None:
+        if community_ids:
+            conditions.append(f"id = ANY(${param_index})")
+            params.append(community_ids)
+            param_index += 1
+
+        if levels:
             conditions.append(f"level = ANY(${param_index})")
             params.append(levels)
             param_index += 1
 
-        if community_ids is not None:
-            conditions.append(f"community_id = ANY(${param_index})")
-            params.append(community_ids)
-            param_index += 1
+        select_fields = """
+            id, graph_id, name, summary, findings, rating,
+            rating_explanation, level, metadata, created_at, updated_at
+        """
+        if include_embeddings:
+            select_fields += ", description_embedding"
 
-        pagination_params = []
-        if offset:
-            pagination_params.append(f"OFFSET ${param_index}")
-            params.append(offset)
-            param_index += 1
+        COUNT_QUERY = f"""
+            SELECT COUNT(*)
+            FROM {self._get_table_name("graph_community")}
+            WHERE {' AND '.join(conditions)}
+        """
+        count = (
+            await self.connection_manager.fetch_query(COUNT_QUERY, params)
+        )[0]["count"]
+
+        QUERY = f"""
+            SELECT {select_fields}
+            FROM {self._get_table_name("graph_community")}
+            WHERE {' AND '.join(conditions)}
+            ORDER BY created_at
+            OFFSET ${param_index}
+        """
+        params.append(offset)
+        param_index += 1
 
         if limit != -1:
-            pagination_params.append(f"LIMIT ${param_index}")
+            QUERY += f" LIMIT ${param_index}"
             params.append(limit)
-            param_index += 1
 
-        pagination_clause = " ".join(pagination_params)
+        rows = await self.connection_manager.fetch_query(QUERY, params)
 
-        query = f"""
-            SELECT id, community_id, collection_id, level, name, summary, findings, rating, rating_explanation, COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name('graph_community')}
-            WHERE collection_id = $1
-            {" AND " + " AND ".join(conditions) if conditions else ""}
-            ORDER BY community_id
-            {pagination_clause}
-        """
+        communities = []
+        for row in rows:
+            community_dict = dict(row)
+            if isinstance(community_dict["metadata"], str):
+                try:
+                    community_dict["metadata"] = json.loads(
+                        community_dict["metadata"]
+                    )
+                except json.JSONDecodeError:
+                    pass
+            communities.append(Community(**community_dict))
 
-        results = await self.connection_manager.fetch_query(query, params)
-        total_entries = results[0]["total_entries"] if results else 0
-        communities = [Community(**community) for community in results]
-
-        return {
-            "communities": communities,
-            "total_entries": total_entries,
-        }
+        return communities, count
 
     async def get_community_details(
         self,

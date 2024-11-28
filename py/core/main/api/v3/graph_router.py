@@ -1274,18 +1274,13 @@ class GraphRouter(BaseRouterV3):
 
             By default, all attributes are returned, but this can be limited using the `attributes` parameter.
             """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can access this endpoint.", 403
-                )
 
-            communities, count = await self.services[
-                "kg"
-            ].providers.database.graph_handler.communities.get(
-                graph_id=collection_id,
-                offset=offset,
-                limit=limit,
-                auth_user=auth_user,
+            communities, count = (
+                await self.providers.database.graph_handler.get_communities(
+                    graph_id=collection_id,
+                    offset=offset,
+                    limit=limit,
+                )
             )
 
             return communities, {  # type: ignore

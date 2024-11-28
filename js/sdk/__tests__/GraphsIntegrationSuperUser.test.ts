@@ -3,7 +3,7 @@ import { describe, test, beforeAll, expect } from "@jest/globals";
 
 const baseUrl = "http://localhost:7272";
 
-describe("r2rClient V3 Collections Integration Tests", () => {
+describe("r2rClient V3 Graphs Integration Tests", () => {
   let client: r2rClient;
   let documentId: string;
   let collectionId: string;
@@ -143,14 +143,14 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   });
 
   test("Build communities", async () => {
-    const response = await client.graphs.build({
+    const response = await client.graphs.buildCommunities({
       collectionId: collectionId,
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 30000));
+    await new Promise((resolve) => setTimeout(resolve, 15000));
 
     expect(response.results).toBeDefined();
-  });
+  }, 45000);
 
   test("Check that there are communities in the graph", async () => {
     const response = await client.graphs.listCommunities({

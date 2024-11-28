@@ -215,4 +215,49 @@ export class CollectionsClient {
       `collections/${options.id}/users/${options.userId}`,
     );
   }
+
+  /**
+   * Creates communities in the graph by analyzing entity relationships and similarities.
+   *
+   * Communities are created through the following process:
+   *  1. Analyzes entity relationships and metadata to build a similarity graph
+   *  2. Applies advanced community detection algorithms (e.g. Leiden) to identify densely connected groups
+   *  3. Creates hierarchical community structure with multiple granularity levels
+   *  4. Generates natural language summaries and statistical insights for each community
+   *
+   * The resulting communities can be used to:
+   *  - Understand high-level graph structure and organization
+   *  - Identify key entity groupings and their relationships
+   *  - Navigate and explore the graph at different levels of detail
+   *  - Generate insights about entity clusters and their characteristics
+   *
+   * The community detection process is configurable through settings like:
+   *  - Community detection algorithm parameters
+   *  - Summary generation prompt
+   * @param collectionId The collection ID corresponding to the graph
+   * @returns
+   */
+  @feature("collections.extract")
+  async extract(options: {
+    collectionId: string;
+    runType?: string;
+    settings?: Record<string, any>;
+    runWithOrchestration?: boolean;
+  }): Promise<WrappedBooleanResponse> {
+    const data = {
+      ...(options.settings && { settings: options.settings }),
+      ...(options.runType && { run_type: options.runType }),
+      ...(options.runWithOrchestration && {
+        run_with_orchestration: options.runWithOrchestration,
+      }),
+    };
+
+    return this.client.makeRequest(
+      "POST",
+      `collections/${options.collectionId}/extract`,
+      {
+        data,
+      },
+    );
+  }
 }

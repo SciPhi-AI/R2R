@@ -13,7 +13,6 @@ from core.base.api.models import (
     WrappedCollectionsResponse,
     WrappedDocumentsResponse,
     WrappedGenericMessageResponse,
-    WrappedKGCreationResponse,
     WrappedUsersResponse,
 )
 from core.providers import (
@@ -1065,7 +1064,7 @@ class CollectionsRouter(BaseRouterV3):
                 description="Whether to run the entities and relationships extraction process with orchestration.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGCreationResponse:  # type: ignore
+        ):
             """
             Extracts entities and relationships from a document.
                 The entities and relationships extraction process involves:
