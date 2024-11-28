@@ -1391,12 +1391,12 @@ class GraphRouter(BaseRouterV3):
                 )
                 if has_document:
                     logger.info(
-                        f"Document {document.id} is already in graph {collection_id}, skipping"
+                        f"Document {document.id} is already in graph {collection_id}, skipping."
                     )
                     continue
                 if len(entities[0]) == 0:
                     logger.warning(
-                        f"Document {document.id} has no entities, extraction may not have been called"
+                        f"Document {document.id} has no entities, extraction may not have been called, skipping."
                     )
                     continue
 

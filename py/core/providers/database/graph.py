@@ -158,6 +158,7 @@ class PostgresEntityHandler(EntityHandler):
         """
 
         for value in values:
+            print('inserting len(values) into graph = ', len(values))
             result = await self.connection_manager.fetchrow_query(QUERY, value)
             results.append(result["id"])
 
