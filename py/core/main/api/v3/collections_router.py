@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import R2RException, RunType, KGRunType
+from core.base import R2RException, RunType, KGRunType, KGCreationSettings
 from core.base.api.models import (
     GenericBooleanResponse,
     GenericMessageResponse,
@@ -15,6 +15,7 @@ from core.base.api.models import (
     WrappedDocumentsResponse,
     WrappedGenericMessageResponse,
     WrappedUsersResponse,
+    WrappedKGCreationResponse
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -1022,3 +1023,109 @@ class CollectionsRouter(BaseRouterV3):
                 user_id, id
             )
             return GenericBooleanResponse(success=True)  # type: ignore
+        
+
+        @self.router.post(
+            "/collections/{id}/extract",
+            summary="Extract entities and relationships",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.extract(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def extract(
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to extract entities and relationships from.",
+            ),
+            run_type: KGRunType = Query(
+                default=KGRunType.RUN,
+                description="Whether to return an estimate of the creation cost or to actually extract the document.",
+            ),
+            settings: Optional[KGCreationSettings] = Body(
+                default=None,
+                description="Settings for the entities and relationships extraction process.",
+            ),
+            run_with_orchestration: Optional[bool] = Query(
+                default=True,
+                description="Whether to run the entities and relationships extraction process with orchestration.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedKGCreationResponse:  # type: ignore
+            """
+            Extracts entities and relationships from a document.
+                The entities and relationships extraction process involves:
+                1. Parsing documents into semantic chunks
+                2. Extracting entities and relationships using LLMs
+            """
+
+            settings = settings.dict() if settings else None  # type: ignore
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            # If no run type is provided, default to estimate
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
+
+            # Apply runtime settings overrides
+            server_kg_creation_settings = (
+                self.providers.database.config.kg_creation_settings
+            )
+
+            if settings:
+                server_kg_creation_settings = update_settings_from_dict(
+                    server_settings=server_kg_creation_settings,
+                    settings_dict=settings,  # type: ignore
+                )
+
+            # If the run type is estimate, return an estimate of the creation cost
+            # if run_type is KGRunType.ESTIMATE:
+            #     return {  # type: ignore
+            #         "message": "Estimate retrieved successfully",
+            #         "task_id": None,
+            #         "id": id,
+            #         "estimate": await self.services[
+            #             "kg"
+            #         ].get_creation_estimate(
+            #             document_id=id,
+            #             kg_creation_settings=server_kg_creation_settings,
+            #         ),
+            #     }
+            # else:
+            # Otherwise, create the graph
+            if run_with_orchestration:
+                workflow_input = {
+                    "collection_id": str(id),
+                    "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
+                    "user": auth_user.json(),
+                }
+
+                return await self.orchestration_provider.run_workflow(  # type: ignore
+                    "extract-triples", {"request": workflow_input}, {}
+                )
+            else:
+                from core.main.orchestration import simple_kg_factory
+
+                logger.info("Running extract-triples without orchestration.")
+                simple_kg = simple_kg_factory(self.services["kg"])
+                await simple_kg["extract-triples"](workflow_input)  # type: ignore
+                return {  # type: ignore
+                    "message": "Graph created successfully.",
+                    "task_id": None,
+                }

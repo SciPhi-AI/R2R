@@ -499,14 +499,14 @@ class GraphRouter(BaseRouterV3):
             }
 
             #         return await self.orchestration_provider.run_workflow(  # type: ignore
-            #             "enrich-graph", {"request": workflow_input}, {}
+            #             "build-communities", {"request": workflow_input}, {}
             #         )
             #     else:
             from core.main.orchestration import simple_kg_factory
 
-            logger.info("Running enrich-graph without orchestration.")
+            logger.info("Running build-communities without orchestration.")
             simple_kg = simple_kg_factory(self.services["kg"])
-            await simple_kg["enrich-graph"](workflow_input)
+            await simple_kg["build-communities"](workflow_input)
             return {
                 "message": "Graph communities created successfully.",
                 "task_id": None,

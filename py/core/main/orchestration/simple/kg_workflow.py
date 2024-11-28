@@ -40,17 +40,42 @@ def simple_kg_factory(service: KgService):
                 )
         return input_data
 
-    async def create_graph(input_data):
+    async def extract_triples(input_data):
 
         input_data = get_input_data_dict(input_data)
 
         if input_data.get("document_id"):
             document_ids = [input_data.get("document_id")]
         else:
-            document_ids = await service.get_document_ids_for_create_graph(
-                collection_id=input_data.get("collection_id"),
-                **input_data["kg_creation_settings"],
-            )
+            documents = []
+            collection_id = input_data.get("collection_id")
+            batch_size = 100
+            offset = 0
+            while True:
+                # Fetch current batch
+                batch = (await service.providers.database.collections_handler.documents_in_collection(
+                    collection_id=collection_id,
+                    offset=offset,
+                    limit=batch_size
+                ))["results"]
+                
+                # If no documents returned, we've reached the end
+                if not batch:
+                    break
+                    
+                # Add current batch to results
+                documents.extend(batch)
+                
+                # Update offset for next batch
+                offset += batch_size
+                
+                # Optional: If batch is smaller than batch_size, we've reached the end
+                if len(batch) < batch_size:
+                    break
+
+            # documents = service.providers.database.collections_handler.documents_in_collection(input_data.get("collection_id"), offset=0, limit=1000)
+            print('extracting for documents = ', documents)
+            document_ids = [document.id for document in documents]
 
         logger.info(
             f"Creating graph for {len(document_ids)} documents with IDs: {document_ids}"
@@ -176,8 +201,8 @@ def simple_kg_factory(service: KgService):
         )
 
     return {
-        "create-graph": create_graph,
-        "enrich-graph": enrich_graph,
+        "extract-triples": extract_triples,
+        "build-communities": enrich_graph,
         "kg-community-summary": kg_community_summary,
         "entity-deduplication": entity_deduplication_workflow,
     }

@@ -1316,14 +1316,14 @@ class DocumentsRouter(BaseRouterV3):
                     }
 
                     return await self.orchestration_provider.run_workflow(  # type: ignore
-                        "create-graph", {"request": workflow_input}, {}
+                        "extract-triples", {"request": workflow_input}, {}
                     )
                 else:
                     from core.main.orchestration import simple_kg_factory
 
-                    logger.info("Running create-graph without orchestration.")
+                    logger.info("Running extract-triples without orchestration.")
                     simple_kg = simple_kg_factory(self.services["kg"])
-                    await simple_kg["create-graph"](workflow_input)  # type: ignore
+                    await simple_kg["extract-triples"](workflow_input)  # type: ignore
                     return {  # type: ignore
                         "message": "Graph created successfully.",
                         "task_id": None,
