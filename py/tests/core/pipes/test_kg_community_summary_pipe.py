@@ -3,14 +3,7 @@ import uuid
 
 import pytest
 
-from core.base import (
-    AsyncPipe,
-    Community,
-    Community,
-    Entity,
-    KGExtraction,
-    Relationship,
-)
+from core.base import AsyncPipe, Community, Entity, KGExtraction, Relationship
 from core.pipes.kg.community_summary import KGCommunitySummaryPipe
 from shared.abstractions.vector import VectorQuantizationType
 

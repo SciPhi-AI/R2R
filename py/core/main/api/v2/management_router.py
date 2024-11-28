@@ -14,7 +14,6 @@ from core.base import Message, R2RException
 from core.base.api.models import (
     GenericMessageResponse,
     WrappedAnalyticsResponse,
-    WrappedSettingsResponse,
     WrappedBooleanResponse,
     WrappedChunksResponse,
     WrappedCollectionResponse,
@@ -26,6 +25,7 @@ from core.base.api.models import (
     WrappedLogsResponse,
     WrappedPromptsResponse,
     WrappedServerStatsResponse,
+    WrappedSettingsResponse,
     WrappedUsersResponse,
 )
 from core.base.logger import AnalysisTypes, LogFilterCriteria

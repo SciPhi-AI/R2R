@@ -119,7 +119,9 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
-            logger.info(f"Running extract-triples on collection {collection_id}")
+            logger.info(
+                f"Running extract-triples on collection {collection_id}"
+            )
 
             # If no run type is provided, default to estimate
             if not run_type:
@@ -157,7 +159,9 @@ class KGRouter(BaseRouter):
                 else:
                     from core.main.orchestration import simple_kg_factory
 
-                    logger.info("Running extract-triples without orchestration.")
+                    logger.info(
+                        "Running extract-triples without orchestration."
+                    )
                     simple_kg = simple_kg_factory(self.service)
                     await simple_kg["extract-triples"](workflow_input)
                     return {
@@ -234,7 +238,9 @@ class KGRouter(BaseRouter):
                 else:
                     from core.main.orchestration import simple_kg_factory
 
-                    logger.info("Running build-communities without orchestration.")
+                    logger.info(
+                        "Running build-communities without orchestration."
+                    )
                     simple_kg = simple_kg_factory(self.service)
                     await simple_kg["build-communities"](workflow_input)
                     return {

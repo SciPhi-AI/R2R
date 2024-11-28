@@ -512,7 +512,6 @@ class GraphRouter(BaseRouterV3):
                 "task_id": None,
             }
 
-
         @self.router.post(
             "/graphs/{collection_id}/reset",
             summary="Reset a graph back to the initial state.",
@@ -981,7 +980,6 @@ class GraphRouter(BaseRouterV3):
                 collection_id, [relationship_id], "graph"
             )
             return {"success": True}
-
 
         @self.router.post(
             "/graphs/{collection_id}/communities",
@@ -1488,4 +1486,3 @@ class GraphRouter(BaseRouterV3):
             )
 
             return GenericBooleanResponse(success=success)
-

@@ -8,8 +8,8 @@ from core.base import (
     CompletionProvider,
     EmbeddingProvider,
 )
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.providers.database import PostgresDBProvider
+from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 

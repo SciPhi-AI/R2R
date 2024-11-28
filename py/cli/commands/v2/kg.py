@@ -3,9 +3,9 @@ import json
 import asyncclick as click
 from asyncclick import pass_context
 
-from r2r import R2RAsyncClient
 from cli.command_group import cli
 from cli.utils.timer import timer
+from r2r import R2RAsyncClient
 
 
 # TODO

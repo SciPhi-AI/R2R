@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import R2RException, RunType, KGRunType, KGCreationSettings
+from core.base import KGCreationSettings, KGRunType, R2RException, RunType
 from core.base.api.models import (
     GenericBooleanResponse,
     GenericMessageResponse,
@@ -14,8 +14,8 @@ from core.base.api.models import (
     WrappedCollectionsResponse,
     WrappedDocumentsResponse,
     WrappedGenericMessageResponse,
+    WrappedKGCreationResponse,
     WrappedUsersResponse,
-    WrappedKGCreationResponse
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -1023,7 +1023,6 @@ class CollectionsRouter(BaseRouterV3):
                 user_id, id
             )
             return GenericBooleanResponse(success=True)  # type: ignore
-        
 
         @self.router.post(
             "/collections/{id}/extract",

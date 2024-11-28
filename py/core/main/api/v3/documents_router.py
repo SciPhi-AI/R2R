@@ -562,7 +562,6 @@ class DocumentsRouter(BaseRouterV3):
                 False,
                 description="Specifies whether or not to include embeddings of each document summary.",
             ),
-
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedDocumentsResponse:
             """
@@ -1321,7 +1320,9 @@ class DocumentsRouter(BaseRouterV3):
                 else:
                     from core.main.orchestration import simple_kg_factory
 
-                    logger.info("Running extract-triples without orchestration.")
+                    logger.info(
+                        "Running extract-triples without orchestration."
+                    )
                     simple_kg = simple_kg_factory(self.services["kg"])
                     await simple_kg["extract-triples"](workflow_input)  # type: ignore
                     return {  # type: ignore
