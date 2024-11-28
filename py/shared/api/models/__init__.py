@@ -1,14 +1,14 @@
-from shared.api.models.base import (
-    PaginatedResultsWrapper,
-    ResultsWrapper,
-    GenericBooleanResponse,
-    GenericMessageResponse,
-    WrappedBooleanResponse,
-    WrappedGenericMessageResponse,
-)
 from shared.api.models.auth.responses import (
     TokenResponse,
     WrappedTokenResponse,
+)
+from shared.api.models.base import (
+    GenericBooleanResponse,
+    GenericMessageResponse,
+    PaginatedResultsWrapper,
+    ResultsWrapper,
+    WrappedBooleanResponse,
+    WrappedGenericMessageResponse,
 )
 from shared.api.models.ingestion.responses import (
     IngestionResponse,
@@ -16,15 +16,18 @@ from shared.api.models.ingestion.responses import (
     WrappedMetadataUpdateResponse,
     WrappedUpdateResponse,
 )
-from shared.api.models.kg.responses import (
-    KGEnrichmentResponse,
-    WrappedKGEnrichmentResponse,
-    # TODO: Need to review anything above this
+from shared.api.models.kg.responses import (  # TODO: Need to review anything above this
     GraphResponse,
+    KGCreationResponse,
+    KGEnrichmentResponse,
+    KGEntityDeduplicationResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
+    WrappedKGCreationResponse,
+    WrappedKGEnrichmentResponse,
+    WrappedKGEntityDeduplicationResponse,
 )
-from shared.api.models.management.responses import (
+from shared.api.models.management.responses import (  # Chunk Responses; Conversation Responses; Document Responses; Collection Responses; Prompt Responses; System Responses; User Responses
     AnalyticsResponse,
     ChunkResponse,
     CollectionResponse,
@@ -34,37 +37,30 @@ from shared.api.models.management.responses import (
     ServerStats,
     SettingsResponse,
     UserResponse,
-    # Chunk Responses
+    WrappedAnalyticsResponse,
     WrappedChunkResponse,
     WrappedChunksResponse,
-    # Conversation Responses
+    WrappedCollectionResponse,
+    WrappedCollectionsResponse,
     WrappedConversationMessagesResponse,
     WrappedConversationResponse,
     WrappedConversationsResponse,
-    # Document Responses
     WrappedDocumentResponse,
     WrappedDocumentsResponse,
-    # Collection Responses
-    WrappedCollectionResponse,
-    WrappedCollectionsResponse,
-    # Prompt Responses
+    WrappedLogsResponse,
     WrappedPromptResponse,
     WrappedPromptsResponse,
-    # System Responses
-    WrappedAnalyticsResponse,
+    WrappedServerStatsResponse,
     WrappedSettingsResponse,
-    # User Responses
     WrappedUserResponse,
     WrappedUsersResponse,
-    WrappedLogsResponse,
-    WrappedServerStatsResponse,
 )
 from shared.api.models.retrieval.responses import (
-    CombinedSearchResponse,
     AgentResponse,
+    CombinedSearchResponse,
     RAGResponse,
-    WrappedDocumentSearchResponse,
     WrappedAgentResponse,
+    WrappedDocumentSearchResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
     WrappedVectorSearchResponse,

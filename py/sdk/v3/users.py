@@ -1,8 +1,6 @@
 from typing import Optional
 from uuid import UUID
 
-from ..models import Token
-
 from shared.api.models.auth.responses import WrappedTokenResponse
 from shared.api.models.base import (
     WrappedBooleanResponse,
@@ -13,6 +11,8 @@ from shared.api.models.management.responses import (
     WrappedUserResponse,
     WrappedUsersResponse,
 )
+
+from ..models import Token
 
 
 class UsersSDK:

@@ -556,6 +556,10 @@ class DocumentsRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
+            include_summary_embeddings: int = Query(
+                False,
+                description="Specifies whether or not to include embeddings of each document summary.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedDocumentsResponse:
             """
@@ -583,6 +587,9 @@ class DocumentsRouter(BaseRouterV3):
                 offset=offset,
                 limit=limit,
             )
+            if not include_summary_embeddings:
+                for document in documents_overview_response["results"]:
+                    document.summary_embedding = None
 
             return (  # type: ignore
                 documents_overview_response["results"],
@@ -1306,14 +1313,16 @@ class DocumentsRouter(BaseRouterV3):
                     }
 
                     return await self.orchestration_provider.run_workflow(  # type: ignore
-                        "create-graph", {"request": workflow_input}, {}
+                        "extract-triples", {"request": workflow_input}, {}
                     )
                 else:
                     from core.main.orchestration import simple_kg_factory
 
-                    logger.info("Running create-graph without orchestration.")
+                    logger.info(
+                        "Running extract-triples without orchestration."
+                    )
                     simple_kg = simple_kg_factory(self.services["kg"])
-                    await simple_kg["create-graph"](workflow_input)  # type: ignore
+                    await simple_kg["extract-triples"](workflow_input)  # type: ignore
                     return {  # type: ignore
                         "message": "Graph created successfully.",
                         "task_id": None,

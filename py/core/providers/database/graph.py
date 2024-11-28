@@ -1840,7 +1840,7 @@ class PostgresGraphHandler(GraphHandler):
         )
 
         return {
-            "message": 'Ran Graph Creation Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG creation process, run `create-graph` with `--run` in the cli, or `run_type="run"` in the client.',
+            "message": 'Ran Graph Creation Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG creation process, run `extract-triples` with `--run` in the cli, or `run_type="run"` in the client.',
             "document_count": len(document_ids),
             "number_of_jobs_created": len(document_ids) + 1,
             "total_chunks": total_chunks,
@@ -1889,7 +1889,7 @@ class PostgresGraphHandler(GraphHandler):
 
             if not entity_count:
                 raise ValueError(
-                    "No entities found in the graph. Please run `create-graph` first."
+                    "No entities found in the graph. Please run `extract-triples` first."
                 )
 
             relationship_count = (
@@ -1909,7 +1909,7 @@ class PostgresGraphHandler(GraphHandler):
 
             if not entity_count:
                 raise ValueError(
-                    "No entities found in the graph. Please run `create-graph` first."
+                    "No entities found in the graph. Please run `extract-triples` first."
                 )
 
             relationship_count = (
@@ -1935,7 +1935,7 @@ class PostgresGraphHandler(GraphHandler):
         )
 
         return {
-            "message": 'Ran Graph Enrichment Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG enrichment process, run `enrich-graph` with `--run` in the cli, or `run_type="run"` in the client.',
+            "message": 'Ran Graph Enrichment Estimate (not the actual run). Note that these are estimated ranges, actual values may vary. To run the KG enrichment process, run `build-communities` with `--run` in the cli, or `run_type="run"` in the client.',
             "total_entities": entity_count,
             "total_relationships": relationship_count,
             "estimated_llm_calls": _get_str_estimation_output(
@@ -2008,7 +2008,7 @@ class PostgresGraphHandler(GraphHandler):
             }
         except UndefinedTableError:
             raise R2RException(
-                "Entity embedding table not found. Please run `create-graph` first.",
+                "Entity embedding table not found. Please run `extract-triples` first.",
                 404,
             )
         except Exception as e:

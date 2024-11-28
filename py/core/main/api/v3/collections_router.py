@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import R2RException, RunType, KGRunType
+from core.base import KGCreationSettings, KGRunType, R2RException, RunType
 from core.base.api.models import (
     GenericBooleanResponse,
     WrappedBooleanResponse,
@@ -13,6 +13,7 @@ from core.base.api.models import (
     WrappedCollectionsResponse,
     WrappedDocumentsResponse,
     WrappedGenericMessageResponse,
+    WrappedKGCreationResponse,
     WrappedUsersResponse,
 )
 from core.providers import (
@@ -1023,74 +1024,106 @@ class CollectionsRouter(BaseRouterV3):
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
-            "/collections/{id}/cluster",
+            "/collections/{id}/extract",
+            summary="Extract entities and relationships",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.documents.extract(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """
+                        ),
+                    },
+                ],
+            },
         )
         @self.base_endpoint
-        async def enrich_graph(
+        async def extract(
             id: UUID = Path(
-                ..., description="The unique identifier of the collection"
+                ...,
+                description="The ID of the document to extract entities and relationships from.",
             ),
-            run_type: Optional[KGRunType] = Body(
-                default=KGRunType.ESTIMATE,
-                description="Run type for the graph enrichment process.",
+            run_type: KGRunType = Query(
+                default=KGRunType.RUN,
+                description="Whether to return an estimate of the creation cost or to actually extract the document.",
             ),
-            kg_enrichment_settings: Optional[dict] = Body(
+            settings: Optional[KGCreationSettings] = Body(
                 default=None,
-                description="Settings for the graph enrichment process.",
+                description="Settings for the entities and relationships extraction process.",
             ),
-            run_with_orchestration: Optional[bool] = Body(True),
+            run_with_orchestration: Optional[bool] = Query(
+                default=True,
+                description="Whether to run the entities and relationships extraction process with orchestration.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):  # -> WrappedKGEnrichmentResponse:
+        ) -> WrappedKGCreationResponse:  # type: ignore
             """
-            This endpoint enriches the graph with additional information.
-            It creates communities of nodes based on their similarity and adds embeddings to the graph.
-            This step is necessary for GraphRAG to work.
+            Extracts entities and relationships from a document.
+                The entities and relationships extraction process involves:
+                1. Parsing documents into semantic chunks
+                2. Extracting entities and relationships using LLMs
             """
+
+            settings = settings.dict() if settings else None  # type: ignore
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
-
-            # If no collection ID is provided, use the default user collection
-            id = generate_default_user_collection_id(auth_user.id)
 
             # If no run type is provided, default to estimate
             if not run_type:
                 run_type = KGRunType.ESTIMATE
 
             # Apply runtime settings overrides
-            server_kg_enrichment_settings = (
-                self.providers.database.config.kg_enrichment_settings
+            server_kg_creation_settings = (
+                self.providers.database.config.kg_creation_settings
             )
-            if kg_enrichment_settings:
-                server_kg_enrichment_settings = update_settings_from_dict(
-                    server_kg_enrichment_settings, kg_enrichment_settings
+
+            if settings:
+                server_kg_creation_settings = update_settings_from_dict(
+                    server_settings=server_kg_creation_settings,
+                    settings_dict=settings,  # type: ignore
                 )
 
-            # If the run type is estimate, return an estimate of the enrichment cost
+            # If the run type is estimate, return an estimate of the creation cost
             # if run_type is KGRunType.ESTIMATE:
-            #     return await self.services["kg"].get_enrichment_estimate(
-            #         collection_id=id,
-            #         kg_enrichment_settings=server_kg_enrichment_settings,
-            #     )
-
-            # Otherwise, run the enrichment workflow
+            #     return {  # type: ignore
+            #         "message": "Estimate retrieved successfully",
+            #         "task_id": None,
+            #         "id": id,
+            #         "estimate": await self.services[
+            #             "kg"
+            #         ].get_creation_estimate(
+            #             document_id=id,
+            #             kg_creation_settings=server_kg_creation_settings,
+            #         ),
+            #     }
             # else:
-            #     if run_with_orchestration:
-            workflow_input = {
-                "collection_id": str(id),
-                "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
-                "user": auth_user.json(),
-            }
+            # Otherwise, create the graph
+            if run_with_orchestration:
+                workflow_input = {
+                    "collection_id": str(id),
+                    "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
+                    "user": auth_user.json(),
+                }
 
-            #         return await self.orchestration_provider.run_workflow(  # type: ignore
-            #             "enrich-graph", {"request": workflow_input}, {}
-            #         )
-            #     else:
-            from core.main.orchestration import simple_kg_factory
+                return await self.orchestration_provider.run_workflow(  # type: ignore
+                    "extract-triples", {"request": workflow_input}, {}
+                )
+            else:
+                from core.main.orchestration import simple_kg_factory
 
-            logger.info("Running enrich-graph without orchestration.")
-            simple_kg = simple_kg_factory(self.services["kg"])
-            await simple_kg["enrich-graph"](workflow_input)
-            return {
-                "message": "Graph communities created successfully.",
-                "task_id": None,
-            }
+                logger.info("Running extract-triples without orchestration.")
+                simple_kg = simple_kg_factory(self.services["kg"])
+                await simple_kg["extract-triples"](workflow_input)  # type: ignore
+                return {  # type: ignore
+                    "message": "Graph created successfully.",
+                    "task_id": None,
+                }

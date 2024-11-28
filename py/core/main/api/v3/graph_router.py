@@ -286,6 +286,93 @@ class GraphRouter(BaseRouterV3):
             return list_graphs_response["results"][0]
 
         @self.router.post(
+            "/graphs/{collection_id}/communities/build",
+        )
+        @self.base_endpoint
+        async def build_communities(
+            collection_id: UUID = Path(
+                ..., description="The unique identifier of the collection"
+            ),
+            run_type: Optional[KGRunType] = Body(
+                default=KGRunType.ESTIMATE,
+                description="Run type for the graph enrichment process.",
+            ),
+            kg_enrichment_settings: Optional[dict] = Body(
+                default=None,
+                description="Settings for the graph enrichment process.",
+            ),
+            run_with_orchestration: Optional[bool] = Body(True),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):  # -> WrappedKGEnrichmentResponse:
+            """Creates communities in the graph by analyzing entity relationships and similarities.
+
+            Communities are created through the following process:
+            1. Analyzes entity relationships and metadata to build a similarity graph
+            2. Applies advanced community detection algorithms (e.g. Leiden) to identify densely connected groups
+            3. Creates hierarchical community structure with multiple granularity levels
+            4. Generates natural language summaries and statistical insights for each community
+
+            The resulting communities can be used to:
+            - Understand high-level graph structure and organization
+            - Identify key entity groupings and their relationships
+            - Navigate and explore the graph at different levels of detail
+            - Generate insights about entity clusters and their characteristics
+
+            The community detection process is configurable through settings like:
+                - Community detection algorithm parameters
+                - Summary generation prompt
+            """
+            print("collection_id = ", collection_id)
+            if not auth_user.is_superuser:
+                logger.warning("Implement permission checks here.")
+
+            # If no collection ID is provided, use the default user collection
+            # id = generate_default_user_collection_id(auth_user.id)
+
+            # If no run type is provided, default to estimate
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
+
+            # Apply runtime settings overrides
+            server_kg_enrichment_settings = (
+                self.providers.database.config.kg_enrichment_settings
+            )
+            if kg_enrichment_settings:
+                server_kg_enrichment_settings = update_settings_from_dict(
+                    server_kg_enrichment_settings, kg_enrichment_settings
+                )
+
+            # If the run type is estimate, return an estimate of the enrichment cost
+            # if run_type is KGRunType.ESTIMATE:
+            #     return await self.services["kg"].get_enrichment_estimate(
+            #         collection_id=id,
+            #         kg_enrichment_settings=server_kg_enrichment_settings,
+            #     )
+
+            # Otherwise, run the enrichment workflow
+            # else:
+            #     if run_with_orchestration:
+            workflow_input = {
+                "collection_id": str(collection_id),
+                "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
+                "user": auth_user.json(),
+            }
+
+            #         return await self.orchestration_provider.run_workflow(  # type: ignore
+            #             "build-communities", {"request": workflow_input}, {}
+            #         )
+            #     else:
+            from core.main.orchestration import simple_kg_factory
+
+            logger.info("Running build-communities without orchestration.")
+            simple_kg = simple_kg_factory(self.services["kg"])
+            await simple_kg["build-communities"](workflow_input)
+            return {
+                "message": "Graph communities created successfully.",
+                "task_id": None,
+            }
+
+        @self.router.post(
             "/graphs/{collection_id}/reset",
             summary="Reset a graph back to the initial state.",
             openapi_extra={
@@ -1048,83 +1135,6 @@ class GraphRouter(BaseRouterV3):
                 collection_id, [relationship_id], "graph"
             )
             return GenericBooleanResponse(success=True)  # type: ignore
-
-        @self.router.post(
-            "/graphs/{collection_id}/communities/build",
-            summary="Builds the graph communities",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.communities.build(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
-                            const { r2rClient } = require("r2r-js");
-
-                            const client = new r2rClient("http://localhost:7272");
-
-                            function main() {
-                                const response = await client.graphs.communities.build({
-                                    collectionId: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                                });
-                            }
-
-                            main();
-                            """
-                        ),
-                    },
-                ],
-            },
-        )
-        @self.base_endpoint
-        async def create_communities(
-            collection_id: UUID = Path(...),
-            settings: Optional[dict] = Body(None),
-            run_type: Optional[KGRunType] = Query(
-                description="Run type for the graph creation process.",
-            ),
-            run_with_orchestration: bool = Query(True),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGEnrichmentResponse:
-            """
-            Creates communities in the graph by analyzing entity relationships and similarities.
-
-            Communities are created through the following process:
-            1. Analyzes entity relationships and metadata to build a similarity graph
-            2. Applies advanced community detection algorithms (e.g. Leiden) to identify densely connected groups
-            3. Creates hierarchical community structure with multiple granularity levels
-            4. Generates natural language summaries and statistical insights for each community
-
-            The resulting communities can be used to:
-            - Understand high-level graph structure and organization
-            - Identify key entity groupings and their relationships
-            - Navigate and explore the graph at different levels of detail
-            - Generate insights about entity clusters and their characteristics
-
-            The community detection process is configurable through settings like:
-            - Community detection algorithm parameters
-            - Summary generation prompt
-            """
-
-            return await self._create_communities(
-                graph_id=collection_id,
-                settings=settings,
-                run_type=run_type,
-                run_with_orchestration=run_with_orchestration,
-                auth_user=auth_user,
-            )
 
         @self.router.post(
             "/graphs/{collection_id}/communities",

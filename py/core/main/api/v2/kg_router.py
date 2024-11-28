@@ -55,20 +55,20 @@ class KGRouter(BaseRouter):
 
         workflow_messages = {}
         if self.orchestration_provider.config.provider == "hatchet":
-            workflow_messages["create-graph"] = (
+            workflow_messages["extract-triples"] = (
                 "Graph creation task queued successfully."
             )
-            workflow_messages["enrich-graph"] = (
+            workflow_messages["build-communities"] = (
                 "Graph enrichment task queued successfully."
             )
             workflow_messages["entity-deduplication"] = (
                 "KG Entity Deduplication task queued successfully."
             )
         else:
-            workflow_messages["create-graph"] = (
+            workflow_messages["extract-triples"] = (
                 "Document entities and relationships extracted successfully. To generate GraphRAG communities, run cluster on the collection this document belongs to."
             )
-            workflow_messages["enrich-graph"] = (
+            workflow_messages["build-communities"] = (
                 "Graph communities created successfully. You can view the communities at http://localhost:7272/v2/communities"
             )
             workflow_messages["entity-deduplication"] = (
@@ -117,7 +117,9 @@ class KGRouter(BaseRouter):
                     auth_user.id
                 )
 
-            logger.info(f"Running create-graph on collection {collection_id}")
+            logger.info(
+                f"Running extract-triples on collection {collection_id}"
+            )
 
             # If no run type is provided, default to estimate
             if not run_type:
@@ -150,14 +152,16 @@ class KGRouter(BaseRouter):
                     }
 
                     return await self.orchestration_provider.run_workflow(  # type: ignore
-                        "create-graph", {"request": workflow_input}, {}
+                        "extract-triples", {"request": workflow_input}, {}
                     )
                 else:
                     from core.main.orchestration import simple_kg_factory
 
-                    logger.info("Running create-graph without orchestration.")
+                    logger.info(
+                        "Running extract-triples without orchestration."
+                    )
                     simple_kg = simple_kg_factory(self.service)
-                    await simple_kg["create-graph"](workflow_input)
+                    await simple_kg["extract-triples"](workflow_input)
                     return {
                         "message": "Graph created successfully.",
                         "task_id": None,
@@ -227,14 +231,16 @@ class KGRouter(BaseRouter):
                     }
 
                     return await self.orchestration_provider.run_workflow(  # type: ignore
-                        "enrich-graph", {"request": workflow_input}, {}
+                        "build-communities", {"request": workflow_input}, {}
                     )
                 else:
                     from core.main.orchestration import simple_kg_factory
 
-                    logger.info("Running enrich-graph without orchestration.")
+                    logger.info(
+                        "Running build-communities without orchestration."
+                    )
                     simple_kg = simple_kg_factory(self.service)
-                    await simple_kg["enrich-graph"](workflow_input)
+                    await simple_kg["build-communities"](workflow_input)
                     return {
                         "message": "Graph communities created successfully.",
                         "task_id": None,

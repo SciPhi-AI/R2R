@@ -158,7 +158,7 @@ def hatchet_kg_factory(
                     f"Failed to update document status for {document_id}: {e}"
                 )
 
-    @orchestration_provider.workflow(name="create-graph", timeout="600m")
+    @orchestration_provider.workflow(name="extract-triples", timeout="600m")
     class CreateGraphWorkflow:
         def __init__(self, kg_service: KgService):
             self.kg_service = kg_service
@@ -373,7 +373,7 @@ def hatchet_kg_factory(
                 "result": f"successfully queued kg entity deduplication summary for collection {graph_id}"
             }
 
-    @orchestration_provider.workflow(name="enrich-graph", timeout="360m")
+    @orchestration_provider.workflow(name="build-communities", timeout="360m")
     class EnrichGraphWorkflow:
         def __init__(self, kg_service: KgService):
             self.kg_service = kg_service
@@ -539,8 +539,8 @@ def hatchet_kg_factory(
 
     return {
         "kg-extract": KGExtractDescribeEmbedWorkflow(service),
-        "create-graph": CreateGraphWorkflow(service),
-        "enrich-graph": EnrichGraphWorkflow(service),
+        "extract-triples": CreateGraphWorkflow(service),
+        "build-communities": EnrichGraphWorkflow(service),
         "kg-community-summary": KGCommunitySummaryWorkflow(service),
         "kg-entity-deduplication": EntityDeduplicationWorkflow(service),
         "kg-entity-deduplication-summary": EntityDeduplicationSummaryWorkflow(

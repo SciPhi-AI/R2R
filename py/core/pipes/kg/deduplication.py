@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import HTTPException
 
 from core.base import AsyncState
-from core.base.abstractions import Entity, KGEntityDeduplicationType
+from core.base.abstractions import DataLevel, Entity, KGEntityDeduplicationType
 from core.base.pipes import AsyncPipe
 from core.providers import (
     LiteLLMCompletionProvider,
@@ -17,7 +17,6 @@ from core.providers import (
     PostgresDBProvider,
 )
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
-from core.base.abstractions import DataLevel
 
 logger = logging.getLogger()
 
