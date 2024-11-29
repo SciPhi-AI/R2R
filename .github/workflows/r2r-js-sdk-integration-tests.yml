@@ -30,7 +30,7 @@ jobs:
           version: 8.x
           run_install: false
       - name: Install JS SDK dependencies
-        working-directory: /home/runner/work/R2R/js/sdk
+        working-directory: ./js/sdk
         run: pnpm install
       - name: Check if R2R server is running
         run: |
@@ -52,8 +52,31 @@ jobs:
       R2R_POSTGRES_USER: postgres
       R2R_PROJECT_NAME: r2r_default
     steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python and install dependencies
+        uses: ./.github/actions/setup-python-light
+        with:
+          os: ubuntu-latest
+      - name: Setup and start PostgreSQL
+        uses: ./.github/actions/setup-postgres-ext
+        with:
+          os: ubuntu-latest
+      - name: Start R2R Light server
+        uses: ./.github/actions/start-r2r-light
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "20.x"
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.x
+          run_install: false
+      - name: Install JS SDK dependencies
+        working-directory: ./js/sdk
+        run: pnpm install
       - name: Run r2rV2Client tests
-        working-directory: /home/runner/work/R2R/js/sdk
+        working-directory: ./js/sdk
         run: pnpm jest r2rV2Client.test.ts
 
   v2-integration-tests:
@@ -77,8 +100,31 @@ jobs:
       R2R_POSTGRES_USER: postgres
       R2R_PROJECT_NAME: r2r_default
     steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python and install dependencies
+        uses: ./.github/actions/setup-python-light
+        with:
+          os: ubuntu-latest
+      - name: Setup and start PostgreSQL
+        uses: ./.github/actions/setup-postgres-ext
+        with:
+          os: ubuntu-latest
+      - name: Start R2R Light server
+        uses: ./.github/actions/start-r2r-light
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "20.x"
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.x
+          run_install: false
+      - name: Install JS SDK dependencies
+        working-directory: ./js/sdk
+        run: pnpm install
       - name: Run integration tests
-        working-directory: /home/runner/work/R2R/js/sdk
+        working-directory: ./js/sdk
         run: pnpm jest ${{ matrix.test-group }}
 
   v3-integration-tests:
@@ -111,6 +157,29 @@ jobs:
       R2R_POSTGRES_USER: postgres
       R2R_PROJECT_NAME: r2r_default
     steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python and install dependencies
+        uses: ./.github/actions/setup-python-light
+        with:
+          os: ubuntu-latest
+      - name: Setup and start PostgreSQL
+        uses: ./.github/actions/setup-postgres-ext
+        with:
+          os: ubuntu-latest
+      - name: Start R2R Light server
+        uses: ./.github/actions/start-r2r-light
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "20.x"
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.x
+          run_install: false
+      - name: Install JS SDK dependencies
+        working-directory: ./js/sdk
+        run: pnpm install
       - name: Run remaining tests
-        working-directory: /home/runner/work/R2R/js/sdk
+        working-directory: ./js/sdk
         run: pnpm jest ${{ matrix.test-group }}
