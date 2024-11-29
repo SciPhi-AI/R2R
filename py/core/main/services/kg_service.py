@@ -1109,15 +1109,19 @@ class KgService(Service):
                 "relation_types": "\n".join(relation_types),
             },
         )
+        print('starting a job....')
 
         for attempt in range(retries):
             try:
+                print('getting a response....')
+
                 response = await self.providers.llm.aget_completion(
                     messages,
                     generation_config=generation_config,
                 )
 
                 kg_extraction = response.choices[0].message.content
+                print('kg_extraction = ', kg_extraction)
 
                 if not kg_extraction:
                     raise R2RException(
@@ -1146,6 +1150,7 @@ class KgService(Service):
                     relationships = re.findall(
                         relationship_pattern, response_str
                     )
+                    print('found len(relationships) = ', len(relationships))
 
                     entities_arr = []
                     for entity in entities:
@@ -1168,6 +1173,7 @@ class KgService(Service):
                                 attributes={},
                             )
                         )
+                    print('found len(entities) = ', len(entities))
 
                     relations_arr = []
                     for relationship in relationships:
@@ -1215,13 +1221,13 @@ class KgService(Service):
                 if attempt < retries - 1:
                     await asyncio.sleep(delay)
                 else:
-                    logger.error(
+                    print(
                         f"Failed after retries with for chunk {chunks[0].id} of document {chunks[0].document_id}: {e}"
                     )
                     # raise e # you should raise an error.
         # add metadata to entities and relationships
 
-        logger.info(
+        print(
             f"KGExtractionPipe: Completed task number {task_id} of {total_tasks} for document {chunks[0].document_id}",
         )
 
@@ -1240,11 +1246,15 @@ class KgService(Service):
 
         total_entities, total_relationships = 0, 0
 
+        print('received len(kg_extractions) = ', len(kg_extractions))
         for extraction in kg_extractions:
-            total_entities, total_relationships = (
-                total_entities + len(extraction.entities),
-                total_relationships + len(extraction.relationships),
-            )
+            # print("extraction = ", extraction)
+
+            # total_entities, total_relationships = (
+            #     total_entities + len(extraction.entities),
+            #     total_relationships + len(extraction.relationships),
+            # )
+            print('storing len(extraction.entities) = ', len(extraction.entities))
 
             for entity in extraction.entities:
                 await self.providers.database.graph_handler.entities.create(
@@ -1273,5 +1283,3 @@ class KgService(Service):
                         metadata=relationship.metadata,
                         store_type="document",  # type: ignore
                     )
-
-            return (total_entities, total_relationships)
