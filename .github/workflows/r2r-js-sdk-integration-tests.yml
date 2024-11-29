@@ -83,6 +83,7 @@ jobs:
     needs: v2-unit-test
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         test-group:
           - r2rV2ClientIntegrationSuperUser.test.ts
@@ -131,6 +132,7 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         test-group:
           - ChunksIntegrationSuperUser.test.ts
