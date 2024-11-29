@@ -1158,7 +1158,7 @@ class GraphRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def create_communities(
+        async def create_community(
             collection_id: UUID = Path(
                 ...,
                 description="The collection ID corresponding to the graph to create the community in.",
@@ -1167,12 +1167,6 @@ class GraphRouter(BaseRouterV3):
             summary: str = Body(..., description="A summary of the community"),
             findings: Optional[list[str]] = Body(
                 default=[], description="Findings about the community"
-            ),
-            level: Optional[int] = Body(
-                default=0,
-                ge=0,
-                le=100,
-                description="The level of the community",
             ),
             rating: Optional[float] = Body(
                 default=5, ge=1, le=10, description="Rating between 1 and 10"
@@ -1184,13 +1178,14 @@ class GraphRouter(BaseRouterV3):
                 default=None, description="Attributes for the community"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedCommunityResponse:
             """
             Creates a new community in the graph.
 
             While communities are typically built automatically via the /graphs/{id}/communities/build endpoint,
-            this endpoint allows you to manually create your own communities. This can be useful when you want to:
+            this endpoint allows you to manually create your own communities.
 
+            This can be useful when you want to:
             - Define custom groupings of entities based on domain knowledge
             - Add communities that weren't detected by the automatic process
             - Create hierarchical organization structures
@@ -1199,16 +1194,22 @@ class GraphRouter(BaseRouterV3):
             The created communities will be integrated with any existing automatically detected communities
             in the graph's community structure.
             """
-            return await self.services["kg"].create_community_v3(
-                graph_id=collection_id,
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
+
+            return await self.services["kg"].create_community(
+                parent_id=collection_id,
                 name=name,
                 summary=summary,
                 findings=findings,
                 rating=rating,
                 rating_explanation=rating_explanation,
-                level=level,
-                attributes=attributes,
-                auth_user=auth_user,
             )
 
         @self.router.get(
@@ -1486,7 +1487,6 @@ class GraphRouter(BaseRouterV3):
             findings: Optional[list[str]] = Body(None),
             rating: Optional[float] = Body(None),
             rating_explanation: Optional[str] = Body(None),
-            level: Optional[int] = Body(None),
             attributes: Optional[dict] = Body(None),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedCommunityResponse:
@@ -1506,7 +1506,6 @@ class GraphRouter(BaseRouterV3):
                 findings=findings,
                 rating=rating,
                 rating_explanation=rating_explanation,
-                level=level,
                 attributes=attributes,
                 auth_user=auth_user,
             )

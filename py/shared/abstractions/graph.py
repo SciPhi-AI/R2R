@@ -117,6 +117,12 @@ class Community(R2RSerializable):
     rating_explanation: str | None = None
     description_embedding: list[float] | None = None
     attributes: dict[str, Any] | None = None
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow,
+    )
+    updated_at: datetime = Field(
+        default_factory=datetime.utcnow,
+    )
 
     def __init__(self, **kwargs):
         if isinstance(kwargs.get("attributes", None), str):

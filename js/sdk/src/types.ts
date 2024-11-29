@@ -47,9 +47,19 @@ export interface CollectionResponse {
   document_count: number;
 }
 
-//TODO: Sync this with the finished API response model
 // Community types
-export interface CommunityResponse {}
+export interface CommunityResponse {
+  id: string;
+  name: string;
+  summary: string;
+  findings: string[];
+  communityId?: string;
+  graphId?: string;
+  collectionId?: string;
+  rating?: number;
+  ratingExplanation?: string;
+  descriptionEmbedding?: string;
+}
 
 // Conversation types
 export interface ConversationResponse {

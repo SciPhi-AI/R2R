@@ -648,7 +648,7 @@ class RelationshipHandler(Handler):
 
 class CommunityHandler(Handler):
     @abstractmethod
-    async def create(self, *args: Any, **kwargs: Any) -> None:
+    async def create(self, *args: Any, **kwargs: Any) -> Community:
         """Create communities in storage."""
         pass
 
@@ -658,7 +658,7 @@ class CommunityHandler(Handler):
         pass
 
     @abstractmethod
-    async def update(self, *args: Any, **kwargs: Any) -> None:
+    async def update(self, *args: Any, **kwargs: Any) -> Community:
         """Update communities in storage."""
         pass
 

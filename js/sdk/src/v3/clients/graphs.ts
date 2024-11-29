@@ -358,7 +358,59 @@ export class GraphsClient {
     );
   }
 
-  // TODO: Create community
+  /**
+   * Creates a new community in the graph.
+   *
+   * While communities are typically built automatically via the /graphs/{id}/communities/build endpoint,
+   * this endpoint allows you to manually create your own communities.
+   *
+   * This can be useful when you want to:
+   *  - Define custom groupings of entities based on domain knowledge
+   *  - Add communities that weren't detected by the automatic process
+   *  - Create hierarchical organization structures
+   *  - Tag groups of entities with specific metadata
+   *
+   * The created communities will be integrated with any existing automatically detected communities
+   * in the graph's community structure.
+   *
+   * @param collectionId The collection ID corresponding to the graph
+   * @param name Name of the community
+   * @param summary Summary of the community
+   * @param findings Findings or insights about the community
+   * @param rating Rating of the community
+   * @param ratingExplanation Explanation of the community rating
+   * @param attributes Additional attributes to associate with the community
+   * @returns WrappedCommunityResponse
+   */
+  @feature("graphs.createCommunity")
+  async createCommunity(options: {
+    collectionId: string;
+    name: string;
+    summary: string;
+    findings?: string[];
+    rating?: number;
+    ratingExplanation?: string;
+    attributes?: Record<string, any>;
+  }): Promise<WrappedCommunityResponse> {
+    const data = {
+      name: options.name,
+      ...(options.summary && { summary: options.summary }),
+      ...(options.findings && { findings: options.findings }),
+      ...(options.rating && { rating: options.rating }),
+      ...(options.ratingExplanation && {
+        rating_explanation: options.ratingExplanation,
+      }),
+      ...(options.attributes && { attributes: options.attributes }),
+    };
+
+    return this.client.makeRequest(
+      "POST",
+      `graphs/${options.collectionId}/communities`,
+      {
+        data,
+      },
+    );
+  }
 
   /**
    * List all communities in a graph.
@@ -420,7 +472,6 @@ export class GraphsClient {
     findings?: string[];
     rating?: number;
     ratingExplanation?: string;
-    level?: number;
     attributes?: Record<string, any>;
   }): Promise<WrappedCommunityResponse> {
     const data = {
@@ -431,7 +482,6 @@ export class GraphsClient {
       ...(options.ratingExplanation && {
         rating_explanation: options.ratingExplanation,
       }),
-      ...(options.level && { level: options.level }),
       ...(options.attributes && { attributes: options.attributes }),
     };
     return this.client.makeRequest(

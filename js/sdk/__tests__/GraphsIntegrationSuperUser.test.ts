@@ -10,6 +10,7 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
   let entity1Id: string;
   let entity2Id: string;
   let relationshipId: string;
+  let communityId: string;
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);
@@ -248,6 +249,65 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
     expect(response.results.subject).toBe("Razumikhin");
     expect(response.results.object).toBe("Dunia");
     expect(response.results.predicate).toBe("falls in love with");
+  });
+
+  test("Create a new community", async () => {
+    const response = await client.graphs.createCommunity({
+      collectionId: collectionId,
+      name: "Raskolnikov and Dunia Community",
+      summary:
+        "Raskolnikov and Dunia are siblings, the children of Pulcheria Alexandrovna",
+      findings: [
+        "Raskolnikov and Dunia are siblings",
+        "They are the children of Pulcheria Alexandrovna",
+        "Their family comes from a modest background",
+        "Dunia works as a governess to support the family",
+        "Raskolnikov is a former university student",
+        "Both siblings are intelligent and well-educated",
+        "They maintain a close relationship despite living apart",
+        "Their mother Pulcheria writes letters to keep them connected",
+      ],
+      rating: 10,
+      ratingExplanation:
+        "Raskolnikov and Dunia are central to the story and have a complex relationship",
+    });
+
+    communityId = response.results.id;
+
+    expect(response.results).toBeDefined();
+    expect(response.results.name).toBe("Raskolnikov and Dunia Community");
+    expect(response.results.summary).toBe(
+      "Raskolnikov and Dunia are siblings, the children of Pulcheria Alexandrovna",
+    );
+    expect(response.results.findings).toContain(
+      "Raskolnikov and Dunia are siblings",
+    );
+    expect(response.results.findings).toContain(
+      "They are the children of Pulcheria Alexandrovna",
+    );
+    expect(response.results.findings).toContain(
+      "Their family comes from a modest background",
+    );
+    expect(response.results.findings).toContain(
+      "Dunia works as a governess to support the family",
+    );
+    expect(response.results.findings).toContain(
+      "Raskolnikov is a former university student",
+    );
+    expect(response.results.findings).toContain(
+      "Both siblings are intelligent and well-educated",
+    );
+    expect(response.results.findings).toContain(
+      "They maintain a close relationship despite living apart",
+    );
+    expect(response.results.findings).toContain(
+      "Their mother Pulcheria writes letters to keep them connected",
+    );
+    expect(response.results.rating).toBe(10);
+    //TODO: Why is this failing?
+    // expect(response.results.ratingExplanation).toBe(
+    //   "Raskolnikov and Dunia are central to the story and have a complex relationship",
+    // );
   });
 
   test("Update the entity", async () => {

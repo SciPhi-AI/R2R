@@ -53,28 +53,30 @@ def simple_kg_factory(service: KgService):
             offset = 0
             while True:
                 # Fetch current batch
-                batch = (await service.providers.database.collections_handler.documents_in_collection(
-                    collection_id=collection_id,
-                    offset=offset,
-                    limit=batch_size
-                ))["results"]
-                
+                batch = (
+                    await service.providers.database.collections_handler.documents_in_collection(
+                        collection_id=collection_id,
+                        offset=offset,
+                        limit=batch_size,
+                    )
+                )["results"]
+
                 # If no documents returned, we've reached the end
                 if not batch:
                     break
-                    
+
                 # Add current batch to results
                 documents.extend(batch)
-                
+
                 # Update offset for next batch
                 offset += batch_size
-                
+
                 # Optional: If batch is smaller than batch_size, we've reached the end
                 if len(batch) < batch_size:
                     break
 
             # documents = service.providers.database.collections_handler.documents_in_collection(input_data.get("collection_id"), offset=0, limit=1000)
-            print('extracting for documents = ', documents)
+            print("extracting for documents = ", documents)
             document_ids = [document.id for document in documents]
 
         logger.info(

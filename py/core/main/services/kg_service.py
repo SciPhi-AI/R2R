@@ -384,38 +384,32 @@ class KgService(Service):
 
     ################### COMMUNITIES ###################
 
-    @telemetry_event("create_community_v3")
-    async def create_community_v3(
+    @telemetry_event("create_community")
+    async def create_community(
         self,
-        graph_id: UUID,
+        parent_id: UUID,
         name: str,
         summary: str,
-        findings: list[str],
+        findings: Optional[list[str]],
         rating: Optional[float],
         rating_explanation: Optional[str],
-        level: Optional[int],
-        attributes: Optional[dict],
-        auth_user: Any,
-        **kwargs,
-    ):
-        embedding = str(
+    ) -> Community:
+        description_embedding = str(
             await self.providers.embedding.async_get_embedding(summary)
         )
         return await self.providers.database.graph_handler.communities.create(
-            graph_id=graph_id,
+            parent_id=parent_id,
+            store_type="graph",  # type: ignore
             name=name,
             summary=summary,
-            embedding=embedding,
+            description_embedding=description_embedding,
             findings=findings,
             rating=rating,
             rating_explanation=rating_explanation,
-            level=level,
-            attributes=attributes,
-            auth_user=auth_user,
         )
 
-    @telemetry_event("update_community_v3")
-    async def update_community_v3(
+    @telemetry_event("update_community")
+    async def update_community(
         self,
         id: UUID,
         community_id: UUID,
@@ -424,10 +418,6 @@ class KgService(Service):
         findings: Optional[list[str]],
         rating: Optional[float],
         rating_explanation: Optional[str],
-        level: Optional[int],
-        attributes: Optional[dict],
-        auth_user: Any,
-        **kwargs,
     ):
         if summary is not None:
             embedding = str(
@@ -445,9 +435,6 @@ class KgService(Service):
             findings=findings,
             rating=rating,
             rating_explanation=rating_explanation,
-            level=level,
-            attributes=attributes,
-            auth_user=auth_user,
         )
 
     @telemetry_event("delete_community_v3")
@@ -1109,11 +1096,11 @@ class KgService(Service):
                 "relation_types": "\n".join(relation_types),
             },
         )
-        print('starting a job....')
+        print("starting a job....")
 
         for attempt in range(retries):
             try:
-                print('getting a response....')
+                print("getting a response....")
 
                 response = await self.providers.llm.aget_completion(
                     messages,
@@ -1121,7 +1108,7 @@ class KgService(Service):
                 )
 
                 kg_extraction = response.choices[0].message.content
-                print('kg_extraction = ', kg_extraction)
+                print("kg_extraction = ", kg_extraction)
 
                 if not kg_extraction:
                     raise R2RException(
@@ -1150,7 +1137,7 @@ class KgService(Service):
                     relationships = re.findall(
                         relationship_pattern, response_str
                     )
-                    print('found len(relationships) = ', len(relationships))
+                    print("found len(relationships) = ", len(relationships))
 
                     entities_arr = []
                     for entity in entities:
@@ -1173,7 +1160,7 @@ class KgService(Service):
                                 attributes={},
                             )
                         )
-                    print('found len(entities) = ', len(entities))
+                    print("found len(entities) = ", len(entities))
 
                     relations_arr = []
                     for relationship in relationships:
@@ -1246,7 +1233,7 @@ class KgService(Service):
 
         total_entities, total_relationships = 0, 0
 
-        print('received len(kg_extractions) = ', len(kg_extractions))
+        print("received len(kg_extractions) = ", len(kg_extractions))
         for extraction in kg_extractions:
             # print("extraction = ", extraction)
 
@@ -1254,7 +1241,9 @@ class KgService(Service):
             #     total_entities + len(extraction.entities),
             #     total_relationships + len(extraction.relationships),
             # )
-            print('storing len(extraction.entities) = ', len(extraction.entities))
+            print(
+                "storing len(extraction.entities) = ", len(extraction.entities)
+            )
 
             for entity in extraction.entities:
                 await self.providers.database.graph_handler.entities.create(

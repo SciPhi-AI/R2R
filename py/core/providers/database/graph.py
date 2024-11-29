@@ -121,9 +121,9 @@ class PostgresEntityHandler(EntityHandler):
 
     async def create(
         self,
-        name: str,
         parent_id: UUID,
         store_type: StoreType,
+        name: str,
         category: Optional[str] = None,
         description: Optional[str] = None,
         description_embedding: Optional[list[float] | str] = None,
@@ -817,7 +817,7 @@ class PostgresCommunityHandler(CommunityHandler):
             node TEXT NOT NULL,
             cluster UUID NOT NULL,
             parent_cluster INT,
-            level INT NOT NULL,
+            level INT,
             is_final_cluster BOOLEAN NOT NULL,
             relationship_ids UUID[] NOT NULL,
             graph_id UUID,
@@ -836,12 +836,12 @@ class PostgresCommunityHandler(CommunityHandler):
             graph_id UUID,
             collection_id UUID,
             community_id UUID,
-            level INT NOT NULL,
+            level INT,
             name TEXT NOT NULL,
             summary TEXT NOT NULL,
-            findings TEXT[] NOT NULL,
-            rating FLOAT NOT NULL,
-            rating_explanation TEXT NOT NULL,
+            findings TEXT[],
+            rating FLOAT,
+            rating_explanation TEXT,
             description_embedding {vector_column_str} NOT NULL,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -853,47 +853,54 @@ class PostgresCommunityHandler(CommunityHandler):
 
     async def create(
         self,
-        graph_id: UUID,
+        parent_id: UUID,
+        store_type: StoreType,
         name: str,
         summary: str,
-        embedding: str,
-        findings: list[str],
+        findings: Optional[list[str]],
         rating: Optional[float],
         rating_explanation: Optional[str],
-        level: Optional[int],
-        metadata: Optional[dict],
-        auth_user: Any,
-    ) -> None:
+        description_embedding: Optional[list[float] | str] = None,
+    ) -> Community:
+        # Do we ever want to get communities from document store?
+        table_name = "graph_community"
 
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(graph_id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to create this community.",
-                    403,
-                )
+        if isinstance(description_embedding, list):
+            description_embedding = str(description_embedding)
 
-        QUERY = f"""
-            INSERT INTO {self._get_table_name("graph_community")}
-            (graph_id, name, summary, findings, rating, rating_explanation, description_embedding, level, metadata, created_by, updated_by)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, level, metadata, created_by, updated_by
+        query = f"""
+            INSERT INTO {self._get_table_name(table_name)}
+            (community_id, name, summary, findings, rating, rating_explanation, description_embedding)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id, community_id, name, summary, findings, rating, rating_explanation, created_at, updated_at
         """
 
         params = [
-            graph_id,
+            parent_id,
             name,
             summary,
             findings,
             rating,
             rating_explanation,
-            embedding,
-            level,
-            metadata,
-            auth_user.id,
-            auth_user.id,
+            description_embedding,
         ]
 
-        return await self.connection_manager.fetchrow_query(QUERY, params)
+        result = await self.connection_manager.fetchrow_query(
+            query=query,
+            params=params,
+        )
+
+        return Community(
+            id=result["id"],
+            community_id=result["community_id"],
+            name=result["name"],
+            summary=result["summary"],
+            findings=result["findings"],
+            rating=result["rating"],
+            rating_explanation=result["rating_explanation"],
+            created_at=result["created_at"],
+            updated_at=result["updated_at"],
+        )
 
     async def update(
         self,
@@ -905,20 +912,10 @@ class PostgresCommunityHandler(CommunityHandler):
         findings: Optional[list[str]],
         rating: Optional[float],
         rating_explanation: Optional[str],
-        level: Optional[int],
-        metadata: Optional[dict],
-        auth_user: Any,
-    ) -> None:
-
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to update this community.",
-                    403,
-                )
+    ) -> Community:
 
         update_fields = []
-        params = [community_id]  # type: ignore
+        params: list[Any] = [community_id]  # type: ignore
         if name is not None:
             update_fields.append(f"name = ${len(params)+1}")
             params.append(name)
@@ -943,17 +940,6 @@ class PostgresCommunityHandler(CommunityHandler):
             update_fields.append(f"rating_explanation = ${len(params)+1}")
             params.append(rating_explanation)
 
-        if level is not None:
-            update_fields.append(f"level = ${len(params)+1}")
-            params.append(level)
-
-        if metadata is not None:
-            update_fields.append(f"metadata = ${len(params)+1}")
-            params.append(metadata)
-
-        update_fields.append(f"updated_by = ${len(params)+1}")
-        params.append(auth_user.id)
-
         update_fields.append(f"updated_at = CURRENT_TIMESTAMP")
 
         QUERY = f"""
@@ -963,15 +949,10 @@ class PostgresCommunityHandler(CommunityHandler):
         return await self.connection_manager.fetchrow_query(QUERY, params)
 
     async def delete(
-        self, graph_id: UUID, community_id: UUID, auth_user: Any
+        self,
+        graph_id: UUID,
+        community_id: UUID,
     ) -> None:
-
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(graph_id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to delete this community.",
-                    403,
-                )
 
         QUERY = f"""
             DELETE FROM {self._get_table_name("graph_community")} WHERE id = $1
@@ -2059,7 +2040,7 @@ class PostgresGraphHandler(GraphHandler):
             Tuple of (list of entities, total count)
         """
         conditions = ["parent_id = $1"]
-        params = [graph_id]
+        params: [Any] = [graph_id]
         param_index = 2
 
         if entity_ids:
