@@ -157,8 +157,6 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
       collectionId: collectionId,
     });
 
-    console.log("Communities: ", response);
-
     expect(response.results).toBeDefined();
     expect(response.total_entries).toBeGreaterThanOrEqual(1);
   });

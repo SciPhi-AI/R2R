@@ -1,23 +1,13 @@
 name: R2R JS SDK Integration Tests
+
 on:
   push:
     branches:
-      - '**'  # Trigger on all branches
+      - '**'
+
 jobs:
-  test:
+  setup:
     runs-on: ubuntu-latest
-    env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
-      AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
-      AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
-      TELEMETRY_ENABLED: 'false'
-      R2R_POSTGRES_HOST: localhost
-      R2R_POSTGRES_DBNAME: postgres
-      R2R_POSTGRES_PORT: '5432'
-      R2R_POSTGRES_PASSWORD: postgres
-      R2R_POSTGRES_USER: postgres
-      R2R_PROJECT_NAME: r2r_default
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python and install dependencies
@@ -45,6 +35,82 @@ jobs:
       - name: Check if R2R server is running
         run: |
           curl http://localhost:7272/v2/health || echo "Server not responding"
+
+  v2-unit-test:
+    needs: setup
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
+      AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
+      AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
+      TELEMETRY_ENABLED: 'false'
+      R2R_POSTGRES_HOST: localhost
+      R2R_POSTGRES_DBNAME: postgres
+      R2R_POSTGRES_PORT: '5432'
+      R2R_POSTGRES_PASSWORD: postgres
+      R2R_POSTGRES_USER: postgres
+      R2R_PROJECT_NAME: r2r_default
+    steps:
+      - name: Run r2rV2Client tests
+        working-directory: ./js/sdk
+        run: pnpm jest r2rV2Client.test.ts
+
+  v2-integration-tests:
+    needs: v2-unit-test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test-group:
+          - r2rV2ClientIntegrationSuperUser.test.ts
+          - r2rV2ClientIntegrationUser.test.ts
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
+      AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
+      AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
+      TELEMETRY_ENABLED: 'false'
+      R2R_POSTGRES_HOST: localhost
+      R2R_POSTGRES_DBNAME: postgres
+      R2R_POSTGRES_PORT: '5432'
+      R2R_POSTGRES_PASSWORD: postgres
+      R2R_POSTGRES_USER: postgres
+      R2R_PROJECT_NAME: r2r_default
+    steps:
       - name: Run integration tests
         working-directory: ./js/sdk
-        run: pnpm test
+        run: pnpm jest ${{ matrix.test-group }}
+
+  v3-integration-tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test-group:
+          - ChunksIntegrationSuperUser.test.ts
+          - CollectionsIntegrationSuperUser.test.ts
+          - ConversationsIntegrationSuperUser.test.ts
+          - DocumentsAndCollectionsIntegrationUser.test.ts
+          - DocumentsIntegrationSuperUser.test.ts
+          - GraphsIntegrationSuperUser.test.ts
+          - PromptsIntegrationSuperUser.test.ts
+          - RetrievalIntegrationSuperUser.test.ts
+          - SystemIntegrationSuperUser.test.ts
+          - SystemIntegrationUser.test.ts
+          - UsersIntegrationSuperUser.test.ts
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
+      AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
+      AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
+      TELEMETRY_ENABLED: 'false'
+      R2R_POSTGRES_HOST: localhost
+      R2R_POSTGRES_DBNAME: postgres
+      R2R_POSTGRES_PORT: '5432'
+      R2R_POSTGRES_PASSWORD: postgres
+      R2R_POSTGRES_USER: postgres
+      R2R_PROJECT_NAME: r2r_default
+    steps:
+      - name: Run remaining tests
+        working-directory: ./js/sdk
+        run: pnpm jest ${{ matrix.test-group }}

@@ -89,7 +89,7 @@ class CommunityInfo(R2RSerializable):
 
     node: str
     cluster: UUID
-    level: int
+    level: Optional[int]
     id: Optional[UUID | int] = None
     parent_cluster: int | None
     is_final_cluster: bool
@@ -104,10 +104,10 @@ class CommunityInfo(R2RSerializable):
 @dataclass
 class Community(R2RSerializable):
 
-    level: int
     name: str = ""
     summary: str = ""
 
+    level: Optional[int] = None
     findings: list[str] = []
     id: Optional[int | UUID] = None
     community_id: Optional[UUID] = None

@@ -2504,7 +2504,7 @@ class PostgresGraphHandler(GraphHandler):
 
     async def get_communities(
         self,
-        graph_id: UUID,
+        collection_id: UUID,
         offset: int,
         limit: int,
         community_ids: Optional[list[UUID]] = None,
@@ -2515,7 +2515,7 @@ class PostgresGraphHandler(GraphHandler):
         Get communities for a graph.
 
         Args:
-            graph_id: UUID of the graph
+            collection_id: UUID of the collection
             offset: Number of records to skip
             limit: Maximum number of records to return (-1 for no limit)
             community_ids: Optional list of community IDs to filter by
@@ -2525,8 +2525,8 @@ class PostgresGraphHandler(GraphHandler):
         Returns:
             Tuple of (list of communities, total count)
         """
-        conditions = ["graph_id = $1"]
-        params: list[Any] = [graph_id]
+        conditions = ["collection_id = $1"]
+        params: list[Any] = [collection_id]
         param_index = 2
 
         if community_ids:
@@ -2540,8 +2540,7 @@ class PostgresGraphHandler(GraphHandler):
             param_index += 1
 
         select_fields = """
-            id, graph_id, name, summary, findings, rating,
-            rating_explanation, level, metadata, created_at, updated_at
+            id, collection_id, name, summary, findings, rating, rating_explanation
         """
         if include_embeddings:
             select_fields += ", description_embedding"
@@ -2574,13 +2573,6 @@ class PostgresGraphHandler(GraphHandler):
         communities = []
         for row in rows:
             community_dict = dict(row)
-            if isinstance(community_dict["metadata"], str):
-                try:
-                    community_dict["metadata"] = json.loads(
-                        community_dict["metadata"]
-                    )
-                except json.JSONDecodeError:
-                    pass
             communities.append(Community(**community_dict))
 
         return communities, count

@@ -1277,7 +1277,7 @@ class GraphRouter(BaseRouterV3):
 
             communities, count = (
                 await self.providers.database.graph_handler.get_communities(
-                    graph_id=collection_id,
+                    collection_id=collection_id,
                     offset=offset,
                     limit=limit,
                 )
