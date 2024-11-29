@@ -30,7 +30,7 @@ jobs:
           version: 8.x
           run_install: false
       - name: Install JS SDK dependencies
-        working-directory: ./js/sdk
+        working-directory: /home/runner/work/R2R/js/sdk
         run: pnpm install
       - name: Check if R2R server is running
         run: |
@@ -53,7 +53,7 @@ jobs:
       R2R_PROJECT_NAME: r2r_default
     steps:
       - name: Run r2rV2Client tests
-        working-directory: ./js/sdk
+        working-directory: /home/runner/work/R2R/js/sdk
         run: pnpm jest r2rV2Client.test.ts
 
   v2-integration-tests:
@@ -78,7 +78,7 @@ jobs:
       R2R_PROJECT_NAME: r2r_default
     steps:
       - name: Run integration tests
-        working-directory: ./js/sdk
+        working-directory: /home/runner/work/R2R/js/sdk
         run: pnpm jest ${{ matrix.test-group }}
 
   v3-integration-tests:
@@ -112,5 +112,5 @@ jobs:
       R2R_PROJECT_NAME: r2r_default
     steps:
       - name: Run remaining tests
-        working-directory: ./js/sdk
+        working-directory: /home/runner/work/R2R/js/sdk
         run: pnpm jest ${{ matrix.test-group }}
