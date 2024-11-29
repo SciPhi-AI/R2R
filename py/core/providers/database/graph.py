@@ -885,22 +885,28 @@ class PostgresCommunityHandler(CommunityHandler):
             description_embedding,
         ]
 
-        result = await self.connection_manager.fetchrow_query(
-            query=query,
-            params=params,
-        )
+        try:
+            result = await self.connection_manager.fetchrow_query(
+                query=query,
+                params=params,
+            )
 
-        return Community(
-            id=result["id"],
-            community_id=result["community_id"],
-            name=result["name"],
-            summary=result["summary"],
-            findings=result["findings"],
-            rating=result["rating"],
-            rating_explanation=result["rating_explanation"],
-            created_at=result["created_at"],
-            updated_at=result["updated_at"],
-        )
+            return Community(
+                id=result["id"],
+                community_id=result["community_id"],
+                name=result["name"],
+                summary=result["summary"],
+                findings=result["findings"],
+                rating=result["rating"],
+                rating_explanation=result["rating_explanation"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while creating the community: {e}",
+            )
 
     async def update(
         self,
@@ -950,14 +956,25 @@ class PostgresCommunityHandler(CommunityHandler):
 
     async def delete(
         self,
-        graph_id: UUID,
+        parent_id: UUID,
         community_id: UUID,
     ) -> None:
+        table_name = "graph_community"
 
-        QUERY = f"""
-            DELETE FROM {self._get_table_name("graph_community")} WHERE id = $1
+        query = f"""
+            DELETE FROM {self._get_table_name(table_name)}
+            WHERE id = $1 AND graph_id = $2
         """
-        await self.connection_manager.execute_query(QUERY, [community_id])
+
+        params = [community_id, parent_id]
+
+        try:
+            await self.connection_manager.execute_query(query, params)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while deleting the community: {e}",
+            )
 
     async def get(
         self,

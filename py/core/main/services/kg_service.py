@@ -315,10 +315,8 @@ class KgService(Service):
     @telemetry_event("delete_relationship_v3")
     async def delete_relationship_v3(
         self,
-        level: DataLevel,
         id: UUID,
         relationship_id: UUID,
-        **kwargs,
     ):
         return (
             await self.providers.database.graph_handler.relationships.delete(
@@ -437,18 +435,15 @@ class KgService(Service):
             rating_explanation=rating_explanation,
         )
 
-    @telemetry_event("delete_community_v3")
-    async def delete_community_v3(
+    @telemetry_event("delete_community")
+    async def delete_community(
         self,
-        graph_id: UUID,
+        parent_id: UUID,
         community_id: UUID,
-        auth_user: Any,
-        **kwargs,
-    ):
-        return await self.providers.database.graph_handler.communities.delete(
-            graph_id=graph_id,
+    ) -> None:
+        await self.providers.database.graph_handler.communities.delete(
+            parent_id=parent_id,
             community_id=community_id,
-            auth_user=auth_user,
         )
 
     @telemetry_event("list_communities_v3")

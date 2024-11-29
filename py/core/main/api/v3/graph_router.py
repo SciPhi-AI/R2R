@@ -1150,7 +1150,37 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.communities.create(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", communities=[community1, community2])
+                            result = client.graphs.create_community(
+                                collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                name="My Community",
+                                summary="A summary of the community",
+                                findings=["Finding 1", "Finding 2"],
+                                rating=5,
+                                rating_explanation="This is a rating explanation",
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.graphs.createCommunity({
+                                    collectionId: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    name: "My Community",
+                                    summary: "A summary of the community",
+                                    findings: ["Finding 1", "Finding 2"],
+                                    rating: 5,
+                                    ratingExplanation: "This is a rating explanation",
+                                });
+                            }
+
+                            main();
                             """
                         ),
                     },
@@ -1414,14 +1444,18 @@ class GraphRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):
-            if not auth_user.is_superuser:
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
                 raise R2RException(
-                    "Only superusers can access this endpoint.", 403
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
                 )
-            await self.services["kg"].delete_community_v3(
-                graph_id=collection_id,
+
+            await self.services["kg"].delete_community(
+                parent_id=collection_id,
                 community_id=community_id,
-                auth_user=auth_user,
             )
             return GenericBooleanResponse(success=True)  # type: ignore
 

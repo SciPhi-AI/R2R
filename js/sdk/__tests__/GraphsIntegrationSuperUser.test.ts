@@ -386,6 +386,24 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
     expect(response.results.predicate).toBe("marries");
   });
 
+  test("Delete the community", async () => {
+    const response = await client.graphs.deleteCommunity({
+      collectionId: collectionId,
+      communityId: communityId,
+    });
+
+    expect(response.results).toBeDefined();
+  });
+
+  test("Check that the community was deleted", async () => {
+    const response = await client.graphs.listCommunities({
+      collectionId: collectionId,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.entries).toHaveLength(0);
+  });
+
   test("Reset the graph", async () => {
     const response = await client.graphs.reset({
       collectionId: collectionId,
