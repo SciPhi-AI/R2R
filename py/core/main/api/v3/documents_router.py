@@ -13,20 +13,19 @@ from pydantic import Json
 
 from core.base import R2RException, RunType, generate_document_id
 from core.base.abstractions import (
-    Entity,
     KGCreationSettings,
     KGRunType,
-    Relationship,
 )
 from core.base.api.models import (
     GenericBooleanResponse,
-    PaginatedResultsWrapper,
     WrappedBooleanResponse,
     WrappedChunksResponse,
     WrappedCollectionsResponse,
     WrappedDocumentResponse,
     WrappedDocumentsResponse,
+    WrappedEntitiesResponse,
     WrappedIngestionResponse,
+    WrappedRelationshipsResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -761,16 +760,16 @@ class DocumentsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document to retrieve chunks for.",
             ),
-            offset: Optional[int] = Query(
+            offset: int = Query(
                 0,
                 ge=0,
-                description="The offset of the first chunk to retrieve.",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
-            limit: Optional[int] = Query(
+            limit: int = Query(
                 100,
-                ge=0,
-                le=20_000,
-                description="The maximum number of chunks to retrieve, up to 20,000.",
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             include_vectors: Optional[bool] = Query(
                 False,
@@ -1263,7 +1262,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Whether to run the entities and relationships extraction process with orchestration.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> WrappedIngestionResponse:
             """
             Extracts entities and relationships from a document.
                 The entities and relationships extraction process involves:
@@ -1290,7 +1289,6 @@ class DocumentsRouter(BaseRouterV3):
                     settings_dict=settings,  # type: ignore
                 )
 
-            # If the run type is estimate, return an estimate of the creation cost
             if run_type is KGRunType.ESTIMATE:
                 return {  # type: ignore
                     "message": "Estimate retrieved successfully",
@@ -1303,30 +1301,27 @@ class DocumentsRouter(BaseRouterV3):
                         kg_creation_settings=server_kg_creation_settings,
                     ),
                 }
+
+            if run_with_orchestration:
+                workflow_input = {
+                    "document_id": str(id),
+                    "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
+                    "user": auth_user.json(),
+                }
+
+                return await self.orchestration_provider.run_workflow(
+                    "extract-triples", {"request": workflow_input}, {}
+                )
             else:
-                # Otherwise, create the graph
-                if run_with_orchestration:
-                    workflow_input = {
-                        "document_id": str(id),
-                        "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
-                        "user": auth_user.json(),
-                    }
+                from core.main.orchestration import simple_kg_factory
 
-                    return await self.orchestration_provider.run_workflow(  # type: ignore
-                        "extract-triples", {"request": workflow_input}, {}
-                    )
-                else:
-                    from core.main.orchestration import simple_kg_factory
-
-                    logger.info(
-                        "Running extract-triples without orchestration."
-                    )
-                    simple_kg = simple_kg_factory(self.services["kg"])
-                    await simple_kg["extract-triples"](workflow_input)  # type: ignore
-                    return {  # type: ignore
-                        "message": "Graph created successfully.",
-                        "task_id": None,
-                    }
+                logger.info("Running extract-triples without orchestration.")
+                simple_kg = simple_kg_factory(self.services["kg"])
+                await simple_kg["extract-triples"](workflow_input)
+                return {  # type: ignore
+                    "message": "Graph created successfully.",
+                    "task_id": None,
+                }
 
         @self.router.get(
             "/documents/{id}/entities",
@@ -1357,23 +1352,23 @@ class DocumentsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document to retrieve entities from.",
             ),
-            offset: Optional[int] = Query(
+            offset: int = Query(
                 0,
                 ge=0,
-                description="The offset of the first entity to retrieve.",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
-            limit: Optional[int] = Query(
+            limit: int = Query(
                 100,
-                ge=0,
-                le=20_000,
-                description="The maximum number of entities to retrieve, up to 20,000.",
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             include_embeddings: Optional[bool] = Query(
                 False,
                 description="Whether to include vector embeddings in the response.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[Entity]]:
+        ) -> WrappedEntitiesResponse:
             """
             Retrieves the entities that were extracted from a document. These represent
             important semantic elements like people, places, organizations, concepts, etc.
@@ -1402,7 +1397,7 @@ class DocumentsRouter(BaseRouterV3):
                 raise R2RException("Document not found.", 404)
 
             # Get all entities for this document from the document_entity table
-            entities, total_count = (
+            entities, count = (
                 await self.providers.database.graph_handler.entities.get(
                     parent_id=id,
                     store_type="document",
@@ -1412,7 +1407,7 @@ class DocumentsRouter(BaseRouterV3):
                 )
             )
 
-            return entities, {"total_entries": total_count}
+            return entities, {"total_entries": count}  # type: ignore
 
         @self.router.get(
             "/documents/{id}/relationships",
@@ -1482,16 +1477,16 @@ class DocumentsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document to retrieve relationships for.",
             ),
-            offset: Optional[int] = Query(
+            offset: int = Query(
                 0,
                 ge=0,
-                description="The offset of the first relationship to retrieve.",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
-            limit: Optional[int] = Query(
+            limit: int = Query(
                 100,
-                ge=0,
-                le=20_000,
-                description="The maximum number of relationships to retrieve, up to 20,000.",
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             entity_names: Optional[list[str]] = Query(
                 None,
@@ -1502,7 +1497,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Filter relationships by specific relationship types.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[Relationship]]:
+        ) -> WrappedRelationshipsResponse:
             """
             Retrieves the relationships between entities that were extracted from a document. These represent
             connections and interactions between entities found in the text.
@@ -1531,7 +1526,7 @@ class DocumentsRouter(BaseRouterV3):
                 raise R2RException("Document not found.", 404)
 
             # Get relationships for this document
-            relationships, total_count = (
+            relationships, count = (
                 await self.providers.database.graph_handler.relationships.get(
                     parent_id=id,
                     store_type="document",
@@ -1542,7 +1537,7 @@ class DocumentsRouter(BaseRouterV3):
                 )
             )
 
-            return relationships, {"total_entries": total_count}
+            return relationships, {"total_entries": count}  # type: ignore
 
     @staticmethod
     async def _process_file(file):
