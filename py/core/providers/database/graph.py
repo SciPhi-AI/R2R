@@ -2199,7 +2199,6 @@ class PostgresGraphHandler(GraphHandler):
 
         # Execute separate DELETE queries
         delete_queries = [
-            f"DELETE FROM {self._get_table_name('chunk_entity')} WHERE document_id = $1",
             f"DELETE FROM {self._get_table_name('relationship')} WHERE document_id = $1",
             f"DELETE FROM {self._get_table_name('entity')} WHERE document_id = $1",
         ]
@@ -2716,7 +2715,6 @@ class PostgresGraphHandler(GraphHandler):
         # TODO: make these queries more efficient. Pass the document_ids as params.
         if cascade:
             DELETE_QUERIES += [
-                f"DELETE FROM {self._get_table_name('chunk_entity')} WHERE document_id = ANY($1::uuid[]);",
                 f"DELETE FROM {self._get_table_name('relationship')} WHERE document_id = ANY($1::uuid[]);",
                 f"DELETE FROM {self._get_table_name('entity')} WHERE document_id = ANY($1::uuid[]);",
                 f"DELETE FROM {self._get_table_name('graph_entity')} WHERE collection_id = $1;",
@@ -2904,64 +2902,6 @@ class PostgresGraphHandler(GraphHandler):
                 )
 
         return entity_map
-
-    async def get_graph_status(self, collection_id: UUID) -> dict:
-        # check document_info table for the documents in the collection and return the status of each document
-        kg_extraction_statuses = await self.connection_manager.fetch_query(
-            f"SELECT document_id, extraction_status FROM {self._get_table_name('document_info')} WHERE collection_id = $1",
-            [collection_id],
-        )
-
-        document_ids = [
-            doc_id["document_id"] for doc_id in kg_extraction_statuses
-        ]
-
-        graph_cluster_statuses = await self.connection_manager.fetch_query(
-            f"SELECT enrichment_status FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} WHERE id = $1",
-            [collection_id],
-        )
-
-        # entity and relationship counts
-        chunk_entity_count = await self.connection_manager.fetch_query(
-            f"SELECT COUNT(*) FROM {self._get_table_name('chunk_entity')} WHERE document_id = ANY($1)",
-            [document_ids],
-        )
-
-        relationship_count = await self.connection_manager.fetch_query(
-            f"SELECT COUNT(*) FROM {self._get_table_name('relationship')} WHERE document_id = ANY($1)",
-            [document_ids],
-        )
-
-        entity_count = await self.connection_manager.fetch_query(
-            f"SELECT COUNT(*) FROM {self._get_table_name('entity')} WHERE document_id = ANY($1)",
-            [document_ids],
-        )
-
-        graph_entity_count = await self.connection_manager.fetch_query(
-            f"SELECT COUNT(*) FROM {self._get_table_name('graph_entity')} WHERE collection_id = $1",
-            [collection_id],
-        )
-
-        community_count = await self.connection_manager.fetch_query(
-            f"SELECT COUNT(*) FROM {self._get_table_name('community')} WHERE collection_id = $1",
-            [collection_id],
-        )
-
-        return {
-            "kg_extraction_statuses": kg_extraction_statuses,
-            "graph_cluster_status": graph_cluster_statuses[0][
-                "enrichment_status"
-            ],
-            "chunk_entity_count": chunk_entity_count[0]["count"],
-            "relationship_count": relationship_count[0]["count"],
-            "entity_count": entity_count[0]["count"],
-            "graph_entity_count": graph_entity_count[0]["count"],
-            "community_count": community_count[0]["count"],
-        }
-
-    ####################### ESTIMATION METHODS #######################
-
-    ####################### GRAPH SEARCH METHODS #######################
 
     def _build_filters(
         self, filters: dict, parameters: list[Union[str, int, bytes]]

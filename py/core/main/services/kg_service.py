@@ -566,14 +566,6 @@ class KgService(Service):
 
         return all_results
 
-    @telemetry_event("get_graph_status")
-    async def get_graph_status(
-        self,
-        collection_id: UUID,
-        **kwargs,
-    ):
-        raise NotImplementedError("Not implemented")
-
     @telemetry_event("kg_clustering")
     async def kg_clustering(
         self,
