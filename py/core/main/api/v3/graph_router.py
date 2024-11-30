@@ -601,13 +601,11 @@ class GraphRouter(BaseRouterV3):
                     "The currently authenticated user does not have access to the specified graph.",
                     403,
                 )
-            # return await self.services["kg"].get_entities(
-            #     id, offset, limit, auth_user
-            # )
-            entities, count = (
-                await self.providers.database.graph_handler.get_entities(
-                    collection_id, offset, limit
-                )
+
+            entities, count = await self.services["kg"].get_entities(
+                parent_id=collection_id,
+                offset=offset,
+                limit=limit,
             )
 
             return entities, {  # type: ignore
@@ -775,7 +773,11 @@ class GraphRouter(BaseRouterV3):
                 )
 
             result = await self.providers.database.graph_handler.entities.get(
-                collection_id, "graph", entity_ids=[entity_id]
+                parent_id=collection_id,
+                store_type="graph",
+                offset=0,
+                limit=1,
+                entity_ids=[entity_id],
             )
             if len(result) == 0 or len(result[0]) == 0:
                 raise R2RException("Entity not found", 404)
@@ -888,9 +890,11 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            await self.providers.database.graph_handler.entities.delete(
-                collection_id, [entity_id], "graph"
+            self.services["kg"].delete_entity(
+                parent_id=collection_id,
+                entity_id=entity_id,
             )
+
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.get(
@@ -963,13 +967,10 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            relationships, count = (
-                await self.providers.database.graph_handler.relationships.get(
-                    parent_id=collection_id,
-                    store_type="graph",
-                    offset=offset,
-                    limit=limit,
-                )
+            relationships, count = await self.services["kg"].get_relationships(
+                parent_id=collection_id,
+                offset=offset,
+                limit=limit,
             )
 
             return relationships, {  # type: ignore
@@ -1042,7 +1043,11 @@ class GraphRouter(BaseRouterV3):
 
             results = (
                 await self.providers.database.graph_handler.relationships.get(
-                    collection_id, "graph", relationship_ids=[relationship_id]
+                    parent_id=collection_id,
+                    store_type="graph",
+                    offset=0,
+                    limit=1,
+                    relationship_ids=[relationship_id],
                 )
             )
             if len(results) == 0 or len(results[0]) == 0:
@@ -1175,14 +1180,11 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            # return await self.services[
-            #     "kg"
-            # ].documents.graph_handler.relationships.remove_from_graph(
-            #     id, relationship_id, auth_user
-            # )
-            await self.providers.database.graph_handler.relationships.delete(
-                collection_id, [relationship_id], "graph"
+            await self.services["kg"].delete_relationship(
+                parent_id=collection_id,
+                relationship_id=relationship_id,
             )
+
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
@@ -1358,12 +1360,10 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            communities, count = (
-                await self.providers.database.graph_handler.get_communities(
-                    collection_id=collection_id,
-                    offset=offset,
-                    limit=limit,
-                )
+            communities, count = await self.services["kg"].get_communities(
+                parent_id=collection_id,
+                offset=offset,
+                limit=limit,
             )
 
             return communities, {  # type: ignore
@@ -1720,7 +1720,10 @@ class GraphRouter(BaseRouterV3):
                     )
                 entities = (
                     await self.providers.database.graph_handler.entities.get(
-                        document.id, store_type="document"
+                        parent_id=document.id,
+                        store_type="document",
+                        offset=0,
+                        limit=100,
                     )
                 )
                 has_document = (

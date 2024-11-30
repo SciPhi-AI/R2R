@@ -14,7 +14,6 @@ from fastapi import HTTPException
 from core.base.abstractions import (
     Community,
     CommunityInfo,
-    DataLevel,
     Entity,
     Graph,
     KGCreationSettings,
@@ -178,8 +177,8 @@ class PostgresEntityHandler(EntityHandler):
         self,
         parent_id: UUID,
         store_type: StoreType,
-        offset: int = 0,
-        limit: int = 100,
+        offset: int,
+        limit: int,
         entity_ids: Optional[list[UUID]] = None,
         entity_names: Optional[list[str]] = None,
         include_embeddings: bool = False,
@@ -268,7 +267,7 @@ class PostgresEntityHandler(EntityHandler):
         """Update an entity in the specified store."""
         table_name = self._get_entity_table_for_store(store_type)
         update_fields = []
-        params: list = []
+        params: list[Any] = []
         param_index = 1
 
         if isinstance(metadata, str):
@@ -340,7 +339,7 @@ class PostgresEntityHandler(EntityHandler):
         parent_id: UUID,
         entity_ids: Optional[list[UUID]] = None,
         store_type: StoreType = StoreType.GRAPH,
-    ) -> list[UUID]:
+    ) -> None:
         """
         Delete entities from the specified store.
         If entity_ids is not provided, deletes all entities for the given parent_id.
@@ -386,8 +385,6 @@ class PostgresEntityHandler(EntityHandler):
                     f"Some entities not found in {store_type} store or no permission to delete",
                     404,
                 )
-
-        return [row["id"] for row in results]
 
 
 class PostgresRelationshipHandler(RelationshipHandler):
@@ -538,8 +535,8 @@ class PostgresRelationshipHandler(RelationshipHandler):
         self,
         parent_id: UUID,
         store_type: StoreType,
-        offset: int = 0,
-        limit: int = 100,
+        offset: int,
+        limit: int,
         relationship_ids: Optional[list[UUID]] = None,
         entity_names: Optional[list[str]] = None,
         relationship_types: Optional[list[str]] = None,
@@ -747,7 +744,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
         parent_id: UUID,
         relationship_ids: Optional[list[UUID]] = None,
         store_type: StoreType = StoreType.GRAPH,
-    ) -> list[UUID]:
+    ) -> None:
         """
         Delete relationships from the specified store.
         If relationship_ids is not provided, deletes all relationships for the given parent_id.
@@ -790,8 +787,6 @@ class PostgresRelationshipHandler(RelationshipHandler):
                     f"Some relationships not found in {store_type} store or no permission to delete",
                     404,
                 )
-
-        return [row["id"] for row in results]
 
 
 class PostgresCommunityHandler(CommunityHandler):
@@ -2060,7 +2055,7 @@ class PostgresGraphHandler(GraphHandler):
 
     async def get_entities(
         self,
-        graph_id: UUID,
+        parent_id: UUID,
         offset: int,
         limit: int,
         entity_ids: Optional[list[UUID]] = None,
@@ -2073,7 +2068,7 @@ class PostgresGraphHandler(GraphHandler):
         Args:
             offset: Number of records to skip
             limit: Maximum number of records to return (-1 for no limit)
-            graph_id: UUID of the graph
+            parent_id: UUID of the collection
             entity_ids: Optional list of entity IDs to filter by
             entity_names: Optional list of entity names to filter by
             include_embeddings: Whether to include embeddings in the response
@@ -2082,7 +2077,7 @@ class PostgresGraphHandler(GraphHandler):
             Tuple of (list of entities, total count)
         """
         conditions = ["parent_id = $1"]
-        params: [Any] = [graph_id]
+        params: list[Any] = [parent_id]
         param_index = 2
 
         if entity_ids:
@@ -2320,8 +2315,8 @@ class PostgresGraphHandler(GraphHandler):
         self,
         parent_id: UUID,
         store_type: StoreType,
-        offset: int = 0,
-        limit: int = 100,
+        offset: int,
+        limit: int,
         entity_names: Optional[list[str]] = None,
         relationship_types: Optional[list[str]] = None,
         relationship_id: Optional[UUID] = None,
@@ -2527,7 +2522,7 @@ class PostgresGraphHandler(GraphHandler):
 
     async def get_communities(
         self,
-        collection_id: UUID,
+        parent_id: UUID,
         offset: int,
         limit: int,
         community_ids: Optional[list[UUID]] = None,
@@ -2547,7 +2542,7 @@ class PostgresGraphHandler(GraphHandler):
             Tuple of (list of communities, total count)
         """
         conditions = ["collection_id = $1"]
-        params: list[Any] = [collection_id]
+        params: list[Any] = [parent_id]
         param_index = 2
 
         if community_ids:

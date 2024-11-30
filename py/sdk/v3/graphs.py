@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from shared.api.models.base import (
@@ -387,7 +387,7 @@ class GraphsSDK:
         Returns:
             dict: Updated community information
         """
-        data = {}
+        data: dict[str, Any] = {}
         if name is not None:
             data["name"] = name
         if summary is not None:

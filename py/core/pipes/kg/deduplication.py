@@ -1,9 +1,7 @@
 import json
 import logging
-from typing import Any, Union
+from typing import Any
 from uuid import UUID
-
-from fastapi import HTTPException
 
 from core.base import AsyncState
 from core.base.abstractions import DataLevel, Entity, KGEntityDeduplicationType
@@ -26,14 +24,12 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         self,
         config: AsyncPipe.PipeConfig,
         database_provider: PostgresDBProvider,
-        llm_provider: Union[
-            OpenAICompletionProvider, LiteLLMCompletionProvider
-        ],
-        embedding_provider: Union[
-            LiteLLMEmbeddingProvider,
-            OpenAIEmbeddingProvider,
-            OllamaEmbeddingProvider,
-        ],
+        llm_provider: OpenAICompletionProvider | LiteLLMCompletionProvider,
+        embedding_provider: (
+            LiteLLMEmbeddingProvider
+            | OpenAIEmbeddingProvider
+            | OllamaEmbeddingProvider
+        ),
         logging_provider: SqlitePersistentLoggingProvider,
         **kwargs,
     ):

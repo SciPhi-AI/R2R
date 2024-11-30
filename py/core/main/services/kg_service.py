@@ -157,29 +157,6 @@ class KgService(Service):
             metadata=metadata,
         )
 
-    @telemetry_event("list_entities")
-    async def list_entities(
-        self,
-        offset: int,
-        limit: int,
-        id: Optional[UUID] = None,
-        graph_id: Optional[UUID] = None,
-        document_id: Optional[UUID] = None,
-        entity_names: Optional[list[str]] = None,
-        include_embeddings: Optional[bool] = False,
-        user_id: Optional[UUID] = None,
-    ):
-        return await self.providers.database.graph_handler.entities.get(
-            id=id,
-            graph_id=graph_id,
-            document_id=document_id,
-            entity_names=entity_names,
-            include_embeddings=include_embeddings,
-            offset=offset,
-            limit=limit,
-            user_id=user_id,
-        )
-
     @telemetry_event("update_entity")
     async def update_entity(
         self,
@@ -198,69 +175,43 @@ class KgService(Service):
 
         return await self.providers.database.graph_handler.entities.update(
             entity_id=entity_id,
+            store_type="graph",  # type: ignore
             name=name,
             description=description,
-            category=category,
             description_embedding=description_embedding,
+            category=category,
             metadata=metadata,
-            store_type="graph",  # type: ignore
         )
 
     @telemetry_event("delete_entity")
     async def delete_entity(
         self,
-        id: UUID,
+        parent_id: UUID,
         entity_id: UUID,
-        level: DataLevel,
     ):
         return await self.providers.database.graph_handler.entities.delete(
-            id=id,
-            entity_id=entity_id,
-            level=level,
+            parent_id=parent_id,
+            entity_ids=[entity_id],
+            store_type="graph",  # type: ignore
         )
 
-    # TODO: deprecate this
     @telemetry_event("get_entities")
     async def get_entities(
         self,
-        collection_id: Optional[UUID] = None,
-        entity_ids: Optional[list[str]] = None,
-        entity_table_name: str = "entity",
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        **kwargs,
-    ):
-        return await self.providers.database.graph_handler.get_entities(
-            collection_id=collection_id,
-            entity_ids=entity_ids,
-            entity_table_name=entity_table_name,
-            offset=offset or 0,
-            limit=limit or -1,
-        )
-
-    ################### RELATIONSHIPS ###################
-
-    @telemetry_event("list_relationships_v3")
-    async def list_relationships_v3(
-        self,
-        id: UUID,
-        level: DataLevel,
+        parent_id: UUID,
         offset: int,
         limit: int,
+        entity_ids: Optional[list[UUID]] = None,
         entity_names: Optional[list[str]] = None,
-        relationship_types: Optional[list[str]] = None,
-        attributes: Optional[list[str]] = None,
-        relationship_id: Optional[UUID] = None,
+        include_embeddings: bool = False,
     ):
-        return await self.providers.database.graph_handler.relationships.get(
-            id=id,
-            level=level,
-            entity_names=entity_names,
-            relationship_types=relationship_types,
-            attributes=attributes,
+        return await self.providers.database.graph_handler.get_entities(
+            parent_id=parent_id,
             offset=offset,
             limit=limit,
-            relationship_id=relationship_id,
+            entity_ids=entity_ids,
+            entity_names=entity_names,
+            include_embeddings=include_embeddings,
         )
 
     @telemetry_event("create_relationship")
@@ -301,13 +252,14 @@ class KgService(Service):
     @telemetry_event("delete_relationship")
     async def delete_relationship(
         self,
-        id: UUID,
+        parent_id: UUID,
         relationship_id: UUID,
     ):
         return (
             await self.providers.database.graph_handler.relationships.delete(
-                id=id,
-                relationship_id=relationship_id,
+                parent_id=parent_id,
+                relationship_ids=[relationship_id],
+                store_type="graph",  # type: ignore
             )
         )
 
@@ -347,26 +299,23 @@ class KgService(Service):
             )
         )
 
-    # TODO: deprecate this
-    @telemetry_event("get_triples")
+    @telemetry_event("get_relationships")
     async def get_relationships(
         self,
+        parent_id: UUID,
         offset: int,
         limit: int,
-        collection_id: UUID,
-        entity_names: Optional[list[str]] = None,
         relationship_ids: Optional[list[UUID]] = None,
+        entity_names: Optional[list[str]] = None,
     ):
         return await self.providers.database.graph_handler.relationships.get(
-            parent_id=collection_id,
+            parent_id=parent_id,
             store_type="graph",  # type: ignore
-            entity_names=entity_names,
-            relationship_ids=relationship_ids,
             offset=offset,
             limit=limit,
+            relationship_ids=relationship_ids,
+            entity_names=entity_names,
         )
-
-    ################### COMMUNITIES ###################
 
     @telemetry_event("create_community")
     async def create_community(
@@ -447,17 +396,19 @@ class KgService(Service):
     @telemetry_event("get_communities")
     async def get_communities(
         self,
-        collection_id: UUID,
-        community_ids: Optional[list[int]] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        **kwargs,
+        parent_id: UUID,
+        offset: int,
+        limit: int,
+        community_ids: Optional[list[UUID]] = None,
+        community_names: Optional[list[str]] = None,
+        include_embeddings: bool = False,
     ):
         return await self.providers.database.graph_handler.get_communities(
-            collection_id=collection_id,
-            community_ids=community_ids,
+            parent_id=parent_id,
             offset=offset,
             limit=limit,
+            community_ids=community_ids,
+            include_embeddings=include_embeddings,
         )
 
     # @telemetry_event("create_new_graph")
