@@ -207,30 +207,16 @@ class KgService(Service):
         )
 
     @telemetry_event("delete_entity")
-    async def delete_entity_v3(
+    async def delete_entity(
         self,
         id: UUID,
         entity_id: UUID,
         level: DataLevel,
-        **kwargs,
     ):
         return await self.providers.database.graph_handler.entities.delete(
             id=id,
             entity_id=entity_id,
             level=level,
-        )
-
-    @telemetry_event("add_entity_to_graph")
-    async def add_entity_to_graph(
-        self,
-        graph_id: UUID,
-        entity_id: UUID,
-        auth_user: Optional[Any] = None,
-    ):
-        return (
-            await self.providers.database.graph_handler.entities.add_to_graph(
-                graph_id, entity_id, auth_user
-            )
         )
 
     # TODO: deprecate this
@@ -312,8 +298,8 @@ class KgService(Service):
             )
         )
 
-    @telemetry_event("delete_relationship_v3")
-    async def delete_relationship_v3(
+    @telemetry_event("delete_relationship")
+    async def delete_relationship(
         self,
         id: UUID,
         relationship_id: UUID,
@@ -365,19 +351,19 @@ class KgService(Service):
     @telemetry_event("get_triples")
     async def get_relationships(
         self,
-        collection_id: Optional[UUID] = None,
+        offset: int,
+        limit: int,
+        collection_id: UUID,
         entity_names: Optional[list[str]] = None,
-        relationship_ids: Optional[list[str]] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        **kwargs,
+        relationship_ids: Optional[list[UUID]] = None,
     ):
-        return await self.providers.database.graph_handler.get_relationships(
-            collection_id=collection_id,
+        return await self.providers.database.graph_handler.relationships.get(
+            parent_id=collection_id,
+            store_type="graph",  # type: ignore
             entity_names=entity_names,
             relationship_ids=relationship_ids,
-            offset=offset or 0,
-            limit=limit or -1,
+            offset=offset,
+            limit=limit,
         )
 
     ################### COMMUNITIES ###################
@@ -458,12 +444,10 @@ class KgService(Service):
             limit=limit,
         )
 
-    # TODO: deprecate this
     @telemetry_event("get_communities")
     async def get_communities(
         self,
-        collection_id: Optional[UUID] = None,
-        levels: Optional[list[int]] = None,
+        collection_id: UUID,
         community_ids: Optional[list[int]] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
@@ -472,8 +456,8 @@ class KgService(Service):
         return await self.providers.database.graph_handler.get_communities(
             collection_id=collection_id,
             community_ids=community_ids,
-            offset=offset or 0,
-            limit=limit or -1,
+            offset=offset,
+            limit=limit,
         )
 
     # @telemetry_event("create_new_graph")

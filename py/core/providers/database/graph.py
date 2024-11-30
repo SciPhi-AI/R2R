@@ -544,7 +544,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
         entity_names: Optional[list[str]] = None,
         relationship_types: Optional[list[str]] = None,
         include_metadata: bool = False,
-    ) -> tuple[list[Relationship], int]:
+    ):
         """
         Get relationships from the specified store.
 
@@ -564,7 +564,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
         table_name = self._get_relationship_table_for_store(store_type)
 
         conditions = ["parent_id = $1"]
-        params = [parent_id]
+        params: list[Any] = [parent_id]
         param_index = 2
 
         if relationship_ids:

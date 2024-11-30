@@ -90,9 +90,9 @@ class CommunityInfo(R2RSerializable):
     node: str
     cluster: UUID
     level: Optional[int]
-    id: Optional[UUID | int] = None
     parent_cluster: int | None
     is_final_cluster: bool
+    id: Optional[UUID | int] = None
     graph_id: Optional[UUID] = None
     collection_id: Optional[UUID] = None  # for backwards compatibility
     relationship_ids: Optional[list[UUID]] = None

@@ -304,7 +304,8 @@ class GraphRouter(BaseRouterV3):
             run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ):  # -> WrappedKGEnrichmentResponse:
-            """Creates communities in the graph by analyzing entity relationships and similarities.
+            """
+            Creates communities in the graph by analyzing entity relationships and similarities.
 
             Communities are created through the following process:
             1. Analyzes entity relationships and metadata to build a similarity graph
@@ -323,8 +324,14 @@ class GraphRouter(BaseRouterV3):
                 - Summary generation prompt
             """
             print("collection_id = ", collection_id)
-            if not auth_user.is_superuser:
-                logger.warning("Implement permission checks here.")
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
 
             # If no collection ID is provided, use the default user collection
             # id = generate_default_user_collection_id(auth_user.id)
@@ -586,6 +593,14 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntitiesResponse:
             """Lists all entities in the graph with pagination support."""
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
             # return await self.services["kg"].get_entities(
             #     id, offset, limit, auth_user
             # )
@@ -626,7 +641,7 @@ class GraphRouter(BaseRouterV3):
                 and collection_id not in auth_user.graph_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to this graph.",
+                    "The currently authenticated user does not have access to the specified graph.",
                     403,
                 )
 
@@ -680,7 +695,7 @@ class GraphRouter(BaseRouterV3):
                 and collection_id not in auth_user.graph_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to this graph.",
+                    "The currently authenticated user does not have access to the specified graph.",
                     403,
                 )
 
@@ -750,7 +765,15 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntityResponse:
             """Retrieves a specific entity by its ID."""
-            # Note: The original was missing implementation, so assuming similar pattern to relationships
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
+
             result = await self.providers.database.graph_handler.entities.get(
                 collection_id, "graph", entity_ids=[entity_id]
             )
@@ -856,6 +879,15 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedBooleanResponse:
             """Removes an entity from the graph."""
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
+
             await self.providers.database.graph_handler.entities.delete(
                 collection_id, [entity_id], "graph"
             )
@@ -922,13 +954,12 @@ class GraphRouter(BaseRouterV3):
             """
             Lists all relationships in the graph with pagination support.
             """
-            # Permission check
             if (
                 not auth_user.is_superuser
                 and collection_id not in auth_user.graph_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to this graph.",
+                    "The currently authenticated user does not have access to the specified graph.",
                     403,
                 )
 
@@ -1000,6 +1031,15 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipResponse:
             """Retrieves a specific relationship by its ID."""
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
+
             results = (
                 await self.providers.database.graph_handler.relationships.get(
                     collection_id, "graph", relationship_ids=[relationship_id]
@@ -1126,6 +1166,15 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedBooleanResponse:
             """Removes a relationship from the graph."""
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
+
             # return await self.services[
             #     "kg"
             # ].documents.graph_handler.relationships.remove_from_graph(
@@ -1632,6 +1681,7 @@ class GraphRouter(BaseRouterV3):
                     "The currently authenticated user does not have access to the specified graph.",
                     403,
                 )
+
             list_graphs_response = await self.services["kg"].list_graphs(
                 # user_ids=None,
                 graph_ids=[collection_id],
@@ -1766,7 +1816,6 @@ class GraphRouter(BaseRouterV3):
 
             The user must have access to both the graph and the document being removed.
             """
-            # Check user permissions for graph
             if (
                 not auth_user.is_superuser
                 and collection_id not in auth_user.graph_ids
@@ -1776,7 +1825,6 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            # Check user permissions for document
             if (
                 not auth_user.is_superuser
                 and document_id not in auth_user.document_ids
