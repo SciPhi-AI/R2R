@@ -2829,17 +2829,13 @@ class PostgresGraphHandler(GraphHandler):
         #         relationship_ids_cache, leiden_params, collection_id
         #     )
         # else:
-        num_communities = await self._cluster_and_add_community_info(
+        return await self._cluster_and_add_community_info(
             relationships=relationships,
             relationship_ids_cache=relationship_ids_cache,
             leiden_params=leiden_params,
             collection_id=collection_id,
             # graph_id=collection_id,
         )
-
-        return num_communities
-
-    ####################### MANAGEMENT METHODS #######################
 
     async def get_entity_map(
         self, offset: int, limit: int, document_id: UUID
@@ -3448,8 +3444,6 @@ class PostgresGraphHandler(GraphHandler):
         except ImportError as e:
             raise ImportError("Please install the graspologic package.") from e
 
-    ####################### UTILITY METHODS #######################
-
     async def get_existing_document_entity_chunk_ids(
         self, document_id: UUID
     ) -> list[str]:
@@ -3462,23 +3456,6 @@ class PostgresGraphHandler(GraphHandler):
                 QUERY, [document_id]
             )
         ]
-
-    async def create_vector_index(self):
-        # need to implement this. Just call vector db provider's create_vector_index method.
-        # this needs to be run periodically for every collection.
-        raise NotImplementedError
-
-    async def structured_query(self):
-        raise NotImplementedError
-
-    async def update_extraction_prompt(self):
-        raise NotImplementedError
-
-    async def update_kg_search_prompt(self):
-        raise NotImplementedError
-
-    async def upsert_relationships(self):
-        raise NotImplementedError
 
     async def get_entity_count(
         self,
@@ -3524,41 +3501,6 @@ class PostgresGraphHandler(GraphHandler):
             WHERE {" AND ".join(conditions)}
         """
         print("QUERY = ", QUERY)
-        return (await self.connection_manager.fetch_query(QUERY, params))[0][
-            "count"
-        ]
-
-    async def get_relationship_count(
-        self,
-        collection_id: Optional[UUID] = None,
-        document_id: Optional[UUID] = None,
-    ) -> int:
-        if collection_id is None and document_id is None:
-            raise ValueError(
-                "Either collection_id or document_id must be provided."
-            )
-
-        conditions = []
-        params = []
-
-        if collection_id:
-            conditions.append(
-                f"""
-                document_id = ANY(
-                    SELECT document_id FROM {self._get_table_name("document_info")}
-                    WHERE $1 = ANY(collection_ids)
-                )
-                """
-            )
-            params.append(str(collection_id))
-        else:
-            conditions.append("document_id = $1")
-            params.append(str(document_id))
-
-        QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("relationship")}
-            WHERE {" AND ".join(conditions)}
-        """
         return (await self.connection_manager.fetch_query(QUERY, params))[0][
             "count"
         ]

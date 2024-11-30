@@ -5,7 +5,6 @@ from uuid import UUID
 
 from core.base import AsyncState, KGExtraction, R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.database.graph import DataLevel
 from core.providers.database.postgres import PostgresDBProvider
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
