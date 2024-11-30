@@ -409,27 +409,25 @@ class KgService(Service):
     @telemetry_event("update_community")
     async def update_community(
         self,
-        id: UUID,
         community_id: UUID,
         name: Optional[str],
         summary: Optional[str],
         findings: Optional[list[str]],
         rating: Optional[float],
         rating_explanation: Optional[str],
-    ):
+    ) -> Community:
+        summary_embedding = None
         if summary is not None:
-            embedding = str(
+            summary_embedding = str(
                 await self.providers.embedding.async_get_embedding(summary)
             )
-        else:
-            embedding = None
 
         return await self.providers.database.graph_handler.communities.update(
-            id=id,
             community_id=community_id,
+            store_type="graph",  # type: ignore
             name=name,
             summary=summary,
-            embedding=embedding,
+            summary_embedding=summary_embedding,
             findings=findings,
             rating=rating,
             rating_explanation=rating_explanation,
@@ -446,16 +444,16 @@ class KgService(Service):
             community_id=community_id,
         )
 
-    @telemetry_event("list_communities_v3")
-    async def list_communities_v3(
+    @telemetry_event("list_communities")
+    async def list_communities(
         self,
-        id: UUID,
+        collection_id: UUID,
         offset: int,
         limit: int,
-        **kwargs,
     ):
         return await self.providers.database.graph_handler.communities.get(
-            id=id,
+            parent_id=collection_id,
+            store_type="graph",  # type: ignore
             offset=offset,
             limit=limit,
         )
@@ -473,7 +471,6 @@ class KgService(Service):
     ):
         return await self.providers.database.graph_handler.get_communities(
             collection_id=collection_id,
-            levels=levels,
             community_ids=community_ids,
             offset=offset or 0,
             limit=limit or -1,

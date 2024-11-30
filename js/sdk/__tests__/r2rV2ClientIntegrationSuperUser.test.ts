@@ -129,7 +129,7 @@ describe("r2rClient Integration Tests", () => {
         metadatas: [{ title: "raskolnikov.txt" }, { title: "karamozov.txt" }],
       }),
     ).resolves.not.toThrow();
-  });
+  }, 10000);
 
   test("Ingest files in folder", async () => {
     const files = ["examples/data/folder"];

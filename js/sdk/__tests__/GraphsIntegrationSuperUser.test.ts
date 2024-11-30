@@ -386,6 +386,40 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
     expect(response.results.predicate).toBe("marries");
   });
 
+  test("Update the community", async () => {
+    const response = await client.graphs.updateCommunity({
+      collectionId: collectionId,
+      communityId: communityId,
+      name: "Rodion Romanovich Raskolnikov and Avdotya Romanovna Raskolnikova Community",
+      summary:
+        "Rodion and Avdotya are siblings, the children of Pulcheria Alexandrovna Raskolnikova",
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.name).toBe(
+      "Rodion Romanovich Raskolnikov and Avdotya Romanovna Raskolnikova Community",
+    );
+    expect(response.results.summary).toBe(
+      "Rodion and Avdotya are siblings, the children of Pulcheria Alexandrovna Raskolnikova",
+    );
+  });
+
+  test("Retrieve the updated community", async () => {
+    const response = await client.graphs.getCommunity({
+      collectionId: collectionId,
+      communityId: communityId,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(communityId);
+    expect(response.results.name).toBe(
+      "Rodion Romanovich Raskolnikov and Avdotya Romanovna Raskolnikova Community",
+    );
+    expect(response.results.summary).toBe(
+      "Rodion and Avdotya are siblings, the children of Pulcheria Alexandrovna Raskolnikova",
+    );
+  });
+
   test("Delete the community", async () => {
     const response = await client.graphs.deleteCommunity({
       collectionId: collectionId,

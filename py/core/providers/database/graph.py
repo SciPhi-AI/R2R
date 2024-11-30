@@ -870,9 +870,9 @@ class PostgresCommunityHandler(CommunityHandler):
 
         query = f"""
             INSERT INTO {self._get_table_name(table_name)}
-            (community_id, name, summary, findings, rating, rating_explanation, description_embedding)
+            (collection_id, name, summary, findings, rating, rating_explanation, description_embedding)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id, community_id, name, summary, findings, rating, rating_explanation, created_at, updated_at
+            RETURNING id, collection_id, name, summary, findings, rating, rating_explanation, created_at, updated_at
         """
 
         params = [
@@ -893,7 +893,7 @@ class PostgresCommunityHandler(CommunityHandler):
 
             return Community(
                 id=result["id"],
-                community_id=result["community_id"],
+                collection_id=result["collection_id"],
                 name=result["name"],
                 summary=result["summary"],
                 findings=result["findings"],
@@ -910,49 +910,83 @@ class PostgresCommunityHandler(CommunityHandler):
 
     async def update(
         self,
-        id: UUID,
         community_id: UUID,
-        name: Optional[str],
-        summary: Optional[str],
-        embedding: Optional[str],
-        findings: Optional[list[str]],
-        rating: Optional[float],
-        rating_explanation: Optional[str],
+        store_type: StoreType,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        summary_embedding: Optional[list[float] | str] = None,
+        findings: Optional[list[str]] = None,
+        rating: Optional[float] = None,
+        rating_explanation: Optional[str] = None,
     ) -> Community:
-
+        table_name = "graph_community"
         update_fields = []
-        params: list[Any] = [community_id]  # type: ignore
+        params: list[Any] = []
+        param_index = 1
+
         if name is not None:
-            update_fields.append(f"name = ${len(params)+1}")
+            update_fields.append(f"name = ${param_index}")
             params.append(name)
+            param_index += 1
 
         if summary is not None:
-            update_fields.append(f"summary = ${len(params)+1}")
+            update_fields.append(f"summary = ${param_index}")
             params.append(summary)
+            param_index += 1
 
-        if embedding is not None:
-            update_fields.append(f"description_embedding = ${len(params)+1}")
-            params.append(embedding)
+        if summary_embedding is not None:
+            update_fields.append(f"description_embedding = ${param_index}")
+            params.append(summary_embedding)
+            param_index += 1
 
         if findings is not None:
-            update_fields.append(f"findings = ${len(params)+1}")
+            update_fields.append(f"findings = ${param_index}")
             params.append(findings)
+            param_index += 1
 
         if rating is not None:
-            update_fields.append(f"rating = ${len(params)+1}")
+            update_fields.append(f"rating = ${param_index}")
             params.append(rating)
+            param_index += 1
 
         if rating_explanation is not None:
-            update_fields.append(f"rating_explanation = ${len(params)+1}")
+            update_fields.append(f"rating_explanation = ${param_index}")
             params.append(rating_explanation)
+            param_index += 1
 
-        update_fields.append(f"updated_at = CURRENT_TIMESTAMP")
+        if not update_fields:
+            raise R2RException(status_code=400, message="No fields to update")
 
-        QUERY = f"""
-            UPDATE {self._get_table_name("graph_community")} SET {", ".join(update_fields)} WHERE id = $1
-            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, metadata, level, created_by, updated_by, updated_at
+        update_fields.append("updated_at = NOW()")
+        params.append(community_id)
+
+        query = f"""
+            UPDATE {self._get_table_name(table_name)}
+            SET {", ".join(update_fields)}
+            WHERE id = ${param_index}\
+            RETURNING id, community_id, name, summary, findings, rating, rating_explanation, created_at, updated_at
         """
-        return await self.connection_manager.fetchrow_query(QUERY, params)
+        try:
+            result = await self.connection_manager.fetchrow_query(
+                query, params
+            )
+
+            return Community(
+                id=result["id"],
+                community_id=result["community_id"],
+                name=result["name"],
+                summary=result["summary"],
+                findings=result["findings"],
+                rating=result["rating"],
+                rating_explanation=result["rating_explanation"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while updating the community: {e}",
+            )
 
     async def delete(
         self,
@@ -990,7 +1024,7 @@ class PostgresCommunityHandler(CommunityHandler):
         # Do we ever want to get communities from document store?
         table_name = "graph_community"
 
-        conditions = ["graph_id = $1"]
+        conditions = ["collection_id = $1"]
         params: list[Any] = [parent_id]
         param_index = 2
 
@@ -1005,8 +1039,8 @@ class PostgresCommunityHandler(CommunityHandler):
             param_index += 1
 
         select_fields = """
-            id, graph_id, name, summary, findings, rating,
-            rating_explanation, level, metadata, created_at, updated_at
+            id, community_id, name, summary, findings, rating,
+            rating_explanation, level, created_at, updated_at
         """
         if include_embeddings:
             select_fields += ", description_embedding"
@@ -1042,15 +1076,6 @@ class PostgresCommunityHandler(CommunityHandler):
         communities = []
         for row in rows:
             community_dict = dict(row)
-
-            # Process metadata if it exists and is a string
-            if isinstance(community_dict["metadata"], str):
-                try:
-                    community_dict["metadata"] = json.loads(
-                        community_dict["metadata"]
-                    )
-                except json.JSONDecodeError:
-                    pass
 
             communities.append(Community(**community_dict))
 
@@ -2506,7 +2531,6 @@ class PostgresGraphHandler(GraphHandler):
         offset: int,
         limit: int,
         community_ids: Optional[list[UUID]] = None,
-        levels: Optional[list[int]] = None,
         include_embeddings: bool = False,
     ) -> tuple[list[Community], int]:
         """
@@ -2517,7 +2541,6 @@ class PostgresGraphHandler(GraphHandler):
             offset: Number of records to skip
             limit: Maximum number of records to return (-1 for no limit)
             community_ids: Optional list of community IDs to filter by
-            levels: Optional list of levels to filter by
             include_embeddings: Whether to include embeddings in the response
 
         Returns:
@@ -2530,11 +2553,6 @@ class PostgresGraphHandler(GraphHandler):
         if community_ids:
             conditions.append(f"id = ANY(${param_index})")
             params.append(community_ids)
-            param_index += 1
-
-        if levels:
-            conditions.append(f"level = ANY(${param_index})")
-            params.append(levels)
             param_index += 1
 
         select_fields = """

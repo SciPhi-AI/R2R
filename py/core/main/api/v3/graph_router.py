@@ -1204,9 +1204,6 @@ class GraphRouter(BaseRouterV3):
             rating_explanation: Optional[str] = Body(
                 default="", description="Explanation for the rating"
             ),
-            attributes: Optional[dict] = Body(
-                default=None, description="Attributes for the community"
-            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedCommunityResponse:
             """
@@ -1302,9 +1299,15 @@ class GraphRouter(BaseRouterV3):
         ) -> WrappedCommunitiesResponse:
             """
             Lists all communities in the graph with pagination support.
-
-            By default, all attributes are returned, but this can be limited using the `attributes` parameter.
             """
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
+                )
 
             communities, count = (
                 await self.providers.database.graph_handler.get_communities(
@@ -1371,23 +1374,29 @@ class GraphRouter(BaseRouterV3):
         ) -> WrappedCommunityResponse:
             """
             Retrieves a specific community by its ID.
-
-            By default, all attributes are returned, but this can be limited using the `attributes` parameter.
             """
-            if not auth_user.is_superuser:
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
                 raise R2RException(
-                    "Only superusers can access this endpoint.", 403
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
                 )
 
-            return await self.services[
+            results = await self.services[
                 "kg"
             ].providers.database.graph_handler.communities.get(
-                graph_id=collection_id,
-                community_id=community_id,
-                auth_user=auth_user,
+                parent_id=collection_id,
+                community_ids=[community_id],
+                store_type="graph",
                 offset=0,
                 limit=1,
             )
+            print(f"results: {results}")
+            if len(results) == 0 or len(results[0]) == 0:
+                raise R2RException("Relationship not found", 404)
+            return results[0][0]
 
         @self.router.delete(
             "/graphs/{collection_id}/communities/{community_id}",
@@ -1519,29 +1528,29 @@ class GraphRouter(BaseRouterV3):
             name: Optional[str] = Body(None),
             summary: Optional[str] = Body(None),
             findings: Optional[list[str]] = Body(None),
-            rating: Optional[float] = Body(None),
+            rating: Optional[float] = Body(default=None, ge=1, le=10),
             rating_explanation: Optional[str] = Body(None),
-            attributes: Optional[dict] = Body(None),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedCommunityResponse:
             """
-            Updates an existing community's metadata and properties.
+            Updates an existing community in the graph.
             """
-            if not auth_user.is_superuser:
+            if (
+                not auth_user.is_superuser
+                and collection_id not in auth_user.graph_ids
+            ):
                 raise R2RException(
-                    "Only superusers can update communities", 403
+                    "The currently authenticated user does not have access to the specified graph.",
+                    403,
                 )
 
-            return await self.services["kg"].update_community_v3(
-                id=collection_id,
+            return await self.services["kg"].update_community(
                 community_id=community_id,
                 name=name,
                 summary=summary,
                 findings=findings,
                 rating=rating,
                 rating_explanation=rating_explanation,
-                attributes=attributes,
-                auth_user=auth_user,
             )
 
         @self.router.post(
