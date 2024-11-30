@@ -1710,58 +1710,6 @@ class PostgresGraphHandler(GraphHandler):
 
     #     return True
 
-    async def add_relationships_v3(
-        self, id: UUID, relationship_ids: list[UUID], copy_data: bool = True
-    ) -> bool:
-        """
-        Add relationships to the graph.
-        """
-        QUERY = f"""
-            UPDATE {self._get_table_name("relationship")}
-            SET graph_ids = array_append(graph_ids, $1)
-            WHERE id = ANY($2)
-        """
-        await self.connection_manager.execute_query(
-            QUERY, [id, relationship_ids]
-        )
-
-        if copy_data:
-            QUERY = f"""
-                INSERT INTO {self._get_table_name("graph_relationship")}
-                SELECT * FROM {self._get_table_name("relationship")}
-                WHERE id = ANY($1)
-            """
-            await self.connection_manager.execute_query(
-                QUERY, [relationship_ids]
-            )
-
-        return True
-
-    async def remove_relationships(
-        self, id: UUID, relationship_ids: list[UUID], delete_data: bool = True
-    ) -> bool:
-        """
-        Remove relationships from the graph.
-        """
-        QUERY = f"""
-            UPDATE {self._get_table_name("relationship")}
-            SET graph_ids = array_remove(graph_ids, $1)
-            WHERE id = ANY($2)
-        """
-        await self.connection_manager.execute_query(
-            QUERY, [id, relationship_ids]
-        )
-
-        if delete_data:
-            QUERY = f"""
-                DELETE FROM {self._get_table_name("graph_relationship")} WHERE id = ANY($1)
-            """
-            await self.connection_manager.execute_query(
-                QUERY, [relationship_ids]
-            )
-
-        return True
-
     async def update(
         self,
         graph_id: UUID,
@@ -2236,30 +2184,6 @@ class PostgresGraphHandler(GraphHandler):
             return None
         return None
 
-    ##################### RELATIONSHIP METHODS #####################
-
-    # DEPRECATED
-    async def add_relationships(
-        self,
-        relationships: list[Relationship],
-        table_name: str = "relationship",
-    ):  # type: ignore
-        """
-        Upsert relationships into the relationship table. These are raw relationships extracted from the document.
-
-        Args:
-            relationships: list[Relationship]: list of relationships to upsert
-            table_name: str: name of the table to upsert into
-
-        Returns:
-            result: asyncpg.Record: result of the upsert operation
-        """
-        return await _add_objects(
-            objects=[ele.to_dict() for ele in relationships],
-            full_table_name=self._get_table_name(table_name),
-            connection_manager=self.connection_manager,
-        )
-
     async def get_all_relationships(
         self,
         collection_id: UUID | None,
@@ -2360,7 +2284,7 @@ class PostgresGraphHandler(GraphHandler):
 
         # Build conditions and parameters for listing relationships
         conditions = ["parent_id = $1"]
-        params = [parent_id]
+        params: list[Any] = [parent_id]
         param_index = 2
 
         if entity_names:
@@ -2748,10 +2672,8 @@ class PostgresGraphHandler(GraphHandler):
 
     async def perform_graph_clustering(
         self,
-        collection_id: UUID | None,
-        # graph_id: UUID | None,
+        collection_id: UUID,
         leiden_params: dict[str, Any],
-        use_community_cache: bool = False,
     ) -> int:
         """
         Leiden clustering algorithm to cluster the knowledge graph relationships into communities.
@@ -2769,8 +2691,6 @@ class PostgresGraphHandler(GraphHandler):
             weight_default: int| float = 1.0,
             check_directed: bool = True,
         """
-
-        start_time = time.time()
 
         # # relationships = await self.get_all_relationships(
         # #     collection_id, collection_id # , graph_id
@@ -3079,8 +2999,6 @@ class PostgresGraphHandler(GraphHandler):
             print("output = ", output)
             yield output
 
-    ####################### GRAPH CLUSTERING METHODS #######################
-
     async def _create_graph_and_cluster(
         self, relationships: list[Relationship], leiden_params: dict[str, Any]
     ) -> Any:
@@ -3096,11 +3014,7 @@ class PostgresGraphHandler(GraphHandler):
 
         logger.info(f"Graph has {len(G.nodes)} nodes and {len(G.edges)} edges")
 
-        hierarchical_communities = await self._compute_leiden_communities(
-            G, leiden_params
-        )
-
-        return hierarchical_communities
+        return await self._compute_leiden_communities(G, leiden_params)
 
     async def _cluster_and_add_community_info(
         self,
@@ -3456,7 +3370,7 @@ class PostgresGraphHandler(GraphHandler):
         inputs = [
             (
                 entity.name,
-                entity.graph_id,
+                entity.parent_id,
                 entity.description,
                 entity.description_embedding,
             )
@@ -3464,8 +3378,6 @@ class PostgresGraphHandler(GraphHandler):
         ]
 
         await self.connection_manager.execute_many(query, inputs)  # type: ignore
-
-    ####################### PRIVATE  METHODS ##########################
 
 
 def _json_serialize(obj):
