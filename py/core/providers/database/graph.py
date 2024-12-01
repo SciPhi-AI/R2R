@@ -374,6 +374,9 @@ class PostgresEntityHandler(EntityHandler):
                 WHERE id = ANY($1) AND parent_id = $2
                 RETURNING id
             """
+            print("QUERY = ", QUERY)
+            print("entity_ids = ", entity_ids)
+            print("parent_id = ", parent_id)
             results = await self.connection_manager.fetch_query(
                 QUERY, [entity_ids, parent_id]
             )
@@ -631,6 +634,8 @@ class PostgresRelationshipHandler(RelationshipHandler):
                     )
                 except json.JSONDecodeError:
                     pass
+            elif not include_metadata:
+                relationship_dict.pop("metadata", None)
             relationships.append(Relationship(**relationship_dict))
 
         return relationships, count
@@ -992,13 +997,38 @@ class PostgresCommunityHandler(CommunityHandler):
 
         query = f"""
             DELETE FROM {self._get_table_name(table_name)}
-            WHERE id = $1 AND graph_id = $2
+            WHERE id = $1 AND collection_id = $2
         """
-
+        print("query = ", query)
+        print("parent_id = ", parent_id)
+        print("community_id = ", community_id)
         params = [community_id, parent_id]
 
         try:
-            await self.connection_manager.execute_query(query, params)
+            results = await self.connection_manager.execute_query(
+                query, params
+            )
+            print("results = ", results)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while deleting the community: {e}",
+            )
+        table_name = "graph_community_info"
+        query = f"""
+            DELETE FROM {self._get_table_name(table_name)}
+            WHERE id = $1 AND collection_id = $2
+        """
+        print("query = ", query)
+        print("parent_id = ", parent_id)
+        print("community_id = ", community_id)
+        params = [community_id, parent_id]
+
+        try:
+            results = await self.connection_manager.execute_query(
+                query, params
+            )
+            print("results = ", results)
         except Exception as e:
             raise HTTPException(
                 status_code=500,
@@ -1251,7 +1281,7 @@ class PostgresGraphHandler(GraphHandler):
             # Delete all graph communities and community info
             community_delete_queries = [
                 f"""DELETE FROM {self._get_table_name("graph_community_info")}
-                    WHERE graph_id = $1""",
+                    WHERE collection_id = $1""",
                 f"""DELETE FROM {self._get_table_name("graph_community")}
                     WHERE collection_id = $1""",
             ]
@@ -2182,6 +2212,7 @@ class PostgresGraphHandler(GraphHandler):
                     )
                 except json.JSONDecodeError:
                     pass
+
             entities.append(Entity(**entity_dict))
 
         return entities, count
@@ -2431,6 +2462,9 @@ class PostgresGraphHandler(GraphHandler):
                     )
                 except json.JSONDecodeError:
                     pass
+            elif not include_metadata:
+                relationship_dict.pop("metadata", None)
+
             relationships.append(Relationship(**relationship_dict))
 
         return relationships, count

@@ -889,7 +889,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            self.services["kg"].delete_entity(
+            await self.services["kg"].delete_entity(
                 parent_id=collection_id,
                 entity_id=entity_id,
             )
@@ -1443,7 +1443,7 @@ class GraphRouter(BaseRouterV3):
             )
             print(f"results: {results}")
             if len(results) == 0 or len(results[0]) == 0:
-                raise R2RException("Relationship not found", 404)
+                raise R2RException("Community not found", 404)
             return results[0][0]
 
         @self.router.delete(

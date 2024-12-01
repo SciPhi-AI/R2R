@@ -65,7 +65,7 @@ class KGRouter(BaseRouter):
             )
         else:
             workflow_messages["extract-triples"] = (
-                "Document entities and relationships extracted successfully. To generate GraphRAG communities, run cluster on the collection this document belongs to."
+                "Document entities and relationships extracted successfully. To generate GraphRAG communities, POST to `/graphs/<collection_id>/communities/build` with a collection this document belongs to."
             )
             workflow_messages["build-communities"] = (
                 "Graph communities created successfully. You can view the communities at http://localhost:7272/v2/communities"
