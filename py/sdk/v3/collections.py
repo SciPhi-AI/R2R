@@ -36,7 +36,7 @@ class CollectionsSDK:
         return await self.client._make_request(
             "POST",
             "collections",
-            json=data,  # {"config": data}
+            json=data,
             version="v3",
         )
 
@@ -111,7 +111,7 @@ class CollectionsSDK:
         return await self.client._make_request(
             "POST",
             f"collections/{str(id)}",
-            json=data,  # {"config": data}
+            json=data,
             version="v3",
         )
 

@@ -4,7 +4,6 @@ from uuid import UUID
 from ..models import (
     KGCreationSettings,
     KGEnrichmentSettings,
-    KGEntityDeduplicationResponse,
     KGEntityDeduplicationSettings,
     KGRunType,
 )
@@ -216,7 +215,7 @@ class SyncKGMixins:
         deduplication_settings: Optional[
             Union[dict, KGEntityDeduplicationSettings]
         ] = None,
-    ) -> KGEntityDeduplicationResponse:
+    ):
         """
         Deduplicate entities in the knowledge graph.
         Args:

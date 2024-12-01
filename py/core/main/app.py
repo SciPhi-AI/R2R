@@ -85,11 +85,11 @@ class R2RApp:
 
     def _setup_routes(self):
         # Include routers in the app
-        # self.app.include_router(self.ingestion_router, prefix="/v2")
-        # self.app.include_router(self.management_router, prefix="/v2")
-        # self.app.include_router(self.retrieval_router, prefix="/v2")
-        # self.app.include_router(self.auth_router, prefix="/v2")
-        # self.app.include_router(self.kg_router, prefix="/v2")
+        self.app.include_router(self.ingestion_router, prefix="/v2")
+        self.app.include_router(self.management_router, prefix="/v2")
+        self.app.include_router(self.retrieval_router, prefix="/v2")
+        self.app.include_router(self.auth_router, prefix="/v2")
+        self.app.include_router(self.kg_router, prefix="/v2")
 
         self.app.include_router(self.documents_router, prefix="/v3")
         self.app.include_router(self.chunks_router, prefix="/v3")

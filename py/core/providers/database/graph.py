@@ -4,7 +4,7 @@ import json
 import logging
 import time
 from enum import Enum
-from typing import Any, AsyncGenerator, List, Optional, Set, Tuple, Union
+from typing import Any, AsyncGenerator, Optional, Set, Tuple, Union
 from uuid import UUID, uuid4
 
 import asyncpg
@@ -14,7 +14,6 @@ from fastapi import HTTPException
 from core.base.abstractions import (
     Community,
     CommunityInfo,
-    DataLevel,
     Entity,
     Graph,
     KGCreationSettings,
@@ -120,56 +119,66 @@ class PostgresEntityHandler(EntityHandler):
             await self.connection_manager.execute_query(QUERY)
 
     async def create(
-        self, entities: list[Entity], store_type: StoreType
-    ) -> list[UUID]:
-        """Create multiple entities in the specified store."""
+        self,
+        parent_id: UUID,
+        store_type: StoreType,
+        name: str,
+        category: Optional[str] = None,
+        description: Optional[str] = None,
+        description_embedding: Optional[list[float] | str] = None,
+        chunk_ids: Optional[list[UUID]] = None,
+        metadata: Optional[dict[str, Any] | str] = None,
+    ) -> Entity:
+        """Create a new entity in the specified store."""
         table_name = self._get_entity_table_for_store(store_type)
-        values = []
-        results = []
 
-        for entity in entities:
-            metadata = entity.metadata
-            if isinstance(metadata, str):
-                try:
-                    metadata = json.loads(metadata)
-                except json.JSONDecodeError:
-                    pass
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except json.JSONDecodeError:
+                pass
 
-            description_embedding = entity.description_embedding
-            if isinstance(description_embedding, list):
-                description_embedding = str(description_embedding)
+        if isinstance(description_embedding, list):
+            description_embedding = str(description_embedding)
 
-            value = (
-                entity.name,
-                entity.category,
-                entity.description,
-                entity.parent_id,
-                description_embedding,
-                entity.chunk_ids,
-                json.dumps(metadata) if metadata else None,
-            )
-            values.append(value)
-
-        QUERY = f"""
+        query = f"""
             INSERT INTO {self._get_table_name(table_name)}
             (name, category, description, parent_id, description_embedding, chunk_ids, metadata)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id
+            RETURNING id, name, category, description, parent_id, chunk_ids, metadata
         """
 
-        for value in values:
-            print("inserting len(values) into graph = ", len(values))
-            result = await self.connection_manager.fetchrow_query(QUERY, value)
-            results.append(result["id"])
+        params = [
+            name,
+            category,
+            description,
+            parent_id,
+            description_embedding,
+            chunk_ids,
+            json.dumps(metadata) if metadata else None,
+        ]
 
-        return results
+        result = await self.connection_manager.fetchrow_query(
+            query=query,
+            params=params,
+        )
+
+        return Entity(
+            id=result["id"],
+            name=result["name"],
+            category=result["category"],
+            description=result["description"],
+            parent_id=result["parent_id"],
+            chunk_ids=result["chunk_ids"],
+            metadata=result["metadata"],
+        )
 
     async def get(
         self,
         parent_id: UUID,
         store_type: StoreType,
-        offset: int = 0,
-        limit: int = 100,
+        offset: int,
+        limit: int,
         entity_ids: Optional[list[UUID]] = None,
         entity_names: Optional[list[str]] = None,
         include_embeddings: bool = False,
@@ -178,7 +187,7 @@ class PostgresEntityHandler(EntityHandler):
         table_name = self._get_entity_table_for_store(store_type)
 
         conditions = ["parent_id = $1"]
-        params = [parent_id]
+        params: list[Any] = [parent_id]
         param_index = 2
 
         if entity_ids:
@@ -246,70 +255,91 @@ class PostgresEntityHandler(EntityHandler):
         return entities, count
 
     async def update(
-        self, entities: list[Entity], store_type: StoreType
-    ) -> list[UUID]:
-        """Update multiple entities in the specified store."""
+        self,
+        entity_id: UUID,
+        store_type: StoreType,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        description_embedding: Optional[list[float] | str] = None,
+        category: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> Entity:
+        """Update an entity in the specified store."""
         table_name = self._get_entity_table_for_store(store_type)
-        results = []
+        update_fields = []
+        params: list[Any] = []
+        param_index = 1
 
-        print("entities = ", entities)
-        QUERY = f"""
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except json.JSONDecodeError:
+                pass
+
+        if name is not None:
+            update_fields.append(f"name = ${param_index}")
+            params.append(name)
+            param_index += 1
+
+        if description is not None:
+            update_fields.append(f"description = ${param_index}")
+            params.append(description)
+            param_index += 1
+
+        if description_embedding is not None:
+            update_fields.append(f"description_embedding = ${param_index}")
+            params.append(description_embedding)
+            param_index += 1
+
+        if category is not None:
+            update_fields.append(f"category = ${param_index}")
+            params.append(category)
+            param_index += 1
+
+        if metadata is not None:
+            update_fields.append(f"metadata = ${param_index}")
+            params.append(json.dumps(metadata))
+            param_index += 1
+
+        if not update_fields:
+            raise R2RException(status_code=400, message="No fields to update")
+
+        update_fields.append("updated_at = NOW()")
+        params.append(entity_id)
+
+        query = f"""
             UPDATE {self._get_table_name(table_name)}
-            SET
-                name = $1,
-                category = $2,
-                description = $3,
-                description_embedding = $4,
-                chunk_ids = $5,
-                metadata = $6,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = $7 AND parent_id = $8
-            RETURNING id
+            SET {', '.join(update_fields)}
+            WHERE id = ${param_index}\
+            RETURNING id, name, category, description, parent_id, chunk_ids, metadata
         """
-
-        for entity in entities:
-            metadata = entity.metadata
-            if isinstance(metadata, str):
-                try:
-                    metadata = json.loads(metadata)
-                except json.JSONDecodeError:
-                    pass
-
-            description_embedding = entity.description_embedding
-            if isinstance(description_embedding, list):
-                description_embedding = str(description_embedding)
-
-            params = [
-                entity.name,
-                entity.category,
-                entity.description,
-                description_embedding,
-                entity.chunk_ids,
-                json.dumps(metadata) if metadata else None,
-                entity.id,
-                entity.parent_id,
-            ]
-            print("QUERY = ", QUERY)
-
+        try:
             result = await self.connection_manager.fetchrow_query(
-                QUERY, params
+                query=query,
+                params=params,
             )
-            if not result:
-                raise R2RException(
-                    f"Entity {entity.id} not found in {store_type} store or no permission to update",
-                    404,
-                )
 
-            results.append(result["id"])
-
-        return results
+            return Entity(
+                id=result["id"],
+                name=result["name"],
+                category=result["category"],
+                description=result["description"],
+                parent_id=result["parent_id"],
+                chunk_ids=result["chunk_ids"],
+                metadata=result["metadata"],
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while updating the entity: {e}",
+            )
 
     async def delete(
         self,
         parent_id: UUID,
         entity_ids: Optional[list[UUID]] = None,
         store_type: StoreType = StoreType.GRAPH,
-    ) -> list[UUID]:
+    ) -> None:
         """
         Delete entities from the specified store.
         If entity_ids is not provided, deletes all entities for the given parent_id.
@@ -355,8 +385,6 @@ class PostgresEntityHandler(EntityHandler):
                     f"Some entities not found in {store_type} store or no permission to delete",
                     404,
                 )
-
-        return [row["id"] for row in results]
 
 
 class PostgresRelationshipHandler(RelationshipHandler):
@@ -436,65 +464,84 @@ class PostgresRelationshipHandler(RelationshipHandler):
             await self.connection_manager.execute_query(QUERY)
 
     async def create(
-        self, relationships: list[Relationship], store_type: StoreType
-    ) -> list[UUID]:
-        """Create multiple relationships in the specified store."""
+        self,
+        subject: str,
+        subject_id: UUID,
+        predicate: str,
+        object: str,
+        object_id: UUID,
+        parent_id: UUID,
+        store_type: StoreType,
+        description: str | None = None,
+        weight: float | None = 1.0,
+        chunk_ids: Optional[list[UUID]] = None,
+        description_embedding: Optional[list[float] | str] = None,
+        metadata: Optional[dict[str, Any] | str] = None,
+    ) -> Relationship:
+        """Create a new relationship in the specified store."""
         table_name = self._get_relationship_table_for_store(store_type)
-        values = []
-        results = []
 
-        for relationship in relationships:
-            metadata = relationship.metadata
-            if isinstance(metadata, str):
-                try:
-                    metadata = json.loads(metadata)
-                except json.JSONDecodeError:
-                    pass
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except json.JSONDecodeError:
+                pass
 
-            description_embedding = relationship.description_embedding
-            if isinstance(description_embedding, list):
-                description_embedding = str(description_embedding)
+        if isinstance(description_embedding, list):
+            description_embedding = str(description_embedding)
 
-            value = (
-                relationship.subject,
-                relationship.predicate,
-                relationship.object,
-                relationship.description,
-                relationship.subject_id,
-                relationship.object_id,
-                relationship.weight,
-                relationship.chunk_ids,
-                relationship.parent_id,
-                description_embedding,
-                json.dumps(metadata) if metadata else None,
-            )
-            values.append(value)
-
-        QUERY = f"""
+        query = f"""
             INSERT INTO {self._get_table_name(table_name)}
             (subject, predicate, object, description, subject_id, object_id,
              weight, chunk_ids, parent_id, description_embedding, metadata)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING id
+            RETURNING id, subject, predicate, object, description, subject_id, object_id, weight, chunk_ids, parent_id, metadata
         """
 
-        for value in values:
-            result = await self.connection_manager.fetchrow_query(QUERY, value)
-            results.append(result["id"])
+        params = [
+            subject,
+            predicate,
+            object,
+            description,
+            subject_id,
+            object_id,
+            weight,
+            chunk_ids,
+            parent_id,
+            description_embedding,
+            json.dumps(metadata) if metadata else None,
+        ]
 
-        return results
+        result = await self.connection_manager.fetchrow_query(
+            query=query,
+            params=params,
+        )
+
+        return Relationship(
+            id=result["id"],
+            subject=result["subject"],
+            predicate=result["predicate"],
+            object=result["object"],
+            description=result["description"],
+            subject_id=result["subject_id"],
+            object_id=result["object_id"],
+            weight=result["weight"],
+            chunk_ids=result["chunk_ids"],
+            parent_id=result["parent_id"],
+            metadata=result["metadata"],
+        )
 
     async def get(
         self,
         parent_id: UUID,
         store_type: StoreType,
-        offset: int = 0,
-        limit: int = 100,
+        offset: int,
+        limit: int,
         relationship_ids: Optional[list[UUID]] = None,
         entity_names: Optional[list[str]] = None,
         relationship_types: Optional[list[str]] = None,
         include_metadata: bool = False,
-    ) -> tuple[list[Relationship], int]:
+    ):
         """
         Get relationships from the specified store.
 
@@ -514,7 +561,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
         table_name = self._get_relationship_table_for_store(store_type)
 
         conditions = ["parent_id = $1"]
-        params = [parent_id]
+        params: list[Any] = [parent_id]
         param_index = 2
 
         if relationship_ids:
@@ -589,69 +636,115 @@ class PostgresRelationshipHandler(RelationshipHandler):
         return relationships, count
 
     async def update(
-        self, relationships: list[Relationship], store_type: StoreType
-    ) -> list[UUID]:
+        self,
+        relationship_id: UUID,
+        store_type: StoreType,
+        subject: Optional[str],
+        subject_id: Optional[UUID],
+        predicate: Optional[str],
+        object: Optional[str],
+        object_id: Optional[UUID],
+        description: Optional[str],
+        description_embedding: Optional[list[float] | str],
+        weight: Optional[float],
+        metadata: Optional[dict[str, Any] | str],
+    ) -> Relationship:
         """Update multiple relationships in the specified store."""
         table_name = self._get_relationship_table_for_store(store_type)
-        results = []
+        update_fields = []
+        params: list = []
+        param_index = 1
 
-        QUERY = f"""
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except json.JSONDecodeError:
+                pass
+
+        if subject is not None:
+            update_fields.append(f"subject = ${param_index}")
+            params.append(subject)
+            param_index += 1
+
+        if subject_id is not None:
+            update_fields.append(f"subject_id = ${param_index}")
+            params.append(subject_id)
+            param_index += 1
+
+        if predicate is not None:
+            update_fields.append(f"predicate = ${param_index}")
+            params.append(predicate)
+            param_index += 1
+
+        if object is not None:
+            update_fields.append(f"object = ${param_index}")
+            params.append(object)
+            param_index += 1
+
+        if object_id is not None:
+            update_fields.append(f"object_id = ${param_index}")
+            params.append(object_id)
+            param_index += 1
+
+        if description is not None:
+            update_fields.append(f"description = ${param_index}")
+            params.append(description)
+            param_index += 1
+
+        if description_embedding is not None:
+            update_fields.append(f"description_embedding = ${param_index}")
+            params.append(description_embedding)
+            param_index += 1
+
+        if weight is not None:
+            update_fields.append(f"weight = ${param_index}")
+            params.append(weight)
+            param_index += 1
+
+        if not update_fields:
+            raise R2RException(status_code=400, message="No fields to update")
+
+        update_fields.append("updated_at = NOW()")
+        params.append(relationship_id)
+
+        query = f"""
             UPDATE {self._get_table_name(table_name)}
-            SET
-                subject = $1,
-                predicate = $2,
-                object = $3,
-                description = $4,
-                subject_id = $5,
-                object_id = $6,
-                weight = $7,
-                chunk_ids = $8,
-                metadata = $9,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = $10 AND parent_id = $11
-            RETURNING id
+            SET {', '.join(update_fields)}
+            WHERE id = ${param_index}
+            RETURNING id, subject, predicate, object, description, subject_id, object_id, weight, chunk_ids, parent_id, metadata
         """
 
-        for relationship in relationships:
-            metadata = relationship.metadata
-            if isinstance(metadata, str):
-                try:
-                    metadata = json.loads(metadata)
-                except json.JSONDecodeError:
-                    pass
-
-            params = [
-                relationship.subject,
-                relationship.predicate,
-                relationship.object,
-                relationship.description,
-                relationship.subject_id,
-                relationship.object_id,
-                relationship.weight,
-                relationship.chunk_ids,
-                json.dumps(metadata) if metadata else None,
-                relationship.id,
-                relationship.parent_id,
-            ]
-
+        try:
             result = await self.connection_manager.fetchrow_query(
-                QUERY, params
+                query=query,
+                params=params,
             )
-            if not result:
-                raise R2RException(
-                    f"Relationship {relationship.id} not found in {store_type} store or no permission to update",
-                    404,
-                )
-            results.append(result["id"])
 
-        return results
+            return Relationship(
+                id=result["id"],
+                subject=result["subject"],
+                predicate=result["predicate"],
+                object=result["object"],
+                description=result["description"],
+                subject_id=result["subject_id"],
+                object_id=result["object_id"],
+                weight=result["weight"],
+                chunk_ids=result["chunk_ids"],
+                parent_id=result["parent_id"],
+                metadata=result["metadata"],
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while updating the relationship: {e}",
+            )
 
     async def delete(
         self,
         parent_id: UUID,
         relationship_ids: Optional[list[UUID]] = None,
         store_type: StoreType = StoreType.GRAPH,
-    ) -> list[UUID]:
+    ) -> None:
         """
         Delete relationships from the specified store.
         If relationship_ids is not provided, deletes all relationships for the given parent_id.
@@ -695,8 +788,6 @@ class PostgresRelationshipHandler(RelationshipHandler):
                     404,
                 )
 
-        return [row["id"] for row in results]
-
 
 class PostgresCommunityHandler(CommunityHandler):
 
@@ -721,7 +812,7 @@ class PostgresCommunityHandler(CommunityHandler):
             node TEXT NOT NULL,
             cluster UUID NOT NULL,
             parent_cluster INT,
-            level INT NOT NULL,
+            level INT,
             is_final_cluster BOOLEAN NOT NULL,
             relationship_ids UUID[] NOT NULL,
             graph_id UUID,
@@ -740,207 +831,250 @@ class PostgresCommunityHandler(CommunityHandler):
             graph_id UUID,
             collection_id UUID,
             community_id UUID,
-            level INT NOT NULL,
+            level INT,
             name TEXT NOT NULL,
             summary TEXT NOT NULL,
-            findings TEXT[] NOT NULL,
-            rating FLOAT NOT NULL,
-            rating_explanation TEXT NOT NULL,
+            findings TEXT[],
+            rating FLOAT,
+            rating_explanation TEXT,
             description_embedding {vector_column_str} NOT NULL,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             metadata JSONB,
             UNIQUE (community_id, level, graph_id, collection_id)
         );"""
-        # created_by UUID REFERENCES {self._get_table_name("users")}(user_id),
-        # updated_by UUID REFERENCES {self._get_table_name("users")}(user_id),
 
         await self.connection_manager.execute_query(query)
 
     async def create(
         self,
-        graph_id: UUID,
+        parent_id: UUID,
+        store_type: StoreType,
         name: str,
         summary: str,
-        embedding: str,
-        findings: list[str],
+        findings: Optional[list[str]],
         rating: Optional[float],
         rating_explanation: Optional[str],
-        level: Optional[int],
-        metadata: Optional[dict],
-        auth_user: Any,
-    ) -> None:
+        description_embedding: Optional[list[float] | str] = None,
+    ) -> Community:
+        # Do we ever want to get communities from document store?
+        table_name = "graph_community"
 
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(graph_id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to create this community.",
-                    403,
-                )
+        if isinstance(description_embedding, list):
+            description_embedding = str(description_embedding)
 
-        QUERY = f"""
-            INSERT INTO {self._get_table_name("graph_community")}
-            (graph_id, name, summary, findings, rating, rating_explanation, description_embedding, level, metadata, created_by, updated_by)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, level, metadata, created_by, updated_by
+        query = f"""
+            INSERT INTO {self._get_table_name(table_name)}
+            (collection_id, name, summary, findings, rating, rating_explanation, description_embedding)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id, collection_id, name, summary, findings, rating, rating_explanation, created_at, updated_at
         """
 
         params = [
-            graph_id,
+            parent_id,
             name,
             summary,
             findings,
             rating,
             rating_explanation,
-            embedding,
-            level,
-            metadata,
-            auth_user.id,
-            auth_user.id,
+            description_embedding,
         ]
 
-        return await self.connection_manager.fetchrow_query(QUERY, params)
+        try:
+            result = await self.connection_manager.fetchrow_query(
+                query=query,
+                params=params,
+            )
+
+            return Community(
+                id=result["id"],
+                collection_id=result["collection_id"],
+                name=result["name"],
+                summary=result["summary"],
+                findings=result["findings"],
+                rating=result["rating"],
+                rating_explanation=result["rating_explanation"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while creating the community: {e}",
+            )
 
     async def update(
         self,
-        id: UUID,
         community_id: UUID,
-        name: Optional[str],
-        summary: Optional[str],
-        embedding: Optional[str],
-        findings: Optional[list[str]],
-        rating: Optional[float],
-        rating_explanation: Optional[str],
-        level: Optional[int],
-        metadata: Optional[dict],
-        auth_user: Any,
-    ) -> None:
-
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to update this community.",
-                    403,
-                )
-
+        store_type: StoreType,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        summary_embedding: Optional[list[float] | str] = None,
+        findings: Optional[list[str]] = None,
+        rating: Optional[float] = None,
+        rating_explanation: Optional[str] = None,
+    ) -> Community:
+        table_name = "graph_community"
         update_fields = []
-        params = [community_id]  # type: ignore
+        params: list[Any] = []
+        param_index = 1
+
         if name is not None:
-            update_fields.append(f"name = ${len(params)+1}")
+            update_fields.append(f"name = ${param_index}")
             params.append(name)
+            param_index += 1
 
         if summary is not None:
-            update_fields.append(f"summary = ${len(params)+1}")
+            update_fields.append(f"summary = ${param_index}")
             params.append(summary)
+            param_index += 1
 
-        if embedding is not None:
-            update_fields.append(f"description_embedding = ${len(params)+1}")
-            params.append(embedding)
+        if summary_embedding is not None:
+            update_fields.append(f"description_embedding = ${param_index}")
+            params.append(summary_embedding)
+            param_index += 1
 
         if findings is not None:
-            update_fields.append(f"findings = ${len(params)+1}")
+            update_fields.append(f"findings = ${param_index}")
             params.append(findings)
+            param_index += 1
 
         if rating is not None:
-            update_fields.append(f"rating = ${len(params)+1}")
+            update_fields.append(f"rating = ${param_index}")
             params.append(rating)
+            param_index += 1
 
         if rating_explanation is not None:
-            update_fields.append(f"rating_explanation = ${len(params)+1}")
+            update_fields.append(f"rating_explanation = ${param_index}")
             params.append(rating_explanation)
+            param_index += 1
 
-        if level is not None:
-            update_fields.append(f"level = ${len(params)+1}")
-            params.append(level)
+        if not update_fields:
+            raise R2RException(status_code=400, message="No fields to update")
 
-        if metadata is not None:
-            update_fields.append(f"metadata = ${len(params)+1}")
-            params.append(metadata)
+        update_fields.append("updated_at = NOW()")
+        params.append(community_id)
 
-        update_fields.append(f"updated_by = ${len(params)+1}")
-        params.append(auth_user.id)
-
-        update_fields.append(f"updated_at = CURRENT_TIMESTAMP")
-
-        QUERY = f"""
-            UPDATE {self._get_table_name("graph_community")} SET {", ".join(update_fields)} WHERE id = $1
-            RETURNING id, graph_id, name, summary, findings, rating, rating_explanation, metadata, level, created_by, updated_by, updated_at
+        query = f"""
+            UPDATE {self._get_table_name(table_name)}
+            SET {", ".join(update_fields)}
+            WHERE id = ${param_index}\
+            RETURNING id, community_id, name, summary, findings, rating, rating_explanation, created_at, updated_at
         """
-        return await self.connection_manager.fetchrow_query(QUERY, params)
+        try:
+            result = await self.connection_manager.fetchrow_query(
+                query, params
+            )
+
+            return Community(
+                id=result["id"],
+                community_id=result["community_id"],
+                name=result["name"],
+                summary=result["summary"],
+                findings=result["findings"],
+                rating=result["rating"],
+                rating_explanation=result["rating_explanation"],
+                created_at=result["created_at"],
+                updated_at=result["updated_at"],
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while updating the community: {e}",
+            )
 
     async def delete(
-        self, graph_id: UUID, community_id: UUID, auth_user: Any
+        self,
+        parent_id: UUID,
+        community_id: UUID,
     ) -> None:
+        table_name = "graph_community"
 
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(graph_id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to delete this community.",
-                    403,
-                )
-
-        QUERY = f"""
-            DELETE FROM {self._get_table_name("graph_community")} WHERE id = $1
+        query = f"""
+            DELETE FROM {self._get_table_name(table_name)}
+            WHERE id = $1 AND graph_id = $2
         """
-        await self.connection_manager.execute_query(QUERY, [community_id])
+
+        params = [community_id, parent_id]
+
+        try:
+            await self.connection_manager.execute_query(query, params)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while deleting the community: {e}",
+            )
 
     async def get(
         self,
-        graph_id: UUID,
+        parent_id: UUID,
+        store_type: StoreType,
         offset: int,
         limit: int,
-        community_id: Optional[UUID] = None,
-        auth_user: Optional[Any] = None,
+        community_ids: Optional[list[UUID]] = None,
+        community_names: Optional[list[str]] = None,
+        include_embeddings: bool = False,
     ):
+        """Retrieve communities from the specified store."""
+        # Do we ever want to get communities from document store?
+        table_name = "graph_community"
 
-        if not auth_user.is_superuser:
-            if not await self._check_permissions(graph_id, auth_user.id):
-                raise R2RException(
-                    "You do not have permission to access this graph.",
-                    403,
-                )
+        conditions = ["collection_id = $1"]
+        params: list[Any] = [parent_id]
+        param_index = 2
 
-        if community_id is None:
+        if community_ids:
+            conditions.append(f"id = ANY(${param_index})")
+            params.append(community_ids)
+            param_index += 1
 
-            QUERY = f"""
-                SELECT
-                    id, graph_id, name, summary, findings, rating, rating_explanation, level, metadata, created_by, updated_by, created_at, updated_at
-                FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
-                OFFSET $2 LIMIT $3
-            """
-            params = [graph_id, offset, limit]
-            communities = [
-                Community(**row)
-                for row in await self.connection_manager.fetch_query(
-                    QUERY, params
-                )
-            ]
+        if community_names:
+            conditions.append(f"name = ANY(${param_index})")
+            params.append(community_names)
+            param_index += 1
 
-            QUERY_COUNT = f"""
-                SELECT COUNT(*) FROM {self._get_table_name("graph_community")} WHERE graph_id = $1
-            """
-            count = (
-                await self.connection_manager.fetch_query(
-                    QUERY_COUNT, [graph_id]
-                )
-            )[0]["count"]
+        select_fields = """
+            id, community_id, name, summary, findings, rating,
+            rating_explanation, level, created_at, updated_at
+        """
+        if include_embeddings:
+            select_fields += ", description_embedding"
 
-            return communities, count
+        COUNT_QUERY = f"""
+            SELECT COUNT(*)
+            FROM {self._get_table_name(table_name)}
+            WHERE {' AND '.join(conditions)}
+        """
 
-        else:
-            QUERY = f"""
-                SELECT
-                    id, graph_id, name, summary, findings, rating, rating_explanation, level, metadata, created_by, updated_by, created_at, updated_at
-                FROM {self._get_table_name("graph_community")} WHERE graph_id = $1 AND id = $2
-            """
-            params = [graph_id, community_id]
-            return [
-                Community(
-                    **await self.connection_manager.fetchrow_query(
-                        QUERY, params
-                    )
-                )
-            ]
+        count = (
+            await self.connection_manager.fetch_query(
+                COUNT_QUERY, params[: param_index - 1]
+            )
+        )[0]["count"]
+
+        QUERY = f"""
+            SELECT {select_fields}
+            FROM {self._get_table_name(table_name)}
+            WHERE {' AND '.join(conditions)}
+            ORDER BY created_at
+            OFFSET ${param_index}
+        """
+        params.append(offset)
+        param_index += 1
+
+        if limit != -1:
+            QUERY += f" LIMIT ${param_index}"
+            params.append(limit)
+
+        rows = await self.connection_manager.fetch_query(QUERY, params)
+
+        communities = []
+        for row in rows:
+            community_dict = dict(row)
+
+            communities.append(Community(**community_dict))
+
+        return communities, count
 
 
 class PostgresGraphHandler(GraphHandler):
@@ -1668,58 +1802,6 @@ class PostgresGraphHandler(GraphHandler):
 
     #     return True
 
-    async def add_relationships_v3(
-        self, id: UUID, relationship_ids: list[UUID], copy_data: bool = True
-    ) -> bool:
-        """
-        Add relationships to the graph.
-        """
-        QUERY = f"""
-            UPDATE {self._get_table_name("relationship")}
-            SET graph_ids = array_append(graph_ids, $1)
-            WHERE id = ANY($2)
-        """
-        await self.connection_manager.execute_query(
-            QUERY, [id, relationship_ids]
-        )
-
-        if copy_data:
-            QUERY = f"""
-                INSERT INTO {self._get_table_name("graph_relationship")}
-                SELECT * FROM {self._get_table_name("relationship")}
-                WHERE id = ANY($1)
-            """
-            await self.connection_manager.execute_query(
-                QUERY, [relationship_ids]
-            )
-
-        return True
-
-    async def remove_relationships(
-        self, id: UUID, relationship_ids: list[UUID], delete_data: bool = True
-    ) -> bool:
-        """
-        Remove relationships from the graph.
-        """
-        QUERY = f"""
-            UPDATE {self._get_table_name("relationship")}
-            SET graph_ids = array_remove(graph_ids, $1)
-            WHERE id = ANY($2)
-        """
-        await self.connection_manager.execute_query(
-            QUERY, [id, relationship_ids]
-        )
-
-        if delete_data:
-            QUERY = f"""
-                DELETE FROM {self._get_table_name("graph_relationship")} WHERE id = ANY($1)
-            """
-            await self.connection_manager.execute_query(
-                QUERY, [relationship_ids]
-            )
-
-        return True
-
     async def update(
         self,
         graph_id: UUID,
@@ -1751,7 +1833,7 @@ class PostgresGraphHandler(GraphHandler):
             UPDATE {self._get_table_name("graph")}
             SET {', '.join(update_fields)}
             WHERE id = ${param_index}
-            RETURNING id, name, description, status, created_at, updated_at, collection_id, document_ids,
+            RETURNING id, name, description, status, created_at, updated_at, collection_id, document_ids
         """
 
         try:
@@ -2013,7 +2095,7 @@ class PostgresGraphHandler(GraphHandler):
 
     async def get_entities(
         self,
-        graph_id: UUID,
+        parent_id: UUID,
         offset: int,
         limit: int,
         entity_ids: Optional[list[UUID]] = None,
@@ -2026,7 +2108,7 @@ class PostgresGraphHandler(GraphHandler):
         Args:
             offset: Number of records to skip
             limit: Maximum number of records to return (-1 for no limit)
-            graph_id: UUID of the graph
+            parent_id: UUID of the collection
             entity_ids: Optional list of entity IDs to filter by
             entity_names: Optional list of entity names to filter by
             include_embeddings: Whether to include embeddings in the response
@@ -2035,7 +2117,7 @@ class PostgresGraphHandler(GraphHandler):
             Tuple of (list of entities, total count)
         """
         conditions = ["parent_id = $1"]
-        params = [graph_id]
+        params: list[Any] = [parent_id]
         param_index = 2
 
         if entity_ids:
@@ -2157,7 +2239,6 @@ class PostgresGraphHandler(GraphHandler):
 
         # Execute separate DELETE queries
         delete_queries = [
-            f"DELETE FROM {self._get_table_name('chunk_entity')} WHERE document_id = $1",
             f"DELETE FROM {self._get_table_name('relationship')} WHERE document_id = $1",
             f"DELETE FROM {self._get_table_name('entity')} WHERE document_id = $1",
         ]
@@ -2194,30 +2275,6 @@ class PostgresGraphHandler(GraphHandler):
             )
             return None
         return None
-
-    ##################### RELATIONSHIP METHODS #####################
-
-    # DEPRECATED
-    async def add_relationships(
-        self,
-        relationships: list[Relationship],
-        table_name: str = "relationship",
-    ):  # type: ignore
-        """
-        Upsert relationships into the relationship table. These are raw relationships extracted from the document.
-
-        Args:
-            relationships: list[Relationship]: list of relationships to upsert
-            table_name: str: name of the table to upsert into
-
-        Returns:
-            result: asyncpg.Record: result of the upsert operation
-        """
-        return await _add_objects(
-            objects=[ele.to_dict() for ele in relationships],
-            full_table_name=self._get_table_name(table_name),
-            connection_manager=self.connection_manager,
-        )
 
     async def get_all_relationships(
         self,
@@ -2273,8 +2330,8 @@ class PostgresGraphHandler(GraphHandler):
         self,
         parent_id: UUID,
         store_type: StoreType,
-        offset: int = 0,
-        limit: int = 100,
+        offset: int,
+        limit: int,
         entity_names: Optional[list[str]] = None,
         relationship_types: Optional[list[str]] = None,
         relationship_id: Optional[UUID] = None,
@@ -2319,7 +2376,7 @@ class PostgresGraphHandler(GraphHandler):
 
         # Build conditions and parameters for listing relationships
         conditions = ["parent_id = $1"]
-        params = [parent_id]
+        params: list[Any] = [parent_id]
         param_index = 2
 
         if entity_names:
@@ -2425,7 +2482,7 @@ class PostgresGraphHandler(GraphHandler):
     #     return [item["community_id"] for item in community_ids]
 
     async def check_communities_exist(
-        self, collection_id: UUID, community_ids: List[UUID]
+        self, collection_id: UUID, community_ids: list[UUID]
     ) -> Set[UUID]:
         """
         Check which communities already exist in the database.
@@ -2480,56 +2537,71 @@ class PostgresGraphHandler(GraphHandler):
 
     async def get_communities(
         self,
+        parent_id: UUID,
         offset: int,
         limit: int,
-        collection_id: Optional[UUID] = None,
-        levels: Optional[list[int]] = None,
         community_ids: Optional[list[UUID]] = None,
-    ) -> dict:
-        conditions = []
-        params: list = [collection_id]
+        include_embeddings: bool = False,
+    ) -> tuple[list[Community], int]:
+        """
+        Get communities for a graph.
+
+        Args:
+            collection_id: UUID of the collection
+            offset: Number of records to skip
+            limit: Maximum number of records to return (-1 for no limit)
+            community_ids: Optional list of community IDs to filter by
+            include_embeddings: Whether to include embeddings in the response
+
+        Returns:
+            Tuple of (list of communities, total count)
+        """
+        conditions = ["collection_id = $1"]
+        params: list[Any] = [parent_id]
         param_index = 2
 
-        if levels is not None:
-            conditions.append(f"level = ANY(${param_index})")
-            params.append(levels)
-            param_index += 1
-
-        if community_ids is not None:
-            conditions.append(f"community_id = ANY(${param_index})")
+        if community_ids:
+            conditions.append(f"id = ANY(${param_index})")
             params.append(community_ids)
             param_index += 1
 
-        pagination_params = []
-        if offset:
-            pagination_params.append(f"OFFSET ${param_index}")
-            params.append(offset)
-            param_index += 1
+        select_fields = """
+            id, collection_id, name, summary, findings, rating, rating_explanation
+        """
+        if include_embeddings:
+            select_fields += ", description_embedding"
+
+        COUNT_QUERY = f"""
+            SELECT COUNT(*)
+            FROM {self._get_table_name("graph_community")}
+            WHERE {' AND '.join(conditions)}
+        """
+        count = (
+            await self.connection_manager.fetch_query(COUNT_QUERY, params)
+        )[0]["count"]
+
+        QUERY = f"""
+            SELECT {select_fields}
+            FROM {self._get_table_name("graph_community")}
+            WHERE {' AND '.join(conditions)}
+            ORDER BY created_at
+            OFFSET ${param_index}
+        """
+        params.append(offset)
+        param_index += 1
 
         if limit != -1:
-            pagination_params.append(f"LIMIT ${param_index}")
+            QUERY += f" LIMIT ${param_index}"
             params.append(limit)
-            param_index += 1
 
-        pagination_clause = " ".join(pagination_params)
+        rows = await self.connection_manager.fetch_query(QUERY, params)
 
-        query = f"""
-            SELECT id, community_id, collection_id, level, name, summary, findings, rating, rating_explanation, COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name('graph_community')}
-            WHERE collection_id = $1
-            {" AND " + " AND ".join(conditions) if conditions else ""}
-            ORDER BY community_id
-            {pagination_clause}
-        """
+        communities = []
+        for row in rows:
+            community_dict = dict(row)
+            communities.append(Community(**community_dict))
 
-        results = await self.connection_manager.fetch_query(query, params)
-        total_entries = results[0]["total_entries"] if results else 0
-        communities = [Community(**community) for community in results]
-
-        return {
-            "communities": communities,
-            "total_entries": total_entries,
-        }
+        return communities, count
 
     async def get_community_details(
         self,
@@ -2659,7 +2731,6 @@ class PostgresGraphHandler(GraphHandler):
         # TODO: make these queries more efficient. Pass the document_ids as params.
         if cascade:
             DELETE_QUERIES += [
-                f"DELETE FROM {self._get_table_name('chunk_entity')} WHERE document_id = ANY($1::uuid[]);",
                 f"DELETE FROM {self._get_table_name('relationship')} WHERE document_id = ANY($1::uuid[]);",
                 f"DELETE FROM {self._get_table_name('entity')} WHERE document_id = ANY($1::uuid[]);",
                 f"DELETE FROM {self._get_table_name('graph_entity')} WHERE collection_id = $1;",
@@ -2693,10 +2764,8 @@ class PostgresGraphHandler(GraphHandler):
 
     async def perform_graph_clustering(
         self,
-        collection_id: UUID | None,
-        # graph_id: UUID | None,
+        collection_id: UUID,
         leiden_params: dict[str, Any],
-        use_community_cache: bool = False,
     ) -> int:
         """
         Leiden clustering algorithm to cluster the knowledge graph relationships into communities.
@@ -2714,8 +2783,6 @@ class PostgresGraphHandler(GraphHandler):
             weight_default: int| float = 1.0,
             check_directed: bool = True,
         """
-
-        start_time = time.time()
 
         # # relationships = await self.get_all_relationships(
         # #     collection_id, collection_id # , graph_id
@@ -2772,17 +2839,13 @@ class PostgresGraphHandler(GraphHandler):
         #         relationship_ids_cache, leiden_params, collection_id
         #     )
         # else:
-        num_communities = await self._cluster_and_add_community_info(
+        return await self._cluster_and_add_community_info(
             relationships=relationships,
             relationship_ids_cache=relationship_ids_cache,
             leiden_params=leiden_params,
             collection_id=collection_id,
             # graph_id=collection_id,
         )
-
-        return num_communities
-
-    ####################### MANAGEMENT METHODS #######################
 
     async def get_entity_map(
         self, offset: int, limit: int, document_id: UUID
@@ -2851,64 +2914,6 @@ class PostgresGraphHandler(GraphHandler):
                 )
 
         return entity_map
-
-    async def get_graph_status(self, collection_id: UUID) -> dict:
-        # check document_info table for the documents in the collection and return the status of each document
-        kg_extraction_statuses = await self.connection_manager.fetch_query(
-            f"SELECT document_id, extraction_status FROM {self._get_table_name('document_info')} WHERE collection_id = $1",
-            [collection_id],
-        )
-
-        document_ids = [
-            doc_id["document_id"] for doc_id in kg_extraction_statuses
-        ]
-
-        graph_cluster_statuses = await self.connection_manager.fetch_query(
-            f"SELECT enrichment_status FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} WHERE id = $1",
-            [collection_id],
-        )
-
-        # entity and relationship counts
-        chunk_entity_count = await self.connection_manager.fetch_query(
-            f"SELECT COUNT(*) FROM {self._get_table_name('chunk_entity')} WHERE document_id = ANY($1)",
-            [document_ids],
-        )
-
-        relationship_count = await self.connection_manager.fetch_query(
-            f"SELECT COUNT(*) FROM {self._get_table_name('relationship')} WHERE document_id = ANY($1)",
-            [document_ids],
-        )
-
-        entity_count = await self.connection_manager.fetch_query(
-            f"SELECT COUNT(*) FROM {self._get_table_name('entity')} WHERE document_id = ANY($1)",
-            [document_ids],
-        )
-
-        graph_entity_count = await self.connection_manager.fetch_query(
-            f"SELECT COUNT(*) FROM {self._get_table_name('graph_entity')} WHERE collection_id = $1",
-            [collection_id],
-        )
-
-        community_count = await self.connection_manager.fetch_query(
-            f"SELECT COUNT(*) FROM {self._get_table_name('community')} WHERE collection_id = $1",
-            [collection_id],
-        )
-
-        return {
-            "kg_extraction_statuses": kg_extraction_statuses,
-            "graph_cluster_status": graph_cluster_statuses[0][
-                "enrichment_status"
-            ],
-            "chunk_entity_count": chunk_entity_count[0]["count"],
-            "relationship_count": relationship_count[0]["count"],
-            "entity_count": entity_count[0]["count"],
-            "graph_entity_count": graph_entity_count[0]["count"],
-            "community_count": community_count[0]["count"],
-        }
-
-    ####################### ESTIMATION METHODS #######################
-
-    ####################### GRAPH SEARCH METHODS #######################
 
     def _build_filters(
         self, filters: dict, parameters: list[Union[str, int, bytes]]
@@ -3090,8 +3095,6 @@ class PostgresGraphHandler(GraphHandler):
             print("output = ", output)
             yield output
 
-    ####################### GRAPH CLUSTERING METHODS #######################
-
     async def _create_graph_and_cluster(
         self, relationships: list[Relationship], leiden_params: dict[str, Any]
     ) -> Any:
@@ -3107,11 +3110,7 @@ class PostgresGraphHandler(GraphHandler):
 
         logger.info(f"Graph has {len(G.nodes)} nodes and {len(G.edges)} edges")
 
-        hierarchical_communities = await self._compute_leiden_communities(
-            G, leiden_params
-        )
-
-        return hierarchical_communities
+        return await self._compute_leiden_communities(G, leiden_params)
 
     async def _cluster_and_add_community_info(
         self,
@@ -3395,8 +3394,6 @@ class PostgresGraphHandler(GraphHandler):
         except ImportError as e:
             raise ImportError("Please install the graspologic package.") from e
 
-    ####################### UTILITY METHODS #######################
-
     async def get_existing_document_entity_chunk_ids(
         self, document_id: UUID
     ) -> list[str]:
@@ -3409,23 +3406,6 @@ class PostgresGraphHandler(GraphHandler):
                 QUERY, [document_id]
             )
         ]
-
-    async def create_vector_index(self):
-        # need to implement this. Just call vector db provider's create_vector_index method.
-        # this needs to be run periodically for every collection.
-        raise NotImplementedError
-
-    async def structured_query(self):
-        raise NotImplementedError
-
-    async def update_extraction_prompt(self):
-        raise NotImplementedError
-
-    async def update_kg_search_prompt(self):
-        raise NotImplementedError
-
-    async def upsert_relationships(self):
-        raise NotImplementedError
 
     async def get_entity_count(
         self,
@@ -3475,41 +3455,6 @@ class PostgresGraphHandler(GraphHandler):
             "count"
         ]
 
-    async def get_relationship_count(
-        self,
-        collection_id: Optional[UUID] = None,
-        document_id: Optional[UUID] = None,
-    ) -> int:
-        if collection_id is None and document_id is None:
-            raise ValueError(
-                "Either collection_id or document_id must be provided."
-            )
-
-        conditions = []
-        params = []
-
-        if collection_id:
-            conditions.append(
-                f"""
-                document_id = ANY(
-                    SELECT document_id FROM {self._get_table_name("document_info")}
-                    WHERE $1 = ANY(collection_ids)
-                )
-                """
-            )
-            params.append(str(collection_id))
-        else:
-            conditions.append("document_id = $1")
-            params.append(str(document_id))
-
-        QUERY = f"""
-            SELECT COUNT(*) FROM {self._get_table_name("relationship")}
-            WHERE {" AND ".join(conditions)}
-        """
-        return (await self.connection_manager.fetch_query(QUERY, params))[0][
-            "count"
-        ]
-
     async def update_entity_descriptions(self, entities: list[Entity]):
 
         query = f"""
@@ -3521,7 +3466,7 @@ class PostgresGraphHandler(GraphHandler):
         inputs = [
             (
                 entity.name,
-                entity.graph_id,
+                entity.parent_id,
                 entity.description,
                 entity.description_embedding,
             )
@@ -3529,8 +3474,6 @@ class PostgresGraphHandler(GraphHandler):
         ]
 
         await self.connection_manager.execute_many(query, inputs)  # type: ignore
-
-    ####################### PRIVATE  METHODS ##########################
 
 
 def _json_serialize(obj):

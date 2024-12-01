@@ -6,8 +6,11 @@ import {
   WrappedCollectionsResponse,
   WrappedDocumentResponse,
   WrappedDocumentsResponse,
+  WrappedEntitiesResponse,
   WrappedIngestionResponse,
+  WrappedRelationshipsResponse,
 } from "../../types";
+import { feature } from "../../feature";
 
 let fs: any;
 if (typeof window === "undefined") {
@@ -32,6 +35,7 @@ export class DocumentsClient {
    * @param runWithOrchestration Optional flag to run with orchestration
    * @returns
    */
+  @feature("documents.create")
   async create(options: {
     file?: FileInput;
     content?: string;
@@ -144,6 +148,7 @@ export class DocumentsClient {
    * @param runWithOrchestration Whether to run with orchestration
    * @returns
    */
+  @feature("documents.update")
   async update(options: {
     id: string;
     file?: FileInput;
@@ -236,6 +241,7 @@ export class DocumentsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("documents.retrieve")
   async retrieve(options: { id: string }): Promise<WrappedDocumentResponse> {
     return this.client.makeRequest("GET", `documents/${options.id}`);
   }
@@ -247,6 +253,7 @@ export class DocumentsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("documents.list")
   async list(options?: {
     ids?: string[];
     offset?: number;
@@ -271,6 +278,7 @@ export class DocumentsClient {
    * @param id ID of document to download
    * @returns
    */
+  @feature("documents.download")
   async download(options: { id: string }): Promise<any> {
     return this.client.makeRequest("GET", `documents/${options.id}/download`, {
       responseType: "blob",
@@ -282,6 +290,7 @@ export class DocumentsClient {
    * @param id ID of document to delete
    * @returns
    */
+  @feature("documents.delete")
   async delete(options: { id: string }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", `documents/${options.id}`);
   }
@@ -294,6 +303,7 @@ export class DocumentsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("documents.listChunks")
   async listChunks(options: {
     id: string;
     includeVectors?: boolean;
@@ -318,6 +328,7 @@ export class DocumentsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("documents.listCollections")
   async listCollections(options: {
     id: string;
     offset?: number;
@@ -337,11 +348,117 @@ export class DocumentsClient {
     );
   }
 
+  @feature("documents.deleteByFilter")
   async deleteByFilter(options: {
     filters: Record<string, any>;
   }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", "documents/by-filter", {
       data: options.filters,
     });
+  }
+
+  /**
+   * Extracts entities and relationships from a document.
+   *
+   * The entities and relationships extraction process involves:
+   *  1. Parsing documents into semantic chunks
+   *  2. Extracting entities and relationships using LLMs
+   * @param options
+   * @returns
+   */
+  @feature("documents.extract")
+  async extract(options: {
+    id: string;
+    runType?: string;
+    runWithOrchestration?: boolean;
+  }): Promise<any> {
+    const data: Record<string, any> = {};
+
+    if (options.runType) {
+      data.runType = options.runType;
+    }
+    if (options.runWithOrchestration !== undefined) {
+      data.runWithOrchestration = options.runWithOrchestration;
+    }
+
+    return this.client.makeRequest("POST", `documents/${options.id}/extract`, {
+      data,
+    });
+  }
+
+  /**
+   * Retrieves the entities that were extracted from a document. These
+   * represent important semantic elements like people, places,
+   * organizations, concepts, etc.
+   *
+   * Users can only access entities from documents they own or have access
+   * to through collections. Entity embeddings are only included if
+   * specifically requested.
+   *
+   * Results are returned in the order they were extracted from the document.
+   * @param id Document ID to retrieve entities for
+   * @param offset Specifies the number of objects to skip. Defaults to 0.
+   * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+   * @param includeEmbeddings Whether to include vector embeddings in the response.
+   * @returns
+   */
+  @feature("documents.listEntities")
+  async listEntities(options: {
+    id: string;
+    offset?: number;
+    limit?: number;
+    includeVectors?: boolean;
+  }): Promise<WrappedEntitiesResponse> {
+    const params: Record<string, any> = {
+      offset: options.offset ?? 0,
+      limit: options.limit ?? 100,
+      includeVectors: options.includeVectors ?? false,
+    };
+
+    return this.client.makeRequest("GET", `documents/${options.id}/entities`, {
+      params,
+    });
+  }
+
+  /**
+   * Retrieves the relationships between entities that were extracted from
+   * a document. These represent connections and interactions between
+   * entities found in the text.
+   *
+   * Users can only access relationships from documents they own or have
+   * access to through collections. Results can be filtered by entity names
+   * and relationship types.
+   *
+   * Results are returned in the order they were extracted from the document.
+   * @param id Document ID to retrieve relationships for
+   * @param offset Specifies the number of objects to skip. Defaults to 0.
+   * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+   * @param includeEmbeddings Whether to include vector embeddings in the response.
+   * @param entityNames Filter relationships by specific entity names.
+   * @param relationshipTypes Filter relationships by specific relationship types.
+   * @returns WrappedRelationshipsResponse
+   */
+  @feature("documents.listRelationships")
+  async listRelationships(options: {
+    id: string;
+    offset?: number;
+    limit?: number;
+    includeVectors?: boolean;
+    entityNames?: string[];
+    relationshipTypes?: string[];
+  }): Promise<WrappedRelationshipsResponse> {
+    const params: Record<string, any> = {
+      offset: options.offset ?? 0,
+      limit: options.limit ?? 100,
+      includeVectors: options.includeVectors ?? false,
+    };
+
+    return this.client.makeRequest(
+      "GET",
+      `documents/${options.id}/relationships`,
+      {
+        params,
+      },
+    );
   }
 }

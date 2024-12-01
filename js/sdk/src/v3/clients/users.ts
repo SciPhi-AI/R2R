@@ -1,3 +1,4 @@
+import { feature } from "../../feature";
 import { r2rClient } from "../../r2rClient";
 import {
   WrappedBooleanResponse,
@@ -17,6 +18,7 @@ export class UsersClient {
    * @param password User's password
    * @returns
    */
+  @feature("users.register")
   async register(options: {
     email: string;
     password: string;
@@ -33,6 +35,7 @@ export class UsersClient {
    * @param password User's password
    * @returns
    */
+  @feature("users.delete")
   async delete(options: {
     id: string;
     password: string;
@@ -49,6 +52,7 @@ export class UsersClient {
    * @param email User's email address
    * @param verificationCode Verification code sent to the user's email
    */
+  @feature("users.verifyEmail")
   async verifyEmail(options: {
     email: string;
     verificationCode: string;
@@ -64,6 +68,7 @@ export class UsersClient {
    * @param password User's password
    * @returns
    */
+  @feature("users.login")
   async login(options: { email: string; password: string }): Promise<any> {
     const response = await this.client.makeRequest("POST", "users/login", {
       data: {
@@ -90,7 +95,7 @@ export class UsersClient {
    * @param accessToken Existing access token
    * @returns
    */
-  // FIXME: What is going on here...
+  @feature("users.loginWithToken")
   async loginWithToken(options: { accessToken: string }): Promise<any> {
     this.client.setTokens(options.accessToken, null);
 
@@ -115,6 +120,7 @@ export class UsersClient {
    * Log out the current user.
    * @returns
    */
+  @feature("users.logout")
   async logout(): Promise<WrappedGenericMessageResponse> {
     const response = await this.client.makeRequest("POST", "users/logout");
     this.client.setTokens(null, null);
@@ -125,6 +131,7 @@ export class UsersClient {
    * Refresh the access token using the refresh token.
    * @returns
    */
+  @feature("users.refreshAccessToken")
   async refreshAccessToken(): Promise<WrappedTokenResponse> {
     const refreshToken = this.client.getRefreshToken();
     if (!refreshToken) {
@@ -160,6 +167,7 @@ export class UsersClient {
    * @param new_password User's new password
    * @returns
    */
+  @feature("users.changePassword")
   async changePassword(options: {
     current_password: string;
     new_password: string;
@@ -174,6 +182,7 @@ export class UsersClient {
    * @param email User's email address
    * @returns
    */
+  @feature("users.requestPasswordReset")
   async requestPasswordReset(options: {
     email: string;
   }): Promise<WrappedGenericMessageResponse> {
@@ -182,6 +191,13 @@ export class UsersClient {
     });
   }
 
+  /**
+   * Reset a user's password using a reset token.
+   * @param reset_token Reset token sent to the user's email
+   * @param new_password New password for the user
+   * @returns
+   */
+  @feature("users.resetPassword")
   async resetPassword(options: {
     reset_token: string;
     new_password: string;
@@ -200,6 +216,7 @@ export class UsersClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("users.list")
   async list(options?: {
     email?: string;
     is_active?: boolean;
@@ -232,6 +249,7 @@ export class UsersClient {
    * @param id User ID to retrieve
    * @returns
    */
+  @feature("users.retrieve")
   async retrieve(options: { id: string }): Promise<WrappedUserResponse> {
     return this.client.makeRequest("GET", `users/${options.id}`);
   }
@@ -240,6 +258,7 @@ export class UsersClient {
    * Get detailed information about the currently authenticated user.
    * @returns
    */
+  @feature("users.me")
   async me(): Promise<WrappedUserResponse> {
     return this.client.makeRequest("GET", `users/me`);
   }
@@ -254,6 +273,7 @@ export class UsersClient {
    * @param profilePicture Optional new profile picture for the user
    * @returns
    */
+  @feature("users.update")
   async update(options: {
     id: string;
     email?: string;
@@ -284,6 +304,7 @@ export class UsersClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("users.listCollections")
   async listCollections(options: {
     id: string;
     offset?: number;
@@ -305,6 +326,7 @@ export class UsersClient {
    * @param collectionId Collection ID to add the user to
    * @returns
    */
+  @feature("users.addToCollection")
   async addToCollection(options: {
     id: string;
     collectionId: string;
@@ -321,6 +343,7 @@ export class UsersClient {
    * @param collectionId Collection ID to remove the user from
    * @returns
    */
+  @feature("users.removeFromCollection")
   async removeFromCollection(options: {
     id: string;
     collectionId: string;

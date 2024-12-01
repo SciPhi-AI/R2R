@@ -129,7 +129,7 @@ describe("r2rClient Integration Tests", () => {
         metadatas: [{ title: "raskolnikov.txt" }, { title: "karamozov.txt" }],
       }),
     ).resolves.not.toThrow();
-  });
+  }, 10000);
 
   test("Ingest files in folder", async () => {
     const files = ["examples/data/folder"];
@@ -153,7 +153,7 @@ describe("r2rClient Integration Tests", () => {
     await expect(
       client.ingestChunks([{ text: "test chunks" }]),
     ).resolves.not.toThrow();
-  });
+  }, 10000);
 
   test("Ingest chunks", async () => {
     await expect(
@@ -163,7 +163,7 @@ describe("r2rClient Integration Tests", () => {
         { source: "example" },
       ),
     ).resolves.not.toThrow();
-  });
+  }, 10000);
 
   test("Search documents", async () => {
     await expect(client.search("test")).resolves.not.toThrow();

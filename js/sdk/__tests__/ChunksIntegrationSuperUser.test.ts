@@ -31,7 +31,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     expect(response.results).toEqual([
       {
         document_id: expect.any(String),
-        message: "Ingestion task completed successfully.",
+        message: "Document created and ingested successfully.",
       },
     ]);
   }, 10000);

@@ -54,9 +54,8 @@ class KGClusteringPipe(AsyncPipe):
 
         num_communities = await self.database_provider.graph_handler.perform_graph_clustering(
             collection_id=collection_id,
-            # graph_id=graph_id,
             leiden_params=leiden_params,
-        )  # type: ignore
+        )
 
         logger.info(
             f"Clustering completed. Generated {num_communities} communities."

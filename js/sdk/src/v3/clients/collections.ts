@@ -1,3 +1,4 @@
+import { feature } from "../../feature";
 import { r2rClient } from "../../r2rClient";
 import {
   WrappedBooleanResponse,
@@ -17,6 +18,7 @@ export class CollectionsClient {
    * @param description Optional description of the collection
    * @returns A promise that resolves with the created collection
    */
+  @feature("collections.create")
   async create(options: {
     name: string;
     description?: string;
@@ -33,6 +35,7 @@ export class CollectionsClient {
    * @param limit Optional limit for pagination
    * @returns
    */
+  @feature("collections.list")
   async list(options?: {
     ids?: string[];
     offset?: number;
@@ -57,6 +60,7 @@ export class CollectionsClient {
    * @param id Collection ID to retrieve
    * @returns
    */
+  @feature("collections.retrieve")
   async retrieve(options: { id: string }): Promise<WrappedCollectionResponse> {
     return this.client.makeRequest("GET", `collections/${options.id}`);
   }
@@ -68,6 +72,7 @@ export class CollectionsClient {
    * @param description Optional new description for the collection
    * @returns
    */
+  @feature("collections.update")
   async update(options: {
     id: string;
     name?: string;
@@ -88,6 +93,7 @@ export class CollectionsClient {
    * @param id Collection ID to delete
    * @returns
    */
+  @feature("collections.delete")
   async delete(options: { id: string }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", `collections/${options.id}`);
   }
@@ -99,6 +105,7 @@ export class CollectionsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("collections.listDocuments")
   async listDocuments(options: {
     id: string;
     offset?: number;
@@ -124,6 +131,7 @@ export class CollectionsClient {
    * @param documentId Document ID to add
    * @returns
    */
+  @feature("collections.addDocument")
   async addDocument(options: {
     id: string;
     documentId: string;
@@ -140,6 +148,7 @@ export class CollectionsClient {
    * @param documentId Document ID to remove
    * @returns
    */
+  @feature("collections.removeDocument")
   async removeDocument(options: {
     id: string;
     documentId: string;
@@ -157,6 +166,7 @@ export class CollectionsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("collections.listUsers")
   async listUsers(options: {
     id: string;
     offset?: number;
@@ -178,6 +188,7 @@ export class CollectionsClient {
    * @param userId User ID to add
    * @returns
    */
+  @feature("collections.addUser")
   async addUser(options: {
     id: string;
     userId: string;
@@ -194,6 +205,7 @@ export class CollectionsClient {
    * @param userId User ID to remove
    * @returns
    */
+  @feature("collections.removeUser")
   async removeUser(options: {
     id: string;
     userId: string;
@@ -201,6 +213,51 @@ export class CollectionsClient {
     return this.client.makeRequest(
       "DELETE",
       `collections/${options.id}/users/${options.userId}`,
+    );
+  }
+
+  /**
+   * Creates communities in the graph by analyzing entity relationships and similarities.
+   *
+   * Communities are created through the following process:
+   *  1. Analyzes entity relationships and metadata to build a similarity graph
+   *  2. Applies advanced community detection algorithms (e.g. Leiden) to identify densely connected groups
+   *  3. Creates hierarchical community structure with multiple granularity levels
+   *  4. Generates natural language summaries and statistical insights for each community
+   *
+   * The resulting communities can be used to:
+   *  - Understand high-level graph structure and organization
+   *  - Identify key entity groupings and their relationships
+   *  - Navigate and explore the graph at different levels of detail
+   *  - Generate insights about entity clusters and their characteristics
+   *
+   * The community detection process is configurable through settings like:
+   *  - Community detection algorithm parameters
+   *  - Summary generation prompt
+   * @param collectionId The collection ID corresponding to the graph
+   * @returns
+   */
+  @feature("collections.extract")
+  async extract(options: {
+    collectionId: string;
+    runType?: string;
+    settings?: Record<string, any>;
+    runWithOrchestration?: boolean;
+  }): Promise<WrappedBooleanResponse> {
+    const data = {
+      ...(options.settings && { settings: options.settings }),
+      ...(options.runType && { run_type: options.runType }),
+      ...(options.runWithOrchestration && {
+        run_with_orchestration: options.runWithOrchestration,
+      }),
+    };
+
+    return this.client.makeRequest(
+      "POST",
+      `collections/${options.collectionId}/extract`,
+      {
+        data,
+      },
     );
   }
 }
