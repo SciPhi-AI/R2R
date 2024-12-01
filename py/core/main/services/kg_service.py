@@ -24,6 +24,7 @@ from core.base.abstractions import (
     Graph,
     KGCreationSettings,
     KGEnrichmentSettings,
+    KGEnrichmentStatus,
     KGEntityDeduplicationSettings,
     KGEntityDeduplicationType,
     R2RException,
@@ -515,11 +516,28 @@ class KgService(Service):
             description=description,
         )
 
+    @telemetry_event("reset_graph_v3")
+    async def reset_graph_v3(self, id: UUID) -> bool:
+        await self.providers.database.graph_handler.reset(
+            graph_id=id,
+        )
+        await self.providers.database.document_handler.set_workflow_status(
+            id=id,
+            status_type="graph_cluster_status",
+            status=KGEnrichmentStatus.PENDING,
+        )
+        return True
+
     @telemetry_event("delete_graph_v3")
     async def delete_graph_v3(self, id: UUID) -> bool:
         await self.providers.database.graph_handler.delete(
             graph_id=id,
         )
+        # await self.providers.database.document_handler.set_workflow_status(
+        #     id=id,
+        #     status_type="graph_cluster_status",
+        #     status=KGEnrichmentStatus.PENDING,
+        # )
         return True
 
     @telemetry_event("get_document_ids_for_create_graph")
@@ -1074,11 +1092,11 @@ class KgService(Service):
                 "relation_types": "\n".join(relation_types),
             },
         )
-        print('starting a job....')
+        print("starting a job....")
 
         for attempt in range(retries):
             try:
-                print('getting a response....')
+                print("getting a response....")
 
                 response = await self.providers.llm.aget_completion(
                     messages,
@@ -1086,7 +1104,7 @@ class KgService(Service):
                 )
 
                 kg_extraction = response.choices[0].message.content
-                print('kg_extraction = ', kg_extraction)
+                print("kg_extraction = ", kg_extraction)
 
                 if not kg_extraction:
                     raise R2RException(
@@ -1115,7 +1133,7 @@ class KgService(Service):
                     relationships = re.findall(
                         relationship_pattern, response_str
                     )
-                    print('found len(relationships) = ', len(relationships))
+                    print("found len(relationships) = ", len(relationships))
 
                     entities_arr = []
                     for entity in entities:
@@ -1138,7 +1156,7 @@ class KgService(Service):
                                 attributes={},
                             )
                         )
-                    print('found len(entities) = ', len(entities))
+                    print("found len(entities) = ", len(entities))
 
                     relations_arr = []
                     for relationship in relationships:
@@ -1211,7 +1229,7 @@ class KgService(Service):
 
         total_entities, total_relationships = 0, 0
 
-        print('received len(kg_extractions) = ', len(kg_extractions))
+        print("received len(kg_extractions) = ", len(kg_extractions))
         for extraction in kg_extractions:
             # print("extraction = ", extraction)
 
@@ -1219,7 +1237,9 @@ class KgService(Service):
             #     total_entities + len(extraction.entities),
             #     total_relationships + len(extraction.relationships),
             # )
-            print('storing len(extraction.entities) = ', len(extraction.entities))
+            print(
+                "storing len(extraction.entities) = ", len(extraction.entities)
+            )
 
             if extraction.entities:
                 await self.providers.database.graph_handler.entities.create(

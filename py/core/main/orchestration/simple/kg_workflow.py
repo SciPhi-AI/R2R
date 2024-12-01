@@ -53,28 +53,30 @@ def simple_kg_factory(service: KgService):
             offset = 0
             while True:
                 # Fetch current batch
-                batch = (await service.providers.database.collections_handler.documents_in_collection(
-                    collection_id=collection_id,
-                    offset=offset,
-                    limit=batch_size
-                ))["results"]
-                
+                batch = (
+                    await service.providers.database.collections_handler.documents_in_collection(
+                        collection_id=collection_id,
+                        offset=offset,
+                        limit=batch_size,
+                    )
+                )["results"]
+
                 # If no documents returned, we've reached the end
                 if not batch:
                     break
-                    
+
                 # Add current batch to results
                 documents.extend(batch)
-                
+
                 # Update offset for next batch
                 offset += batch_size
-                
+
                 # Optional: If batch is smaller than batch_size, we've reached the end
                 if len(batch) < batch_size:
                     break
 
             # documents = service.providers.database.collections_handler.documents_in_collection(input_data.get("collection_id"), offset=0, limit=1000)
-            print('extracting for documents = ', documents)
+            print("extracting for documents = ", documents)
             document_ids = [document.id for document in documents]
 
         logger.info(
@@ -89,7 +91,10 @@ def simple_kg_factory(service: KgService):
                     document_id=document_id,
                     **input_data["kg_creation_settings"],
                 ):
-                    print('found extraction w/ entities = = ', len(extraction.entities))
+                    print(
+                        "found extraction w/ entities = = ",
+                        len(extraction.entities),
+                    )
                     extractions.append(extraction)
                 await service.store_kg_extractions(extractions)
 
@@ -108,6 +113,16 @@ def simple_kg_factory(service: KgService):
     async def enrich_graph(input_data):
 
         input_data = get_input_data_dict(input_data)
+        workflow_status = await service.providers.database.get_workflow_status(
+            id=input_data.get("collection_id", None),
+            status_type="graph_cluster_status",
+        )
+        print("workflow_status = ", workflow_status)
+        if workflow_status == KGEnrichmentStatus.SUCCESS:
+            raise R2RException(
+                "Communities have already been built for this collection. To build communities again, first submit a POST request to `graphs/{collection_id}/reset`.",
+                400,
+            )
 
         try:
             num_communities = await service.kg_clustering(
@@ -141,11 +156,11 @@ def simple_kg_factory(service: KgService):
                     input_data=input_data_copy,
                 )
 
-            # await service.providers.database.set_workflow_status(
-            #     id=input_data.get("collection_id", None),
-            #     status_type="graph_cluster_status",
-            #     status=KGEnrichmentStatus.SUCCESS,
-            # )
+            await service.providers.database.set_workflow_status(
+                id=input_data.get("collection_id", None),
+                status_type="graph_cluster_status",
+                status=KGEnrichmentStatus.SUCCESS,
+            )
             # return {
             #     "result": "successfully ran kg community summary workflows"
             # }
