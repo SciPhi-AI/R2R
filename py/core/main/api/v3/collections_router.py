@@ -8,13 +8,11 @@ from fastapi import Body, Depends, Path, Query
 from core.base import KGCreationSettings, KGRunType, R2RException, RunType
 from core.base.api.models import (
     GenericBooleanResponse,
-    GenericMessageResponse,
     WrappedBooleanResponse,
     WrappedCollectionResponse,
     WrappedCollectionsResponse,
     WrappedDocumentsResponse,
     WrappedGenericMessageResponse,
-    WrappedKGCreationResponse,
     WrappedUsersResponse,
 )
 from core.providers import (
@@ -1066,7 +1064,7 @@ class CollectionsRouter(BaseRouterV3):
                 description="Whether to run the entities and relationships extraction process with orchestration.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGCreationResponse:  # type: ignore
+        ):
             """
             Extracts entities and relationships from a document.
                 The entities and relationships extraction process involves:

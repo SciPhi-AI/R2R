@@ -1,3 +1,4 @@
+import { feature } from "../../feature";
 import { r2rClient } from "../../r2rClient";
 import {
   UnprocessedChunk,
@@ -20,6 +21,7 @@ export class ChunksClient {
      * @param runWithOrchestration Optional flag to run with orchestration
      * @returns
      */
+  @feature("chunks.create")
   async create(options: {
     chunks: UnprocessedChunk[];
     runWithOrchestration?: boolean;
@@ -39,6 +41,7 @@ export class ChunksClient {
    * @param metadata Optional new metadata for the chunk
    * @returns
    */
+  @feature("chunks.update")
   async update(options: {
     id: string;
     text?: string;
@@ -54,6 +57,7 @@ export class ChunksClient {
    * @param id ID of the chunk to retrieve
    * @returns
    */
+  @feature("chunks.retrieve")
   async retrieve(options: { id: string }): Promise<WrappedChunkResponse> {
     return this.client.makeRequest("GET", `chunks/${options.id}`);
   }
@@ -63,6 +67,7 @@ export class ChunksClient {
    * @param id ID of the chunk to delete
    * @returns
    */
+  @feature("chunks.delete")
   async delete(options: { id: string }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", `chunks/${options.id}`);
   }
@@ -75,6 +80,7 @@ export class ChunksClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
+  @feature("chunks.list")
   async list(options?: {
     includeVectors?: boolean;
     metadataFilters?: Record<string, any>;

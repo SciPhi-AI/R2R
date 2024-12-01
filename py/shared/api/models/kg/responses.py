@@ -119,25 +119,6 @@ class KGDeduplicationEstimate(R2RSerializable):
     )
 
 
-class KGCreationResponse(BaseModel):
-    message: str = Field(
-        ...,
-        description="A message describing the result of the KG creation request.",
-    )
-    id: Optional[UUID] = Field(
-        None,
-        description="The ID of the created object.",
-    )
-    task_id: Optional[UUID] = Field(
-        None,
-        description="The task ID of the KG creation request.",
-    )
-    estimate: Optional[KGCreationEstimate] = Field(
-        None,
-        description="The estimation of the KG creation request.",
-    )
-
-
 class Config:
     json_schema_extra = {
         "example": {
@@ -195,40 +176,6 @@ class KGEnrichmentResponse(BaseModel):
         }
 
 
-class KGEntityDeduplicationResponse(BaseModel):
-    """Response for knowledge graph entity deduplication."""
-
-    message: str = Field(
-        ...,
-        description="The message to display to the user.",
-    )
-
-    task_id: Optional[UUID] = Field(
-        None,
-        description="The task ID of the KG entity deduplication request.",
-    )
-
-    estimate: Optional[KGDeduplicationEstimate] = Field(
-        None,
-        description="The estimation of the KG entity deduplication request.",
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "message": "Entity deduplication queued successfully.",
-                "task_id": "c68dc72e-fc23-5452-8f49-d7bd46088a96",
-                "estimate": {
-                    "num_entities": 1000,
-                    "estimated_llm_calls": "1000",
-                    "estimated_total_in_out_tokens_in_millions": "1000",
-                    "estimated_cost_in_usd": "1000",
-                    "estimated_total_time_in_minutes": "1000",
-                },
-            }
-        }
-
-
 class KGTunePromptResponse(R2RSerializable):
     """Response containing just the tuned prompt string."""
 
@@ -250,12 +197,8 @@ WrappedCommunitiesResponse = PaginatedResultsWrapper[list[Community]]
 
 
 # CREATE
-WrappedKGCreationResponse = ResultsWrapper[KGCreationResponse]
 WrappedKGEnrichmentResponse = ResultsWrapper[KGEnrichmentResponse]
 WrappedKGTunePromptResponse = ResultsWrapper[KGTunePromptResponse]
-WrappedKGEntityDeduplicationResponse = ResultsWrapper[
-    KGEntityDeduplicationResponse
-]
 
 
 class GraphResponse(BaseModel):

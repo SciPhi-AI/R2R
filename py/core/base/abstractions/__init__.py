@@ -65,7 +65,6 @@ from shared.abstractions.search import (
     KGEntityResult,
     KGGlobalResult,
     KGRelationshipResult,
-    KGSearchMethod,
     KGSearchResultType,
     SearchSettings,
 )
@@ -131,7 +130,6 @@ __all__ = [
     # Search abstractions
     "AggregateSearchResult",
     "GraphSearchResult",
-    "KGSearchMethod",
     "KGSearchResultType",
     "KGEntityResult",
     "KGRelationshipResult",

@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator
 from uuid import UUID
 
 from core.base import (
@@ -15,7 +15,6 @@ from core.base.abstractions import (
     KGCommunityResult,
     KGEntityResult,
     KGRelationshipResult,
-    KGSearchMethod,
     KGSearchResultType,
     SearchSettings,
 )
@@ -180,6 +179,14 @@ class KGSearchSearchPipe(GeneratorPipe):
                     # "document_ids",
                 ],
             ):
+                try:
+                    # TODO - remove this nasty hack
+                    search_result["metadata"] = json.loads(
+                        search_result["metadata"]
+                    )
+                except:
+                    pass
+
                 yield GraphSearchResult(
                     content=KGRelationshipResult(
                         # name=search_result["name"],
@@ -234,7 +241,6 @@ class KGSearchSearchPipe(GeneratorPipe):
                         rating_explanation=search_result["rating_explanation"],
                         findings=search_result["findings"],
                     ),
-                    # method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.COMMUNITY,
                     metadata=(
                         {

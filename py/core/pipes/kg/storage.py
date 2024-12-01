@@ -5,7 +5,6 @@ from uuid import UUID
 
 from core.base import AsyncState, KGExtraction, R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.database.graph import DataLevel
 from core.providers.database.postgres import PostgresDBProvider
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
@@ -64,7 +63,7 @@ class KGStoragePipe(AsyncPipe):
                 if not extraction.entities[0].chunk_ids:
                     for i in range(len(extraction.entities)):
                         extraction.entities[i].chunk_ids = extraction.chunk_ids
-                        extraction.entities[i].document_id = (
+                        extraction.entities[i].parent_id = (
                             extraction.document_id
                         )
 

@@ -324,3 +324,23 @@ class DocumentsSDK:
             params={"filters": filters_json},
             version="v3",
         )
+
+    async def extract(
+        self,
+        id: str | UUID,
+        run_type: Optional[str] = "estimate",
+        run_with_orchestration: Optional[bool] = True,
+    ):
+        data = {}
+
+        if run_type:
+            data["run_type"] = run_type
+        if run_with_orchestration is not None:
+            data["run_with_orchestration"] = str(run_with_orchestration)
+
+        return await self.client._make_request(
+            "POST",
+            f"documents/{str(id)}/extract",
+            data=data,
+            version="v3",
+        )

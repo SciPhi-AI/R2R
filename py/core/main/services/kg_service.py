@@ -134,15 +134,15 @@ class KgService(Service):
 
         return await _collect_results(result_gen)
 
-    @telemetry_event("create_entities")
-    async def create_entities(
+    @telemetry_event("create_entity")
+    async def create_entity(
         self,
         name: str,
         description: str,
-        metadata: Optional[dict] = None,
+        parent_id: UUID,
         category: Optional[str] = None,
-        auth_user: Optional[Any] = None,
-    ):
+        metadata: Optional[dict] = None,
+    ) -> Entity:
 
         description_embedding = str(
             await self.providers.embedding.async_get_embedding(description)
@@ -150,317 +150,266 @@ class KgService(Service):
 
         return await self.providers.database.graph_handler.entities.create(
             name=name,
+            parent_id=parent_id,
+            store_type="graph",  # type: ignore
             category=category,
             description=description,
             description_embedding=description_embedding,
             metadata=metadata,
-            auth_user=auth_user,
-        )
-
-    @telemetry_event("list_entities")
-    async def list_entities(
-        self,
-        offset: int,
-        limit: int,
-        id: Optional[UUID] = None,
-        graph_id: Optional[UUID] = None,
-        document_id: Optional[UUID] = None,
-        entity_names: Optional[list[str]] = None,
-        include_embeddings: Optional[bool] = False,
-        user_id: Optional[UUID] = None,
-    ):
-        return await self.providers.database.graph_handler.entities.get(
-            id=id,
-            graph_id=graph_id,
-            document_id=document_id,
-            entity_names=entity_names,
-            include_embeddings=include_embeddings,
-            offset=offset,
-            limit=limit,
-            user_id=user_id,
         )
 
     @telemetry_event("update_entity")
-    async def update_entity_v3(
+    async def update_entity(
         self,
-        id: UUID,
-        name: Optional[str],
-        category: Optional[str],
-        description: Optional[str],
-        attributes: Optional[dict],
-        auth_user: Optional[Any] = None,
-    ):
+        entity_id: UUID,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        category: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> Entity:
 
+        description_embedding = None
         if description is not None:
             description_embedding = str(
                 await self.providers.embedding.async_get_embedding(description)
             )
-        else:
-            description_embedding = None
 
         return await self.providers.database.graph_handler.entities.update(
-            id=id,
+            entity_id=entity_id,
+            store_type="graph",  # type: ignore
             name=name,
-            category=category,
             description=description,
             description_embedding=description_embedding,
-            attributes=attributes,
-            auth_user=auth_user,
+            category=category,
+            metadata=metadata,
         )
 
     @telemetry_event("delete_entity")
-    async def delete_entity_v3(
+    async def delete_entity(
         self,
-        id: UUID,
+        parent_id: UUID,
         entity_id: UUID,
-        level: DataLevel,
-        **kwargs,
     ):
         return await self.providers.database.graph_handler.entities.delete(
-            id=id,
-            entity_id=entity_id,
-            level=level,
+            parent_id=parent_id,
+            entity_ids=[entity_id],
+            store_type="graph",  # type: ignore
         )
 
-    @telemetry_event("add_entity_to_graph")
-    async def add_entity_to_graph(
-        self,
-        graph_id: UUID,
-        entity_id: UUID,
-        auth_user: Optional[Any] = None,
-    ):
-        return (
-            await self.providers.database.graph_handler.entities.add_to_graph(
-                graph_id, entity_id, auth_user
-            )
-        )
-
-    # TODO: deprecate this
     @telemetry_event("get_entities")
     async def get_entities(
         self,
-        collection_id: Optional[UUID] = None,
-        entity_ids: Optional[list[str]] = None,
-        entity_table_name: str = "entity",
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        **kwargs,
-    ):
-        return await self.providers.database.graph_handler.get_entities(
-            collection_id=collection_id,
-            entity_ids=entity_ids,
-            entity_table_name=entity_table_name,
-            offset=offset or 0,
-            limit=limit or -1,
-        )
-
-    ################### RELATIONSHIPS ###################
-
-    @telemetry_event("list_relationships_v3")
-    async def list_relationships_v3(
-        self,
-        id: UUID,
-        level: DataLevel,
+        parent_id: UUID,
         offset: int,
         limit: int,
+        entity_ids: Optional[list[UUID]] = None,
         entity_names: Optional[list[str]] = None,
-        relationship_types: Optional[list[str]] = None,
-        attributes: Optional[list[str]] = None,
-        relationship_id: Optional[UUID] = None,
+        include_embeddings: bool = False,
     ):
-        return await self.providers.database.graph_handler.relationships.get(
-            id=id,
-            level=level,
-            entity_names=entity_names,
-            relationship_types=relationship_types,
-            attributes=attributes,
+        return await self.providers.database.graph_handler.get_entities(
+            parent_id=parent_id,
             offset=offset,
             limit=limit,
-            relationship_id=relationship_id,
+            entity_ids=entity_ids,
+            entity_names=entity_names,
+            include_embeddings=include_embeddings,
         )
 
-    @telemetry_event("create_relationships_v3")
-    async def create_relationships_v3(
+    @telemetry_event("create_relationship")
+    async def create_relationship(
         self,
-        relationships: list[Relationship],
-        **kwargs,
-    ):
-        for relationship in relationships:
-            if relationship.description:
-                relationships.description_embedding = str(
-                    await self.providers.embedding.async_get_embedding(
-                        relationship.description
-                    )
-                )
-
-        print("relationships = ", relationships)
+        subject: str,
+        subject_id: UUID,
+        predicate: str,
+        object: str,
+        object_id: UUID,
+        parent_id: UUID,
+        description: str | None = None,
+        weight: float | None = 1.0,
+        metadata: Optional[dict[str, Any] | str] = None,
+    ) -> Relationship:
+        description_embedding = None
+        if description:
+            description_embedding = str(
+                await self.providers.embedding.async_get_embedding(description)
+            )
 
         return (
             await self.providers.database.graph_handler.relationships.create(
-                relationships
+                subject=subject,
+                subject_id=subject_id,
+                predicate=predicate,
+                object=object,
+                object_id=object_id,
+                parent_id=parent_id,
+                description=description,
+                description_embedding=description_embedding,
+                weight=weight,
+                metadata=metadata,
+                store_type="graph",  # type: ignore
             )
         )
 
-    @telemetry_event("delete_relationship_v3")
-    async def delete_relationship_v3(
+    @telemetry_event("delete_relationship")
+    async def delete_relationship(
         self,
-        level: DataLevel,
-        id: UUID,
+        parent_id: UUID,
         relationship_id: UUID,
-        **kwargs,
     ):
         return (
             await self.providers.database.graph_handler.relationships.delete(
-                level=level,
-                id=id,
-                relationship_id=relationship_id,
+                parent_id=parent_id,
+                relationship_ids=[relationship_id],
+                store_type="graph",  # type: ignore
             )
         )
 
-    @telemetry_event("update_relationship_v3")
-    async def update_relationship_v3(
+    @telemetry_event("update_relationship")
+    async def update_relationship(
         self,
-        relationship: Relationship,
-        **kwargs,
-    ):
+        relationship_id: UUID,
+        subject: Optional[str] = None,
+        subject_id: Optional[UUID] = None,
+        predicate: Optional[str] = None,
+        object: Optional[str] = None,
+        object_id: Optional[UUID] = None,
+        description: Optional[str] = None,
+        weight: Optional[float] = None,
+        metadata: Optional[dict[str, Any] | str] = None,
+    ) -> Relationship:
+
+        description_embedding = None
+        if description is not None:
+            description_embedding = str(
+                await self.providers.embedding.async_get_embedding(description)
+            )
+
         return (
             await self.providers.database.graph_handler.relationships.update(
-                relationship
+                relationship_id=relationship_id,
+                subject=subject,
+                subject_id=subject_id,
+                predicate=predicate,
+                object=object,
+                object_id=object_id,
+                description=description,
+                description_embedding=description_embedding,
+                weight=weight,
+                metadata=metadata,
+                store_type="graph",  # type: ignore
             )
         )
 
-    # TODO: deprecate this
-    @telemetry_event("get_triples")
+    @telemetry_event("get_relationships")
     async def get_relationships(
         self,
-        collection_id: Optional[UUID] = None,
+        parent_id: UUID,
+        offset: int,
+        limit: int,
+        relationship_ids: Optional[list[UUID]] = None,
         entity_names: Optional[list[str]] = None,
-        relationship_ids: Optional[list[str]] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        **kwargs,
     ):
-        return await self.providers.database.graph_handler.get_relationships(
-            collection_id=collection_id,
-            entity_names=entity_names,
+        return await self.providers.database.graph_handler.relationships.get(
+            parent_id=parent_id,
+            store_type="graph",  # type: ignore
+            offset=offset,
+            limit=limit,
             relationship_ids=relationship_ids,
-            offset=offset or 0,
-            limit=limit or -1,
+            entity_names=entity_names,
         )
 
-    ################### COMMUNITIES ###################
-
-    @telemetry_event("create_community_v3")
-    async def create_community_v3(
+    @telemetry_event("create_community")
+    async def create_community(
         self,
-        graph_id: UUID,
+        parent_id: UUID,
         name: str,
         summary: str,
-        findings: list[str],
+        findings: Optional[list[str]],
         rating: Optional[float],
         rating_explanation: Optional[str],
-        level: Optional[int],
-        attributes: Optional[dict],
-        auth_user: Any,
-        **kwargs,
-    ):
-        embedding = str(
+    ) -> Community:
+        description_embedding = str(
             await self.providers.embedding.async_get_embedding(summary)
         )
         return await self.providers.database.graph_handler.communities.create(
-            graph_id=graph_id,
+            parent_id=parent_id,
+            store_type="graph",  # type: ignore
             name=name,
             summary=summary,
-            embedding=embedding,
+            description_embedding=description_embedding,
             findings=findings,
             rating=rating,
             rating_explanation=rating_explanation,
-            level=level,
-            attributes=attributes,
-            auth_user=auth_user,
         )
 
-    @telemetry_event("update_community_v3")
-    async def update_community_v3(
+    @telemetry_event("update_community")
+    async def update_community(
         self,
-        id: UUID,
         community_id: UUID,
         name: Optional[str],
         summary: Optional[str],
         findings: Optional[list[str]],
         rating: Optional[float],
         rating_explanation: Optional[str],
-        level: Optional[int],
-        attributes: Optional[dict],
-        auth_user: Any,
-        **kwargs,
-    ):
+    ) -> Community:
+        summary_embedding = None
         if summary is not None:
-            embedding = str(
+            summary_embedding = str(
                 await self.providers.embedding.async_get_embedding(summary)
             )
-        else:
-            embedding = None
 
         return await self.providers.database.graph_handler.communities.update(
-            id=id,
             community_id=community_id,
+            store_type="graph",  # type: ignore
             name=name,
             summary=summary,
-            embedding=embedding,
+            summary_embedding=summary_embedding,
             findings=findings,
             rating=rating,
             rating_explanation=rating_explanation,
-            level=level,
-            attributes=attributes,
-            auth_user=auth_user,
         )
 
-    @telemetry_event("delete_community_v3")
-    async def delete_community_v3(
+    @telemetry_event("delete_community")
+    async def delete_community(
         self,
-        graph_id: UUID,
+        parent_id: UUID,
         community_id: UUID,
-        auth_user: Any,
-        **kwargs,
-    ):
-        return await self.providers.database.graph_handler.communities.delete(
-            graph_id=graph_id,
+    ) -> None:
+        await self.providers.database.graph_handler.communities.delete(
+            parent_id=parent_id,
             community_id=community_id,
-            auth_user=auth_user,
         )
 
-    @telemetry_event("list_communities_v3")
-    async def list_communities_v3(
+    @telemetry_event("list_communities")
+    async def list_communities(
         self,
-        id: UUID,
+        collection_id: UUID,
         offset: int,
         limit: int,
-        **kwargs,
     ):
         return await self.providers.database.graph_handler.communities.get(
-            id=id,
+            parent_id=collection_id,
+            store_type="graph",  # type: ignore
             offset=offset,
             limit=limit,
         )
 
-    # TODO: deprecate this
     @telemetry_event("get_communities")
     async def get_communities(
         self,
-        collection_id: Optional[UUID] = None,
-        levels: Optional[list[int]] = None,
-        community_ids: Optional[list[int]] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        **kwargs,
+        parent_id: UUID,
+        offset: int,
+        limit: int,
+        community_ids: Optional[list[UUID]] = None,
+        community_names: Optional[list[str]] = None,
+        include_embeddings: bool = False,
     ):
         return await self.providers.database.graph_handler.get_communities(
-            collection_id=collection_id,
-            levels=levels,
+            parent_id=parent_id,
+            offset=offset,
+            limit=limit,
             community_ids=community_ids,
-            offset=offset or 0,
-            limit=limit or -1,
+            include_embeddings=include_embeddings,
         )
 
     # @telemetry_event("create_new_graph")
@@ -634,14 +583,6 @@ class KgService(Service):
         )
 
         return all_results
-
-    @telemetry_event("get_graph_status")
-    async def get_graph_status(
-        self,
-        collection_id: UUID,
-        **kwargs,
-    ):
-        raise NotImplementedError("Not implemented")
 
     @telemetry_event("kg_clustering")
     async def kg_clustering(
@@ -1241,12 +1182,30 @@ class KgService(Service):
                 "storing len(extraction.entities) = ", len(extraction.entities)
             )
 
-            if extraction.entities:
+            for entity in extraction.entities:
                 await self.providers.database.graph_handler.entities.create(
-                    extraction.entities, store_type="document"
+                    name=entity.name,
+                    parent_id=entity.parent_id,
+                    store_type="document",  # type: ignore
+                    category=entity.category,
+                    description=entity.description,
+                    description_embedding=entity.description_embedding,
+                    chunk_ids=entity.chunk_ids,
+                    metadata=entity.metadata,
                 )
 
             if extraction.relationships:
-                await self.providers.database.graph_handler.relationships.create(
-                    extraction.relationships, store_type="document"
-                )
+                for relationship in extraction.relationships:
+                    await self.providers.database.graph_handler.relationships.create(
+                        subject=relationship.subject,
+                        subject_id=relationship.subject_id,
+                        predicate=relationship.predicate,
+                        object=relationship.object,
+                        object_id=relationship.object_id,
+                        parent_id=relationship.parent_id,
+                        description=relationship.description,
+                        description_embedding=relationship.description_embedding,
+                        weight=relationship.weight,
+                        metadata=relationship.metadata,
+                        store_type="document",  # type: ignore
+                    )

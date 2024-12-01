@@ -315,6 +315,9 @@ class RetrievalService(Service):
                                 )
                     messages = messages or []
 
+                    if message and not messages:
+                        messages = [message]
+
                 current_message = messages[-1]  # type: ignore
 
                 # Save the new message to the conversation

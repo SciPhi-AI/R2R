@@ -3,16 +3,10 @@ import { describe, test, beforeAll, expect } from "@jest/globals";
 
 const baseUrl = "http://localhost:7272";
 
-const messages = [
-  {
-    role: "system" as const,
-    content: "You are a helpful assistant.",
-  },
-  {
-    role: "user" as const,
-    content: "Tell me about Sonia.",
-  },
-];
+const message = {
+  role: "user" as const,
+  content: "Tell me about Sonia.",
+};
 
 /**
  * sonia.txt will have an id of 28ce9a4c-4d15-5287-b0c6-67834b9c4546
@@ -85,15 +79,15 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
   test("Agent with no parameters", async () => {
     const response = await client.retrieval.agent({
-      messages: messages,
+      message: message,
     });
 
     expect(response.results).toBeDefined();
   }, 30000);
 
-  test("Streaming RAG", async () => {
+  test("Streaming agent", async () => {
     const stream = await client.retrieval.agent({
-      messages: messages,
+      message: message,
       ragGenerationConfig: {
         stream: true,
       },

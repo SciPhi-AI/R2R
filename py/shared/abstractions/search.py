@@ -62,10 +62,6 @@ class KGSearchResultType(str, Enum):
     COMMUNITY = "community"
 
 
-class KGSearchMethod(str, Enum):
-    LOCAL = "local"
-
-
 class KGEntityResult(R2RSerializable):
     name: str
     description: str

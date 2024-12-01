@@ -12,7 +12,6 @@ from shared.abstractions import (
     KGGlobalResult,
     KGRelationshipResult,
     KGRunType,
-    KGSearchMethod,
     KGSearchResultType,
     Message,
     MessageType,
@@ -23,9 +22,7 @@ from shared.abstractions import (
 )
 from shared.api.models import (
     CombinedSearchResponse,
-    KGCreationResponse,
     KGEnrichmentResponse,
-    KGEntityDeduplicationResponse,
     RAGResponse,
     UserResponse,
 )
@@ -40,7 +37,6 @@ __all__ = [
     "KGGlobalResult",
     "KGRelationshipResult",
     "KGRunType",
-    "KGSearchMethod",
     "GraphSearchResult",
     "KGSearchResultType",
     "GraphSearchSettings",
@@ -52,8 +48,6 @@ __all__ = [
     "ChunkSearchResult",
     "SearchSettings",
     "KGEntityDeduplicationSettings",
-    "KGEntityDeduplicationResponse",
-    "KGCreationResponse",
     "KGEnrichmentResponse",
     "RAGResponse",
     "CombinedSearchResponse",

@@ -138,7 +138,7 @@ class PostgresDocumentHandler(DocumentHandler):
                                     summary = $12, summary_embedding = $13
                                 WHERE document_id = $14
                                 """
-                                print("db_entry = ", db_entry)
+
                                 await conn.execute(
                                     update_query,
                                     db_entry["collection_ids"],
@@ -465,7 +465,7 @@ class PostgresDocumentHandler(DocumentHandler):
                         logger.warning(
                             f"Failed to parse embedding for document {row['document_id']}: {e}"
                         )
-                print("row = ", row)
+
                 documents.append(
                     DocumentResponse(
                         id=row["document_id"],
