@@ -46,7 +46,7 @@ class PostgresCollectionHandler(CollectionsHandler):
             user_id UUID,
             name TEXT NOT NULL,
             description TEXT,
-            graph_cluster_status TEXT DEFAULT 'PENDING',
+            graph_cluster_status TEXT DEFAULT 'pending',
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );

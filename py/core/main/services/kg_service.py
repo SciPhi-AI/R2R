@@ -24,6 +24,7 @@ from core.base.abstractions import (
     Graph,
     KGCreationSettings,
     KGEnrichmentSettings,
+    KGEnrichmentStatus,
     KGEntityDeduplicationSettings,
     KGEntityDeduplicationType,
     R2RException,
@@ -464,11 +465,28 @@ class KgService(Service):
             description=description,
         )
 
+    @telemetry_event("reset_graph_v3")
+    async def reset_graph_v3(self, id: UUID) -> bool:
+        await self.providers.database.graph_handler.reset(
+            graph_id=id,
+        )
+        await self.providers.database.document_handler.set_workflow_status(
+            id=id,
+            status_type="graph_cluster_status",
+            status=KGEnrichmentStatus.PENDING,
+        )
+        return True
+
     @telemetry_event("delete_graph_v3")
     async def delete_graph_v3(self, id: UUID) -> bool:
         await self.providers.database.graph_handler.delete(
             graph_id=id,
         )
+        # await self.providers.database.document_handler.set_workflow_status(
+        #     id=id,
+        #     status_type="graph_cluster_status",
+        #     status=KGEnrichmentStatus.PENDING,
+        # )
         return True
 
     @telemetry_event("get_document_ids_for_create_graph")

@@ -374,6 +374,9 @@ class PostgresEntityHandler(EntityHandler):
                 WHERE id = ANY($1) AND parent_id = $2
                 RETURNING id
             """
+            print("QUERY = ", QUERY)
+            print("entity_ids = ", entity_ids)
+            print("parent_id = ", parent_id)
             results = await self.connection_manager.fetch_query(
                 QUERY, [entity_ids, parent_id]
             )
@@ -631,6 +634,8 @@ class PostgresRelationshipHandler(RelationshipHandler):
                     )
                 except json.JSONDecodeError:
                     pass
+            elif not include_metadata:
+                relationship_dict.pop("metadata", None)
             relationships.append(Relationship(**relationship_dict))
 
         return relationships, count
@@ -992,13 +997,38 @@ class PostgresCommunityHandler(CommunityHandler):
 
         query = f"""
             DELETE FROM {self._get_table_name(table_name)}
-            WHERE id = $1 AND graph_id = $2
+            WHERE id = $1 AND collection_id = $2
         """
-
+        print("query = ", query)
+        print("parent_id = ", parent_id)
+        print("community_id = ", community_id)
         params = [community_id, parent_id]
 
         try:
-            await self.connection_manager.execute_query(query, params)
+            results = await self.connection_manager.execute_query(
+                query, params
+            )
+            print("results = ", results)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while deleting the community: {e}",
+            )
+        table_name = "graph_community_info"
+        query = f"""
+            DELETE FROM {self._get_table_name(table_name)}
+            WHERE id = $1 AND collection_id = $2
+        """
+        print("query = ", query)
+        print("parent_id = ", parent_id)
+        print("community_id = ", community_id)
+        params = [community_id, parent_id]
+
+        try:
+            results = await self.connection_manager.execute_query(
+                query, params
+            )
+            print("results = ", results)
         except Exception as e:
             raise HTTPException(
                 status_code=500,
@@ -1188,6 +1218,89 @@ class PostgresGraphHandler(GraphHandler):
                 status_code=409,
             )
 
+    async def reset(self, graph_id: UUID) -> None:
+        """
+        Completely delete a graph and all associated data.
+
+        This method:
+        1. Removes graph associations from users
+        2. Deletes all graph entities
+        3. Deletes all graph relationships
+        4. Deletes all graph communities and community info
+        5. Removes the graph record itself
+
+        Args:
+            graph_id (UUID): ID of the graph to delete
+
+        Returns:
+            None
+
+        Raises:
+            R2RException: If deletion fails
+        """
+        try:
+            # Remove graph_id from users
+            user_update_query = f"""
+                UPDATE {self._get_table_name('users')}
+                SET graph_ids = array_remove(graph_ids, $1)
+                WHERE $1 = ANY(graph_ids)
+            """
+            await self.connection_manager.execute_query(
+                user_update_query, [graph_id]
+            )
+
+            # Delete all graph entities
+            entity_delete_query = f"""
+                DELETE FROM {self._get_table_name("graph_entity")}
+                WHERE parent_id = $1
+            """
+            await self.connection_manager.execute_query(
+                entity_delete_query, [graph_id]
+            )
+
+            # Delete all graph relationships
+            relationship_delete_query = f"""
+                DELETE FROM {self._get_table_name("graph_relationship")}
+                WHERE parent_id = $1
+            """
+            await self.connection_manager.execute_query(
+                relationship_delete_query, [graph_id]
+            )
+
+            # Delete all graph relationships
+            community_delete_query = f"""
+                DELETE FROM {self._get_table_name("graph_community")}
+                WHERE collection_id = $1
+            """
+            print("community_delete_query = ", community_delete_query)
+            print("graph_id = ", graph_id)
+            await self.connection_manager.execute_query(
+                community_delete_query, [graph_id]
+            )
+
+            # Delete all graph communities and community info
+            community_delete_queries = [
+                f"""DELETE FROM {self._get_table_name("graph_community_info")}
+                    WHERE collection_id = $1""",
+                f"""DELETE FROM {self._get_table_name("graph_community")}
+                    WHERE collection_id = $1""",
+            ]
+            for query in community_delete_queries:
+                await self.connection_manager.execute_query(query, [graph_id])
+
+            # # Finally delete the graph itself
+            # graph_delete_query = f"""
+            #     DELETE FROM {self._get_table_name("graph")}
+            #     WHERE id = $1
+            # """
+            # await self.connection_manager.execute_query(
+            #     graph_delete_query, [graph_id]
+            # )
+
+        except Exception as e:
+            logger.error(f"Error deleting graph {graph_id}: {str(e)}")
+            raise R2RException(f"Failed to delete graph: {str(e)}", 500)
+
     async def delete(self, graph_id: UUID) -> None:
         """
         Completely delete a graph and all associated data.
@@ -1237,12 +1350,21 @@ class PostgresGraphHandler(GraphHandler):
                 relationship_delete_query, [graph_id]
             )
 
+            # Delete all graph relationships
+            community_delete_query = f"""
+                DELETE FROM {self._get_table_name("graph_community")}
+                WHERE collection_id = $1
+            """
+            await self.connection_manager.execute_query(
+                community_delete_query, [graph_id]
+            )
+
             # Delete all graph communities and community info
             community_delete_queries = [
                 f"""DELETE FROM {self._get_table_name("graph_community_info")}
                     WHERE graph_id = $1""",
                 f"""DELETE FROM {self._get_table_name("graph_community")}
-                    WHERE graph_id = $1""",
+                    WHERE collection_id = $1""",
             ]
             for query in community_delete_queries:
                 await self.connection_manager.execute_query(query, [graph_id])
@@ -2090,6 +2212,7 @@ class PostgresGraphHandler(GraphHandler):
                     )
                 except json.JSONDecodeError:
                     pass
+
             entities.append(Entity(**entity_dict))
 
         return entities, count
@@ -2339,6 +2462,9 @@ class PostgresGraphHandler(GraphHandler):
                     )
                 except json.JSONDecodeError:
                     pass
+            elif not include_metadata:
+                relationship_dict.pop("metadata", None)
+
             relationships.append(Relationship(**relationship_dict))
 
         return relationships, count
@@ -2957,6 +3083,8 @@ class PostgresGraphHandler(GraphHandler):
         property_names = kwargs.get("property_names", ["name", "description"])
         if "metadata" not in property_names:
             property_names.append("metadata")
+        # if search_type == "community" and "collection_id" not in property_names:
+        #     property_names.append("collection_id")
 
         filters = kwargs.get("filters", {})
         print("filters = ", filters)
@@ -2969,6 +3097,7 @@ class PostgresGraphHandler(GraphHandler):
             )
 
         table_name = f"graph_{search_type}"
+        print("table_name = ", table_name)
         # if  "collection_id" in filters and "collection_ids" not in property_names:
         #     property_names.append("collection_id")
         property_names_str = ", ".join(property_names)
@@ -2991,6 +3120,7 @@ class PostgresGraphHandler(GraphHandler):
         )
 
         for result in results:
+            # import pdb; pdb.set_trace()
             output = {
                 property_name: result[property_name]
                 for property_name in property_names

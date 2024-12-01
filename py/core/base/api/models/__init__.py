@@ -21,20 +21,20 @@ from shared.api.models.ingestion.responses import (
 from shared.api.models.kg.responses import (  # TODO: Need to review anything above this
     Community,
     Entity,
+    GraphResponse,
     KGEnrichmentResponse,
     KGTunePromptResponse,
     Relationship,
-    GraphResponse,
     WrappedCommunitiesResponse,
     WrappedCommunityResponse,
     WrappedEntitiesResponse,
     WrappedEntityResponse,
+    WrappedGraphResponse,
+    WrappedGraphsResponse,
     WrappedKGEnrichmentResponse,
     WrappedKGTunePromptResponse,
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,
-    WrappedGraphResponse,
-    WrappedGraphsResponse,
 )
 from shared.api.models.management.responses import (  # Document Responses; Prompt Responses; Chunk Responses; Conversation Responses; User Responses; TODO: anything below this hasn't been reviewed
     AnalyticsResponse,

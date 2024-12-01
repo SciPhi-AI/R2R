@@ -6,9 +6,7 @@ from uuid import UUID
 from fastapi import Body, Depends, Path, Query
 
 from core.base import R2RException, RunType
-from core.base.abstractions import (
-    KGRunType,
-)
+from core.base.abstractions import KGRunType
 from core.base.api.models import (
     GenericBooleanResponse,
     WrappedBooleanResponse,
@@ -450,7 +448,8 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            await self.services["kg"].delete_graph_v3(id=collection_id)
+            await self.services["kg"].reset_graph_v3(id=collection_id)
+            # await _pull(collection_id, auth_user)
             return GenericBooleanResponse(success=True)  # type: ignore
 
         # update graph
@@ -890,7 +889,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            self.services["kg"].delete_entity(
+            await self.services["kg"].delete_entity(
                 parent_id=collection_id,
                 entity_id=entity_id,
             )
@@ -1444,7 +1443,7 @@ class GraphRouter(BaseRouterV3):
             )
             print(f"results: {results}")
             if len(results) == 0 or len(results[0]) == 0:
-                raise R2RException("Relationship not found", 404)
+                raise R2RException("Community not found", 404)
             return results[0][0]
 
         @self.router.delete(

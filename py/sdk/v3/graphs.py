@@ -1,19 +1,16 @@
 from typing import Any, Optional
 from uuid import UUID
 
-from shared.api.models.base import (
-    WrappedBooleanResponse,
-)
-
+from shared.api.models.base import WrappedBooleanResponse
 from shared.api.models.kg.responses import (
-    WrappedGraphResponse,
-    WrappedGraphsResponse,
-    WrappedEntitiesResponse,
-    WrappedEntityResponse,
-    WrappedRelationshipResponse,
-    WrappedRelationshipsResponse,
     WrappedCommunitiesResponse,
     WrappedCommunityResponse,
+    WrappedEntitiesResponse,
+    WrappedEntityResponse,
+    WrappedGraphResponse,
+    WrappedGraphsResponse,
+    WrappedRelationshipResponse,
+    WrappedRelationshipsResponse,
 )
 
 _list = list  # Required for type hinting since we have a list method
