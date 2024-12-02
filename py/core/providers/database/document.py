@@ -307,6 +307,8 @@ class PostgresDocumentHandler(DocumentHandler):
             return KGExtractionStatus
         elif status_type == "graph_cluster_status":
             return KGEnrichmentStatus
+        elif status_type == "graph_sync_status":
+            return KGEnrichmentStatus
         else:
             raise R2RException(
                 status_code=400, message=f"Invalid status type: {status_type}"

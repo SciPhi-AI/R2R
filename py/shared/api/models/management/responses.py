@@ -87,6 +87,7 @@ class CollectionResponse(BaseModel):
     name: str
     description: Optional[str]
     graph_cluster_status: str
+    graph_sync_status: str
     created_at: datetime
     updated_at: datetime
     user_count: int

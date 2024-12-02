@@ -5,7 +5,12 @@ from uuid import UUID
 from fastapi import HTTPException
 from litellm import AuthenticationError
 
-from core.base import DocumentChunk, R2RException, increment_version
+from core.base import (
+    DocumentChunk,
+    KGEnrichmentStatus,
+    R2RException,
+    increment_version,
+)
 from core.utils import (
     generate_default_user_collection_id,
     generate_extraction_id,
@@ -89,6 +94,16 @@ def simple_ingestion_factory(service: IngestionService):
                         document_id=document_info.id,
                         collection_id=collection_id,
                     )
+                    await service.providers.database.set_workflow_status(
+                        id=collection_id,
+                        status_type="graph_sync_status",
+                        status=KGEnrichmentStatus.OUTDATED,
+                    )
+                    await service.providers.database.set_workflow_status(
+                        id=collection_id,
+                        status_type="graph_cluster_status",
+                        status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                    )
                 else:
                     print("collection_ids = ", collection_ids)
 
@@ -134,6 +149,17 @@ def simple_ingestion_factory(service: IngestionService):
                             document_id=document_info.id,
                             collection_id=collection_id,
                         )
+                        await service.providers.database.set_workflow_status(
+                            id=collection_id,
+                            status_type="graph_sync_status",
+                            status=KGEnrichmentStatus.OUTDATED,
+                        )
+                        await service.providers.database.set_workflow_status(
+                            id=collection_id,
+                            status_type="graph_cluster_status",
+                            status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                        )
+
             except Exception as e:
                 logger.error(
                     f"Error during assigning document to collection: {str(e)}"
@@ -307,6 +333,17 @@ def simple_ingestion_factory(service: IngestionService):
                         document_id=document_info.id,
                         collection_id=collection_id,
                     )
+                    await service.providers.database.set_workflow_status(
+                        id=collection_id,
+                        status_type="graph_sync_status",
+                        status=KGEnrichmentStatus.OUTDATED,
+                    )
+                    await service.providers.database.set_workflow_status(
+                        id=collection_id,
+                        status_type="graph_cluster_status",
+                        status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                    )
+
                 else:
                     print("collection_ids = ", collection_ids)
                     for collection_id in collection_ids:
@@ -344,6 +381,17 @@ def simple_ingestion_factory(service: IngestionService):
                             document_id=document_info.id,
                             collection_id=collection_id,
                         )
+                        await service.providers.database.set_workflow_status(
+                            id=collection_id,
+                            status_type="graph_sync_status",
+                            status=KGEnrichmentStatus.OUTDATED,
+                        )
+                        await service.providers.database.set_workflow_status(
+                            id=collection_id,
+                            status_type="graph_cluster_status",
+                            status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                        )
+
             except Exception as e:
                 logger.error(
                     f"Error during assigning document to collection: {str(e)}"

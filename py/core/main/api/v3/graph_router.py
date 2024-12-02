@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import R2RException, RunType
+from core.base import KGEnrichmentStatus, R2RException, RunType
 from core.base.abstractions import KGRunType
 from core.base.api.models import (
     GenericBooleanResponse,
@@ -1646,6 +1646,10 @@ class GraphRouter(BaseRouterV3):
             collection_id: UUID = Path(
                 ..., description="The ID of the graph to initialize."
             ),
+            force: Optional[bool] = Body(
+                False,
+                description="If true, forces a re-pull of all entities and relationships.",
+            ),
             # document_ids: list[UUID] = Body(
             #     ..., description="List of document IDs to add to the graph."
             # ),
@@ -1736,22 +1740,32 @@ class GraphRouter(BaseRouterV3):
                     )
                     continue
                 if len(entities[0]) == 0:
-                    logger.warning(
-                        f"Document {document.id} has no entities, extraction may not have been called, skipping."
-                    )
-                    continue
+                    if not force:
+                        logger.warning(
+                            f"Document {document.id} has no entities, extraction may not have been called, skipping."
+                        )
+                        continue
+                    else:
+                        logger.warning(
+                            f"Document {document.id} has no entities, but force=True, continuing."
+                        )
 
                 success = (
                     await self.providers.database.graph_handler.add_documents(
                         id=collection_id,
-                        document_ids=[
-                            document.id
-                        ],  # [doc.id for doc in documents]
+                        document_ids=[document.id],
                     )
                 )
             if not success:
                 logger.warning(
                     f"No documents were added to graph {collection_id}, marking as failed."
+                )
+
+            if success:
+                await self.providers.database.set_workflow_status(
+                    id=collection_id,
+                    status_type="graph_sync_status",
+                    status=KGEnrichmentStatus.SUCCESS,
                 )
 
             return GenericBooleanResponse(success=success)  # type: ignore

@@ -11,6 +11,7 @@ from core.base import (
     AnalysisTypes,
     CollectionResponse,
     DocumentResponse,
+    KGEnrichmentStatus,
     LogFilterCriteria,
     LogProcessor,
     Message,
@@ -355,29 +356,46 @@ class ManagementService(Service):
                 )
 
             for document_id in document_ids_to_purge:
-                remaining_chunks = await self.providers.database.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
-                    document_id=document_id,
-                    offset=0,
-                    limit=1000,
+                # remaining_chunks = await self.providers.database.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                #     document_id=document_id,
+                #     offset=0,
+                #     limit=1000,
+                # )
+                # if remaining_chunks["total_entries"] == 0:
+                #     try:
+                #         await self.providers.database.delete_from_documents_overview(
+                #             document_id
+                #         )
+                #         logger.info(
+                #             f"Deleted document ID {document_id} from documents_overview."
+                #         )
+                #     except Exception as e:
+                #         logger.error(
+                #             f"Error deleting document ID {document_id} from documents_overview: {e}"
+                #         )
+                # await self.providers.database.graph_handler.entities.delete(
+                #     parent_id=document_id, store_type="document"
+                # )
+                # await self.providers.database.graph_handler.relationships.delete(
+                #     parent_id=document_id, store_type="document"
+                # )
+                collections = (
+                    await self.providers.database.get_collections_overview(
+                        offset=0, limit=1000, filter_document_ids=[document_id]
+                    )
                 )
-                if remaining_chunks["total_entries"] == 0:
-                    try:
-                        await self.providers.database.delete_from_documents_overview(
-                            document_id
-                        )
-                        logger.info(
-                            f"Deleted document ID {document_id} from documents_overview."
-                        )
-                    except Exception as e:
-                        logger.error(
-                            f"Error deleting document ID {document_id} from documents_overview: {e}"
-                        )
-                await self.providers.database.graph_handler.entities.delete(
-                    parent_id=document_id, store_type="document"
-                )
-                await self.providers.database.graph_handler.relationships.delete(
-                    parent_id=document_id, store_type="document"
-                )
+                # TODO - Loop over all collections
+                for collection in collections["results"]:
+                    await self.providers.database.set_workflow_status(
+                        id=collection.id,
+                        status_type="graph_sync_status",
+                        status=KGEnrichmentStatus.OUTDATED,
+                    )
+                    await self.providers.database.set_workflow_status(
+                        id=collection.id,
+                        status_type="graph_cluster_status",
+                        status=KGEnrichmentStatus.OUTDATED,
+                    )
 
         return None
 
@@ -435,6 +453,17 @@ class ManagementService(Service):
         await self.providers.database.assign_document_to_collection_relational(
             document_id, collection_id
         )
+        await self.providers.database.set_workflow_status(
+            id=collection_id,
+            status_type="graph_sync_status",
+            status=KGEnrichmentStatus.OUTDATED,
+        )
+        await self.providers.database.set_workflow_status(
+            id=collection_id,
+            status_type="graph_cluster_status",
+            status=KGEnrichmentStatus.OUTDATED,
+        )
+
         return {"message": "Document assigned to collection successfully"}
 
     @telemetry_event("RemoveDocumentFromCollection")
