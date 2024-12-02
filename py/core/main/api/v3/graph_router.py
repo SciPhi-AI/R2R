@@ -271,7 +271,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the specified collection associated with the given graph.",
@@ -332,7 +332,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -453,7 +453,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -613,7 +613,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -655,7 +655,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -715,7 +715,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -791,7 +791,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -841,7 +841,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -920,7 +920,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -998,7 +998,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1073,7 +1073,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1141,7 +1141,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1223,7 +1223,7 @@ class GraphRouter(BaseRouterV3):
 
             if (
                 not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                and collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1329,7 +1329,7 @@ class GraphRouter(BaseRouterV3):
 
             if (
                 not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                and collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1409,7 +1409,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1483,7 +1483,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1567,7 +1567,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1655,7 +1655,7 @@ class GraphRouter(BaseRouterV3):
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1749,10 +1749,12 @@ class GraphRouter(BaseRouterV3):
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can `pull` a graph.", 403)
 
+            print("auth_user = ", auth_user)
+            print("auth_user.collection_ids = ", auth_user.collection_ids)
             if (
                 # not auth_user.is_superuser
                 collection_id
-                not in auth_user.graph_ids
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1909,7 +1911,7 @@ class GraphRouter(BaseRouterV3):
         #     """
         #     if (
         #         not auth_user.is_superuser
-        #         and collection_id not in auth_user.graph_ids
+        #         and collection_id not in auth_user.collection_ids
         #     ):
         #         raise R2RException(
         #             "The currently authenticated user does not have access to the collection associated with the given graph.",

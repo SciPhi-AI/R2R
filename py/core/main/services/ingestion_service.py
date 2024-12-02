@@ -122,7 +122,7 @@ class IngestionService(Service):
                 ):
                     raise R2RException(
                         status_code=409,
-                        message=f"Document {document_id} already exists. Increment the version to overwrite existing document. Otherwise, submit a POST request to `/documents/{document_id}` to update the existing version.",
+                        message=f"Document {document_id} already exists. Submit a DELETE request to `/documents/{document_id}` to delete this document and allow for re-ingestion.",
                     )
                 elif existing_doc.ingestion_status != IngestionStatus.FAILED:
                     raise R2RException(

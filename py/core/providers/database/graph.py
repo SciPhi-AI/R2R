@@ -1785,53 +1785,6 @@ class PostgresGraphHandler(GraphHandler):
 
         return True
 
-    async def add_entities_v3(
-        self, id: UUID, entity_ids: list[UUID], copy_data: bool = True
-    ) -> bool:
-        """
-        Add entities to the graph.
-        """
-        QUERY = f"""
-            UPDATE {self._get_table_name("entity")}
-            SET graph_ids = CASE
-                    WHEN $1 = ANY(graph_ids) THEN graph_ids
-                    ELSE array_append(graph_ids, $1)
-                END
-            WHERE id = ANY($2)
-        """
-
-        if copy_data:
-            QUERY = f"""
-                INSERT INTO {self._get_table_name("graph_entity")}
-                SELECT * FROM {self._get_table_name("entity")}
-                WHERE id = ANY($1)
-            """
-            await self.connection_manager.execute_query(QUERY, [entity_ids])
-
-        await self.connection_manager.execute_query(QUERY, [id, entity_ids])
-
-        return True
-
-    # async def remove_entities(
-    #     self, id: UUID, entity_ids: list[UUID]
-    # ) -> bool:
-    #     """
-    #     Remove entities from the graph.
-    #     """
-    #     QUERY = f"""
-    #         UPDATE {self._get_table_name("graph_entity")}
-    #         SET graph_ids = array_remove(graph_ids, $1)
-    #         WHERE id = ANY($2)
-    #     """
-    #     await self.connection_manager.execute_query(QUERY, [id, entity_ids])
-
-    #     # QUERY = f"""
-    #     #     DELETE FROM {self._get_table_name("graph_entity")} WHERE id = ANY($1)
-    #     # """
-    #     # await self.connection_manager.execute_query(QUERY, [entity_ids])
-
-    #     return True
-
     async def update(
         self,
         graph_id: UUID,
