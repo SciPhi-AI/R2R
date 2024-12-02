@@ -120,7 +120,7 @@ def simple_kg_factory(service: KgService):
         print("workflow_status = ", workflow_status)
         if workflow_status == KGEnrichmentStatus.SUCCESS:
             raise R2RException(
-                "Communities have already been built for this collection. To build communities again, first submit a POST request to `graphs/{collection_id}/reset`.",
+                "Communities have already been built for this collection. To build communities again, first submit a POST request to `graphs/{collection_id}/reset` to erase the previously built communities.",
                 400,
             )
 

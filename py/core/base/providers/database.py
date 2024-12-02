@@ -1281,7 +1281,14 @@ class DatabaseProvider(Provider):
     async def delete(
         self, filters: dict[str, Any]
     ) -> dict[str, dict[str, str]]:
-        return await self.vector_handler.delete(filters)
+        result = await self.vector_handler.delete(filters)
+        await self.graph_handler.entities.delete(
+            parent_id=filters["document_id"]["$eq"]
+        )
+        await self.graph_handler.relationships.delete(
+            parent_id=filters["document_id"]["$eq"]
+        )
+        return result
 
     async def assign_document_to_collection_vector(
         self,
