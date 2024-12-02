@@ -1039,13 +1039,19 @@ class DatabaseProvider(Provider):
         description: str = "",
         collection_id: Optional[UUID] = None,
     ) -> CollectionResponse:
+        print("~" * 100)
         print("create_collection in database being called...")
-        return await self.collections_handler.create_collection(
+        result = await self.collections_handler.create_collection(
             user_id=user_id,
             name=name,
             description=description,
             collection_id=collection_id,
         )
+        print("user_id = ", user_id)
+        print("result.id = ", result.id)
+
+        await self.user_handler.add_user_to_collection(user_id, result.id)
+        return result
 
     async def update_collection(
         self,
@@ -1127,8 +1133,12 @@ class DatabaseProvider(Provider):
     async def get_user_by_email(self, email: str) -> UserResponse:
         return await self.user_handler.get_user_by_email(email)
 
-    async def create_user(self, email: str, password: str) -> UserResponse:
-        return await self.user_handler.create_user(email, password)
+    async def create_user(
+        self, email: str, password: str, is_superuser: bool = False
+    ) -> UserResponse:
+        return await self.user_handler.create_user(
+            email, password, is_superuser
+        )
 
     async def update_user(self, user: UserResponse) -> UserResponse:
         return await self.user_handler.update_user(user)
