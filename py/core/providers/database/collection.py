@@ -160,7 +160,7 @@ class PostgresCollectionHandler(CollectionsHandler):
                 COUNT(DISTINCT d.document_id) FILTER (WHERE d.document_id IS NOT NULL) as document_count
             FROM updated_collection uc
             LEFT JOIN {self._get_table_name('users')} u ON uc.collection_id = ANY(u.collection_ids)
-            LEFT JOIN {self._get_table_name('document_info')} d ON uc.collection_id = ANY(d.collection_ids)
+            LEFT JOIN {self._get_table_name('document')} d ON uc.collection_id = ANY(d.collection_ids)
             GROUP BY uc.collection_id, uc.user_id, uc.name, uc.description, uc.graph_sync_status, uc.graph_cluster_status, uc.created_at, uc.updated_at
         """
         try:
@@ -204,7 +204,7 @@ class PostgresCollectionHandler(CollectionsHandler):
         # Remove collection_id from documents
         document_update_query = f"""
             WITH updated AS (
-                UPDATE {self._get_table_name('document_info')}
+                UPDATE {self._get_table_name('document')}
                 SET collection_ids = array_remove(collection_ids, $1)
                 WHERE $1 = ANY(collection_ids)
                 RETURNING 1
@@ -248,7 +248,7 @@ class PostgresCollectionHandler(CollectionsHandler):
             SELECT d.document_id, d.user_id, d.type, d.metadata, d.title, d.version,
                 d.size_in_bytes, d.ingestion_status, d.extraction_status, d.created_at, d.updated_at,
                 COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name('document_info')} d
+            FROM {self._get_table_name('document')} d
             WHERE $1 = ANY(d.collection_ids)
             ORDER BY d.created_at DESC
             OFFSET $2
@@ -331,7 +331,7 @@ class PostgresCollectionHandler(CollectionsHandler):
                     COUNT(DISTINCT d.document_id) FILTER (WHERE d.document_id IS NOT NULL) as document_count
                 FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} c
                 {user_join} {self._get_table_name('users')} u ON c.collection_id = ANY(u.collection_ids)
-                {document_join} {self._get_table_name('document_info')} d ON c.collection_id = ANY(d.collection_ids)
+                {document_join} {self._get_table_name('document')} d ON c.collection_id = ANY(d.collection_ids)
                 {where_clause}
                 GROUP BY c.collection_id, c.user_id, c.name, c.description, c.created_at, c.updated_at, c.graph_cluster_status
             )
@@ -403,7 +403,7 @@ class PostgresCollectionHandler(CollectionsHandler):
 
             # First, check if the document exists
             document_check_query = f"""
-                SELECT 1 FROM {self._get_table_name('document_info')}
+                SELECT 1 FROM {self._get_table_name('document')}
                 WHERE document_id = $1
             """
             document_exists = await self.connection_manager.fetchrow_query(
@@ -417,7 +417,7 @@ class PostgresCollectionHandler(CollectionsHandler):
 
             # If document exists, proceed with the assignment
             assign_query = f"""
-                UPDATE {self._get_table_name('document_info')}
+                UPDATE {self._get_table_name('document')}
                 SET collection_ids = array_append(collection_ids, $1)
                 WHERE document_id = $2 AND NOT ($1 = ANY(collection_ids))
                 RETURNING document_id
@@ -461,7 +461,7 @@ class PostgresCollectionHandler(CollectionsHandler):
             raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
-            UPDATE {self._get_table_name('document_info')}
+            UPDATE {self._get_table_name('document')}
             SET collection_ids = array_remove(collection_ids, $1)
             WHERE document_id = $2 AND $1 = ANY(collection_ids)
             RETURNING document_id

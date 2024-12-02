@@ -247,7 +247,7 @@ class PostgresUserHandler(UserHandler):
 
         # Remove user from documents
         doc_update_query = f"""
-            UPDATE {self._get_table_name('document_info')}
+            UPDATE {self._get_table_name('document')}
             SET user_id = NULL
             WHERE user_id = $1
         """
@@ -589,7 +589,7 @@ class PostgresUserHandler(UserHandler):
                     ARRAY_AGG(d.document_id) FILTER (WHERE d.document_id IS NOT NULL) AS document_ids,
                     COUNT(*) OVER() AS total_entries
                 FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
-                LEFT JOIN {self._get_table_name('document_info')} d ON u.user_id = d.user_id
+                LEFT JOIN {self._get_table_name('document')} d ON u.user_id = d.user_id
                 {' WHERE u.user_id = ANY($3::uuid[])' if user_ids else ''}
                 GROUP BY u.user_id, u.email, u.is_superuser, u.is_active, u.is_verified, u.created_at, u.updated_at, u.collection_ids, u.graph_ids
             )

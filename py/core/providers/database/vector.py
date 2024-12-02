@@ -1377,7 +1377,7 @@ class PostgresChunkHandler(ChunkHandler):
                         )
                     END as metadata_rank
                 FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} v
-                LEFT JOIN {self._get_table_name('document_info')} d ON v.document_id = d.document_id
+                LEFT JOIN {self._get_table_name('document')} d ON v.document_id = d.document_id
                 WHERE v.metadata IS NOT NULL
             ),
             -- Body search scores

@@ -25,7 +25,7 @@ logger = logging.getLogger()
 
 
 class PostgresDocumentHandler(DocumentHandler):
-    TABLE_NAME = "document_info"
+    TABLE_NAME = "documents"
     COLUMN_VARS = [
         "extraction_id",
         "document_id",
