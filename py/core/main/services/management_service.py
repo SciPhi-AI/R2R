@@ -374,10 +374,12 @@ class ManagementService(Service):
                             f"Error deleting document ID {document_id} from documents_overview: {e}"
                         )
                 await self.providers.database.graph_handler.entities.delete(
-                    parent_id=document_id, store_type="document"
+                    parent_id=document_id,
+                    store_type="document",  # type: ignore
                 )
                 await self.providers.database.graph_handler.relationships.delete(
-                    parent_id=document_id, store_type="document"
+                    parent_id=document_id,
+                    store_type="document",  # type: ignore
                 )
                 collections = (
                     await self.providers.database.get_collections_overview(
