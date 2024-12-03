@@ -21,13 +21,10 @@ from shared.abstractions.exception import (
 )
 from shared.abstractions.graph import (
     Community,
-    DataLevel,
     Entity,
-    EntityType,
     Graph,
     KGExtraction,
     Relationship,
-    RelationshipType,
 )
 from shared.abstractions.ingestion import (
     ChunkEnrichmentSettings,
@@ -109,12 +106,9 @@ __all__ = [
     "R2RException",
     # Graph abstractions
     "Entity",
-    "EntityType",
-    "RelationshipType",
     "Community",
     "KGExtraction",
     "Relationship",
-    "DataLevel",
     # Index abstractions
     "IndexConfig",
     # LLM abstractions

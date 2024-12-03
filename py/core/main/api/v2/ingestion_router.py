@@ -575,7 +575,7 @@ class IngestionRouter(BaseRouter):
         @self.base_endpoint
         async def create_vector_index_app(
             table_name: Optional[VectorTableName] = Body(
-                default=VectorTableName.VECTORS,
+                default=VectorTableName.CHUNKS,
                 description=create_vector_descriptions.get("table_name"),
             ),
             index_method: IndexMethod = Body(
@@ -647,7 +647,7 @@ class IngestionRouter(BaseRouter):
         @self.base_endpoint
         async def list_vector_indices_app(
             table_name: Optional[VectorTableName] = Query(
-                default=VectorTableName.VECTORS,
+                default=VectorTableName.CHUNKS,
                 description=list_vector_indices_descriptions.get("table_name"),
             ),
             offset: int = Query(
@@ -691,7 +691,7 @@ class IngestionRouter(BaseRouter):
                 description=delete_vector_index_descriptions.get("index_name"),
             ),
             table_name: Optional[VectorTableName] = Body(
-                default=VectorTableName.VECTORS,
+                default=VectorTableName.CHUNKS,
                 description=delete_vector_index_descriptions.get("table_name"),
             ),
             concurrently: bool = Body(

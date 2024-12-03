@@ -1,35 +1,12 @@
 import json
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import Field
 
 from .base import R2RSerializable
-
-
-class EntityType(R2RSerializable):
-    id: str
-    name: str
-    description: str | None = None
-
-
-class RelationshipType(R2RSerializable):
-    id: str
-    name: str
-    description: str | None = None
-
-
-class DataLevel(str, Enum):
-    GRAPH = "graph"
-    COLLECTION = "collection"
-    DOCUMENT = "document"
-    CHUNK = "chunk"
-
-    def __str__(self):
-        return self.value
 
 
 class Entity(R2RSerializable):

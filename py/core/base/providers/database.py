@@ -53,7 +53,6 @@ from ..abstractions import (
     KGEntityDeduplicationSettings,
     KGExtraction,
     Relationship,
-    RelationshipType,
 )
 from .base import ProviderConfig
 

@@ -7,7 +7,6 @@ from uuid import UUID
 from pydantic import Field
 
 from .base import R2RSerializable
-from .graph import DataLevel
 from .llm import GenerationConfig
 from .vector import IndexMeasure
 
@@ -177,7 +176,6 @@ from uuid import UUID
 from pydantic import Field
 
 from .base import R2RSerializable
-from .graph import DataLevel
 from .llm import GenerationConfig
 from .vector import IndexMeasure
 

@@ -302,4 +302,3 @@ def downgrade() -> None:
     # Now we can safely drop the summary and embedding columns
     op.drop_column("document_info", "summary_embedding", schema=project_name)
     op.drop_column("document_info", "summary", schema=project_name)
-    

@@ -81,7 +81,7 @@ class HybridSearchIntermediateResult(TypedDict):
 
 
 class PostgresChunkHandler(ChunkHandler):
-    TABLE_NAME = VectorTableName.VECTORS
+    TABLE_NAME = VectorTableName.CHUNKS
 
     COLUMN_VARS = [
         "id",
@@ -774,8 +774,8 @@ class PostgresChunkHandler(ChunkHandler):
             ArgError: If an invalid index method is used, or if *replace* is False and an index already exists.
         """
 
-        if table_name == VectorTableName.VECTORS:
-            table_name_str = f"{self.project_name}.{VectorTableName.VECTORS}"  # TODO - Fix bug in vector table naming convention
+        if table_name == VectorTableName.CHUNKS:
+            table_name_str = f"{self.project_name}.{VectorTableName.CHUNKS}"  # TODO - Fix bug in vector table naming convention
             if index_column:
                 col_name = index_column
             else:
@@ -792,9 +792,9 @@ class PostgresChunkHandler(ChunkHandler):
                 f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
             )
             col_name = "description_embedding"
-        elif table_name == VectorTableName.ENTITIES_COLLECTION:
+        elif table_name == VectorTableName.GRAPHS_ENTITIES:
             table_name_str = (
-                f"{self.project_name}.{VectorTableName.ENTITIES_COLLECTION}"
+                f"{self.project_name}.{VectorTableName.GRAPHS_ENTITIES}"
             )
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:
@@ -1127,17 +1127,17 @@ class PostgresChunkHandler(ChunkHandler):
             Exception: If index deletion fails
         """
         # Validate table name and get column name
-        if table_name == VectorTableName.VECTORS:
-            table_name_str = f"{self.project_name}.{VectorTableName.VECTORS}"
+        if table_name == VectorTableName.CHUNKS:
+            table_name_str = f"{self.project_name}.{VectorTableName.CHUNKS}"
             col_name = "vec"
         elif table_name == VectorTableName.ENTITIES_DOCUMENT:
             table_name_str = (
                 f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
             )
             col_name = "description_embedding"
-        elif table_name == VectorTableName.ENTITIES_COLLECTION:
+        elif table_name == VectorTableName.GRAPHS_ENTITIES:
             table_name_str = (
-                f"{self.project_name}.{VectorTableName.ENTITIES_COLLECTION}"
+                f"{self.project_name}.{VectorTableName.GRAPHS_ENTITIES}"
             )
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:

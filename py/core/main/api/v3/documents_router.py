@@ -1410,7 +1410,7 @@ class DocumentsRouter(BaseRouterV3):
             entities, count = (
                 await self.providers.database.graph_handler.entities.get(
                     parent_id=id,
-                    store_type="document",
+                    store_type="documents",
                     offset=offset,
                     limit=limit,
                     include_embeddings=include_embeddings,
@@ -1548,7 +1548,7 @@ class DocumentsRouter(BaseRouterV3):
             relationships, count = (
                 await self.providers.database.graph_handler.relationships.get(
                     parent_id=id,
-                    store_type="document",
+                    store_type="documents",
                     entity_names=entity_names,
                     relationship_types=relationship_types,
                     offset=offset,

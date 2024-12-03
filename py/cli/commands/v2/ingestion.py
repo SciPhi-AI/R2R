@@ -216,7 +216,7 @@ async def ingest_sample_files_from_unstructured(ctx):
 @click.option(
     "--table-name",
     type=click.Choice([t.value for t in VectorTableName]),
-    default=VectorTableName.VECTORS.value,
+    default=VectorTableName.CHUNKS.value,
     help="Table to create index on",
 )
 @click.option(
@@ -275,7 +275,7 @@ async def create_vector_index(
 @click.option(
     "--table-name",
     type=click.Choice([t.value for t in VectorTableName]),
-    default=VectorTableName.VECTORS.value,
+    default=VectorTableName.CHUNKS.value,
     help="Table to list indices from",
 )
 @pass_context
@@ -292,7 +292,7 @@ async def list_vector_indices(ctx, table_name):
 @click.option(
     "--table-name",
     type=click.Choice([t.value for t in VectorTableName]),
-    default=VectorTableName.VECTORS.value,
+    default=VectorTableName.CHUNKS.value,
     help="Table containing the index",
 )
 @click.option(

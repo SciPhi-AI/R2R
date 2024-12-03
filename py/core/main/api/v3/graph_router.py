@@ -799,7 +799,7 @@ class GraphRouter(BaseRouterV3):
 
             result = await self.providers.database.graph_handler.entities.get(
                 parent_id=collection_id,
-                store_type="graph",
+                store_type="graphs",
                 offset=0,
                 limit=1,
                 entity_ids=[entity_id],
@@ -1082,7 +1082,7 @@ class GraphRouter(BaseRouterV3):
             results = (
                 await self.providers.database.graph_handler.relationships.get(
                     parent_id=collection_id,
-                    store_type="graph",
+                    store_type="graphs",
                     offset=0,
                     limit=1,
                     relationship_ids=[relationship_id],
@@ -1494,7 +1494,7 @@ class GraphRouter(BaseRouterV3):
             ].providers.database.graph_handler.communities.get(
                 parent_id=collection_id,
                 community_ids=[community_id],
-                store_type="graph",
+                store_type="graphs",
                 offset=0,
                 limit=1,
             )
@@ -1728,7 +1728,7 @@ class GraphRouter(BaseRouterV3):
             Adds documents to a graph by copying their entities and relationships.
 
             This endpoint:
-            1. Copies document entities to the graph_entity table
+            1. Copies document entities to the graphs_entities table
             2. Copies document relationships to the graph_relationship table
             3. Associates the documents with the graph
 
@@ -1800,7 +1800,7 @@ class GraphRouter(BaseRouterV3):
                 entities = (
                     await self.providers.database.graph_handler.entities.get(
                         parent_id=document.id,
-                        store_type="document",
+                        store_type="documents",
                         offset=0,
                         limit=100,
                     )

@@ -64,7 +64,7 @@ class PostgresDocumentHandler(DocumentHandler):
                 created_at TIMESTAMPTZ DEFAULT NOW(),
                 updated_at TIMESTAMPTZ DEFAULT NOW(),
                 ingestion_attempt_number INT DEFAULT 0,
-                doc_search_vector tsvector GENERATED ALWAYS AS (
+                raw_tsvector tsvector GENERATED ALWAYS AS (
                     setweight(to_tsvector('english', COALESCE(title, '')), 'A') ||
                     setweight(to_tsvector('english', COALESCE(summary, '')), 'B') ||
                     setweight(to_tsvector('english', COALESCE((metadata->>'description')::text, '')), 'C')
@@ -76,7 +76,7 @@ class PostgresDocumentHandler(DocumentHandler):
             -- Full text search index
             CREATE INDEX IF NOT EXISTS idx_doc_search_{self.project_name}
             ON {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
-            USING GIN (doc_search_vector);
+            USING GIN (raw_tsvector);
             """
             await self.connection_manager.execute_query(query)
         except Exception as e:
@@ -585,9 +585,7 @@ class PostgresDocumentHandler(DocumentHandler):
     ) -> list[DocumentResponse]:
         """Enhanced full-text search using generated tsvector."""
 
-        where_clauses = [
-            "doc_search_vector @@ websearch_to_tsquery('english', $1)"
-        ]
+        where_clauses = ["raw_tsvector @@ websearch_to_tsquery('english', $1)"]
         params: list[str | int | bytes] = [query_text]
 
         # Handle filters
@@ -616,7 +614,7 @@ class PostgresDocumentHandler(DocumentHandler):
                 updated_at,
                 summary,
                 summary_embedding,
-                ts_rank_cd(doc_search_vector, websearch_to_tsquery('english', $1), 32) as text_score
+                ts_rank_cd(raw_tsvector, websearch_to_tsquery('english', $1), 32) as text_score
             FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
             WHERE {where_clause}
             ORDER BY text_score DESC

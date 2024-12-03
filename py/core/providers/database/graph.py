@@ -43,8 +43,8 @@ from .collection import PostgresCollectionHandler
 
 
 class StoreType(str, Enum):
-    GRAPH = "graph"
-    DOCUMENT = "document"
+    GRAPHS = "graphs"
+    DOCUMENTS = "documents"
 
 
 logger = logging.getLogger()
@@ -65,15 +65,15 @@ class PostgresEntityHandler(EntityHandler):
         """Get the appropriate table name for the store type."""
         if isinstance(store_type, StoreType):
             store_type = store_type.value
-        return f"{store_type}_entity"
+        return f"{store_type}_entities"
 
     def _get_parent_constraint(self, store_type: StoreType) -> str:
         """Get the appropriate foreign key constraint for the store type."""
-        if store_type == StoreType.GRAPH:
+        if store_type == StoreType.GRAPHS:
             return f"""
                 CONSTRAINT fk_graph
                     FOREIGN KEY(parent_id)
-                    REFERENCES {self._get_table_name("graph")}(id)
+                    REFERENCES {self._get_table_name("graphs")}(id)
                     ON DELETE CASCADE
             """
         else:
@@ -337,7 +337,7 @@ class PostgresEntityHandler(EntityHandler):
         self,
         parent_id: UUID,
         entity_ids: Optional[list[UUID]] = None,
-        store_type: StoreType = StoreType.GRAPH,
+        store_type: StoreType = StoreType.GRAPHS,
     ) -> None:
         """
         Delete entities from the specified store.
@@ -404,15 +404,15 @@ class PostgresRelationshipHandler(RelationshipHandler):
         """Get the appropriate table name for the store type."""
         if isinstance(store_type, StoreType):
             store_type = store_type.value
-        return f"{store_type}_relationship"
+        return f"{store_type}_relationships"
 
     def _get_parent_constraint(self, store_type: StoreType) -> str:
         """Get the appropriate foreign key constraint for the store type."""
-        if store_type == StoreType.GRAPH:
+        if store_type == StoreType.GRAPHS:
             return f"""
                 CONSTRAINT fk_graph
                     FOREIGN KEY(parent_id)
-                    REFERENCES {self._get_table_name("graph")}(id)
+                    REFERENCES {self._get_table_name("graphs")}(id)
                     ON DELETE CASCADE
             """
         else:
@@ -747,7 +747,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
         self,
         parent_id: UUID,
         relationship_ids: Optional[list[UUID]] = None,
-        store_type: StoreType = StoreType.GRAPH,
+        store_type: StoreType = StoreType.GRAPHS,
     ) -> None:
         """
         Delete relationships from the specified store.
@@ -808,7 +808,7 @@ class PostgresCommunityHandler(CommunityHandler):
         )
 
         query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("graph_community")} (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("graphs_communities")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             collection_id UUID,
             community_id UUID,
@@ -839,7 +839,7 @@ class PostgresCommunityHandler(CommunityHandler):
         description_embedding: Optional[list[float] | str] = None,
     ) -> Community:
         # Do we ever want to get communities from document store?
-        table_name = "graph_community"
+        table_name = "graphs_communities"
 
         if isinstance(description_embedding, list):
             description_embedding = str(description_embedding)
@@ -895,7 +895,7 @@ class PostgresCommunityHandler(CommunityHandler):
         rating: Optional[float] = None,
         rating_explanation: Optional[str] = None,
     ) -> Community:
-        table_name = "graph_community"
+        table_name = "graphs_communities"
         update_fields = []
         params: list[Any] = []
         param_index = 1
@@ -969,7 +969,7 @@ class PostgresCommunityHandler(CommunityHandler):
         parent_id: UUID,
         community_id: UUID,
     ) -> None:
-        table_name = "graph_community"
+        table_name = "graphs_communities"
 
         query = f"""
             DELETE FROM {self._get_table_name(table_name)}
@@ -1019,7 +1019,7 @@ class PostgresCommunityHandler(CommunityHandler):
     ):
         """Retrieve communities from the specified store."""
         # Do we ever want to get communities from document store?
-        table_name = "graph_community"
+        table_name = "graphs_communities"
 
         conditions = ["collection_id = $1"]
         params: list[Any] = [parent_id]
@@ -1113,7 +1113,7 @@ class PostgresGraphHandler(GraphHandler):
     async def create_tables(self) -> None:
         """Create the graph tables with mandatory collection_id support."""
         QUERY = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("graph")} (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name("graphs")} (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 collection_id UUID NOT NULL,
                 name TEXT NOT NULL,
@@ -1202,7 +1202,7 @@ class PostgresGraphHandler(GraphHandler):
             # Delete all graph entities
             print(f"Attemping to delete all entities for {parent_id}")
             entity_delete_query = f"""
-                DELETE FROM {self._get_table_name("graph_entity")}
+                DELETE FROM {self._get_table_name("graphs_entities")}
                 WHERE parent_id = $1
             """
             await self.connection_manager.execute_query(
@@ -1220,7 +1220,7 @@ class PostgresGraphHandler(GraphHandler):
 
             # Delete all graph relationships
             community_delete_query = f"""
-                DELETE FROM {self._get_table_name("graph_community")}
+                DELETE FROM {self._get_table_name("graphs_communities")}
                 WHERE collection_id = $1
             """
             await self.connection_manager.execute_query(
@@ -1229,7 +1229,7 @@ class PostgresGraphHandler(GraphHandler):
 
             # Delete all graph communities and community info
             query = f"""
-                DELETE FROM {self._get_table_name("graph_community")}
+                DELETE FROM {self._get_table_name("graphs_communities")}
                 WHERE collection_id = $1
             """
 
@@ -1363,9 +1363,9 @@ class PostgresGraphHandler(GraphHandler):
         """
         Add documents to the graph by copying their entities and relationships.
         """
-        # Copy entities from document_entity to graph_entity
+        # Copy entities from document_entity to graphs_entities
         ENTITY_COPY_QUERY = f"""
-            INSERT INTO {self._get_table_name("graph_entity")} (
+            INSERT INTO {self._get_table_name("graphs_entities")} (
                 name, category, description, parent_id, description_embedding,
                 chunk_ids, metadata
             )
@@ -1742,7 +1742,7 @@ class PostgresGraphHandler(GraphHandler):
         # Count query - uses the same conditions but without offset/limit
         COUNT_QUERY = f"""
             SELECT COUNT(*)
-            FROM {self._get_table_name("graph_entity")}
+            FROM {self._get_table_name("graphs_entities")}
             WHERE {' AND '.join(conditions)}
         """
         count = (
@@ -1760,7 +1760,7 @@ class PostgresGraphHandler(GraphHandler):
         # Main query for fetching entities with pagination
         QUERY = f"""
             SELECT {select_fields}
-            FROM {self._get_table_name("graph_entity")}
+            FROM {self._get_table_name("graphs_entities")}
             WHERE {' AND '.join(conditions)}
             ORDER BY created_at
             OFFSET ${param_index}
@@ -2003,7 +2003,7 @@ class PostgresGraphHandler(GraphHandler):
         QUERY = f"""
             SELECT EXISTS (
                 SELECT 1
-                FROM {self._get_table_name("graph")}
+                FROM {self._get_table_name("graphs")}
                 WHERE id = $1
                 AND document_ids IS NOT NULL
                 AND $2 = ANY(document_ids)
@@ -2057,7 +2057,7 @@ class PostgresGraphHandler(GraphHandler):
 
         COUNT_QUERY = f"""
             SELECT COUNT(*)
-            FROM {self._get_table_name("graph_community")}
+            FROM {self._get_table_name("graphs_communities")}
             WHERE {' AND '.join(conditions)}
         """
         count = (
@@ -2066,7 +2066,7 @@ class PostgresGraphHandler(GraphHandler):
 
         QUERY = f"""
             SELECT {select_fields}
-            FROM {self._get_table_name("graph_community")}
+            FROM {self._get_table_name("graphs_communities")}
             WHERE {' AND '.join(conditions)}
             ORDER BY created_at
             OFFSET ${param_index}
@@ -2104,7 +2104,7 @@ class PostgresGraphHandler(GraphHandler):
         )
 
         QUERY = f"""
-            INSERT INTO {self._get_table_name("graph_community")} ({columns})
+            INSERT INTO {self._get_table_name("graphs_communities")} ({columns})
             VALUES ({placeholders})
             ON CONFLICT (community_id, level, collection_id) DO UPDATE SET
                 {conflict_columns}
@@ -2130,7 +2130,7 @@ class PostgresGraphHandler(GraphHandler):
 
         # remove all relationships for these documents.
         DELETE_QUERIES = [
-            f"DELETE FROM {self._get_table_name('graph_community')} WHERE collection_id = $1;",
+            f"DELETE FROM {self._get_table_name('graphs_communities')} WHERE collection_id = $1;",
         ]
 
         # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
@@ -2149,8 +2149,8 @@ class PostgresGraphHandler(GraphHandler):
         if cascade:
             DELETE_QUERIES += [
                 f"DELETE FROM {self._get_table_name('graph_relationship')} WHERE document_id = ANY($1::uuid[]);",
-                f"DELETE FROM {self._get_table_name('graph_entity')} WHERE document_id = ANY($1::uuid[]);",
-                f"DELETE FROM {self._get_table_name('graph_entity')} WHERE collection_id = $1;",
+                f"DELETE FROM {self._get_table_name('graphs_entities')} WHERE document_id = ANY($1::uuid[]);",
+                f"DELETE FROM {self._get_table_name('graphs_entities')} WHERE collection_id = $1;",
             ]
 
             # setting the kg_creation_status to PENDING for this collection.
@@ -2162,7 +2162,7 @@ class PostgresGraphHandler(GraphHandler):
             )
 
         for query in DELETE_QUERIES:
-            if "community" in query or "graph_entity" in query:
+            if "community" in query or "graphs_entities" in query:
                 await self.connection_manager.execute_query(
                     query, [collection_id]
                 )
@@ -2207,7 +2207,7 @@ class PostgresGraphHandler(GraphHandler):
         while True:
             relationships, count = await self.relationships.get(
                 parent_id=collection_id,
-                store_type=StoreType.GRAPH,
+                store_type=StoreType.GRAPHS,
                 offset=offset,
                 limit=page_size,
             )
@@ -2682,7 +2682,7 @@ class PostgresGraphHandler(GraphHandler):
     async def update_entity_descriptions(self, entities: list[Entity]):
 
         query = f"""
-            UPDATE {self._get_table_name("graph_entity")}
+            UPDATE {self._get_table_name("graphs_entities")}
             SET description = $3, description_embedding = $4
             WHERE name = $1 AND graph_id = $2
         """

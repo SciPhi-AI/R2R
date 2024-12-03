@@ -248,7 +248,7 @@ class SyncIngestionMixins:
     @deprecated("Use client.indices.create() instead")
     def create_vector_index(
         self,
-        table_name: VectorTableName = VectorTableName.VECTORS,
+        table_name: VectorTableName = VectorTableName.CHUNKS,
         index_method: IndexMethod = IndexMethod.hnsw,
         index_measure: IndexMeasure = IndexMeasure.cosine_distance,
         index_arguments: Optional[dict] = None,
@@ -286,7 +286,7 @@ class SyncIngestionMixins:
     @deprecated("Use client.indices.list() instead")
     def list_vector_indices(
         self,
-        table_name: VectorTableName = VectorTableName.VECTORS,
+        table_name: VectorTableName = VectorTableName.CHUNKS,
     ) -> dict:
         """
         List all vector indices for a given table.
@@ -306,7 +306,7 @@ class SyncIngestionMixins:
     def delete_vector_index(
         self,
         index_name: str,
-        table_name: VectorTableName = VectorTableName.VECTORS,
+        table_name: VectorTableName = VectorTableName.CHUNKS,
         concurrently: bool = True,
     ) -> dict:
         """

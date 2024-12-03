@@ -188,7 +188,10 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         )
 
         entities = await self._get_entities(
-            graph_id, collection_id, offset, limit, level="graph"  # type: ignore
+            graph_id,
+            collection_id,
+            offset,
+            limit,  # type: ignore
         )
 
         entity_names = [entity.name for entity in entities]

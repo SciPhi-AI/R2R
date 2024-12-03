@@ -18,7 +18,6 @@ from core.base import (
 )
 from core.base.abstractions import (
     Community,
-    DataLevel,
     Entity,
     GenerationConfig,
     Graph,
@@ -151,7 +150,7 @@ class KgService(Service):
         return await self.providers.database.graph_handler.entities.create(
             name=name,
             parent_id=parent_id,
-            store_type="graph",  # type: ignore
+            store_type="graphs",  # type: ignore
             category=category,
             description=description,
             description_embedding=description_embedding,
@@ -176,7 +175,7 @@ class KgService(Service):
 
         return await self.providers.database.graph_handler.entities.update(
             entity_id=entity_id,
-            store_type="graph",  # type: ignore
+            store_type="graphs",  # type: ignore
             name=name,
             description=description,
             description_embedding=description_embedding,
@@ -193,7 +192,7 @@ class KgService(Service):
         return await self.providers.database.graph_handler.entities.delete(
             parent_id=parent_id,
             entity_ids=[entity_id],
-            store_type="graph",  # type: ignore
+            store_type="graphs",  # type: ignore
         )
 
     @telemetry_event("get_entities")
@@ -246,7 +245,7 @@ class KgService(Service):
                 description_embedding=description_embedding,
                 weight=weight,
                 metadata=metadata,
-                store_type="graph",  # type: ignore
+                store_type="graphs",  # type: ignore
             )
         )
 
@@ -260,7 +259,7 @@ class KgService(Service):
             await self.providers.database.graph_handler.relationships.delete(
                 parent_id=parent_id,
                 relationship_ids=[relationship_id],
-                store_type="graph",  # type: ignore
+                store_type="graphs",  # type: ignore
             )
         )
 
@@ -296,7 +295,7 @@ class KgService(Service):
                 description_embedding=description_embedding,
                 weight=weight,
                 metadata=metadata,
-                store_type="graph",  # type: ignore
+                store_type="graphs",  # type: ignore
             )
         )
 
@@ -311,7 +310,7 @@ class KgService(Service):
     ):
         return await self.providers.database.graph_handler.relationships.get(
             parent_id=parent_id,
-            store_type="graph",  # type: ignore
+            store_type="graphs",  # type: ignore
             offset=offset,
             limit=limit,
             relationship_ids=relationship_ids,
@@ -333,7 +332,7 @@ class KgService(Service):
         )
         return await self.providers.database.graph_handler.communities.create(
             parent_id=parent_id,
-            store_type="graph",  # type: ignore
+            store_type="graphs",  # type: ignore
             name=name,
             summary=summary,
             description_embedding=description_embedding,
@@ -360,7 +359,7 @@ class KgService(Service):
 
         return await self.providers.database.graph_handler.communities.update(
             community_id=community_id,
-            store_type="graph",  # type: ignore
+            store_type="graphs",  # type: ignore
             name=name,
             summary=summary,
             summary_embedding=summary_embedding,
@@ -389,7 +388,7 @@ class KgService(Service):
     ):
         return await self.providers.database.graph_handler.communities.get(
             parent_id=collection_id,
-            store_type="graph",  # type: ignore
+            store_type="graphs",  # type: ignore
             offset=offset,
             limit=limit,
         )
@@ -1158,7 +1157,7 @@ class KgService(Service):
                 result = await self.providers.database.graph_handler.entities.create(
                     name=entity.name,
                     parent_id=entity.parent_id,
-                    store_type="document",  # type: ignore
+                    store_type="documents",  # type: ignore
                     category=entity.category,
                     description=entity.description,
                     description_embedding=entity.description_embedding,
@@ -1191,5 +1190,5 @@ class KgService(Service):
                         description_embedding=relationship.description_embedding,
                         weight=relationship.weight,
                         metadata=relationship.metadata,
-                        store_type="document",  # type: ignore
+                        store_type="documents",  # type: ignore
                     )

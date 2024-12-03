@@ -138,8 +138,4 @@ __all__ = [
     "generate_default_user_collection_id",
     "generate_user_id",
     "increment_version",
-    "EntityType",
-    "RelationshipType",
-    "format_entity_types",
-    "format_relations",
 ]

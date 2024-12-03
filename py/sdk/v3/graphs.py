@@ -436,7 +436,7 @@ class GraphsSDK:
         Adds documents to a graph by copying their entities and relationships.
 
         This endpoint:
-            1. Copies document entities to the graph_entity table
+            1. Copies document entities to the graphs_entities table
             2. Copies document relationships to the graph_relationship table
             3. Associates the documents with the graph
 

@@ -6,7 +6,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable, Optional
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
-from ..abstractions.graph import EntityType, RelationshipType
 from ..abstractions.search import (
     AggregateSearchResult,
     KGCommunityResult,
@@ -196,16 +195,6 @@ def decrement_version(version: str) -> str:
     prefix = version[:-1]
     suffix = int(version[-1])
     return f"{prefix}{max(0, suffix - 1)}"
-
-
-def format_entity_types(entity_types: list[EntityType]) -> str:
-    lines = [entity.name for entity in entity_types]
-    return "\n".join(lines)
-
-
-def format_relations(predicates: list[RelationshipType]) -> str:
-    lines = [predicate.name for predicate in predicates]
-    return "\n".join(lines)
 
 
 def llm_cost_per_million_tokens(

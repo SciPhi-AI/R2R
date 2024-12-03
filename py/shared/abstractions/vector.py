@@ -114,12 +114,12 @@ class VectorTableName(str, Enum):
     This enum represents the different tables where we store vectors.
     """
 
-    VECTORS = "vectors"
-    ENTITIES_DOCUMENT = "entity"
-    ENTITIES_COLLECTION = "collection_entity"
+    CHUNKS = "chunks"
+    ENTITIES_DOCUMENT = "documents_entities"
+    GRAPHS_ENTITIES = "graphs_entities"
     # TODO: Add support for relationships
     # TRIPLES = "relationship"
-    COMMUNITIES = "graph_community"
+    COMMUNITIES = "graphs_communities"
 
     def __str__(self) -> str:
         return self.value
@@ -233,7 +233,7 @@ class StorageResult(R2RSerializable):
 
 class IndexConfig(BaseModel):
     # table_name: Optional[VectorTableName] = Body(
-    #     default=VectorTableName.VECTORS,
+    #     default=VectorTableName.CHUNKS,
     #     description=create_vector_descriptions.get("table_name"),
     # ),
     # index_method: IndexMethod = Body(
@@ -264,7 +264,7 @@ class IndexConfig(BaseModel):
     # ),
     # auth_user=Depends(self.service.providers.auth.auth_wrapper),
     name: Optional[str] = Field(default=None)
-    table_name: Optional[str] = Field(default=VectorTableName.VECTORS)
+    table_name: Optional[str] = Field(default=VectorTableName.CHUNKS)
     index_method: Optional[str] = Field(default=IndexMethod.hnsw)
     index_measure: Optional[str] = Field(default=IndexMeasure.cosine_distance)
     index_arguments: Optional[IndexArgsIVFFlat | IndexArgsHNSW] = Field(

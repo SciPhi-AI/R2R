@@ -152,10 +152,6 @@ __all__ = [
     "to_async_generator",
     "generate_id",
     "increment_version",
-    "EntityType",
-    "RelationshipType",
-    "format_entity_types",
-    "format_relations",
     "validate_uuid",
     ## MAIN
     ## R2R ABSTRACTIONS

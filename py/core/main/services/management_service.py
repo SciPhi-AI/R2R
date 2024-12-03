@@ -375,11 +375,11 @@ class ManagementService(Service):
                         )
                 await self.providers.database.graph_handler.entities.delete(
                     parent_id=document_id,
-                    store_type="document",  # type: ignore
+                    store_type="documents",  # type: ignore
                 )
                 await self.providers.database.graph_handler.relationships.delete(
                     parent_id=document_id,
-                    store_type="document",  # type: ignore
+                    store_type="documents",  # type: ignore
                 )
                 collections = (
                     await self.providers.database.get_collections_overview(

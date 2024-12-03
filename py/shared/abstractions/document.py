@@ -90,9 +90,6 @@ class DocumentType(str, Enum):
     # XML
     XML = "xml"
 
-    # Knowledge Graph
-    GRAPH = "graph"
-
 
 class Document(R2RSerializable):
     id: UUID = Field(default_factory=uuid4)

@@ -15,10 +15,8 @@ from .exception import R2RDocumentProcessingError, R2RException
 from .graph import (
     Community,
     Entity,
-    EntityType,
     KGExtraction,
     Relationship,
-    RelationshipType,
 )
 from .kg import (
     GraphBuildSettings,
@@ -92,8 +90,6 @@ __all__ = [
     "R2RException",
     # Graph abstractions
     "Entity",
-    "EntityType",
-    "RelationshipType",
     "Community",
     "Community",
     "KGExtraction",
