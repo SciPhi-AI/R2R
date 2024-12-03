@@ -321,7 +321,9 @@ class DocumentsSDK:
         return await self.client._make_request(
             "DELETE",
             "documents/by-filter",
-            params={"filters": filters_json},
+            data=filters_json,
+            # params={"filters": filters_json},
+            # data=filters,
             version="v3",
         )
 

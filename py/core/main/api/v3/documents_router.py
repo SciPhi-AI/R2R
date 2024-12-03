@@ -201,8 +201,7 @@ class DocumentsRouter(BaseRouterV3):
             Creates a new Document object from an input file or text content. The document will be processed
             to create chunks for vector indexing and search.
 
-            Either a file or text content must be provided, but not both. Regular users can only create
-            documents for themselves, while superusers can create documents for any user.
+            Either a file or text content must be provided, but not both. Documents are shared through `Collections` which allow for tightly specified cross-user interactions.
 
             The ingestion process runs asynchronously and its progress can be tracked using the returned
             task_id.
@@ -328,7 +327,7 @@ class DocumentsRouter(BaseRouterV3):
 
         #                     result = client.documents.update(
         #                         file_path="pg_essay_1.html",
-        #                         id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+        #                         id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
         #                     )
         #                     """
         #                 ),
@@ -344,7 +343,7 @@ class DocumentsRouter(BaseRouterV3):
         #                     function main() {
         #                         const response = await client.documents.update({
         #                             file: { path: "pg_essay_1.html", name: "pg_essay_1.html" },
-        #                             id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+        #                             id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
         #                         });
         #                     }
 
@@ -356,7 +355,7 @@ class DocumentsRouter(BaseRouterV3):
         #                 "lang": "CLI",
         #                 "source": textwrap.dedent(
         #                     """
-        #                     r2r documents update /path/to/file.txt --id=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+        #                     r2r documents update /path/to/file.txt --id=b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
         #                     """
         #                 ),
         #             },
@@ -364,7 +363,7 @@ class DocumentsRouter(BaseRouterV3):
         #                 "lang": "cURL",
         #                 "source": textwrap.dedent(
         #                     """
-        #                     curl -X POST "https://api.example.com/document/9fbe403b-c11c-5aae-8ade-ef22980c3ad1"  \\
+        #                     curl -X POST "https://api.example.com/document/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"  \\
         #                     -H "Content-Type: multipart/form-data"  \\
         #                     -H "Authorization: Bearer YOUR_API_KEY"  \\
         #                     -F "file=@pg_essay_1.html;type=text/plain"
@@ -662,7 +661,7 @@ class DocumentsRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.documents.retrieve(
-                            id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
                         ),
@@ -677,7 +676,7 @@ class DocumentsRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.documents.retrieve({
-                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
                                 });
                             }
 
@@ -689,7 +688,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r documents retrieve 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            r2r documents retrieve b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -697,7 +696,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1"  \\
+                            curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"  \\
                             -H "Authorization: Bearer YOUR_API_KEY"
                             """
                         ),
@@ -759,7 +758,7 @@ class DocumentsRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.documents.list_chunks(
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                                id="32b6a70f-a995-5c51-85d2-834f06283a1e"
                             )
                             """
                         ),
@@ -774,7 +773,7 @@ class DocumentsRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.documents.listChunks({
-                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    id: "32b6a70f-a995-5c51-85d2-834f06283a1e",
                                 });
                             }
 
@@ -786,7 +785,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r documents list-chunks 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            r2r documents list-chunks b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -794,7 +793,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/chunks"  \\
+                            curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/chunks"  \\
                             -H "Authorization: Bearer YOUR_API_KEY"\
                             """
                         ),
@@ -1022,6 +1021,54 @@ class DocumentsRouter(BaseRouterV3):
             )
 
         @self.router.delete(
+            "/documents/by-filter",
+            summary="Delete documents by filter",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            result = client.documents.delete_by_filter(
+                                filters='{"document_type": {"$eq": "txt"}, "created_at": {"$lt": "2025-01-01T00:00:00Z"}}'
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X DELETE "https://api.example.com/v3/documents/by-filter?filters=%7B%22document_type%22%3A%7B%22%24eq%22%3A%22text%22%7D%2C%22created_at%22%3A%7B%22%24lt%22%3A%222023-01-01T00%3A00%3A00Z%22%7D%7D" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def delete_document_by_filter(
+            filters: Json[dict] = Body(
+                ..., description="JSON-encoded filters"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedBooleanResponse:
+            """
+            Delete documents based on provided filters. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`. Deletion requests are limited to a user's own documents.
+            """
+
+            filters_dict = {
+                "$and": [{"user_id": {"$eq": str(auth_user.id)}}, filters]
+            }
+            await self.services["management"].delete(filters=filters_dict)
+
+            return GenericBooleanResponse(success=True)  # type: ignore
+
+        @self.router.delete(
             "/documents/{id}",
             summary="Delete a document",
             openapi_extra={
@@ -1036,7 +1083,7 @@ class DocumentsRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.documents.delete(
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
                         ),
@@ -1051,7 +1098,7 @@ class DocumentsRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.documents.delete({
-                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
                                 });
                             }
 
@@ -1063,7 +1110,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r documents delete 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            r2r documents delete b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -1098,72 +1145,6 @@ class DocumentsRouter(BaseRouterV3):
             await self.services["management"].delete(filters=filters)
             return GenericBooleanResponse(success=True)  # type: ignore
 
-        @self.router.delete(
-            "/documents/by-filter",
-            summary="Delete documents by filter",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-                            result = client.documents.delete_by_filter(
-                                filters='{"document_type": {"$eq": "text"}, "created_at": {"$lt": "2023-01-01T00:00:00Z"}}'
-                            )
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X DELETE "https://api.example.com/v3/documents/by-filter?filters=%7B%22document_type%22%3A%7B%22%24eq%22%3A%22text%22%7D%2C%22created_at%22%3A%7B%22%24lt%22%3A%222023-01-01T00%3A00%3A00Z%22%7D%7D" \\
-                                -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def delete_document_by_filter(
-            filters: str = Query(..., description="JSON-encoded filters"),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedBooleanResponse:
-            """
-            Delete documents based on provided filters. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`. Deletion requests are limited to a user's own documents.
-            """
-
-            try:
-                filters_dict = json.loads(filters)
-            except json.JSONDecodeError:
-                raise R2RException(
-                    status_code=422, message="Invalid JSON in filters"
-                )
-
-            if not isinstance(filters_dict, dict):
-                raise R2RException(
-                    status_code=422, message="Filters must be a JSON object"
-                )
-
-            filters_dict = {"$and": [{"$eq": str(auth_user.id)}, filters_dict]}
-
-            for key, value in filters_dict.items():
-                if not isinstance(value, dict):
-                    raise R2RException(
-                        status_code=422,
-                        message=f"Invalid filter format for key: {key}",
-                    )
-
-            delete_bool = await self.services["management"].delete(
-                filters=filters_dict
-            )
-
-            return GenericBooleanResponse(success=delete_bool)  # type: ignore
-
         @self.router.get(
             "/documents/{id}/collections",
             summary="List document collections",
@@ -1179,7 +1160,7 @@ class DocumentsRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.documents.list_collections(
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=10
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa", offset=0, limit=10
                             )
                             """
                         ),
@@ -1194,7 +1175,7 @@ class DocumentsRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.documents.listCollections({
-                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
                                 });
                             }
 
@@ -1206,7 +1187,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r documents list-collections 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            r2r documents list-collections b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -1214,7 +1195,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/collections"  \\
+                            curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/collections"  \\
                             -H "Authorization: Bearer YOUR_API_KEY"
                             """
                         ),
@@ -1283,7 +1264,7 @@ class DocumentsRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.documents.extract(
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
                         ),
@@ -1389,7 +1370,7 @@ class DocumentsRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.documents.extract(
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
                         ),
@@ -1484,7 +1465,7 @@ class DocumentsRouter(BaseRouterV3):
                             # when using auth, do client.login(...)
 
                             result = client.documents.list_relationships(
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
                                 offset=0,
                                 limit=100
                             )
@@ -1501,7 +1482,7 @@ class DocumentsRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.documents.listRelationships({
-                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
                                     offset: 0,
                                     limit: 100,
                                 });
@@ -1515,7 +1496,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r documents list-relationships 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            r2r documents list-relationships b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -1523,7 +1504,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/relationships" \\
+                            curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/relationships" \\
                             -H "Authorization: Bearer YOUR_API_KEY"
                             """
                         ),
