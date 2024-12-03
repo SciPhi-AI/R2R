@@ -504,12 +504,12 @@ describe("R2RClient", () => {
 
       const query = "test query";
       const vector_search_settings = { top_k: 5 };
-      const kg_search_settings = { max_hops: 2 };
+      const graph_search_settings = { max_hops: 2 };
 
       const result = await client.search(
         query,
         vector_search_settings,
-        kg_search_settings,
+        graph_search_settings,
       );
 
       expect(result).toEqual(mockResponse);
@@ -519,7 +519,7 @@ describe("R2RClient", () => {
         data: JSON.stringify({
           query,
           vector_search_settings,
-          kg_search_settings,
+          graph_search_settings,
         }),
         headers: {
           Authorization: "Bearer access-token",
@@ -539,14 +539,14 @@ describe("R2RClient", () => {
       const query = "test query";
       const rag_generation_config = { max_tokens: 100 };
       const vector_search_settings = { top_k: 5 };
-      const kg_search_settings = { max_hops: 2 };
+      const graph_search_settings = { max_hops: 2 };
       const task_prompt_override = "Custom prompt";
       const include_title_if_available = true;
 
       const result = await client.rag(
         query,
         vector_search_settings,
-        kg_search_settings,
+        graph_search_settings,
         rag_generation_config,
         task_prompt_override,
         include_title_if_available,
@@ -559,7 +559,7 @@ describe("R2RClient", () => {
         data: JSON.stringify({
           query,
           vector_search_settings,
-          kg_search_settings,
+          graph_search_settings,
           rag_generation_config,
           task_prompt_override,
           include_title_if_available,

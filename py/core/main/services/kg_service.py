@@ -688,7 +688,7 @@ class KgService(Service):
     @telemetry_event("get_creation_estimate")
     async def get_creation_estimate(
         self,
-        kg_creation_settings: KGCreationSettings,
+        graph_creation_settings: KGCreationSettings,
         document_id: Optional[UUID] = None,
         collection_id: Optional[UUID] = None,
         **kwargs,
@@ -697,7 +697,7 @@ class KgService(Service):
             await self.providers.database.graph_handler.get_creation_estimate(
                 document_id=document_id,
                 collection_id=collection_id,
-                kg_creation_settings=kg_creation_settings,
+                graph_creation_settings=graph_creation_settings,
             )
         )
 
@@ -706,7 +706,7 @@ class KgService(Service):
         self,
         collection_id: Optional[UUID] = None,
         graph_id: Optional[UUID] = None,
-        kg_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings(),
+        graph_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings(),
         **kwargs,
     ):
 
@@ -718,7 +718,7 @@ class KgService(Service):
         return await self.providers.database.graph_handler.get_enrichment_estimate(
             collection_id=collection_id,
             graph_id=graph_id,
-            kg_enrichment_settings=kg_enrichment_settings,
+            graph_enrichment_settings=graph_enrichment_settings,
         )
 
     @telemetry_event("get_deduplication_estimate")
@@ -738,8 +738,8 @@ class KgService(Service):
         self,
         collection_id: UUID,
         graph_id: UUID,
-        kg_entity_deduplication_type: KGEntityDeduplicationType,
-        kg_entity_deduplication_prompt: str,
+        graph_entity_deduplication_type: KGEntityDeduplicationType,
+        graph_entity_deduplication_prompt: str,
         generation_config: GenerationConfig,
         **kwargs,
     ):
@@ -748,8 +748,8 @@ class KgService(Service):
                 message={
                     "collection_id": collection_id,
                     "graph_id": graph_id,
-                    "kg_entity_deduplication_type": kg_entity_deduplication_type,
-                    "kg_entity_deduplication_prompt": kg_entity_deduplication_prompt,
+                    "graph_entity_deduplication_type": graph_entity_deduplication_type,
+                    "graph_entity_deduplication_prompt": graph_entity_deduplication_prompt,
                     "generation_config": generation_config,
                     **kwargs,
                 }
@@ -765,8 +765,8 @@ class KgService(Service):
         collection_id: UUID,
         offset: int,
         limit: int,
-        kg_entity_deduplication_type: KGEntityDeduplicationType,
-        kg_entity_deduplication_prompt: str,
+        graph_entity_deduplication_type: KGEntityDeduplicationType,
+        graph_entity_deduplication_prompt: str,
         generation_config: GenerationConfig,
         **kwargs,
     ):
@@ -780,8 +780,8 @@ class KgService(Service):
                     "collection_id": collection_id,
                     "offset": offset,
                     "limit": limit,
-                    "kg_entity_deduplication_type": kg_entity_deduplication_type,
-                    "kg_entity_deduplication_prompt": kg_entity_deduplication_prompt,
+                    "graph_entity_deduplication_type": graph_entity_deduplication_type,
+                    "graph_entity_deduplication_prompt": graph_entity_deduplication_prompt,
                     "generation_config": generation_config,
                 }
             ),
@@ -1025,7 +1025,7 @@ class KgService(Service):
         combined_extraction: str = " ".join([chunk.data for chunk in chunks])  # type: ignore
 
         messages = await self.providers.database.prompt_handler.get_message_payload(
-            task_prompt_name=self.providers.database.config.kg_creation_settings.graphrag_relationships_extraction_few_shot,
+            task_prompt_name=self.providers.database.config.graph_creation_settings.graphrag_relationships_extraction_few_shot,
             task_inputs={
                 "input": combined_extraction,
                 "max_knowledge_relationships": max_knowledge_relationships,

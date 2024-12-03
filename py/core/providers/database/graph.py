@@ -1864,7 +1864,7 @@ class PostgresGraphHandler(GraphHandler):
 
     async def get_creation_estimate(
         self,
-        kg_creation_settings: KGCreationSettings,
+        graph_creation_settings: KGCreationSettings,
         document_id: Optional[UUID] = None,
         collection_id: Optional[UUID] = None,
     ):
@@ -1893,7 +1893,7 @@ class PostgresGraphHandler(GraphHandler):
 
         total_chunks = (
             sum(doc["chunk_count"] for doc in chunk_counts)
-            // kg_creation_settings.chunk_merge_count
+            // graph_creation_settings.chunk_merge_count
         )
         estimated_entities = (total_chunks * 10, total_chunks * 20)
         estimated_relationships = (
@@ -1908,7 +1908,7 @@ class PostgresGraphHandler(GraphHandler):
             2000 * calls // 1000000 for calls in estimated_llm_calls
         )
         cost_per_million = llm_cost_per_million_tokens(
-            kg_creation_settings.generation_config.model
+            graph_creation_settings.generation_config.model
         )
         estimated_cost = tuple(
             tokens * cost_per_million for tokens in total_in_out_tokens
@@ -1945,7 +1945,7 @@ class PostgresGraphHandler(GraphHandler):
         self,
         collection_id: UUID | None = None,
         graph_id: UUID | None = None,
-        kg_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings(),
+        graph_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings(),
     ):
         """Get the estimated cost and time for enriching a KG."""
         if collection_id is not None:
@@ -2003,7 +2003,7 @@ class PostgresGraphHandler(GraphHandler):
             2000 * calls / 1000000 for calls in estimated_llm_calls
         )
         cost_per_million = llm_cost_per_million_tokens(
-            kg_enrichment_settings.generation_config.model  # type: ignore
+            graph_enrichment_settings.generation_config.model  # type: ignore
         )
         estimated_cost = tuple(
             tokens * cost_per_million for tokens in tokens_in_millions

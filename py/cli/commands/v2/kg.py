@@ -33,31 +33,31 @@ from r2r import R2RAsyncClient
 )
 @pass_context
 async def create_graph(
-    ctx, collection_id, run, kg_creation_settings, force_kg_creation
+    ctx, collection_id, run, graph_creation_settings, force_kg_creation
 ):
     client: R2RAsyncClient = ctx.obj
 
-    if kg_creation_settings:
+    if graph_creation_settings:
         try:
-            kg_creation_settings = json.loads(kg_creation_settings)
+            graph_creation_settings = json.loads(graph_creation_settings)
         except json.JSONDecodeError:
             click.echo(
                 "Error: kg-creation-settings must be a valid JSON string"
             )
             return
     else:
-        kg_creation_settings = {}
+        graph_creation_settings = {}
 
     run_type = "run" if run else "estimate"
 
     if force_kg_creation:
-        kg_creation_settings = {"force_kg_creation": True}
+        graph_creation_settings = {"force_kg_creation": True}
 
     with timer():
         response = await client.create_graph(
             collection_id=collection_id,
             run_type=run_type,
-            kg_creation_settings=kg_creation_settings,
+            graph_creation_settings=graph_creation_settings,
         )
 
     click.echo(json.dumps(response, indent=2))
@@ -143,32 +143,32 @@ async def deduplicate_entities(
 )
 @pass_context
 async def enrich_graph(
-    ctx, collection_id, run, force_kg_enrichment, kg_enrichment_settings
+    ctx, collection_id, run, force_kg_enrichment, graph_enrichment_settings
 ):
     """
     Enrich an existing graph.
     """
     client: R2RAsyncClient = ctx.obj
 
-    if kg_enrichment_settings:
+    if graph_enrichment_settings:
         try:
-            kg_enrichment_settings = json.loads(kg_enrichment_settings)
+            graph_enrichment_settings = json.loads(graph_enrichment_settings)
         except json.JSONDecodeError:
             click.echo(
                 "Error: kg-enrichment-settings must be a valid JSON string"
             )
             return
     else:
-        kg_enrichment_settings = {}
+        graph_enrichment_settings = {}
 
     run_type = "run" if run else "estimate"
 
     if force_kg_enrichment:
-        kg_enrichment_settings = {"force_kg_enrichment": True}
+        graph_enrichment_settings = {"force_kg_enrichment": True}
 
     with timer():
         response = await client.enrich_graph(
-            collection_id, run_type, kg_enrichment_settings
+            collection_id, run_type, graph_enrichment_settings
         )
 
     click.echo(json.dumps(response, indent=2))

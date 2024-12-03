@@ -217,6 +217,10 @@ class ChunkSearchSettings(R2RSerializable):
         default=40,
         description="Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed.",
     )
+    enabled: bool = Field(
+        default=True,
+        description="Whether to enable chunk search",
+    )
 
 
 class GraphSearchSettings(R2RSerializable):
@@ -352,7 +356,7 @@ class SearchSettings(R2RSerializable):
             "use_semantic_search": True,
             "use_fulltext_search": False,
             "use_hybrid_search": True,
-            "use_kg_search": True,
+            "use_graph_search": True,
             "filters": {"category": "technology"},
             "limit": 20,
             "offset": 0,
@@ -594,7 +598,7 @@ class SearchSettings(R2RSerializable):
 #         description="The system prompt for the graphrag reduce prompt.",
 #     )
 
-#     use_kg_search: bool = Field(
+#     use_graph_search: bool = Field(
 #         alias="useKGSearch",
 #         default=False,
 #         description="Whether to use KG search",
@@ -639,7 +643,7 @@ class SearchSettings(R2RSerializable):
 #         populate_by_name = True
 #         json_encoders = {UUID: str}
 #         json_schema_extra = {
-#             "use_kg_search": True,
+#             "use_graph_search": True,
 #             "kg_search_type": "local",
 #             "kg_search_level": "0",
 #             "generation_config": GenerationConfig.Config.json_schema_extra,

@@ -10,16 +10,16 @@
 # KG settings
 batch_size = 256
 
-  [database.kg_creation_settings]
+  [database.graph_creation_settings]
     generation_config = { model = "azure/gpt-4o-mini" }
 
-  [database.kg_entity_deduplication_settings]
+  [database.graph_entity_deduplication_settings]
     generation_config = { model = "azure/gpt-4o-mini" }
 
-  [database.kg_enrichment_settings]
+  [database.graph_enrichment_settings]
     generation_config = { model = "azure/gpt-4o-mini" }
 
-  [database.kg_search_settings]
+  [database.graph_search_settings]
     generation_config = { model = "azure/gpt-4o-mini" }
 
 [embedding]

@@ -66,8 +66,8 @@ class GraphRouter(BaseRouterV3):
         Args:
             id (UUID): Graph containing the entities
             settings (dict, optional): Deduplication settings including:
-                - kg_entity_deduplication_type (str): Deduplication method (e.g. "by_name")
-                - kg_entity_deduplication_prompt (str): Custom prompt for analysis
+                - graph_entity_deduplication_type (str): Deduplication method (e.g. "by_name")
+                - graph_entity_deduplication_prompt (str): Custom prompt for analysis
                 - max_description_input_length (int): Max chars for entity descriptions
                 - generation_config (dict): LLM generation parameters
             run_type (KGRunType): Whether to estimate cost or run deduplication
@@ -86,7 +86,7 @@ class GraphRouter(BaseRouterV3):
             raise R2RException("Only superusers can deduplicate entities", 403)
 
         server_settings = (
-            self.providers.database.config.kg_entity_deduplication_settings
+            self.providers.database.config.graph_entity_deduplication_settings
         )
         if settings:
             server_settings = update_settings_from_dict(
@@ -101,7 +101,7 @@ class GraphRouter(BaseRouterV3):
 
         workflow_input = {
             "graph_id": str(collection_id),
-            "kg_entity_deduplication_settings": server_settings.model_dump_json(),
+            "graph_entity_deduplication_settings": server_settings.model_dump_json(),
             "user": auth_user.model_dump_json(),
         }
 
@@ -295,7 +295,7 @@ class GraphRouter(BaseRouterV3):
                 default=KGRunType.ESTIMATE,
                 description="Run type for the graph enrichment process.",
             ),
-            kg_enrichment_settings: Optional[dict] = Body(
+            graph_enrichment_settings: Optional[dict] = Body(
                 default=None,
                 description="Settings for the graph enrichment process.",
             ),
@@ -339,43 +339,43 @@ class GraphRouter(BaseRouterV3):
                 run_type = KGRunType.ESTIMATE
 
             # Apply runtime settings overrides
-            server_kg_enrichment_settings = (
-                self.providers.database.config.kg_enrichment_settings
+            server_graph_enrichment_settings = (
+                self.providers.database.config.graph_enrichment_settings
             )
-            if kg_enrichment_settings:
-                server_kg_enrichment_settings = update_settings_from_dict(
-                    server_kg_enrichment_settings, kg_enrichment_settings
+            if graph_enrichment_settings:
+                server_graph_enrichment_settings = update_settings_from_dict(
+                    server_graph_enrichment_settings, graph_enrichment_settings
                 )
 
             # If the run type is estimate, return an estimate of the enrichment cost
             # if run_type is KGRunType.ESTIMATE:
             #     return await self.services["kg"].get_enrichment_estimate(
             #         collection_id=id,
-            #         kg_enrichment_settings=server_kg_enrichment_settings,
+            #         graph_enrichment_settings=server_graph_enrichment_settings,
             #     )
 
             # Otherwise, run the enrichment workflow
             # else:
-            #     if run_with_orchestration:
-            workflow_input = {
-                "collection_id": str(collection_id),
-                "kg_enrichment_settings": server_kg_enrichment_settings.model_dump_json(),
-                "user": auth_user.json(),
-            }
+            if run_with_orchestration:
+                workflow_input = {
+                    "collection_id": str(collection_id),
+                    "graph_enrichment_settings": server_graph_enrichment_settings.model_dump_json(),
+                    "user": auth_user.json(),
+                }
 
-            #         return await self.orchestration_provider.run_workflow(  # type: ignore
-            #             "build-communities", {"request": workflow_input}, {}
-            #         )
-            #     else:
-            from core.main.orchestration import simple_kg_factory
+                return await self.orchestration_provider.run_workflow(  # type: ignore
+                    "build-communities", {"request": workflow_input}, {}
+                )
+            else:
+                from core.main.orchestration import simple_kg_factory
 
-            logger.info("Running build-communities without orchestration.")
-            simple_kg = simple_kg_factory(self.services["kg"])
-            await simple_kg["build-communities"](workflow_input)
-            return {
-                "message": "Graph communities created successfully.",
-                "task_id": None,
-            }
+                logger.info("Running build-communities without orchestration.")
+                simple_kg = simple_kg_factory(self.services["kg"])
+                await simple_kg["build-communities"](workflow_input)
+                return {
+                    "message": "Graph communities created successfully.",
+                    "task_id": None,
+                }
 
         @self.router.post(
             "/graphs/{collection_id}/reset",

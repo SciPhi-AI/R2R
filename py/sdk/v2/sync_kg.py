@@ -14,7 +14,9 @@ class SyncKGMixins:
         self,
         collection_id: Optional[Union[UUID, str]] = None,
         run_type: Optional[Union[str, KGRunType]] = None,
-        kg_creation_settings: Optional[Union[dict, KGCreationSettings]] = None,
+        graph_creation_settings: Optional[
+            Union[dict, KGCreationSettings]
+        ] = None,
         run_with_orchestration: Optional[bool] = None,
     ) -> dict:
         """
@@ -23,15 +25,15 @@ class SyncKGMixins:
         Args:
             collection_id (Optional[Union[UUID, str]]): The ID of the collection to create the graph for.
             run_type (Optional[Union[str, KGRunType]]): The type of run to perform.
-            kg_creation_settings (Optional[Union[dict, KGCreationSettings]]): Settings for the graph creation process.
+            graph_creation_settings (Optional[Union[dict, KGCreationSettings]]): Settings for the graph creation process.
         """
-        if isinstance(kg_creation_settings, KGCreationSettings):
-            kg_creation_settings = kg_creation_settings.model_dump()
+        if isinstance(graph_creation_settings, KGCreationSettings):
+            graph_creation_settings = graph_creation_settings.model_dump()
 
         data = {
             "collection_id": str(collection_id) if collection_id else None,
             "run_type": str(run_type) if run_type else None,
-            "kg_creation_settings": kg_creation_settings or {},
+            "graph_creation_settings": graph_creation_settings or {},
             "run_with_orchestration": run_with_orchestration or True,
         }
 
@@ -41,7 +43,7 @@ class SyncKGMixins:
         self,
         collection_id: Optional[Union[UUID, str]] = None,
         run_type: Optional[Union[str, KGRunType]] = None,
-        kg_enrichment_settings: Optional[
+        graph_enrichment_settings: Optional[
             Union[dict, KGEnrichmentSettings]
         ] = None,
         run_with_orchestration: Optional[bool] = None,
@@ -52,17 +54,17 @@ class SyncKGMixins:
         Args:
             collection_id (Optional[Union[UUID, str]]): The ID of the collection to enrich the graph for.
             run_type (Optional[Union[str, KGRunType]]): The type of run to perform.
-            kg_enrichment_settings (Optional[Union[dict, KGEnrichmentSettings]]): Settings for the graph enrichment process.
+            graph_enrichment_settings (Optional[Union[dict, KGEnrichmentSettings]]): Settings for the graph enrichment process.
         Returns:
             KGEnrichmentResponse: Results of the graph enrichment process.
         """
-        if isinstance(kg_enrichment_settings, KGEnrichmentSettings):
-            kg_enrichment_settings = kg_enrichment_settings.model_dump()
+        if isinstance(graph_enrichment_settings, KGEnrichmentSettings):
+            graph_enrichment_settings = graph_enrichment_settings.model_dump()
 
         data = {
             "collection_id": str(collection_id) if collection_id else None,
             "run_type": str(run_type) if run_type else None,
-            "kg_enrichment_settings": kg_enrichment_settings or {},
+            "graph_enrichment_settings": graph_enrichment_settings or {},
             "run_with_orchestration": run_with_orchestration or True,
         }
 

@@ -1276,13 +1276,13 @@ class DocumentsRouter(BaseRouterV3):
                 run_type = KGRunType.ESTIMATE
 
             # Apply runtime settings overrides
-            server_kg_creation_settings = (
-                self.providers.database.config.kg_creation_settings
+            server_graph_creation_settings = (
+                self.providers.database.config.graph_creation_settings
             )
 
             if settings:
-                server_kg_creation_settings = update_settings_from_dict(
-                    server_settings=server_kg_creation_settings,
+                server_graph_creation_settings = update_settings_from_dict(
+                    server_settings=server_graph_creation_settings,
                     settings_dict=settings,  # type: ignore
                 )
 
@@ -1295,14 +1295,14 @@ class DocumentsRouter(BaseRouterV3):
                         "kg"
                     ].get_creation_estimate(
                         document_id=id,
-                        kg_creation_settings=server_kg_creation_settings,
+                        graph_creation_settings=server_graph_creation_settings,
                     ),
                 }
 
             if run_with_orchestration:
                 workflow_input = {
                     "document_id": str(id),
-                    "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
+                    "graph_creation_settings": server_graph_creation_settings.model_dump_json(),
                     "user": auth_user.json(),
                 }
 

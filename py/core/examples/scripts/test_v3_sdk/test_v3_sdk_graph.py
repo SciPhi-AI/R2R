@@ -170,7 +170,7 @@ def test_graph_operations(collection_id):
     dedup_result = client.graphs.deduplicate_entities(
         collection_id=collection_id,
         settings={
-            "kg_entity_deduplication_type": "by_name",
+            "graph_entity_deduplication_type": "by_name",
             "max_description_input_length": 65536,
         },
     )

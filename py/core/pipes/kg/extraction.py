@@ -87,7 +87,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
         combined_extraction: str = " ".join([extraction.data for extraction in extractions])  # type: ignore
 
         messages = await self.database_provider.prompt_handler.get_message_payload(
-            task_prompt_name=self.database_provider.config.kg_creation_settings.graphrag_relationships_extraction_few_shot,
+            task_prompt_name=self.database_provider.config.graph_creation_settings.graphrag_relationships_extraction_few_shot,
             task_inputs={
                 "input": combined_extraction,
                 "max_knowledge_relationships": max_knowledge_relationships,

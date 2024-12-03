@@ -108,7 +108,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     "use_hybrid_search": True
                                 },
                                 graph_search_settings={
-                                    "use_kg_search": True,
+                                    "use_graph_search": True,
                                     "kg_search_type": "local",
                                     "kg_search_level": "0",
                                     "generation_config": {
@@ -191,7 +191,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     "use_hybrid_search": true
                                 },
                                 "graph_search_settings": {
-                                    "use_kg_search": true,
+                                    "use_graph_search": true,
                                     "kg_search_type": "local",
                                     "kg_search_level": "0",
                                     "generation_config": {
@@ -270,7 +270,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     "use_hybrid_search": True
                                 },
                                 graph_search_settings={
-                                    "use_kg_search": True,
+                                    "use_graph_search": True,
                                     "kg_search_type": "local",
                                     "kg_search_level": "0",
                                     "generation_config": {
@@ -305,7 +305,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                         use_hybrid_search: true
                                     },
                                     graph_search_settings: {
-                                        use_kg_search: true,
+                                        use_graph_search: true,
                                         kg_search_type: "local",
                                         kg_search_level: "0",
                                         generation_config: {
@@ -356,7 +356,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     "use_hybrid_search": true
                                 },
                                 "graph_search_settings": {
-                                    "use_kg_search": true,
+                                    "use_graph_search": true,
                                     "kg_search_type": "local",
                                     "kg_search_level": "0",
                                     "generation_config": {
@@ -458,7 +458,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                 "use_hybrid_search": True
                             },
                             graph_search_settings={
-                                "use_kg_search": True,
+                                "use_graph_search": True,
                                 "kg_search_type": "local",
                                 "kg_search_level": "1"
                             },
@@ -531,7 +531,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     "use_hybrid_search": true
                                 },
                                 "graph_search_settings": {
-                                    "use_kg_search": true,
+                                    "use_graph_search": true,
                                     "kg_search_type": "local",
                                     "kg_search_level": "1"
                                 },

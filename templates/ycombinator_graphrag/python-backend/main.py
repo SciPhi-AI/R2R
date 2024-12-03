@@ -105,7 +105,7 @@ def ingest():
     enrich_graph()
 
 def ask():
-    result = client.rag(query=args.query, use_kg_search=True, kg_search_type=args.kg_search_type)
+    result = client.rag(query=args.query, use_graph_search=True, kg_search_type=args.kg_search_type)
     print(result)
 
 if __name__ == "__main__":

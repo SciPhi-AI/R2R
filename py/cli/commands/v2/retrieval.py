@@ -86,12 +86,12 @@ async def search(ctx, query, **kwargs):
         and v is not None
     }
 
-    kg_search_settings = {
+    graph_search_settings = {
         k: v
         for k, v in kwargs.items()
         if k
         in [
-            "use_kg_search",
+            "use_graph_search",
             "kg_search_type",
             "kg_search_level",
             "generation_config",
@@ -107,7 +107,7 @@ async def search(ctx, query, **kwargs):
         results = await client.search(
             query,
             vector_search_settings,
-            kg_search_settings,
+            graph_search_settings,
         )
 
         if isinstance(results, dict) and "results" in results:
@@ -205,12 +205,12 @@ async def rag(ctx, query, **kwargs):
         and v is not None
     }
 
-    kg_search_settings = {
+    graph_search_settings = {
         k: v
         for k, v in kwargs.items()
         if k
         in [
-            "use_kg_search",
+            "use_graph_search",
             "kg_search_type",
             "kg_search_level",
             "kg_search_model",
@@ -222,9 +222,9 @@ async def rag(ctx, query, **kwargs):
         and v is not None
     }
 
-    if kg_search_settings.get("kg_search_model"):
-        kg_search_settings["generation_config"] = {
-            "model": kg_search_settings.pop("kg_search_model")
+    if graph_search_settings.get("kg_search_model"):
+        graph_search_settings["generation_config"] = {
+            "model": graph_search_settings.pop("kg_search_model")
         }
 
     with timer():
@@ -232,7 +232,7 @@ async def rag(ctx, query, **kwargs):
             query,
             rag_generation_config,
             vector_search_settings,
-            kg_search_settings,
+            graph_search_settings,
         )
 
         if rag_generation_config.get("stream"):
