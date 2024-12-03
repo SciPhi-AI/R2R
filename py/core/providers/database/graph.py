@@ -1220,86 +1220,187 @@ class PostgresGraphHandler(GraphHandler):
 
     async def reset(self, graph_id: UUID) -> None:
         """
-        Completely delete a graph and all associated data.
-
-        This method:
-        1. Removes graph associations from users
-        2. Deletes all graph entities
-        3. Deletes all graph relationships
-        4. Deletes all graph communities and community info
-        5. Removes the graph record itself
-
-        Args:
-            graph_id (UUID): ID of the graph to delete
-
-        Returns:
-            None
-
-        Raises:
-            R2RException: If deletion fails
+        Completely reset a graph and all associated data.
         """
-        try:
-            # Remove graph_id from users
-            user_update_query = f"""
-                UPDATE {self._get_table_name('users')}
-                SET graph_ids = array_remove(graph_ids, $1)
-                WHERE $1 = ANY(graph_ids)
-            """
-            await self.connection_manager.execute_query(
-                user_update_query, [graph_id]
-            )
+        async with self.connection_manager.transaction():
+            try:
+                # First verify graph exists and get document_ids
+                verify_query = f"""
+                    SELECT EXISTS (
+                        SELECT 1 FROM {self._get_table_name("graph")}
+                        WHERE id = $1
+                    ) as exists, 
+                    (
+                        SELECT document_ids 
+                        FROM {self._get_table_name("graph")}
+                        WHERE id = $1
+                    ) as document_ids;
+                """
+                result = await self.connection_manager.fetchrow_query(
+                    verify_query, [graph_id]
+                )
+                if not result or not result["exists"]:
+                    raise R2RException(f"Graph {graph_id} not found", 404)
+                
+                document_ids = result["document_ids"] or []
 
-            # Delete all graph entities
-            entity_delete_query = f"""
-                DELETE FROM {self._get_table_name("graph_entity")}
-                WHERE parent_id = $1
-            """
-            await self.connection_manager.execute_query(
-                entity_delete_query, [graph_id]
-            )
+                # Remove graph_id from users
+                user_update_query = f"""
+                    UPDATE {self._get_table_name('users')}
+                    SET graph_ids = array_remove(graph_ids, $1)
+                    WHERE $1 = ANY(graph_ids)
+                """
+                await self.connection_manager.execute_query(
+                    user_update_query, [graph_id]
+                )
 
-            # Delete all graph relationships
-            relationship_delete_query = f"""
-                DELETE FROM {self._get_table_name("graph_relationship")}
-                WHERE parent_id = $1
-            """
-            await self.connection_manager.execute_query(
-                relationship_delete_query, [graph_id]
-            )
+                # Delete all graph entities
+                entity_delete_query = f"""
+                    DELETE FROM {self._get_table_name("graph_entity")}
+                    WHERE parent_id = $1
+                """
+                await self.connection_manager.execute_query(
+                    entity_delete_query, [graph_id]
+                )
 
-            # Delete all graph relationships
-            community_delete_query = f"""
-                DELETE FROM {self._get_table_name("graph_community")}
-                WHERE collection_id = $1
-            """
-            print("community_delete_query = ", community_delete_query)
-            print("graph_id = ", graph_id)
-            await self.connection_manager.execute_query(
-                community_delete_query, [graph_id]
-            )
+                # Delete all graph relationships
+                relationship_delete_query = f"""
+                    DELETE FROM {self._get_table_name("graph_relationship")}
+                    WHERE parent_id = $1
+                """
+                await self.connection_manager.execute_query(
+                    relationship_delete_query, [graph_id]
+                )
 
-            # Delete all graph communities and community info
-            community_delete_queries = [
-                f"""DELETE FROM {self._get_table_name("graph_community_info")}
-                    WHERE collection_id = $1""",
-                f"""DELETE FROM {self._get_table_name("graph_community")}
-                    WHERE collection_id = $1""",
-            ]
-            for query in community_delete_queries:
-                await self.connection_manager.execute_query(query, [graph_id])
+                # Delete all graph communities and community info
+                community_delete_queries = [
+                    f"""DELETE FROM {self._get_table_name("graph_community_info")}
+                        WHERE collection_id = $1""",
+                    f"""DELETE FROM {self._get_table_name("graph_community")}
+                        WHERE collection_id = $1""",
+                ]
+                for query in community_delete_queries:
+                    await self.connection_manager.execute_query(
+                        query, [graph_id]
+                    )
 
-            # # Finally delete the graph itself
-            # graph_delete_query = f"""
-            #     DELETE FROM {self._get_table_name("graph")}
-            #     WHERE id = $1
-            # """
-            # await self.connection_manager.execute_query(
-            #     graph_delete_query, [graph_id]
-            # )
+                # # Reset document statuses if needed
+                # if document_ids:
+                #     doc_status_update = f"""
+                #         UPDATE {self._get_table_name("documents")}
+                #         SET graph_ids = array_remove(graph_ids, $1),
+                #             extraction_status = 'pending'
+                #         WHERE id = ANY($2)
+                #     """
+                #     await self.connection_manager.execute_query(
+                #         doc_status_update, [graph_id, document_ids]
+                #     )
 
-        except Exception as e:
-            logger.error(f"Error deleting graph {graph_id}: {str(e)}")
-            raise R2RException(f"Failed to delete graph: {str(e)}", 500)
+                # Reset the graph record back to initial state
+                reset_graph_query = f"""
+                    UPDATE {self._get_table_name("graph")}
+                    SET status = 'pending',
+                        document_ids = ARRAY[]::uuid[],
+                        metadata = NULL,
+                        statistics = NULL,
+                        updated_at = NOW()
+                    WHERE id = $1
+                """
+                await self.connection_manager.execute_query(
+                    reset_graph_query, [graph_id]
+                )
+
+                # Log the cleanup
+                logger.info(
+                    f"Successfully reset graph {graph_id} and cleaned up {len(document_ids)} associated documents"
+                )
+
+            except Exception as e:
+                logger.error(f"Error resetting graph {graph_id}: {str(e)}")
+                raise R2RException(f"Failed to reset graph: {str(e)}", 500)
+            
+    # async def reset(self, graph_id: UUID) -> None:
+    #     """
+    #     Completely delete a graph and all associated data.
+
+    #     This method:
+    #     1. Removes graph associations from users
+    #     2. Deletes all graph entities
+    #     3. Deletes all graph relationships
+    #     4. Deletes all graph communities and community info
+    #     5. Removes the graph record itself
+
+    #     Args:
+    #         graph_id (UUID): ID of the graph to delete
+
+    #     Returns:
+    #         None
+
+    #     Raises:
+    #         R2RException: If deletion fails
+    #     """
+    #     try:
+    #         # Remove graph_id from users
+    #         user_update_query = f"""
+    #             UPDATE {self._get_table_name('users')}
+    #             SET graph_ids = array_remove(graph_ids, $1)
+    #             WHERE $1 = ANY(graph_ids)
+    #         """
+    #         await self.connection_manager.execute_query(
+    #             user_update_query, [graph_id]
+    #         )
+
+    #         # Delete all graph entities
+    #         entity_delete_query = f"""
+    #             DELETE FROM {self._get_table_name("graph_entity")}
+    #             WHERE parent_id = $1
+    #         """
+    #         await self.connection_manager.execute_query(
+    #             entity_delete_query, [graph_id]
+    #         )
+
+    #         # Delete all graph relationships
+    #         relationship_delete_query = f"""
+    #             DELETE FROM {self._get_table_name("graph_relationship")}
+    #             WHERE parent_id = $1
+    #         """
+    #         await self.connection_manager.execute_query(
+    #             relationship_delete_query, [graph_id]
+    #         )
+
+    #         # Delete all graph relationships
+    #         community_delete_query = f"""
+    #             DELETE FROM {self._get_table_name("graph_community")}
+    #             WHERE collection_id = $1
+    #         """
+    #         print("community_delete_query = ", community_delete_query)
+    #         print("graph_id = ", graph_id)
+    #         await self.connection_manager.execute_query(
+    #             community_delete_query, [graph_id]
+    #         )
+
+    #         # Delete all graph communities and community info
+    #         community_delete_queries = [
+    #             f"""DELETE FROM {self._get_table_name("graph_community_info")}
+    #                 WHERE collection_id = $1""",
+    #             f"""DELETE FROM {self._get_table_name("graph_community")}
+    #                 WHERE collection_id = $1""",
+    #         ]
+    #         for query in community_delete_queries:
+    #             await self.connection_manager.execute_query(query, [graph_id])
+
+    #         # # Finally delete the graph itself
+    #         # graph_delete_query = f"""
+    #         #     DELETE FROM {self._get_table_name("graph")}
+    #         #     WHERE id = $1
+    #         # """
+    #         # await self.connection_manager.execute_query(
+    #         #     graph_delete_query, [graph_id]
+    #         # )
+
+    #     except Exception as e:
+    #         logger.error(f"Error deleting graph {graph_id}: {str(e)}")
+    #         raise R2RException(f"Failed to delete graph: {str(e)}", 500)
 
     async def delete(self, graph_id: UUID) -> None:
         """
