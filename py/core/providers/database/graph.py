@@ -2121,8 +2121,8 @@ class PostgresGraphHandler(GraphHandler):
 
         # Execute separate DELETE queries
         delete_queries = [
-            f"DELETE FROM {self._get_table_name('document_relationship')} WHERE document_id = $1",
-            f"DELETE FROM {self._get_table_name('entity')} WHERE document_id = $1",
+            f"DELETE FROM {self._get_table_name('document_relationship')} WHERE parent_id = $1",
+            f"DELETE FROM {self._get_table_name('document_entity')} WHERE parent_id = $1",
         ]
 
         for query in delete_queries:

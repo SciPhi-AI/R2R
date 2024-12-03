@@ -581,7 +581,7 @@ class PostgresUserHandler(UserHandler):
         """Check if a collection exists."""
         query = f"""
             SELECT 1 FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
-            WHERE collection_id = $1
+            WHERE id = $1
         """
         result = await self.connection_manager.fetchrow_query(
             query, [collection_id]
