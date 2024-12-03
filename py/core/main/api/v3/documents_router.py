@@ -1278,7 +1278,7 @@ class DocumentsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document to extract entities and relationships from.",
             ),
-            run_type: KGRunType = Query(
+            run_type: KGRunType = Body(
                 default=KGRunType.RUN,
                 description="Whether to return an estimate of the creation cost or to actually extract the document.",
             ),
@@ -1286,7 +1286,7 @@ class DocumentsRouter(BaseRouterV3):
                 default=None,
                 description="Settings for the entities and relationships extraction process.",
             ),
-            run_with_orchestration: Optional[bool] = Query(
+            run_with_orchestration: Optional[bool] = Body(
                 default=True,
                 description="Whether to run the entities and relationships extraction process with orchestration.",
             ),
@@ -1294,9 +1294,12 @@ class DocumentsRouter(BaseRouterV3):
         ) -> WrappedGenericMessageResponse:
             """
             Extracts entities and relationships from a document.
-                The entities and relationships extraction process involves:
+
+            The entities and relationships extraction process involves:
                 1. Parsing documents into semantic chunks
                 2. Extracting entities and relationships using LLMs
+                3. Storing the created entities and relationships in the knowledge graph
+                4. Preserving the document's metadata and content, and associating the elements with collections the document belongs to
             """
 
             settings = settings.dict() if settings else None  # type: ignore

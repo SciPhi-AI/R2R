@@ -330,7 +330,7 @@ class DocumentsSDK:
     async def extract(
         self,
         id: str | UUID,
-        run_type: Optional[str] = "estimate",
+        run_type: Optional[str] = None,
         run_with_orchestration: Optional[bool] = True,
     ):
         data = {}
@@ -343,6 +343,6 @@ class DocumentsSDK:
         return await self.client._make_request(
             "POST",
             f"documents/{str(id)}/extract",
-            data=data,
+            params=data,
             version="v3",
         )
