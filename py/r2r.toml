@@ -7,7 +7,7 @@ system_instruction_name = "rag_agent"
 tool_names = ["search"]
 
   [agent.generation_config]
-  model = "openai/gpt-4o"
+  model = "azure/gpt-4o"
 
 [auth]
 provider = "r2r"

@@ -197,36 +197,6 @@ class DocumentsSDK:
             version="v3",
         )
 
-    async def list(
-        self,
-        ids: Optional[list[str | UUID]] = None,
-        offset: Optional[int] = 0,
-        limit: Optional[int] = 100,
-    ) -> WrappedDocumentsResponse:
-        """
-        List documents with pagination.
-
-        Args:
-            ids (Optional[list[Union[str, UUID]]]): Optional list of document IDs to filter by
-            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
-            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
-
-        Returns:
-            dict: List of documents and pagination information
-        """
-        params = {
-            "offset": offset,
-            "limit": limit,
-        }
-        if ids:
-            params["ids"] = [str(doc_id) for doc_id in ids]  # type: ignore
-
-        return await self.client._make_request(
-            "GET",
-            "documents",
-            params=params,
-            version="v3",
-        )
 
     async def download(
         self,
@@ -348,12 +318,26 @@ class DocumentsSDK:
         self,
         id: str | UUID,
         run_type: Optional[str] = None,
+        settings: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
-    ):
+    ) -> dict:
+        """
+        Extract entities and relationships from a document.
+        
+        Args:
+            id (Union[str, UUID]): ID of document to extract from
+            run_type (Optional[str]): Whether to return an estimate or run extraction
+            settings (Optional[dict]): Settings for extraction process
+            run_with_orchestration (Optional[bool]): Whether to run with orchestration
+            
+        Returns:
+            dict: Extraction results or cost estimate
+        """
         data = {}
-
         if run_type:
             data["run_type"] = run_type
+        if settings:
+            data["settings"] = json.dumps(settings)
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
 
@@ -361,5 +345,126 @@ class DocumentsSDK:
             "POST",
             f"documents/{str(id)}/extract",
             params=data,
+            version="v3",
+        )
+
+    async def list_entities(
+        self,
+        id: str | UUID,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
+        include_embeddings: Optional[bool] = False,
+    ) -> dict:
+        """
+        List entities extracted from a document.
+        
+        Args:
+            id (Union[str, UUID]): ID of document to get entities from
+            offset (Optional[int]): Number of items to skip
+            limit (Optional[int]): Max number of items to return
+            include_embeddings (Optional[bool]): Whether to include embeddings
+            
+        Returns:
+            dict: List of entities and pagination info
+        """
+        params = {
+            "offset": offset,
+            "limit": limit,
+            "include_embeddings": include_embeddings,
+        }
+        return await self.client._make_request(
+            "GET", 
+            f"documents/{str(id)}/entities",
+            params=params,
+            version="v3",
+        )
+
+    async def list_relationships(
+        self,
+        id: str | UUID,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
+        entity_names: Optional[list[str]] = None,
+        relationship_types: Optional[list[str]] = None,
+    ) -> dict:
+        """
+        List relationships extracted from a document.
+        
+        Args:
+            id (Union[str, UUID]): ID of document to get relationships from
+            offset (Optional[int]): Number of items to skip
+            limit (Optional[int]): Max number of items to return
+            entity_names (Optional[list[str]]): Filter by entity names
+            relationship_types (Optional[list[str]]): Filter by relationship types
+            
+        Returns:
+            dict: List of relationships and pagination info
+        """
+        params = {
+            "offset": offset,
+            "limit": limit,
+        }
+        if entity_names:
+            params["entity_names"] = entity_names
+        if relationship_types:
+            params["relationship_types"] = relationship_types
+            
+        return await self.client._make_request(
+            "GET",
+            f"documents/{str(id)}/relationships",
+            params=params,
+            version="v3",
+        )
+    
+    # async def extract(
+    #     self,
+    #     id: str | UUID,
+    #     run_type: Optional[str] = None,
+    #     run_with_orchestration: Optional[bool] = True,
+    # ):
+    #     data = {}
+
+    #     if run_type:
+    #         data["run_type"] = run_type
+    #     if run_with_orchestration is not None:
+    #         data["run_with_orchestration"] = str(run_with_orchestration)
+
+    #     return await self.client._make_request(
+    #         "POST",
+    #         f"documents/{str(id)}/extract",
+    #         params=data,
+    #         version="v3",
+    #     )
+
+    # Be sure to put at bottom of the page...
+
+    async def list(
+        self,
+        ids: Optional[list[str | UUID]] = None,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
+    ) -> WrappedDocumentsResponse:
+        """
+        List documents with pagination.
+
+        Args:
+            ids (Optional[list[Union[str, UUID]]]): Optional list of document IDs to filter by
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+
+        Returns:
+            dict: List of documents and pagination information
+        """
+        params = {
+            "offset": offset,
+            "limit": limit,
+        }
+        if ids:
+            params["ids"] = [str(doc_id) for doc_id in ids]  # type: ignore
+
+        return await self.client._make_request(
+            "GET",
+            "documents",
+            params=params,
             version="v3",
         )

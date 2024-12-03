@@ -122,7 +122,7 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.create(
+                            response = client.documents.create(
                                 file_path="pg_essay_1.html",
                                 metadata={"metadata_1":"some random metadata"},
                                 id=None
@@ -631,7 +631,7 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.list(
+                            response = client.documents.list(
                                 limit=10,
                                 offset=0
                             )
@@ -752,7 +752,7 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.retrieve(
+                            response = client.documents.retrieve(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
@@ -849,7 +849,7 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.list_chunks(
+                            response = client.documents.list_chunks(
                                 id="32b6a70f-a995-5c51-85d2-834f06283a1e"
                             )
                             """
@@ -983,7 +983,7 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.download(
+                            response = client.documents.download(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
@@ -1124,8 +1124,8 @@ class DocumentsRouter(BaseRouterV3):
                             from r2r import R2RClient
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
-                            result = client.documents.delete_by_filter(
-                                filters='{"document_type": {"$eq": "txt"}, "created_at": {"$lt": "2025-01-01T00:00:00Z"}}'
+                            response = client.documents.delete_by_filter(
+                                filters={"document_type": {"$eq": "txt"}} 
                             )
                             """
                         ),
@@ -1174,7 +1174,7 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.delete(
+                            response = client.documents.delete(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
@@ -1251,7 +1251,7 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.list_collections(
+                            response = client.documents.list_collections(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa", offset=0, limit=10
                             )
                             """
@@ -1355,7 +1355,7 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.extract(
+                            response = client.documents.extract(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
@@ -1468,7 +1468,7 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.extract(
+                            response = client.documents.extract(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
@@ -1563,7 +1563,7 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.list_relationships(
+                            response = client.documents.list_relationships(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
                                 offset=0,
                                 limit=100

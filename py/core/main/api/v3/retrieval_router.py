@@ -99,29 +99,18 @@ class RetrievalRouterV3(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.retrieval.search(
+                            response =client.retrieval.search(
                                 query="Who is Aristotle?",
-                                chunk_search_settings={
-                                    "use_semantic_search": True,
-                                    "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    "limit": 20,
-                                    "use_hybrid_search": True
-                                },
-                                graph_search_settings={
-                                    "use_graph_search": True,
-                                    "kg_search_type": "local",
-                                    "kg_search_level": "0",
-                                    "generation_config": {
-                                        "model": "gpt-4o-mini",
-                                        "temperature": 0.7,
+                                search_settings: {
+                                    filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                    use_semantic_search: true,
+                                    chunk_settings: {
+                                        limit: 20, // separate limit for chunk vs. graph
+                                        enabled: true
                                     },
-                                    "limits": {
-                                        "entity": 20,
-                                        "relationship": 20,
-                                        "community": 20,
+                                    graph_settings: {
+                                        enabled: true,
                                     },
-                                    "max_community_description_length": 65536,
-                                    "max_llm_queries_for_global_search": 250
                                 }
                             )
                             """
@@ -138,27 +127,16 @@ class RetrievalRouterV3(BaseRouterV3):
                             function main() {
                                 const response = await client.search({
                                     query: "Who is Aristotle?",
-                                    searchSettings: {
-                                        useVectorSearch: true,
-                                        filters: { document_id: { $eq: "3e157b3a-8469-51db-90d9-52e7d896b49b" } },
-                                        searchLimit: 20,
-                                        useHybridSearch: true
-                                    },
-                                    graph_search_settings: {
-                                        useKgSearch: true,
-                                        kgSearchType: "local",
-                                        kgSearchLevel: "0",
-                                        generationConfic: {
-                                            model: "gpt-4o-mini",
-                                            temperature: 0.7
+                                    search_settings: {
+                                        filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                        use_semantic_search: true,
+                                        chunk_settings: {
+                                            limit: 20, // separate limit for chunk vs. graph
+                                            enabled: true
                                         },
-                                        localSearchLimits: {
-                                            entity: 20,
-                                            relationship: 20,
-                                            community: 20
-                                        },
-                                        maxCommunityDescriptionLength: 65536,
-                                        maxLlmQueriesForGlobalSearch: 250
+                                        graph_settings: {
+                                            enabled: true,
+                                        }
                                     }
                                 });
                             }
@@ -184,27 +162,16 @@ class RetrievalRouterV3(BaseRouterV3):
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -d '{
                                 "query": "Who is Aristotle?",
-                                "chunk_search_settings": {
-                                    "use_semantic_search": true,
-                                    "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    "limit": 20,
-                                    "use_hybrid_search": true
-                                },
-                                "graph_search_settings": {
-                                    "use_graph_search": true,
-                                    "kg_search_type": "local",
-                                    "kg_search_level": "0",
-                                    "generation_config": {
-                                        "model": "gpt-4o-mini",
-                                        "temperature": 0.7
+                                "search_settings": {
+                                    filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                    use_semantic_search: true,
+                                    chunk_settings: {
+                                        limit: 20, // separate limit for chunk vs. graph
+                                        enabled: true
                                     },
-                                    "limits": {
-                                        "entity": 20,
-                                        "relationship": 20,
-                                        "community": 20
-                                    },
-                                    "max_community_description_length": 65536,
-                                    "max_llm_queries_for_global_search": 250
+                                    graph_settings: {
+                                        enabled: true,
+                                    }
                                 }
                             }'
                             """
@@ -261,27 +228,23 @@ class RetrievalRouterV3(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.rag(
+                            response =client.retrieval.rag(
                                 query="Who is Aristotle?",
-                                chunk_search_settings={
+                                search_settings={
                                     "use_semantic_search": True,
                                     "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    "limit": 20,
-                                    "use_hybrid_search": True
+                                    "limit": 10,
+                                    chunk_settings={
+                                        "limit": 20, # separate limit for chunk vs. graph
+                                    },
+                                    graph_settings={
+                                        "enabled": True,
+                                    },
                                 },
-                                graph_search_settings={
-                                    "use_graph_search": True,
-                                    "kg_search_type": "local",
-                                    "kg_search_level": "0",
-                                    "generation_config": {
-                                        "model": "gpt-4o-mini",
-                                        "temperature": 0.7,
-                                    }
-                                },
-                                rag_generation_config={
-                                    "stream": False,
-                                    "temperature": 0.7,
-                                    "max_tokens": 150
+                                rag_generation_config: {
+                                    stream: false,
+                                    temperature: 0.7,
+                                    max_tokens: 150
                                 }
                             )
                             """
@@ -296,29 +259,18 @@ class RetrievalRouterV3(BaseRouterV3):
                             const client = new r2rClient("http://localhost:7272");
 
                             function main() {
-                                const response = await client.rag({
+                                const response = await client.retrieval.rag({
                                     query: "Who is Aristotle?",
-                                    chunk_search_settings: {
+                                    search_settings: {
+                                        filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
                                         use_semantic_search: true,
-                                        filters: { document_id: { $eq: "3e157b3a-8469-51db-90d9-52e7d896b49b" } },
-                                        limit: 20,
-                                        use_hybrid_search: true
-                                    },
-                                    graph_search_settings: {
-                                        use_graph_search: true,
-                                        kg_search_type: "local",
-                                        kg_search_level: "0",
-                                        generation_config: {
-                                            model: "gpt-4o-mini",
-                                            temperature: 0.7
+                                        chunk_settings: {
+                                            limit: 20, // separate limit for chunk vs. graph
+                                            enabled: true
                                         },
-                                        limits: {
-                                            entity: 20,
-                                            relationship: 20,
-                                            community: 20
+                                        graph_settings: {
+                                            enabled: true,
                                         },
-                                        max_community_description_length: 65536,
-                                        max_llm_queries_for_global_search: 250
                                     },
                                     rag_generation_config: {
                                         stream: false,
@@ -349,25 +301,21 @@ class RetrievalRouterV3(BaseRouterV3):
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -d '{
                                 "query": "Who is Aristotle?",
-                                "chunk_search_settings": {
-                                    "use_semantic_search": true,
+                                "search_settings": {
+                                    "use_semantic_search": True,
                                     "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    "limit": 20,
-                                    "use_hybrid_search": true
-                                },
-                                "graph_search_settings": {
-                                    "use_graph_search": true,
-                                    "kg_search_type": "local",
-                                    "kg_search_level": "0",
-                                    "generation_config": {
-                                        "model": "gpt-4o-mini",
-                                        "temperature": 0.7
-                                    }
+                                    "limit": 10,
+                                    chunk_settings={
+                                        "limit": 20, # separate limit for chunk vs. graph
+                                    },
+                                    graph_settings={
+                                        "enabled": True,
+                                    },
                                 },
                                 "rag_generation_config": {
-                                    "stream": false,
-                                    "temperature": 0.7,
-                                    "max_tokens": 150
+                                    stream: false,
+                                    temperature: 0.7,
+                                    max_tokens: 150
                                 }
                             }'
                             """
@@ -446,27 +394,27 @@ class RetrievalRouterV3(BaseRouterV3):
                         client = R2RClient("http://localhost:7272")
                         # when using auth, do client.login(...)
 
-                        result = client.agent(
+                        response =client.retrieval.agent(
                             message={
                                 "role": "user",
                                 "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
                             },
-                            chunk_search_settings={
+                            search_settings={
                                 "use_semantic_search": True,
-                                "filters": {"collection_ids": ["5e157b3a-8469-51db-90d9-52e7d896b49b"]},
-                                "limit": 20,
-                                "use_hybrid_search": True
+                                "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                "limit": 10,
+                                chunk_settings={
+                                    "limit": 20, # separate limit for chunk vs. graph
+                                },
+                                graph_settings={
+                                    "enabled": True,
+                                },
                             },
-                            graph_search_settings={
-                                "use_graph_search": True,
-                                "kg_search_type": "local",
-                                "kg_search_level": "1"
-                            },
-                            rag_generation_config={
-                                "stream": False,
-                                "temperature": 0.7,
-                                "max_tokens": 1000
-                            },
+                            rag_generation_config: {
+                                stream: false,
+                                temperature: 0.7,
+                                max_tokens: 150
+                            }
                             include_title_if_available=True,
                             conversation_id="550e8400-e29b-41d4-a716-446655440000"  # Optional for conversation continuity
                         )
@@ -482,26 +430,26 @@ class RetrievalRouterV3(BaseRouterV3):
                             const client = new r2rClient("http://localhost:7272");
 
                             function main() {
-                                const response = await client.agent({
+                                const response = await client.retrieval.agent({
                                     message: {
                                         role: "user",
                                         content: "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
                                     },
-                                    chunk_search_settings: {
-                                        useCectorSearch: true,
-                                        filters: { collection_ids: ["5e157b3a-8469-51db-90d9-52e7d896b49b"] },
-                                        searchLimit: 20,
-                                        useHybridSearch: true
-                                    },
-                                    graph_search_settings: {
-                                        useKgSearch: true,
-                                        kgSearchType: "local",
-                                        kgSearchLevel: "1"
+                                    search_settings: {
+                                        filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                        use_semantic_search: true,
+                                        chunk_settings: {
+                                            limit: 20, // separate limit for chunk vs. graph
+                                            enabled: true
+                                        },
+                                        graph_settings: {
+                                            enabled: true,
+                                        },
                                     },
                                     rag_generation_config: {
                                         stream: false,
                                         temperature: 0.7,
-                                        maxTokens: 1000
+                                        max_tokens: 150
                                     },
                                     includeTitleIfAvailable: true,
                                     conversationId: "550e8400-e29b-41d4-a716-446655440000"
@@ -524,21 +472,16 @@ class RetrievalRouterV3(BaseRouterV3):
                                     "role": "user",
                                     "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
                                 },
-                                "chunk_search_settings": {
-                                    "use_semantic_search": true,
-                                    "filters": {"collection_ids": ["5e157b3a-8469-51db-90d9-52e7d896b49b"]},
-                                    "limit": 20,
-                                    "use_hybrid_search": true
-                                },
-                                "graph_search_settings": {
-                                    "use_graph_search": true,
-                                    "kg_search_type": "local",
-                                    "kg_search_level": "1"
-                                },
-                                "rag_generation_config": {
-                                    "stream": false,
-                                    "temperature": 0.7,
-                                    "max_tokens": 1000
+                                "search_settings": {
+                                    "use_semantic_search": True,
+                                    "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                    "limit": 10,
+                                    chunk_settings={
+                                        "limit": 20, # separate limit for chunk vs. graph
+                                    },
+                                    graph_settings={
+                                        "enabled": True,
+                                    },
                                 },
                                 "include_title_if_available": true,
                                 "conversation_id": "550e8400-e29b-41d4-a716-446655440000"
@@ -666,7 +609,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.completion(
+                            response =client.completion(
                                 messages=[
                                     {"role": "system", "content": "You are a helpful assistant."},
                                     {"role": "user", "content": "What is the capital of France?"},

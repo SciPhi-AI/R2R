@@ -281,11 +281,10 @@ class ChunksRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            results = client.chunks.search(
+                            response = client.chunks.search(
                                 query="search query",
                                 search_settings={
-                                    "limit": 10,
-                                    "min_score": 0.7
+                                    "limit": 10
                                 }
                             )
                             """
@@ -336,7 +335,7 @@ class ChunksRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            chunk = client.chunks.retrieve(
+                            response = client.chunks.retrieve(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
@@ -408,9 +407,9 @@ class ChunksRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            result = client.chunks.update(
+                            response = client.chunks.update(
                                 {
-                                    "id": first_chunk_id,
+                                    "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
                                     "text": "Updated content",
                                     "metadata": {"key": "new value"}
                                 }
@@ -539,7 +538,7 @@ class ChunksRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            result = client.chunks.delete(
+                            response = client.chunks.delete(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
@@ -606,7 +605,7 @@ class ChunksRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            results = client.chunks.list(
+                            response = client.chunks.list(
                                 metadata_filter={"key": "value"},
                                 include_vectors=False,
                                 offset=0,

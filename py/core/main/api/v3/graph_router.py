@@ -175,7 +175,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.list()
+                            response = client.graphs.list()
                             """
                         ),
                     },
@@ -257,7 +257,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.get(
+                            response = client.graphs.get(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )"""
                         ),
@@ -430,7 +430,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.reset(
+                            response = client.graphs.reset(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                             )"""
                         ),
@@ -474,9 +474,8 @@ class GraphRouter(BaseRouterV3):
 
             This endpoint permanently removes the specified graph along with all
             entities and relationships that belong to only this graph.
-            Entities and relationships extracted from documents are not deleted
-            and must be deleted separately using the /entities and /relationships
-            endpoints.
+            The original source entities and relationships extracted from underlying documents are not deleted
+            and are managed through the document lifecycle.
             """
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can reset a graph", 403)
@@ -510,7 +509,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.update(
+                            response = client.graphs.update(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 graph={
                                     "name": "New Name",
@@ -596,7 +595,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.get_entities(collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7")
+                            response = client.graphs.get_entities(collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7")
                             """
                         ),
                     },
@@ -778,7 +777,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.get_entity(
+                            response = client.graphs.get_entity(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 entity_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )
@@ -901,7 +900,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.remove_entity(
+                            response = client.graphs.remove_entity(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 entity_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )
@@ -979,7 +978,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.list_relationships(collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7")
+                            response = client.graphs.list_relationships(collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7")
                             """
                         ),
                     },
@@ -1060,7 +1059,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.get_relationship(
+                            response = client.graphs.get_relationship(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 relationship_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )
@@ -1205,7 +1204,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.delete_relationship(
+                            response = client.graphs.delete_relationship(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 relationship_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )
@@ -1282,7 +1281,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.create_community(
+                            response = client.graphs.create_community(
                                 collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
                                 name="My Community",
                                 summary="A summary of the community",
@@ -1390,7 +1389,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.list_communities(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            response = client.graphs.list_communities(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
                             """
                         ),
                     },
@@ -1471,7 +1470,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.get_community(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
+                            response = client.graphs.get_community(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
                             """
                         ),
                     },
@@ -1549,7 +1548,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.delete_community(
+                            response = client.graphs.delete_community(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 community_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )
@@ -1628,7 +1627,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.update_community(
+                            response = client.graphs.update_community(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 community_update={
                                     "metadata": {
@@ -1722,7 +1721,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.graphs.pull(
+                            response = client.graphs.pull(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )"""
                         ),
@@ -1898,7 +1897,7 @@ class GraphRouter(BaseRouterV3):
         #                     client = R2RClient("http://localhost:7272")
         #                     # when using auth, do client.login(...)
 
-        #                     result = client.graphs.remove_document(
+        #                     response = client.graphs.remove_document(
         #                         collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
         #                         document_id="f98db41a-5555-4444-3333-222222222222"
         #                     )"""
