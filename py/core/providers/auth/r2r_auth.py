@@ -56,7 +56,9 @@ class R2RAuthProvider(AuthProvider):
     async def initialize(self):
         try:
             user = await self.register(
-                email=self.admin_email, password=self.admin_password
+                email=self.admin_email,
+                password=self.admin_password,
+                is_superuser=True,
             )
             await self.database_provider.mark_user_as_superuser(user.id)
         except R2RException:
@@ -134,9 +136,13 @@ class R2RAuthProvider(AuthProvider):
             raise R2RException(status_code=400, message="Inactive user")
         return current_user
 
-    async def register(self, email: str, password: str) -> UserResponse:
+    async def register(
+        self, email: str, password: str, is_superuser: bool = False
+    ) -> UserResponse:
         # Create new user and give them a default collection
-        new_user = await self.database_provider.create_user(email, password)
+        new_user = await self.database_provider.create_user(
+            email, password, is_superuser
+        )
         default_collection: CollectionResponse = (
             await self.database_provider.create_collection(
                 owner_id=new_user.id,

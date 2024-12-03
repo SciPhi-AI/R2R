@@ -1159,18 +1159,11 @@ class KgService(Service):
 
         print("received len(kg_extractions) = ", len(kg_extractions))
         for extraction in kg_extractions:
-            # print("extraction = ", extraction)
 
-            # total_entities, total_relationships = (
-            #     total_entities + len(extraction.entities),
-            #     total_relationships + len(extraction.relationships),
-            # )
-            print(
-                "storing len(extraction.entities) = ", len(extraction.entities)
-            )
-
+            entities_id_map = {}
             for entity in extraction.entities:
-                await self.providers.database.graph_handler.entities.create(
+                print("entity = ", entity)
+                result = await self.providers.database.graph_handler.entities.create(
                     name=entity.name,
                     parent_id=entity.parent_id,
                     store_type="document",  # type: ignore
@@ -1180,15 +1173,27 @@ class KgService(Service):
                     chunk_ids=entity.chunk_ids,
                     metadata=entity.metadata,
                 )
+                entities_id_map[entity.name] = result.id
 
             if extraction.relationships:
+
                 for relationship in extraction.relationships:
+                    print("relationship.subject = ", relationship.subject)
+                    print(
+                        "entities_id_map.get(relationship.subject, None) = ",
+                        entities_id_map.get(relationship.subject, None),
+                    )
+
                     await self.providers.database.graph_handler.relationships.create(
                         subject=relationship.subject,
-                        subject_id=relationship.subject_id,
+                        subject_id=entities_id_map.get(
+                            relationship.subject, None
+                        ),
                         predicate=relationship.predicate,
                         object=relationship.object,
-                        object_id=relationship.object_id,
+                        object_id=entities_id_map.get(
+                            relationship.object, None
+                        ),
                         parent_id=relationship.parent_id,
                         description=relationship.description,
                         description_embedding=relationship.description_embedding,

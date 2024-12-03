@@ -420,7 +420,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
             return f"""
                 CONSTRAINT fk_document
                     FOREIGN KEY(parent_id)
-                    REFERENCES {self._get_table_name("documents")}(id)
+                    REFERENCES {self._get_table_name("documents")}(document_id)
                     ON DELETE CASCADE
             """
 
@@ -1612,6 +1612,86 @@ class PostgresGraphHandler(GraphHandler):
             await self.connection_manager.execute_query(
                 DELETE_RELATIONSHIPS_QUERY, [relationship_ids]
             )
+
+        return True
+
+    async def add_collections(
+        self, id: UUID, collection_ids: list[UUID], copy_data: bool = True
+    ) -> bool:
+        """
+        Add all entities and relationships for this collection to the graph.
+        """
+        for collection_id in collection_ids:
+            for table in ["entity", "relationship"]:
+                QUERY = f"""
+                    UPDATE {self._get_table_name(table)}
+                    SET graph_ids = CASE
+                        WHEN $1 = ANY(graph_ids) THEN graph_ids
+                        ELSE array_append(graph_ids, $1)
+                    END
+                    WHERE document_id = ANY(
+                        ARRAY(
+                            SELECT document_id FROM {self._get_table_name("documents")}
+                            WHERE $2 = ANY(collection_ids)
+                        )
+                    );
+                """
+                await self.connection_manager.execute_query(
+                    QUERY, [id, collection_id]
+                )
+
+        if copy_data:
+            for old_table, new_table in [
+                ("entity", "graph_entity"),
+                ("relationship", "graph_relationship"),
+            ]:
+                for collection_id in collection_ids:
+                    QUERY = f"""
+                        INSERT INTO {self._get_table_name(new_table)}
+                        SELECT * FROM {self._get_table_name(old_table)}
+                        WHERE document_id = ANY(
+                            ARRAY(SELECT document_id FROM {self._get_table_name("documents")} WHERE $1 = ANY(collection_ids)))
+                    """
+                    await self.connection_manager.execute_query(
+                        QUERY, [collection_id]
+                    )
+
+        return True
+
+    async def remove_collections(
+        self, id: UUID, collection_ids: list[UUID], delete_data: bool = True
+    ) -> bool:
+        """
+        Remove all entities and relationships for this collection from the graph.
+        """
+        for collection_id in collection_ids:
+            for table in ["entity", "relationship"]:
+                QUERY = f"""
+                    UPDATE {self._get_table_name(table)}
+                    SET graph_ids = array_remove(graph_ids, $1)
+                    WHERE document_id = ANY(
+                        ARRAY(
+                            SELECT document_id FROM {self._get_table_name("documents")}
+                            WHERE $2 = ANY(collection_ids)
+                        )
+                    )
+                """
+                await self.connection_manager.execute_query(
+                    QUERY, [id, collection_id]
+                )
+
+        if delete_data:
+            for _, new_table in [
+                ("entity", "graph_entity"),
+                ("relationship", "graph_relationship"),
+            ]:
+                for collection_id in collection_ids:
+                    QUERY = f"""
+                        DELETE FROM {self._get_table_name(new_table)} WHERE document_id = ANY(ARRAY(SELECT document_id FROM {self._get_table_name("documents")} WHERE $1 = ANY(collection_ids)))
+                    """
+                    await self.connection_manager.execute_query(
+                        QUERY, [collection_id]
+                    )
 
         return True
 

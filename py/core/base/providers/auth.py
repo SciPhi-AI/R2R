@@ -59,17 +59,24 @@ class AuthProvider(Provider, ABC):
         super().__init__(config)
         self.config: AuthConfig = config  # for type hinting
 
-    def _get_default_admin_user(self) -> UserResponse:
-        return UserResponse(
-            id=generate_user_id(self.admin_email),
-            email=self.admin_email,
-            hashed_password=self.crypto_provider.get_password_hash(
-                self.admin_password
-            ),
-            is_superuser=True,
-            is_active=True,
-            is_verified=True,
+    async def _get_default_admin_user(self) -> UserResponse:
+        result = await self.database_provider.get_user_by_email(
+            self.admin_email
         )
+        print("result = ", result)
+        return result
+
+        # return UserResponse(
+        #     id=generate_user_id(self.admin_email),
+        #     email=self.admin_email,
+        #     hashed_password=self.crypto_provider.get_password_hash(
+        #         self.admin_password
+        #     ),
+        #     is_superuser=True,
+        #     is_active=True,
+        #     is_verified=True,
+        #     collection_ids=self.database_provider.get_user_by_email
+        # )
 
     @abstractmethod
     def create_access_token(self, data: dict) -> str:
@@ -117,7 +124,7 @@ class AuthProvider(Provider, ABC):
         self, auth: Optional[HTTPAuthorizationCredentials] = Security(security)
     ) -> UserResponse:
         if not self.config.require_authentication and auth is None:
-            return self._get_default_admin_user()
+            return await self._get_default_admin_user()
 
         if auth is None:
             raise R2RException(
