@@ -1,5 +1,5 @@
 import logging
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator
 from uuid import UUID
 
 from core.base import (
@@ -43,7 +43,6 @@ class KGClusteringPipe(AsyncPipe):
     async def cluster_kg(
         self,
         collection_id: UUID,
-        graph_id: UUID,
         leiden_params: dict,
     ):
         """
@@ -78,11 +77,9 @@ class KGClusteringPipe(AsyncPipe):
         """
 
         collection_id = input.message.get("collection_id", None)
-        graph_id = input.message.get("graph_id", None)
         leiden_params = input.message["leiden_params"]
 
         yield await self.cluster_kg(
             collection_id=collection_id,
-            graph_id=graph_id,
             leiden_params=leiden_params,
         )

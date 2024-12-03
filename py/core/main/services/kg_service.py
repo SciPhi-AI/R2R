@@ -455,12 +455,12 @@ class KgService(Service):
     @telemetry_event("update_graph")
     async def update_graph(
         self,
-        graph_id: UUID,
+        collection_id: UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> GraphResponse:
         return await self.providers.database.graph_handler.update(
-            graph_id=graph_id,
+            collection_id=collection_id,
             name=name,
             description=description,
         )
@@ -468,25 +468,13 @@ class KgService(Service):
     @telemetry_event("reset_graph_v3")
     async def reset_graph_v3(self, id: UUID) -> bool:
         await self.providers.database.graph_handler.reset(
-            graph_id=id,
+            parent_id=id,
         )
         await self.providers.database.document_handler.set_workflow_status(
             id=id,
             status_type="graph_cluster_status",
             status=KGEnrichmentStatus.PENDING,
         )
-        return True
-
-    @telemetry_event("delete_graph_v3")
-    async def delete_graph_v3(self, id: UUID) -> bool:
-        await self.providers.database.graph_handler.delete(
-            graph_id=id,
-        )
-        # await self.providers.database.document_handler.set_workflow_status(
-        #     id=id,
-        #     status_type="graph_cluster_status",
-        #     status=KGEnrichmentStatus.PENDING,
-        # )
         return True
 
     @telemetry_event("get_document_ids_for_create_graph")
@@ -602,7 +590,6 @@ class KgService(Service):
             input=self.pipes.kg_clustering_pipe.Input(
                 message={
                     "collection_id": collection_id,
-                    # "graph_id": graph_id,
                     "generation_config": generation_config,
                     "leiden_params": leiden_params,
                     "logger": logger,
@@ -909,7 +896,7 @@ class KgService(Service):
                     DocumentChunk(
                         id=chunk["id"],
                         document_id=chunk["document_id"],
-                        user_id=chunk["user_id"],
+                        owner_id=chunk["owner_id"],
                         collection_ids=chunk["collection_ids"],
                         data=chunk["text"],
                         metadata=chunk["metadata"],

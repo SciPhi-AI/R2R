@@ -5,7 +5,7 @@ import logging
 import time
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional, Set, Tuple, Union
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import asyncpg
 from asyncpg.exceptions import UndefinedTableError, UniqueViolationError
@@ -81,7 +81,7 @@ class PostgresEntityHandler(EntityHandler):
             return f"""
                 CONSTRAINT fk_document
                     FOREIGN KEY(parent_id)
-                    REFERENCES {self._get_table_name("document_info")}(document_id)
+                    REFERENCES {self._get_table_name("documents")}(id)
                     ON DELETE CASCADE
             """
 
@@ -345,7 +345,7 @@ class PostgresEntityHandler(EntityHandler):
         If entity_ids is not provided, deletes all entities for the given parent_id.
 
         Args:
-            parent_id (UUID): Parent ID (graph_id or document_id)
+            parent_id (UUID): Parent ID (collection_id or document_id)
             entity_ids (Optional[list[UUID]]): Specific entity IDs to delete. If None, deletes all entities for parent_id
             store_type (StoreType): Type of store (graph or document)
 
@@ -420,7 +420,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
             return f"""
                 CONSTRAINT fk_document
                     FOREIGN KEY(parent_id)
-                    REFERENCES {self._get_table_name("document_info")}(document_id)
+                    REFERENCES {self._get_table_name("documents")}(id)
                     ON DELETE CASCADE
             """
 
@@ -549,7 +549,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
         Get relationships from the specified store.
 
         Args:
-            parent_id: UUID of the parent (graph_id or document_id)
+            parent_id: UUID of the parent (collection_id or document_id)
             store_type: Type of store (graph or document)
             offset: Number of records to skip
             limit: Maximum number of records to return (-1 for no limit)
@@ -755,7 +755,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
         If relationship_ids is not provided, deletes all relationships for the given parent_id.
 
         Args:
-            parent_id: UUID of the parent (graph_id or document_id)
+            parent_id: UUID of the parent (collection_id or document_id)
             relationship_ids: Optional list of specific relationship IDs to delete
             store_type: Type of store (graph or document)
 
@@ -809,7 +809,6 @@ class PostgresCommunityHandler(CommunityHandler):
         )
 
         # communities table, result of the Leiden algorithm
-        # graph_id is for backward compatibility
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("graph_community_info")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -820,9 +819,8 @@ class PostgresCommunityHandler(CommunityHandler):
             level INT,
             is_final_cluster BOOLEAN NOT NULL,
             relationship_ids UUID[] NOT NULL,
-            graph_id UUID,
             collection_id UUID,
-            UNIQUE (graph_id, collection_id, node, cluster, level)
+            UNIQUE (collection_id, node, cluster, level)
         );"""
 
         await self.connection_manager.execute_query(query)
@@ -833,7 +831,6 @@ class PostgresCommunityHandler(CommunityHandler):
         query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name("graph_community")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            graph_id UUID,
             collection_id UUID,
             community_id UUID,
             level INT,
@@ -846,7 +843,7 @@ class PostgresCommunityHandler(CommunityHandler):
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             metadata JSONB,
-            UNIQUE (community_id, level, graph_id, collection_id)
+            UNIQUE (community_id, level, collection_id)
         );"""
 
         await self.connection_manager.execute_query(query)
@@ -1151,11 +1148,7 @@ class PostgresGraphHandler(GraphHandler):
                 document_ids UUID[],
                 metadata JSONB,
                 created_at TIMESTAMPTZ DEFAULT NOW(),
-                updated_at TIMESTAMPTZ DEFAULT NOW(),
-                CONSTRAINT fk_collection
-                    FOREIGN KEY(collection_id)
-                    REFERENCES {self._get_table_name("collections")}(collection_id)
-                    ON DELETE CASCADE
+                updated_at TIMESTAMPTZ DEFAULT NOW()
             );
 
             CREATE INDEX IF NOT EXISTS graph_collection_id_idx
@@ -1173,13 +1166,11 @@ class PostgresGraphHandler(GraphHandler):
         collection_id: UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        graph_id: Optional[UUID] = None,
         status: str = "pending",
     ) -> GraphResponse:
-        print("create in graph being called....")
         """Create a new graph associated with a collection."""
-        graph_id = graph_id or uuid4()
-        name = name or f"Graph {graph_id}"
+
+        name = name or f"Graph {collection_id}"
         description = description or ""
 
         query = f"""
@@ -1189,7 +1180,7 @@ class PostgresGraphHandler(GraphHandler):
             RETURNING id, collection_id, name, description, status, created_at, updated_at, document_ids
         """
         params = [
-            graph_id,
+            collection_id,
             collection_id,
             name,
             description,
@@ -1218,7 +1209,7 @@ class PostgresGraphHandler(GraphHandler):
                 status_code=409,
             )
 
-    async def reset(self, graph_id: UUID) -> None:
+    async def reset(self, parent_id: UUID) -> None:
         """
         Completely delete a graph and all associated data.
 
@@ -1229,42 +1220,26 @@ class PostgresGraphHandler(GraphHandler):
         4. Deletes all graph communities and community info
         5. Removes the graph record itself
 
-        Args:
-            graph_id (UUID): ID of the graph to delete
-
-        Returns:
-            None
-
         Raises:
             R2RException: If deletion fails
         """
         try:
-            # Remove graph_id from users
-            user_update_query = f"""
-                UPDATE {self._get_table_name('users')}
-                SET graph_ids = array_remove(graph_ids, $1)
-                WHERE $1 = ANY(graph_ids)
-            """
-            await self.connection_manager.execute_query(
-                user_update_query, [graph_id]
-            )
-
             # Delete all graph entities
             entity_delete_query = f"""
                 DELETE FROM {self._get_table_name("graph_entity")}
-                WHERE parent_id = $1
+                WHERE collection_id = $1
             """
             await self.connection_manager.execute_query(
-                entity_delete_query, [graph_id]
+                entity_delete_query, [parent_id]
             )
 
             # Delete all graph relationships
             relationship_delete_query = f"""
                 DELETE FROM {self._get_table_name("graph_relationship")}
-                WHERE parent_id = $1
+                WHERE collection_id = $1
             """
             await self.connection_manager.execute_query(
-                relationship_delete_query, [graph_id]
+                relationship_delete_query, [parent_id]
             )
 
             # Delete all graph relationships
@@ -1273,9 +1248,9 @@ class PostgresGraphHandler(GraphHandler):
                 WHERE collection_id = $1
             """
             print("community_delete_query = ", community_delete_query)
-            print("graph_id = ", graph_id)
+            print("collection_id = ", parent_id)
             await self.connection_manager.execute_query(
-                community_delete_query, [graph_id]
+                community_delete_query, [parent_id]
             )
 
             # Delete all graph communities and community info
@@ -1286,7 +1261,7 @@ class PostgresGraphHandler(GraphHandler):
                     WHERE collection_id = $1""",
             ]
             for query in community_delete_queries:
-                await self.connection_manager.execute_query(query, [graph_id])
+                await self.connection_manager.execute_query(query, [parent_id])
 
             # # Finally delete the graph itself
             # graph_delete_query = f"""
@@ -1298,10 +1273,10 @@ class PostgresGraphHandler(GraphHandler):
             # )
 
         except Exception as e:
-            logger.error(f"Error deleting graph {graph_id}: {str(e)}")
+            logger.error(f"Error deleting graph {parent_id}: {str(e)}")
             raise R2RException(f"Failed to delete graph: {str(e)}", 500)
 
-    async def delete(self, graph_id: UUID) -> None:
+    async def delete(self, id: UUID) -> None:
         """
         Completely delete a graph and all associated data.
 
@@ -1313,7 +1288,7 @@ class PostgresGraphHandler(GraphHandler):
         5. Removes the graph record itself
 
         Args:
-            graph_id (UUID): ID of the graph to delete
+            id (UUID): ID of the graph to delete
 
         Returns:
             None
@@ -1325,11 +1300,11 @@ class PostgresGraphHandler(GraphHandler):
             # Remove graph_id from users
             user_update_query = f"""
                 UPDATE {self._get_table_name('users')}
-                SET graph_ids = array_remove(graph_ids, $1)
-                WHERE $1 = ANY(graph_ids)
+                SET id = array_remove(id, $1)
+                WHERE $1 = ANY(id)
             """
             await self.connection_manager.execute_query(
-                user_update_query, [graph_id]
+                user_update_query, [id]
             )
 
             # Delete all graph entities
@@ -1338,7 +1313,7 @@ class PostgresGraphHandler(GraphHandler):
                 WHERE parent_id = $1
             """
             await self.connection_manager.execute_query(
-                entity_delete_query, [graph_id]
+                entity_delete_query, [id]
             )
 
             # Delete all graph relationships
@@ -1347,27 +1322,27 @@ class PostgresGraphHandler(GraphHandler):
                 WHERE parent_id = $1
             """
             await self.connection_manager.execute_query(
-                relationship_delete_query, [graph_id]
+                relationship_delete_query, [id]
             )
 
             # Delete all graph relationships
             community_delete_query = f"""
                 DELETE FROM {self._get_table_name("graph_community")}
-                WHERE collection_id = $1
+                WHERE parent_id = $1
             """
             await self.connection_manager.execute_query(
-                community_delete_query, [graph_id]
+                community_delete_query, [id]
             )
 
             # Delete all graph communities and community info
             community_delete_queries = [
                 f"""DELETE FROM {self._get_table_name("graph_community_info")}
-                    WHERE graph_id = $1""",
+                    WHERE id = $1""",
                 f"""DELETE FROM {self._get_table_name("graph_community")}
                     WHERE collection_id = $1""",
             ]
             for query in community_delete_queries:
-                await self.connection_manager.execute_query(query, [graph_id])
+                await self.connection_manager.execute_query(query, [id])
 
             # Finally delete the graph itself
             graph_delete_query = f"""
@@ -1375,77 +1350,12 @@ class PostgresGraphHandler(GraphHandler):
                 WHERE id = $1
             """
             await self.connection_manager.execute_query(
-                graph_delete_query, [graph_id]
+                graph_delete_query, [id]
             )
 
         except Exception as e:
-            logger.error(f"Error deleting graph {graph_id}: {str(e)}")
+            logger.error(f"Error deleting graph {id}: {str(e)}")
             raise R2RException(f"Failed to delete graph: {str(e)}", 500)
-
-    # async def delete(self, graph_id: UUID) -> None:
-    #     """
-    #     Completely delete a graph and all associated data.
-
-    #     This method:
-    #     1. Removes graph associations from users
-    #     2. Deletes all graph entities
-    #     3. Deletes all graph relationships
-    #     4. Deletes all graph communities and community info
-    #     5. Removes the graph record itself
-
-    #     Args:
-    #         graph_id (UUID): ID of the graph to delete
-
-    #     Returns:
-    #         None
-
-    #     Raises:
-    #         R2RException: If deletion fails
-    #     """
-    #     try:
-    #         # Start transaction to ensure atomic deletion
-    #         # Remove graph_id from users
-    #         user_update_query = f"""
-    #             UPDATE {self._get_table_name('users')}
-    #             SET graph_ids = array_remove(graph_ids, $1)
-    #             WHERE $1 = ANY(graph_ids)
-    #         """
-    #         await self.connection_manager.execute_query(user_update_query, graph_id)
-
-    #         # Delete all graph entities
-    #         entity_delete_query = f"""
-    #             DELETE FROM {self._get_table_name("graph_entity")}
-    #             WHERE parent_id = $1
-    #         """
-    #         await self.connection_manager.execute_query.execute(entity_delete_query, graph_id)
-
-    #         # Delete all graph relationships
-    #         relationship_delete_query = f"""
-    #             DELETE FROM {self._get_table_name("graph_relationship")}
-    #             WHERE parent_id = $1
-    #         """
-    #         await self.connection_manager.execute_query.execute(relationship_delete_query, graph_id)
-
-    #         # Delete all graph communities and community info
-    #         community_delete_queries = [
-    #             f"""DELETE FROM {self._get_table_name("graph_community_info")}
-    #             WHERE graph_id = $1""",
-    #             f"""DELETE FROM {self._get_table_name("graph_community")}
-    #             WHERE graph_id = $1""",
-    #         ]
-    #         for query in community_delete_queries:
-    #             await self.connection_manager.execute_query.execute(query, graph_id)
-
-    #         # Finally delete the graph itself
-    #         graph_delete_query = f"""
-    #             DELETE FROM {self._get_table_name("graph")}
-    #             WHERE id = $1
-    #         """
-    #         await self.connection_manager.execute_query.execute(graph_delete_query, graph_id)
-
-    #     except Exception as e:
-    #         logger.error(f"Error deleting graph {graph_id}: {str(e)}")
-    #         raise R2RException(f"Failed to delete graph: {str(e)}", 500)
 
     async def list_graphs(
         self,
@@ -1705,136 +1615,9 @@ class PostgresGraphHandler(GraphHandler):
 
         return True
 
-    async def add_collections(
-        self, id: UUID, collection_ids: list[UUID], copy_data: bool = True
-    ) -> bool:
-        """
-        Add all entities and relationships for this collection to the graph.
-        """
-        for collection_id in collection_ids:
-            for table in ["entity", "relationship"]:
-                QUERY = f"""
-                    UPDATE {self._get_table_name(table)}
-                    SET graph_ids = CASE
-                        WHEN $1 = ANY(graph_ids) THEN graph_ids
-                        ELSE array_append(graph_ids, $1)
-                    END
-                    WHERE document_id = ANY(
-                        ARRAY(
-                            SELECT document_id FROM {self._get_table_name("document_info")}
-                            WHERE $2 = ANY(collection_ids)
-                        )
-                    );
-                """
-                await self.connection_manager.execute_query(
-                    QUERY, [id, collection_id]
-                )
-
-        if copy_data:
-            for old_table, new_table in [
-                ("entity", "graph_entity"),
-                ("relationship", "graph_relationship"),
-            ]:
-                for collection_id in collection_ids:
-                    QUERY = f"""
-                        INSERT INTO {self._get_table_name(new_table)}
-                        SELECT * FROM {self._get_table_name(old_table)}
-                        WHERE document_id = ANY(
-                            ARRAY(SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids)))
-                    """
-                    await self.connection_manager.execute_query(
-                        QUERY, [collection_id]
-                    )
-
-        return True
-
-    async def remove_collections(
-        self, id: UUID, collection_ids: list[UUID], delete_data: bool = True
-    ) -> bool:
-        """
-        Remove all entities and relationships for this collection from the graph.
-        """
-        for collection_id in collection_ids:
-            for table in ["entity", "relationship"]:
-                QUERY = f"""
-                    UPDATE {self._get_table_name(table)}
-                    SET graph_ids = array_remove(graph_ids, $1)
-                    WHERE document_id = ANY(
-                        ARRAY(
-                            SELECT document_id FROM {self._get_table_name("document_info")}
-                            WHERE $2 = ANY(collection_ids)
-                        )
-                    )
-                """
-                await self.connection_manager.execute_query(
-                    QUERY, [id, collection_id]
-                )
-
-        if delete_data:
-            for _, new_table in [
-                ("entity", "graph_entity"),
-                ("relationship", "graph_relationship"),
-            ]:
-                for collection_id in collection_ids:
-                    QUERY = f"""
-                        DELETE FROM {self._get_table_name(new_table)} WHERE document_id = ANY(ARRAY(SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids)))
-                    """
-                    await self.connection_manager.execute_query(
-                        QUERY, [collection_id]
-                    )
-
-        return True
-
-    async def add_entities_v3(
-        self, id: UUID, entity_ids: list[UUID], copy_data: bool = True
-    ) -> bool:
-        """
-        Add entities to the graph.
-        """
-        QUERY = f"""
-            UPDATE {self._get_table_name("entity")}
-            SET graph_ids = CASE
-                    WHEN $1 = ANY(graph_ids) THEN graph_ids
-                    ELSE array_append(graph_ids, $1)
-                END
-            WHERE id = ANY($2)
-        """
-
-        if copy_data:
-            QUERY = f"""
-                INSERT INTO {self._get_table_name("graph_entity")}
-                SELECT * FROM {self._get_table_name("entity")}
-                WHERE id = ANY($1)
-            """
-            await self.connection_manager.execute_query(QUERY, [entity_ids])
-
-        await self.connection_manager.execute_query(QUERY, [id, entity_ids])
-
-        return True
-
-    # async def remove_entities(
-    #     self, id: UUID, entity_ids: list[UUID]
-    # ) -> bool:
-    #     """
-    #     Remove entities from the graph.
-    #     """
-    #     QUERY = f"""
-    #         UPDATE {self._get_table_name("graph_entity")}
-    #         SET graph_ids = array_remove(graph_ids, $1)
-    #         WHERE id = ANY($2)
-    #     """
-    #     await self.connection_manager.execute_query(QUERY, [id, entity_ids])
-
-    #     # QUERY = f"""
-    #     #     DELETE FROM {self._get_table_name("graph_entity")} WHERE id = ANY($1)
-    #     # """
-    #     # await self.connection_manager.execute_query(QUERY, [entity_ids])
-
-    #     return True
-
     async def update(
         self,
-        graph_id: UUID,
+        collection_id: UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> GraphResponse:
@@ -1857,7 +1640,7 @@ class PostgresGraphHandler(GraphHandler):
             raise R2RException(status_code=400, message="No fields to update")
 
         update_fields.append("updated_at = NOW()")
-        params.append(graph_id)
+        params.append(collection_id)
 
         query = f"""
             UPDATE {self._get_table_name("graph")}
@@ -1889,8 +1672,6 @@ class PostgresGraphHandler(GraphHandler):
                 status_code=500,
                 detail=f"An error occurred while updating the graph: {e}",
             )
-
-    ###### ESTIMATION METHODS ######
 
     async def get_creation_estimate(
         self,
@@ -2070,7 +1851,7 @@ class PostgresGraphHandler(GraphHandler):
                 SELECT name, count(name)
                 FROM {self._get_table_name("entity")}
                 WHERE document_id = ANY(
-                    SELECT document_id FROM {self._get_table_name("document_info")}
+                    SELECT document_id FROM {self._get_table_name("documents")}
                     WHERE $1 = ANY(collection_ids)
                 )
                 GROUP BY name
@@ -2260,7 +2041,7 @@ class PostgresGraphHandler(GraphHandler):
     ) -> None:
         # don't delete if status is PROCESSING.
         QUERY = f"""
-            SELECT graph_cluster_status FROM {self._get_table_name("collections")} WHERE collection_id = $1
+            SELECT graph_cluster_status FROM {self._get_table_name("collections")} WHERE id = $1
         """
         status = (
             await self.connection_manager.fetch_query(QUERY, [collection_id])
@@ -2323,7 +2104,7 @@ class PostgresGraphHandler(GraphHandler):
         #     # getting all documents for a collection
         #     if document_ids is None:
         #         QUERY = f"""
-        #             select distinct document_id from {self._get_table_name("document_info")} where $1 = ANY(collection_ids)
+        #             select distinct document_id from {self._get_table_name("documents")} where $1 = ANY(collection_ids)
         #         """
         #         document_ids_list = await self.connection_manager.fetch_query(
         #             QUERY, [collection_id]
@@ -2548,8 +2329,8 @@ class PostgresGraphHandler(GraphHandler):
         self, communities: list[CommunityInfo]
     ) -> None:
         QUERY = f"""
-            INSERT INTO {self._get_table_name("graph_community_info")} (node, cluster, parent_cluster, level, is_final_cluster, relationship_ids, collection_id, graph_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO {self._get_table_name("graph_community_info")} (node, cluster, parent_cluster, level, is_final_cluster, relationship_ids, collection_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             """
         print(f"Communities = {communities}")
         communities_tuples_list = [
@@ -2561,7 +2342,6 @@ class PostgresGraphHandler(GraphHandler):
                 community.is_final_cluster,
                 community.relationship_ids,
                 community.collection_id,
-                community.graph_id,
             )
             for community in communities
         ]
@@ -2641,7 +2421,6 @@ class PostgresGraphHandler(GraphHandler):
         self,
         community_id: int,
         collection_id: UUID | None,
-        # graph_id: UUID | None,
     ) -> Tuple[int, list[Entity], list[Relationship]]:
 
         QUERY = f"""
@@ -2722,7 +2501,7 @@ class PostgresGraphHandler(GraphHandler):
         QUERY = f"""
             INSERT INTO {self._get_table_name("graph_community")} ({columns})
             VALUES ({placeholders})
-            ON CONFLICT (community_id, level, graph_id, collection_id) DO UPDATE SET
+            ON CONFLICT (community_id, level, collection_id) DO UPDATE SET
                 {conflict_columns}
             """
 
@@ -2765,14 +2544,14 @@ class PostgresGraphHandler(GraphHandler):
         # TODO: make these queries more efficient. Pass the document_ids as params.
         if cascade:
             DELETE_QUERIES += [
-                f"DELETE FROM {self._get_table_name('relationship')} WHERE document_id = ANY($1::uuid[]);",
-                f"DELETE FROM {self._get_table_name('entity')} WHERE document_id = ANY($1::uuid[]);",
+                f"DELETE FROM {self._get_table_name('graph_relationship')} WHERE document_id = ANY($1::uuid[]);",
+                f"DELETE FROM {self._get_table_name('graph_entity')} WHERE document_id = ANY($1::uuid[]);",
                 f"DELETE FROM {self._get_table_name('graph_entity')} WHERE collection_id = $1;",
             ]
 
             # setting the kg_creation_status to PENDING for this collection.
             QUERY = f"""
-                UPDATE {self._get_table_name("document_info")} SET extraction_status = $1 WHERE $2::uuid = ANY(collection_ids)
+                UPDATE {self._get_table_name("documents")} SET extraction_status = $1 WHERE $2::uuid = ANY(collection_ids)
             """
             await self.connection_manager.execute_query(
                 QUERY, [KGExtractionStatus.PENDING, collection_id]
@@ -2818,22 +2597,6 @@ class PostgresGraphHandler(GraphHandler):
             check_directed: bool = True,
         """
 
-        # # relationships = await self.get_all_relationships(
-        # #     collection_id, collection_id # , graph_id
-        # # )
-
-        # relationships = await self.relationships.get(parent_id=collection_id, store_type="graph", limit = 100)
-        # logger.info(
-        #     f"Got {len(relationships)} relationships for {collection_id}"
-        # )
-
-        # logger.info(f"Clustering with settings: {leiden_params}")
-        # print("relationships = ", relationships)
-
-        # relationship_ids_cache = await self._get_relationship_ids_cache(
-        #     relationships
-        # )[0]
-
         offset = 0
         page_size = 1000  # Increased batch size for efficiency
         all_relationships = []
@@ -2864,21 +2627,11 @@ class PostgresGraphHandler(GraphHandler):
         print("relationship_ids_cache = ", relationship_ids_cache)
 
         logger.info(f"Clustering with settings: {leiden_params}")
-        # incremental clustering isn't enabled for v3 yet.
-        # collection ID will not be null for v2
-        # if not graph_id and await self._use_community_cache(  # type: ignore
-        #     collection_id, relationship_ids_cache
-        # ):
-        #     num_communities = await self._incremental_clustering(  # type: ignore
-        #         relationship_ids_cache, leiden_params, collection_id
-        #     )
-        # else:
         return await self._cluster_and_add_community_info(
             relationships=relationships,
             relationship_ids_cache=relationship_ids_cache,
             leiden_params=leiden_params,
             collection_id=collection_id,
-            # graph_id=collection_id,
         )
 
     async def get_entity_map(
@@ -3152,31 +2905,12 @@ class PostgresGraphHandler(GraphHandler):
         relationship_ids_cache: dict[str, list[int]],
         leiden_params: dict[str, Any],
         collection_id: Optional[UUID] = None,
-        # graph_id: Optional[UUID] = None,
     ) -> int:
 
         # clear if there is any old information
         conditions = []
         if collection_id is not None:
             conditions.append("collection_id = $1")
-        # if graph_id is not None:
-        #     conditions.append("graph_id = $2")
-
-        # if conditions:
-        #     where_clause = " OR ".join(conditions)
-        #     QUERY = f"""
-        #         DELETE FROM {self._get_table_name("graph_community_info")} WHERE {where_clause}
-        #     """
-        #     await self.connection_manager.execute_query(
-        #         QUERY, [collection_id]
-        #     )
-
-        #     QUERY = f"""
-        #         DELETE FROM {self._get_table_name("graph_community")} WHERE {where_clause}
-        #     """
-        #     await self.connection_manager.execute_query(
-        #         QUERY, [collection_id ]
-        #     )
 
         await asyncio.sleep(0.1)
 
@@ -3210,14 +2944,12 @@ class PostgresGraphHandler(GraphHandler):
         inputs = [
             CommunityInfo(
                 node=str(item.node),
-                # cluster=item.cluster,
                 cluster=generate_id(f"{item.cluster}_{collection_id}"),
                 parent_cluster=item.parent_cluster,
                 level=item.level,
                 is_final_cluster=item.is_final_cluster,
                 relationship_ids=relationship_ids(item.node),
                 collection_id=collection_id,
-                # graph_id=graph_id,
             )
             for item in hierarchical_communities
         ]
@@ -3337,7 +3069,7 @@ class PostgresGraphHandler(GraphHandler):
             communities_dict[community["node"]].append(community)
 
         QUERY = f"""
-            SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids) and extraction_status = $2
+            SELECT document_id FROM {self._get_table_name("documents")} WHERE $1 = ANY(collection_ids) and extraction_status = $2
         """
 
         new_document_ids = await self.connection_manager.fetch_query(
@@ -3444,7 +3176,6 @@ class PostgresGraphHandler(GraphHandler):
     async def get_entity_count(
         self,
         collection_id: Optional[UUID] = None,
-        graph_id: Optional[UUID] = None,
         document_id: Optional[UUID] = None,
         distinct: bool = False,
         entity_table_name: str = "entity",
@@ -3468,7 +3199,7 @@ class PostgresGraphHandler(GraphHandler):
         #     conditions.append(
         #         f"""
         #         document_id = ANY(
-        #             SELECT document_id FROM {self._get_table_name("document_info")}
+        #             SELECT document_id FROM {self._get_table_name("documents")}
         #             WHERE $1 = ANY(collection_ids)
         #         )
         #         """

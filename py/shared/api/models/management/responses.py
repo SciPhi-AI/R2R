@@ -83,7 +83,7 @@ class ChunkResponse(BaseModel):
 
 class CollectionResponse(BaseModel):
     id: UUID
-    user_id: Optional[UUID]
+    owner_id: Optional[UUID]
     name: str
     description: Optional[str]
     graph_cluster_status: str

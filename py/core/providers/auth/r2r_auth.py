@@ -139,14 +139,13 @@ class R2RAuthProvider(AuthProvider):
         new_user = await self.database_provider.create_user(email, password)
         default_collection: CollectionResponse = (
             await self.database_provider.create_collection(
-                user_id=new_user.id,
+                owner_id=new_user.id,
             )
         )
         await self.database_provider.graph_handler.create(
             collection_id=default_collection.id,
             name=default_collection.name,
             description=default_collection.description,
-            graph_id=default_collection.id,
         )
 
         await self.database_provider.add_user_to_collection(

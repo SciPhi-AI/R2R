@@ -387,7 +387,7 @@ class ChunksRouter(BaseRouterV3):
                 raise R2RException("Not authorized to access this chunk", 403)
 
             return ChunkResponse(  # type: ignore
-                id=chunk["chunk_id"],
+                id=chunk["id"],
                 document_id=chunk["document_id"],
                 user_id=chunk["user_id"],
                 collection_ids=chunk["collection_ids"],
@@ -463,7 +463,7 @@ class ChunksRouter(BaseRouterV3):
 
             workflow_input = {
                 "document_id": str(existing_chunk["document_id"]),
-                "chunk_id": str(chunk_update.id),
+                "id": str(chunk_update.id),
                 "text": chunk_update.text,
                 "metadata": chunk_update.metadata
                 or existing_chunk["metadata"],
@@ -588,7 +588,7 @@ class ChunksRouter(BaseRouterV3):
             filters = {
                 "$and": [
                     {"user_id": {"$eq": str(auth_user.id)}},
-                    {"chunk_id": {"$eq": id}},
+                    {"id": {"$eq": id}},
                 ]
             }
             await self.services["management"].delete(filters=filters)
@@ -691,7 +691,7 @@ class ChunksRouter(BaseRouterV3):
             # Convert to response format
             chunks = [
                 ChunkResponse(
-                    id=chunk["chunk_id"],
+                    id=chunk["id"],
                     document_id=chunk["document_id"],
                     user_id=chunk["user_id"],
                     collection_ids=chunk["collection_ids"],

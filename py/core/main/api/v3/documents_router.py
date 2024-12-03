@@ -796,7 +796,7 @@ class DocumentsRouter(BaseRouterV3):
                 )
 
             is_owner = str(
-                list_document_chunks["results"][0].get("user_id")
+                list_document_chunks["results"][0].get("owner_id")
             ) == str(auth_user.id)
             document_collections = await self.services[
                 "management"

@@ -346,7 +346,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
             yield DocumentChunk(
                 id=generate_extraction_id(document.id, iteration),
                 document_id=document.id,
-                user_id=document.user_id,
+                owner_id=document.owner_id,
                 collection_ids=document.collection_ids,
                 data=text,
                 metadata=metadata,

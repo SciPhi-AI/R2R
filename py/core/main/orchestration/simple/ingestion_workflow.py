@@ -84,7 +84,7 @@ def simple_ingestion_factory(service: IngestionService):
                 if not collection_ids:
                     # TODO: Move logic onto the `management service`
                     collection_id = generate_default_user_collection_id(
-                        document_info.user_id
+                        document_info.owner_id
                     )
                     await service.providers.database.assign_document_to_collection_relational(
                         document_id=document_info.id,
@@ -114,7 +114,7 @@ def simple_ingestion_factory(service: IngestionService):
                             description = f"A collection started during {document_info.title} ingestion"
 
                             result = await service.providers.database.create_collection(
-                                user_id=document_info.user_id,
+                                owner_id=document_info.owner_id,
                                 name=name,
                                 description=description,
                                 collection_id=collection_id,
@@ -184,7 +184,6 @@ def simple_ingestion_factory(service: IngestionService):
             )
 
     async def update_files(input_data):
-        from core.base import IngestionStatus
         from core.main import IngestionServiceAdapter
 
         parsed_data = IngestionServiceAdapter.parse_update_files_input(
@@ -290,7 +289,7 @@ def simple_ingestion_factory(service: IngestionService):
                     ),
                     document_id=document_id,
                     collection_ids=[],
-                    user_id=document_info.user_id,
+                    owner_id=document_info.owner_id,
                     data=chunk.text,
                     metadata=parsed_data["metadata"],
                 ).model_dump()
@@ -321,17 +320,25 @@ def simple_ingestion_factory(service: IngestionService):
             try:
                 # TODO - Move logic onto management service
                 if not collection_ids:
-                    # TODO: Move logic onto the `management service`
                     collection_id = generate_default_user_collection_id(
-                        document_info.user_id
+                        document_info.owner_id
+                    )
+                    print(
+                        f"Assigning docment to relational collection, collection_id = {collection_id}"
                     )
                     await service.providers.database.assign_document_to_collection_relational(
                         document_id=document_info.id,
                         collection_id=collection_id,
                     )
+                    print(
+                        f"Assigning docment to vector collection, collection_id = {collection_id}"
+                    )
                     await service.providers.database.assign_document_to_collection_vector(
                         document_id=document_info.id,
                         collection_id=collection_id,
+                    )
+                    print(
+                        f"Setting graph sync status to outdated for collection_id = {collection_id}"
                     )
                     await service.providers.database.set_workflow_status(
                         id=collection_id,
@@ -352,7 +359,7 @@ def simple_ingestion_factory(service: IngestionService):
                             name = document_info.title or "N/A"
                             description = ""
                             result = await service.providers.database.create_collection(
-                                user_id=document_info.user_id,
+                                owner_id=document_info.owner_id,
                                 name=name,
                                 description=description,
                                 collection_id=collection_id,

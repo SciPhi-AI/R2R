@@ -93,7 +93,6 @@ class CommunityInfo(R2RSerializable):
     parent_cluster: int | None
     is_final_cluster: bool
     id: Optional[UUID | int] = None
-    graph_id: Optional[UUID] = None
     collection_id: Optional[UUID] = None  # for backwards compatibility
     relationship_ids: Optional[list[UUID]] = None
 
@@ -111,7 +110,6 @@ class Community(R2RSerializable):
     findings: list[str] = []
     id: Optional[int | UUID] = None
     community_id: Optional[UUID] = None
-    graph_id: Optional[UUID] = None
     collection_id: Optional[UUID] = None
     rating: float | None = None
     rating_explanation: str | None = None

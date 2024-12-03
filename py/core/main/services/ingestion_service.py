@@ -168,7 +168,7 @@ class IngestionService(Service):
 
         return DocumentResponse(
             id=document_id,
-            user_id=user.id,
+            owner_id=user.id,
             collection_ids=metadata.get("collection_ids", []),
             document_type=DocumentType[file_extension.upper()],
             title=(
@@ -197,7 +197,7 @@ class IngestionService(Service):
 
         return DocumentResponse(
             id=document_id,
-            user_id=user.id,
+            owner_id=user.id,
             collection_ids=metadata.get("collection_ids", []),
             document_type=DocumentType.TXT,
             title=metadata.get("title", f"Ingested Chunks - {document_id}"),
@@ -219,7 +219,7 @@ class IngestionService(Service):
                 message=Document(
                     id=document_info.id,
                     collection_ids=document_info.collection_ids,
-                    user_id=document_info.user_id,
+                    owner_id=document_info.owner_id,
                     metadata={
                         "document_type": document_info.document_type.value,
                         **document_info.metadata,
@@ -437,7 +437,7 @@ class IngestionService(Service):
             )
 
         if (
-            str(existing_chunk["user_id"]) != str(user.id)
+            str(existing_chunk["owner_id"]) != str(user.id)
             and not user.is_superuser
         ):
             raise R2RException(
@@ -461,7 +461,7 @@ class IngestionService(Service):
             "collection_ids": kwargs.get(
                 "collection_ids", existing_chunk["collection_ids"]
             ),
-            "user_id": existing_chunk["user_id"],
+            "owner_id": existing_chunk["owner_id"],
             "data": text or existing_chunk["text"],
             "metadata": merged_metadata,
         }
@@ -585,10 +585,10 @@ class IngestionService(Service):
         chunk["metadata"]["original_text"] = chunk["text"]
 
         return VectorEntry(
-            chunk_id=uuid.uuid5(uuid.NAMESPACE_DNS, str(chunk["chunk_id"])),
+            id=uuid.uuid5(uuid.NAMESPACE_DNS, str(chunk["chunk_id"])),
             vector=Vector(data=data, type=VectorType.FIXED, length=len(data)),
             document_id=document_id,
-            user_id=chunk["user_id"],
+            owner_id=chunk["owner_id"],
             collection_ids=chunk["collection_ids"],
             text=updated_chunk_text or chunk["text"],
             metadata=chunk["metadata"],
@@ -780,7 +780,7 @@ class IngestionServiceAdapter:
         return {
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),
             "document_id": UUID(data["document_id"]),
-            "chunk_id": UUID(data["chunk_id"]),
+            "id": UUID(data["id"]),
             "text": data["text"],
             "metadata": data.get("metadata"),
             "collection_ids": data.get("collection_ids", []),

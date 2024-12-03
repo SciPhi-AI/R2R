@@ -51,7 +51,8 @@ class UserStats(BaseModel):
     created_at: datetime
     updated_at: datetime
     collection_ids: list[UUID]
-    graph_ids: list[UUID]
     num_files: int
-    total_size_in_bytes: int
+    total_size_in_bytes: Optional[int] = (
+        None  # FIXME: This should not be optional
+    )
     document_ids: list[UUID]

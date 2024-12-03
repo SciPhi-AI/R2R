@@ -266,7 +266,7 @@ class CollectionsHandler(Handler):
     @abstractmethod
     async def create_collection(
         self,
-        user_id: UUID,
+        owner_id: UUID,
         name: Optional[str] = None,
         description: str = "",
         collection_id: Optional[UUID] = None,
@@ -423,16 +423,6 @@ class UserHandler(Handler):
     @abstractmethod
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
-    ) -> bool:
-        pass
-
-    @abstractmethod
-    async def add_user_to_graph(self, user_id: UUID, graph_id: UUID) -> bool:
-        pass
-
-    @abstractmethod
-    async def remove_user_from_graph(
-        self, user_id: UUID, graph_id: UUID
     ) -> bool:
         pass
 
@@ -1034,14 +1024,13 @@ class DatabaseProvider(Provider):
 
     async def create_collection(
         self,
-        user_id: UUID,
+        owner_id: UUID,
         name: Optional[str] = None,
         description: str = "",
         collection_id: Optional[UUID] = None,
     ) -> CollectionResponse:
-        print("create_collection in database being called...")
         return await self.collections_handler.create_collection(
-            user_id=user_id,
+            owner_id=owner_id,
             name=name,
             description=description,
             collection_id=collection_id,

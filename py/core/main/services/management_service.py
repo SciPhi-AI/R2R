@@ -571,22 +571,20 @@ class ManagementService(Service):
     @telemetry_event("CreateCollection")
     async def create_collection(
         self,
-        user_id: UUID,
+        owner_id: UUID,
         name: Optional[str] = None,
         description: str = "",
     ) -> CollectionResponse:
         result = await self.providers.database.create_collection(
-            user_id=user_id,
+            owner_id=owner_id,
             name=name,
             description=description,
         )
         print("create collection result = ", result)
         graph_result = await self.providers.database.graph_handler.create(
             collection_id=result.id,
-            # user_id=user_id,
             name=name,
             description=description,
-            graph_id=result.id,
         )
         print("graph_result = ", graph_result)
 

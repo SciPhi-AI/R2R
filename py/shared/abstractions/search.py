@@ -15,25 +15,25 @@ from .vector import IndexMeasure
 class ChunkSearchResult(R2RSerializable):
     """Result of a search operation."""
 
-    chunk_id: UUID
+    id: UUID
     document_id: UUID
-    user_id: Optional[UUID]
+    owner_id: Optional[UUID]
     collection_ids: list[UUID]
     score: float
     text: str
     metadata: dict[str, Any]
 
     def __str__(self) -> str:
-        return f"ChunkSearchResult(id={self.chunk_id}, document_id={self.document_id}, score={self.score})"
+        return f"ChunkSearchResult(id={self.id}, document_id={self.document_id}, score={self.score})"
 
     def __repr__(self) -> str:
         return self.__str__()
 
     def as_dict(self) -> dict:
         return {
-            "chunk_id": self.chunk_id,
+            "id": self.id,
             "document_id": self.document_id,
-            "user_id": self.user_id,
+            "user_id": self.owner_id,
             "collection_ids": self.collection_ids,
             "score": self.score,
             "text": self.text,
@@ -43,7 +43,7 @@ class ChunkSearchResult(R2RSerializable):
     class Config:
         populate_by_name = True
         json_schema_extra = {
-            "chunk_id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+            "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [],
