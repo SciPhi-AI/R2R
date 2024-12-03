@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import KGEnrichmentStatus, R2RException, RunType
+from core.base import KGEnrichmentStatus, R2RException, RunType, Workflow
 from core.base.abstractions import KGRunType
 from core.base.api.models import (
     GenericBooleanResponse,
@@ -46,6 +46,37 @@ class GraphRouter(BaseRouterV3):
         run_type: RunType = RunType.KG,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
+        self._register_workflows()
+
+    def _register_workflows(self):
+
+        workflow_messages = {}
+        if self.orchestration_provider.config.provider == "hatchet":
+            workflow_messages["extract-triples"] = (
+                "Graph creation task queued successfully."
+            )
+            workflow_messages["build-communities"] = (
+                "Graph enrichment task queued successfully."
+            )
+            workflow_messages["entity-deduplication"] = (
+                "KG Entity Deduplication task queued successfully."
+            )
+        else:
+            workflow_messages["extract-triples"] = (
+                "Document entities and relationships extracted successfully. To generate GraphRAG communities, POST to `/graphs/<collection_id>/communities/build` with a collection this document belongs to."
+            )
+            workflow_messages["build-communities"] = (
+                "Graph communities created successfully. You can view the communities at http://localhost:7272/v2/communities"
+            )
+            workflow_messages["entity-deduplication"] = (
+                "KG Entity Deduplication completed successfully."
+            )
+
+        self.orchestration_provider.register_workflows(
+            Workflow.KG,
+            self.services["kg"],
+            workflow_messages,
+        )
 
     async def _deduplicate_entities(
         self,

@@ -11,7 +11,7 @@ from fastapi import Body, Depends, File, Form, Path, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import Json
 
-from core.base import R2RException, RunType, generate_document_id
+from core.base import R2RException, RunType, Workflow, generate_document_id
 from core.base.abstractions import KGCreationSettings, KGRunType
 from core.base.api.models import (
     GenericBooleanResponse,
@@ -47,6 +47,56 @@ class DocumentsRouter(BaseRouterV3):
         run_type: RunType = RunType.INGESTION,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
+        self._register_workflows()
+
+    # TODO - Remove this legacy method
+    def _register_workflows(self):
+        self.orchestration_provider.register_workflows(
+            Workflow.INGESTION,
+            self.services["ingestion"],
+            {
+                "ingest-files": (
+                    "Ingest files task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Document created and ingested successfully."
+                ),
+                "ingest-chunks": (
+                    "Ingest chunks task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Document created and ingested successfully."
+                ),
+                "update-files": (
+                    "Update file task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Update task queued successfully."
+                ),
+                "update-chunk": (
+                    "Update chunk task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Chunk update completed successfully."
+                ),
+                "update-document-metadata": (
+                    "Update document metadata task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Document metadata update completed successfully."
+                ),
+                "create-vector-index": (
+                    "Vector index creation task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Vector index creation task completed successfully."
+                ),
+                "delete-vector-index": (
+                    "Vector index deletion task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Vector index deletion task completed successfully."
+                ),
+                "select-vector-index": (
+                    "Vector index selection task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Vector index selection task completed successfully."
+                ),
+            },
+        )
 
     def _setup_routes(self):
         @self.router.post(
