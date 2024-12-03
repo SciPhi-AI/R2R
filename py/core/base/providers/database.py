@@ -457,7 +457,8 @@ class UserHandler(Handler):
 
     @abstractmethod
     async def get_user_validation_data(
-        self, user_id: UUID, *args, **kwargs
+        self,
+        user_id: UUID,
     ) -> dict:
         """
         Get verification data for a specific user.
@@ -1231,9 +1232,12 @@ class DatabaseProvider(Provider):
         )
 
     async def get_user_validation_data(
-        self, user_id: UUID, *args, **kwargs
+        self,
+        user_id: UUID,
     ) -> dict:
-        return await self.user_handler.get_user_validation_data(user_id)
+        return await self.user_handler.get_user_validation_data(
+            user_id=user_id
+        )
 
     # Vector handler methods
     async def upsert(self, entry: VectorEntry) -> None:

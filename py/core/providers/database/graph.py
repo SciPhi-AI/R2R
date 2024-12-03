@@ -420,7 +420,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
             return f"""
                 CONSTRAINT fk_document
                     FOREIGN KEY(parent_id)
-                    REFERENCES {self._get_table_name("documents")}(document_id)
+                    REFERENCES {self._get_table_name("documents")}(id)
                     ON DELETE CASCADE
             """
 
@@ -1225,9 +1225,10 @@ class PostgresGraphHandler(GraphHandler):
         """
         try:
             # Delete all graph entities
+            print(f"Attemping to delete all entities for {parent_id}")
             entity_delete_query = f"""
                 DELETE FROM {self._get_table_name("graph_entity")}
-                WHERE collection_id = $1
+                WHERE parent_id = $1
             """
             await self.connection_manager.execute_query(
                 entity_delete_query, [parent_id]
@@ -1236,7 +1237,7 @@ class PostgresGraphHandler(GraphHandler):
             # Delete all graph relationships
             relationship_delete_query = f"""
                 DELETE FROM {self._get_table_name("graph_relationship")}
-                WHERE collection_id = $1
+                WHERE parent_id = $1
             """
             await self.connection_manager.execute_query(
                 relationship_delete_query, [parent_id]
@@ -1247,8 +1248,6 @@ class PostgresGraphHandler(GraphHandler):
                 DELETE FROM {self._get_table_name("graph_community")}
                 WHERE collection_id = $1
             """
-            print("community_delete_query = ", community_delete_query)
-            print("collection_id = ", parent_id)
             await self.connection_manager.execute_query(
                 community_delete_query, [parent_id]
             )
@@ -1262,15 +1261,6 @@ class PostgresGraphHandler(GraphHandler):
             ]
             for query in community_delete_queries:
                 await self.connection_manager.execute_query(query, [parent_id])
-
-            # # Finally delete the graph itself
-            # graph_delete_query = f"""
-            #     DELETE FROM {self._get_table_name("graph")}
-            #     WHERE id = $1
-            # """
-            # await self.connection_manager.execute_query(
-            #     graph_delete_query, [graph_id]
-            # )
 
         except Exception as e:
             logger.error(f"Error deleting graph {parent_id}: {str(e)}")
@@ -1863,7 +1853,7 @@ class PostgresGraphHandler(GraphHandler):
 
             relationship_count = (
                 await self.connection_manager.fetch_query(
-                    f"SELECT COUNT(*) FROM {self._get_table_name('relationship')} WHERE document_id = ANY($1);",
+                    f"SELECT COUNT(*) FROM {self._get_table_name('document_relationship')} WHERE document_id = ANY($1);",
                     [document_ids],
                 )
             )[0]["count"]
@@ -2131,7 +2121,7 @@ class PostgresGraphHandler(GraphHandler):
 
         # Execute separate DELETE queries
         delete_queries = [
-            f"DELETE FROM {self._get_table_name('relationship')} WHERE document_id = $1",
+            f"DELETE FROM {self._get_table_name('document_relationship')} WHERE document_id = $1",
             f"DELETE FROM {self._get_table_name('entity')} WHERE document_id = $1",
         ]
 

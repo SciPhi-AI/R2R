@@ -195,8 +195,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
 
         entity_descriptions = (
             await self.database_provider.graph_handler.get_entities(
-                graph_id=graph_id,
-                collection_id=collection_id,
+                parent_id=collection_id,
                 entity_names=entity_names,
                 entity_table_name="entity",
                 offset=offset,

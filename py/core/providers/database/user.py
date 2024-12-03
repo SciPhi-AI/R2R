@@ -152,7 +152,14 @@ class PostgresUserHandler(UserHandler):
             RETURNING id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids
         """
         result = await self.connection_manager.fetchrow_query(
-            query, [email, generate_user_id(email), is_superuser, hashed_password, []]
+            query,
+            [
+                email,
+                generate_user_id(email),
+                is_superuser,
+                hashed_password,
+                [],
+            ],
         )
 
         if not result:
@@ -558,7 +565,7 @@ class PostgresUserHandler(UserHandler):
                 collection_ids=row[7] or [],
                 num_files=row[9],
                 total_size_in_bytes=row[10],
-                document_ids=row[11] or [],
+                document_ids=list(row[11]) if row[11] is not None else [],
             )
             for row in results
         ]
@@ -582,7 +589,8 @@ class PostgresUserHandler(UserHandler):
         return result is not None
 
     async def get_user_validation_data(
-        self, id: UUID, *args, **kwargs
+        self,
+        user_id: UUID,
     ) -> dict:
         """
         Get verification data for a specific user.
@@ -597,7 +605,7 @@ class PostgresUserHandler(UserHandler):
             FROM {self._get_table_name("users")}
             WHERE id = $1
         """
-        result = await self.connection_manager.fetchrow_query(query, [id])
+        result = await self.connection_manager.fetchrow_query(query, [user_id])
 
         if not result:
             raise R2RException(status_code=404, message="User not found")

@@ -202,14 +202,17 @@ class AuthService(Service):
 
     @telemetry_event("GetUserVerificationCode")
     async def get_user_verification_code(
-        self, user_id: UUID, *args, **kwargs
+        self,
+        user_id: UUID,
     ) -> dict:
         """
         Get only the verification code data for a specific user.
         This method should be called after superuser authorization has been verified.
         """
         verification_data = (
-            await self.providers.database.get_user_validation_data(user_id)
+            await self.providers.database.get_user_validation_data(
+                user_id=user_id
+            )
         )
         return {
             "verification_code": verification_data["verification_data"][
@@ -222,14 +225,17 @@ class AuthService(Service):
 
     @telemetry_event("GetUserVerificationCode")
     async def get_user_reset_token(
-        self, user_id: UUID, *args, **kwargs
+        self,
+        user_id: UUID,
     ) -> dict:
         """
         Get only the verification code data for a specific user.
         This method should be called after superuser authorization has been verified.
         """
         verification_data = (
-            await self.providers.database.get_user_validation_data(user_id)
+            await self.providers.database.get_user_validation_data(
+                user_id=user_id
+            )
         )
         return {
             "reset_token": verification_data["verification_data"][
