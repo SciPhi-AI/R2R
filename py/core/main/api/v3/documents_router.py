@@ -11,7 +11,14 @@ from fastapi import Body, Depends, File, Form, Path, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import Json
 
-from core.base import R2RException, RunType, Workflow, generate_document_id
+from core.base import (
+    R2RException,
+    RunType,
+    UnprocessedChunk,
+    Workflow,
+    generate_document_id,
+    generate_id,
+)
 from core.base.abstractions import KGCreationSettings, KGRunType
 from core.base.api.models import (
     GenericBooleanResponse,
@@ -34,6 +41,7 @@ from core.utils import update_settings_from_dict
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
+MAX_CHUNKS_PER_REQUEST = 1024 * 100
 
 
 class DocumentsRouter(BaseRouterV3):
@@ -169,11 +177,15 @@ class DocumentsRouter(BaseRouterV3):
         async def create_document(
             file: Optional[UploadFile] = File(
                 None,
-                description="The file to ingest. Either a file or content must be provided, but not both.",
+                description="The file to ingest. Exactly one of file, raw_text, or chunks must be provided.",
             ),
-            content: Optional[str] = Form(
+            raw_text: Optional[str] = Form(
                 None,
-                description="The text content to ingest. Either a file or content must be provided, but not both.",
+                description="Raw text content to ingest. Exactly one of file, raw_text, or chunks must be provided.",
+            ),
+            chunks: Optional[Json[list[str]]] = Form(
+                None,
+                description="Pre-processed text chunks to ingest. Exactly one of file, raw_text, or chunks must be provided.",
             ),
             id: Optional[UUID] = Form(
                 None,
@@ -206,18 +218,23 @@ class DocumentsRouter(BaseRouterV3):
             The ingestion process runs asynchronously and its progress can be tracked using the returned
             task_id.
             """
-            if not file and not content:
+            if not file and not raw_text and not chunks:
                 raise R2RException(
                     status_code=422,
-                    message="Either a file or content must be provided.",
+                    message="Either a `file`, `raw_text`, or `chunks` must be provided.",
                 )
-            if file and content:
+            if (
+                (file and raw_text)
+                or (file and chunks)
+                or (raw_text and chunks)
+            ):
                 raise R2RException(
                     status_code=422,
-                    message="Both a file and content cannot be provided.",
+                    message="Only one of `file`, `raw_text`, or `chunks` may be provided.",
                 )
             # Check if the user is a superuser
             metadata = metadata or {}
+            print("metadata = ", metadata)
             if not auth_user.is_superuser:
                 if "user_id" in metadata and (
                     not auth_user.is_superuser
@@ -230,86 +247,161 @@ class DocumentsRouter(BaseRouterV3):
                 # If user is not a superuser, set user_id in metadata
                 metadata["user_id"] = str(auth_user.id)
 
-            if file:
-                file_data = await self._process_file(file)
-                content_length = len(file_data["content"])
-                file_content = BytesIO(base64.b64decode(file_data["content"]))
+            if chunks:
+                if len(chunks) == 0:
+                    raise R2RException("Empty list of chunks provided", 400)
 
-                file_data.pop("content", None)
-                document_id = id or generate_document_id(
-                    file_data["filename"], auth_user.id
-                )
-            elif content:
-                content_length = len(content)
-                file_content = BytesIO(content.encode("utf-8"))
-                document_id = id or generate_document_id(content, auth_user.id)
-                file_data = {
-                    "filename": "N/A",
-                    "content_type": "text/plain",
-                }
-            else:
-                raise R2RException(
-                    status_code=422,
-                    message="Either a file or content must be provided.",
+                if len(chunks) > MAX_CHUNKS_PER_REQUEST:
+                    raise R2RException(
+                        f"Maximum of {MAX_CHUNKS_PER_REQUEST} chunks per request",
+                        400,
+                    )
+                document_id = generate_document_id(
+                    str(json.dumps(chunks)), auth_user.id
                 )
 
-            # collection_uuids = None
-            # print('collection_ids = ', collection_ids)
-            # if collection_ids:
-            #     try:
-            #         collection_uuids = [UUID(cid) for cid in collection_ids]
-            #     except ValueError:
-            #         raise R2RException(
-            #             status_code=422,
-            #             message="Collection IDs must be valid UUIDs.",
-            #         )
+                # FIXME: Metadata doesn't seem to be getting passed through
+                raw_chunks_for_doc = [
+                    UnprocessedChunk(
+                        text=chunk, metadata=metadata, id=generate_id()
+                    )
+                    for chunk in chunks
+                ]
 
-            workflow_input = {
-                "file_data": file_data,
-                "document_id": str(document_id),
-                "collection_ids": collection_ids,
-                "metadata": metadata,
-                "ingestion_config": ingestion_config,
-                "user": auth_user.model_dump_json(),
-                "size_in_bytes": content_length,
-                "is_update": False,
-            }
-
-            file_name = file_data["filename"]
-            await self.providers.database.store_file(
-                document_id,
-                file_name,
-                file_content,
-                file_data["content_type"],
-            )
-            if run_with_orchestration:
-                raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
-                    "ingest-files",
-                    {"request": workflow_input},
-                    options={
-                        "additional_metadata": {
-                            "document_id": str(document_id),
-                        }
-                    },
-                )
-                raw_message["document_id"] = str(document_id)
-                return raw_message  # type: ignore
-            else:
-                logger.info(
-                    f"Running ingestion without orchestration for file {file_name} and document_id {document_id}."
-                )
-                # TODO - Clean up implementation logic here to be more explicitly `synchronous`
-                from core.main.orchestration import simple_ingestion_factory
-
-                simple_ingestor = simple_ingestion_factory(
-                    self.services["ingestion"]
-                )
-                await simple_ingestor["ingest-files"](workflow_input)
-                return {  # type: ignore
-                    "message": "Document created and ingested successfully.",
+                # Prepare workflow input
+                workflow_input = {
                     "document_id": str(document_id),
-                    "task_id": None,
+                    "chunks": [
+                        chunk.model_dump() for chunk in raw_chunks_for_doc
+                    ],
+                    "metadata": metadata,  # Base metadata for the document
+                    "user": auth_user.model_dump_json(),
                 }
+
+                # TODO - Modify create_chunks so that we can add chunks to existing document
+
+                if run_with_orchestration:
+                    # Run ingestion with orchestration
+                    raw_message = (
+                        await self.orchestration_provider.run_workflow(
+                            "ingest-chunks",
+                            {"request": workflow_input},
+                            options={
+                                "additional_metadata": {
+                                    "document_id": str(document_id),
+                                }
+                            },
+                        )
+                    )
+                    raw_message["document_id"] = str(document_id)
+                    return raw_message
+
+                else:
+                    logger.info(
+                        "Running chunk ingestion without orchestration."
+                    )
+                    from core.main.orchestration import (
+                        simple_ingestion_factory,
+                    )
+
+                    simple_ingestor = simple_ingestion_factory(
+                        self.services["ingestion"]
+                    )
+                    await simple_ingestor["ingest-chunks"](workflow_input)
+
+                    return {
+                        "message": "Document created and ingested successfully.",
+                        "document_id": str(document_id),
+                        "task_id": None,
+                    }
+
+            else:
+                if file:
+                    file_data = await self._process_file(file)
+                    content_length = len(file_data["content"])
+                    file_content = BytesIO(
+                        base64.b64decode(file_data["content"])
+                    )
+
+                    file_data.pop("content", None)
+                    document_id = id or generate_document_id(
+                        file_data["filename"], auth_user.id
+                    )
+                elif raw_text:
+                    content_length = len(raw_text)
+                    file_content = BytesIO(raw_text.encode("utf-8"))
+                    document_id = id or generate_document_id(
+                        raw_text, auth_user.id
+                    )
+                    file_data = {
+                        "filename": "N/A",
+                        "content_type": "text/plain",
+                    }
+                else:
+                    raise R2RException(
+                        status_code=422,
+                        message="Either a file or content must be provided.",
+                    )
+
+                # collection_uuids = None
+                # print('collection_ids = ', collection_ids)
+                # if collection_ids:
+                #     try:
+                #         collection_uuids = [UUID(cid) for cid in collection_ids]
+                #     except ValueError:
+                #         raise R2RException(
+                #             status_code=422,
+                #             message="Collection IDs must be valid UUIDs.",
+                #         )
+
+                workflow_input = {
+                    "file_data": file_data,
+                    "document_id": str(document_id),
+                    "collection_ids": collection_ids,
+                    "metadata": metadata,
+                    "ingestion_config": ingestion_config,
+                    "user": auth_user.model_dump_json(),
+                    "size_in_bytes": content_length,
+                    "is_update": False,
+                }
+
+                file_name = file_data["filename"]
+                await self.providers.database.store_file(
+                    document_id,
+                    file_name,
+                    file_content,
+                    file_data["content_type"],
+                )
+                if run_with_orchestration:
+                    raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
+                        "ingest-files",
+                        {"request": workflow_input},
+                        options={
+                            "additional_metadata": {
+                                "document_id": str(document_id),
+                            }
+                        },
+                    )
+                    raw_message["document_id"] = str(document_id)
+                    return raw_message  # type: ignore
+                else:
+                    logger.info(
+                        f"Running ingestion without orchestration for file {file_name} and document_id {document_id}."
+                    )
+                    # TODO - Clean up implementation logic here to be more explicitly `synchronous`
+                    from core.main.orchestration import (
+                        simple_ingestion_factory,
+                    )
+
+                    simple_ingestor = simple_ingestion_factory(
+                        self.services["ingestion"]
+                    )
+                    await simple_ingestor["ingest-files"](workflow_input)
+                    return {  # type: ignore
+                        "message": "Document created and ingested successfully.",
+                        "document_id": str(document_id),
+                        "task_id": None,
+                    }
 
         # @self.router.post(
         #     "/documents/{id}",
@@ -1296,9 +1388,13 @@ class DocumentsRouter(BaseRouterV3):
             Extracts entities and relationships from a document.
 
             The entities and relationships extraction process involves:
+
                 1. Parsing documents into semantic chunks
+
                 2. Extracting entities and relationships using LLMs
+
                 3. Storing the created entities and relationships in the knowledge graph
+
                 4. Preserving the document's metadata and content, and associating the elements with collections the document belongs to
             """
 

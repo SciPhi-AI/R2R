@@ -102,7 +102,7 @@ services:
     networks:
       - r2r-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${R2R_PORT:-7272}/v2/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${R2R_PORT:-7272}/v3/health"]
       interval: 6s
       timeout: 5s
       retries: 5

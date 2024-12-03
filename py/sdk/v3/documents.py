@@ -24,7 +24,8 @@ class DocumentsSDK:
     async def create(
         self,
         file_path: Optional[str] = None,
-        content: Optional[str] = None,
+        raw_text: Optional[str] = None,
+        chunks: Optional[list[str]] = None,
         id: Optional[str | UUID] = None,
         collection_ids: Optional[list[str | UUID]] = None,
         metadata: Optional[dict] = None,
@@ -43,10 +44,18 @@ class DocumentsSDK:
             ingestion_config (Optional[dict]): Optional ingestion configuration to use
             run_with_orchestration (Optional[bool]): Whether to run with orchestration
         """
-        if not file_path and not content:
-            raise ValueError("Either file_path or content must be provided")
-        if file_path and content:
-            raise ValueError("Cannot provide both file_path and content")
+        if not file_path and not raw_text and not chunks:
+            raise ValueError(
+                "Either `file_path`, `raw_text` or `chunks` must be provided"
+            )
+        if (
+            (file_path and raw_text)
+            or (file_path and chunks)
+            or (raw_text and chunks)
+        ):
+            raise ValueError(
+                "Only one of `file_path`, `raw_text` or `chunks` may be provided"
+            )
 
         data = {}
         files = None
@@ -84,8 +93,16 @@ class DocumentsSDK:
                 # Ensure we close the file after the request is complete
                 file_instance.close()
             return result
+        elif raw_text:
+            data["raw_text"] = raw_text  # type: ignore
+            return await self.client._make_request(
+                "POST",
+                "documents",
+                data=data,
+                version="v3",
+            )
         else:
-            data["content"] = content  # type: ignore
+            data["chunks"] = json.dumps(chunks)
             return await self.client._make_request(
                 "POST",
                 "documents",
