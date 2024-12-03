@@ -251,7 +251,7 @@ class ManagementMixins:
         )
 
     @deprecated("Use client.documents.list_chunks() instead")
-    async def list_document_chunks(
+    async def document_chunks(
         self,
         document_id: str,
         offset: Optional[int] = None,
@@ -276,11 +276,11 @@ class ManagementMixins:
             params["include_vectors"] = include_vectors
         if not params:
             return await self._make_request(  # type: ignore
-                "GET", f"list_document_chunks/{document_id}"
+                "GET", f"document_chunks/{document_id}"
             )
         else:
             return await self._make_request(  # type: ignore
-                "GET", f"list_document_chunks/{document_id}", params=params
+                "GET", f"document_chunks/{document_id}", params=params
             )
 
     @deprecated("Use client.collections.list() instead")

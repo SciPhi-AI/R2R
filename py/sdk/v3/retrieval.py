@@ -73,6 +73,21 @@ class RetrievalSDK:
             version="v3",
         )
 
+    async def embedding(
+        self,
+        text: str,
+    ):
+        data = {
+            "text": text,
+        }
+
+        return await self.client._make_request(
+            "POST",
+            "retrieval/embedding",
+            json=data,
+            version="v3",
+        )
+
     async def rag(
         self,
         query: str,

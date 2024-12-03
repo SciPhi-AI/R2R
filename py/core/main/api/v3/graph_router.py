@@ -1729,7 +1729,7 @@ class GraphRouter(BaseRouterV3):
 
             This endpoint:
             1. Copies document entities to the graphs_entities table
-            2. Copies document relationships to the graph_relationship table
+            2. Copies document relationships to the graphs_relationships table
             3. Associates the documents with the graph
 
             When a document is added:

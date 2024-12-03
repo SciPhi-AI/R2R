@@ -228,6 +228,7 @@ class RetrievalMixins:
         else:
             return await self._make_request("POST", "agent", json=data)  # type: ignore
 
+    @deprecated("Use client.retrieval.embedding() instead")
     async def embedding(
         self,
         content: str,

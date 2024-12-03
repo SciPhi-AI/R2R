@@ -143,6 +143,13 @@ class RetrievalService(Service):
             **kwargs,
         )
 
+    @telemetry_event("Embedding")
+    async def embedding(
+        self,
+        text: str,
+    ):
+        return await self.providers.embedding.async_get_embedding(text=text)
+
     @telemetry_event("RAG")
     async def rag(
         self,

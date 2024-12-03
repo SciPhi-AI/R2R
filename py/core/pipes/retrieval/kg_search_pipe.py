@@ -111,7 +111,7 @@ class KGSearchSearchPipe(GeneratorPipe):
             )
 
             # entity search
-            search_type = "entity"
+            search_type = "entities"
             base_limit = search_settings.limit
 
             if search_type not in search_settings.graph_settings.limits:
@@ -156,7 +156,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # # relationship search
             # # disabled for now. We will check evaluations and see if we need it
-            search_type = "relationship"
+            search_type = "relationships"
             if search_type not in search_settings.graph_settings.limits:
                 logger.warning(
                     f"No limit set for graph search type {search_type}, defaulting to global settings limit of {base_limit}"
@@ -214,7 +214,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                 )
 
             # community search
-            search_type = "community"
+            search_type = "communities"
             async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
                 message,
                 search_type=search_type,

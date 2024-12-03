@@ -81,14 +81,12 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             "description",
             "chunk_ids",
             "document_id",
-            "attributes",
             # "description_embedding",
         ]
         deduplication_target_keys = [
             "description",
             "chunk_ids",
             "document_ids",
-            "attributes",
             # "description_embedding",
         ]
         deduplication_keys = list(

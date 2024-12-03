@@ -509,7 +509,7 @@ class KgService(Service):
             await self.providers.database.graph_handler.get_entity_count(
                 document_id=document_id,
                 distinct=True,
-                entity_table_name="document_entity",
+                entity_table_name="documents_entities",
             )
         )
 
@@ -1126,8 +1126,6 @@ class KgService(Service):
                     print(
                         f"Failed after retries with for chunk {chunks[0].id} of document {chunks[0].document_id}: {e}"
                     )
-                    # raise e # you should raise an error.
-        # add metadata to entities and relationships
 
         print(
             f"KGExtractionPipe: Completed task number {task_id} of {total_tasks} for document {chunks[0].document_id}",
@@ -1146,11 +1144,7 @@ class KgService(Service):
         Stores a batch of knowledge graph extractions in the graph database.
         """
 
-        total_entities, total_relationships = 0, 0
-
-        print("received len(kg_extractions) = ", len(kg_extractions))
         for extraction in kg_extractions:
-
             entities_id_map = {}
             for entity in extraction.entities:
                 print("entity = ", entity)

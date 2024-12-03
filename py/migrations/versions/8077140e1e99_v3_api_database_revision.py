@@ -1,7 +1,7 @@
 """v3_api_database_revision
 
 Revision ID: 8077140e1e99
-Revises: 
+Revises:
 Create Date: 2024-12-03 12:10:10.878485
 
 """
@@ -26,144 +26,173 @@ if not project_name:
         "Environment variable `R2R_PROJECT_NAME` must be provided migrate, it should be set equal to the value of `project_name` in your `r2r.toml`."
     )
 
+if (
+    input(
+        "WARNING: This migration will delete all graph data. Are you sure you want to continue? (yes/no) "
+    ).lower()
+    != "yes"
+):
+    raise ValueError("Migration aborted.")
+
 
 def upgrade() -> None:
 
     # Collections table migration
     op.alter_column(
-        f"{project_name}.collections",
+        "collections",
         "collection_id",
         new_column_name="id",
+        schema=project_name,
     )
 
     op.drop_column(
-        f"{project_name}.collections",
+        "collections",
         "kg_enrichment_status",
+        schema=project_name,
     )
 
     op.add_column(
-        f"{project_name}.collections",
+        "collections",
         sa.Column(
             "owner_id",
             sa.UUID,
             server_default=sa.text("'2acb499e-8428-543b-bd85-0d9098718220'"),
         ),
+        schema=project_name,
     )
 
     op.add_column(
-        f"{project_name}.collections",
+        "collections",
         sa.Column(
             "graph_sync_status", sa.Text, server_default=sa.text("'pending'")
         ),
+        schema=project_name,
     )
 
     op.add_column(
-        f"{project_name}.collections",
+        "collections",
         sa.Column(
             "graph_cluster_status",
             sa.Text,
             server_default=sa.text("'pending'"),
         ),
+        schema=project_name,
     )
 
     # Documents table migration
     op.rename_table(
-        f"{project_name}.document_info",
-        f"{project_name}.documents",
+        "document_info",
+        "documents",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.documents",
+        "documents",
         "document_id",
         new_column_name="id",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.documents",
+        "documents",
         "user_id",
         new_column_name="owner_id",
+        schema=project_name,
     )
 
     op.drop_column(
-        f"{project_name}.documents",
+        "documents",
         "kg_extraction_status",
+        schema=project_name,
     )
 
     op.add_column(
-        f"{project_name}.documents",
+        "documents",
         sa.Column(
             "extraction_status",
             sa.Text,
             server_default=sa.text("'pending'"),
         ),
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.documents",
+        "documents",
         "doc_search_vector",
         new_column_name="raw_tsvector",
+        schema=project_name,
     )
 
     # Files table migration
     op.rename_table(
-        f"{project_name}.file_storage",
-        f"{project_name}.files",
+        "file_storage",
+        "files",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.files",
+        "files",
         "file_name",
         new_column_name="name",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.files",
+        "files",
         "file_oid",
         new_column_name="oid",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.files",
+        "files",
         "file_size",
         new_column_name="size",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.files",
+        "files",
         "file_type",
         new_column_name="type",
+        schema=project_name,
     )
 
     # Prompts table migration
     op.alter_column(
-        f"{project_name}.prompts",
+        "prompts",
         "prompt_id",
         new_column_name="id",
+        schema=project_name,
     )
 
     # Users table migration
     op.alter_column(
-        f"{project_name}.users",
+        "users",
         "user_id",
         new_column_name="id",
+        schema=project_name,
     )
 
     # Chunks table migration
     op.rename_table(
-        f"{project_name}.vectors",
-        f"{project_name}.chunks",
+        "vectors",
+        "chunks",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.chunks",
+        "chunks",
         "extraction_id",
         new_column_name="id",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.chunks",
+        "chunks",
         "user_id",
         new_column_name="owner_id",
+        schema=project_name,
     )
 
 
@@ -171,131 +200,152 @@ def downgrade() -> None:
 
     # Collections table migration
     op.alter_column(
-        f"{project_name}.collections",
+        "collections",
         "id",
         new_column_name="collection_id",
+        schema=project_name,
     )
 
     op.add_column(
-        f"{project_name}.collections",
+        "collections",
         sa.Column(
             "kg_enrichment_status",
             sa.Text,
             server_default=sa.text("'pending'"),
         ),
+        schema=project_name,
     )
 
     op.drop_column(
-        f"{project_name}.collections",
+        "collections",
         "owner_id",
+        schema=project_name,
     )
 
     op.drop_column(
-        f"{project_name}.collections",
+        "collections",
         "graph_sync_status",
+        schema=project_name,
     )
 
     op.drop_column(
-        f"{project_name}.collections",
+        "collections",
         "graph_cluster_status",
+        schema=project_name,
     )
 
     # Documents table migration
     op.rename_table(
-        f"{project_name}.documents",
-        f"{project_name}.document_info",
+        "documents",
+        "document_info",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.document_info",
+        "document_info",
         "id",
         new_column_name="document_id",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.document_info",
+        "document_info",
         "owner_id",
         new_column_name="user_id",
+        schema=project_name,
     )
 
     op.add_column(
-        f"{project_name}.document_info",
+        "document_info",
         sa.Column(
             "kg_extraction_status",
             sa.Text,
             server_default=sa.text("'pending'"),
         ),
+        schema=project_name,
     )
 
     op.drop_column(
-        f"{project_name}.document_info",
+        "document_info",
         "extraction_status",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.document_info",
+        "document_info",
         "raw_tsvector",
         new_column_name="doc_search_vector",
+        schema=project_name,
     )
 
     # Files table migration
     op.rename_table(
-        f"{project_name}.files",
-        f"{project_name}.file_storage",
+        "files",
+        "file_storage",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.file_storage",
+        "file_storage",
         "name",
         new_column_name="file_name",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.file_storage",
+        "file_storage",
         "oid",
         new_column_name="file_oid",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.file_storage",
+        "file_storage",
         "size",
         new_column_name="file_size",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.file_storage",
+        "file_storage",
         "type",
         new_column_name="file_type",
+        schema=project_name,
     )
 
     # Prompts table migration
     op.alter_column(
-        f"{project_name}.prompts",
+        "prompts",
         "id",
         new_column_name="prompt_id",
+        schema=project_name,
     )
 
     # Users table migration
     op.alter_column(
-        f"{project_name}.users",
+        "users",
         "id",
         new_column_name="user_id",
+        schema=project_name,
     )
 
     # Chunks table migration
     op.rename_table(
-        f"{project_name}.chunks",
-        f"{project_name}.vectors",
+        "chunks",
+        "vectors",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.vectors",
+        "vectors",
         "id",
         new_column_name="extraction_id",
+        schema=project_name,
     )
 
     op.alter_column(
-        f"{project_name}.vectors",
+        "vectors",
         "owner_id",
         new_column_name="user_id",
+        schema=project_name,
     )

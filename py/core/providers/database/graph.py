@@ -34,7 +34,6 @@ from core.base.providers.database import (
 from core.base.utils import (
     _decorate_vector_type,
     _get_str_estimation_output,
-    generate_id,
     llm_cost_per_million_tokens,
 )
 
@@ -1082,7 +1081,7 @@ class PostgresCommunityHandler(CommunityHandler):
 class PostgresGraphHandler(GraphHandler):
     """Handler for Knowledge Graph METHODS in PostgreSQL."""
 
-    TABLE_NAME = "graph"
+    TABLE_NAME = "graphs"
 
     def __init__(
         self,
@@ -1113,13 +1112,12 @@ class PostgresGraphHandler(GraphHandler):
     async def create_tables(self) -> None:
         """Create the graph tables with mandatory collection_id support."""
         QUERY = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name("graphs")} (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresGraphHandler.TABLE_NAME)} (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 collection_id UUID NOT NULL,
                 name TEXT NOT NULL,
                 description TEXT,
                 status TEXT NOT NULL,
-                statistics JSONB,
                 document_ids UUID[],
                 metadata JSONB,
                 created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -1127,7 +1125,7 @@ class PostgresGraphHandler(GraphHandler):
             );
 
             CREATE INDEX IF NOT EXISTS graph_collection_id_idx
-                ON {self._get_table_name("graph")} (collection_id);
+                ON {self._get_table_name("graphs")} (collection_id);
         """
 
         await self.connection_manager.execute_query(QUERY)
@@ -1211,7 +1209,7 @@ class PostgresGraphHandler(GraphHandler):
 
             # Delete all graph relationships
             relationship_delete_query = f"""
-                DELETE FROM {self._get_table_name("graph_relationship")}
+                DELETE FROM {self._get_table_name("graphs_relationships")}
                 WHERE parent_id = $1
             """
             await self.connection_manager.execute_query(
@@ -1276,7 +1274,7 @@ class PostgresGraphHandler(GraphHandler):
                     id, collection_id, name, description, status, created_at, updated_at, document_ids,
                     COUNT(*) OVER() as total_entries,
                     ROW_NUMBER() OVER (PARTITION BY collection_id ORDER BY created_at DESC) as rn
-                FROM {self._get_table_name("graph")}
+                FROM {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
                 {where_clause}
             )
             SELECT * FROM RankedGraphs
@@ -1324,14 +1322,14 @@ class PostgresGraphHandler(GraphHandler):
             params = [offset, limit]
 
             QUERY = f"""
-                SELECT * FROM {self._get_table_name("graph")}
+                SELECT * FROM {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
                 OFFSET $1 LIMIT $2
             """
 
             ret = await self.connection_manager.fetch_query(QUERY, params)
 
             COUNT_QUERY = f"""
-                SELECT COUNT(*) FROM {self._get_table_name("graph")}
+                SELECT COUNT(*) FROM {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
             """
             count = (await self.connection_manager.fetch_query(COUNT_QUERY))[
                 0
@@ -1344,7 +1342,7 @@ class PostgresGraphHandler(GraphHandler):
 
         else:
             QUERY = f"""
-                SELECT * FROM {self._get_table_name("graph")} WHERE id = $1
+                SELECT * FROM {self._get_table_name(PostgresGraphHandler.TABLE_NAME)} WHERE id = $1
             """
 
             params = [graph_id]  # type: ignore
@@ -1372,23 +1370,23 @@ class PostgresGraphHandler(GraphHandler):
             SELECT
                 name, category, description, $1, description_embedding,
                 chunk_ids, metadata
-            FROM {self._get_table_name("document_entity")}
+            FROM {self._get_table_name("documents_entities")}
             WHERE parent_id = ANY($2)
         """
         await self.connection_manager.execute_query(
             ENTITY_COPY_QUERY, [id, document_ids]
         )
 
-        # Copy relationships from document_relationship to graph_relationship
+        # Copy relationships from documents_relationships to graphs_relationships
         RELATIONSHIP_COPY_QUERY = f"""
-            INSERT INTO {self._get_table_name("graph_relationship")} (
+            INSERT INTO {self._get_table_name("graphs_relationships")} (
                 subject, predicate, object, description, subject_id, object_id,
                 weight, chunk_ids, parent_id, metadata, description_embedding
             )
             SELECT
                 subject, predicate, object, description, subject_id, object_id,
                 weight, chunk_ids, $1, metadata, description_embedding
-            FROM {self._get_table_name("document_relationship")}
+            FROM {self._get_table_name("documents_relationships")}
             WHERE parent_id = ANY($2)
         """
         await self.connection_manager.execute_query(
@@ -1397,7 +1395,7 @@ class PostgresGraphHandler(GraphHandler):
 
         # Add document_ids to the graph
         UPDATE_GRAPH_QUERY = f"""
-            UPDATE {self._get_table_name("graph")}
+            UPDATE {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
             SET document_ids = array_cat(
                 CASE
                     WHEN document_ids IS NULL THEN ARRAY[]::uuid[]
@@ -1441,7 +1439,7 @@ class PostgresGraphHandler(GraphHandler):
         params.append(collection_id)
 
         query = f"""
-            UPDATE {self._get_table_name("graph")}
+            UPDATE {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
             SET {', '.join(update_fields)}
             WHERE id = ${param_index}
             RETURNING id, name, description, status, created_at, updated_at, collection_id, document_ids
@@ -1581,7 +1579,7 @@ class PostgresGraphHandler(GraphHandler):
 
             relationship_count = (
                 await self.connection_manager.fetch_query(
-                    f"SELECT COUNT(*) FROM {self._get_table_name('document_relationship')} WHERE document_id = ANY($1);",
+                    f"SELECT COUNT(*) FROM {self._get_table_name("documents_relationships")} WHERE document_id = ANY($1);",
                     [document_ids],
                 )
             )[0]["count"]
@@ -1829,7 +1827,7 @@ class PostgresGraphHandler(GraphHandler):
         # Count query - uses the same conditions but without offset/limit
         COUNT_QUERY = f"""
             SELECT COUNT(*)
-            FROM {self._get_table_name("graph_relationship")}
+            FROM {self._get_table_name("graphs_relationships")}
             WHERE {' AND '.join(conditions)}
         """
         count = (
@@ -1846,7 +1844,7 @@ class PostgresGraphHandler(GraphHandler):
         # Main query for fetching relationships with pagination
         QUERY = f"""
             SELECT {select_fields}
-            FROM {self._get_table_name("graph_relationship")}
+            FROM {self._get_table_name("graphs_relationships")}
             WHERE {' AND '.join(conditions)}
             ORDER BY created_at
             OFFSET ${param_index}
@@ -1928,8 +1926,8 @@ class PostgresGraphHandler(GraphHandler):
 
         # Execute separate DELETE queries
         delete_queries = [
-            f"DELETE FROM {self._get_table_name('document_relationship')} WHERE parent_id = $1",
-            f"DELETE FROM {self._get_table_name('document_entity')} WHERE parent_id = $1",
+            f"DELETE FROM {self._get_table_name("documents_relationships")} WHERE parent_id = $1",
+            f"DELETE FROM {self._get_table_name("documents_entities")} WHERE parent_id = $1",
         ]
 
         for query in delete_queries:
@@ -1962,7 +1960,7 @@ class PostgresGraphHandler(GraphHandler):
         #         ]
 
         QUERY = f"""
-            SELECT id, subject, predicate, weight, object, parent_id FROM {self._get_table_name("graph_relationship")} WHERE parent_id = ANY($1)
+            SELECT id, subject, predicate, weight, object, parent_id FROM {self._get_table_name("graphs_relationships")} WHERE parent_id = ANY($1)
         """
         relationships = await self.connection_manager.fetch_query(
             QUERY, [collection_id]
@@ -2148,7 +2146,7 @@ class PostgresGraphHandler(GraphHandler):
         # TODO: make these queries more efficient. Pass the document_ids as params.
         if cascade:
             DELETE_QUERIES += [
-                f"DELETE FROM {self._get_table_name('graph_relationship')} WHERE document_id = ANY($1::uuid[]);",
+                f"DELETE FROM {self._get_table_name('graphs_relationships')} WHERE document_id = ANY($1::uuid[]);",
                 f"DELETE FROM {self._get_table_name('graphs_entities')} WHERE document_id = ANY($1::uuid[]);",
                 f"DELETE FROM {self._get_table_name('graphs_entities')} WHERE collection_id = $1;",
             ]
@@ -2245,7 +2243,7 @@ class PostgresGraphHandler(GraphHandler):
         QUERY1 = f"""
             WITH entities_list AS (
                 SELECT DISTINCT name
-                FROM {self._get_table_name("document_entity")}
+                FROM {self._get_table_name("documents_entities")}
                 WHERE parent_id = $1
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
@@ -2253,7 +2251,7 @@ class PostgresGraphHandler(GraphHandler):
             SELECT e.name, e.description, e.category,
                    (SELECT array_agg(DISTINCT x) FROM unnest(e.chunk_ids) x) AS chunk_ids,
                    e.parent_id
-            FROM {self._get_table_name("document_entity")} e
+            FROM {self._get_table_name("documents_entities")} e
             JOIN entities_list el ON e.name = el.name
             GROUP BY e.name, e.description, e.category, e.chunk_ids, e.parent_id
             ORDER BY e.name;"""
@@ -2268,7 +2266,7 @@ class PostgresGraphHandler(GraphHandler):
             WITH entities_list AS (
 
                 SELECT DISTINCT name
-                FROM {self._get_table_name("document_entity")}
+                FROM {self._get_table_name("documents_entities")}
                 WHERE parent_id = $1
                 ORDER BY name ASC
                 LIMIT {limit} OFFSET {offset}
@@ -2276,7 +2274,7 @@ class PostgresGraphHandler(GraphHandler):
 
             SELECT DISTINCT t.subject, t.predicate, t.object, t.weight, t.description,
                    (SELECT array_agg(DISTINCT x) FROM unnest(t.chunk_ids) x) AS chunk_ids, t.parent_id
-            FROM {self._get_table_name("document_relationship")} t
+            FROM {self._get_table_name("documents_relationships")} t
             JOIN entities_list el ON t.subject = el.name
             ORDER BY t.subject, t.predicate, t.object;
         """
@@ -2435,7 +2433,7 @@ class PostgresGraphHandler(GraphHandler):
         Perform semantic search with similarity scores while maintaining exact same structure.
         """
         query_embedding = kwargs.get("query_embedding", None)
-        search_type = kwargs.get("search_type", "entity")
+        search_type = kwargs.get("search_type", "entities")
         embedding_type = kwargs.get("embedding_type", "description_embedding")
         property_names = kwargs.get("property_names", ["name", "description"])
         if "metadata" not in property_names:
@@ -2453,7 +2451,7 @@ class PostgresGraphHandler(GraphHandler):
                 "Hybrid and fulltext search not supported for graph search, ignoring."
             )
 
-        table_name = f"graph_{search_type}"
+        table_name = f"graphs_{search_type}"
         print("table_name = ", table_name)
         # if  "collection_id" in filters and "collection_ids" not in property_names:
         #     property_names.append("collection_id")
@@ -2623,7 +2621,7 @@ class PostgresGraphHandler(GraphHandler):
         self, document_id: UUID
     ) -> list[str]:
         QUERY = f"""
-            SELECT DISTINCT unnest(chunk_ids) AS chunk_id FROM {self._get_table_name("document_entity")} WHERE parent_id = $1
+            SELECT DISTINCT unnest(chunk_ids) AS chunk_id FROM {self._get_table_name("documents_entities")} WHERE parent_id = $1
         """
         return [
             item["chunk_id"]
@@ -2647,26 +2645,6 @@ class PostgresGraphHandler(GraphHandler):
 
         conditions = ["parent_id = $1"]
         params = [str(document_id)]
-
-        # if entity_table_name == "collection_entity":
-        #     if document_id:
-        #         raise ValueError(
-        #             "document_id is not supported for collection_entity table"
-        #         )
-        #     params.append(str(collection_id))
-        # elif collection_id:
-        #     conditions.append(
-        #         f"""
-        #         document_id = ANY(
-        #             SELECT document_id FROM {self._get_table_name("documents")}
-        #             WHERE $1 = ANY(collection_ids)
-        #         )
-        #         """
-        #     )
-        #     params.append(str(collection_id))
-        # else:
-        #     conditions.append("document_id = $1")
-        #     params.append(str(document_id))
 
         count_value = "DISTINCT name" if distinct else "*"
 

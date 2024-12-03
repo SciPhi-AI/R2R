@@ -120,8 +120,6 @@ class Graph(R2RSerializable):
         alias="updatedAt",
         default_factory=datetime.utcnow,
     )
-    statistics: dict[str, Any] = {}
-    attributes: dict[str, Any] = {}
     status: str = "pending"
 
     class Config:
@@ -135,18 +133,7 @@ class Graph(R2RSerializable):
         parsed_data: dict[str, Any] = (
             json.loads(data) if isinstance(data, str) else data
         )
-
-        # Convert string representations to dicts before validation
-        if isinstance(parsed_data.get("attributes", {}), str):
-            parsed_data["attributes"] = json.loads(parsed_data["attributes"])
-        if isinstance(parsed_data.get("statistics", {}), str):
-            parsed_data["statistics"] = json.loads(parsed_data["statistics"])
         return cls(**parsed_data)
 
     def __init__(self, **kwargs):
-        # Convert string representations to dicts before calling super().__init__
-        if isinstance(kwargs.get("attributes", {}), str):
-            kwargs["attributes"] = json.loads(kwargs["attributes"])
-        if isinstance(kwargs.get("statistics", {}), str):
-            kwargs["statistics"] = json.loads(kwargs["statistics"])
         super().__init__(**kwargs)
