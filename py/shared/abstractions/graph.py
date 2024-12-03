@@ -84,23 +84,6 @@ class Relationship(R2RSerializable):
 
 
 @dataclass
-class CommunityInfo(R2RSerializable):
-    """A protocol for a community in the system."""
-
-    node: str
-    cluster: UUID
-    level: Optional[int]
-    parent_cluster: int | None
-    is_final_cluster: bool
-    id: Optional[UUID | int] = None
-    collection_id: Optional[UUID] = None  # for backwards compatibility
-    relationship_ids: Optional[list[UUID]] = None
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-
-@dataclass
 class Community(R2RSerializable):
 
     name: str = ""

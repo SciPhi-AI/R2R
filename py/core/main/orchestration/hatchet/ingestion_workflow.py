@@ -669,9 +669,9 @@ def hatchet_ingestion_factory(
                     else parsed_data["document_id"]
                 )
                 extraction_uuid = (
-                    UUID(parsed_data["chunk_id"])
-                    if isinstance(parsed_data["chunk_id"], str)
-                    else parsed_data["chunk_id"]
+                    UUID(parsed_data["id"])
+                    if isinstance(parsed_data["id"], str)
+                    else parsed_data["id"]
                 )
 
                 await self.ingestion_service.update_chunk_ingress(

@@ -389,7 +389,7 @@ class ChunksRouter(BaseRouterV3):
             return ChunkResponse(  # type: ignore
                 id=chunk["id"],
                 document_id=chunk["document_id"],
-                user_id=chunk["user_id"],
+                owner_id=chunk["owner_id"],
                 collection_ids=chunk["collection_ids"],
                 text=chunk["text"],
                 metadata=chunk["metadata"],
@@ -483,7 +483,7 @@ class ChunksRouter(BaseRouterV3):
             return ChunkResponse(  # type: ignore
                 id=chunk_update.id,
                 document_id=existing_chunk["document_id"],
-                user_id=existing_chunk["user_id"],
+                owner_id=existing_chunk["owner_id"],
                 collection_ids=existing_chunk["collection_ids"],
                 text=chunk_update.text,
                 metadata=chunk_update.metadata or existing_chunk["metadata"],
@@ -693,7 +693,7 @@ class ChunksRouter(BaseRouterV3):
                 ChunkResponse(
                     id=chunk["id"],
                     document_id=chunk["document_id"],
-                    user_id=chunk["user_id"],
+                    owner_id=chunk["owner_id"],
                     collection_ids=chunk["collection_ids"],
                     text=chunk["text"],
                     metadata=chunk["metadata"],

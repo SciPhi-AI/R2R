@@ -74,7 +74,7 @@ class UserResponse(R2RSerializable):
 class ChunkResponse(BaseModel):
     id: UUID
     document_id: UUID
-    user_id: UUID
+    owner_id: UUID
     collection_ids: list[UUID]
     text: str
     metadata: dict[str, Any]

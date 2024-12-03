@@ -10,7 +10,6 @@ from pydantic import BaseModel
 from core.base.abstractions import (
     ChunkSearchResult,
     Community,
-    CommunityInfo,
     DocumentResponse,
     Entity,
     Graph,
@@ -659,28 +658,6 @@ class CommunityHandler(Handler):
         pass
 
 
-class CommunityInfoHandler(Handler):
-    @abstractmethod
-    async def create(self, *args: Any, **kwargs: Any) -> None:
-        """Create community info in storage."""
-        pass
-
-    @abstractmethod
-    async def get(self, *args: Any, **kwargs: Any) -> list[CommunityInfo]:
-        """Get community info from storage."""
-        pass
-
-    @abstractmethod
-    async def update(self, *args: Any, **kwargs: Any) -> None:
-        """Update community info in storage."""
-        pass
-
-    @abstractmethod
-    async def delete(self, *args: Any, **kwargs: Any) -> None:
-        """Delete community info from storage."""
-        pass
-
-
 class GraphHandler(Handler):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -692,11 +669,6 @@ class GraphHandler(Handler):
         pass
 
     @abstractmethod
-    async def get(self, *args: Any, **kwargs: Any) -> list[Graph]:
-        """Get graph"""
-        pass
-
-    @abstractmethod
     async def update(
         self,
         graph_id: UUID,
@@ -704,11 +676,6 @@ class GraphHandler(Handler):
         description: Optional[str],
     ) -> GraphResponse:
         """Update graph"""
-        pass
-
-    @abstractmethod
-    async def delete(self, graph_id: UUID) -> None:
-        """Delete graph"""
         pass
 
 
@@ -1038,11 +1005,6 @@ class DatabaseProvider(Provider):
             description=description,
             collection_id=collection_id,
         )
-        print("user_id = ", user_id)
-        print("result.id = ", result.id)
-
-        await self.user_handler.add_user_to_collection(user_id, result.id)
-        return result
 
     async def update_collection(
         self,

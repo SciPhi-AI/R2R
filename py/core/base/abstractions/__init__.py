@@ -21,7 +21,6 @@ from shared.abstractions.exception import (
 )
 from shared.abstractions.graph import (
     Community,
-    CommunityInfo,
     DataLevel,
     Entity,
     EntityType,
@@ -113,7 +112,6 @@ __all__ = [
     "EntityType",
     "RelationshipType",
     "Community",
-    "CommunityInfo",
     "KGExtraction",
     "Relationship",
     "DataLevel",

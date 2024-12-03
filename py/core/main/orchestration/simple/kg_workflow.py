@@ -138,19 +138,21 @@ def simple_kg_factory(service: KgService):
             if num_communities == 0:
                 raise R2RException("No communities found", 400)
 
-            parallel_communities = min(100, num_communities)
+            parallel_communities = min(100, num_communities[0])
 
-            total_workflows = math.ceil(num_communities / parallel_communities)
+            total_workflows = math.ceil(
+                num_communities[0] / parallel_communities
+            )
             for i in range(total_workflows):
                 input_data_copy = input_data.copy()
                 input_data_copy["offset"] = i * parallel_communities
                 input_data_copy["limit"] = min(
                     parallel_communities,
-                    num_communities - i * parallel_communities,
+                    num_communities[0] - i * parallel_communities,
                 )
-                # running i'th workflow out of total_workflows
+
                 logger.info(
-                    f"Running kg community summary for {i+1}'th workflow out of total {total_workflows} workflows"
+                    f"Running kg community summary for workflow {i+1} of {total_workflows}"
                 )
                 await kg_community_summary(
                     input_data=input_data_copy,
@@ -161,9 +163,6 @@ def simple_kg_factory(service: KgService):
                 status_type="graph_cluster_status",
                 status=KGEnrichmentStatus.SUCCESS,
             )
-            # return {
-            #     "result": "successfully ran kg community summary workflows"
-            # }
 
         except Exception as e:
 
@@ -185,7 +184,6 @@ def simple_kg_factory(service: KgService):
             offset=input_data["offset"],
             limit=input_data["limit"],
             collection_id=input_data.get("collection_id", None),
-            # graph_id=input_data.get("graph_id", None),
             **input_data["kg_enrichment_settings"],
         )
 

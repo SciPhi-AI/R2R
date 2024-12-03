@@ -444,14 +444,6 @@ class KgService(Service):
             filter_collection_id=collection_id,
         )
 
-    @telemetry_event("get_graphs")
-    async def get_graphs(
-        self, offset: int, limit: int, graph_id: Optional[UUID] = None
-    ) -> Graph:
-        return await self.providers.database.graph_handler.get(
-            offset=offset, limit=limit, graph_id=graph_id
-        )
-
     @telemetry_event("update_graph")
     async def update_graph(
         self,

@@ -553,6 +553,9 @@ class PostgresUserHandler(UserHandler):
 
         results = await self.connection_manager.fetch_query(query, params)
 
+        for row in results:
+            print(f"document_ids type: {type(row[11])}, value: {row[11]}")
+
         users = [
             UserStats(
                 id=row[0],
@@ -565,7 +568,11 @@ class PostgresUserHandler(UserHandler):
                 collection_ids=row[7] or [],
                 num_files=row[9],
                 total_size_in_bytes=row[10],
-                document_ids=list(row[11]) if row[11] is not None else [],
+                document_ids=(
+                    []
+                    if row[11] is None
+                    else [str(doc_id) for doc_id in row[11]]
+                ),
             )
             for row in results
         ]

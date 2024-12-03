@@ -105,7 +105,7 @@ class PostgresChunkHandler(ChunkHandler):
 
     async def create_tables(self):
         # Check for old table name first
-        check_query = f"""
+        check_query = """
         SELECT EXISTS (
             SELECT FROM pg_tables
             WHERE schemaname = $1
