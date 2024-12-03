@@ -181,6 +181,14 @@ class KGSearchSearchPipe(GeneratorPipe):
                     # "document_ids",
                 ],
             ):
+                try:
+                    # TODO - remove this nasty hack
+                    search_result["metadata"] = json.loads(
+                        search_result["metadata"]
+                    )
+                except:
+                    pass
+
                 yield GraphSearchResult(
                     content=KGRelationshipResult(
                         # name=search_result["name"],

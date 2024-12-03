@@ -131,7 +131,7 @@ class IngestionStatus(str, Enum):
 
     @classmethod
     def table_name(cls) -> str:
-        return "document_info"
+        return "documents"
 
     @classmethod
     def id_column(cls) -> str:
@@ -152,7 +152,7 @@ class KGExtractionStatus(str, Enum):
 
     @classmethod
     def table_name(cls) -> str:
-        return "document_info"
+        return "documents"
 
     @classmethod
     def id_column(cls) -> str:

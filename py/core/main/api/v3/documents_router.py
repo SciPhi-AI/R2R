@@ -21,6 +21,7 @@ from core.base.api.models import (
     WrappedDocumentResponse,
     WrappedDocumentsResponse,
     WrappedEntitiesResponse,
+    WrappedGenericMessageResponse,
     WrappedIngestionResponse,
     WrappedRelationshipsResponse,
 )
@@ -1259,7 +1260,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Whether to run the entities and relationships extraction process with orchestration.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedIngestionResponse:
+        ) -> WrappedGenericMessageResponse:
             """
             Extracts entities and relationships from a document.
                 The entities and relationships extraction process involves:
@@ -1269,7 +1270,10 @@ class DocumentsRouter(BaseRouterV3):
 
             settings = settings.dict() if settings else None  # type: ignore
             if not auth_user.is_superuser:
-                logger.warning("Implement permission checks here.")
+                raise R2RException(
+                    "Only a superuser can extract entities and relationships from a document.",
+                    403,
+                )
 
             # If no run type is provided, default to estimate
             if not run_type:
@@ -1375,6 +1379,15 @@ class DocumentsRouter(BaseRouterV3):
 
             Results are returned in the order they were extracted from the document.
             """
+            if (
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
             # First check if the document exists and user has access
             documents_overview_response = await self.services[
                 "management"
@@ -1469,7 +1482,7 @@ class DocumentsRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def list_relationships(
+        async def get_relationships(
             id: UUID = Path(
                 ...,
                 description="The ID of the document to retrieve relationships for.",
@@ -1504,6 +1517,15 @@ class DocumentsRouter(BaseRouterV3):
 
             Results are returned in the order they were extracted from the document.
             """
+            if (
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
             # First check if the document exists and user has access
             documents_overview_response = await self.services[
                 "management"

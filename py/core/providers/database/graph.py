@@ -81,7 +81,7 @@ class PostgresEntityHandler(EntityHandler):
             return f"""
                 CONSTRAINT fk_document
                     FOREIGN KEY(parent_id)
-                    REFERENCES {self._get_table_name("document_info")}(document_id)
+                    REFERENCES {self._get_table_name("documents")}(document_id)
                     ON DELETE CASCADE
             """
 
@@ -374,6 +374,9 @@ class PostgresEntityHandler(EntityHandler):
                 WHERE id = ANY($1) AND parent_id = $2
                 RETURNING id
             """
+            print("QUERY = ", QUERY)
+            print("entity_ids = ", entity_ids)
+            print("parent_id = ", parent_id)
             results = await self.connection_manager.fetch_query(
                 QUERY, [entity_ids, parent_id]
             )
@@ -417,7 +420,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
             return f"""
                 CONSTRAINT fk_document
                     FOREIGN KEY(parent_id)
-                    REFERENCES {self._get_table_name("document_info")}(document_id)
+                    REFERENCES {self._get_table_name("documents")}(document_id)
                     ON DELETE CASCADE
             """
 
@@ -631,6 +634,8 @@ class PostgresRelationshipHandler(RelationshipHandler):
                     )
                 except json.JSONDecodeError:
                     pass
+            elif not include_metadata:
+                relationship_dict.pop("metadata", None)
             relationships.append(Relationship(**relationship_dict))
 
         return relationships, count
@@ -992,13 +997,38 @@ class PostgresCommunityHandler(CommunityHandler):
 
         query = f"""
             DELETE FROM {self._get_table_name(table_name)}
-            WHERE id = $1 AND graph_id = $2
+            WHERE id = $1 AND collection_id = $2
         """
-
+        print("query = ", query)
+        print("parent_id = ", parent_id)
+        print("community_id = ", community_id)
         params = [community_id, parent_id]
 
         try:
-            await self.connection_manager.execute_query(query, params)
+            results = await self.connection_manager.execute_query(
+                query, params
+            )
+            print("results = ", results)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while deleting the community: {e}",
+            )
+        table_name = "graph_community_info"
+        query = f"""
+            DELETE FROM {self._get_table_name(table_name)}
+            WHERE id = $1 AND collection_id = $2
+        """
+        print("query = ", query)
+        print("parent_id = ", parent_id)
+        print("community_id = ", community_id)
+        params = [community_id, parent_id]
+
+        try:
+            results = await self.connection_manager.execute_query(
+                query, params
+            )
+            print("results = ", results)
         except Exception as e:
             raise HTTPException(
                 status_code=500,
@@ -1251,7 +1281,7 @@ class PostgresGraphHandler(GraphHandler):
             # Delete all graph communities and community info
             community_delete_queries = [
                 f"""DELETE FROM {self._get_table_name("graph_community_info")}
-                    WHERE graph_id = $1""",
+                    WHERE collection_id = $1""",
                 f"""DELETE FROM {self._get_table_name("graph_community")}
                     WHERE collection_id = $1""",
             ]
@@ -1691,7 +1721,7 @@ class PostgresGraphHandler(GraphHandler):
                     END
                     WHERE document_id = ANY(
                         ARRAY(
-                            SELECT document_id FROM {self._get_table_name("document_info")}
+                            SELECT document_id FROM {self._get_table_name("documents")}
                             WHERE $2 = ANY(collection_ids)
                         )
                     );
@@ -1710,7 +1740,7 @@ class PostgresGraphHandler(GraphHandler):
                         INSERT INTO {self._get_table_name(new_table)}
                         SELECT * FROM {self._get_table_name(old_table)}
                         WHERE document_id = ANY(
-                            ARRAY(SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids)))
+                            ARRAY(SELECT document_id FROM {self._get_table_name("documents")} WHERE $1 = ANY(collection_ids)))
                     """
                     await self.connection_manager.execute_query(
                         QUERY, [collection_id]
@@ -1731,7 +1761,7 @@ class PostgresGraphHandler(GraphHandler):
                     SET graph_ids = array_remove(graph_ids, $1)
                     WHERE document_id = ANY(
                         ARRAY(
-                            SELECT document_id FROM {self._get_table_name("document_info")}
+                            SELECT document_id FROM {self._get_table_name("documents")}
                             WHERE $2 = ANY(collection_ids)
                         )
                     )
@@ -1747,60 +1777,13 @@ class PostgresGraphHandler(GraphHandler):
             ]:
                 for collection_id in collection_ids:
                     QUERY = f"""
-                        DELETE FROM {self._get_table_name(new_table)} WHERE document_id = ANY(ARRAY(SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids)))
+                        DELETE FROM {self._get_table_name(new_table)} WHERE document_id = ANY(ARRAY(SELECT document_id FROM {self._get_table_name("documents")} WHERE $1 = ANY(collection_ids)))
                     """
                     await self.connection_manager.execute_query(
                         QUERY, [collection_id]
                     )
 
         return True
-
-    async def add_entities_v3(
-        self, id: UUID, entity_ids: list[UUID], copy_data: bool = True
-    ) -> bool:
-        """
-        Add entities to the graph.
-        """
-        QUERY = f"""
-            UPDATE {self._get_table_name("entity")}
-            SET graph_ids = CASE
-                    WHEN $1 = ANY(graph_ids) THEN graph_ids
-                    ELSE array_append(graph_ids, $1)
-                END
-            WHERE id = ANY($2)
-        """
-
-        if copy_data:
-            QUERY = f"""
-                INSERT INTO {self._get_table_name("graph_entity")}
-                SELECT * FROM {self._get_table_name("entity")}
-                WHERE id = ANY($1)
-            """
-            await self.connection_manager.execute_query(QUERY, [entity_ids])
-
-        await self.connection_manager.execute_query(QUERY, [id, entity_ids])
-
-        return True
-
-    # async def remove_entities(
-    #     self, id: UUID, entity_ids: list[UUID]
-    # ) -> bool:
-    #     """
-    #     Remove entities from the graph.
-    #     """
-    #     QUERY = f"""
-    #         UPDATE {self._get_table_name("graph_entity")}
-    #         SET graph_ids = array_remove(graph_ids, $1)
-    #         WHERE id = ANY($2)
-    #     """
-    #     await self.connection_manager.execute_query(QUERY, [id, entity_ids])
-
-    #     # QUERY = f"""
-    #     #     DELETE FROM {self._get_table_name("graph_entity")} WHERE id = ANY($1)
-    #     # """
-    #     # await self.connection_manager.execute_query(QUERY, [entity_ids])
-
-    #     return True
 
     async def update(
         self,
@@ -2040,7 +2023,7 @@ class PostgresGraphHandler(GraphHandler):
                 SELECT name, count(name)
                 FROM {self._get_table_name("entity")}
                 WHERE document_id = ANY(
-                    SELECT document_id FROM {self._get_table_name("document_info")}
+                    SELECT document_id FROM {self._get_table_name("documents")}
                     WHERE $1 = ANY(collection_ids)
                 )
                 GROUP BY name
@@ -2182,6 +2165,7 @@ class PostgresGraphHandler(GraphHandler):
                     )
                 except json.JSONDecodeError:
                     pass
+
             entities.append(Entity(**entity_dict))
 
         return entities, count
@@ -2431,6 +2415,9 @@ class PostgresGraphHandler(GraphHandler):
                     )
                 except json.JSONDecodeError:
                     pass
+            elif not include_metadata:
+                relationship_dict.pop("metadata", None)
+
             relationships.append(Relationship(**relationship_dict))
 
         return relationships, count
@@ -2738,7 +2725,7 @@ class PostgresGraphHandler(GraphHandler):
 
             # setting the kg_creation_status to PENDING for this collection.
             QUERY = f"""
-                UPDATE {self._get_table_name("document_info")} SET extraction_status = $1 WHERE $2::uuid = ANY(collection_ids)
+                UPDATE {self._get_table_name("documents")} SET extraction_status = $1 WHERE $2::uuid = ANY(collection_ids)
             """
             await self.connection_manager.execute_query(
                 QUERY, [KGExtractionStatus.PENDING, collection_id]
@@ -3303,7 +3290,7 @@ class PostgresGraphHandler(GraphHandler):
             communities_dict[community["node"]].append(community)
 
         QUERY = f"""
-            SELECT document_id FROM {self._get_table_name("document_info")} WHERE $1 = ANY(collection_ids) and extraction_status = $2
+            SELECT document_id FROM {self._get_table_name("documents")} WHERE $1 = ANY(collection_ids) and extraction_status = $2
         """
 
         new_document_ids = await self.connection_manager.fetch_query(

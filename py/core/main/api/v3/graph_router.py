@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import R2RException, RunType
+from core.base import KGEnrichmentStatus, R2RException, RunType
 from core.base.abstractions import KGRunType
 from core.base.api.models import (
     GenericBooleanResponse,
@@ -83,7 +83,9 @@ class GraphRouter(BaseRouterV3):
             R2RException: If user unauthorized or deduplication fails
         """
         if not auth_user.is_superuser:
-            raise R2RException("Only superusers can deduplicate entities", 403)
+            raise R2RException(
+                "Only superusers can deduplicate a graphs entities", 403
+            )
 
         server_settings = (
             self.providers.database.config.graph_entity_deduplication_settings
@@ -267,11 +269,12 @@ class GraphRouter(BaseRouterV3):
             Retrieves detailed information about a specific graph by ID.
             """
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
+                    "The currently authenticated user does not have access to the specified collection associated with the given graph.",
                     403,
                 )
 
@@ -322,12 +325,17 @@ class GraphRouter(BaseRouterV3):
                 - Summary generation prompt
             """
             print("collection_id = ", collection_id)
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only superusers can build communities", 403
+                )
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -439,12 +447,16 @@ class GraphRouter(BaseRouterV3):
             and must be deleted separately using the /entities and /relationships
             endpoints.
             """
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can reset a graph", 403)
+
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -519,12 +531,18 @@ class GraphRouter(BaseRouterV3):
             This endpoint allows updating the name and description of an existing collection.
             The user must have appropriate permissions to modify the collection.
             """
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only superusers can update graph details", 403
+                )
+
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.collection_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -593,11 +611,12 @@ class GraphRouter(BaseRouterV3):
         ) -> WrappedEntitiesResponse:
             """Lists all entities in the graph with pagination support."""
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -634,11 +653,12 @@ class GraphRouter(BaseRouterV3):
         ) -> WrappedEntityResponse:
             """Creates a new entity in the graph."""
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -687,12 +707,18 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipResponse:
             """Creates a new relationship in the graph."""
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only superusers can create relationships.", 403
+                )
+
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -763,11 +789,12 @@ class GraphRouter(BaseRouterV3):
         ) -> WrappedEntityResponse:
             """Retrieves a specific entity by its ID."""
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -807,12 +834,17 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedEntityResponse:
             """Updates an existing entity in the graph."""
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only superusers can update graph entities.", 403
+                )
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -880,16 +912,22 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedBooleanResponse:
             """Removes an entity from the graph."""
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only superusers can delete graph details.", 403
+                )
+
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
-            self.services["kg"].delete_entity(
+            await self.services["kg"].delete_entity(
                 parent_id=collection_id,
                 entity_id=entity_id,
             )
@@ -958,11 +996,12 @@ class GraphRouter(BaseRouterV3):
             Lists all relationships in the graph with pagination support.
             """
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -1032,11 +1071,12 @@ class GraphRouter(BaseRouterV3):
         ) -> WrappedRelationshipResponse:
             """Retrieves a specific relationship by its ID."""
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -1093,12 +1133,18 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedRelationshipResponse:
             """Updates an existing relationship in the graph."""
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only superusers can update graph details", 403
+                )
+
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -1170,12 +1216,17 @@ class GraphRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedBooleanResponse:
             """Removes a relationship from the graph."""
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only superusers can delete a relationship.", 403
+                )
+
             if (
                 not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                and collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -1271,12 +1322,17 @@ class GraphRouter(BaseRouterV3):
             The created communities will be integrated with any existing automatically detected communities
             in the graph's community structure.
             """
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only superusers can create a community.", 403
+                )
+
             if (
                 not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                and collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -1351,11 +1407,12 @@ class GraphRouter(BaseRouterV3):
             Lists all communities in the graph with pagination support.
             """
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -1424,11 +1481,12 @@ class GraphRouter(BaseRouterV3):
             Retrieves a specific community by its ID.
             """
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -1443,7 +1501,7 @@ class GraphRouter(BaseRouterV3):
             )
             print(f"results: {results}")
             if len(results) == 0 or len(results[0]) == 0:
-                raise R2RException("Relationship not found", 404)
+                raise R2RException("Community not found", 404)
             return results[0][0]
 
         @self.router.delete(
@@ -1506,7 +1564,16 @@ class GraphRouter(BaseRouterV3):
                 and collection_id not in auth_user.graph_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "Only superusers can delete communities", 403
+                )
+
+            if (
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -1588,7 +1655,16 @@ class GraphRouter(BaseRouterV3):
                 and collection_id not in auth_user.graph_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "Only superusers can update communities.", 403
+                )
+
+            if (
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -1600,87 +1676,6 @@ class GraphRouter(BaseRouterV3):
                 rating=rating,
                 rating_explanation=rating_explanation,
             )
-
-        async def _pull(collection_id: UUID, auth_user):
-            if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
-                    403,
-                )
-
-            list_graphs_response = await self.services["kg"].list_graphs(
-                # user_ids=None,
-                graph_ids=[collection_id],
-                offset=0,
-                limit=1,
-            )
-            if len(list_graphs_response["results"]) == 0:
-                raise R2RException("Graph not found", 404)
-            collection_id = list_graphs_response["results"][0].collection_id
-            documents = []
-            document_req = (
-                await self.providers.database.collections_handler.documents_in_collection(
-                    collection_id, offset=0, limit=100
-                )
-            )["results"]
-            documents.extend(document_req)
-            while len(document_req) == 100:
-                document_req = (
-                    await self.providers.database.collections_handler.documents_in_collection(
-                        collection_id, offset=len(documents), limit=100
-                    )
-                )["results"]
-                documents.extend(document_req)
-
-            success = False
-
-            for document in documents:
-                if (
-                    not auth_user.is_superuser
-                    and document.id
-                    not in auth_user.document_ids  # TODO - extend to include checks on collections
-                ):
-                    raise R2RException(
-                        f"The currently authenticated user does not have access to document {document.id}",
-                        403,
-                    )
-                entities = (
-                    await self.providers.database.graph_handler.entities.get(
-                        document.id, store_type="document"
-                    )
-                )
-                has_document = (
-                    await self.providers.database.graph_handler.has_document(
-                        collection_id, document.id
-                    )
-                )
-                if has_document:
-                    logger.info(
-                        f"Document {document.id} is already in graph {collection_id}, skipping."
-                    )
-                    continue
-                if len(entities[0]) == 0:
-                    logger.warning(
-                        f"Document {document.id} has no entities, extraction may not have been called, skipping."
-                    )
-                    continue
-
-                success = (
-                    await self.providers.database.graph_handler.add_documents(
-                        id=collection_id,
-                        document_ids=[
-                            document.id
-                        ],  # [doc.id for doc in documents]
-                    )
-                )
-            if not success:
-                logger.warning(
-                    f"No documents were added to graph {collection_id}, marking as failed."
-                )
-            return success
 
         @self.router.post(
             "/graphs/{collection_id}/pull",
@@ -1727,6 +1722,10 @@ class GraphRouter(BaseRouterV3):
             collection_id: UUID = Path(
                 ..., description="The ID of the graph to initialize."
             ),
+            force: Optional[bool] = Body(
+                False,
+                description="If true, forces a re-pull of all entities and relationships.",
+            ),
             # document_ids: list[UUID] = Body(
             #     ..., description="List of document IDs to add to the graph."
             # ),
@@ -1753,12 +1752,18 @@ class GraphRouter(BaseRouterV3):
             The user must have access to both the graph and the documents being added.
             """
             # Check user permissions for graph
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can `pull` a graph.", 403)
+
+            print("auth_user = ", auth_user)
+            print("auth_user.collection_ids = ", auth_user.collection_ids)
             if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
+                # not auth_user.is_superuser
+                collection_id
+                not in auth_user.collection_ids
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
 
@@ -1789,6 +1794,7 @@ class GraphRouter(BaseRouterV3):
             success = False
 
             for document in documents:
+                # TODO - Add better checks for user permissions
                 if (
                     not auth_user.is_superuser
                     and document.id
@@ -1817,17 +1823,20 @@ class GraphRouter(BaseRouterV3):
                     )
                     continue
                 if len(entities[0]) == 0:
-                    logger.warning(
-                        f"Document {document.id} has no entities, extraction may not have been called, skipping."
-                    )
-                    continue
+                    if not force:
+                        logger.warning(
+                            f"Document {document.id} has no entities, extraction may not have been called, skipping."
+                        )
+                        continue
+                    else:
+                        logger.warning(
+                            f"Document {document.id} has no entities, but force=True, continuing."
+                        )
 
                 success = (
                     await self.providers.database.graph_handler.add_documents(
                         id=collection_id,
-                        document_ids=[
-                            document.id
-                        ],  # [doc.id for doc in documents]
+                        document_ids=[document.id],
                     )
                 )
             if not success:
@@ -1835,93 +1844,100 @@ class GraphRouter(BaseRouterV3):
                     f"No documents were added to graph {collection_id}, marking as failed."
                 )
 
-            return GenericBooleanResponse(success=success)  # type: ignore
-
-        @self.router.delete(
-            "/graphs/{collection_id}/documents/{document_id}",
-            summary="Remove document from graph",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.graphs.remove_document(
-                                collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                document_id="f98db41a-5555-4444-3333-222222222222"
-                            )"""
-                        ),
-                    },
-                    {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
-                            const { r2rClient } = require("r2r-js");
-
-                            const client = new r2rClient("http://localhost:7272");
-
-                            async function main() {
-                                const response = await client.graphs.removeDocument({
-                                    collectionId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                                    documentId: "f98db41a-5555-4444-3333-222222222222"
-                                });
-                            }
-
-                            main();
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def remove_document(
-            collection_id: UUID = Path(
-                ...,
-                description="The ID of the graph to remove the document from.",
-            ),
-            document_id: UUID = Path(
-                ..., description="The ID of the document to remove."
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedBooleanResponse:
-            """
-            Removes a document from a graph and removes any associated entities
-
-            This endpoint:
-            1. Removes the document ID from the graph's document_ids array
-            2. Optionally deletes the document's copied entities and relationships
-
-            The user must have access to both the graph and the document being removed.
-            """
-            if (
-                not auth_user.is_superuser
-                and collection_id not in auth_user.graph_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified graph.",
-                    403,
-                )
-
-            if (
-                not auth_user.is_superuser
-                and document_id not in auth_user.document_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified document.",
-                    403,
-                )
-
-            success = (
-                await self.providers.database.graph_handler.remove_documents(
+            if success:
+                await self.providers.database.set_workflow_status(
                     id=collection_id,
-                    document_ids=[document_id],  # , delete_data=delete_data
+                    status_type="graph_sync_status",
+                    status=KGEnrichmentStatus.SUCCESS,
                 )
-            )
 
             return GenericBooleanResponse(success=success)  # type: ignore
+
+        # @self.router.delete(
+        #     "/graphs/{collection_id}/documents/{document_id}",
+        #     summary="Remove document from graph",
+        #     openapi_extra={
+        #         "x-codeSamples": [
+        #             {
+        #                 "lang": "Python",
+        #                 "source": textwrap.dedent(
+        #                     """
+        #                     from r2r import R2RClient
+
+        #                     client = R2RClient("http://localhost:7272")
+        #                     # when using auth, do client.login(...)
+
+        #                     result = client.graphs.remove_document(
+        #                         collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+        #                         document_id="f98db41a-5555-4444-3333-222222222222"
+        #                     )"""
+        #                 ),
+        #             },
+        #             {
+        #                 "lang": "JavaScript",
+        #                 "source": textwrap.dedent(
+        #                     """
+        #                     const { r2rClient } = require("r2r-js");
+
+        #                     const client = new r2rClient("http://localhost:7272");
+
+        #                     async function main() {
+        #                         const response = await client.graphs.removeDocument({
+        #                             collectionId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
+        #                             documentId: "f98db41a-5555-4444-3333-222222222222"
+        #                         });
+        #                     }
+
+        #                     main();
+        #                     """
+        #                 ),
+        #             },
+        #         ]
+        #     },
+        # )
+        # @self.base_endpoint
+        # async def remove_document(
+        #     collection_id: UUID = Path(
+        #         ...,
+        #         description="The ID of the graph to remove the document from.",
+        #     ),
+        #     document_id: UUID = Path(
+        #         ..., description="The ID of the document to remove."
+        #     ),
+        #     auth_user=Depends(self.providers.auth.auth_wrapper),
+        # ) -> WrappedBooleanResponse:
+        #     """
+        #     Removes a document from a graph and removes any associated entities
+
+        #     This endpoint:
+        #     1. Removes the document ID from the graph's document_ids array
+        #     2. Optionally deletes the document's copied entities and relationships
+
+        #     The user must have access to both the graph and the document being removed.
+        #     """
+        #     if (
+        #         not auth_user.is_superuser
+        #         and collection_id not in auth_user.collection_ids
+        #     ):
+        #         raise R2RException(
+        #             "The currently authenticated user does not have access to the collection associated with the given graph.",
+        #             403,
+        #         )
+
+        #     if (
+        #         not auth_user.is_superuser
+        #         and document_id not in auth_user.document_ids
+        #     ):
+        #         raise R2RException(
+        #             "The currently authenticated user does not have access to the collection associated with the given graph.",
+        #             403,
+        #         )
+
+        #     success = (
+        #         await self.providers.database.graph_handler.remove_documents(
+        #             id=collection_id,
+        #             document_ids=[document_id],  # , delete_data=delete_data
+        #         )
+        #     )
+
+        #     return GenericBooleanResponse(success=success)  # type: ignore

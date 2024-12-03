@@ -46,6 +46,7 @@ class PostgresCollectionHandler(CollectionsHandler):
             user_id UUID,
             name TEXT NOT NULL,
             description TEXT,
+            graph_sync_status TEXT DEFAULT 'pending',
             graph_cluster_status TEXT DEFAULT 'pending',
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -79,7 +80,7 @@ class PostgresCollectionHandler(CollectionsHandler):
             INSERT INTO {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
             (collection_id, user_id, name, description)
             VALUES ($1, $2, $3, $4)
-            RETURNING collection_id, user_id, name, description, graph_cluster_status, created_at, updated_at
+            RETURNING collection_id, user_id, name, description, graph_sync_status, graph_cluster_status, created_at, updated_at
         """
         params = [
             collection_id or uuid4(),
@@ -104,6 +105,7 @@ class PostgresCollectionHandler(CollectionsHandler):
                 name=result["name"],
                 description=result["description"],
                 graph_cluster_status=result["graph_cluster_status"],
+                graph_sync_status=result["graph_sync_status"],
                 created_at=result["created_at"],
                 updated_at=result["updated_at"],
                 user_count=0,
@@ -150,7 +152,7 @@ class PostgresCollectionHandler(CollectionsHandler):
                 UPDATE {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
                 SET {', '.join(update_fields)}
                 WHERE collection_id = ${param_index}
-                RETURNING collection_id, user_id, name, description, graph_cluster_status, created_at, updated_at
+                RETURNING collection_id, user_id, name, description, graph_sync_status, graph_cluster_status, created_at, updated_at
             )
             SELECT
                 uc.*,
@@ -158,8 +160,8 @@ class PostgresCollectionHandler(CollectionsHandler):
                 COUNT(DISTINCT d.document_id) FILTER (WHERE d.document_id IS NOT NULL) as document_count
             FROM updated_collection uc
             LEFT JOIN {self._get_table_name('users')} u ON uc.collection_id = ANY(u.collection_ids)
-            LEFT JOIN {self._get_table_name('document_info')} d ON uc.collection_id = ANY(d.collection_ids)
-            GROUP BY uc.collection_id, uc.user_id, uc.name, uc.description, uc.graph_cluster_status, uc.created_at, uc.updated_at
+            LEFT JOIN {self._get_table_name('documents')} d ON uc.collection_id = ANY(d.collection_ids)
+            GROUP BY uc.collection_id, uc.user_id, uc.name, uc.description, uc.graph_sync_status, uc.graph_cluster_status, uc.created_at, uc.updated_at
         """
         try:
             result = await self.connection_manager.fetchrow_query(
@@ -175,6 +177,7 @@ class PostgresCollectionHandler(CollectionsHandler):
                 user_id=result["user_id"],
                 name=result["name"],
                 description=result["description"],
+                graph_sync_status=result["graph_sync_status"],
                 graph_cluster_status=result["graph_cluster_status"],
                 created_at=result["created_at"],
                 updated_at=result["updated_at"],
@@ -201,7 +204,7 @@ class PostgresCollectionHandler(CollectionsHandler):
         # Remove collection_id from documents
         document_update_query = f"""
             WITH updated AS (
-                UPDATE {self._get_table_name('document_info')}
+                UPDATE {self._get_table_name('documents')}
                 SET collection_ids = array_remove(collection_ids, $1)
                 WHERE $1 = ANY(collection_ids)
                 RETURNING 1
@@ -245,7 +248,7 @@ class PostgresCollectionHandler(CollectionsHandler):
             SELECT d.document_id, d.user_id, d.type, d.metadata, d.title, d.version,
                 d.size_in_bytes, d.ingestion_status, d.extraction_status, d.created_at, d.updated_at,
                 COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name('document_info')} d
+            FROM {self._get_table_name('documents')} d
             WHERE $1 = ANY(d.collection_ids)
             ORDER BY d.created_at DESC
             OFFSET $2
@@ -322,12 +325,13 @@ class PostgresCollectionHandler(CollectionsHandler):
                     c.description,
                     c.created_at,
                     c.updated_at,
+                    c.graph_sync_status,
                     c.graph_cluster_status,
                     COUNT(DISTINCT u.user_id) FILTER (WHERE u.user_id IS NOT NULL) as user_count,
                     COUNT(DISTINCT d.document_id) FILTER (WHERE d.document_id IS NOT NULL) as document_count
                 FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} c
                 {user_join} {self._get_table_name('users')} u ON c.collection_id = ANY(u.collection_ids)
-                {document_join} {self._get_table_name('document_info')} d ON c.collection_id = ANY(d.collection_ids)
+                {document_join} {self._get_table_name('documents')} d ON c.collection_id = ANY(d.collection_ids)
                 {where_clause}
                 GROUP BY c.collection_id, c.user_id, c.name, c.description, c.created_at, c.updated_at, c.graph_cluster_status
             )
@@ -358,6 +362,7 @@ class PostgresCollectionHandler(CollectionsHandler):
                     user_id=row["user_id"],
                     name=row["name"],
                     description=row["description"],
+                    graph_sync_status=row["graph_sync_status"],
                     graph_cluster_status=row["graph_cluster_status"],
                     created_at=row["created_at"],
                     updated_at=row["updated_at"],
@@ -398,7 +403,7 @@ class PostgresCollectionHandler(CollectionsHandler):
 
             # First, check if the document exists
             document_check_query = f"""
-                SELECT 1 FROM {self._get_table_name('document_info')}
+                SELECT 1 FROM {self._get_table_name('documents')}
                 WHERE document_id = $1
             """
             document_exists = await self.connection_manager.fetchrow_query(
@@ -412,7 +417,7 @@ class PostgresCollectionHandler(CollectionsHandler):
 
             # If document exists, proceed with the assignment
             assign_query = f"""
-                UPDATE {self._get_table_name('document_info')}
+                UPDATE {self._get_table_name('documents')}
                 SET collection_ids = array_append(collection_ids, $1)
                 WHERE document_id = $2 AND NOT ($1 = ANY(collection_ids))
                 RETURNING document_id
@@ -456,7 +461,7 @@ class PostgresCollectionHandler(CollectionsHandler):
             raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
-            UPDATE {self._get_table_name('document_info')}
+            UPDATE {self._get_table_name('documents')}
             SET collection_ids = array_remove(collection_ids, $1)
             WHERE document_id = $2 AND $1 = ANY(collection_ids)
             RETURNING document_id

@@ -11,6 +11,7 @@ from litellm import AuthenticationError
 from core.base import (
     DocumentChunk,
     IngestionStatus,
+    KGEnrichmentStatus,
     OrchestrationProvider,
     generate_extraction_id,
     increment_version,
@@ -179,6 +180,16 @@ def hatchet_ingestion_factory(
                         document_id=document_info.id,
                         collection_id=collection_id,
                     )
+                    await service.providers.database.set_workflow_status(
+                        id=collection_id,
+                        status_type="graph_sync_status",
+                        status=KGEnrichmentStatus.OUTDATED,
+                    )
+                    await service.providers.database.set_workflow_status(
+                        id=collection_id,
+                        status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                        status=KGEnrichmentStatus.OUTDATED,
+                    )
                 else:
                     for collection_id in collection_ids:
                         try:
@@ -218,7 +229,16 @@ def hatchet_ingestion_factory(
                             document_id=document_info.id,
                             collection_id=collection_id,
                         )
-
+                        await service.providers.database.set_workflow_status(
+                            id=collection_id,
+                            status_type="graph_sync_status",
+                            status=KGEnrichmentStatus.OUTDATED,
+                        )
+                        await service.providers.database.set_workflow_status(
+                            id=collection_id,
+                            status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                            status=KGEnrichmentStatus.OUTDATED,
+                        )
                 # get server chunk enrichment settings and override parts of it if provided in the ingestion config
                 server_chunk_enrichment_settings = getattr(
                     service.providers.ingestion.config,
@@ -525,6 +545,16 @@ def hatchet_ingestion_factory(
                         document_id=document_info.id,
                         collection_id=collection_id,
                     )
+                    await service.providers.database.set_workflow_status(
+                        id=collection_id,
+                        status_type="graph_sync_status",
+                        status=KGEnrichmentStatus.OUTDATED,
+                    )
+                    await service.providers.database.set_workflow_status(
+                        id=collection_id,
+                        status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                        status=KGEnrichmentStatus.OUTDATED,
+                    )
                 else:
                     for collection_id in collection_ids:
                         try:
@@ -555,6 +585,16 @@ def hatchet_ingestion_factory(
                         await service.providers.database.assign_document_to_collection_vector(
                             document_id=document_info.id,
                             collection_id=collection_id,
+                        )
+                        await service.providers.database.set_workflow_status(
+                            id=collection_id,
+                            status_type="graph_sync_status",
+                            status=KGEnrichmentStatus.OUTDATED,
+                        )
+                        await service.providers.database.set_workflow_status(
+                            id=collection_id,
+                            status_type="graph_cluster_status",
+                            status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                         )
             except Exception as e:
                 logger.error(

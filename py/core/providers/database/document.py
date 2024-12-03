@@ -25,7 +25,7 @@ logger = logging.getLogger()
 
 
 class PostgresDocumentHandler(DocumentHandler):
-    TABLE_NAME = "document_info"
+    TABLE_NAME = "documents"
     COLUMN_VARS = [
         "extraction_id",
         "document_id",
@@ -306,6 +306,8 @@ class PostgresDocumentHandler(DocumentHandler):
         elif status_type == "extraction_status":
             return KGExtractionStatus
         elif status_type == "graph_cluster_status":
+            return KGEnrichmentStatus
+        elif status_type == "graph_sync_status":
             return KGEnrichmentStatus
         else:
             raise R2RException(
