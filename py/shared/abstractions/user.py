@@ -2,9 +2,9 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from shared.abstractions import R2RSerializable
-
 from pydantic import BaseModel, Field
+
+from shared.abstractions import R2RSerializable
 
 from ..utils import generate_default_user_collection_id
 

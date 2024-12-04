@@ -21,10 +21,7 @@ from shared.abstractions import (
     Token,
     User,
 )
-from shared.api.models import (
-    CombinedSearchResponse,
-    RAGResponse,
-)
+from shared.api.models import CombinedSearchResponse, RAGResponse
 
 __all__ = [
     "GenerationConfig",

@@ -6,8 +6,8 @@ from fastapi import HTTPException
 
 from core.base import CryptoProvider, UserHandler
 from core.base.abstractions import R2RException
-from shared.abstractions import User
 from core.utils import generate_user_id
+from shared.abstractions import User
 
 from .base import PostgresConnectionManager, QueryBuilder
 from .collection import PostgresCollectionHandler

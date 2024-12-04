@@ -22,14 +22,11 @@ from core.base.abstractions import (
     Message,
     Relationship,
     SearchSettings,
+    User,
     VectorEntry,
     VectorTableName,
-    User,
 )
-from core.base.api.models import (
-    CollectionResponse,
-    GraphResponse,
-)
+from core.base.api.models import CollectionResponse, GraphResponse
 
 from ..logger import RunInfoLog
 from ..logger.base import RunType

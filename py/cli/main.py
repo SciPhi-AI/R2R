@@ -4,13 +4,13 @@ from cli.commands import (
     conversations,
     database,
     documents,
+    graphs,
     indices,
     prompts,
     retrieval,
     system,
     users,
 )
-
 from cli.utils.telemetry import posthog, telemetry
 
 
@@ -22,6 +22,8 @@ def add_command_with_telemetry(command):
 add_command_with_telemetry(collections.collections)
 add_command_with_telemetry(conversations.conversations)
 add_command_with_telemetry(documents.documents)
+add_command_with_telemetry(graphs.graphs)
+
 # Graph
 add_command_with_telemetry(indices.indices)
 add_command_with_telemetry(prompts.prompts)

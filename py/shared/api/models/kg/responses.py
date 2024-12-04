@@ -3,6 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
+
 from shared.abstractions.graph import Community, Entity, Relationship
 from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 

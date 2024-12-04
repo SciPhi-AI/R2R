@@ -2407,7 +2407,6 @@ class PostgresGraphHandler(GraphHandler):
             ORDER BY {embedding_type} <=> $1
             LIMIT $2;
         """
-
         results = await self.connection_manager.fetch_query(
             QUERY, tuple(params)
         )

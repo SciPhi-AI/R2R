@@ -19,11 +19,7 @@ from core.base import (
     manage_run,
     to_async_generator,
 )
-from core.base.api.models import (
-    CombinedSearchResponse,
-    RAGResponse,
-    User,
-)
+from core.base.api.models import CombinedSearchResponse, RAGResponse, User
 from core.base.logger.base import RunType
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event

@@ -7,7 +7,7 @@ system_instruction_name = "rag_agent"
 tool_names = ["search"]
 
   [agent.generation_config]
-  model = "azure/gpt-4o"
+  model = "openai/gpt-4o"
 
 [auth]
 provider = "r2r"
@@ -23,7 +23,7 @@ provider = "litellm"
 concurrent_request_limit = 256
 
   [completion.generation_config]
-  model = "azure/gpt-4o"
+  model = "openai/gpt-4o"
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 1_024
@@ -49,22 +49,22 @@ batch_size = 256
     fragment_merge_count = 4 # number of fragments to merge into a single extraction
     max_knowledge_relationships = 100
     max_description_input_length = 65536
-    generation_config = { model = "azure/gpt-4o-mini" } # and other params, model used for relationshipt extraction
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for relationshipt extraction
 
   [database.graph_entity_deduplication_settings]
     graph_entity_deduplication_type = "by_name"
     graph_entity_deduplication_prompt = "graphrag_entity_deduplication"
     max_description_input_length = 65536
-    generation_config = { model = "azure/gpt-4o-mini" } # and other params, model used for deduplication
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for deduplication
 
   [database.graph_enrichment_settings]
     community_reports_prompt = "graphrag_community_reports"
     max_summary_input_length = 65536
-    generation_config = { model = "azure/gpt-4o-mini" } # and other params, model used for node description and graph clustering
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for node description and graph clustering
     leiden_params = {}
 
   [database.graph_search_settings]
-    generation_config = { model = "azure/gpt-4o-mini" }
+    generation_config = { model = "openai/gpt-4o-mini" }
 
 [embedding]
 provider = "litellm"
@@ -101,7 +101,9 @@ excluded_parsers = ["mp4"]
 # document_summary_system_prompt = 'default_system'
 # document_summary_task_prompt = 'default_summary'
 # chunks_for_document_summary = 128
-document_summary_model = "azure/gpt-4o-mini"
+document_summary_model = "openai/gpt-4o-mini"
+vision_img_model = "openai/gpt-4o"
+vision_pdf_model = "openai/gpt-4o"
 
   [ingestion.chunk_enrichment_settings]
     enable_chunk_enrichment = false # disabled by default
@@ -110,7 +112,7 @@ document_summary_model = "azure/gpt-4o-mini"
     backward_chunks = 3
     semantic_neighbors = 10
     semantic_similarity_threshold = 0.7
-    generation_config = { model = "azure/gpt-4o-mini" }
+    generation_config = { model = "openai/gpt-4o-mini" }
 
   [ingestion.extra_parsers]
     pdf = "zerox"

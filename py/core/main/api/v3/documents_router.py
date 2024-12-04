@@ -378,9 +378,7 @@ class DocumentsRouter(BaseRouterV3):
                     f"Running ingestion without orchestration for file {file_name} and document_id {document_id}."
                 )
                 # TODO - Clean up implementation logic here to be more explicitly `synchronous`
-                from core.main.orchestration import (
-                    simple_ingestion_factory,
-                )
+                from core.main.orchestration import simple_ingestion_factory
 
                 simple_ingestor = simple_ingestion_factory(
                     self.services["ingestion"]
