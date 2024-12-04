@@ -1560,7 +1560,7 @@ class PostgresGraphHandler(GraphHandler):
 
             relationship_count = (
                 await self.connection_manager.fetch_query(
-                    f"SELECT COUNT(*) FROM {self._get_table_name("documents_relationships")} WHERE document_id = ANY($1);",
+                    f"""SELECT COUNT(*) FROM {self._get_table_name("documents_relationships")} WHERE document_id = ANY($1);""",
                     [document_ids],
                 )
             )[0]["count"]
@@ -1907,8 +1907,8 @@ class PostgresGraphHandler(GraphHandler):
 
         # Execute separate DELETE queries
         delete_queries = [
-            f"DELETE FROM {self._get_table_name("documents_relationships")} WHERE parent_id = $1",
-            f"DELETE FROM {self._get_table_name("documents_entities")} WHERE parent_id = $1",
+            f"""DELETE FROM {self._get_table_name("documents_relationships")} WHERE parent_id = $1""",
+            f"""DELETE FROM {self._get_table_name("documents_entities")} WHERE parent_id = $1""",
         ]
 
         for query in delete_queries:

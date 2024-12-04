@@ -511,7 +511,6 @@ class PostgresDocumentHandler(DocumentHandler):
             filter_clause = self._build_filters(
                 search_settings.filters, params
             )
-            print("filter_clause = ", filter_clause)
             where_clauses.append(filter_clause)
 
         where_clause = " AND ".join(where_clauses)

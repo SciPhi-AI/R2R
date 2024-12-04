@@ -32,7 +32,6 @@ def format_search_results_for_llm(results: AggregateSearchResult) -> str:
 
     if results.graph_search_results:
         formatted_results.append("KG Search Results:")
-        print("results.graph_search_results = ", results.graph_search_results)
         for kg_result in results.graph_search_results:
             try:
                 formatted_results.extend((f"Source [{source_counter}]:",))

@@ -55,7 +55,6 @@ def retrieval():
 async def search(ctx, query, **kwargs):
     """Perform a search query."""
     client: R2RAsyncClient = ctx.obj
-    print("kwargs = ", kwargs)
     search_settings = {
         k: v
         for k, v in kwargs.items()
@@ -72,7 +71,6 @@ async def search(ctx, query, **kwargs):
         and v is not None
     }
     graph_search_enabled = kwargs.get("graph_search_enabled")
-    print("graph_search_enabled = ", graph_search_enabled)
     if graph_search_enabled != None:
         search_settings["graph_settings"] = {"enabled": graph_search_enabled}
 
@@ -168,7 +166,6 @@ async def rag(ctx, query, **kwargs):
         and v is not None
     }
     graph_search_enabled = kwargs.get("graph_search_enabled")
-    print("graph_search_enabled = ", graph_search_enabled)
     if graph_search_enabled != None:
         search_settings["graph_settings"] = {"enabled": graph_search_enabled}
 

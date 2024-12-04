@@ -536,7 +536,7 @@ def hatchet_kg_factory(
             ][0]["num_communities"]
 
             # Calculate batching
-            parallel_communities = min(100, num_communities)
+            parallel_communities = min(100, num_communities[0])
             total_workflows = math.ceil(num_communities / parallel_communities)
             workflows = []
 
