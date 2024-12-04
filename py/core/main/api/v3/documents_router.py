@@ -234,7 +234,6 @@ class DocumentsRouter(BaseRouterV3):
                 )
             # Check if the user is a superuser
             metadata = metadata or {}
-            print("metadata = ", metadata)
             if not auth_user.is_superuser:
                 if "user_id" in metadata and (
                     not auth_user.is_superuser
@@ -309,7 +308,7 @@ class DocumentsRouter(BaseRouterV3):
                     )
                     await simple_ingestor["ingest-chunks"](workflow_input)
 
-                    return {
+                    return {  # type: ignore
                         "message": "Document created and ingested successfully.",
                         "document_id": str(document_id),
                         "task_id": None,
@@ -392,7 +391,6 @@ class DocumentsRouter(BaseRouterV3):
                     "document_id": str(document_id),
                     "task_id": None,
                 }
-
 
         @self.router.get(
             "/documents",
@@ -902,7 +900,7 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
                             response = client.documents.delete_by_filter(
-                                filters={"document_type": {"$eq": "txt"}} 
+                                filters={"document_type": {"$eq": "txt"}}
                             )
                             """
                         ),

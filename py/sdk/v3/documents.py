@@ -129,7 +129,6 @@ class DocumentsSDK:
             version="v3",
         )
 
-
     async def download(
         self,
         id: str | UUID,
@@ -255,13 +254,13 @@ class DocumentsSDK:
     ) -> dict:
         """
         Extract entities and relationships from a document.
-        
+
         Args:
             id (Union[str, UUID]): ID of document to extract from
             run_type (Optional[str]): Whether to return an estimate or run extraction
             settings (Optional[dict]): Settings for extraction process
             run_with_orchestration (Optional[bool]): Whether to run with orchestration
-            
+
         Returns:
             dict: Extraction results or cost estimate
         """
@@ -289,13 +288,13 @@ class DocumentsSDK:
     ) -> dict:
         """
         List entities extracted from a document.
-        
+
         Args:
             id (Union[str, UUID]): ID of document to get entities from
             offset (Optional[int]): Number of items to skip
             limit (Optional[int]): Max number of items to return
             include_embeddings (Optional[bool]): Whether to include embeddings
-            
+
         Returns:
             dict: List of entities and pagination info
         """
@@ -305,7 +304,7 @@ class DocumentsSDK:
             "include_embeddings": include_embeddings,
         }
         return await self.client._make_request(
-            "GET", 
+            "GET",
             f"documents/{str(id)}/entities",
             params=params,
             version="v3",
@@ -321,14 +320,14 @@ class DocumentsSDK:
     ) -> dict:
         """
         List relationships extracted from a document.
-        
+
         Args:
             id (Union[str, UUID]): ID of document to get relationships from
             offset (Optional[int]): Number of items to skip
             limit (Optional[int]): Max number of items to return
             entity_names (Optional[list[str]]): Filter by entity names
             relationship_types (Optional[list[str]]): Filter by relationship types
-            
+
         Returns:
             dict: List of relationships and pagination info
         """
@@ -340,14 +339,14 @@ class DocumentsSDK:
             params["entity_names"] = entity_names
         if relationship_types:
             params["relationship_types"] = relationship_types
-            
+
         return await self.client._make_request(
             "GET",
             f"documents/{str(id)}/relationships",
             params=params,
             version="v3",
         )
-    
+
     # async def extract(
     #     self,
     #     id: str | UUID,

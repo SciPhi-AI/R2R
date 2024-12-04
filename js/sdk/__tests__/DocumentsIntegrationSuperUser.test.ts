@@ -31,7 +31,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
   test("Create document with content", async () => {
     const response = await client.documents.create({
-      content: "This is a test document",
+      raw_text: "This is a test document",
       metadata: { title: "Test Document" },
     });
 
@@ -70,7 +70,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
       client.documents.create({
         metadata: { title: "No Content" },
       }),
-    ).rejects.toThrow(/Either file.*or content must be provided/);
+    ).rejects.toThrow(/Either file, raw_text, or chunks must be provided/);
   });
 
   test("Error handling - Create document with both file and content", async () => {
@@ -80,10 +80,10 @@ describe("r2rClient V3 Documents Integration Tests", () => {
           path: "examples/data/raskolnikov.txt",
           name: "raskolnikov.txt",
         },
-        content: "Test content",
+        raw_text: "Test content",
         metadata: { title: "Both File and Content" },
       }),
-    ).rejects.toThrow(/Cannot provide both file.*and content/);
+    ).rejects.toThrow(/Only one of file, raw_text, or chunks may be provided/);
   });
 
   test("Delete Raskolnikov.txt", async () => {

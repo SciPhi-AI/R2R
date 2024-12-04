@@ -103,7 +103,7 @@ class KGSearchSearchPipe(GeneratorPipe):
     ) -> AsyncGenerator[GraphSearchResult, None]:
         if search_settings.graph_settings.enabled == False:
             return
-        
+
         async for message in input.message:
             query_embedding = (
                 await self.embedding_provider.async_get_embedding(message)

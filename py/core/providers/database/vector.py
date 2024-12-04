@@ -523,15 +523,9 @@ class PostgresChunkHandler(ChunkHandler):
         )
 
         semantic_limit = search_settings.limit
-        full_text_limit = (
-            search_settings.hybrid_settings.full_text_limit
-        )
-        semantic_weight = (
-            search_settings.hybrid_settings.semantic_weight
-        )
-        full_text_weight = (
-            search_settings.hybrid_settings.full_text_weight
-        )
+        full_text_limit = search_settings.hybrid_settings.full_text_limit
+        semantic_weight = search_settings.hybrid_settings.semantic_weight
+        full_text_weight = search_settings.hybrid_settings.full_text_weight
         rrf_k = search_settings.hybrid_settings.rrf_k
 
         combined_results: dict[uuid.UUID, HybridSearchIntermediateResult] = {}

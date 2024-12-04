@@ -91,7 +91,6 @@ async def update(ctx, file_path, id, metadata, run_without_orchestration):
     click.echo(f"Updated file {id} file successfully.")
 
 
-
 @documents.command()
 @click.argument("id", required=True, type=str)
 @pass_context
@@ -218,16 +217,15 @@ async def ingest_files_from_urls(client, urls):
             os.unlink(temp_file.name)
 
 
-
 # Missing CLI Commands
 @documents.command()
 @click.argument("id", required=True, type=str)
 @click.option("--run-type", help="Extraction run type (estimate or run)")
 @click.option("--settings", type=JSON, help="Extraction settings as JSON")
 @click.option(
-    "--run-without-orchestration", 
+    "--run-without-orchestration",
     is_flag=True,
-    help="Run without orchestration"
+    help="Run without orchestration",
 )
 @pass_context
 async def extract(ctx, id, run_type, settings, run_without_orchestration):
@@ -244,6 +242,7 @@ async def extract(ctx, id, run_type, settings, run_without_orchestration):
         )
 
     click.echo(json.dumps(response, indent=2))
+
 
 @documents.command()
 @click.argument("id", required=True, type=str)
@@ -277,6 +276,7 @@ async def list_entities(ctx, id, offset, limit, include_embeddings):
 
     click.echo(json.dumps(response, indent=2))
 
+
 @documents.command()
 @click.argument("id", required=True, type=str)
 @click.option(
@@ -300,7 +300,9 @@ async def list_entities(ctx, id, offset, limit, include_embeddings):
     help="Filter by relationship types",
 )
 @pass_context
-async def list_relationships(ctx, id, offset, limit, entity_names, relationship_types):
+async def list_relationships(
+    ctx, id, offset, limit, entity_names, relationship_types
+):
     """List relationships extracted from a document."""
     client: R2RAsyncClient = ctx.obj
 
@@ -310,10 +312,13 @@ async def list_relationships(ctx, id, offset, limit, entity_names, relationship_
             offset=offset,
             limit=limit,
             entity_names=list(entity_names) if entity_names else None,
-            relationship_types=list(relationship_types) if relationship_types else None,
+            relationship_types=(
+                list(relationship_types) if relationship_types else None
+            ),
         )
 
     click.echo(json.dumps(response, indent=2))
+
 
 @documents.command()
 @click.option(
@@ -357,8 +362,6 @@ async def create_samples(ctx):
     click.echo(
         f"Sample files ingestion completed. Ingest files response:\n\n{response}"
     )
-
-
 
 
 @documents.command()

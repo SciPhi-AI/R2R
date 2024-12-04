@@ -1,5 +1,5 @@
 from cli.command_group import cli
-from cli.commands import (  # V3 methods
+from cli.commands import (
     collections,
     conversations,
     database,
@@ -9,11 +9,10 @@ from cli.commands import (  # V3 methods
     retrieval,
     system,
     users,
-    graphs
 )
 
-# TODO: Remove old commands in a later release
 from cli.utils.telemetry import posthog, telemetry
+
 
 def add_command_with_telemetry(command):
     cli.add_command(telemetry(command))
@@ -37,8 +36,6 @@ add_command_with_telemetry(database.upgrade)
 add_command_with_telemetry(database.downgrade)
 add_command_with_telemetry(database.current)
 add_command_with_telemetry(database.history)
-
-add_command_with_telemetry(graphs.graphs)  # Added this line
 
 
 def main():
