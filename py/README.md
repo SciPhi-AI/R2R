@@ -13,7 +13,7 @@
 </h3>
 
 # About
-R2R (RAG to Riches) is the most advanced AI retrieval system, supporting Retrieval-Augmented Generation (RAG) with production-ready features. Built around a containerized [RESTful API](https://r2r-docs.sciphi.ai/api-reference/introduction), R2R offers multimodal content ingestion, hybrid search functionality, configurable GraphRAG, and comprehensive user and document management.
+R2R (RAG to Riches) is the most advanced AI retrieval system, supporting Retrieval-Augmented Generation (RAG) with production-ready features. Built around a containerized [RESTful API]([https://r2r-docs.sciphi.ai/api-reference/introduction](https://r2r-docs.sciphi.ai/api-and-sdks/introduction)), R2R offers multimodal content ingestion, hybrid search functionality, configurable GraphRAG, and comprehensive user and document management.
 
 For a more complete view of R2R, check out the [full documentation](https://r2r-docs.sciphi.ai/).
 
