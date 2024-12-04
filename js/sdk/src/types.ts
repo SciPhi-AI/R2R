@@ -38,9 +38,11 @@ export interface ChunkResponse {
 // Collection types
 export interface CollectionResponse {
   id: string;
-  user_id?: string;
+  owner_id?: string;
   name: string;
   description?: string;
+  graph_cluster_status: string;
+  graph_sync_status: string;
   created_at: string;
   updated_at: string;
   user_count: number;
@@ -106,20 +108,13 @@ export interface DocumentResponse {
 // Entity types
 export interface EntityResponse {
   id: string;
-  sid?: string;
   name: string;
-  category?: string;
   description?: string;
-  chunk_ids: string[];
+  category?: string;
+  metadata: Record<string, any>;
+  parent_id?: string;
+  chunk_ids?: string[];
   description_embedding?: string;
-  document_id: string;
-  document_ids: string[];
-  graph_ids: string[];
-  user_id: string;
-  last_modified_by: string;
-  created_at: string;
-  updated_at: string;
-  attributes?: Record<string, any>;
 }
 
 // Graph types
