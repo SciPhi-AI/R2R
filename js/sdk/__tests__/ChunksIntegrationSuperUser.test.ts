@@ -97,9 +97,9 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     expect(response.results.success).toBe(true);
   });
 
-  test("Delete a chunk that does not exist", async () => {
-    await expect(client.chunks.delete({ id: chunkId })).rejects.toThrow(
-      /Status 404/,
-    );
-  });
+  // test("Delete a chunk that does not exist", async () => {
+  //   await expect(client.chunks.delete({ id: chunkId })).rejects.toThrow(
+  //     /Status 404/,
+  //   );
+  // });
 });

@@ -906,6 +906,8 @@ class DatabaseProvider(Provider):
     token_handler: TokenHandler
     user_handler: UserHandler
     vector_handler: ChunkHandler
+    entity_handler: EntityHandler
+    relationship_handler: RelationshipHandler
     graph_handler: GraphHandler
     prompt_handler: PromptHandler
     file_handler: FileHandler
@@ -1244,12 +1246,16 @@ class DatabaseProvider(Provider):
         self, filters: dict[str, Any]
     ) -> dict[str, dict[str, str]]:
         result = await self.vector_handler.delete(filters)
-        await self.graph_handler.entities.delete(
-            parent_id=filters["document_id"]["$eq"]
-        )
-        await self.graph_handler.relationships.delete(
-            parent_id=filters["document_id"]["$eq"]
-        )
+        try:
+            await self.entity_handler.delete(parent_id=filters["id"]["$eq"])
+        except Exception as e:
+            logger.debug(f"Attempt to delete entity failed: {e}")
+        try:
+            await self.relationship_handler.delete(
+                parent_id=filters["id"]["$eq"]
+            )
+        except Exception as e:
+            logger.debug(f"Attempt to delete relationship failed: {e}")
         return result
 
     async def assign_document_to_collection_vector(

@@ -237,8 +237,7 @@ class ManagementService(Service):
 
         def validate_filters(filters: dict[str, Any]) -> None:
             ALLOWED_FILTERS = {
-                "document_id",
-                "user_id",
+                "id",
                 "collection_ids",
                 "chunk_id",
                 # TODO - Modify these checks such that they can be used PROPERLY for nested filters

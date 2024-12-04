@@ -1003,8 +1003,8 @@ class DocumentsRouter(BaseRouterV3):
             """
             filters = {
                 "$and": [
-                    {"user_id": {"$eq": str(auth_user.id)}},
-                    {"document_id": {"$eq": id}},
+                    {"id": {"$eq": str(auth_user.id)}},
+                    {"id": {"$eq": id}},
                 ]
             }
             await self.services["management"].delete(filters=filters)
