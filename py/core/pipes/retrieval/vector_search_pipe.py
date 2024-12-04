@@ -48,6 +48,9 @@ class VectorSearchPipe(SearchPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[ChunkSearchResult, None]:
+        if search_settings.chunk_settings.enabled == False:
+            return
+
         search_settings.filters = (
             search_settings.filters or self.config.filters
         )

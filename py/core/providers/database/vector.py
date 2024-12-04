@@ -471,7 +471,7 @@ class PostgresChunkHandler(ChunkHandler):
         params.extend(
             [
                 search_settings.offset,
-                search_settings.hybrid_search_settings.full_text_limit,
+                search_settings.hybrid_settings.full_text_limit,
             ]
         )
 
@@ -497,12 +497,12 @@ class PostgresChunkHandler(ChunkHandler):
         *args,
         **kwargs,
     ) -> list[ChunkSearchResult]:
-        if search_settings.hybrid_search_settings is None:
+        if search_settings.hybrid_settings is None:
             raise ValueError(
-                "Please provide a valid `hybrid_search_settings` in the `search_settings`."
+                "Please provide a valid `hybrid_settings` in the `search_settings`."
             )
         if (
-            search_settings.hybrid_search_settings.full_text_limit
+            search_settings.hybrid_settings.full_text_limit
             < search_settings.limit
         ):
             raise ValueError(
@@ -513,7 +513,7 @@ class PostgresChunkHandler(ChunkHandler):
         semantic_settings.limit += search_settings.offset
 
         full_text_settings = copy.deepcopy(search_settings)
-        full_text_settings.hybrid_search_settings.full_text_limit += (
+        full_text_settings.hybrid_settings.full_text_limit += (
             search_settings.offset
         )
 
@@ -526,15 +526,15 @@ class PostgresChunkHandler(ChunkHandler):
 
         semantic_limit = search_settings.limit
         full_text_limit = (
-            search_settings.hybrid_search_settings.full_text_limit
+            search_settings.hybrid_settings.full_text_limit
         )
         semantic_weight = (
-            search_settings.hybrid_search_settings.semantic_weight
+            search_settings.hybrid_settings.semantic_weight
         )
         full_text_weight = (
-            search_settings.hybrid_search_settings.full_text_weight
+            search_settings.hybrid_settings.full_text_weight
         )
-        rrf_k = search_settings.hybrid_search_settings.rrf_k
+        rrf_k = search_settings.hybrid_settings.rrf_k
 
         combined_results: dict[uuid.UUID, HybridSearchIntermediateResult] = {}
 

@@ -1609,20 +1609,20 @@ export class r2rClient extends BaseClient {
    *
    * @param collection_id The ID of the collection to create the graph for.
    * @param run_type The type of run to perform.
-   * @param kg_creation_settings Settings for the graph creation process.
+   * @param graph_creation_settings Settings for the graph creation process.
    */
   @feature("createGraph")
   async createGraph(
     collection_id?: string,
     run_type?: KGRunType,
-    kg_creation_settings?: KGCreationSettings | Record<string, any>,
+    graph_creation_settings?: KGCreationSettings | Record<string, any>,
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
 
     const json_data: Record<string, any> = {
       collection_id,
       run_type,
-      kg_creation_settings,
+      graph_creation_settings,
     };
 
     Object.keys(json_data).forEach(
@@ -1637,20 +1637,20 @@ export class r2rClient extends BaseClient {
    *
    * @param collection_id The ID of the collection to enrich the graph for.
    * @param run_type The type of run to perform.
-   * @param kg_enrichment_settings Settings for the graph enrichment process.
+   * @param graph_enrichment_settings Settings for the graph enrichment process.
    */
   @feature("enrichGraph")
   async enrichGraph(
     collection_id?: string,
     run_type?: KGRunType,
-    kg_enrichment_settings?: KGEnrichmentSettings | Record<string, any>,
+    graph_enrichment_settings?: KGEnrichmentSettings | Record<string, any>,
   ): Promise<any> {
     this._ensureAuthenticated();
 
     const json_data: Record<string, any> = {
       collection_id,
       run_type,
-      kg_enrichment_settings,
+      graph_enrichment_settings,
     };
 
     Object.keys(json_data).forEach(
@@ -1887,7 +1887,7 @@ export class r2rClient extends BaseClient {
    * Conduct a vector and/or KG search.
    * @param query The query to search for.
    * @param vector_search_settings Vector search settings.
-   * @param kg_search_settings KG search settings.
+   * @param graph_search_settings KG search settings.
    * @deprecated use `client.retrieval.search` instead
    * @returns
    */
@@ -1895,14 +1895,14 @@ export class r2rClient extends BaseClient {
   async search(
     query: string,
     vector_search_settings?: ChunkSearchSettings | Record<string, any>,
-    kg_search_settings?: KGSearchSettings | Record<string, any>,
+    graph_search_settings?: KGSearchSettings | Record<string, any>,
   ): Promise<any> {
     this._ensureAuthenticated();
 
     const json_data: Record<string, any> = {
       query,
       vector_search_settings,
-      kg_search_settings,
+      graph_search_settings,
     };
 
     Object.keys(json_data).forEach(
@@ -1916,7 +1916,7 @@ export class r2rClient extends BaseClient {
    * Conducts a Retrieval Augmented Generation (RAG) search with the given query.
    * @param query The query to search for.
    * @param vector_search_settings Vector search settings.
-   * @param kg_search_settings KG search settings.
+   * @param graph_search_settings KG search settings.
    * @param rag_generation_config RAG generation configuration.
    * @param task_prompt_override Task prompt override.
    * @param include_title_if_available Include title if available.
@@ -1927,7 +1927,7 @@ export class r2rClient extends BaseClient {
   async rag(
     query: string,
     vector_search_settings?: ChunkSearchSettings | Record<string, any>,
-    kg_search_settings?: KGSearchSettings | Record<string, any>,
+    graph_search_settings?: KGSearchSettings | Record<string, any>,
     rag_generation_config?: GenerationConfig | Record<string, any>,
     task_prompt_override?: string,
     include_title_if_available?: boolean,
@@ -1937,7 +1937,7 @@ export class r2rClient extends BaseClient {
     const json_data: Record<string, any> = {
       query,
       vector_search_settings,
-      kg_search_settings,
+      graph_search_settings,
       rag_generation_config,
       task_prompt_override,
       include_title_if_available,
@@ -1975,7 +1975,7 @@ export class r2rClient extends BaseClient {
    * @param messages The messages to send to the agent.
    * @param rag_generation_config RAG generation configuration.
    * @param vector_search_settings Vector search settings.
-   * @param kg_search_settings KG search settings.
+   * @param graph_search_settings KG search settings.
    * @param task_prompt_override Task prompt override.
    * @param include_title_if_available Include title if available.
    * @param conversation_id The ID of the conversation, if not a new conversation.
@@ -1988,7 +1988,7 @@ export class r2rClient extends BaseClient {
     messages: Message[],
     rag_generation_config?: GenerationConfig | Record<string, any>,
     vector_search_settings?: ChunkSearchSettings | Record<string, any>,
-    kg_search_settings?: KGSearchSettings | Record<string, any>,
+    graph_search_settings?: KGSearchSettings | Record<string, any>,
     task_prompt_override?: string,
     include_title_if_available?: boolean,
     conversation_id?: string,
@@ -1999,7 +1999,7 @@ export class r2rClient extends BaseClient {
     const json_data: Record<string, any> = {
       messages,
       vector_search_settings,
-      kg_search_settings,
+      graph_search_settings,
       rag_generation_config,
       task_prompt_override,
       include_title_if_available,

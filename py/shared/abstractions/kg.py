@@ -36,10 +36,10 @@ class KGCreationSettings(R2RSerializable):
     graphrag_relationships_extraction_few_shot: str = Field(
         default="graphrag_relationships_extraction_few_shot",
         description="The prompt to use for knowledge graph extraction.",
-        alias="graphrag_relationships_extraction_few_shot_prompt",  # TODO - mark deprecated & remove
+        alias="graphrag_relationships_extraction_few_shot",  # TODO - mark deprecated & remove
     )
 
-    graphrag_entity_description: str = Field(
+    graph_entity_description_prompt: str = Field(
         default="graphrag_entity_description",
         description="The prompt to use for entity description generation.",
         alias="graphrag_entity_description_prompt",  # TODO - mark deprecated & remove
@@ -79,7 +79,7 @@ class KGCreationSettings(R2RSerializable):
 class KGEntityDeduplicationSettings(R2RSerializable):
     """Settings for knowledge graph entity deduplication."""
 
-    kg_entity_deduplication_type: KGEntityDeduplicationType = Field(
+    graph_entity_deduplication_type: KGEntityDeduplicationType = Field(
         default=KGEntityDeduplicationType.BY_NAME,
         description="The type of entity deduplication to use.",
     )
@@ -89,7 +89,7 @@ class KGEntityDeduplicationSettings(R2RSerializable):
         description="The maximum length of the description for a node in the graph.",
     )
 
-    kg_entity_deduplication_prompt: str = Field(
+    graph_entity_deduplication_prompt: str = Field(
         default="graphrag_entity_deduplication",
         description="The prompt to use for knowledge graph entity deduplication.",
     )
@@ -133,7 +133,7 @@ class KGEnrichmentSettings(R2RSerializable):
 class GraphEntitySettings(R2RSerializable):
     """Settings for knowledge graph entity creation."""
 
-    kg_entity_deduplication_type: KGEntityDeduplicationType = Field(
+    graph_entity_deduplication_type: KGEntityDeduplicationType = Field(
         default=KGEntityDeduplicationType.BY_NAME,
         description="The type of entity deduplication to use.",
     )
@@ -143,7 +143,7 @@ class GraphEntitySettings(R2RSerializable):
         description="The maximum length of the description for a node in the graph.",
     )
 
-    kg_entity_deduplication_prompt: str = Field(
+    graph_entity_deduplication_prompt: str = Field(
         default="graphrag_entity_deduplication",
         description="The prompt to use for knowledge graph entity deduplication.",
     )

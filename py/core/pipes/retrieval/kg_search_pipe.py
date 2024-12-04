@@ -101,6 +101,8 @@ class KGSearchSearchPipe(GeneratorPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[GraphSearchResult, None]:
+        if search_settings.graph_settings.enabled == False:
+            return
         # search over communities and
         # do 3 searches. One over entities, one over relationships, one over communities
         print("graph_search_settings = ", search_settings)

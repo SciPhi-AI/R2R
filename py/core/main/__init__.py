@@ -16,10 +16,6 @@ __all__ = [
     ## R2R API
     # Routes
     "AuthRouter",
-    "IngestionRouter",
-    "ManagementRouter",
-    "RetrievalRouter",
-    "KGRouter",
     ## R2R APP
     "R2RApp",
     ## R2R ASSEMBLY

@@ -89,185 +89,185 @@ class ChunksRouter(BaseRouterV3):
         return filters
 
     def _setup_routes(self):
-        @self.router.post(
-            "/chunks",
-            summary="Create Chunks",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
+        # @self.router.post(
+        #     "/chunks",
+        #     summary="Create Chunks",
+        #     openapi_extra={
+        #         "x-codeSamples": [
+        #             {
+        #                 "lang": "Python",
+        #                 "source": textwrap.dedent(
+        #                     """
+        #                     from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
+        #                     client = R2RClient("http://localhost:7272")
+        #                     # when using auth, do client.login(...)
 
-                            result = client.chunks.create(
-                                chunks=[
-                                    {
-                                        "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-                                        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-                                        "collection_ids": ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
-                                        "metadata": {"key": "value"},
-                                        "text": "Some text content"
-                                    }
-                                ],
-                                run_with_orchestration=False
-                            )
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
-                            const { r2rClient } = require("r2r-js");
+        #                     result = client.chunks.create(
+        #                         chunks=[
+        #                             {
+        #                                 "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        #                                 "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        #                                 "collection_ids": ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
+        #                                 "metadata": {"key": "value"},
+        #                                 "text": "Some text content"
+        #                             }
+        #                         ],
+        #                         run_with_orchestration=False
+        #                     )
+        #                     """
+        #                 ),
+        #             },
+        #             {
+        #                 "lang": "JavaScript",
+        #                 "source": textwrap.dedent(
+        #                     """
+        #                     const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+        #                     const client = new r2rClient("http://localhost:7272");
 
-                            function main() {
-                                const response = await client.chunks.create({
-                                    chunks: [
-                                        {
-                                            id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-                                            documentId: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-                                            collectionIds: ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
-                                            metadata: {key: "value"},
-                                            text: "Some text content"
-                                        }
-                                    ],
-                                    run_with_orchestration: false
-                                });
-                            }
+        #                     function main() {
+        #                         const response = await client.chunks.create({
+        #                             chunks: [
+        #                                 {
+        #                                     id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        #                                     documentId: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        #                                     collectionIds: ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
+        #                                     metadata: {key: "value"},
+        #                                     text: "Some text content"
+        #                                 }
+        #                             ],
+        #                             run_with_orchestration: false
+        #                         });
+        #                     }
 
-                            main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X POST "https://api.example.com/v3/chunks" \\
-                                -H "Content-Type: application/json" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" \\
-                                -d '{
-                                "chunks": [{
-                                    "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-                                    "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-                                    "collection_ids": ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
-                                    "metadata": {"key": "value"},
-                                    "text": "Some text content"
-                                }],
-                                "run_with_orchestration": false
-                                }'
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def create_chunks(
-            # TODO: We should allow ingestion directly into a collection
-            raw_chunks: list[UnprocessedChunk] = Body(
-                ..., description="List of chunks to create"
-            ),
-            run_with_orchestration: Optional[bool] = Body(True),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> Any:
-            """
-            Create multiple chunks and process them through the ingestion pipeline.
+        #                     main();
+        #                     """
+        #                 ),
+        #             },
+        #             {
+        #                 "lang": "cURL",
+        #                 "source": textwrap.dedent(
+        #                     """
+        #                     curl -X POST "https://api.example.com/v3/chunks" \\
+        #                         -H "Content-Type: application/json" \\
+        #                         -H "Authorization: Bearer YOUR_API_KEY" \\
+        #                         -d '{
+        #                         "chunks": [{
+        #                             "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        #                             "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+        #                             "collection_ids": ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
+        #                             "metadata": {"key": "value"},
+        #                             "text": "Some text content"
+        #                         }],
+        #                         "run_with_orchestration": false
+        #                         }'
+        #                     """
+        #                 ),
+        #             },
+        #         ]
+        #     },
+        # )
+        # @self.base_endpoint
+        # async def create_chunks(
+        #     # TODO: We should allow ingestion directly into a collection
+        #     raw_chunks: list[UnprocessedChunk] = Body(
+        #         ..., description="List of chunks to create"
+        #     ),
+        #     run_with_orchestration: Optional[bool] = Body(True),
+        #     auth_user=Depends(self.providers.auth.auth_wrapper),
+        # ) -> Any:
+        #     """
+        #     Create multiple chunks and process them through the ingestion pipeline.
 
-            This endpoint allows creating multiple chunks at once, optionally associating them
-            with documents and collections. The chunks will be processed asynchronously if
-            run_with_orchestration is True.
+        #     This endpoint allows creating multiple chunks at once, optionally associating them
+        #     with documents and collections. The chunks will be processed asynchronously if
+        #     run_with_orchestration is True.
 
-            Maximum of 100,000 chunks can be created in a single request.
+        #     Maximum of 100,000 chunks can be created in a single request.
 
-            Note, it is not yet possible to add chunks to an existing document using this endpoint.
-            """
-            default_document_id = generate_id()
-            if len(raw_chunks) > MAX_CHUNKS_PER_REQUEST:
-                raise R2RException(
-                    f"Maximum of {MAX_CHUNKS_PER_REQUEST} chunks per request",
-                    400,
-                )
-            if len(raw_chunks) == 0:
-                raise R2RException("No chunks provided", 400)
+        #     Note, it is not yet possible to add chunks to an existing document using this endpoint.
+        #     """
+        #     default_document_id = generate_id()
+        #     if len(raw_chunks) > MAX_CHUNKS_PER_REQUEST:
+        #         raise R2RException(
+        #             f"Maximum of {MAX_CHUNKS_PER_REQUEST} chunks per request",
+        #             400,
+        #         )
+        #     if len(raw_chunks) == 0:
+        #         raise R2RException("No chunks provided", 400)
 
-            # Group chunks by document_id for efficiency
-            chunks_by_document: dict = {}
-            for chunk in raw_chunks:
-                if chunk.document_id not in chunks_by_document:
-                    chunks_by_document[chunk.document_id] = []
-                chunks_by_document[chunk.document_id].append(chunk)
+        #     # Group chunks by document_id for efficiency
+        #     chunks_by_document: dict = {}
+        #     for chunk in raw_chunks:
+        #         if chunk.document_id not in chunks_by_document:
+        #             chunks_by_document[chunk.document_id] = []
+        #         chunks_by_document[chunk.document_id].append(chunk)
 
-            responses = []
-            # FIXME: Need to verify that the collection_id workflow is valid
-            for document_id, doc_chunks in chunks_by_document.items():
-                document_id = document_id or default_document_id
-                # Convert UnprocessedChunks to RawChunks for ingestion
-                # FIXME: Metadata doesn't seem to be getting passed through
-                raw_chunks_for_doc = [
-                    UnprocessedChunk(
-                        text=chunk.text if hasattr(chunk, "text") else "",
-                        metadata=chunk.metadata,
-                        id=chunk.id,
-                    )
-                    for chunk in doc_chunks
-                ]
+        #     responses = []
+        #     # FIXME: Need to verify that the collection_id workflow is valid
+        #     for document_id, doc_chunks in chunks_by_document.items():
+        #         document_id = document_id or default_document_id
+        #         # Convert UnprocessedChunks to RawChunks for ingestion
+        #         # FIXME: Metadata doesn't seem to be getting passed through
+        #         raw_chunks_for_doc = [
+        #             UnprocessedChunk(
+        #                 text=chunk.text if hasattr(chunk, "text") else "",
+        #                 metadata=chunk.metadata,
+        #                 id=chunk.id,
+        #             )
+        #             for chunk in doc_chunks
+        #         ]
 
-                # Prepare workflow input
-                workflow_input = {
-                    "document_id": str(document_id),
-                    "chunks": [
-                        chunk.model_dump() for chunk in raw_chunks_for_doc
-                    ],
-                    "metadata": {},  # Base metadata for the document
-                    "user": auth_user.model_dump_json(),
-                }
+        #         # Prepare workflow input
+        #         workflow_input = {
+        #             "document_id": str(document_id),
+        #             "chunks": [
+        #                 chunk.model_dump() for chunk in raw_chunks_for_doc
+        #             ],
+        #             "metadata": {},  # Base metadata for the document
+        #             "user": auth_user.model_dump_json(),
+        #         }
 
-                # TODO - Modify create_chunks so that we can add chunks to existing document
+        #         # TODO - Modify create_chunks so that we can add chunks to existing document
 
-                if run_with_orchestration:
-                    # Run ingestion with orchestration
-                    raw_message = (
-                        await self.orchestration_provider.run_workflow(
-                            "ingest-chunks",
-                            {"request": workflow_input},
-                            options={
-                                "additional_metadata": {
-                                    "document_id": str(document_id),
-                                }
-                            },
-                        )
-                    )
-                    raw_message["document_id"] = str(document_id)
-                    responses.append(raw_message)
+        #         if run_with_orchestration:
+        #             # Run ingestion with orchestration
+        #             raw_message = (
+        #                 await self.orchestration_provider.run_workflow(
+        #                     "ingest-chunks",
+        #                     {"request": workflow_input},
+        #                     options={
+        #                         "additional_metadata": {
+        #                             "document_id": str(document_id),
+        #                         }
+        #                     },
+        #                 )
+        #             )
+        #             raw_message["document_id"] = str(document_id)
+        #             responses.append(raw_message)
 
-                else:
-                    logger.info(
-                        "Running chunk ingestion without orchestration."
-                    )
-                    from core.main.orchestration import (
-                        simple_ingestion_factory,
-                    )
+        #         else:
+        #             logger.info(
+        #                 "Running chunk ingestion without orchestration."
+        #             )
+        #             from core.main.orchestration import (
+        #                 simple_ingestion_factory,
+        #             )
 
-                    simple_ingestor = simple_ingestion_factory(
-                        self.services["ingestion"]
-                    )
-                    await simple_ingestor["ingest-chunks"](workflow_input)
+        #             simple_ingestor = simple_ingestion_factory(
+        #                 self.services["ingestion"]
+        #             )
+        #             await simple_ingestor["ingest-chunks"](workflow_input)
 
-                    raw_message = {
-                        "message": "Document created and ingested successfully.",
-                        "document_id": str(document_id),
-                        "task_id": None,
-                    }
-                    responses.append(raw_message)
+        #             raw_message = {
+        #                 "message": "Document created and ingested successfully.",
+        #                 "document_id": str(document_id),
+        #                 "task_id": None,
+        #             }
+        #             responses.append(raw_message)
 
-            return responses  # type: ignore
+        #     return responses  # type: ignore
 
         @self.router.post(
             "/chunks/search",
@@ -281,11 +281,10 @@ class ChunksRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            results = client.chunks.search(
+                            response = client.chunks.search(
                                 query="search query",
                                 search_settings={
-                                    "limit": 10,
-                                    "min_score": 0.7
+                                    "limit": 10
                                 }
                             )
                             """
@@ -336,7 +335,7 @@ class ChunksRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            chunk = client.chunks.retrieve(
+                            response = client.chunks.retrieve(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
@@ -408,9 +407,9 @@ class ChunksRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            result = client.chunks.update(
+                            response = client.chunks.update(
                                 {
-                                    "id": first_chunk_id,
+                                    "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
                                     "text": "Updated content",
                                     "metadata": {"key": "new value"}
                                 }
@@ -539,7 +538,7 @@ class ChunksRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            result = client.chunks.delete(
+                            response = client.chunks.delete(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
@@ -606,9 +605,9 @@ class ChunksRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            results = client.chunks.list(
+                            response = client.chunks.list(
                                 metadata_filter={"key": "value"},
-                                include_vectors=False
+                                include_vectors=False,
                                 offset=0,
                                 limit=10,
                             )

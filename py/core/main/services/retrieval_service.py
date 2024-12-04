@@ -82,7 +82,7 @@ class RetrievalService(Service):
                     and search_settings.use_fulltext_search
                 )
                 or search_settings.use_hybrid_search
-            ) and not search_settings.hybrid_search_settings:
+            ) and not search_settings.hybrid_settings:
                 raise R2RException(
                     status_code=400,
                     message="Hybrid search settings must be specified in the input configuration.",
@@ -287,6 +287,7 @@ class RetrievalService(Service):
                                 conversation_id, branch_id
                             )
                         )
+                        print('conversation = ', conversation)
                         if not conversation:
                             logger.error(
                                 f"No conversation found for ID: {conversation_id}"
@@ -295,10 +296,10 @@ class RetrievalService(Service):
                                 status_code=404,
                                 message=f"Conversation not found: {conversation_id}",
                             )
-                        messages = [conv[1] for conv in conversation] + [  # type: ignore
+                        messages = [resp.message for resp in conversation] + [  # type: ignore
                             message
                         ]
-                        ids = [conv[0] for conv in conversation]
+                        ids = [resp.id for resp in conversation]
                     else:
                         conversation = (
                             await self.logging_connection.create_conversation()

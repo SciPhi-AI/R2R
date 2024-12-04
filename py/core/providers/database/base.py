@@ -163,3 +163,25 @@ class PostgresConnectionManager(DatabaseConnectionManager):
                     return await conn.fetchrow(query, *params)
                 else:
                     return await conn.fetchrow(query)
+
+    @asynccontextmanager
+    async def transaction(self, isolation_level=None):
+        """
+        Async context manager for database transactions.
+        
+        Args:
+            isolation_level: Optional isolation level for the transaction
+            
+        Yields:
+            The connection manager instance for use within the transaction
+        """
+        if not self.pool:
+            raise ValueError("PostgresConnectionManager is not initialized.")
+            
+        async with self.pool.get_connection() as conn:
+            async with conn.transaction(isolation=isolation_level):
+                try:
+                    yield self
+                except Exception as e:
+                    logger.error(f"Transaction failed: {str(e)}")
+                    raise
