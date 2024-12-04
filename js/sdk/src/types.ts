@@ -88,14 +88,14 @@ export interface BranchResponse {
 export interface DocumentResponse {
   id: string;
   collection_ids: string[];
-  user_id: string;
+  owner_id: string;
   document_type: string;
   metadata: Record<string, any>;
   title?: string;
   version: string;
   size_in_bytes?: number;
   ingestion_status: string;
-  kg_extraction_status: string;
+  extraction_status: string;
   created_at: string;
   updated_at: string;
   ingestion_attempt_number?: number;
