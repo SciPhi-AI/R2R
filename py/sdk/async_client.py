@@ -6,9 +6,6 @@ import httpx
 from shared.abstractions import R2RException
 
 from .base.base_client import BaseClient
-
-from .base.base_client import BaseClient
-
 from .v2 import (
     AuthMixins,
     IngestionMixins,
@@ -17,7 +14,6 @@ from .v2 import (
     RetrievalMixins,
     ServerMixins,
 )
-
 from .v3 import (
     ChunksSDK,
     CollectionsSDK,

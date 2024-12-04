@@ -7,6 +7,7 @@ from shared.api.models.management.responses import (
     WrappedChunkResponse,
     WrappedChunksResponse,
 )
+
 from ..models import SearchSettings
 
 

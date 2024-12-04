@@ -17,11 +17,11 @@ from core.providers import (
     PostgresDBProvider,
     R2RAuthProvider,
     R2RIngestionProvider,
+    SendGridEmailProvider,
     SimpleOrchestrationProvider,
     SqlitePersistentLoggingProvider,
     SupabaseAuthProvider,
     UnstructuredIngestionProvider,
-    SendGridEmailProvider,
 )
 
 

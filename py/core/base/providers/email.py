@@ -1,8 +1,8 @@
 # email_provider.py
 import logging
+import os
 from abc import ABC, abstractmethod
 from typing import Optional
-import os
 
 from .base import Provider, ProviderConfig
 
