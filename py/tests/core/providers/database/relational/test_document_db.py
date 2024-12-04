@@ -52,8 +52,7 @@ async def test_upsert_documents_overview(temporary_postgres_db_provider):
     assert inserted_document.size_in_bytes == document_info.size_in_bytes
     assert inserted_document.ingestion_status == document_info.ingestion_status
     assert (
-        inserted_document.extraction_status
-        == document_info.extraction_status
+        inserted_document.extraction_status == document_info.extraction_status
     )
 
     # Update the document and verify the changes

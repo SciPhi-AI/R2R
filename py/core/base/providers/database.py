@@ -2,23 +2,16 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from io import BytesIO
-from typing import (
-    Any,
-    BinaryIO,
-    Optional,
-    Sequence,
-    Tuple,
-)
+from typing import Any, BinaryIO, Optional, Sequence, Tuple
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from core.base.abstractions import (
+    ChunkSearchResult,
     Community,
-    CommunityInfo,
     DocumentResponse,
     Entity,
-    Graph,
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
@@ -29,16 +22,11 @@ from core.base.abstractions import (
     Message,
     Relationship,
     SearchSettings,
-    UserStats,
+    User,
     VectorEntry,
-    VectorSearchResult,
     VectorTableName,
 )
-from core.base.api.models import (
-    CollectionResponse,
-    GraphResponse,
-    UserResponse,
-)
+from core.base.api.models import CollectionResponse, GraphResponse
 
 from ..logger import RunInfoLog
 from ..logger.base import RunType
@@ -54,13 +42,12 @@ from uuid import UUID
 from ..abstractions import (
     Community,
     Entity,
+    GraphSearchSettings,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
     KGExtraction,
-    KGSearchSettings,
     Relationship,
-    RelationshipType,
 )
 from .base import ProviderConfig
 
@@ -126,12 +113,12 @@ class DatabaseConfig(ProviderConfig):
     # KG settings
     batch_size: Optional[int] = 1
     kg_store_path: Optional[str] = None
-    kg_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings()
-    kg_creation_settings: KGCreationSettings = KGCreationSettings()
-    kg_entity_deduplication_settings: KGEntityDeduplicationSettings = (
+    graph_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings()
+    graph_creation_settings: KGCreationSettings = KGCreationSettings()
+    graph_entity_deduplication_settings: KGEntityDeduplicationSettings = (
         KGEntityDeduplicationSettings()
     )
-    kg_search_settings: KGSearchSettings = KGSearchSettings()
+    graph_search_settings: GraphSearchSettings = GraphSearchSettings()
 
     def __post_init__(self):
         self.validate_config()
@@ -272,7 +259,7 @@ class CollectionsHandler(Handler):
     @abstractmethod
     async def create_collection(
         self,
-        user_id: UUID,
+        owner_id: UUID,
         name: Optional[str] = None,
         description: str = "",
         collection_id: Optional[UUID] = None,
@@ -353,19 +340,21 @@ class UserHandler(Handler):
     TABLE_NAME = "users"
 
     @abstractmethod
-    async def get_user_by_id(self, user_id: UUID) -> UserResponse:
+    async def get_user_by_id(self, user_id: UUID) -> User:
         pass
 
     @abstractmethod
-    async def get_user_by_email(self, email: str) -> UserResponse:
+    async def get_user_by_email(self, email: str) -> User:
         pass
 
     @abstractmethod
-    async def create_user(self, email: str, password: str) -> UserResponse:
+    async def create_user(
+        self, email: str, password: str, is_superuser: bool
+    ) -> User:
         pass
 
     @abstractmethod
-    async def update_user(self, user: UserResponse) -> UserResponse:
+    async def update_user(self, user: User) -> User:
         pass
 
     @abstractmethod
@@ -379,7 +368,7 @@ class UserHandler(Handler):
         pass
 
     @abstractmethod
-    async def get_all_users(self) -> list[UserResponse]:
+    async def get_all_users(self) -> list[User]:
         pass
 
     @abstractmethod
@@ -433,19 +422,9 @@ class UserHandler(Handler):
         pass
 
     @abstractmethod
-    async def add_user_to_graph(self, user_id: UUID, graph_id: UUID) -> bool:
-        pass
-
-    @abstractmethod
-    async def remove_user_from_graph(
-        self, user_id: UUID, graph_id: UUID
-    ) -> bool:
-        pass
-
-    @abstractmethod
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, list[UserResponse] | int]:
+    ) -> dict[str, list[User] | int]:
         pass
 
     @abstractmethod
@@ -468,12 +447,13 @@ class UserHandler(Handler):
         offset: int,
         limit: int,
         user_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, list[UserStats] | int]:
+    ) -> dict[str, list[User] | int]:
         pass
 
     @abstractmethod
     async def get_user_validation_data(
-        self, user_id: UUID, *args, **kwargs
+        self,
+        user_id: UUID,
     ) -> dict:
         """
         Get verification data for a specific user.
@@ -482,7 +462,7 @@ class UserHandler(Handler):
         pass
 
 
-class VectorHandler(Handler):
+class ChunkHandler(Handler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -497,13 +477,13 @@ class VectorHandler(Handler):
     @abstractmethod
     async def semantic_search(
         self, query_vector: list[float], search_settings: SearchSettings
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         pass
 
     @abstractmethod
     async def full_text_search(
         self, query_text: str, search_settings: SearchSettings
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         pass
 
     @abstractmethod
@@ -514,7 +494,7 @@ class VectorHandler(Handler):
         search_settings: SearchSettings,
         *args,
         **kwargs,
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         pass
 
     @abstractmethod
@@ -610,7 +590,7 @@ class VectorHandler(Handler):
 class EntityHandler(Handler):
 
     @abstractmethod
-    async def create(self, *args: Any, **kwargs: Any) -> None:
+    async def create(self, *args: Any, **kwargs: Any) -> Entity:
         """Create entities in storage."""
         pass
 
@@ -620,7 +600,7 @@ class EntityHandler(Handler):
         pass
 
     @abstractmethod
-    async def update(self, *args: Any, **kwargs: Any) -> None:
+    async def update(self, *args: Any, **kwargs: Any) -> Entity:
         """Update entities in storage."""
         pass
 
@@ -632,7 +612,7 @@ class EntityHandler(Handler):
 
 class RelationshipHandler(Handler):
     @abstractmethod
-    async def create(self, *args: Any, **kwargs: Any) -> None:
+    async def create(self, *args: Any, **kwargs: Any) -> Relationship:
         """Add relationships to storage."""
         pass
 
@@ -642,7 +622,7 @@ class RelationshipHandler(Handler):
         pass
 
     @abstractmethod
-    async def update(self, *args: Any, **kwargs: Any) -> None:
+    async def update(self, *args: Any, **kwargs: Any) -> Relationship:
         """Update relationships in storage."""
         pass
 
@@ -654,7 +634,7 @@ class RelationshipHandler(Handler):
 
 class CommunityHandler(Handler):
     @abstractmethod
-    async def create(self, *args: Any, **kwargs: Any) -> None:
+    async def create(self, *args: Any, **kwargs: Any) -> Community:
         """Create communities in storage."""
         pass
 
@@ -664,35 +644,13 @@ class CommunityHandler(Handler):
         pass
 
     @abstractmethod
-    async def update(self, *args: Any, **kwargs: Any) -> None:
+    async def update(self, *args: Any, **kwargs: Any) -> Community:
         """Update communities in storage."""
         pass
 
     @abstractmethod
     async def delete(self, *args: Any, **kwargs: Any) -> None:
         """Delete communities from storage."""
-        pass
-
-
-class CommunityInfoHandler(Handler):
-    @abstractmethod
-    async def create(self, *args: Any, **kwargs: Any) -> None:
-        """Create community info in storage."""
-        pass
-
-    @abstractmethod
-    async def get(self, *args: Any, **kwargs: Any) -> list[CommunityInfo]:
-        """Get community info from storage."""
-        pass
-
-    @abstractmethod
-    async def update(self, *args: Any, **kwargs: Any) -> None:
-        """Update community info in storage."""
-        pass
-
-    @abstractmethod
-    async def delete(self, *args: Any, **kwargs: Any) -> None:
-        """Delete community info from storage."""
         pass
 
 
@@ -707,11 +665,6 @@ class GraphHandler(Handler):
         pass
 
     @abstractmethod
-    async def get(self, *args: Any, **kwargs: Any) -> list[Graph]:
-        """Get graph"""
-        pass
-
-    @abstractmethod
     async def update(
         self,
         graph_id: UUID,
@@ -719,11 +672,6 @@ class GraphHandler(Handler):
         description: Optional[str],
     ) -> GraphResponse:
         """Update graph"""
-        pass
-
-    @abstractmethod
-    async def delete(self, graph_id: UUID) -> None:
-        """Delete graph"""
         pass
 
 
@@ -957,7 +905,9 @@ class DatabaseProvider(Provider):
     collections_handler: CollectionsHandler
     token_handler: TokenHandler
     user_handler: UserHandler
-    vector_handler: VectorHandler
+    vector_handler: ChunkHandler
+    entity_handler: EntityHandler
+    relationship_handler: RelationshipHandler
     graph_handler: GraphHandler
     prompt_handler: PromptHandler
     file_handler: FileHandler
@@ -1040,13 +990,13 @@ class DatabaseProvider(Provider):
 
     async def create_collection(
         self,
-        user_id: UUID,
+        owner_id: UUID,
         name: Optional[str] = None,
         description: str = "",
         collection_id: Optional[UUID] = None,
     ) -> CollectionResponse:
         return await self.collections_handler.create_collection(
-            user_id=user_id,
+            owner_id=owner_id,
             name=name,
             description=description,
             collection_id=collection_id,
@@ -1126,16 +1076,22 @@ class DatabaseProvider(Provider):
         )
 
     # User handler methods
-    async def get_user_by_id(self, user_id: UUID) -> UserResponse:
+    async def get_user_by_id(self, user_id: UUID) -> User:
         return await self.user_handler.get_user_by_id(user_id)
 
-    async def get_user_by_email(self, email: str) -> UserResponse:
+    async def get_user_by_email(self, email: str) -> User:
         return await self.user_handler.get_user_by_email(email)
 
-    async def create_user(self, email: str, password: str) -> UserResponse:
-        return await self.user_handler.create_user(email, password)
+    async def create_user(
+        self, email: str, password: str, is_superuser: bool = False
+    ) -> User:
+        return await self.user_handler.create_user(
+            email=email,
+            password=password,
+            is_superuser=is_superuser,
+        )
 
-    async def update_user(self, user: UserResponse) -> UserResponse:
+    async def update_user(self, user: User) -> User:
         return await self.user_handler.update_user(user)
 
     async def delete_user_relational(self, user_id: UUID) -> None:
@@ -1148,7 +1104,7 @@ class DatabaseProvider(Provider):
             user_id, new_hashed_password
         )
 
-    async def get_all_users(self) -> list[UserResponse]:
+    async def get_all_users(self) -> list[User]:
         return await self.user_handler.get_all_users()
 
     async def store_verification_code(
@@ -1205,7 +1161,7 @@ class DatabaseProvider(Provider):
 
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, list[UserResponse] | int]:
+    ) -> dict[str, list[User] | int]:
         return await self.user_handler.get_users_in_collection(
             collection_id, offset, limit
         )
@@ -1228,7 +1184,7 @@ class DatabaseProvider(Provider):
         offset: int,
         limit: int,
         user_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, list[UserStats] | int]:
+    ) -> dict[str, list[User] | int]:
         return await self.user_handler.get_users_overview(
             offset=offset,
             limit=limit,
@@ -1236,9 +1192,12 @@ class DatabaseProvider(Provider):
         )
 
     async def get_user_validation_data(
-        self, user_id: UUID, *args, **kwargs
+        self,
+        user_id: UUID,
     ) -> dict:
-        return await self.user_handler.get_user_validation_data(user_id)
+        return await self.user_handler.get_user_validation_data(
+            user_id=user_id
+        )
 
     # Vector handler methods
     async def upsert(self, entry: VectorEntry) -> None:
@@ -1249,14 +1208,14 @@ class DatabaseProvider(Provider):
 
     async def semantic_search(
         self, query_vector: list[float], search_settings: SearchSettings
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         return await self.vector_handler.semantic_search(
             query_vector, search_settings
         )
 
     async def full_text_search(
         self, query_text: str, search_settings: SearchSettings
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         return await self.vector_handler.full_text_search(
             query_text, search_settings
         )
@@ -1268,7 +1227,7 @@ class DatabaseProvider(Provider):
         search_settings: SearchSettings,
         *args,
         **kwargs,
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         return await self.vector_handler.hybrid_search(
             query_text, query_vector, search_settings, *args, **kwargs
         )
@@ -1286,7 +1245,18 @@ class DatabaseProvider(Provider):
     async def delete(
         self, filters: dict[str, Any]
     ) -> dict[str, dict[str, str]]:
-        return await self.vector_handler.delete(filters)
+        result = await self.vector_handler.delete(filters)
+        try:
+            await self.entity_handler.delete(parent_id=filters["id"]["$eq"])
+        except Exception as e:
+            logger.debug(f"Attempt to delete entity failed: {e}")
+        try:
+            await self.relationship_handler.delete(
+                parent_id=filters["id"]["$eq"]
+            )
+        except Exception as e:
+            logger.debug(f"Attempt to delete relationship failed: {e}")
+        return result
 
     async def assign_document_to_collection_vector(
         self,

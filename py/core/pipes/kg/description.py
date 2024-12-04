@@ -92,16 +92,13 @@ class KGEntityDescriptionPipe(AsyncPipe):
                 for chunk_id in entity.chunk_ids:
                     unique_chunk_ids.add(chunk_id)
 
-            # import pdb; pdb.set_trace()
-            print("entities[0] = ", entities[0])
-
             out_entity = entities[0]
             if not out_entity.description:
                 out_entity.description = (
                     (
                         await self.llm_provider.aget_completion(
                             messages=await self.database_provider.prompt_handler.get_message_payload(
-                                task_prompt_name=self.database_provider.config.kg_creation_settings.graphrag_entity_description,
+                                task_prompt_name=self.database_provider.config.graph_creation_settings.graph_entity_description_prompt,
                                 task_inputs={
                                     "entity_info": truncate_info(
                                         entity_info,
@@ -113,7 +110,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                                     ),
                                 },
                             ),
-                            generation_config=self.database_provider.config.kg_creation_settings.generation_config,
+                            generation_config=self.database_provider.config.graph_creation_settings.generation_config,
                         )
                     )
                     .choices[0]
@@ -132,12 +129,10 @@ class KGEntityDescriptionPipe(AsyncPipe):
                     )
                 )[0]
 
-                print("out_entity = ", out_entity)
-
                 # upsert the entity and its embedding
                 await self.database_provider.graph_handler.add_entities(
                     [out_entity],
-                    table_name="document_entity",
+                    table_name="documents_entities",
                 )
 
             return out_entity.name

@@ -2,6 +2,7 @@ from .auth import AuthConfig, AuthProvider
 from .base import AppConfig, Provider, ProviderConfig
 from .crypto import CryptoConfig, CryptoProvider
 from .database import (
+    ChunkHandler,
     CollectionsHandler,
     DatabaseConfig,
     DatabaseConnectionManager,
@@ -14,7 +15,6 @@ from .database import (
     PromptHandler,
     TokenHandler,
     UserHandler,
-    VectorHandler,
 )
 from .email import EmailConfig, EmailProvider
 from .embedding import EmbeddingConfig, EmbeddingProvider
@@ -47,7 +47,7 @@ __all__ = [
     "TokenHandler",
     "UserHandler",
     "LoggingHandler",
-    "VectorHandler",
+    "ChunkHandler",
     "GraphHandler",
     "PromptHandler",
     "FileHandler",

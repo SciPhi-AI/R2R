@@ -5,11 +5,11 @@ from typing import Any
 from ollama import AsyncClient, Client
 
 from core.base import (
+    ChunkSearchResult,
     EmbeddingConfig,
     EmbeddingProvider,
     EmbeddingPurpose,
     R2RException,
-    VectorSearchResult,
 )
 
 logger = logging.getLogger()
@@ -178,16 +178,16 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
     def rerank(
         self,
         query: str,
-        results: list[VectorSearchResult],
+        results: list[ChunkSearchResult],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         return results[:limit]
 
     async def arerank(
         self,
         query: str,
-        results: list[VectorSearchResult],
+        results: list[ChunkSearchResult],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
     ):

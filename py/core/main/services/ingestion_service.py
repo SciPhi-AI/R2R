@@ -31,7 +31,7 @@ from core.base.abstractions import (
     IndexMethod,
     VectorTableName,
 )
-from core.base.api.models import UserResponse
+from core.base.api.models import User
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 
@@ -71,7 +71,7 @@ class IngestionService(Service):
     async def ingest_file_ingress(
         self,
         file_data: dict,
-        user: UserResponse,
+        user: User,
         document_id: UUID,
         size_in_bytes,
         metadata: Optional[dict] = None,
@@ -122,7 +122,7 @@ class IngestionService(Service):
                 ):
                     raise R2RException(
                         status_code=409,
-                        message=f"Document {document_id} already exists. Increment the version to overwrite existing document. Otherwise, submit a POST request to `/documents/{document_id}` to update the existing version.",
+                        message=f"Document {document_id} already exists. Submit a DELETE request to `/documents/{document_id}` to delete this document and allow for re-ingestion.",
                     )
                 elif existing_doc.ingestion_status != IngestionStatus.FAILED:
                     raise R2RException(
@@ -148,7 +148,7 @@ class IngestionService(Service):
     def _create_document_info_from_file(
         self,
         document_id: UUID,
-        user: UserResponse,
+        user: User,
         file_name: str,
         metadata: dict,
         version: str,
@@ -168,7 +168,7 @@ class IngestionService(Service):
 
         return DocumentResponse(
             id=document_id,
-            user_id=user.id,
+            owner_id=user.id,
             collection_ids=metadata.get("collection_ids", []),
             document_type=DocumentType[file_extension.upper()],
             title=(
@@ -187,7 +187,7 @@ class IngestionService(Service):
     def _create_document_info_from_chunks(
         self,
         document_id: UUID,
-        user: UserResponse,
+        user: User,
         chunks: list[RawChunk],
         metadata: dict,
         version: str,
@@ -197,7 +197,7 @@ class IngestionService(Service):
 
         return DocumentResponse(
             id=document_id,
-            user_id=user.id,
+            owner_id=user.id,
             collection_ids=metadata.get("collection_ids", []),
             document_type=DocumentType.TXT,
             title=metadata.get("title", f"Ingested Chunks - {document_id}"),
@@ -219,7 +219,7 @@ class IngestionService(Service):
                 message=Document(
                     id=document_info.id,
                     collection_ids=document_info.collection_ids,
-                    user_id=document_info.user_id,
+                    owner_id=document_info.owner_id,
                     metadata={
                         "document_type": document_info.document_type.value,
                         **document_info.metadata,
@@ -362,7 +362,7 @@ class IngestionService(Service):
         document_id: UUID,
         metadata: Optional[dict],
         chunks: list[RawChunk],
-        user: UserResponse,
+        user: User,
         *args: Any,
         **kwargs: Any,
     ) -> DocumentResponse:
@@ -409,7 +409,7 @@ class IngestionService(Service):
         document_id: UUID,
         chunk_id: UUID,
         text: str,
-        user: UserResponse,
+        user: User,
         metadata: Optional[dict] = None,
         *args: Any,
         **kwargs: Any,
@@ -435,7 +435,7 @@ class IngestionService(Service):
             )
 
         if (
-            str(existing_chunk["user_id"]) != str(user.id)
+            str(existing_chunk["owner_id"]) != str(user.id)
             and not user.is_superuser
         ):
             raise R2RException(
@@ -459,7 +459,7 @@ class IngestionService(Service):
             "collection_ids": kwargs.get(
                 "collection_ids", existing_chunk["collection_ids"]
             ),
-            "user_id": existing_chunk["user_id"],
+            "owner_id": existing_chunk["owner_id"],
             "data": text or existing_chunk["text"],
             "metadata": merged_metadata,
         }
@@ -583,10 +583,10 @@ class IngestionService(Service):
         chunk["metadata"]["original_text"] = chunk["text"]
 
         return VectorEntry(
-            chunk_id=uuid.uuid5(uuid.NAMESPACE_DNS, str(chunk["chunk_id"])),
+            id=uuid.uuid5(uuid.NAMESPACE_DNS, str(chunk["chunk_id"])),
             vector=Vector(data=data, type=VectorType.FIXED, length=len(data)),
             document_id=document_id,
-            user_id=chunk["user_id"],
+            owner_id=chunk["owner_id"],
             collection_ids=chunk["collection_ids"],
             text=updated_chunk_text or chunk["text"],
             metadata=chunk["metadata"],
@@ -687,7 +687,7 @@ class IngestionService(Service):
         self,
         document_id: UUID,
         metadata: dict,
-        user: UserResponse,
+        user: User,
     ) -> None:
         # Verify document exists and user has access
         existing_document = await self.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
@@ -720,7 +720,7 @@ class IngestionService(Service):
 
 class IngestionServiceAdapter:
     @staticmethod
-    def _parse_user_data(user_data) -> UserResponse:
+    def _parse_user_data(user_data) -> User:
         if isinstance(user_data, str):
             try:
                 user_data = json.loads(user_data)
@@ -728,7 +728,7 @@ class IngestionServiceAdapter:
                 raise ValueError(
                     f"Invalid user data format: {user_data}"
                 ) from e
-        return UserResponse.from_dict(user_data)
+        return User.from_dict(user_data)
 
     @staticmethod
     def _parse_chunk_enrichment_settings(
@@ -778,7 +778,7 @@ class IngestionServiceAdapter:
         return {
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),
             "document_id": UUID(data["document_id"]),
-            "chunk_id": UUID(data["chunk_id"]),
+            "id": UUID(data["id"]),
             "text": data["text"],
             "metadata": data.get("metadata"),
             "collection_ids": data.get("collection_ids", []),

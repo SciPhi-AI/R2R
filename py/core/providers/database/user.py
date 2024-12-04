@@ -1,13 +1,13 @@
 from datetime import datetime
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 from fastapi import HTTPException
 
 from core.base import CryptoProvider, UserHandler
-from core.base.abstractions import R2RException, UserStats
-from core.base.api.models import UserResponse
+from core.base.abstractions import R2RException
 from core.utils import generate_user_id
+from shared.abstractions import User
 
 from .base import PostgresConnectionManager, QueryBuilder
 from .collection import PostgresCollectionHandler
@@ -28,7 +28,7 @@ class PostgresUserHandler(UserHandler):
     async def create_tables(self):
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresUserHandler.TABLE_NAME)} (
-            user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             email TEXT UNIQUE NOT NULL,
             hashed_password TEXT NOT NULL,
             is_superuser BOOLEAN DEFAULT FALSE,
@@ -42,19 +42,18 @@ class PostgresUserHandler(UserHandler):
             reset_token TEXT,
             reset_token_expiry TIMESTAMPTZ,
             collection_ids UUID[] NULL,
-            graph_ids UUID[] NULL,
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
         """
         await self.connection_manager.execute_query(query)
 
-    async def get_user_by_id(self, user_id: UUID) -> UserResponse:
+    async def get_user_by_id(self, id: UUID) -> User:
         query, _ = (
             QueryBuilder(self._get_table_name("users"))
             .select(
                 [
-                    "user_id",
+                    "id",
                     "email",
                     "hashed_password",
                     "is_superuser",
@@ -66,19 +65,18 @@ class PostgresUserHandler(UserHandler):
                     "profile_picture",
                     "bio",
                     "collection_ids",
-                    "graph_ids",
                 ]
             )
-            .where("user_id = $1")
+            .where("id = $1")
             .build()
         )
-        result = await self.connection_manager.fetchrow_query(query, [user_id])
+        result = await self.connection_manager.fetchrow_query(query, [id])
 
         if not result:
             raise R2RException(status_code=404, message="User not found")
 
-        return UserResponse(
-            id=result["user_id"],
+        return User(
+            id=result["id"],
             email=result["email"],
             hashed_password=result["hashed_password"],
             is_superuser=result["is_superuser"],
@@ -90,15 +88,14 @@ class PostgresUserHandler(UserHandler):
             profile_picture=result["profile_picture"],
             bio=result["bio"],
             collection_ids=result["collection_ids"],
-            graph_ids=result["graph_ids"],
         )
 
-    async def get_user_by_email(self, email: str) -> UserResponse:
+    async def get_user_by_email(self, email: str) -> User:
         query, params = (
             QueryBuilder(self._get_table_name("users"))
             .select(
                 [
-                    "user_id",
+                    "id",
                     "email",
                     "hashed_password",
                     "is_superuser",
@@ -110,7 +107,6 @@ class PostgresUserHandler(UserHandler):
                     "profile_picture",
                     "bio",
                     "collection_ids",
-                    "graph_ids",
                 ]
             )
             .where("email = $1")
@@ -120,8 +116,8 @@ class PostgresUserHandler(UserHandler):
         if not result:
             raise R2RException(status_code=404, message="User not found")
 
-        return UserResponse(
-            id=result["user_id"],
+        return User(
+            id=result["id"],
             email=result["email"],
             hashed_password=result["hashed_password"],
             is_superuser=result["is_superuser"],
@@ -133,10 +129,11 @@ class PostgresUserHandler(UserHandler):
             profile_picture=result["profile_picture"],
             bio=result["bio"],
             collection_ids=result["collection_ids"],
-            graph_ids=result["graph_ids"],
         )
 
-    async def create_user(self, email: str, password: str) -> UserResponse:
+    async def create_user(
+        self, email: str, password: str, is_superuser: bool = False
+    ) -> User:
         try:
             if await self.get_user_by_email(email):
                 raise R2RException(
@@ -150,12 +147,19 @@ class PostgresUserHandler(UserHandler):
         hashed_password = self.crypto_provider.get_password_hash(password)  # type: ignore
         query = f"""
             INSERT INTO {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
-            (email, user_id, hashed_password, collection_ids, graph_ids)
+            (email, id, is_superuser, hashed_password, collection_ids)
             VALUES ($1, $2, $3, $4, $5)
-            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids, graph_ids
+            RETURNING id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids
         """
         result = await self.connection_manager.fetchrow_query(
-            query, [email, generate_user_id(email), hashed_password, [], []]
+            query,
+            [
+                email,
+                generate_user_id(email),
+                is_superuser,
+                hashed_password,
+                [],
+            ],
         )
 
         if not result:
@@ -164,8 +168,8 @@ class PostgresUserHandler(UserHandler):
                 detail="Failed to create user",
             )
 
-        return UserResponse(
-            id=result["user_id"],
+        return User(
+            id=result["id"],
             email=result["email"],
             is_superuser=result["is_superuser"],
             is_active=result["is_active"],
@@ -173,17 +177,16 @@ class PostgresUserHandler(UserHandler):
             created_at=result["created_at"],
             updated_at=result["updated_at"],
             collection_ids=result["collection_ids"],
-            graph_ids=result["graph_ids"],
             hashed_password=hashed_password,
         )
 
-    async def update_user(self, user: UserResponse) -> UserResponse:
+    async def update_user(self, user: User) -> User:
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET email = $1, is_superuser = $2, is_active = $3, is_verified = $4, updated_at = NOW(),
-                name = $5, profile_picture = $6, bio = $7, collection_ids = $8, graph_ids = $9
-            WHERE user_id = $10
-            RETURNING user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, collection_ids, graph_ids
+                name = $5, profile_picture = $6, bio = $7, collection_ids = $8
+            WHERE id = $9
+            RETURNING id, email, is_superuser, is_active, is_verified, created_at, updated_at, name, profile_picture, bio, collection_ids
         """
         result = await self.connection_manager.fetchrow_query(
             query,
@@ -196,7 +199,6 @@ class PostgresUserHandler(UserHandler):
                 user.profile_picture,
                 user.bio,
                 user.collection_ids,
-                user.graph_ids,
                 user.id,
             ],
         )
@@ -207,8 +209,8 @@ class PostgresUserHandler(UserHandler):
                 detail="Failed to update user",
             )
 
-        return UserResponse(
-            id=result["user_id"],
+        return User(
+            id=result["id"],
             email=result["email"],
             is_superuser=result["is_superuser"],
             is_active=result["is_active"],
@@ -219,17 +221,16 @@ class PostgresUserHandler(UserHandler):
             profile_picture=result["profile_picture"],
             bio=result["bio"],
             collection_ids=result["collection_ids"],
-            graph_ids=result["graph_ids"],
         )
 
-    async def delete_user_relational(self, user_id: UUID) -> None:
+    async def delete_user_relational(self, id: UUID) -> None:
         # Get the collections the user belongs to
         collection_query = f"""
             SELECT collection_ids FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
-            WHERE user_id = $1
+            WHERE id = $1
         """
         collection_result = await self.connection_manager.fetchrow_query(
-            collection_query, [user_id]
+            collection_query, [id]
         )
 
         if not collection_result:
@@ -237,49 +238,45 @@ class PostgresUserHandler(UserHandler):
 
         # Remove user from documents
         doc_update_query = f"""
-            UPDATE {self._get_table_name('document_info')}
-            SET user_id = NULL
-            WHERE user_id = $1
+            UPDATE {self._get_table_name('documents')}
+            SET id = NULL
+            WHERE id = $1
         """
-        await self.connection_manager.execute_query(
-            doc_update_query, [user_id]
-        )
+        await self.connection_manager.execute_query(doc_update_query, [id])
 
         # Delete the user
         delete_query = f"""
             DELETE FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
-            WHERE user_id = $1
-            RETURNING user_id
+            WHERE id = $1
+            RETURNING id
         """
         result = await self.connection_manager.fetchrow_query(
-            delete_query, [user_id]
+            delete_query, [id]
         )
 
         if not result:
             raise R2RException(status_code=404, message="User not found")
 
-    async def update_user_password(
-        self, user_id: UUID, new_hashed_password: str
-    ):
+    async def update_user_password(self, id: UUID, new_hashed_password: str):
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET hashed_password = $1, updated_at = NOW()
-            WHERE user_id = $2
+            WHERE id = $2
         """
         await self.connection_manager.execute_query(
-            query, [new_hashed_password, user_id]
+            query, [new_hashed_password, id]
         )
 
-    async def get_all_users(self) -> list[UserResponse]:
+    async def get_all_users(self) -> list[User]:
         query = f"""
-            SELECT user_id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids, graph_ids
+            SELECT id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids
             FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
         """
         results = await self.connection_manager.fetch_query(query)
 
         return [
-            UserResponse(
-                id=result["user_id"],
+            User(
+                id=result["id"],
                 email=result["email"],
                 hashed_password="null",
                 is_superuser=result["is_superuser"],
@@ -288,21 +285,20 @@ class PostgresUserHandler(UserHandler):
                 created_at=result["created_at"],
                 updated_at=result["updated_at"],
                 collection_ids=result["collection_ids"],
-                graph_ids=result["graph_ids"],
             )
             for result in results
         ]
 
     async def store_verification_code(
-        self, user_id: UUID, verification_code: str, expiry: datetime
+        self, id: UUID, verification_code: str, expiry: datetime
     ):
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET verification_code = $1, verification_code_expiry = $2
-            WHERE user_id = $3
+            WHERE id = $3
         """
         await self.connection_manager.execute_query(
-            query, [verification_code, expiry, user_id]
+            query, [verification_code, expiry, id]
         )
 
     async def verify_user(self, verification_code: str) -> None:
@@ -310,7 +306,7 @@ class PostgresUserHandler(UserHandler):
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL
             WHERE verification_code = $1 AND verification_code_expiry > NOW()
-            RETURNING user_id
+            RETURNING id
         """
         result = await self.connection_manager.fetchrow_query(
             query, [verification_code]
@@ -329,68 +325,68 @@ class PostgresUserHandler(UserHandler):
         """
         await self.connection_manager.execute_query(query, [verification_code])
 
-    async def expire_verification_code(self, user_id: UUID):
+    async def expire_verification_code(self, id: UUID):
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET verification_code_expiry = NOW() - INTERVAL '1 day'
-            WHERE user_id = $1
+            WHERE id = $1
         """
-        await self.connection_manager.execute_query(query, [user_id])
+        await self.connection_manager.execute_query(query, [id])
 
     async def store_reset_token(
-        self, user_id: UUID, reset_token: str, expiry: datetime
+        self, id: UUID, reset_token: str, expiry: datetime
     ):
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET reset_token = $1, reset_token_expiry = $2
-            WHERE user_id = $3
+            WHERE id = $3
         """
         await self.connection_manager.execute_query(
-            query, [reset_token, expiry, user_id]
+            query, [reset_token, expiry, id]
         )
 
     async def get_user_id_by_reset_token(
         self, reset_token: str
     ) -> Optional[UUID]:
         query = f"""
-            SELECT user_id FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
+            SELECT id FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             WHERE reset_token = $1 AND reset_token_expiry > NOW()
         """
         result = await self.connection_manager.fetchrow_query(
             query, [reset_token]
         )
-        return result["user_id"] if result else None
+        return result["id"] if result else None
 
-    async def remove_reset_token(self, user_id: UUID):
+    async def remove_reset_token(self, id: UUID):
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET reset_token = NULL, reset_token_expiry = NULL
-            WHERE user_id = $1
+            WHERE id = $1
         """
-        await self.connection_manager.execute_query(query, [user_id])
+        await self.connection_manager.execute_query(query, [id])
 
-    async def remove_user_from_all_collections(self, user_id: UUID):
+    async def remove_user_from_all_collections(self, id: UUID):
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET collection_ids = ARRAY[]::UUID[]
-            WHERE user_id = $1
+            WHERE id = $1
         """
-        await self.connection_manager.execute_query(query, [user_id])
+        await self.connection_manager.execute_query(query, [id])
 
     async def add_user_to_collection(
-        self, user_id: UUID, collection_id: UUID
+        self, id: UUID, collection_id: UUID
     ) -> bool:
-        if not await self.get_user_by_id(user_id):
+        if not await self.get_user_by_id(id):
             raise R2RException(status_code=404, message="User not found")
 
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET collection_ids = array_append(collection_ids, $1)
-            WHERE user_id = $2 AND NOT ($1 = ANY(collection_ids))
-            RETURNING user_id
+            WHERE id = $2 AND NOT ($1 = ANY(collection_ids))
+            RETURNING id
         """
         result = await self.connection_manager.fetchrow_query(
-            query, [collection_id, user_id]
+            query, [collection_id, id]
         )  # fetchrow instead of execute_query
         if not result:
             raise R2RException(
@@ -398,39 +394,20 @@ class PostgresUserHandler(UserHandler):
             )
         return True
 
-    async def add_user_to_graph(self, user_id: UUID, graph_id: UUID) -> bool:
-        if not await self.get_user_by_id(user_id):
-            raise R2RException(status_code=404, message="User not found")
-
-        query = f"""
-            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
-            SET graph_ids = array_append(graph_ids, $1)
-            WHERE user_id = $2 AND NOT ($1 = ANY(graph_ids))
-            RETURNING user_id
-        """
-        result = await self.connection_manager.fetchrow_query(
-            query, [graph_id, user_id]
-        )  # fetchrow instead of execute_query
-        if not result:
-            raise R2RException(
-                status_code=400, message="User already in graph"
-            )
-        return True
-
     async def remove_user_from_collection(
-        self, user_id: UUID, collection_id: UUID
+        self, id: UUID, collection_id: UUID
     ) -> bool:
-        if not await self.get_user_by_id(user_id):
+        if not await self.get_user_by_id(id):
             raise R2RException(status_code=404, message="User not found")
 
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET collection_ids = array_remove(collection_ids, $1)
-            WHERE user_id = $2 AND $1 = ANY(collection_ids)
-            RETURNING user_id
+            WHERE id = $2 AND $1 = ANY(collection_ids)
+            RETURNING id
         """
         result = await self.connection_manager.fetchrow_query(
-            query, [collection_id, user_id]
+            query, [collection_id, id]
         )
         if not result:
             raise R2RException(
@@ -439,31 +416,9 @@ class PostgresUserHandler(UserHandler):
             )
         return True
 
-    async def remove_user_from_graph(
-        self, user_id: UUID, graph_id: UUID
-    ) -> bool:
-        if not await self.get_user_by_id(user_id):
-            raise R2RException(status_code=404, message="User not found")
-
-        query = f"""
-            UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
-            SET graph_ids = array_remove(graph_ids, $1)
-            WHERE user_id = $2 AND $1 = ANY(graph_ids)
-            RETURNING user_id
-        """
-        result = await self.connection_manager.fetchrow_query(
-            query, [graph_id, user_id]
-        )
-        if not result:
-            raise R2RException(
-                status_code=400,
-                message="User is not a member of the specified graph",
-            )
-        return True
-
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, Union[list[UserResponse], int]]:
+    ) -> dict[str, list[User] | int]:
         """
         Get all users in a specific collection with pagination.
 
@@ -473,7 +428,7 @@ class PostgresUserHandler(UserHandler):
             limit (int): The maximum number of users to return.
 
         Returns:
-            List[UserResponse]: A list of UserResponse objects representing the users in the collection.
+            List[User]: A list of User objects representing the users in the collection.
 
         Raises:
             R2RException: If the collection doesn't exist.
@@ -482,8 +437,8 @@ class PostgresUserHandler(UserHandler):
             raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
-            SELECT u.user_id, u.email, u.is_active, u.is_superuser, u.created_at, u.updated_at,
-                u.is_verified, u.collection_ids, u.graph_ids, u.name, u.bio, u.profile_picture,
+            SELECT u.id, u.email, u.is_active, u.is_superuser, u.created_at, u.updated_at,
+                u.is_verified, u.collection_ids, u.name, u.bio, u.profile_picture,
                 COUNT(*) OVER() AS total_entries
             FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
             WHERE $1 = ANY(u.collection_ids)
@@ -499,8 +454,8 @@ class PostgresUserHandler(UserHandler):
         results = await self.connection_manager.fetch_query(query, conditions)
 
         users = [
-            UserResponse(
-                id=row["user_id"],
+            User(
+                id=row["id"],
                 email=row["email"],
                 is_active=row["is_active"],
                 is_superuser=row["is_superuser"],
@@ -508,7 +463,6 @@ class PostgresUserHandler(UserHandler):
                 updated_at=row["updated_at"],
                 is_verified=row["is_verified"],
                 collection_ids=row["collection_ids"],
-                graph_ids=row["graph_ids"],
                 name=row["name"],
                 bio=row["bio"],
                 profile_picture=row["profile_picture"],
@@ -522,19 +476,19 @@ class PostgresUserHandler(UserHandler):
 
         return {"results": users, "total_entries": total_entries}
 
-    async def mark_user_as_superuser(self, user_id: UUID):
+    async def mark_user_as_superuser(self, id: UUID):
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET is_superuser = TRUE, is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL
-            WHERE user_id = $1
+            WHERE id = $1
         """
-        await self.connection_manager.execute_query(query, [user_id])
+        await self.connection_manager.execute_query(query, [id])
 
     async def get_user_id_by_verification_code(
         self, verification_code: str
     ) -> Optional[UUID]:
         query = f"""
-            SELECT user_id FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
+            SELECT id FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             WHERE verification_code = $1 AND verification_code_expiry > NOW()
         """
         result = await self.connection_manager.fetchrow_query(
@@ -546,26 +500,35 @@ class PostgresUserHandler(UserHandler):
                 status_code=400, message="Invalid or expired verification code"
             )
 
-        return result["user_id"]
+        return result["id"]
 
-    async def mark_user_as_verified(self, user_id: UUID):
+    async def mark_user_as_verified(self, id: UUID):
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET is_verified = TRUE, verification_code = NULL, verification_code_expiry = NULL
-            WHERE user_id = $1
+            WHERE id = $1
         """
-        await self.connection_manager.execute_query(query, [user_id])
+        await self.connection_manager.execute_query(query, [id])
 
     async def get_users_overview(
         self,
         offset: int,
         limit: int,
         user_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, Union[list[UserStats], int]]:
+    ) -> dict[str, list[User] | int]:
+
         query = f"""
-            WITH user_docs AS (
+            WITH user_document_ids AS (
                 SELECT
-                    u.user_id,
+                    u.id as user_id,
+                    ARRAY_AGG(d.id) FILTER (WHERE d.id IS NOT NULL) AS doc_ids
+                FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
+                LEFT JOIN {self._get_table_name('documents')} d ON u.id = d.owner_id
+                GROUP BY u.id
+            ),
+            user_docs AS (
+                SELECT
+                    u.id,
                     u.email,
                     u.is_superuser,
                     u.is_active,
@@ -573,17 +536,19 @@ class PostgresUserHandler(UserHandler):
                     u.created_at,
                     u.updated_at,
                     u.collection_ids,
-                    u.graph_ids,
-                    COUNT(d.document_id) AS num_files,
+                    COUNT(d.id) AS num_files,
                     COALESCE(SUM(d.size_in_bytes), 0) AS total_size_in_bytes,
-                    ARRAY_AGG(d.document_id) FILTER (WHERE d.document_id IS NOT NULL) AS document_ids,
-                    COUNT(*) OVER() AS total_entries
+                    ud.doc_ids as document_ids
                 FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
-                LEFT JOIN {self._get_table_name('document_info')} d ON u.user_id = d.user_id
-                {' WHERE u.user_id = ANY($3::uuid[])' if user_ids else ''}
-                GROUP BY u.user_id, u.email, u.is_superuser, u.is_active, u.is_verified, u.created_at, u.updated_at, u.collection_ids, u.graph_ids
+                LEFT JOIN {self._get_table_name('documents')} d ON u.id = d.owner_id
+                LEFT JOIN user_document_ids ud ON u.id = ud.user_id
+                {' WHERE u.id = ANY($3::uuid[])' if user_ids else ''}
+                GROUP BY u.id, u.email, u.is_superuser, u.is_active, u.is_verified,
+                         u.created_at, u.updated_at, u.collection_ids, ud.doc_ids
             )
-            SELECT *
+            SELECT
+                user_docs.*,
+                COUNT(*) OVER() AS total_entries
             FROM user_docs
             ORDER BY email
             OFFSET $1
@@ -601,19 +566,22 @@ class PostgresUserHandler(UserHandler):
         results = await self.connection_manager.fetch_query(query, params)
 
         users = [
-            UserStats(
-                id=row[0],
-                email=row[1],
-                is_superuser=row[2],
-                is_active=row[3],
-                is_verified=row[4],
-                created_at=row[5],
-                updated_at=row[6],
-                collection_ids=row[7] or [],
-                graph_ids=row[8] or [],
-                num_files=row[9],
-                total_size_in_bytes=row[10],
-                document_ids=row[11] or [],
+            User(
+                id=row["id"],
+                email=row["email"],
+                is_superuser=row["is_superuser"],
+                is_active=row["is_active"],
+                is_verified=row["is_verified"],
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
+                collection_ids=row["collection_ids"] or [],
+                num_files=row["num_files"],
+                total_size_in_bytes=row["total_size_in_bytes"],
+                document_ids=(
+                    []
+                    if row["document_ids"] is None
+                    else [doc_id for doc_id in row["document_ids"]]
+                ),
             )
             for row in results
         ]
@@ -629,7 +597,7 @@ class PostgresUserHandler(UserHandler):
         """Check if a collection exists."""
         query = f"""
             SELECT 1 FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
-            WHERE collection_id = $1
+            WHERE id = $1
         """
         result = await self.connection_manager.fetchrow_query(
             query, [collection_id]
@@ -637,7 +605,8 @@ class PostgresUserHandler(UserHandler):
         return result is not None
 
     async def get_user_validation_data(
-        self, user_id: UUID, *args, **kwargs
+        self,
+        user_id: UUID,
     ) -> dict:
         """
         Get verification data for a specific user.
@@ -650,7 +619,7 @@ class PostgresUserHandler(UserHandler):
                 reset_token,
                 reset_token_expiry
             FROM {self._get_table_name("users")}
-            WHERE user_id = $1
+            WHERE id = $1
         """
         result = await self.connection_manager.fetchrow_query(query, [user_id])
 

@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 from ..base.abstractions import (
     AggregateSearchResult,
-    KGSearchSettings,
+    GraphSearchSettings,
     SearchSettings,
 )
 from ..base.logger.run_manager import RunManager, manage_run
@@ -35,21 +35,12 @@ class SearchPipeline(AsyncPipeline):
         state: Optional[AsyncState],
         stream: bool = False,
         run_manager: Optional[RunManager] = None,
-        vector_search_settings: SearchSettings = SearchSettings(),
-        kg_search_settings: KGSearchSettings = KGSearchSettings(),
+        search_settings: SearchSettings = SearchSettings(),
         *args: Any,
         **kwargs: Any,
     ):
         request_state = state or AsyncState()
 
-        use_vector_search = (
-            self._vector_search_pipeline is not None
-            and vector_search_settings.use_vector_search
-        )
-        do_kg = (
-            self._kg_search_pipeline is not None
-            and kg_search_settings.use_kg_search
-        )
         run_manager = run_manager or self.run_manager
         async with manage_run(run_manager):
             vector_search_queue: Queue[str] = Queue()
@@ -57,10 +48,8 @@ class SearchPipeline(AsyncPipeline):
 
             async def enqueue_requests():
                 async for message in input:
-                    if use_vector_search:
-                        await vector_search_queue.put(message)
-                    if do_kg:
-                        await kg_queue.put(message)
+                    await vector_search_queue.put(message)
+                    await kg_queue.put(message)
 
                 await vector_search_queue.put(None)
                 await kg_queue.put(None)
@@ -69,47 +58,37 @@ class SearchPipeline(AsyncPipeline):
             enqueue_task = asyncio.create_task(enqueue_requests())
 
             # Start the embedding and KG pipelines in parallel
-            if use_vector_search:
-                if not self._vector_search_pipeline:
-                    raise ValueError("Vector search pipeline not found")
-
-                vector_search_task = asyncio.create_task(
-                    self._vector_search_pipeline.run(
-                        dequeue_requests(vector_search_queue),
-                        request_state,
-                        stream,
-                        run_manager,
-                        vector_search_settings=vector_search_settings,
-                        *args,
-                        **kwargs,
-                    )
+            vector_search_task = asyncio.create_task(
+                self._vector_search_pipeline.run(
+                    dequeue_requests(vector_search_queue),
+                    request_state,
+                    stream,
+                    run_manager,
+                    search_settings=search_settings,
+                    *args,
+                    **kwargs,
                 )
-
-            if do_kg:
-                if not self._kg_search_pipeline:
-                    raise ValueError("KG search pipeline not found")
-                kg_task = asyncio.create_task(
-                    self._kg_search_pipeline.run(
-                        dequeue_requests(kg_queue),
-                        request_state,
-                        stream,
-                        run_manager,
-                        kg_search_settings=kg_search_settings,
-                        *args,
-                        **kwargs,
-                    )
+            )
+            kg_task = asyncio.create_task(
+                self._kg_search_pipeline.run(
+                    dequeue_requests(kg_queue),
+                    request_state,
+                    stream,
+                    run_manager,
+                    search_settings=search_settings,
+                    *args,
+                    **kwargs,
                 )
+            )
 
         await enqueue_task
 
-        vector_search_results = (
-            await vector_search_task if use_vector_search else []
-        )
-        kg_results = await kg_task if do_kg else []
+        chunk_search_results = await vector_search_task
+        kg_results = await kg_task
 
         return AggregateSearchResult(
-            vector_search_results=vector_search_results,
-            kg_search_results=kg_results,
+            chunk_search_results=chunk_search_results,
+            graph_search_results=kg_results,
         )
 
     def add_pipe(

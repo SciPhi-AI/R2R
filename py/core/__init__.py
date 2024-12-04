@@ -73,15 +73,15 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
-    "KGSearchResult",
-    "KGSearchSettings",
-    "VectorSearchResult",
+    "GraphSearchResult",
+    "ChunkSearchSettings",
+    "GraphSearchSettings",
+    "ChunkSearchResult",
     "SearchSettings",
     "HybridSearchSettings",
     # User abstractions
     "Token",
     "TokenData",
-    "UserStats",
     # Vector abstractions
     "Vector",
     "VectorEntry",
@@ -98,7 +98,7 @@ __all__ = [
     ## API
     # Auth Responses
     "TokenResponse",
-    "UserResponse",
+    "User",
     ## LOGGING
     # Basic types
     "RunType",
@@ -151,10 +151,6 @@ __all__ = [
     "to_async_generator",
     "generate_id",
     "increment_version",
-    "EntityType",
-    "RelationshipType",
-    "format_entity_types",
-    "format_relations",
     "validate_uuid",
     ## MAIN
     ## R2R ABSTRACTIONS
@@ -178,10 +174,6 @@ __all__ = [
     "R2RAgentFactory",
     # R2R Routers
     "AuthRouter",
-    "IngestionRouter",
-    "ManagementRouter",
-    "RetrievalRouter",
-    "KGRouter",
     ## R2R SERVICES
     "AuthService",
     "IngestionService",

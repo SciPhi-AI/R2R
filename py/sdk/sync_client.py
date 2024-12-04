@@ -1,9 +1,10 @@
 import asyncio
-import inspect
 import contextlib
-from typing import Any
-from .async_client import R2RAsyncClient
 import functools
+import inspect
+from typing import Any
+
+from .async_client import R2RAsyncClient
 from .v2 import (
     SyncAuthMixins,
     SyncIngestionMixins,
@@ -38,7 +39,6 @@ class R2RClient(R2RAsyncClient):
     def _override_v2_methods(self):
         """
         Replace async v2 methods with sync versions
-
         This is really ugly, but it's the only way to make it work once we
         remove v2, we can just resort to the metaclass approach that is in utils
         """
@@ -108,5 +108,15 @@ class R2RClient(R2RAsyncClient):
         if hasattr(self, "_loop") and self._loop is not None:
             with contextlib.suppress(Exception):
                 if not self._loop.is_closed():
-                    self._loop.run_until_complete(self.close())
-                    self._loop.close()
+                    try:
+                        self._loop.run_until_complete(self._async_close())
+                    except RuntimeError:
+                        # If the event loop is already running, we can't use run_until_complete
+                        if self._loop.is_running():
+                            self._loop.call_soon_threadsafe(self._sync_close)
+                        else:
+                            asyncio.run_coroutine_threadsafe(
+                                self._async_close(), self._loop
+                            )
+                    finally:
+                        self._loop.close()

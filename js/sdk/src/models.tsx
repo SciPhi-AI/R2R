@@ -37,7 +37,7 @@ export interface HybridSearchSettings {
   rrfK: number;
 }
 
-export interface VectorSearchSettings {
+export interface ChunkSearchSettings {
   useVectorSearch?: boolean;
   useHybridSearch?: boolean;
   filters?: Record<string, any>;
@@ -45,7 +45,7 @@ export interface VectorSearchSettings {
   offset?: number;
   selectedCollectionIds?: string[];
   indexMeasure: IndexMeasure;
-  includeValues?: boolean;
+  includeScores?: boolean;
   includeMetadatas?: boolean;
   probes?: number;
   efSearch?: number;
@@ -61,8 +61,6 @@ export interface KGSearchSettings {
   kgSearchType?: "local";
   kgSearchLevel?: number | null;
   generationConfig?: GenerationConfig;
-  // entityTypes?: any[];
-  // relationships?: any[];
   maxCommunityDescriptionLength?: number;
   maxLlmQueriesForGlobalSearch?: number;
   localSearchLimits?: Record<string, number>;

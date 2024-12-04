@@ -47,6 +47,20 @@ export interface CollectionResponse {
   document_count: number;
 }
 
+// Community types
+export interface CommunityResponse {
+  id: string;
+  name: string;
+  summary: string;
+  findings: string[];
+  communityId?: string;
+  graphId?: string;
+  collectionId?: string;
+  rating?: number;
+  ratingExplanation?: string;
+  descriptionEmbedding?: string;
+}
+
 // Conversation types
 export interface ConversationResponse {
   id: string;
@@ -82,11 +96,30 @@ export interface DocumentResponse {
   size_in_bytes?: number;
   ingestion_status: string;
   kg_extraction_status: string;
-  created_date: string;
-  updated_date: string;
+  created_at: string;
+  updated_at: string;
   ingestion_attempt_number?: number;
   summary?: string;
   summary_embedding?: string;
+}
+
+// Entity types
+export interface EntityResponse {
+  id: string;
+  sid?: string;
+  name: string;
+  category?: string;
+  description?: string;
+  chunk_ids: string[];
+  description_embedding?: string;
+  document_id: string;
+  document_ids: string[];
+  graph_ids: string[];
+  user_id: string;
+  last_modified_by: string;
+  created_at: string;
+  updated_at: string;
+  attributes?: Record<string, any>;
 }
 
 // Graph types
@@ -134,6 +167,21 @@ export interface PromptResponse {
   input_types: string[];
 }
 
+// Relationship types
+export interface RelationshipResponse {
+  id: string;
+  subject: string;
+  predicate: string;
+  object: string;
+  description?: string;
+  subject_id: string;
+  object_id: string;
+  weight: number;
+  chunk_ids: string[];
+  parent_id: string;
+  metadata: Record<string, any>;
+}
+
 // Retrieval types
 export interface VectorSearchResult {
   chunk_id: string;
@@ -155,7 +203,7 @@ export interface KGSearchResult {
 
 export interface CombinedSearchResponse {
   vector_search_results: VectorSearchResult[];
-  kg_search_results?: KGSearchResult[];
+  graph_search_results?: KGSearchResult[];
 }
 
 // System types
@@ -187,7 +235,7 @@ export interface TokenResponse {
   refresh_token: string;
 }
 
-export interface UserResponse {
+export interface User {
   id: string;
   email: string;
   is_active: boolean;
@@ -218,6 +266,12 @@ export type WrappedCollectionsResponse = PaginatedResultsWrapper<
   CollectionResponse[]
 >;
 
+// Community Responses
+export type WrappedCommunityResponse = ResultsWrapper<CommunityResponse>;
+export type WrappedCommunitiesResponse = PaginatedResultsWrapper<
+  CommunityResponse[]
+>;
+
 // Conversation Responses
 export type WrappedConversationMessagesResponse = ResultsWrapper<
   MessageResponse[]
@@ -240,6 +294,10 @@ export type WrappedDocumentsResponse = PaginatedResultsWrapper<
   DocumentResponse[]
 >;
 
+// Entity Responses
+export type WrappedEntityResponse = ResultsWrapper<EntityResponse>;
+export type WrappedEntitiesResponse = PaginatedResultsWrapper<EntityResponse[]>;
+
 // Graph Responses
 export type WrappedGraphResponse = ResultsWrapper<GraphResponse>;
 export type WrappedGraphsResponse = PaginatedResultsWrapper<GraphResponse[]>;
@@ -254,6 +312,12 @@ export type WrappedListVectorIndicesResponse = ResultsWrapper<IndexConfig[]>;
 export type WrappedPromptResponse = ResultsWrapper<PromptResponse>;
 export type WrappedPromptsResponse = PaginatedResultsWrapper<PromptResponse[]>;
 
+// Relationship Responses
+export type WrappedRelationshipResponse = ResultsWrapper<RelationshipResponse>;
+export type WrappedRelationshipsResponse = PaginatedResultsWrapper<
+  RelationshipResponse[]
+>;
+
 // Retrieval Responses
 export type WrappedVectorSearchResponse = ResultsWrapper<VectorSearchResult[]>;
 export type WrappedSearchResponse = ResultsWrapper<CombinedSearchResponse>;
@@ -265,5 +329,5 @@ export type WrappedServerStatsResponse = ResultsWrapper<ServerStats>;
 
 // User Responses
 export type WrappedTokenResponse = ResultsWrapper<TokenResponse>;
-export type WrappedUserResponse = ResultsWrapper<UserResponse>;
-export type WrappedUsersResponse = PaginatedResultsWrapper<UserResponse[]>;
+export type WrappedUserResponse = ResultsWrapper<User>;
+export type WrappedUsersResponse = PaginatedResultsWrapper<User[]>;

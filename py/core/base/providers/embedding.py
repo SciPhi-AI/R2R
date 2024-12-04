@@ -11,8 +11,8 @@ from litellm import AuthenticationError
 from core.base.abstractions import VectorQuantizationSettings
 
 from ..abstractions import (
+    ChunkSearchResult,
     EmbeddingPurpose,
-    VectorSearchResult,
     default_embedding_prefixes,
 )
 from .base import Provider, ProviderConfig
@@ -168,7 +168,7 @@ class EmbeddingProvider(Provider):
     def rerank(
         self,
         query: str,
-        results: list[VectorSearchResult],
+        results: list[ChunkSearchResult],
         stage: PipeStage = PipeStage.RERANK,
         limit: int = 10,
     ):
@@ -178,7 +178,7 @@ class EmbeddingProvider(Provider):
     async def arerank(
         self,
         query: str,
-        results: list[VectorSearchResult],
+        results: list[ChunkSearchResult],
         stage: PipeStage = PipeStage.RERANK,
         limit: int = 10,
     ):

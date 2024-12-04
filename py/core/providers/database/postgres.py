@@ -20,7 +20,7 @@ from core.providers.database.logging import PostgresLoggingHandler
 from core.providers.database.prompt import PostgresPromptHandler
 from core.providers.database.tokens import PostgresTokenHandler
 from core.providers.database.user import PostgresUserHandler
-from core.providers.database.vector import PostgresVectorHandler
+from core.providers.database.vector import PostgresChunkHandler
 
 from .base import SemaphoreConnectionPool
 
@@ -61,7 +61,7 @@ class PostgresDBProvider(DatabaseProvider):
     collections_handler: PostgresCollectionHandler
     token_handler: PostgresTokenHandler
     user_handler: PostgresUserHandler
-    vector_handler: PostgresVectorHandler
+    vector_handler: PostgresChunkHandler
     graph_handler: PostgresGraphHandler
     prompt_handler: PostgresPromptHandler
     file_handler: PostgresFileHandler
@@ -147,7 +147,7 @@ class PostgresDBProvider(DatabaseProvider):
         self.user_handler = PostgresUserHandler(
             self.project_name, self.connection_manager, self.crypto_provider
         )
-        self.vector_handler = PostgresVectorHandler(
+        self.vector_handler = PostgresChunkHandler(
             self.project_name,
             self.connection_manager,
             self.dimension,

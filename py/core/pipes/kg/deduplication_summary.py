@@ -58,14 +58,14 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         description_length = 0
         while index < len(entity_descriptions) and not (
             len(entity_descriptions[index]) + description_length
-            > self.database_provider.config.kg_entity_deduplication_settings.max_description_input_length
+            > self.database_provider.config.graph_entity_deduplication_settings.max_description_input_length
         ):
             description_length += len(entity_descriptions[index])
             index += 1
 
         completion = await self.llm_provider.aget_completion(
             messages=await self.database_provider.prompt_handler.get_message_payload(
-                task_prompt_name=self.database_provider.config.kg_entity_deduplication_settings.kg_entity_deduplication_prompt,
+                task_prompt_name=self.database_provider.config.graph_entity_deduplication_settings.graph_entity_deduplication_prompt,
                 task_inputs={
                     "entity_name": entity_name,
                     "entity_descriptions": "\n".join(
@@ -142,7 +142,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
 
         if graph_id is not None:
             return await self.database_provider.graph_handler.entities.get(
-                id=graph_id,
+                parent_id=graph_id,
                 offset=offset,
                 limit=limit,
                 level=level,
@@ -150,8 +150,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
 
         elif collection_id is not None:
             return await self.database_provider.graph_handler.get_entities(
-                collection_id=collection_id,
-                entity_table_name=f"{level}_entity",
+                parent_id=collection_id,
                 offset=offset,
                 limit=limit,
             )
@@ -175,30 +174,31 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         collection_id = input.message.get("collection_id", None)
         offset = input.message["offset"]
         limit = input.message["limit"]
-        kg_entity_deduplication_type = input.message[
-            "kg_entity_deduplication_type"
+        graph_entity_deduplication_type = input.message[
+            "graph_entity_deduplication_type"
         ]
-        kg_entity_deduplication_prompt = input.message[
-            "kg_entity_deduplication_prompt"
+        graph_entity_deduplication_prompt = input.message[
+            "graph_entity_deduplication_prompt"
         ]
         generation_config = input.message["generation_config"]
 
         logger.info(
-            f"Running kg_entity_deduplication_summary for graph {graph_id} with settings kg_entity_deduplication_type: {kg_entity_deduplication_type}, kg_entity_deduplication_prompt: {kg_entity_deduplication_prompt}, generation_config: {generation_config}"
+            f"Running kg_entity_deduplication_summary for graph {graph_id} with settings graph_entity_deduplication_type: {graph_entity_deduplication_type}, graph_entity_deduplication_prompt: {graph_entity_deduplication_prompt}, generation_config: {generation_config}"
         )
 
         entities = await self._get_entities(
-            graph_id, collection_id, offset, limit, level="graph"  # type: ignore
+            graph_id,
+            collection_id,
+            offset,
+            limit,  # type: ignore
         )
 
         entity_names = [entity.name for entity in entities]
 
         entity_descriptions = (
             await self.database_provider.graph_handler.get_entities(
-                graph_id=graph_id,
-                collection_id=collection_id,
+                parent_id=collection_id,
                 entity_names=entity_names,
-                entity_table_name="entity",
                 offset=offset,
                 limit=limit,
             )

@@ -1,5 +1,6 @@
 import asyncio
 import textwrap
+from copy import copy
 from typing import Any, Optional
 from uuid import UUID
 
@@ -8,7 +9,7 @@ from fastapi.responses import StreamingResponse
 
 from core.base import (
     GenerationConfig,
-    KGSearchSettings,
+    GraphSearchSettings,
     Message,
     R2RException,
     SearchSettings,
@@ -46,22 +47,17 @@ class RetrievalRouterV3(BaseRouterV3):
     def _select_filters(
         self,
         auth_user: Any,
-        search_settings: SearchSettings | KGSearchSettings,
+        search_settings: SearchSettings,
     ) -> dict[str, Any]:
-        selected_collections = {
-            str(cid) for cid in set(search_settings.selected_collection_ids)
-        }
 
-        if auth_user.is_superuser:
-            if selected_collections:
-                # For superusers, we only filter by selected collections
-                filters = {
-                    "collection_ids": {"$overlap": list(selected_collections)}
-                }
-            else:
-                filters = {}
-        else:
+        filters = copy(search_settings.filters)
+        selected_collections = None
+        if not auth_user.is_superuser:
             user_collections = set(auth_user.collection_ids)
+            for key in filters.keys():
+                if "collection_ids" in key:
+                    selected_collections = set(filters[key]["$overlap"])
+                    break
 
             if selected_collections:
                 allowed_collections = user_collections.intersection(
@@ -70,7 +66,7 @@ class RetrievalRouterV3(BaseRouterV3):
             else:
                 allowed_collections = user_collections
             # for non-superusers, we filter by user_id and selected & allowed collections
-            filters = {
+            collection_filters = {
                 "$or": [
                     {"user_id": {"$eq": auth_user.id}},
                     {
@@ -81,8 +77,9 @@ class RetrievalRouterV3(BaseRouterV3):
                 ]  # type: ignore
             }
 
-        if search_settings.filters != {}:
-            filters = {"$and": [filters, search_settings.filters]}  # type: ignore
+            filters.pop("collection_ids", None)
+
+            filters = {"$and": [collection_filters, filters]}  # type: ignore
 
         return filters
 
@@ -102,29 +99,18 @@ class RetrievalRouterV3(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.retrieval.search(
+                            response =client.retrieval.search(
                                 query="Who is Aristotle?",
-                                vector_search_settings={
-                                    "use_vector_search": True,
-                                    "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    "limit": 20,
-                                    "use_hybrid_search": True
-                                },
-                                kg_search_settings={
-                                    "use_kg_search": True,
-                                    "kg_search_type": "local",
-                                    "kg_search_level": "0",
-                                    "generation_config": {
-                                        "model": "gpt-4o-mini",
-                                        "temperature": 0.7,
+                                search_settings: {
+                                    filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                    use_semantic_search: true,
+                                    chunk_settings: {
+                                        limit: 20, // separate limit for chunk vs. graph
+                                        enabled: true
                                     },
-                                    "local_search_limits": {
-                                        "__Entity__": 20,
-                                        "__Relationship__": 20,
-                                        "__Community__": 20,
+                                    graph_settings: {
+                                        enabled: true,
                                     },
-                                    "max_community_description_length": 65536,
-                                    "max_llm_queries_for_global_search": 250
                                 }
                             )
                             """
@@ -141,27 +127,16 @@ class RetrievalRouterV3(BaseRouterV3):
                             function main() {
                                 const response = await client.search({
                                     query: "Who is Aristotle?",
-                                    vectorSearchSettings: {
-                                        useVectorSearch: true,
-                                        filters: { document_id: { $eq: "3e157b3a-8469-51db-90d9-52e7d896b49b" } },
-                                        searchLimit: 20,
-                                        useHybridSearch: true
-                                    },
-                                    kg_search_settings: {
-                                        useKgSearch: true,
-                                        kgSearchType: "local",
-                                        kgSearchLevel: "0",
-                                        generationConfic: {
-                                            model: "gpt-4o-mini",
-                                            temperature: 0.7
+                                    search_settings: {
+                                        filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                        use_semantic_search: true,
+                                        chunk_settings: {
+                                            limit: 20, // separate limit for chunk vs. graph
+                                            enabled: true
                                         },
-                                        localSearchLimits: {
-                                            __Entity__: 20,
-                                            __Relationship__: 20,
-                                            __Community__: 20
-                                        },
-                                        maxCommunityDescriptionLength: 65536,
-                                        maxLlmQueriesForGlobalSearch: 250
+                                        graph_settings: {
+                                            enabled: true,
+                                        }
                                     }
                                 });
                             }
@@ -187,27 +162,16 @@ class RetrievalRouterV3(BaseRouterV3):
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -d '{
                                 "query": "Who is Aristotle?",
-                                "vector_search_settings": {
-                                    "use_vector_search": true,
-                                    "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    "limit": 20,
-                                    "use_hybrid_search": true
-                                },
-                                "kg_search_settings": {
-                                    "use_kg_search": true,
-                                    "kg_search_type": "local",
-                                    "kg_search_level": "0",
-                                    "generation_config": {
-                                        "model": "gpt-4o-mini",
-                                        "temperature": 0.7
+                                "search_settings": {
+                                    filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                    use_semantic_search: true,
+                                    chunk_settings: {
+                                        limit: 20, // separate limit for chunk vs. graph
+                                        enabled: true
                                     },
-                                    "local_search_limits": {
-                                        "__Entity__": 20,
-                                        "__Relationship__": 20,
-                                        "__Community__": 20
-                                    },
-                                    "max_community_description_length": 65536,
-                                    "max_llm_queries_for_global_search": 250
+                                    graph_settings: {
+                                        enabled: true,
+                                    }
                                 }
                             }'
                             """
@@ -222,15 +186,9 @@ class RetrievalRouterV3(BaseRouterV3):
                 ...,
                 description="Search query to find relevant documents",
             ),
-            vector_search_settings: SearchSettings = Body(
-                alias="vectorSearchSettings",
+            search_settings: SearchSettings = Body(
                 default_factory=SearchSettings,
                 description="Settings for vector-based search",
-            ),
-            kg_search_settings: KGSearchSettings = Body(
-                alias="kgSearchSettings",
-                default_factory=KGSearchSettings,
-                description="Settings for knowledge graph search",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedSearchResponse:
@@ -242,19 +200,13 @@ class RetrievalRouterV3(BaseRouterV3):
 
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
             """
-
-            vector_search_settings.filters = self._select_filters(
-                auth_user, vector_search_settings
-            )
-
-            kg_search_settings.filters = self._select_filters(
-                auth_user, kg_search_settings
+            search_settings.filters = self._select_filters(
+                auth_user, search_settings
             )
 
             results = await self.services["retrieval"].search(
                 query=query,
-                vector_search_settings=vector_search_settings,
-                kg_search_settings=kg_search_settings,
+                search_settings=search_settings,
             )
             return results
 
@@ -273,27 +225,23 @@ class RetrievalRouterV3(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.rag(
+                            response =client.retrieval.rag(
                                 query="Who is Aristotle?",
-                                vector_search_settings={
-                                    "use_vector_search": True,
+                                search_settings={
+                                    "use_semantic_search": True,
                                     "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    "limit": 20,
-                                    "use_hybrid_search": True
+                                    "limit": 10,
+                                    chunk_settings={
+                                        "limit": 20, # separate limit for chunk vs. graph
+                                    },
+                                    graph_settings={
+                                        "enabled": True,
+                                    },
                                 },
-                                kg_search_settings={
-                                    "use_kg_search": True,
-                                    "kg_search_type": "local",
-                                    "kg_search_level": "0",
-                                    "generation_config": {
-                                        "model": "gpt-4o-mini",
-                                        "temperature": 0.7,
-                                    }
-                                },
-                                rag_generation_config={
-                                    "stream": False,
-                                    "temperature": 0.7,
-                                    "max_tokens": 150
+                                rag_generation_config: {
+                                    stream: false,
+                                    temperature: 0.7,
+                                    max_tokens: 150
                                 }
                             )
                             """
@@ -308,29 +256,18 @@ class RetrievalRouterV3(BaseRouterV3):
                             const client = new r2rClient("http://localhost:7272");
 
                             function main() {
-                                const response = await client.rag({
+                                const response = await client.retrieval.rag({
                                     query: "Who is Aristotle?",
-                                    vector_search_settings: {
-                                        use_vector_search: true,
-                                        filters: { document_id: { $eq: "3e157b3a-8469-51db-90d9-52e7d896b49b" } },
-                                        limit: 20,
-                                        use_hybrid_search: true
-                                    },
-                                    kg_search_settings: {
-                                        use_kg_search: true,
-                                        kg_search_type: "local",
-                                        kg_search_level: "0",
-                                        generation_config: {
-                                            model: "gpt-4o-mini",
-                                            temperature: 0.7
+                                    search_settings: {
+                                        filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                        use_semantic_search: true,
+                                        chunk_settings: {
+                                            limit: 20, // separate limit for chunk vs. graph
+                                            enabled: true
                                         },
-                                        local_search_limits: {
-                                            __Entity__: 20,
-                                            __Relationship__: 20,
-                                            __Community__: 20
+                                        graph_settings: {
+                                            enabled: true,
                                         },
-                                        max_community_description_length: 65536,
-                                        max_llm_queries_for_global_search: 250
                                     },
                                     rag_generation_config: {
                                         stream: false,
@@ -361,25 +298,21 @@ class RetrievalRouterV3(BaseRouterV3):
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -d '{
                                 "query": "Who is Aristotle?",
-                                "vector_search_settings": {
-                                    "use_vector_search": true,
+                                "search_settings": {
+                                    "use_semantic_search": True,
                                     "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    "limit": 20,
-                                    "use_hybrid_search": true
-                                },
-                                "kg_search_settings": {
-                                    "use_kg_search": true,
-                                    "kg_search_type": "local",
-                                    "kg_search_level": "0",
-                                    "generation_config": {
-                                        "model": "gpt-4o-mini",
-                                        "temperature": 0.7
-                                    }
+                                    "limit": 10,
+                                    chunk_settings={
+                                        "limit": 20, # separate limit for chunk vs. graph
+                                    },
+                                    graph_settings={
+                                        "enabled": True,
+                                    },
                                 },
                                 "rag_generation_config": {
-                                    "stream": false,
-                                    "temperature": 0.7,
-                                    "max_tokens": 150
+                                    stream: false,
+                                    temperature: 0.7,
+                                    max_tokens: 150
                                 }
                             }'
                             """
@@ -391,28 +324,19 @@ class RetrievalRouterV3(BaseRouterV3):
         @self.base_endpoint
         async def rag_app(
             query: str = Body(...),
-            vector_search_settings: SearchSettings = Body(
-                alias="vectorSearchSettings",
+            search_settings: SearchSettings = Body(
                 default_factory=SearchSettings,
                 description="Settings for vector-based search",
             ),
-            kg_search_settings: KGSearchSettings = Body(
-                alias="kgSearchSettings",
-                default_factory=KGSearchSettings,
-                description="Settings for knowledge graph search",
-            ),
             rag_generation_config: GenerationConfig = Body(
-                alias="ragGenerationConfig",
                 default_factory=GenerationConfig,
                 description="Configuration for RAG generation",
             ),
             task_prompt_override: Optional[str] = Body(
-                alias="taskPromptOverride",
                 default=None,
                 description="Optional custom prompt to override default",
             ),
             include_title_if_available: bool = Body(
-                alias="includeTitleIfAvailable",
                 default=False,
                 description="Include document titles in responses when available",
             ),
@@ -428,14 +352,13 @@ class RetrievalRouterV3(BaseRouterV3):
             The generation process can be customized using the `rag_generation_config` parameter.
             """
 
-            vector_search_settings.filters = self._select_filters(
-                auth_user, vector_search_settings
+            search_settings.filters = self._select_filters(
+                auth_user, search_settings
             )
 
             response = await self.services["retrieval"].rag(
                 query=query,
-                vector_search_settings=vector_search_settings,
-                kg_search_settings=kg_search_settings,
+                search_settings=search_settings,
                 rag_generation_config=rag_generation_config,
                 task_prompt_override=task_prompt_override,
                 include_title_if_available=include_title_if_available,
@@ -468,27 +391,27 @@ class RetrievalRouterV3(BaseRouterV3):
                         client = R2RClient("http://localhost:7272")
                         # when using auth, do client.login(...)
 
-                        result = client.agent(
+                        response =client.retrieval.agent(
                             message={
                                 "role": "user",
                                 "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
                             },
-                            vector_search_settings={
-                                "use_vector_search": True,
-                                "filters": {"collection_ids": ["5e157b3a-8469-51db-90d9-52e7d896b49b"]},
-                                "limit": 20,
-                                "use_hybrid_search": True
+                            search_settings={
+                                "use_semantic_search": True,
+                                "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                "limit": 10,
+                                chunk_settings={
+                                    "limit": 20, # separate limit for chunk vs. graph
+                                },
+                                graph_settings={
+                                    "enabled": True,
+                                },
                             },
-                            kg_search_settings={
-                                "use_kg_search": True,
-                                "kg_search_type": "local",
-                                "kg_search_level": "1"
-                            },
-                            rag_generation_config={
-                                "stream": False,
-                                "temperature": 0.7,
-                                "max_tokens": 1000
-                            },
+                            rag_generation_config: {
+                                stream: false,
+                                temperature: 0.7,
+                                max_tokens: 150
+                            }
                             include_title_if_available=True,
                             conversation_id="550e8400-e29b-41d4-a716-446655440000"  # Optional for conversation continuity
                         )
@@ -504,26 +427,26 @@ class RetrievalRouterV3(BaseRouterV3):
                             const client = new r2rClient("http://localhost:7272");
 
                             function main() {
-                                const response = await client.agent({
+                                const response = await client.retrieval.agent({
                                     message: {
                                         role: "user",
                                         content: "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
                                     },
-                                    vector_search_settings: {
-                                        useCectorSearch: true,
-                                        filters: { collection_ids: ["5e157b3a-8469-51db-90d9-52e7d896b49b"] },
-                                        searchLimit: 20,
-                                        useHybridSearch: true
-                                    },
-                                    kg_search_settings: {
-                                        useKgSearch: true,
-                                        kgSearchType: "local",
-                                        kgSearchLevel: "1"
+                                    search_settings: {
+                                        filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                        use_semantic_search: true,
+                                        chunk_settings: {
+                                            limit: 20, // separate limit for chunk vs. graph
+                                            enabled: true
+                                        },
+                                        graph_settings: {
+                                            enabled: true,
+                                        },
                                     },
                                     rag_generation_config: {
                                         stream: false,
                                         temperature: 0.7,
-                                        maxTokens: 1000
+                                        max_tokens: 150
                                     },
                                     includeTitleIfAvailable: true,
                                     conversationId: "550e8400-e29b-41d4-a716-446655440000"
@@ -546,21 +469,16 @@ class RetrievalRouterV3(BaseRouterV3):
                                     "role": "user",
                                     "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
                                 },
-                                "vector_search_settings": {
-                                    "use_vector_search": true,
-                                    "filters": {"collection_ids": ["5e157b3a-8469-51db-90d9-52e7d896b49b"]},
-                                    "limit": 20,
-                                    "use_hybrid_search": true
-                                },
-                                "kg_search_settings": {
-                                    "use_kg_search": true,
-                                    "kg_search_type": "local",
-                                    "kg_search_level": "1"
-                                },
-                                "rag_generation_config": {
-                                    "stream": false,
-                                    "temperature": 0.7,
-                                    "max_tokens": 1000
+                                "search_settings": {
+                                    "use_semantic_search": True,
+                                    "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
+                                    "limit": 10,
+                                    chunk_settings={
+                                        "limit": 20, # separate limit for chunk vs. graph
+                                    },
+                                    graph_settings={
+                                        "enabled": True,
+                                    },
                                 },
                                 "include_title_if_available": true,
                                 "conversation_id": "550e8400-e29b-41d4-a716-446655440000"
@@ -582,38 +500,27 @@ class RetrievalRouterV3(BaseRouterV3):
                 deprecated=True,
                 description="List of messages (deprecated, use message instead)",
             ),
-            vector_search_settings: SearchSettings = Body(
-                alias="vectorSearchSettings",
+            search_settings: SearchSettings = Body(
                 default_factory=SearchSettings,
                 description="Settings for vector-based search",
             ),
-            kg_search_settings: KGSearchSettings = Body(
-                alias="kgSearchSettings",
-                default_factory=KGSearchSettings,
-                description="Settings for knowledge graph search",
-            ),
             rag_generation_config: GenerationConfig = Body(
-                alias="ragGenerationConfig",
                 default_factory=GenerationConfig,
                 description="Configuration for RAG generation",
             ),
             task_prompt_override: Optional[str] = Body(
-                alias="taskPromptOverride",
                 default=None,
                 description="Optional custom prompt to override default",
             ),
             include_title_if_available: bool = Body(
-                alias="includeTitleIfAvailable",
                 default=True,
                 description="Include document titles in responses when available",
             ),
             conversation_id: Optional[UUID] = Body(
-                alias="conversationId",
                 default=None,
                 description="ID of the conversation",
             ),
             branch_id: Optional[UUID] = Body(
-                alias="branchId",
                 default=None,
                 description="ID of the conversation branch",
             ),
@@ -651,18 +558,16 @@ class RetrievalRouterV3(BaseRouterV3):
             information, providing detailed, factual responses with proper attribution to source documents.
             """
 
-            vector_search_settings.filters = self._select_filters(
+            search_settings.filters = self._select_filters(
                 auth_user=auth_user,
-                search_settings=vector_search_settings,
+                search_settings=search_settings,
             )
 
-            kg_search_settings.filters = vector_search_settings.filters
             try:
                 response = await self.services["retrieval"].agent(
                     message=message,
                     messages=messages,
-                    vector_search_settings=vector_search_settings,
-                    kg_search_settings=kg_search_settings,
+                    search_settings=search_settings,
                     rag_generation_config=rag_generation_config,
                     task_prompt_override=task_prompt_override,
                     include_title_if_available=include_title_if_available,
@@ -701,7 +606,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.completion(
+                            response =client.completion(
                                 messages=[
                                     {"role": "system", "content": "You are a helpful assistant."},
                                     {"role": "user", "content": "What is the capital of France?"},
@@ -796,7 +701,6 @@ class RetrievalRouterV3(BaseRouterV3):
                 ],
             ),
             generation_config: GenerationConfig = Body(
-                alias="generationConfig",
                 default_factory=GenerationConfig,
                 description="Configuration for text generation",
                 example={
@@ -822,4 +726,77 @@ class RetrievalRouterV3(BaseRouterV3):
             return await self.services["retrieval"].completion(
                 messages=messages,
                 generation_config=generation_config,
+            )
+
+        @self.router.post(
+            "/retrieval/embedding",
+            summary="Generate Embeddings",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.retrieval.embedding(
+                                text="Who is Aristotle?",
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.retrieval.embedding({
+                                    text: "Who is Aristotle?",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "Shell",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/retrieval/embedding" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "text": "Who is Aristotle?",
+                                }'
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def embedding(
+            text: str = Body(
+                ...,
+                description="Text to generate embeddings for",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Generate embeddings for the provided text using the specified model.
+
+            This endpoint uses the language model to generate embeddings for the provided text.
+            The model parameter specifies the model to use for generating embeddings.
+            """
+
+            return await self.services["retrieval"].embedding(
+                text=text,
             )

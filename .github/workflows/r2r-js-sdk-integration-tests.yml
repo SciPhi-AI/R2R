@@ -1,11 +1,59 @@
 name: R2R JS SDK Integration Tests
+
 on:
   push:
     branches:
-      - '**'  # Trigger on all branches
+      - '**'
+
 jobs:
-  test:
+  setup:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python and install dependencies
+        uses: ./.github/actions/setup-python-light
+        with:
+          os: ubuntu-latest
+      - name: Setup and start PostgreSQL
+        uses: ./.github/actions/setup-postgres-ext
+        with:
+          os: ubuntu-latest
+      - name: Start R2R Light server
+        uses: ./.github/actions/start-r2r-light
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "20.x"
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.x
+          run_install: false
+      - name: Install JS SDK dependencies
+        working-directory: ./js/sdk
+        run: pnpm install
+      - name: Check if R2R server is running
+        run: |
+          curl http://localhost:7272/v2/health || echo "Server not responding"
+
+  v3-integration-tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test-group:
+          - ChunksIntegrationSuperUser.test.ts
+          - CollectionsIntegrationSuperUser.test.ts
+          - ConversationsIntegrationSuperUser.test.ts
+          - DocumentsAndCollectionsIntegrationUser.test.ts
+          - DocumentsIntegrationSuperUser.test.ts
+          - GraphsIntegrationSuperUser.test.ts
+          - PromptsIntegrationSuperUser.test.ts
+          - RetrievalIntegrationSuperUser.test.ts
+          - SystemIntegrationSuperUser.test.ts
+          - SystemIntegrationUser.test.ts
+          - UsersIntegrationSuperUser.test.ts
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
@@ -42,9 +90,6 @@ jobs:
       - name: Install JS SDK dependencies
         working-directory: ./js/sdk
         run: pnpm install
-      - name: Check if R2R server is running
-        run: |
-          curl http://localhost:7272/v2/health || echo "Server not responding"
-      - name: Run integration tests
+      - name: Run remaining tests
         working-directory: ./js/sdk
-        run: pnpm test
+        run: pnpm jest ${{ matrix.test-group }}

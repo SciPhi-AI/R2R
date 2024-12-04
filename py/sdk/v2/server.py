@@ -1,6 +1,8 @@
 from __future__ import annotations  # for Python 3.10+
-from typing_extensions import deprecated
+
 from typing import Optional
+
+from typing_extensions import deprecated
 
 
 class ServerMixins:

@@ -11,13 +11,14 @@ from core.base import (
     AnalysisTypes,
     CollectionResponse,
     DocumentResponse,
+    KGEnrichmentStatus,
     LogFilterCriteria,
     LogProcessor,
     Message,
     Prompt,
     R2RException,
     RunManager,
-    UserResponse,
+    User,
 )
 from core.base.logger.base import RunType
 from core.base.utils import validate_uuid
@@ -236,8 +237,7 @@ class ManagementService(Service):
 
         def validate_filters(filters: dict[str, Any]) -> None:
             ALLOWED_FILTERS = {
-                "document_id",
-                "user_id",
+                "id",
                 "collection_ids",
                 "chunk_id",
                 # TODO - Modify these checks such that they can be used PROPERLY for nested filters
@@ -373,11 +373,30 @@ class ManagementService(Service):
                             f"Error deleting document ID {document_id} from documents_overview: {e}"
                         )
                 await self.providers.database.graph_handler.entities.delete(
-                    parent_id=document_id, store_type="document"
+                    parent_id=document_id,
+                    store_type="documents",  # type: ignore
                 )
                 await self.providers.database.graph_handler.relationships.delete(
-                    parent_id=document_id, store_type="document"
+                    parent_id=document_id,
+                    store_type="documents",  # type: ignore
                 )
+                collections = (
+                    await self.providers.database.get_collections_overview(
+                        offset=0, limit=1000, filter_document_ids=[document_id]
+                    )
+                )
+                # TODO - Loop over all collections
+                for collection in collections["results"]:
+                    await self.providers.database.set_workflow_status(
+                        id=collection.id,
+                        status_type="graph_sync_status",
+                        status=KGEnrichmentStatus.OUTDATED,
+                    )
+                    await self.providers.database.set_workflow_status(
+                        id=collection.id,
+                        status_type="graph_cluster_status",
+                        status=KGEnrichmentStatus.OUTDATED,
+                    )
 
         return None
 
@@ -435,6 +454,17 @@ class ManagementService(Service):
         await self.providers.database.assign_document_to_collection_relational(
             document_id, collection_id
         )
+        await self.providers.database.set_workflow_status(
+            id=collection_id,
+            status_type="graph_sync_status",
+            status=KGEnrichmentStatus.OUTDATED,
+        )
+        await self.providers.database.set_workflow_status(
+            id=collection_id,
+            status_type="graph_cluster_status",
+            status=KGEnrichmentStatus.OUTDATED,
+        )
+
         return {"message": "Document assigned to collection successfully"}
 
     @telemetry_event("RemoveDocumentFromCollection")
@@ -542,15 +572,22 @@ class ManagementService(Service):
     @telemetry_event("CreateCollection")
     async def create_collection(
         self,
-        user_id: UUID,
+        owner_id: UUID,
         name: Optional[str] = None,
         description: str = "",
     ) -> CollectionResponse:
-        return await self.providers.database.create_collection(
-            user_id=user_id,
+        result = await self.providers.database.create_collection(
+            owner_id=owner_id,
             name=name,
             description=description,
         )
+        graph_result = await self.providers.database.graph_handler.create(
+            collection_id=result.id,
+            name=name,
+            description=description,
+        )
+
+        return result
 
     @telemetry_event("UpdateCollection")
     async def update_collection(
@@ -609,7 +646,7 @@ class ManagementService(Service):
     @telemetry_event("GetUsersInCollection")
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
-    ) -> dict[str, list[UserResponse] | int]:
+    ) -> dict[str, list[User] | int]:
         return await self.providers.database.get_users_in_collection(
             collection_id, offset=offset, limit=limit
         )

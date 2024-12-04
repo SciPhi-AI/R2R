@@ -21,14 +21,9 @@ from shared.abstractions.exception import (
 )
 from shared.abstractions.graph import (
     Community,
-    CommunityInfo,
-    Community,
     Entity,
-    DataLevel,
-    EntityType,
     Graph,
     KGExtraction,
-    RelationshipType,
     Relationship,
 )
 from shared.abstractions.ingestion import (
@@ -36,13 +31,13 @@ from shared.abstractions.ingestion import (
     ChunkEnrichmentStrategy,
 )
 from shared.abstractions.kg import (
+    GraphBuildSettings,
+    GraphCommunitySettings,
+    GraphEntitySettings,
+    GraphRelationshipSettings,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
-    GraphBuildSettings,
-    GraphEntitySettings,
-    GraphRelationshipSettings,
-    GraphCommunitySettings,
     KGEntityDeduplicationType,
     KGRunType,
 )
@@ -57,19 +52,19 @@ from shared.abstractions.llm import (
 from shared.abstractions.prompt import Prompt
 from shared.abstractions.search import (
     AggregateSearchResult,
+    ChunkSearchResult,
+    ChunkSearchSettings,
+    GraphSearchResult,
+    GraphSearchSettings,
     HybridSearchSettings,
     KGCommunityResult,
     KGEntityResult,
     KGGlobalResult,
     KGRelationshipResult,
-    KGSearchMethod,
-    KGSearchResult,
     KGSearchResultType,
-    KGSearchSettings,
     SearchSettings,
-    VectorSearchResult,
 )
-from shared.abstractions.user import Token, TokenData, UserStats
+from shared.abstractions.user import Token, TokenData, User
 from shared.abstractions.vector import (
     IndexArgsHNSW,
     IndexArgsIVFFlat,
@@ -111,13 +106,9 @@ __all__ = [
     "R2RException",
     # Graph abstractions
     "Entity",
-    "EntityType",
-    "RelationshipType",
     "Community",
-    "CommunityInfo",
     "KGExtraction",
     "Relationship",
-    "DataLevel",
     # Index abstractions
     "IndexConfig",
     # LLM abstractions
@@ -130,15 +121,15 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
-    "KGSearchResult",
-    "KGSearchMethod",
+    "GraphSearchResult",
     "KGSearchResultType",
     "KGEntityResult",
     "KGRelationshipResult",
     "KGCommunityResult",
     "KGGlobalResult",
-    "KGSearchSettings",
-    "VectorSearchResult",
+    "GraphSearchSettings",
+    "ChunkSearchSettings",
+    "ChunkSearchResult",
     "SearchSettings",
     "HybridSearchSettings",
     # KG abstractions
@@ -154,7 +145,7 @@ __all__ = [
     # User abstractions
     "Token",
     "TokenData",
-    "UserStats",
+    "User",
     # Vector abstractions
     "Vector",
     "VectorEntry",

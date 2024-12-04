@@ -9,11 +9,7 @@ from core.providers import (
     SimpleOrchestrationProvider,
 )
 
-from .api.v2.auth_router import AuthRouter
-from .api.v2.ingestion_router import IngestionRouter
-from .api.v2.kg_router import KGRouter
-from .api.v2.management_router import ManagementRouter
-from .api.v2.retrieval_router import RetrievalRouter
+from .api.v3.auth_router import AuthRouter
 from .api.v3.chunks_router import ChunksRouter
 from .api.v3.collections_router import CollectionsRouter
 from .api.v3.conversations_router import ConversationsRouter
@@ -35,10 +31,6 @@ class R2RApp:
             HatchetOrchestrationProvider | SimpleOrchestrationProvider
         ),
         auth_router: AuthRouter,
-        ingestion_router: IngestionRouter,
-        management_router: ManagementRouter,
-        retrieval_router: RetrievalRouter,
-        kg_router: KGRouter,
         documents_router: DocumentsRouter,
         chunks_router: ChunksRouter,
         indices_router: IndicesRouter,
@@ -51,11 +43,7 @@ class R2RApp:
         graph_router: GraphRouter,
     ):
         self.config = config
-        self.ingestion_router = ingestion_router
-        self.management_router = management_router
-        self.retrieval_router = retrieval_router
         self.auth_router = auth_router
-        self.kg_router = kg_router
         self.orchestration_provider = orchestration_provider
         self.documents_router = documents_router
         self.chunks_router = chunks_router
@@ -84,12 +72,6 @@ class R2RApp:
         self._apply_cors()
 
     def _setup_routes(self):
-        # Include routers in the app
-        # self.app.include_router(self.ingestion_router, prefix="/v2")
-        # self.app.include_router(self.management_router, prefix="/v2")
-        # self.app.include_router(self.retrieval_router, prefix="/v2")
-        # self.app.include_router(self.auth_router, prefix="/v2")
-        # self.app.include_router(self.kg_router, prefix="/v2")
 
         self.app.include_router(self.documents_router, prefix="/v3")
         self.app.include_router(self.chunks_router, prefix="/v3")

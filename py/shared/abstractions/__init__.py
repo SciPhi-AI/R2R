@@ -12,23 +12,15 @@ from .document import (
 )
 from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import R2RDocumentProcessingError, R2RException
-from .graph import (
-    Community,
-    Community,
-    Entity,
-    EntityType,
-    KGExtraction,
-    RelationshipType,
-    Relationship,
-)
+from .graph import Community, Entity, KGExtraction, Relationship
 from .kg import (
+    GraphBuildSettings,
+    GraphCommunitySettings,
+    GraphEntitySettings,
+    GraphRelationshipSettings,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
-    GraphEntitySettings,
-    GraphRelationshipSettings,
-    GraphCommunitySettings,
-    GraphBuildSettings,
     KGRunType,
 )
 from .llm import (
@@ -42,19 +34,19 @@ from .llm import (
 from .prompt import Prompt
 from .search import (
     AggregateSearchResult,
+    ChunkSearchResult,
+    ChunkSearchSettings,
+    GraphSearchResult,
+    GraphSearchSettings,
     HybridSearchSettings,
     KGCommunityResult,
     KGEntityResult,
     KGGlobalResult,
     KGRelationshipResult,
-    KGSearchMethod,
-    KGSearchResult,
     KGSearchResultType,
-    KGSearchSettings,
     SearchSettings,
-    VectorSearchResult,
 )
-from .user import Token, TokenData, UserStats
+from .user import Token, TokenData, User
 from .vector import (
     IndexArgsHNSW,
     IndexArgsIVFFlat,
@@ -93,8 +85,6 @@ __all__ = [
     "R2RException",
     # Graph abstractions
     "Entity",
-    "EntityType",
-    "RelationshipType",
     "Community",
     "Community",
     "KGExtraction",
@@ -109,15 +99,15 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
-    "KGSearchResult",
-    "KGSearchMethod",
+    "GraphSearchResult",
     "KGSearchResultType",
     "KGEntityResult",
     "KGRelationshipResult",
     "KGCommunityResult",
     "KGGlobalResult",
-    "KGSearchSettings",
-    "VectorSearchResult",
+    "GraphSearchSettings",
+    "ChunkSearchSettings",
+    "ChunkSearchResult",
     "SearchSettings",
     "HybridSearchSettings",
     # KG abstractions
@@ -131,7 +121,7 @@ __all__ = [
     # User abstractions
     "Token",
     "TokenData",
-    "UserStats",
+    "User",
     # Vector abstractions
     "Vector",
     "VectorEntry",

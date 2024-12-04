@@ -4,13 +4,7 @@ import uuid
 
 import pytest
 
-from core.base import (
-    Community,
-    Community,
-    Entity,
-    KGExtraction,
-    Relationship,
-)
+from core.base import Community, Entity, KGExtraction, Relationship
 from shared.abstractions.vector import VectorQuantizationType
 
 

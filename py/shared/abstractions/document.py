@@ -90,14 +90,11 @@ class DocumentType(str, Enum):
     # XML
     XML = "xml"
 
-    # Knowledge Graph
-    GRAPH = "graph"
-
 
 class Document(R2RSerializable):
     id: UUID = Field(default_factory=uuid4)
     collection_ids: list[UUID]
-    user_id: UUID
+    owner_id: UUID
     document_type: DocumentType
     metadata: dict
 
@@ -131,7 +128,7 @@ class IngestionStatus(str, Enum):
 
     @classmethod
     def table_name(cls) -> str:
-        return "document_info"
+        return "documents"
 
     @classmethod
     def id_column(cls) -> str:
@@ -152,11 +149,11 @@ class KGExtractionStatus(str, Enum):
 
     @classmethod
     def table_name(cls) -> str:
-        return "document_info"
+        return "documents"
 
     @classmethod
     def id_column(cls) -> str:
-        return "document_id"
+        return "id"
 
 
 class KGEnrichmentStatus(str, Enum):
@@ -177,7 +174,7 @@ class KGEnrichmentStatus(str, Enum):
 
     @classmethod
     def id_column(cls) -> str:
-        return "collection_id"
+        return "id"
 
 
 class DocumentResponse(R2RSerializable):
@@ -185,7 +182,7 @@ class DocumentResponse(R2RSerializable):
 
     id: UUID
     collection_ids: list[UUID]
-    user_id: UUID
+    owner_id: UUID
     document_type: DocumentType
     metadata: dict
     title: Optional[str] = None
@@ -209,9 +206,9 @@ class DocumentResponse(R2RSerializable):
             embedding = f"[{','.join(str(x) for x in self.summary_embedding)}]"
 
         return {
-            "document_id": self.id,
+            "id": self.id,
             "collection_ids": self.collection_ids,
-            "user_id": self.user_id,
+            "owner_id": self.owner_id,
             "document_type": self.document_type,
             "metadata": json.dumps(self.metadata),
             "title": self.title or "N/A",
@@ -251,7 +248,7 @@ class DocumentChunk(R2RSerializable):
     id: UUID
     document_id: UUID
     collection_ids: list[UUID]
-    user_id: UUID
+    owner_id: UUID
     data: str | bytes
     metadata: dict
 

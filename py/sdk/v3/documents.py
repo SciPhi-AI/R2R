@@ -4,13 +4,13 @@ from typing import Optional
 from uuid import UUID
 
 from shared.api.models.base import WrappedBooleanResponse
+from shared.api.models.ingestion.responses import WrappedIngestionResponse
 from shared.api.models.management.responses import (
     WrappedChunksResponse,
     WrappedCollectionsResponse,
     WrappedDocumentResponse,
     WrappedDocumentsResponse,
 )
-from shared.api.models.ingestion.responses import WrappedIngestionResponse
 
 
 class DocumentsSDK:
@@ -24,7 +24,8 @@ class DocumentsSDK:
     async def create(
         self,
         file_path: Optional[str] = None,
-        content: Optional[str] = None,
+        raw_text: Optional[str] = None,
+        chunks: Optional[list[str]] = None,
         id: Optional[str | UUID] = None,
         collection_ids: Optional[list[str | UUID]] = None,
         metadata: Optional[dict] = None,
@@ -43,24 +44,31 @@ class DocumentsSDK:
             ingestion_config (Optional[dict]): Optional ingestion configuration to use
             run_with_orchestration (Optional[bool]): Whether to run with orchestration
         """
-        if not file_path and not content:
-            raise ValueError("Either file_path or content must be provided")
-        if file_path and content:
-            raise ValueError("Cannot provide both file_path and content")
+        if not file_path and not raw_text and not chunks:
+            raise ValueError(
+                "Either `file_path`, `raw_text` or `chunks` must be provided"
+            )
+        if (
+            (file_path and raw_text)
+            or (file_path and chunks)
+            or (raw_text and chunks)
+        ):
+            raise ValueError(
+                "Only one of `file_path`, `raw_text` or `chunks` may be provided"
+            )
 
         data = {}
         files = None
 
         if id:
-            data["id"] = json.dumps(str(id))
+            data["id"] = str(id)  # json.dumps(str(id))
         if metadata:
             data["metadata"] = json.dumps(metadata)
         if ingestion_config:
             data["ingestion_config"] = json.dumps(ingestion_config)
         if collection_ids:
-            for cid in collection_ids:
-                data["collection_ids"] = str(cid)
-
+            collection_ids = [str(collection_id) for collection_id in collection_ids]  # type: ignore
+            data["collection_ids"] = json.dumps(collection_ids)
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
 
@@ -85,79 +93,19 @@ class DocumentsSDK:
                 # Ensure we close the file after the request is complete
                 file_instance.close()
             return result
-        else:
-            data["content"] = content  # type: ignore
+        elif raw_text:
+            data["raw_text"] = raw_text  # type: ignore
             return await self.client._make_request(
                 "POST",
                 "documents",
                 data=data,
                 version="v3",
             )
-
-    async def update(
-        self,
-        id: str | UUID,
-        file_path: Optional[str] = None,
-        content: Optional[str] = None,
-        metadata: Optional[dict] = None,
-        ingestion_config: Optional[dict] = None,
-        run_with_orchestration: Optional[bool] = True,
-    ) -> WrappedIngestionResponse:
-        """
-        Update an existing document.
-
-        Args:
-            id (Union[str, UUID]): ID of document to update
-            file_path (Optional[str]): Path to the new file
-            content (Optional[str]): New text content
-            metadata (Optional[dict]): Updated metadata
-            ingestion_config (Optional[dict]): Custom ingestion configuration
-            run_with_orchestration (Optional[bool]): Whether to run with orchestration
-
-        Returns:
-            dict: Update results containing processed document information
-        """
-        if not file_path and not content:
-            raise ValueError("Either file_path or content must be provided")
-        if file_path and content:
-            raise ValueError("Cannot provide both file_path and content")
-
-        data = {}
-        files = None
-
-        if metadata:
-            data["metadata"] = json.dumps([metadata])
-        if ingestion_config:
-            data["ingestion_config"] = json.dumps(ingestion_config)
-        if run_with_orchestration is not None:
-            data["run_with_orchestration"] = str(run_with_orchestration)
-
-        if file_path:
-            # Create a new file instance that will remain open during the request
-            file_instance = open(file_path, "rb")
-            files = [
-                (
-                    "file",
-                    (file_path, file_instance, "application/octet-stream"),
-                )
-            ]
-            try:
-                result = await self.client._make_request(
-                    "POST",
-                    f"documents/{str(id)}",
-                    data=data,
-                    files=files,
-                    version="v3",
-                )
-            finally:
-                # Ensure we close the file after the request is complete
-                file_instance.close()
-            return result
         else:
-            data["content"] = content  # type: ignore
+            data["chunks"] = json.dumps(chunks)
             return await self.client._make_request(
                 "POST",
-                f"documents/{str(id)}",
+                "documents",
                 data=data,
                 version="v3",
             )
@@ -178,37 +126,6 @@ class DocumentsSDK:
         return await self.client._make_request(
             "GET",
             f"documents/{str(id)}",
-            version="v3",
-        )
-
-    async def list(
-        self,
-        ids: Optional[list[str | UUID]] = None,
-        offset: Optional[int] = 0,
-        limit: Optional[int] = 100,
-    ) -> WrappedDocumentsResponse:
-        """
-        List documents with pagination.
-
-        Args:
-            ids (Optional[list[Union[str, UUID]]]): Optional list of document IDs to filter by
-            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
-            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
-
-        Returns:
-            dict: List of documents and pagination information
-        """
-        params = {
-            "offset": offset,
-            "limit": limit,
-        }
-        if ids:
-            params["ids"] = [str(doc_id) for doc_id in ids]  # type: ignore
-
-        return await self.client._make_request(
-            "GET",
-            "documents",
-            params=params,
             version="v3",
         )
 
@@ -322,6 +239,163 @@ class DocumentsSDK:
         return await self.client._make_request(
             "DELETE",
             "documents/by-filter",
-            params={"filters": filters_json},
+            data=filters_json,
+            # params={"filters": filters_json},
+            # data=filters,
+            version="v3",
+        )
+
+    async def extract(
+        self,
+        id: str | UUID,
+        run_type: Optional[str] = None,
+        settings: Optional[dict] = None,
+        run_with_orchestration: Optional[bool] = True,
+    ) -> dict:
+        """
+        Extract entities and relationships from a document.
+
+        Args:
+            id (Union[str, UUID]): ID of document to extract from
+            run_type (Optional[str]): Whether to return an estimate or run extraction
+            settings (Optional[dict]): Settings for extraction process
+            run_with_orchestration (Optional[bool]): Whether to run with orchestration
+
+        Returns:
+            dict: Extraction results or cost estimate
+        """
+        data = {}
+        if run_type:
+            data["run_type"] = run_type
+        if settings:
+            data["settings"] = json.dumps(settings)
+        if run_with_orchestration is not None:
+            data["run_with_orchestration"] = str(run_with_orchestration)
+
+        return await self.client._make_request(
+            "POST",
+            f"documents/{str(id)}/extract",
+            params=data,
+            version="v3",
+        )
+
+    async def list_entities(
+        self,
+        id: str | UUID,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
+        include_embeddings: Optional[bool] = False,
+    ) -> dict:
+        """
+        List entities extracted from a document.
+
+        Args:
+            id (Union[str, UUID]): ID of document to get entities from
+            offset (Optional[int]): Number of items to skip
+            limit (Optional[int]): Max number of items to return
+            include_embeddings (Optional[bool]): Whether to include embeddings
+
+        Returns:
+            dict: List of entities and pagination info
+        """
+        params = {
+            "offset": offset,
+            "limit": limit,
+            "include_embeddings": include_embeddings,
+        }
+        return await self.client._make_request(
+            "GET",
+            f"documents/{str(id)}/entities",
+            params=params,
+            version="v3",
+        )
+
+    async def list_relationships(
+        self,
+        id: str | UUID,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
+        entity_names: Optional[list[str]] = None,
+        relationship_types: Optional[list[str]] = None,
+    ) -> dict:
+        """
+        List relationships extracted from a document.
+
+        Args:
+            id (Union[str, UUID]): ID of document to get relationships from
+            offset (Optional[int]): Number of items to skip
+            limit (Optional[int]): Max number of items to return
+            entity_names (Optional[list[str]]): Filter by entity names
+            relationship_types (Optional[list[str]]): Filter by relationship types
+
+        Returns:
+            dict: List of relationships and pagination info
+        """
+        params = {
+            "offset": offset,
+            "limit": limit,
+        }
+        if entity_names:
+            params["entity_names"] = entity_names
+        if relationship_types:
+            params["relationship_types"] = relationship_types
+
+        return await self.client._make_request(
+            "GET",
+            f"documents/{str(id)}/relationships",
+            params=params,
+            version="v3",
+        )
+
+    # async def extract(
+    #     self,
+    #     id: str | UUID,
+    #     run_type: Optional[str] = None,
+    #     run_with_orchestration: Optional[bool] = True,
+    # ):
+    #     data = {}
+
+    #     if run_type:
+    #         data["run_type"] = run_type
+    #     if run_with_orchestration is not None:
+    #         data["run_with_orchestration"] = str(run_with_orchestration)
+
+    #     return await self.client._make_request(
+    #         "POST",
+    #         f"documents/{str(id)}/extract",
+    #         params=data,
+    #         version="v3",
+    #     )
+
+    # Be sure to put at bottom of the page...
+
+    async def list(
+        self,
+        ids: Optional[list[str | UUID]] = None,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = 100,
+    ) -> WrappedDocumentsResponse:
+        """
+        List documents with pagination.
+
+        Args:
+            ids (Optional[list[Union[str, UUID]]]): Optional list of document IDs to filter by
+            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
+            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+
+        Returns:
+            dict: List of documents and pagination information
+        """
+        params = {
+            "offset": offset,
+            "limit": limit,
+        }
+        if ids:
+            params["ids"] = [str(doc_id) for doc_id in ids]  # type: ignore
+
+        return await self.client._make_request(
+            "GET",
+            "documents",
+            params=params,
             version="v3",
         )

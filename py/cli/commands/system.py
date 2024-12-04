@@ -1,20 +1,14 @@
 import json
-
-import asyncclick as click
-from asyncclick import pass_context
-
-from r2r import R2RAsyncClient
-from cli.utils.timer import timer
-from cli.command_group import cli
-
-
 import os
 import platform
 import subprocess
 import sys
 from importlib.metadata import version as get_version
 
+import asyncclick as click
+from asyncclick import pass_context
 from dotenv import load_dotenv
+
 from cli.command_group import cli
 from cli.utils.docker_utils import (
     bring_down_docker_compose,
@@ -23,6 +17,8 @@ from cli.utils.docker_utils import (
     run_local_serve,
     wait_for_container_health,
 )
+from cli.utils.timer import timer
+from r2r import R2RAsyncClient
 
 
 @click.group()

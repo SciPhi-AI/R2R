@@ -11,6 +11,7 @@ from litellm import AuthenticationError
 from core.base import (
     DocumentChunk,
     IngestionStatus,
+    KGEnrichmentStatus,
     OrchestrationProvider,
     generate_extraction_id,
     increment_version,
@@ -88,21 +89,6 @@ def hatchet_ingestion_factory(
                 async for extraction in extractions_generator:
                     extractions.append(extraction)
 
-                # serializable_extractions = [
-                #     extraction.to_dict() for extraction in extractions
-                # ]
-
-                # return {
-                #     "status": "Successfully extracted data",
-                #     "extractions": serializable_extractions,
-                #     "document_info": document_info.to_dict(),
-                # }
-
-                # @orchestration_provider.step(parents=["parse"], timeout="60m")
-                # async def embed(self, context: Context) -> dict:
-                #     document_info_dict = context.step_output("parse")["document_info"]
-                #     document_info = DocumentResponse(**document_info_dict)
-
                 await service.update_document_status(
                     document_info, status=IngestionStatus.AUGMENTING
                 )
@@ -140,16 +126,6 @@ def hatchet_ingestion_factory(
                 async for _ in storage_generator:
                     pass
 
-                #     return {
-                #         "document_info": document_info.to_dict(),
-                #     }
-
-                # @orchestration_provider.step(parents=["embed"], timeout="60m")
-                # async def finalize(self, context: Context) -> dict:
-                #     document_info_dict = context.step_output("embed")["document_info"]
-                #     print("Calling finalize for document_info_dict = ", document_info_dict)
-                #     document_info = DocumentResponse(**document_info_dict)
-
                 is_update = context.workflow_input()["request"].get(
                     "is_update"
                 )
@@ -169,7 +145,7 @@ def hatchet_ingestion_factory(
                 if not collection_ids:
                     # TODO: Move logic onto the `management service`
                     collection_id = generate_default_user_collection_id(
-                        document_info.user_id
+                        document_info.owner_id
                     )
                     await service.providers.database.assign_document_to_collection_relational(
                         document_id=document_info.id,
@@ -179,16 +155,34 @@ def hatchet_ingestion_factory(
                         document_id=document_info.id,
                         collection_id=collection_id,
                     )
+                    await service.providers.database.set_workflow_status(
+                        id=collection_id,
+                        status_type="graph_sync_status",
+                        status=KGEnrichmentStatus.OUTDATED,
+                    )
+                    await service.providers.database.set_workflow_status(
+                        id=collection_id,
+                        status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                        status=KGEnrichmentStatus.OUTDATED,
+                    )
                 else:
                     for collection_id in collection_ids:
                         try:
-                            # FIXME: Right now we just throw a warning if the collection already exists, but we should probably handle this more gracefully
-                            await service.providers.database.create_collection(
-                                user_id=document_info.user_id,
-                                name=document_info.title,
-                                description="",
+                            name = document_info.title or "N/A"
+                            description = ""
+                            result = await self.providers.database.create_collection(
+                                owner_id=document_info.owner_id,
+                                name=name,
+                                description=description,
                                 collection_id=collection_id,
                             )
+                            await self.providers.database.graph_handler.create(
+                                collection_id=collection_id,
+                                name=name,
+                                description=description,
+                                graph_id=collection_id,
+                            )
+
                         except Exception as e:
                             logger.warning(
                                 f"Warning, could not create collection with error: {str(e)}"
@@ -202,7 +196,16 @@ def hatchet_ingestion_factory(
                             document_id=document_info.id,
                             collection_id=collection_id,
                         )
-
+                        await service.providers.database.set_workflow_status(
+                            id=collection_id,
+                            status_type="graph_sync_status",
+                            status=KGEnrichmentStatus.OUTDATED,
+                        )
+                        await service.providers.database.set_workflow_status(
+                            id=collection_id,
+                            status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                            status=KGEnrichmentStatus.OUTDATED,
+                        )
                 # get server chunk enrichment settings and override parts of it if provided in the ingestion config
                 server_chunk_enrichment_settings = getattr(
                     service.providers.ingestion.config,
@@ -436,7 +439,7 @@ def hatchet_ingestion_factory(
                     id=generate_extraction_id(document_id, i),
                     document_id=document_id,
                     collection_ids=[],
-                    user_id=document_info.user_id,
+                    owner_id=document_info.owner_id,
                     data=chunk.text,
                     metadata=parsed_data["metadata"],
                 ).to_dict()
@@ -499,7 +502,7 @@ def hatchet_ingestion_factory(
                 if not collection_ids:
                     # TODO: Move logic onto the `management service`
                     collection_id = generate_default_user_collection_id(
-                        document_info.user_id
+                        document_info.owner_id
                     )
                     await service.providers.database.assign_document_to_collection_relational(
                         document_id=document_info.id,
@@ -509,15 +512,34 @@ def hatchet_ingestion_factory(
                         document_id=document_info.id,
                         collection_id=collection_id,
                     )
+                    await service.providers.database.set_workflow_status(
+                        id=collection_id,
+                        status_type="graph_sync_status",
+                        status=KGEnrichmentStatus.OUTDATED,
+                    )
+                    await service.providers.database.set_workflow_status(
+                        id=collection_id,
+                        status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                        status=KGEnrichmentStatus.OUTDATED,
+                    )
                 else:
                     for collection_id in collection_ids:
                         try:
+                            name = document_info.title or "N/A"
+                            description = ""
                             await service.providers.database.create_collection(
-                                user_id=document_info.user_id,
-                                name=document_info.title or "N/A",
-                                description="",
+                                owner_id=document_info.owner_id,
+                                name=name,
+                                description=description,
                                 collection_id=collection_id,
                             )
+                            await self.providers.database.graph_handler.create(
+                                collection_id=collection_id,
+                                name=name,
+                                description=description,
+                                graph_id=collection_id,
+                            )
+
                         except Exception as e:
                             logger.warning(
                                 f"Warning, could not create collection with error: {str(e)}"
@@ -530,6 +552,16 @@ def hatchet_ingestion_factory(
                         await service.providers.database.assign_document_to_collection_vector(
                             document_id=document_info.id,
                             collection_id=collection_id,
+                        )
+                        await service.providers.database.set_workflow_status(
+                            id=collection_id,
+                            status_type="graph_sync_status",
+                            status=KGEnrichmentStatus.OUTDATED,
+                        )
+                        await service.providers.database.set_workflow_status(
+                            id=collection_id,
+                            status_type="graph_cluster_status",
+                            status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                         )
             except Exception as e:
                 logger.error(
@@ -604,9 +636,9 @@ def hatchet_ingestion_factory(
                     else parsed_data["document_id"]
                 )
                 extraction_uuid = (
-                    UUID(parsed_data["chunk_id"])
-                    if isinstance(parsed_data["chunk_id"], str)
-                    else parsed_data["chunk_id"]
+                    UUID(parsed_data["id"])
+                    if isinstance(parsed_data["id"], str)
+                    else parsed_data["id"]
                 )
 
                 await self.ingestion_service.update_chunk_ingress(

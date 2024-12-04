@@ -1,7 +1,3 @@
-"""
-FIXME: We should migrate away from having prompt_id, and just have it use id.
-"""
-
 import json
 import logging
 import os
@@ -172,7 +168,7 @@ class CacheablePromptHandler(PromptHandler):
         prompt_override: Optional[str] = None,
     ) -> dict:
         query = f"""
-        SELECT prompt_id, name, template, input_types, created_at, updated_at
+        SELECT id, name, template, input_types, created_at, updated_at
         FROM {self._get_table_name("prompts")}
         WHERE name = $1;
         """
@@ -186,7 +182,7 @@ class CacheablePromptHandler(PromptHandler):
             input_types = json.loads(input_types)
 
         return {
-            "id": result["prompt_id"],
+            "id": result["id"],
             "name": result["name"],
             "template": result["template"],
             "input_types": input_types,
@@ -271,7 +267,7 @@ class PostgresPromptHandler(CacheablePromptHandler):
     async def _load_prompts_from_database(self) -> None:
         """Load prompts from the database."""
         query = f"""
-        SELECT prompt_id, name, template, input_types, created_at, updated_at
+        SELECT id, name, template, input_types, created_at, updated_at
         FROM {self._get_table_name("prompts")};
         """
         try:
@@ -285,7 +281,7 @@ class PostgresPromptHandler(CacheablePromptHandler):
                     input_types = json.loads(input_types)
 
                 self.prompts[row["name"]] = {
-                    "prompt_id": row["prompt_id"],
+                    "id": row["id"],
                     "template": row["template"],
                     "input_types": input_types,
                     "created_at": row["created_at"],
@@ -295,7 +291,7 @@ class PostgresPromptHandler(CacheablePromptHandler):
                 self._template_cache.set(
                     row["name"],
                     {
-                        "prompt_id": row["prompt_id"],
+                        "id": row["id"],
                         "template": row["template"],
                         "input_types": input_types,
                     },
@@ -443,7 +439,7 @@ class PostgresPromptHandler(CacheablePromptHandler):
         UPDATE {self._get_table_name("prompts")}
         SET {', '.join(set_clauses)}
         WHERE name = $1
-        RETURNING prompt_id, template, input_types;
+        RETURNING id, template, input_types;
         """
 
         try:
@@ -471,7 +467,7 @@ class PostgresPromptHandler(CacheablePromptHandler):
         """Create the necessary tables for storing prompts."""
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name("prompts")} (
-            prompt_id UUID PRIMARY KEY,
+            id UUID PRIMARY KEY,
             name VARCHAR(255) NOT NULL UNIQUE,
             template TEXT NOT NULL,
             input_types JSONB NOT NULL,
@@ -509,7 +505,7 @@ class PostgresPromptHandler(CacheablePromptHandler):
         if preserve_existing and name in self.prompts:
             return
 
-        prompt_id = generate_default_prompt_id(name)
+        id = generate_default_prompt_id(name)
 
         # Ensure input_types is properly serialized
         input_types_json = (
@@ -519,21 +515,21 @@ class PostgresPromptHandler(CacheablePromptHandler):
         )
 
         query = f"""
-        INSERT INTO {self._get_table_name("prompts")} (prompt_id, name, template, input_types)
+        INSERT INTO {self._get_table_name("prompts")} (id, name, template, input_types)
         VALUES ($1, $2, $3, $4)
         ON CONFLICT (name) DO UPDATE
         SET template = EXCLUDED.template,
             input_types = EXCLUDED.input_types,
             updated_at = CURRENT_TIMESTAMP
-        RETURNING prompt_id, created_at, updated_at;
+        RETURNING id, created_at, updated_at;
         """
 
         result = await self.connection_manager.fetchrow_query(
-            query, [prompt_id, name, template, input_types_json]
+            query, [id, name, template, input_types_json]
         )
 
         self.prompts[name] = {
-            "prompt_id": result["prompt_id"],
+            "id": result["id"],
             "template": template,
             "input_types": input_types,
             "created_at": result["created_at"],
@@ -544,7 +540,7 @@ class PostgresPromptHandler(CacheablePromptHandler):
         self._template_cache.set(
             name,
             {
-                "prompt_id": prompt_id,
+                "id": id,
                 "template": template,
                 "input_types": input_types,
             },  # Store as dict in cache
@@ -558,7 +554,7 @@ class PostgresPromptHandler(CacheablePromptHandler):
     async def get_all_prompts(self) -> dict[str, Any]:
         """Retrieve all stored prompts."""
         query = f"""
-        SELECT prompt_id, name, template, input_types, created_at, updated_at, COUNT(*) OVER() AS total_entries
+        SELECT id, name, template, input_types, created_at, updated_at, COUNT(*) OVER() AS total_entries
         FROM {self._get_table_name("prompts")};
         """
         results = await self.connection_manager.fetch_query(query)
@@ -571,7 +567,7 @@ class PostgresPromptHandler(CacheablePromptHandler):
         prompts = [
             {
                 "name": row["name"],
-                "id": row["prompt_id"],
+                "id": row["id"],
                 "template": row["template"],
                 "input_types": (
                     json.loads(row["input_types"])

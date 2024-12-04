@@ -17,8 +17,8 @@ from core.base import (
     Relationship,
 )
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.providers.database import PostgresDBProvider
+from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -87,7 +87,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
         combined_extraction: str = " ".join([extraction.data for extraction in extractions])  # type: ignore
 
         messages = await self.database_provider.prompt_handler.get_message_payload(
-            task_prompt_name=self.database_provider.config.kg_creation_settings.graphrag_relationships_extraction_few_shot,
+            task_prompt_name=self.database_provider.config.graph_creation_settings.graphrag_relationships_extraction_few_shot,
             task_inputs={
                 "input": combined_extraction,
                 "max_knowledge_relationships": max_knowledge_relationships,
@@ -143,7 +143,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
                                 category=entity_category,
                                 description=entity_description,
                                 name=entity_value,
-                                document_id=extractions[0].document_id,
+                                parent_id=extractions[0].document_id,
                                 chunk_ids=[
                                     extraction.id for extraction in extractions
                                 ],
@@ -167,7 +167,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
                                 object=object,
                                 description=description,
                                 weight=weight,
-                                document_id=extractions[0].document_id,
+                                parent_id=extractions[0].document_id,
                                 chunk_ids=[
                                     extraction.id for extraction in extractions
                                 ],
@@ -204,8 +204,6 @@ class KGExtractionPipe(AsyncPipe[dict]):
         )
 
         return KGExtraction(
-            chunk_ids=[extraction.id for extraction in extractions],
-            document_id=extractions[0].document_id,
             entities=[],
             relationships=[],
         )
@@ -245,7 +243,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
             DocumentChunk(
                 id=extraction["id"],
                 document_id=extraction["document_id"],
-                user_id=extraction["user_id"],
+                owner_id=extraction["owner_id"],
                 collection_ids=extraction["collection_ids"],
                 data=extraction["text"],
                 metadata=extraction["metadata"],

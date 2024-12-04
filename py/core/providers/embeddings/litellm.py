@@ -9,11 +9,11 @@ from aiohttp import ClientError, ClientSession
 from litellm import AuthenticationError, aembedding, embedding
 
 from core.base import (
+    ChunkSearchResult,
     EmbeddingConfig,
     EmbeddingProvider,
     EmbeddingPurpose,
     R2RException,
-    VectorSearchResult,
 )
 
 logger = logging.getLogger()
@@ -193,7 +193,7 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
     def rerank(
         self,
         query: str,
-        results: list[VectorSearchResult],
+        results: list[ChunkSearchResult],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
     ):
@@ -229,7 +229,7 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
                     copied_result.score = rank_info["score"]
                     scored_results.append(copied_result)
 
-                # Return only the VectorSearchResult objects, limited to specified count
+                # Return only the ChunkSearchResult objects, limited to specified count
                 return scored_results[:limit]
 
             except requests.RequestException as e:
@@ -242,21 +242,21 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
     async def arerank(
         self,
         query: str,
-        results: list[VectorSearchResult],
+        results: list[ChunkSearchResult],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         """
         Asynchronously rerank search results using the configured rerank model.
 
         Args:
             query: The search query string
-            results: List of VectorSearchResult objects to rerank
+            results: List of ChunkSearchResult objects to rerank
             stage: The pipeline stage (must be RERANK)
             limit: Maximum number of results to return
 
         Returns:
-            List of reranked VectorSearchResult objects, limited to specified count
+            List of reranked ChunkSearchResult objects, limited to specified count
         """
         if self.config.rerank_model is not None:
             if not self.rerank_url:
@@ -291,7 +291,7 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
                             copied_result.score = rank_info["score"]
                             scored_results.append(copied_result)
 
-                        # Return only the VectorSearchResult objects, limited to specified count
+                        # Return only the ChunkSearchResult objects, limited to specified count
                         return scored_results[:limit]
 
             except (ClientError, Exception) as e:

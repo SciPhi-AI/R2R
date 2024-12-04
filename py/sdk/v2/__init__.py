@@ -4,7 +4,6 @@ from .kg import KGMixins
 from .management import ManagementMixins
 from .retrieval import RetrievalMixins
 from .server import ServerMixins
-
 from .sync_auth import SyncAuthMixins
 from .sync_ingestion import SyncIngestionMixins
 from .sync_kg import SyncKGMixins

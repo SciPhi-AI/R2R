@@ -11,24 +11,26 @@ from fastapi import Body, Depends, File, Form, Path, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import Json
 
-from core.base import R2RException, RunType, generate_document_id
-from core.base.abstractions import (
-    Entity,
-    GraphBuildSettings,
-    KGCreationSettings,
-    KGRunType,
-    Relationship,
+from core.base import (
+    R2RException,
+    RunType,
+    UnprocessedChunk,
+    Workflow,
+    generate_document_id,
+    generate_id,
 )
+from core.base.abstractions import KGCreationSettings, KGRunType
 from core.base.api.models import (
     GenericBooleanResponse,
-    PaginatedResultsWrapper,
     WrappedBooleanResponse,
     WrappedChunksResponse,
     WrappedCollectionsResponse,
     WrappedDocumentResponse,
     WrappedDocumentsResponse,
+    WrappedEntitiesResponse,
+    WrappedGenericMessageResponse,
     WrappedIngestionResponse,
-    WrappedKGCreationResponse,
+    WrappedRelationshipsResponse,
 )
 from core.providers import (
     HatchetOrchestrationProvider,
@@ -39,6 +41,7 @@ from core.utils import update_settings_from_dict
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
+MAX_CHUNKS_PER_REQUEST = 1024 * 100
 
 
 class DocumentsRouter(BaseRouterV3):
@@ -52,6 +55,56 @@ class DocumentsRouter(BaseRouterV3):
         run_type: RunType = RunType.INGESTION,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
+        self._register_workflows()
+
+    # TODO - Remove this legacy method
+    def _register_workflows(self):
+        self.orchestration_provider.register_workflows(
+            Workflow.INGESTION,
+            self.services["ingestion"],
+            {
+                "ingest-files": (
+                    "Ingest files task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Document created and ingested successfully."
+                ),
+                "ingest-chunks": (
+                    "Ingest chunks task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Document created and ingested successfully."
+                ),
+                "update-files": (
+                    "Update file task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Update task queued successfully."
+                ),
+                "update-chunk": (
+                    "Update chunk task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Chunk update completed successfully."
+                ),
+                "update-document-metadata": (
+                    "Update document metadata task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Document metadata update completed successfully."
+                ),
+                "create-vector-index": (
+                    "Vector index creation task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Vector index creation task completed successfully."
+                ),
+                "delete-vector-index": (
+                    "Vector index deletion task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Vector index deletion task completed successfully."
+                ),
+                "select-vector-index": (
+                    "Vector index selection task queued successfully."
+                    if self.orchestration_provider.config.provider != "simple"
+                    else "Vector index selection task completed successfully."
+                ),
+            },
+        )
 
     def _setup_routes(self):
         @self.router.post(
@@ -69,7 +122,7 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.create(
+                            response = client.documents.create(
                                 file_path="pg_essay_1.html",
                                 metadata={"metadata_1":"some random metadata"},
                                 id=None
@@ -124,17 +177,21 @@ class DocumentsRouter(BaseRouterV3):
         async def create_document(
             file: Optional[UploadFile] = File(
                 None,
-                description="The file to ingest. Either a file or content must be provided, but not both.",
+                description="The file to ingest. Exactly one of file, raw_text, or chunks must be provided.",
             ),
-            content: Optional[str] = Form(
+            raw_text: Optional[str] = Form(
                 None,
-                description="The text content to ingest. Either a file or content must be provided, but not both.",
+                description="Raw text content to ingest. Exactly one of file, raw_text, or chunks must be provided.",
+            ),
+            chunks: Optional[Json[list[str]]] = Form(
+                None,
+                description="Pre-processed text chunks to ingest. Exactly one of file, raw_text, or chunks must be provided.",
             ),
             id: Optional[UUID] = Form(
                 None,
                 description="The ID of the document. If not provided, a new ID will be generated.",
             ),
-            collection_ids: Optional[list[str]] = Form(
+            collection_ids: Optional[Json[list[UUID]]] = Form(
                 None,
                 description="Collection IDs to associate with the document. If none are provided, the document will be assigned to the user's default collection.",
             ),
@@ -156,21 +213,24 @@ class DocumentsRouter(BaseRouterV3):
             Creates a new Document object from an input file or text content. The document will be processed
             to create chunks for vector indexing and search.
 
-            Either a file or text content must be provided, but not both. Regular users can only create
-            documents for themselves, while superusers can create documents for any user.
+            Either a file or text content must be provided, but not both. Documents are shared through `Collections` which allow for tightly specified cross-user interactions.
 
             The ingestion process runs asynchronously and its progress can be tracked using the returned
             task_id.
             """
-            if not file and not content:
+            if not file and not raw_text and not chunks:
                 raise R2RException(
                     status_code=422,
-                    message="Either a file or content must be provided.",
+                    message="Either a `file`, `raw_text`, or `chunks` must be provided.",
                 )
-            if file and content:
+            if (
+                (file and raw_text)
+                or (file and chunks)
+                or (raw_text and chunks)
+            ):
                 raise R2RException(
                     status_code=422,
-                    message="Both a file and content cannot be provided.",
+                    message="Only one of `file`, `raw_text`, or `chunks` may be provided.",
                 )
             # Check if the user is a superuser
             metadata = metadata or {}
@@ -186,43 +246,106 @@ class DocumentsRouter(BaseRouterV3):
                 # If user is not a superuser, set user_id in metadata
                 metadata["user_id"] = str(auth_user.id)
 
-            if file:
-                file_data = await self._process_file(file)
-                content_length = len(file_data["content"])
-                file_content = BytesIO(base64.b64decode(file_data["content"]))
+            if chunks:
+                if len(chunks) == 0:
+                    raise R2RException("Empty list of chunks provided", 400)
 
-                file_data.pop("content", None)
-                document_id = id or generate_document_id(
-                    file_data["filename"], auth_user.id
+                if len(chunks) > MAX_CHUNKS_PER_REQUEST:
+                    raise R2RException(
+                        f"Maximum of {MAX_CHUNKS_PER_REQUEST} chunks per request",
+                        400,
+                    )
+                document_id = generate_document_id(
+                    str(json.dumps(chunks)), auth_user.id
                 )
-            elif content:
-                content_length = len(content)
-                file_content = BytesIO(content.encode("utf-8"))
-                document_id = id or generate_document_id(content, auth_user.id)
-                file_data = {
-                    "filename": "N/A",
-                    "content_type": "text/plain",
+
+                # FIXME: Metadata doesn't seem to be getting passed through
+                raw_chunks_for_doc = [
+                    UnprocessedChunk(
+                        text=chunk, metadata=metadata, id=generate_id()
+                    )
+                    for chunk in chunks
+                ]
+
+                # Prepare workflow input
+                workflow_input = {
+                    "document_id": str(document_id),
+                    "chunks": [
+                        chunk.model_dump() for chunk in raw_chunks_for_doc
+                    ],
+                    "metadata": metadata,  # Base metadata for the document
+                    "user": auth_user.model_dump_json(),
                 }
-            else:
-                raise R2RException(
-                    status_code=422,
-                    message="Either a file or content must be provided.",
-                )
 
-            collection_uuids = None
-            if collection_ids:
-                try:
-                    collection_uuids = [UUID(cid) for cid in collection_ids]
-                except ValueError:
+                # TODO - Modify create_chunks so that we can add chunks to existing document
+
+                if run_with_orchestration:
+                    # Run ingestion with orchestration
+                    raw_message = (
+                        await self.orchestration_provider.run_workflow(
+                            "ingest-chunks",
+                            {"request": workflow_input},
+                            options={
+                                "additional_metadata": {
+                                    "document_id": str(document_id),
+                                }
+                            },
+                        )
+                    )
+                    raw_message["document_id"] = str(document_id)
+                    return raw_message
+
+                else:
+                    logger.info(
+                        "Running chunk ingestion without orchestration."
+                    )
+                    from core.main.orchestration import (
+                        simple_ingestion_factory,
+                    )
+
+                    simple_ingestor = simple_ingestion_factory(
+                        self.services["ingestion"]
+                    )
+                    await simple_ingestor["ingest-chunks"](workflow_input)
+
+                    return {  # type: ignore
+                        "message": "Document created and ingested successfully.",
+                        "document_id": str(document_id),
+                        "task_id": None,
+                    }
+
+            else:
+                if file:
+                    file_data = await self._process_file(file)
+                    content_length = len(file_data["content"])
+                    file_content = BytesIO(
+                        base64.b64decode(file_data["content"])
+                    )
+
+                    file_data.pop("content", None)
+                    document_id = id or generate_document_id(
+                        file_data["filename"], auth_user.id
+                    )
+                elif raw_text:
+                    content_length = len(raw_text)
+                    file_content = BytesIO(raw_text.encode("utf-8"))
+                    document_id = id or generate_document_id(
+                        raw_text, auth_user.id
+                    )
+                    file_data = {
+                        "filename": "N/A",
+                        "content_type": "text/plain",
+                    }
+                else:
                     raise R2RException(
                         status_code=422,
-                        message="Collection IDs must be valid UUIDs.",
+                        message="Either a file or content must be provided.",
                     )
 
             workflow_input = {
                 "file_data": file_data,
                 "document_id": str(document_id),
-                "collection_ids": collection_uuids,
+                "collection_ids": collection_ids,
                 "metadata": metadata,
                 "ingestion_config": ingestion_config,
                 "user": auth_user.model_dump_json(),
@@ -237,6 +360,7 @@ class DocumentsRouter(BaseRouterV3):
                 file_content,
                 file_data["content_type"],
             )
+
             if run_with_orchestration:
                 raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
                     "ingest-files",
@@ -261,224 +385,10 @@ class DocumentsRouter(BaseRouterV3):
                 )
                 await simple_ingestor["ingest-files"](workflow_input)
                 return {  # type: ignore
-                    "message": "Ingestion task completed successfully.",
+                    "message": "Document created and ingested successfully.",
                     "document_id": str(document_id),
                     "task_id": None,
                 }
-
-        @self.router.post(
-            "/documents/{id}",
-            summary="Update a document",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.documents.update(
-                                file_path="pg_essay_1.html",
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
-                            )
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
-                            const { r2rClient } = require("r2r-js");
-
-                            const client = new r2rClient("http://localhost:7272");
-
-                            function main() {
-                                const response = await client.documents.update({
-                                    file: { path: "pg_essay_1.html", name: "pg_essay_1.html" },
-                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
-                                });
-                            }
-
-                            main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r documents update /path/to/file.txt --id=9fbe403b-c11c-5aae-8ade-ef22980c3ad1
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X POST "https://api.example.com/document/9fbe403b-c11c-5aae-8ade-ef22980c3ad1"  \\
-                            -H "Content-Type: multipart/form-data"  \\
-                            -H "Authorization: Bearer YOUR_API_KEY"  \\
-                            -F "file=@pg_essay_1.html;type=text/plain"
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def update_document(  # type: ignore
-            file: Optional[UploadFile] = File(
-                None,
-                description="The file to ingest. Either a file or content must be provided, but not both.",
-            ),
-            content: Optional[str] = Form(
-                None,
-                description="The text content to ingest. Either a file or content must be provided, but not both.",
-            ),
-            id: UUID = Path(
-                ...,
-                description="The ID of the document. If not provided, a new ID will be generated.",
-            ),
-            metadata: Optional[list[dict]] = Form(
-                None,
-                description="Metadata to associate with the document, such as title, description, or custom fields.",
-            ),
-            ingestion_config: Optional[Json[dict]] = Form(
-                None,
-                description="An optional dictionary to override the default chunking configuration for the ingestion process. If not provided, the system will use the default server-side chunking configuration.",
-            ),
-            run_with_orchestration: Optional[bool] = Form(
-                True,
-                description="Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.",
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedIngestionResponse:
-            """
-            Updates an existing document with new content and/or metadata. This will trigger
-            reprocessing of the document's chunks and knowledge graph data.
-
-            Either a new file or text content must be provided, but not both. The update process
-            runs asynchronously and its progress can be tracked using the returned task_id.
-
-            Metadata can be updated to change the document's title, description, or other fields. These changes are additive w.r.t. the existing metadata, but for chunks and knowledge graph data, the update is a full replacement.
-
-            Regular users can only update their own documents. Superusers can update any document.
-            All previous document versions are preserved in the system.
-            """
-            if file and content:
-                raise R2RException(
-                    status_code=422,
-                    message="Both a file and content cannot be provided.",
-                )
-
-            if (not file and not content) and metadata:
-                pass
-                # metadata update only
-                ## TODO - Uncomment after merging in `main`
-                # workflow_input = {
-                #     "document_id": str(id),
-                #     "metadata": metadata,
-                #     "user": auth_user.model_dump_json(),
-                # }
-
-                # logger.info(
-                #     "Running document metadata update without orchestration."
-                # )
-                # from core.main.orchestration import simple_ingestion_factory
-
-                # simple_ingestor = simple_ingestion_factory(self.service)
-                # await simple_ingestor["update-document-metadata"](
-                #     workflow_input
-                # )
-                # return {  # type: ignore
-                #     "message": "Update metadata task completed successfully.",
-                #     "id": str(document_id),
-                #     "task_id": None,
-                # }
-
-            else:
-                metadata = metadata or {}  # type: ignore
-
-                # Check if the user is a superuser
-                if not auth_user.is_superuser:
-                    if (
-                        metadata is not None
-                        and "user_id" in metadata
-                        and metadata["user_id"] != str(auth_user.id)  # type: ignore
-                    ):
-                        raise R2RException(
-                            status_code=403,
-                            message="Non-superusers cannot set user_id in metadata.",
-                        )
-                    metadata["user_id"] = str(auth_user.id)  # type: ignore
-
-                if file:
-                    file_data = await self._process_file(file)
-                    content_length = len(file_data["content"])
-                    file_content = BytesIO(
-                        base64.b64decode(file_data["content"])
-                    )
-                    file_data.pop("content", None)
-                elif content:
-                    content_length = len(content)
-                    file_content = BytesIO(content.encode("utf-8"))
-                    file_data = {
-                        "filename": f"N/A",
-                        "content_type": "text/plain",
-                    }
-                else:
-                    raise R2RException(
-                        status_code=422,
-                        message="Either a file or content must be provided.",
-                    )
-                await self.providers.database.store_file(
-                    id,
-                    file_data["filename"],
-                    file_content,
-                    file_data["content_type"],
-                )
-
-                workflow_input = {
-                    "file_datas": [file_data],
-                    "document_ids": [str(id)],
-                    "metadatas": [metadata],
-                    "ingestion_config": ingestion_config,
-                    "user": auth_user.model_dump_json(),
-                    "file_sizes_in_bytes": [content_length],
-                    "is_update": False,
-                    "user": auth_user.model_dump_json(),
-                    "is_update": True,
-                }
-
-                if run_with_orchestration:
-                    raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
-                        "update-files", {"request": workflow_input}, {}
-                    )
-                    raw_message["message"] = "Update task queued successfully."
-                    raw_message["document_id"] = workflow_input[
-                        "document_ids"
-                    ][0]
-
-                    return raw_message  # type: ignore
-                else:
-                    logger.info("Running update without orchestration.")
-                    # TODO - Clean up implementation logic here to be more explicitly `synchronous`
-                    from core.main.orchestration import (
-                        simple_ingestion_factory,
-                    )
-
-                    simple_ingestor = simple_ingestion_factory(
-                        self.services["ingestion"]
-                    )
-                    await simple_ingestor["update-files"](workflow_input)
-                    return {  # type: ignore
-                        "message": "Update task completed successfully.",
-                        "document_id": workflow_input["document_ids"],
-                        "task_id": None,
-                    }
 
         @self.router.get(
             "/documents",
@@ -494,7 +404,7 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.list(
+                            response = client.documents.list(
                                 limit=10,
                                 offset=0
                             )
@@ -557,6 +467,10 @@ class DocumentsRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
+            include_summary_embeddings: int = Query(
+                False,
+                description="Specifies whether or not to include embeddings of each document summary.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedDocumentsResponse:
             """
@@ -584,6 +498,9 @@ class DocumentsRouter(BaseRouterV3):
                 offset=offset,
                 limit=limit,
             )
+            if not include_summary_embeddings:
+                for document in documents_overview_response["results"]:
+                    document.summary_embedding = None
 
             return (  # type: ignore
                 documents_overview_response["results"],
@@ -608,8 +525,8 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.retrieve(
-                            id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            response = client.documents.retrieve(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
                         ),
@@ -624,7 +541,7 @@ class DocumentsRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.documents.retrieve({
-                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
                                 });
                             }
 
@@ -636,7 +553,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r documents retrieve 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            r2r documents retrieve b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -644,7 +561,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1"  \\
+                            curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"  \\
                             -H "Authorization: Bearer YOUR_API_KEY"
                             """
                         ),
@@ -705,8 +622,8 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.list_chunks(
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            response = client.documents.list_chunks(
+                                id="32b6a70f-a995-5c51-85d2-834f06283a1e"
                             )
                             """
                         ),
@@ -721,7 +638,7 @@ class DocumentsRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.documents.listChunks({
-                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    id: "32b6a70f-a995-5c51-85d2-834f06283a1e",
                                 });
                             }
 
@@ -733,7 +650,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r documents list-chunks 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            r2r documents list-chunks b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -741,7 +658,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/chunks"  \\
+                            curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/chunks"  \\
                             -H "Authorization: Bearer YOUR_API_KEY"\
                             """
                         ),
@@ -755,16 +672,16 @@ class DocumentsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document to retrieve chunks for.",
             ),
-            offset: Optional[int] = Query(
+            offset: int = Query(
                 0,
                 ge=0,
-                description="The offset of the first chunk to retrieve.",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
-            limit: Optional[int] = Query(
+            limit: int = Query(
                 100,
-                ge=0,
-                le=20_000,
-                description="The maximum number of chunks to retrieve, up to 20,000.",
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             include_vectors: Optional[bool] = Query(
                 False,
@@ -793,7 +710,7 @@ class DocumentsRouter(BaseRouterV3):
                 )
 
             is_owner = str(
-                list_document_chunks["results"][0].get("user_id")
+                list_document_chunks["results"][0].get("owner_id")
             ) == str(auth_user.id)
             document_collections = await self.services[
                 "management"
@@ -839,7 +756,7 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.download(
+                            response = client.documents.download(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
@@ -969,6 +886,54 @@ class DocumentsRouter(BaseRouterV3):
             )
 
         @self.router.delete(
+            "/documents/by-filter",
+            summary="Delete documents by filter",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+                            response = client.documents.delete_by_filter(
+                                filters={"document_type": {"$eq": "txt"}}
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X DELETE "https://api.example.com/v3/documents/by-filter?filters=%7B%22document_type%22%3A%7B%22%24eq%22%3A%22text%22%7D%2C%22created_at%22%3A%7B%22%24lt%22%3A%222023-01-01T00%3A00%3A00Z%22%7D%7D" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def delete_document_by_filter(
+            filters: Json[dict] = Body(
+                ..., description="JSON-encoded filters"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedBooleanResponse:
+            """
+            Delete documents based on provided filters. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`. Deletion requests are limited to a user's own documents.
+            """
+
+            filters_dict = {
+                "$and": [{"user_id": {"$eq": str(auth_user.id)}}, filters]
+            }
+            await self.services["management"].delete(filters=filters_dict)
+
+            return GenericBooleanResponse(success=True)  # type: ignore
+
+        @self.router.delete(
             "/documents/{id}",
             summary="Delete a document",
             openapi_extra={
@@ -982,8 +947,8 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.delete(
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            response = client.documents.delete(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
                         ),
@@ -998,7 +963,7 @@ class DocumentsRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.documents.delete({
-                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
                                 });
                             }
 
@@ -1010,7 +975,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r documents delete 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            r2r documents delete b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -1038,78 +1003,12 @@ class DocumentsRouter(BaseRouterV3):
             """
             filters = {
                 "$and": [
-                    {"user_id": {"$eq": str(auth_user.id)}},
-                    {"document_id": {"$eq": id}},
+                    {"id": {"$eq": str(auth_user.id)}},
+                    {"id": {"$eq": id}},
                 ]
             }
             await self.services["management"].delete(filters=filters)
             return GenericBooleanResponse(success=True)  # type: ignore
-
-        @self.router.delete(
-            "/documents/by-filter",
-            summary="Delete documents by filter",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-                            result = client.documents.delete_by_filter(
-                                filters='{"document_type": {"$eq": "text"}, "created_at": {"$lt": "2023-01-01T00:00:00Z"}}'
-                            )
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X DELETE "https://api.example.com/v3/documents/by-filter?filters=%7B%22document_type%22%3A%7B%22%24eq%22%3A%22text%22%7D%2C%22created_at%22%3A%7B%22%24lt%22%3A%222023-01-01T00%3A00%3A00Z%22%7D%7D" \\
-                                -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def delete_document_by_filter(
-            filters: str = Query(..., description="JSON-encoded filters"),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedBooleanResponse:
-            """
-            Delete documents based on provided filters. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`. Deletion requests are limited to a user's own documents.
-            """
-
-            try:
-                filters_dict = json.loads(filters)
-            except json.JSONDecodeError:
-                raise R2RException(
-                    status_code=422, message="Invalid JSON in filters"
-                )
-
-            if not isinstance(filters_dict, dict):
-                raise R2RException(
-                    status_code=422, message="Filters must be a JSON object"
-                )
-
-            filters_dict = {"$and": [{"$eq": str(auth_user.id)}, filters_dict]}
-
-            for key, value in filters_dict.items():
-                if not isinstance(value, dict):
-                    raise R2RException(
-                        status_code=422,
-                        message=f"Invalid filter format for key: {key}",
-                    )
-
-            delete_bool = await self.services["management"].delete(
-                filters=filters_dict
-            )
-
-            return GenericBooleanResponse(success=delete_bool)  # type: ignore
 
         @self.router.get(
             "/documents/{id}/collections",
@@ -1125,8 +1024,8 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.list_collections(
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1", offset=0, limit=10
+                            response = client.documents.list_collections(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa", offset=0, limit=10
                             )
                             """
                         ),
@@ -1141,7 +1040,7 @@ class DocumentsRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.documents.listCollections({
-                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
                                 });
                             }
 
@@ -1153,7 +1052,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r documents list-collections 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            r2r documents list-collections b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -1161,7 +1060,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/collections"  \\
+                            curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/collections"  \\
                             -H "Authorization: Bearer YOUR_API_KEY"
                             """
                         ),
@@ -1229,8 +1128,8 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.extract(
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            response = client.documents.extract(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
                         ),
@@ -1244,7 +1143,7 @@ class DocumentsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document to extract entities and relationships from.",
             ),
-            run_type: KGRunType = Query(
+            run_type: KGRunType = Body(
                 default=KGRunType.RUN,
                 description="Whether to return an estimate of the creation cost or to actually extract the document.",
             ),
@@ -1252,39 +1151,48 @@ class DocumentsRouter(BaseRouterV3):
                 default=None,
                 description="Settings for the entities and relationships extraction process.",
             ),
-            run_with_orchestration: Optional[bool] = Query(
+            run_with_orchestration: Optional[bool] = Body(
                 default=True,
                 description="Whether to run the entities and relationships extraction process with orchestration.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedKGCreationResponse:  # type: ignore
+        ) -> WrappedGenericMessageResponse:
             """
             Extracts entities and relationships from a document.
-                The entities and relationships extraction process involves:
+
+            The entities and relationships extraction process involves:
+
                 1. Parsing documents into semantic chunks
+
                 2. Extracting entities and relationships using LLMs
+
+                3. Storing the created entities and relationships in the knowledge graph
+
+                4. Preserving the document's metadata and content, and associating the elements with collections the document belongs to
             """
 
             settings = settings.dict() if settings else None  # type: ignore
             if not auth_user.is_superuser:
-                logger.warning("Implement permission checks here.")
+                raise R2RException(
+                    "Only a superuser can extract entities and relationships from a document.",
+                    403,
+                )
 
             # If no run type is provided, default to estimate
             if not run_type:
                 run_type = KGRunType.ESTIMATE
 
             # Apply runtime settings overrides
-            server_kg_creation_settings = (
-                self.providers.database.config.kg_creation_settings
+            server_graph_creation_settings = (
+                self.providers.database.config.graph_creation_settings
             )
 
             if settings:
-                server_kg_creation_settings = update_settings_from_dict(
-                    server_settings=server_kg_creation_settings,
+                server_graph_creation_settings = update_settings_from_dict(
+                    server_settings=server_graph_creation_settings,
                     settings_dict=settings,  # type: ignore
                 )
 
-            # If the run type is estimate, return an estimate of the creation cost
             if run_type is KGRunType.ESTIMATE:
                 return {  # type: ignore
                     "message": "Estimate retrieved successfully",
@@ -1294,31 +1202,30 @@ class DocumentsRouter(BaseRouterV3):
                         "kg"
                     ].get_creation_estimate(
                         document_id=id,
-                        kg_creation_settings=server_kg_creation_settings,
+                        graph_creation_settings=server_graph_creation_settings,
                     ),
                 }
+
+            if run_with_orchestration:
+                workflow_input = {
+                    "document_id": str(id),
+                    "graph_creation_settings": server_graph_creation_settings.model_dump_json(),
+                    "user": auth_user.json(),
+                }
+
+                return await self.orchestration_provider.run_workflow(
+                    "extract-triples", {"request": workflow_input}, {}
+                )
             else:
-                # Otherwise, create the graph
-                if run_with_orchestration:
-                    workflow_input = {
-                        "document_id": str(id),
-                        "kg_creation_settings": server_kg_creation_settings.model_dump_json(),
-                        "user": auth_user.json(),
-                    }
+                from core.main.orchestration import simple_kg_factory
 
-                    return await self.orchestration_provider.run_workflow(  # type: ignore
-                        "create-graph", {"request": workflow_input}, {}
-                    )
-                else:
-                    from core.main.orchestration import simple_kg_factory
-
-                    logger.info("Running create-graph without orchestration.")
-                    simple_kg = simple_kg_factory(self.services["kg"])
-                    await simple_kg["create-graph"](workflow_input)  # type: ignore
-                    return {  # type: ignore
-                        "message": "Graph created successfully.",
-                        "task_id": None,
-                    }
+                logger.info("Running extract-triples without orchestration.")
+                simple_kg = simple_kg_factory(self.services["kg"])
+                await simple_kg["extract-triples"](workflow_input)
+                return {  # type: ignore
+                    "message": "Graph created successfully.",
+                    "task_id": None,
+                }
 
         @self.router.get(
             "/documents/{id}/entities",
@@ -1334,8 +1241,8 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.extract(
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            response = client.documents.extract(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
                         ),
@@ -1349,23 +1256,23 @@ class DocumentsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document to retrieve entities from.",
             ),
-            offset: Optional[int] = Query(
+            offset: int = Query(
                 0,
                 ge=0,
-                description="The offset of the first entity to retrieve.",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
-            limit: Optional[int] = Query(
+            limit: int = Query(
                 100,
-                ge=0,
-                le=20_000,
-                description="The maximum number of entities to retrieve, up to 20,000.",
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             include_embeddings: Optional[bool] = Query(
                 False,
                 description="Whether to include vector embeddings in the response.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[Entity]]:
+        ) -> WrappedEntitiesResponse:
             """
             Retrieves the entities that were extracted from a document. These represent
             important semantic elements like people, places, organizations, concepts, etc.
@@ -1375,6 +1282,15 @@ class DocumentsRouter(BaseRouterV3):
 
             Results are returned in the order they were extracted from the document.
             """
+            if (
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
             # First check if the document exists and user has access
             documents_overview_response = await self.services[
                 "management"
@@ -1394,17 +1310,17 @@ class DocumentsRouter(BaseRouterV3):
                 raise R2RException("Document not found.", 404)
 
             # Get all entities for this document from the document_entity table
-            entities, total_count = (
+            entities, count = (
                 await self.providers.database.graph_handler.entities.get(
                     parent_id=id,
-                    store_type="document",
+                    store_type="documents",
                     offset=offset,
                     limit=limit,
                     include_embeddings=include_embeddings,
                 )
             )
 
-            return entities, {"total_entries": total_count}
+            return entities, {"total_entries": count}  # type: ignore
 
         @self.router.get(
             "/documents/{id}/relationships",
@@ -1420,8 +1336,8 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            result = client.documents.list_relationships(
-                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                            response = client.documents.list_relationships(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
                                 offset=0,
                                 limit=100
                             )
@@ -1438,7 +1354,7 @@ class DocumentsRouter(BaseRouterV3):
 
                             function main() {
                                 const response = await client.documents.listRelationships({
-                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
                                     offset: 0,
                                     limit: 100,
                                 });
@@ -1452,7 +1368,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r documents list-relationships 9fbe403b-c11c-5aae-8ade-ef22980c3ad1
+                            r2r documents list-relationships b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -1460,7 +1376,7 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/documents/9fbe403b-c11c-5aae-8ade-ef22980c3ad1/relationships" \\
+                            curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/relationships" \\
                             -H "Authorization: Bearer YOUR_API_KEY"
                             """
                         ),
@@ -1469,21 +1385,21 @@ class DocumentsRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def list_relationships(
+        async def get_relationships(
             id: UUID = Path(
                 ...,
                 description="The ID of the document to retrieve relationships for.",
             ),
-            offset: Optional[int] = Query(
+            offset: int = Query(
                 0,
                 ge=0,
-                description="The offset of the first relationship to retrieve.",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
-            limit: Optional[int] = Query(
+            limit: int = Query(
                 100,
-                ge=0,
-                le=20_000,
-                description="The maximum number of relationships to retrieve, up to 20,000.",
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             entity_names: Optional[list[str]] = Query(
                 None,
@@ -1494,7 +1410,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Filter relationships by specific relationship types.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> PaginatedResultsWrapper[list[Relationship]]:
+        ) -> WrappedRelationshipsResponse:
             """
             Retrieves the relationships between entities that were extracted from a document. These represent
             connections and interactions between entities found in the text.
@@ -1504,6 +1420,15 @@ class DocumentsRouter(BaseRouterV3):
 
             Results are returned in the order they were extracted from the document.
             """
+            if (
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
+            ):
+                raise R2RException(
+                    "The currently authenticated user does not have access to the specified collection.",
+                    403,
+                )
+
             # First check if the document exists and user has access
             documents_overview_response = await self.services[
                 "management"
@@ -1523,10 +1448,10 @@ class DocumentsRouter(BaseRouterV3):
                 raise R2RException("Document not found.", 404)
 
             # Get relationships for this document
-            relationships, total_count = (
+            relationships, count = (
                 await self.providers.database.graph_handler.relationships.get(
                     parent_id=id,
-                    store_type="document",
+                    store_type="documents",
                     entity_names=entity_names,
                     relationship_types=relationship_types,
                     offset=offset,
@@ -1534,7 +1459,7 @@ class DocumentsRouter(BaseRouterV3):
                 )
             )
 
-            return relationships, {"total_entries": total_count}
+            return relationships, {"total_entries": count}  # type: ignore
 
     @staticmethod
     async def _process_file(file):

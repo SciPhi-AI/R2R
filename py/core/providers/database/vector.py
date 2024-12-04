@@ -3,12 +3,14 @@ import json
 import logging
 import time
 import uuid
-from typing import Any, Optional, TypedDict, Union
+from typing import Any, Optional, TypedDict
 from uuid import UUID
 
 import numpy as np
 
 from core.base import (
+    ChunkHandler,
+    ChunkSearchResult,
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
@@ -16,9 +18,7 @@ from core.base import (
     R2RException,
     SearchSettings,
     VectorEntry,
-    VectorHandler,
     VectorQuantizationType,
-    VectorSearchResult,
     VectorTableName,
 )
 
@@ -46,14 +46,15 @@ def index_measure_to_ops(
 
 
 def quantize_vector_to_binary(
-    vector: Union[list[float], np.ndarray], threshold: float = 0.0
+    vector: list[float] | np.ndarray,
+    threshold: float = 0.0,
 ) -> bytes:
     """
     Quantizes a float vector to a binary vector string for PostgreSQL bit type.
     Used when quantization_type is INT1.
 
     Args:
-        vector (Union[List[float], np.ndarray]): Input vector of floats
+        vector (List[float] | np.ndarray): Input vector of floats
         threshold (float, optional): Threshold for binarization. Defaults to 0.0.
 
     Returns:
@@ -75,17 +76,17 @@ def quantize_vector_to_binary(
 class HybridSearchIntermediateResult(TypedDict):
     semantic_rank: int
     full_text_rank: int
-    data: VectorSearchResult
+    data: ChunkSearchResult
     rrf_score: float
 
 
-class PostgresVectorHandler(VectorHandler):
-    TABLE_NAME = VectorTableName.VECTORS
+class PostgresChunkHandler(ChunkHandler):
+    TABLE_NAME = VectorTableName.CHUNKS
 
     COLUMN_VARS = [
-        "chunk_id",
+        "id",
         "document_id",
-        "user_id",
+        "owner_id",
         "collection_ids",
     ]
 
@@ -104,7 +105,7 @@ class PostgresVectorHandler(VectorHandler):
 
     async def create_tables(self):
         # Check for old table name first
-        check_query = f"""
+        check_query = """
         SELECT EXISTS (
             SELECT FROM pg_tables
             WHERE schemaname = $1
@@ -130,10 +131,10 @@ class PostgresVectorHandler(VectorHandler):
         )
 
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} (
-            chunk_id UUID PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} (
+            id UUID PRIMARY KEY,
             document_id UUID,
-            user_id UUID,
+            owner_id UUID,
             collection_ids UUID[],
             vec vector({self.dimension}),
             {binary_col}
@@ -141,13 +142,13 @@ class PostgresVectorHandler(VectorHandler):
             metadata JSONB
             {",fts tsvector GENERATED ALWAYS AS (to_tsvector('english', text)) STORED" if self.enable_fts else ""}
         );
-        CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} (document_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_user_id ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} (user_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} USING GIN (collection_ids);
+        CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} (document_id);
+        CREATE INDEX IF NOT EXISTS idx_vectors_owner_id ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} (owner_id);
+        CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} USING GIN (collection_ids);
         """
         if self.enable_fts:
             query += f"""
-            CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} USING GIN (to_tsvector('english', text));
+            CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} USING GIN (to_tsvector('english', text));
             """
 
         await self.connection_manager.execute_query(query)
@@ -161,12 +162,12 @@ class PostgresVectorHandler(VectorHandler):
         if self.quantization_type == VectorQuantizationType.INT1:
             # For quantized vectors, use vec_binary column
             query = f"""
-            INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-            (chunk_id, document_id, user_id, collection_ids, vec, vec_binary, text, metadata)
+            INSERT INTO {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+            (id, document_id, owner_id, collection_ids, vec, vec_binary, text, metadata)
             VALUES ($1, $2, $3, $4, $5, $6::bit({self.dimension}), $7, $8)
-            ON CONFLICT (chunk_id) DO UPDATE SET
+            ON CONFLICT (id) DO UPDATE SET
             document_id = EXCLUDED.document_id,
-            user_id = EXCLUDED.user_id,
+            owner_id = EXCLUDED.owner_id,
             collection_ids = EXCLUDED.collection_ids,
             vec = EXCLUDED.vec,
             vec_binary = EXCLUDED.vec_binary,
@@ -176,9 +177,9 @@ class PostgresVectorHandler(VectorHandler):
             await self.connection_manager.execute_query(
                 query,
                 (
-                    entry.chunk_id,
+                    entry.id,
                     entry.document_id,
-                    entry.user_id,
+                    entry.owner_id,
                     entry.collection_ids,
                     str(entry.vector.data),
                     quantize_vector_to_binary(
@@ -191,12 +192,12 @@ class PostgresVectorHandler(VectorHandler):
         else:
             # For regular vectors, use vec column only
             query = f"""
-            INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-            (chunk_id, document_id, user_id, collection_ids, vec, text, metadata)
+            INSERT INTO {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+            (id, document_id, owner_id, collection_ids, vec, text, metadata)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
-            ON CONFLICT (chunk_id) DO UPDATE SET
+            ON CONFLICT (id) DO UPDATE SET
             document_id = EXCLUDED.document_id,
-            user_id = EXCLUDED.user_id,
+            owner_id = EXCLUDED.owner_id,
             collection_ids = EXCLUDED.collection_ids,
             vec = EXCLUDED.vec,
             text = EXCLUDED.text,
@@ -206,9 +207,9 @@ class PostgresVectorHandler(VectorHandler):
             await self.connection_manager.execute_query(
                 query,
                 (
-                    entry.chunk_id,
+                    entry.id,
                     entry.document_id,
-                    entry.user_id,
+                    entry.owner_id,
                     entry.collection_ids,
                     str(entry.vector.data),
                     entry.text,
@@ -224,12 +225,12 @@ class PostgresVectorHandler(VectorHandler):
         if self.quantization_type == VectorQuantizationType.INT1:
             # For quantized vectors, use vec_binary column
             query = f"""
-            INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-            (chunk_id, document_id, user_id, collection_ids, vec, vec_binary, text, metadata)
+            INSERT INTO {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+            (id, document_id, owner_id, collection_ids, vec, vec_binary, text, metadata)
             VALUES ($1, $2, $3, $4, $5, $6::bit({self.dimension}), $7, $8)
-            ON CONFLICT (chunk_id) DO UPDATE SET
+            ON CONFLICT (id) DO UPDATE SET
             document_id = EXCLUDED.document_id,
-            user_id = EXCLUDED.user_id,
+            owner_id = EXCLUDED.owner_id,
             collection_ids = EXCLUDED.collection_ids,
             vec = EXCLUDED.vec,
             vec_binary = EXCLUDED.vec_binary,
@@ -238,9 +239,9 @@ class PostgresVectorHandler(VectorHandler):
             """
             bin_params = [
                 (
-                    entry.chunk_id,
+                    entry.id,
                     entry.document_id,
-                    entry.user_id,
+                    entry.owner_id,
                     entry.collection_ids,
                     str(entry.vector.data),
                     quantize_vector_to_binary(
@@ -256,12 +257,12 @@ class PostgresVectorHandler(VectorHandler):
         else:
             # For regular vectors, use vec column only
             query = f"""
-            INSERT INTO {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-            (chunk_id, document_id, user_id, collection_ids, vec, text, metadata)
+            INSERT INTO {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+            (id, document_id, owner_id, collection_ids, vec, text, metadata)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
-            ON CONFLICT (chunk_id) DO UPDATE SET
+            ON CONFLICT (id) DO UPDATE SET
             document_id = EXCLUDED.document_id,
-            user_id = EXCLUDED.user_id,
+            owner_id = EXCLUDED.owner_id,
             collection_ids = EXCLUDED.collection_ids,
             vec = EXCLUDED.vec,
             text = EXCLUDED.text,
@@ -269,9 +270,9 @@ class PostgresVectorHandler(VectorHandler):
             """
             params = [
                 (
-                    entry.chunk_id,
+                    entry.id,
                     entry.document_id,
-                    entry.user_id,
+                    entry.owner_id,
                     entry.collection_ids,
                     str(entry.vector.data),
                     entry.text,
@@ -284,22 +285,24 @@ class PostgresVectorHandler(VectorHandler):
 
     async def semantic_search(
         self, query_vector: list[float], search_settings: SearchSettings
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         try:
-            imeasure_obj = IndexMeasure(search_settings.index_measure)
+            imeasure_obj = IndexMeasure(
+                search_settings.chunk_settings.index_measure
+            )
         except ValueError:
             raise ValueError("Invalid index measure")
 
-        table_name = self._get_table_name(PostgresVectorHandler.TABLE_NAME)
+        table_name = self._get_table_name(PostgresChunkHandler.TABLE_NAME)
         cols = [
-            f"{table_name}.chunk_id",
+            f"{table_name}.id",
             f"{table_name}.document_id",
-            f"{table_name}.user_id",
+            f"{table_name}.owner_id",
             f"{table_name}.collection_ids",
             f"{table_name}.text",
         ]
 
-        params: list[Union[str, int, bytes]] = []
+        params: list[str | int | bytes] = []
         # For binary vectors (INT1), implement two-stage search
         if self.quantization_type == VectorQuantizationType.INT1:
             # Convert query vector to binary format
@@ -351,9 +354,9 @@ class PostgresVectorHandler(VectorHandler):
             )
             -- Second stage: Re-rank using original vectors
             SELECT
-                chunk_id,
+                id,
                 document_id,
-                user_id,
+                owner_id,
                 collection_ids,
                 text,
                 {"metadata," if search_settings.include_metadatas else ""}
@@ -374,10 +377,10 @@ class PostgresVectorHandler(VectorHandler):
 
         else:
             # Standard float vector handling - unchanged from original
-            distance_calc = f"{table_name}.vec {search_settings.index_measure.pgvector_repr} $1::vector({self.dimension})"
+            distance_calc = f"{table_name}.vec {search_settings.chunk_settings.index_measure.pgvector_repr} $1::vector({self.dimension})"
             query_param = str(query_vector)
 
-            if search_settings.include_values:
+            if search_settings.include_scores:
                 cols.append(f"({distance_calc}) AS distance")
             if search_settings.include_metadatas:
                 cols.append(f"{table_name}.metadata")
@@ -405,10 +408,10 @@ class PostgresVectorHandler(VectorHandler):
         results = await self.connection_manager.fetch_query(query, params)
 
         return [
-            VectorSearchResult(
-                chunk_id=UUID(str(result["chunk_id"])),
+            ChunkSearchResult(
+                id=UUID(str(result["id"])),
                 document_id=UUID(str(result["document_id"])),
-                user_id=UUID(str(result["user_id"])),
+                owner_id=UUID(str(result["owner_id"])),
                 collection_ids=result["collection_ids"],
                 text=result["text"],
                 score=(
@@ -427,14 +430,14 @@ class PostgresVectorHandler(VectorHandler):
 
     async def full_text_search(
         self, query_text: str, search_settings: SearchSettings
-    ) -> list[VectorSearchResult]:
+    ) -> list[ChunkSearchResult]:
         if not self.enable_fts:
             raise ValueError(
                 "Full-text search is not enabled for this collection."
             )
 
         where_clauses = []
-        params: list[Union[str, int, bytes]] = [query_text]
+        params: list[str | int | bytes] = [query_text]
 
         if search_settings.filters:
             filters_clause = self._build_filters(
@@ -453,9 +456,9 @@ class PostgresVectorHandler(VectorHandler):
 
         query = f"""
             SELECT
-                chunk_id, document_id, user_id, collection_ids, text, metadata,
+                id, document_id, owner_id, collection_ids, text, metadata,
                 ts_rank(fts, websearch_to_tsquery('english', $1), 32) as rank
-            FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+            FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
             {where_clause}
         """
 
@@ -466,16 +469,16 @@ class PostgresVectorHandler(VectorHandler):
         params.extend(
             [
                 search_settings.offset,
-                search_settings.hybrid_search_settings.full_text_limit,
+                search_settings.hybrid_settings.full_text_limit,
             ]
         )
 
         results = await self.connection_manager.fetch_query(query, params)
         return [
-            VectorSearchResult(
-                chunk_id=UUID(str(r["chunk_id"])),
+            ChunkSearchResult(
+                id=UUID(str(r["id"])),
                 document_id=UUID(str(r["document_id"])),
-                user_id=UUID(str(r["user_id"])),
+                owner_id=UUID(str(r["owner_id"])),
                 collection_ids=r["collection_ids"],
                 text=r["text"],
                 score=float(r["rank"]),
@@ -491,13 +494,13 @@ class PostgresVectorHandler(VectorHandler):
         search_settings: SearchSettings,
         *args,
         **kwargs,
-    ) -> list[VectorSearchResult]:
-        if search_settings.hybrid_search_settings is None:
+    ) -> list[ChunkSearchResult]:
+        if search_settings.hybrid_settings is None:
             raise ValueError(
-                "Please provide a valid `hybrid_search_settings` in the `search_settings`."
+                "Please provide a valid `hybrid_settings` in the `search_settings`."
             )
         if (
-            search_settings.hybrid_search_settings.full_text_limit
+            search_settings.hybrid_settings.full_text_limit
             < search_settings.limit
         ):
             raise ValueError(
@@ -508,33 +511,27 @@ class PostgresVectorHandler(VectorHandler):
         semantic_settings.limit += search_settings.offset
 
         full_text_settings = copy.deepcopy(search_settings)
-        full_text_settings.hybrid_search_settings.full_text_limit += (
+        full_text_settings.hybrid_settings.full_text_limit += (
             search_settings.offset
         )
 
-        semantic_results: list[VectorSearchResult] = (
-            await self.semantic_search(query_vector, semantic_settings)
+        semantic_results: list[ChunkSearchResult] = await self.semantic_search(
+            query_vector, semantic_settings
         )
-        full_text_results: list[VectorSearchResult] = (
+        full_text_results: list[ChunkSearchResult] = (
             await self.full_text_search(query_text, full_text_settings)
         )
 
         semantic_limit = search_settings.limit
-        full_text_limit = (
-            search_settings.hybrid_search_settings.full_text_limit
-        )
-        semantic_weight = (
-            search_settings.hybrid_search_settings.semantic_weight
-        )
-        full_text_weight = (
-            search_settings.hybrid_search_settings.full_text_weight
-        )
-        rrf_k = search_settings.hybrid_search_settings.rrf_k
+        full_text_limit = search_settings.hybrid_settings.full_text_limit
+        semantic_weight = search_settings.hybrid_settings.semantic_weight
+        full_text_weight = search_settings.hybrid_settings.full_text_weight
+        rrf_k = search_settings.hybrid_settings.rrf_k
 
         combined_results: dict[uuid.UUID, HybridSearchIntermediateResult] = {}
 
         for rank, result in enumerate(semantic_results, 1):
-            combined_results[result.chunk_id] = {
+            combined_results[result.id] = {
                 "semantic_rank": rank,
                 "full_text_rank": full_text_limit,
                 "data": result,
@@ -542,10 +539,10 @@ class PostgresVectorHandler(VectorHandler):
             }
 
         for rank, result in enumerate(full_text_results, 1):
-            if result.chunk_id in combined_results:
-                combined_results[result.chunk_id]["full_text_rank"] = rank
+            if result.id in combined_results:
+                combined_results[result.id]["full_text_rank"] = rank
             else:
-                combined_results[result.chunk_id] = {
+                combined_results[result.id] = {
                     "semantic_rank": semantic_limit,
                     "full_text_rank": rank,
                     "data": result,
@@ -578,10 +575,10 @@ class PostgresVectorHandler(VectorHandler):
         ]
 
         return [
-            VectorSearchResult(
-                chunk_id=result["data"].chunk_id,
+            ChunkSearchResult(
+                id=result["data"].id,
                 document_id=result["data"].document_id,
-                user_id=result["data"].user_id,
+                owner_id=result["data"].owner_id,
                 collection_ids=result["data"].collection_ids,
                 text=result["data"].text,
                 score=result["rrf_score"],
@@ -597,21 +594,21 @@ class PostgresVectorHandler(VectorHandler):
     async def delete(
         self, filters: dict[str, Any]
     ) -> dict[str, dict[str, str]]:
-        params: list[Union[str, int, bytes]] = []
+        params: list[str | int | bytes] = []
         where_clause = self._build_filters(filters, params)
 
         query = f"""
-        DELETE FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+        DELETE FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
         WHERE {where_clause}
-        RETURNING chunk_id, document_id, text;
+        RETURNING id, document_id, text;
         """
 
         results = await self.connection_manager.fetch_query(query, params)
 
         return {
-            str(result["chunk_id"]): {
+            str(result["id"]): {
                 "status": "deleted",
-                "chunk_id": str(result["chunk_id"]),
+                "id": str(result["id"]),
                 "document_id": str(result["document_id"]),
                 "text": result["text"],
             }
@@ -622,7 +619,7 @@ class PostgresVectorHandler(VectorHandler):
         self, document_id: UUID, collection_id: UUID
     ) -> None:
         query = f"""
-        UPDATE {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+        UPDATE {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
         SET collection_ids = array_append(collection_ids, $1)
         WHERE document_id = $2 AND NOT ($1 = ANY(collection_ids));
         """
@@ -634,7 +631,7 @@ class PostgresVectorHandler(VectorHandler):
         self, document_id: UUID, collection_id: UUID
     ) -> None:
         query = f"""
-        UPDATE {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+        UPDATE {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
         SET collection_ids = array_remove(collection_ids, $1)
         WHERE document_id = $2;
         """
@@ -642,16 +639,16 @@ class PostgresVectorHandler(VectorHandler):
             query, (collection_id, document_id)
         )
 
-    async def delete_user_vector(self, user_id: UUID) -> None:
+    async def delete_user_vector(self, owner_id: UUID) -> None:
         query = f"""
-        DELETE FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-        WHERE user_id = $1;
+        DELETE FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+        WHERE owner_id = $1;
         """
-        await self.connection_manager.execute_query(query, (user_id,))
+        await self.connection_manager.execute_query(query, (owner_id,))
 
     async def delete_collection_vector(self, collection_id: UUID) -> None:
         query = f"""
-         DELETE FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+         DELETE FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
          WHERE $1 = ANY(collection_ids)
          RETURNING collection_ids
          """
@@ -671,8 +668,8 @@ class PostgresVectorHandler(VectorHandler):
         limit_clause = f"LIMIT {limit}" if limit > -1 else ""
 
         query = f"""
-        SELECT chunk_id, document_id, user_id, collection_ids, text, metadata{vector_select}, COUNT(*) OVER() AS total
-        FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+        SELECT id, document_id, owner_id, collection_ids, text, metadata{vector_select}, COUNT(*) OVER() AS total
+        FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
         WHERE document_id = $1
         ORDER BY (metadata->>'chunk_order')::integer
         OFFSET $2
@@ -689,9 +686,9 @@ class PostgresVectorHandler(VectorHandler):
             total = results[0].get("total", 0)
             chunks = [
                 {
-                    "id": result["chunk_id"],
+                    "id": result["id"],
                     "document_id": result["document_id"],
-                    "user_id": result["user_id"],
+                    "owner_id": result["owner_id"],
                     "collection_ids": result["collection_ids"],
                     "text": result["text"],
                     "metadata": json.loads(result["metadata"]),
@@ -704,28 +701,26 @@ class PostgresVectorHandler(VectorHandler):
 
         return {"results": chunks, "total_entries": total}
 
-    async def get_chunk(self, chunk_id: UUID) -> dict:
+    async def get_chunk(self, id: UUID) -> dict:
         query = f"""
-        SELECT chunk_id, document_id, user_id, collection_ids, text, metadata
-        FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
-        WHERE chunk_id = $1;
+        SELECT id, document_id, owner_id, collection_ids, text, metadata
+        FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+        WHERE id = $1;
         """
 
-        result = await self.connection_manager.fetchrow_query(
-            query, (chunk_id,)
-        )
+        result = await self.connection_manager.fetchrow_query(query, (id,))
 
         if result:
             return {
-                "chunk_id": result["chunk_id"],
+                "id": result["id"],
                 "document_id": result["document_id"],
-                "user_id": result["user_id"],
+                "owner_id": result["owner_id"],
                 "collection_ids": result["collection_ids"],
                 "text": result["text"],
                 "metadata": json.loads(result["metadata"]),
             }
         raise R2RException(
-            message=f"Chunk with ID {chunk_id} not found", status_code=404
+            message=f"Chunk with ID {id} not found", status_code=404
         )
 
     async def create_index(
@@ -733,9 +728,7 @@ class PostgresVectorHandler(VectorHandler):
         table_name: Optional[VectorTableName] = None,
         index_measure: IndexMeasure = IndexMeasure.cosine_distance,
         index_method: IndexMethod = IndexMethod.auto,
-        index_arguments: Optional[
-            Union[IndexArgsIVFFlat, IndexArgsHNSW]
-        ] = None,
+        index_arguments: Optional[IndexArgsIVFFlat | IndexArgsHNSW] = None,
         index_name: Optional[str] = None,
         index_column: Optional[str] = None,
         concurrently: bool = True,
@@ -772,8 +765,8 @@ class PostgresVectorHandler(VectorHandler):
             ArgError: If an invalid index method is used, or if *replace* is False and an index already exists.
         """
 
-        if table_name == VectorTableName.VECTORS:
-            table_name_str = f"{self.project_name}.{VectorTableName.VECTORS}"  # TODO - Fix bug in vector table naming convention
+        if table_name == VectorTableName.CHUNKS:
+            table_name_str = f"{self.project_name}.{VectorTableName.CHUNKS}"  # TODO - Fix bug in vector table naming convention
             if index_column:
                 col_name = index_column
             else:
@@ -790,9 +783,9 @@ class PostgresVectorHandler(VectorHandler):
                 f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
             )
             col_name = "description_embedding"
-        elif table_name == VectorTableName.ENTITIES_COLLECTION:
+        elif table_name == VectorTableName.GRAPHS_ENTITIES:
             table_name_str = (
-                f"{self.project_name}.{VectorTableName.ENTITIES_COLLECTION}"
+                f"{self.project_name}.{VectorTableName.GRAPHS_ENTITIES}"
             )
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:
@@ -872,7 +865,7 @@ class PostgresVectorHandler(VectorHandler):
         return None
 
     def _build_filters(
-        self, filters: dict, parameters: list[Union[str, int, bytes]]
+        self, filters: dict, parameters: list[str | int | bytes]
     ) -> str:
 
         def parse_condition(key: str, value: Any) -> str:  # type: ignore
@@ -1078,7 +1071,6 @@ class PostgresVectorHandler(VectorHandler):
                     "name": result["name"],
                     "table_name": result["table_name"],
                     "definition": result["definition"],
-                    "method": result["method"],
                     "size_in_bytes": result["size_in_bytes"],
                     "row_estimate": result["row_estimate"],
                     "number_of_scans": result["number_of_scans"],
@@ -1126,17 +1118,17 @@ class PostgresVectorHandler(VectorHandler):
             Exception: If index deletion fails
         """
         # Validate table name and get column name
-        if table_name == VectorTableName.VECTORS:
-            table_name_str = f"{self.project_name}.{VectorTableName.VECTORS}"
+        if table_name == VectorTableName.CHUNKS:
+            table_name_str = f"{self.project_name}.{VectorTableName.CHUNKS}"
             col_name = "vec"
         elif table_name == VectorTableName.ENTITIES_DOCUMENT:
             table_name_str = (
                 f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
             )
             col_name = "description_embedding"
-        elif table_name == VectorTableName.ENTITIES_COLLECTION:
+        elif table_name == VectorTableName.GRAPHS_ENTITIES:
             table_name_str = (
-                f"{self.project_name}.{VectorTableName.ENTITIES_COLLECTION}"
+                f"{self.project_name}.{VectorTableName.GRAPHS_ENTITIES}"
             )
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:
@@ -1195,32 +1187,32 @@ class PostgresVectorHandler(VectorHandler):
         offset: int,
         limit: int,
         document_id: UUID,
-        chunk_id: UUID,
+        id: UUID,
         similarity_threshold: float = 0.5,
     ) -> list[dict[str, Any]]:
 
-        table_name = self._get_table_name(PostgresVectorHandler.TABLE_NAME)
+        table_name = self._get_table_name(PostgresChunkHandler.TABLE_NAME)
         query = f"""
         WITH target_vector AS (
             SELECT vec FROM {table_name}
-            WHERE document_id = $1 AND chunk_id = $2
+            WHERE document_id = $1 AND id = $2
         )
-        SELECT t.chunk_id, t.text, t.metadata, t.document_id, (t.vec <=> tv.vec) AS similarity
+        SELECT t.id, t.text, t.metadata, t.document_id, (t.vec <=> tv.vec) AS similarity
         FROM {table_name} t, target_vector tv
         WHERE (t.vec <=> tv.vec) >= $3
             AND t.document_id = $1
-            AND t.chunk_id != $2
+            AND t.id != $2
         ORDER BY similarity ASC
         LIMIT $4
         """
         results = await self.connection_manager.fetch_query(
             query,
-            (str(document_id), str(chunk_id), similarity_threshold, limit),
+            (str(document_id), str(id), similarity_threshold, limit),
         )
 
         return [
             {
-                "chunk_id": str(r["chunk_id"]),
+                "id": str(r["id"]),
                 "text": r["text"],
                 "metadata": json.loads(r["metadata"]),
                 "document_id": str(r["document_id"]),
@@ -1262,13 +1254,13 @@ class PostgresVectorHandler(VectorHandler):
         # Build the select clause
         vector_select = ", vec" if include_vectors else ""
         select_clause = f"""
-            chunk_id, document_id, user_id, collection_ids,
+            id, document_id, owner_id, collection_ids,
             text, metadata{vector_select}, COUNT(*) OVER() AS total
         """
 
         # Build the where clause if filters are provided
         where_clause = ""
-        params: list[Union[str, int, bytes]] = []
+        params: list[str | int | bytes] = []
         if filters:
             where_clause = self._build_filters(filters, params)
             where_clause = f"WHERE {where_clause}"
@@ -1276,7 +1268,7 @@ class PostgresVectorHandler(VectorHandler):
         # Construct the final query
         query = f"""
         SELECT {select_clause}
-        FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+        FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
         {where_clause}
         LIMIT $%s
         OFFSET $%s
@@ -1299,9 +1291,9 @@ class PostgresVectorHandler(VectorHandler):
             total = results[0].get("total", 0)
             chunks = [
                 {
-                    "chunk_id": str(result["chunk_id"]),
+                    "id": str(result["id"]),
                     "document_id": str(result["document_id"]),
-                    "user_id": str(result["user_id"]),
+                    "owner_id": str(result["owner_id"]),
                     "collection_ids": result["collection_ids"],
                     "text": result["text"],
                     "metadata": json.loads(result["metadata"]),
@@ -1337,7 +1329,7 @@ class PostgresVectorHandler(VectorHandler):
     ) -> list[dict[str, Any]]:
         """
         Search for documents based on their metadata fields and/or body text.
-        Joins with document_info table to get complete document metadata.
+        Joins with documents table to get complete document metadata.
 
         Args:
             query_text (str): The search query text
@@ -1347,7 +1339,7 @@ class PostgresVectorHandler(VectorHandler):
             list[dict[str, Any]]: List of documents with their search scores and complete metadata
         """
         where_clauses = []
-        params: list[Union[str, int, bytes]] = [query_text]
+        params: list[str | int | bytes] = [query_text]
 
         # Build the dynamic metadata field search expression
         metadata_fields_expr = " || ' ' || ".join(
@@ -1372,8 +1364,8 @@ class PostgresVectorHandler(VectorHandler):
                             32
                         )
                     END as metadata_rank
-                FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)} v
-                LEFT JOIN {self._get_table_name('document_info')} d ON v.document_id = d.document_id
+                FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} v
+                LEFT JOIN {self._get_table_name('documents')} d ON v.document_id = d.id
                 WHERE v.metadata IS NOT NULL
             ),
             -- Body search scores
@@ -1387,7 +1379,7 @@ class PostgresVectorHandler(VectorHandler):
                             32
                         )
                     ) as body_rank
-                FROM {self._get_table_name(PostgresVectorHandler.TABLE_NAME)}
+                FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
                 WHERE $1 != ''
                 {f"AND to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)" if settings.search_over_body else ""}
                 GROUP BY document_id
@@ -1467,7 +1459,7 @@ class PostgresVectorHandler(VectorHandler):
     def _get_index_options(
         self,
         method: IndexMethod,
-        index_arguments: Optional[Union[IndexArgsIVFFlat, IndexArgsHNSW]],
+        index_arguments: Optional[IndexArgsIVFFlat | IndexArgsHNSW],
     ) -> str:
         if method == IndexMethod.ivfflat:
             if isinstance(index_arguments, IndexArgsIVFFlat):

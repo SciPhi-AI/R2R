@@ -11,7 +11,7 @@ from core.base import (
     DocumentResponse,
     EmbeddingPurpose,
     GenerationConfig,
-    KGSearchSettings,
+    GraphSearchSettings,
     Message,
     R2RException,
     RunManager,
@@ -19,11 +19,7 @@ from core.base import (
     manage_run,
     to_async_generator,
 )
-from core.base.api.models import (
-    CombinedSearchResponse,
-    RAGResponse,
-    UserResponse,
-)
+from core.base.api.models import CombinedSearchResponse, RAGResponse, User
 from core.base.logger.base import RunType
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -57,27 +53,18 @@ class RetrievalService(Service):
         )
 
     @telemetry_event("Search")
-    async def search(
+    async def search(  # TODO - rename to 'search_chunks'
         self,
         query: str,
-        vector_search_settings: SearchSettings = SearchSettings(),
-        kg_search_settings: KGSearchSettings = KGSearchSettings(),
+        search_settings: SearchSettings = SearchSettings(),
         *args,
         **kwargs,
     ) -> CombinedSearchResponse:
         async with manage_run(self.run_manager, RunType.RETRIEVAL) as run_id:
             t0 = time.time()
-            if (
-                kg_search_settings.use_kg_search
-                and self.config.database.kg_search_settings is False
-            ):
-                raise R2RException(
-                    status_code=400,
-                    message="Knowledge Graph search is not enabled in the configuration.",
-                )
 
             if (
-                vector_search_settings.use_vector_search
+                search_settings.use_semantic_search
                 and self.config.database.provider is None
             ):
                 raise R2RException(
@@ -86,23 +73,24 @@ class RetrievalService(Service):
                 )
 
             if (
-                vector_search_settings.use_vector_search
-                and vector_search_settings.use_hybrid_search
-                and not vector_search_settings.hybrid_search_settings
-            ):
+                (
+                    search_settings.use_semantic_search
+                    and search_settings.use_fulltext_search
+                )
+                or search_settings.use_hybrid_search
+            ) and not search_settings.hybrid_settings:
                 raise R2RException(
                     status_code=400,
                     message="Hybrid search settings must be specified in the input configuration.",
                 )
             # TODO - Remove these transforms once we have a better way to handle this
-            for filter, value in vector_search_settings.filters.items():
+            for filter, value in search_settings.filters.items():
                 if isinstance(value, UUID):
-                    vector_search_settings.filters[filter] = str(value)
+                    search_settings.filters[filter] = str(value)
             merged_kwargs = {
                 "input": to_async_generator([query]),
                 "state": None,
-                "vector_search_settings": vector_search_settings,
-                "kg_search_settings": kg_search_settings,
+                "search_settings": search_settings,
                 "run_manager": self.run_manager,
                 **kwargs,
             }
@@ -151,13 +139,19 @@ class RetrievalService(Service):
             **kwargs,
         )
 
+    @telemetry_event("Embedding")
+    async def embedding(
+        self,
+        text: str,
+    ):
+        return await self.providers.embedding.async_get_embedding(text=text)
+
     @telemetry_event("RAG")
     async def rag(
         self,
         query: str,
         rag_generation_config: GenerationConfig,
-        vector_search_settings: SearchSettings = SearchSettings(),
-        kg_search_settings: KGSearchSettings = KGSearchSettings(),
+        search_settings: SearchSettings = SearchSettings(),
         *args,
         **kwargs,
     ) -> RAGResponse:
@@ -167,16 +161,15 @@ class RetrievalService(Service):
                 for (
                     filter,
                     value,
-                ) in vector_search_settings.filters.items():
+                ) in search_settings.filters.items():
                     if isinstance(value, UUID):
-                        vector_search_settings.filters[filter] = str(value)
+                        search_settings.filters[filter] = str(value)
 
                 if rag_generation_config.stream:
                     return await self.stream_rag_response(
                         query,
                         rag_generation_config,
-                        vector_search_settings,
-                        kg_search_settings,
+                        search_settings,
                         *args,
                         **kwargs,
                     )
@@ -184,8 +177,7 @@ class RetrievalService(Service):
                 merged_kwargs = {
                     "input": to_async_generator([query]),
                     "state": None,
-                    "vector_search_settings": vector_search_settings,
-                    "kg_search_settings": kg_search_settings,
+                    "search_settings": search_settings,
                     "run_manager": self.run_manager,
                     "rag_generation_config": rag_generation_config,
                     **kwargs,
@@ -223,8 +215,7 @@ class RetrievalService(Service):
         self,
         query,
         rag_generation_config,
-        vector_search_settings,
-        kg_search_settings,
+        search_settings,
         *args,
         **kwargs,
     ):
@@ -234,8 +225,7 @@ class RetrievalService(Service):
                     "input": to_async_generator([query]),
                     "state": None,
                     "run_manager": self.run_manager,
-                    "vector_search_settings": vector_search_settings,
-                    "kg_search_settings": kg_search_settings,
+                    "search_settings": search_settings,
                     "rag_generation_config": rag_generation_config,
                     **kwargs,
                 }
@@ -254,8 +244,7 @@ class RetrievalService(Service):
     async def agent(
         self,
         rag_generation_config: GenerationConfig,
-        vector_search_settings: SearchSettings = SearchSettings(),
-        kg_search_settings: KGSearchSettings = KGSearchSettings(),
+        search_settings: SearchSettings = SearchSettings(),
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
         conversation_id: Optional[str] = None,
@@ -282,9 +271,9 @@ class RetrievalService(Service):
                     )
 
                 # Transform UUID filters to strings
-                for filter, value in vector_search_settings.filters.items():
+                for filter, value in search_settings.filters.items():
                     if isinstance(value, UUID):
-                        vector_search_settings.filters[filter] = str(value)
+                        search_settings.filters[filter] = str(value)
 
                 ids = None
 
@@ -309,10 +298,10 @@ class RetrievalService(Service):
                                 status_code=404,
                                 message=f"Conversation not found: {conversation_id}",
                             )
-                        messages = [conv[1] for conv in conversation] + [  # type: ignore
+                        messages = [resp.message for resp in conversation] + [  # type: ignore
                             message
                         ]
-                        ids = [conv[0] for conv in conversation]
+                        ids = [resp.id for resp in conversation]
                     else:
                         conversation = (
                             await self.logging_connection.create_conversation()
@@ -328,6 +317,9 @@ class RetrievalService(Service):
                                     parent_id,
                                 )
                     messages = messages or []
+
+                    if message and not messages:
+                        messages = [message]
 
                 current_message = messages[-1]  # type: ignore
 
@@ -361,8 +353,7 @@ class RetrievalService(Service):
                             async for chunk in agent.arun(
                                 messages=messages,
                                 system_instruction=task_prompt_override,
-                                vector_search_settings=vector_search_settings,
-                                kg_search_settings=kg_search_settings,
+                                search_settings=search_settings,
                                 rag_generation_config=rag_generation_config,
                                 include_title_if_available=include_title_if_available,
                                 *args,
@@ -375,8 +366,7 @@ class RetrievalService(Service):
                 results = await self.agents.rag_agent.arun(
                     messages=messages,
                     system_instruction=task_prompt_override,
-                    vector_search_settings=vector_search_settings,
-                    kg_search_settings=kg_search_settings,
+                    search_settings=search_settings,
                     rag_generation_config=rag_generation_config,
                     include_title_if_available=include_title_if_available,
                     *args,
@@ -424,19 +414,17 @@ class RetrievalServiceAdapter:
                 user_data = json.loads(user_data)
             except json.JSONDecodeError:
                 raise ValueError(f"Invalid user data format: {user_data}")
-        return UserResponse.from_dict(user_data)
+        return User.from_dict(user_data)
 
     @staticmethod
     def prepare_search_input(
         query: str,
-        vector_search_settings: SearchSettings,
-        kg_search_settings: KGSearchSettings,
-        user: UserResponse,
+        search_settings: SearchSettings,
+        user: User,
     ) -> dict:
         return {
             "query": query,
-            "vector_search_settings": vector_search_settings.to_dict(),
-            "kg_search_settings": kg_search_settings.to_dict(),
+            "search_settings": search_settings.to_dict(),
             "user": user.to_dict(),
         }
 
@@ -444,11 +432,8 @@ class RetrievalServiceAdapter:
     def parse_search_input(data: dict):
         return {
             "query": data["query"],
-            "vector_search_settings": SearchSettings.from_dict(
-                data["vector_search_settings"]
-            ),
-            "kg_search_settings": KGSearchSettings.from_dict(
-                data["kg_search_settings"]
+            "search_settings": SearchSettings.from_dict(
+                data["search_settings"]
             ),
             "user": RetrievalServiceAdapter._parse_user_data(data["user"]),
         }
@@ -456,16 +441,14 @@ class RetrievalServiceAdapter:
     @staticmethod
     def prepare_rag_input(
         query: str,
-        vector_search_settings: SearchSettings,
-        kg_search_settings: KGSearchSettings,
+        search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,
         task_prompt_override: Optional[str],
-        user: UserResponse,
+        user: User,
     ) -> dict:
         return {
             "query": query,
-            "vector_search_settings": vector_search_settings.to_dict(),
-            "kg_search_settings": kg_search_settings.to_dict(),
+            "search_settings": search_settings.to_dict(),
             "rag_generation_config": rag_generation_config.to_dict(),
             "task_prompt_override": task_prompt_override,
             "user": user.to_dict(),
@@ -475,11 +458,8 @@ class RetrievalServiceAdapter:
     def parse_rag_input(data: dict):
         return {
             "query": data["query"],
-            "vector_search_settings": SearchSettings.from_dict(
-                data["vector_search_settings"]
-            ),
-            "kg_search_settings": KGSearchSettings.from_dict(
-                data["kg_search_settings"]
+            "search_settings": SearchSettings.from_dict(
+                data["search_settings"]
             ),
             "rag_generation_config": GenerationConfig.from_dict(
                 data["rag_generation_config"]
@@ -491,19 +471,17 @@ class RetrievalServiceAdapter:
     @staticmethod
     def prepare_agent_input(
         message: Message,
-        vector_search_settings: SearchSettings,
-        kg_search_settings: KGSearchSettings,
+        search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,
         task_prompt_override: Optional[str],
         include_title_if_available: bool,
-        user: UserResponse,
+        user: User,
         conversation_id: Optional[str] = None,
         branch_id: Optional[str] = None,
     ) -> dict:
         return {
             "message": message.to_dict(),
-            "vector_search_settings": vector_search_settings.to_dict(),
-            "kg_search_settings": kg_search_settings.to_dict(),
+            "search_settings": search_settings.to_dict(),
             "rag_generation_config": rag_generation_config.to_dict(),
             "task_prompt_override": task_prompt_override,
             "include_title_if_available": include_title_if_available,
@@ -516,11 +494,8 @@ class RetrievalServiceAdapter:
     def parse_agent_input(data: dict):
         return {
             "message": Message.from_dict(data["message"]),
-            "vector_search_settings": SearchSettings.from_dict(
-                data["vector_search_settings"]
-            ),
-            "kg_search_settings": KGSearchSettings.from_dict(
-                data["kg_search_settings"]
+            "search_settings": SearchSettings.from_dict(
+                data["search_settings"]
             ),
             "rag_generation_config": GenerationConfig.from_dict(
                 data["rag_generation_config"]

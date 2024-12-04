@@ -1,8 +1,10 @@
 from __future__ import annotations  # for Python 3.10+
-from typing_extensions import deprecated
+
 import json
 from typing import Any, Optional, Union
 from uuid import UUID
+
+from typing_extensions import deprecated
 
 from ..models import Message
 
@@ -811,48 +813,6 @@ class SyncManagementMixins:
         return self._make_request(  # type: ignore
             "GET", f"branches_overview/{str(conversation_id)}"
         )
-
-    # TODO: Publish these methods once more testing is done
-    # def get_next_branch(self, branch_id: str) -> dict:
-    #     """
-    #     Get the next branch in a conversation.
-    #
-    #     Args:
-    #         branch_id (str): The ID of the branch to get the next branch for.
-    #
-    #     Returns:
-    #         dict: The response from the server.
-    #     """
-    #     return self._make_request("GET", f"get_next_branch/{branch_id}") # type: ignore
-    #
-    # def get_previous_branch(self, branch_id: str) -> dict:
-    #     """
-    #     Get the previous branch in a conversation.
-    #
-    #     Args:
-    #         branch_id (str): The ID of the branch to get the previous branch for.
-    #
-    #     Returns:
-    #         dict: The response from the server.
-    #     """
-    #     return self._make_request("GET", f"get_previous_branch/{branch_id}") # type: ignore
-    #
-    # def branch_at_message(
-    #     self,
-    #     conversation_id: Union[str, UUID],
-    #     message_id: str,
-    # ) -> dict:
-    #     """
-    #     Branch at a specific message in a conversation.
-    #
-    #     Args:
-    #         conversation_id (Union[str, UUID]): The ID of the conversation to branch.
-    #         message_id (str): The ID of the message to branch at.
-    #
-    #     Returns:
-    #         dict: The response from the server.
-    #     """
-    #     return self._make_request("POST", f"branch_at_message/{str(conversation_id)}/{message_id}") # type: ignore
 
     @deprecated("Use client.conversations.delete() instead")
     def delete_conversation(

@@ -1,14 +1,14 @@
-from shared.api.models.base import (
-    PaginatedResultsWrapper,
-    ResultsWrapper,
-    GenericBooleanResponse,
-    GenericMessageResponse,
-    WrappedBooleanResponse,
-    WrappedGenericMessageResponse,
-)
 from shared.api.models.auth.responses import (
     TokenResponse,
     WrappedTokenResponse,
+)
+from shared.api.models.base import (
+    GenericBooleanResponse,
+    GenericMessageResponse,
+    PaginatedResultsWrapper,
+    ResultsWrapper,
+    WrappedBooleanResponse,
+    WrappedGenericMessageResponse,
 )
 from shared.api.models.ingestion.responses import (
     IngestionResponse,
@@ -17,13 +17,6 @@ from shared.api.models.ingestion.responses import (
     WrappedUpdateResponse,
 )
 from shared.api.models.kg.responses import (
-    KGCreationResponse,
-    KGEnrichmentResponse,
-    KGEntityDeduplicationResponse,
-    WrappedKGCreationResponse,
-    WrappedKGEnrichmentResponse,
-    WrappedKGEntityDeduplicationResponse,
-    # TODO: Need to review anything above this
     GraphResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
@@ -37,38 +30,30 @@ from shared.api.models.management.responses import (
     PromptResponse,
     ServerStats,
     SettingsResponse,
-    UserResponse,
-    # Chunk Responses
+    WrappedAnalyticsResponse,
     WrappedChunkResponse,
     WrappedChunksResponse,
-    # Conversation Responses
+    WrappedCollectionResponse,
+    WrappedCollectionsResponse,
     WrappedConversationMessagesResponse,
     WrappedConversationResponse,
     WrappedConversationsResponse,
-    # Document Responses
     WrappedDocumentResponse,
     WrappedDocumentsResponse,
-    # Collection Responses
-    WrappedCollectionResponse,
-    WrappedCollectionsResponse,
-    # Prompt Responses
+    WrappedLogsResponse,
     WrappedPromptResponse,
     WrappedPromptsResponse,
-    # System Responses
-    WrappedAnalyticsResponse,
+    WrappedServerStatsResponse,
     WrappedSettingsResponse,
-    # User Responses
     WrappedUserResponse,
     WrappedUsersResponse,
-    WrappedLogsResponse,
-    WrappedServerStatsResponse,
 )
 from shared.api.models.retrieval.responses import (
-    CombinedSearchResponse,
     AgentResponse,
+    CombinedSearchResponse,
     RAGResponse,
-    WrappedDocumentSearchResponse,
     WrappedAgentResponse,
+    WrappedDocumentSearchResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
     WrappedVectorSearchResponse,
@@ -85,13 +70,6 @@ __all__ = [
     "WrappedIngestionResponse",
     "WrappedUpdateResponse",
     "WrappedMetadataUpdateResponse",
-    # Restructure Responses
-    "KGCreationResponse",
-    "KGEnrichmentResponse",
-    "KGEntityDeduplicationResponse",
-    "WrappedKGCreationResponse",
-    "WrappedKGEnrichmentResponse",
-    "WrappedKGEntityDeduplicationResponse",
     # TODO: Need to review anything above this
     "GraphResponse",
     "WrappedGraphResponse",
@@ -126,7 +104,6 @@ __all__ = [
     "WrappedConversationResponse",
     "WrappedConversationsResponse",
     # User Responses
-    "UserResponse",
     "WrappedUserResponse",
     "WrappedUsersResponse",
     # Base Responses

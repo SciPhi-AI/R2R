@@ -1,9 +1,7 @@
 import json
 import logging
-from typing import Any, Union
+from typing import Any
 from uuid import UUID
-
-from fastapi import HTTPException
 
 from core.base import AsyncState
 from core.base.abstractions import Entity, KGEntityDeduplicationType
@@ -17,7 +15,6 @@ from core.providers import (
     PostgresDBProvider,
 )
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
-from core.base.abstractions import DataLevel
 
 logger = logging.getLogger()
 
@@ -27,14 +24,12 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         self,
         config: AsyncPipe.PipeConfig,
         database_provider: PostgresDBProvider,
-        llm_provider: Union[
-            OpenAICompletionProvider, LiteLLMCompletionProvider
-        ],
-        embedding_provider: Union[
-            LiteLLMEmbeddingProvider,
-            OpenAIEmbeddingProvider,
-            OllamaEmbeddingProvider,
-        ],
+        llm_provider: OpenAICompletionProvider | LiteLLMCompletionProvider,
+        embedding_provider: (
+            LiteLLMEmbeddingProvider
+            | OpenAIEmbeddingProvider
+            | OllamaEmbeddingProvider
+        ),
         logging_provider: SqlitePersistentLoggingProvider,
         **kwargs,
     ):
@@ -58,7 +53,6 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             # TODO: remove the tuple return type
             return (
                 await self.database_provider.graph_handler.entities.get(
-                    level=DataLevel.GRAPH,
                     id=graph_id,
                     offset=0,
                     limit=-1,
@@ -87,14 +81,12 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             "description",
             "chunk_ids",
             "document_id",
-            "attributes",
             # "description_embedding",
         ]
         deduplication_target_keys = [
             "description",
             "chunk_ids",
             "document_ids",
-            "attributes",
             # "description_embedding",
         ]
         deduplication_keys = list(
@@ -286,18 +278,21 @@ class KGEntityDeduplicationPipe(AsyncPipe):
                 "graph_id and collection_id cannot both be provided"
             )
 
-        kg_entity_deduplication_type = input.message[
-            "kg_entity_deduplication_type"
+        graph_entity_deduplication_type = input.message[
+            "graph_entity_deduplication_type"
         ]
 
-        if kg_entity_deduplication_type == KGEntityDeduplicationType.BY_NAME:
+        if (
+            graph_entity_deduplication_type
+            == KGEntityDeduplicationType.BY_NAME
+        ):
             async for result in self.kg_named_entity_deduplication(
                 graph_id=graph_id, collection_id=collection_id, **kwargs
             ):
                 yield result
 
         elif (
-            kg_entity_deduplication_type
+            graph_entity_deduplication_type
             == KGEntityDeduplicationType.BY_DESCRIPTION
         ):
             async for result in self.kg_description_entity_deduplication(
@@ -305,12 +300,14 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             ):
                 yield result
 
-        elif kg_entity_deduplication_type == KGEntityDeduplicationType.BY_LLM:
+        elif (
+            graph_entity_deduplication_type == KGEntityDeduplicationType.BY_LLM
+        ):
             raise NotImplementedError(
                 "LLM entity deduplication is not implemented yet"
             )
 
         else:
             raise ValueError(
-                f"Invalid kg_entity_deduplication_type: {kg_entity_deduplication_type}"
+                f"Invalid graph_entity_deduplication_type: {graph_entity_deduplication_type}"
             )

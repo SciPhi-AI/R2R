@@ -213,7 +213,7 @@
           }
         }
       ],
-      "kg_search_results": null
+      "graph_search_results": null
     }
   },
   "basic_rag": {
@@ -461,7 +461,7 @@
             }
           }
         ],
-        "kg_search_results": null
+        "graph_search_results": null
       }
     }
   },
@@ -705,7 +705,7 @@
             }
           }
         ],
-        "kg_search_results": null
+        "graph_search_results": null
       }
     }
   },

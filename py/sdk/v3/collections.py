@@ -36,7 +36,7 @@ class CollectionsSDK:
         return await self.client._make_request(
             "POST",
             "collections",
-            json=data,  # {"config": data}
+            json=data,
             version="v3",
         )
 
@@ -111,7 +111,7 @@ class CollectionsSDK:
         return await self.client._make_request(
             "POST",
             f"collections/{str(id)}",
-            json=data,  # {"config": data}
+            json=data,
             version="v3",
         )
 
@@ -271,3 +271,43 @@ class CollectionsSDK:
             version="v3",
         )
         return result.get("results", True)
+
+    async def extract(
+        self,
+        id: str | UUID,
+        # run_type: Optional[str] = "RUN",
+        settings: Optional[dict] = None,
+        run_with_orchestration: Optional[bool] = True,
+    ) -> dict:
+        """
+        Extract entities and relationships from documents in a collection.
+
+        Args:
+            id (str | UUID): Collection ID to extract from
+            run_type (Optional[str]): Whether to return an estimate of the creation cost or to actually extract.
+                Defaults to "RUN"
+            settings (Optional[dict]): Settings for the entities and relationships extraction process
+            run_with_orchestration (Optional[bool]): Whether to run the extraction process with orchestration.
+                Defaults to True
+
+        Returns:
+            dict: Result of the extraction process, containing either:
+                - For estimates: message, task_id, id, and estimate
+                - For runs: message and task_id
+        """
+        params = {
+            # "run_type": run_type,
+            "run_with_orchestration": run_with_orchestration
+        }
+
+        data = {}
+        if settings is not None:
+            data["settings"] = settings
+
+        return await self.client._make_request(
+            "POST",
+            f"collections/{str(id)}/extract",
+            params=params,
+            json=data if data else None,
+            version="v3",
+        )

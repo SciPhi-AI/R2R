@@ -1,8 +1,7 @@
 from .base_utils import (
     _decorate_vector_type,
+    _get_str_estimation_output,
     decrement_version,
-    format_entity_types,
-    format_relations,
     format_search_results_for_llm,
     format_search_results_for_stream,
     generate_default_prompt_id,
@@ -16,13 +15,10 @@ from .base_utils import (
     run_pipeline,
     to_async_generator,
     validate_uuid,
-    _get_str_estimation_output,
 )
 from .splitter.text import RecursiveCharacterTextSplitter, TextSplitter
 
 __all__ = [
-    "format_entity_types",
-    "format_relations",
     "format_search_results_for_stream",
     "format_search_results_for_llm",
     # ID generation

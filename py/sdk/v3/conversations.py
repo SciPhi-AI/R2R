@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from shared.api.models.base import WrappedBooleanResponse
@@ -125,7 +125,7 @@ class ConversationsSDK:
         Returns:
             dict: Result of the operation, including the new message ID
         """
-        data = {
+        data: dict[str, Any] = {
             "content": content,
             "role": role,
         }

@@ -6,10 +6,10 @@ from openai import AsyncOpenAI, AuthenticationError, OpenAI
 from openai._types import NOT_GIVEN
 
 from core.base import (
+    ChunkSearchResult,
     EmbeddingConfig,
     EmbeddingProvider,
     EmbeddingPurpose,
-    VectorSearchResult,
 )
 
 logger = logging.getLogger()
@@ -218,7 +218,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     def rerank(
         self,
         query: str,
-        results: list[VectorSearchResult],
+        results: list[ChunkSearchResult],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
     ):
@@ -227,7 +227,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     async def arerank(
         self,
         query: str,
-        results: list[VectorSearchResult],
+        results: list[ChunkSearchResult],
         stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
         limit: int = 10,
     ):

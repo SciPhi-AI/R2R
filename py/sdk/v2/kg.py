@@ -4,7 +4,6 @@ from uuid import UUID
 from ..models import (
     KGCreationSettings,
     KGEnrichmentSettings,
-    KGEntityDeduplicationResponse,
     KGEntityDeduplicationSettings,
     KGRunType,
 )
@@ -55,7 +54,7 @@ class KGMixins:
             run_type (Optional[Union[str, KGRunType]]): The type of run to perform.
             kg_enrichment_settings (Optional[Union[dict, KGEnrichmentSettings]]): Settings for the graph enrichment process.
         Returns:
-            KGEnrichmentResponse: Results of the graph enrichment process.
+            Results of the graph enrichment process.
         """
         if isinstance(kg_enrichment_settings, KGEnrichmentSettings):
             kg_enrichment_settings = kg_enrichment_settings.model_dump()
@@ -141,7 +140,7 @@ class KGMixins:
         self,
         collection_id: Optional[Union[UUID, str]] = None,
         levels: Optional[list[int]] = None,
-        community_numbers: Optional[list[int]] = None,
+        community_ids: Optional[list[UUID]] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> dict:
@@ -153,7 +152,7 @@ class KGMixins:
             offset (int): The offset for pagination.
             limit (int): The limit for pagination.
             levels (Optional[List[int]]): Optional list of levels to filter by.
-            community_numbers (Optional[List[int]]): Optional list of community numbers to filter by.
+            community_ids (Optional[List[int]]): Optional list of community numbers to filter by.
 
         Returns:
             dict: A dictionary containing the retrieved communities.
@@ -162,7 +161,7 @@ class KGMixins:
         params = {
             "collection_id": collection_id,
             "levels": levels,
-            "community_numbers": community_numbers,
+            "community_ids": community_ids,
             "offset": offset,
             "limit": limit,
         }
@@ -216,7 +215,7 @@ class KGMixins:
         deduplication_settings: Optional[
             Union[dict, KGEntityDeduplicationSettings]
         ] = None,
-    ) -> KGEntityDeduplicationResponse:
+    ):
         """
         Deduplicate entities in the knowledge graph.
         Args:

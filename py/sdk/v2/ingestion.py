@@ -1,10 +1,12 @@
 from __future__ import annotations  # for Python 3.10+
-from typing_extensions import deprecated
+
 import json
 import os
 from contextlib import ExitStack
 from typing import Optional, Union
 from uuid import UUID
+
+from typing_extensions import deprecated
 
 from shared.abstractions import IndexMeasure, IndexMethod, VectorTableName
 
@@ -246,7 +248,7 @@ class IngestionMixins:
     @deprecated("Use client.indices.create() instead")
     async def create_vector_index(
         self,
-        table_name: VectorTableName = VectorTableName.VECTORS,
+        table_name: VectorTableName = VectorTableName.CHUNKS,
         index_method: IndexMethod = IndexMethod.hnsw,
         index_measure: IndexMeasure = IndexMeasure.cosine_distance,
         index_arguments: Optional[dict] = None,
@@ -284,7 +286,7 @@ class IngestionMixins:
     @deprecated("Use client.indices.list() instead")
     async def list_vector_indices(
         self,
-        table_name: VectorTableName = VectorTableName.VECTORS,
+        table_name: VectorTableName = VectorTableName.CHUNKS,
     ) -> dict:
         """
         List all vector indices for a given table.
@@ -304,7 +306,7 @@ class IngestionMixins:
     async def delete_vector_index(
         self,
         index_name: str,
-        table_name: VectorTableName = VectorTableName.VECTORS,
+        table_name: VectorTableName = VectorTableName.CHUNKS,
         concurrently: bool = True,
     ) -> dict:
         """

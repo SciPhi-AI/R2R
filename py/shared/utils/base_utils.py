@@ -2,10 +2,10 @@ import asyncio
 import json
 import logging
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable, Optional
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
-from ..abstractions.graph import EntityType, RelationshipType
 from ..abstractions.search import (
     AggregateSearchResult,
     KGCommunityResult,
@@ -14,7 +14,6 @@ from ..abstractions.search import (
     KGRelationshipResult,
 )
 from ..abstractions.vector import VectorQuantizationType
-from datetime import datetime
 
 logger = logging.getLogger()
 
@@ -23,42 +22,55 @@ def format_search_results_for_llm(results: AggregateSearchResult) -> str:
     formatted_results = []
     source_counter = 1
 
-    if results.vector_search_results:
+    if results.chunk_search_results:
         formatted_results.append("Vector Search Results:")
-        for result in results.vector_search_results:
+        for result in results.chunk_search_results:
             formatted_results.extend(
                 (f"Source [{source_counter}]:", f"{result.text}")
             )
             source_counter += 1
 
-    if results.kg_search_results:
+    if results.graph_search_results:
         formatted_results.append("KG Search Results:")
-        for kg_result in results.kg_search_results:
-            formatted_results.extend(
-                (
-                    f"Source [{source_counter}]:",
-                    f"Name: {kg_result.content.name}",
-                )
-            )
+        for kg_result in results.graph_search_results:
+            try:
+                formatted_results.extend((f"Source [{source_counter}]:",))
+            except AttributeError:
+                raise ValueError(f"Invalid KG search result: {kg_result}")
+                # formatted_results.extend(
+                #     (
+                #         f"Source [{source_counter}]:",
+                #         f"Type: {kg_result.content.type}",
+                #     )
+                # )
 
             if isinstance(kg_result.content, KGCommunityResult):
                 formatted_results.extend(
                     (
+                        f"Name: {kg_result.content.name}",
                         f"Summary: {kg_result.content.summary}",
-                        f"Rating: {kg_result.content.rating}",
-                        f"Rating Explanation: {kg_result.content.rating_explanation}",
-                        "Findings:",
+                        # f"Rating: {kg_result.content.rating}",
+                        # f"Rating Explanation: {kg_result.content.rating_explanation}",
+                        # "Findings:",
                     )
                 )
-                formatted_results.extend(
-                    f"- {finding}" for finding in kg_result.content.findings
-                )
+                # formatted_results.append(
+                #     f"- {finding}" for finding in kg_result.content.findings
+                # )
             elif isinstance(
                 kg_result.content,
-                (KGEntityResult, KGRelationshipResult, KGGlobalResult),
+                KGEntityResult,
             ):
+                formatted_results.extend(
+                    [
+                        f"Name: {kg_result.content.name}",
+                        f"Description: {kg_result.content.description}",
+                    ]
+                )
+            elif isinstance(kg_result.content, KGRelationshipResult):
                 formatted_results.append(
-                    f"Description: {kg_result.content.description}"
+                    f"Relationship: {kg_result.content.subject} - {kg_result.content.predicate} - {kg_result.content.object}",
+                    # f"Description: {kg_result.content.description}"
                 )
 
             if kg_result.metadata:
@@ -76,27 +88,25 @@ def format_search_results_for_llm(results: AggregateSearchResult) -> str:
 def format_search_results_for_stream(
     result: AggregateSearchResult,
 ) -> str:
-    VECTOR_SEARCH_STREAM_MARKER = (
-        "search"  # TODO - change this to vector_search in next major release
-    )
-    KG_SEARCH_STREAM_MARKER = "kg_search"
+    CHUNK_SEARCH_STREAM_MARKER = "chunk_search"  # TODO - change this to vector_search in next major release
+    GRAPH_SEARCH_STREAM_MARKER = "graph_search"
 
     context = ""
-    if result.vector_search_results:
-        context += f"<{VECTOR_SEARCH_STREAM_MARKER}>"
+    if result.chunk_search_results:
+        context += f"<{CHUNK_SEARCH_STREAM_MARKER}>"
         vector_results_list = [
-            result.as_dict() for result in result.vector_search_results
+            result.as_dict() for result in result.chunk_search_results
         ]
         context += json.dumps(vector_results_list, default=str)
-        context += f"</{VECTOR_SEARCH_STREAM_MARKER}>"
+        context += f"</{CHUNK_SEARCH_STREAM_MARKER}>"
 
-    if result.kg_search_results:
-        context += f"<{KG_SEARCH_STREAM_MARKER}>"
+    if result.graph_search_results:
+        context += f"<{GRAPH_SEARCH_STREAM_MARKER}>"
         kg_results_list = [
-            result.dict() for result in result.kg_search_results
+            result.dict() for result in result.graph_search_results
         ]
         context += json.dumps(kg_results_list, default=str)
-        context += f"</{KG_SEARCH_STREAM_MARKER}>"
+        context += f"</{GRAPH_SEARCH_STREAM_MARKER}>"
 
     return context
 
@@ -105,15 +115,22 @@ if TYPE_CHECKING:
     from ..pipeline.base_pipeline import AsyncPipeline
 
 
-def _generate_id_from_label(label: str) -> UUID:
+def _generate_id_from_label(label) -> UUID:
     return uuid5(NAMESPACE_DNS, label)
 
 
-def generate_id() -> UUID:
+def generate_id(label: Optional[str] = None) -> UUID:
     """
     Generates a unique run id
     """
-    return _generate_id_from_label(str(uuid4()))
+    return _generate_id_from_label(label if label != None else str(uuid4()))
+
+
+# def generate_id(label: Optional[str]= None) -> UUID:
+#     """
+#     Generates a unique run id
+#     """
+#     return _generate_id_from_label(str(uuid4(label)))
 
 
 def generate_document_id(filename: str, user_id: UUID) -> UUID:
@@ -191,16 +208,6 @@ def decrement_version(version: str) -> str:
     prefix = version[:-1]
     suffix = int(version[-1])
     return f"{prefix}{max(0, suffix - 1)}"
-
-
-def format_entity_types(entity_types: list[EntityType]) -> str:
-    lines = [entity.name for entity in entity_types]
-    return "\n".join(lines)
-
-
-def format_relations(predicates: list[RelationshipType]) -> str:
-    lines = [predicate.name for predicate in predicates]
-    return "\n".join(lines)
 
 
 def llm_cost_per_million_tokens(

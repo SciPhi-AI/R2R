@@ -7,7 +7,7 @@ from core.base import (
 )
 from core.base.abstractions import (
     AggregateSearchResult,
-    KGSearchSettings,
+    GraphSearchSettings,
     SearchSettings,
 )
 from core.base.agent import AgentConfig, Tool
@@ -57,16 +57,14 @@ class RAGAgentMixin:
     async def search(
         self,
         query: str,
-        vector_search_settings: SearchSettings,
-        kg_search_settings: KGSearchSettings,
+        search_settings: SearchSettings,
         *args,
         **kwargs,
     ) -> list[AggregateSearchResult]:
         response = await self.search_pipeline.run(
             to_async_generator([query]),
             state=None,
-            vector_search_settings=vector_search_settings,
-            kg_search_settings=kg_search_settings,
+            search_settings=search_settings,
         )
         return response
 

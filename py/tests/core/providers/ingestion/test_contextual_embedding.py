@@ -22,7 +22,7 @@ from shared.abstractions.ingestion import (
     ChunkEnrichmentSettings,
     ChunkEnrichmentStrategy,
 )
-from shared.api.models.auth.responses import UserResponse
+from shared.api.models.auth.responses import User
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ def sample_document_id():
 
 @pytest.fixture
 def sample_user():
-    return UserResponse(
+    return User(
         id=UUID("87654321-8765-4321-8765-432187654321"),
         email="test@example.com",
         is_superuser=True,

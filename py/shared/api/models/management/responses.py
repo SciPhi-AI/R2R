@@ -4,9 +4,9 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from shared.abstractions import R2RSerializable
 from shared.abstractions.document import DocumentResponse
 from shared.abstractions.llm import Message
+from shared.abstractions.user import User
 from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 
@@ -52,29 +52,10 @@ class SettingsResponse(BaseModel):
     # r2r_version: str
 
 
-class UserResponse(R2RSerializable):
-    id: UUID
-    email: str
-    is_active: bool = True
-    is_superuser: bool = False
-    created_at: datetime = datetime.now()
-    updated_at: datetime = datetime.now()
-    is_verified: bool = False
-    collection_ids: list[UUID] = []
-    graph_ids: list[UUID] = []
-
-    # Optional fields (to update or set at creation)
-    hashed_password: Optional[str] = None
-    verification_code_expiry: Optional[datetime] = None
-    name: Optional[str] = None
-    bio: Optional[str] = None
-    profile_picture: Optional[str] = None
-
-
 class ChunkResponse(BaseModel):
     id: UUID
     document_id: UUID
-    user_id: UUID
+    owner_id: UUID
     collection_ids: list[UUID]
     text: str
     metadata: dict[str, Any]
@@ -83,10 +64,11 @@ class ChunkResponse(BaseModel):
 
 class CollectionResponse(BaseModel):
     id: UUID
-    user_id: Optional[UUID]
+    owner_id: Optional[UUID]
     name: str
     description: Optional[str]
-    kg_enrichment_status: str
+    graph_cluster_status: str
+    graph_sync_status: str
     created_at: datetime
     updated_at: datetime
     user_count: int
@@ -160,8 +142,8 @@ WrappedSettingsResponse = ResultsWrapper[SettingsResponse]
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
 
 # User Responses
-WrappedUserResponse = ResultsWrapper[UserResponse]
-WrappedUsersResponse = PaginatedResultsWrapper[list[UserResponse]]
+WrappedUserResponse = ResultsWrapper[User]
+WrappedUsersResponse = PaginatedResultsWrapper[list[User]]
 
 # TODO: anything below this hasn't been reviewed
 WrappedLogsResponse = ResultsWrapper[list[LogResponse]]

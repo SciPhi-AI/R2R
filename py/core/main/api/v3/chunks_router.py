@@ -1,21 +1,21 @@
+import json
 import logging
 import textwrap
-
-import json
-
+from copy import copy
 from typing import Any, Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
 from core.base import (
-    KGSearchSettings,
+    ChunkResponse,
+    ChunkSearchSettings,
+    GraphSearchSettings,
     R2RException,
     RunType,
+    SearchSettings,
     UnprocessedChunk,
     UpdateChunk,
-    SearchSettings,
-    ChunkResponse,
 )
 from core.base.api.models import (
     GenericBooleanResponse,
@@ -31,7 +31,6 @@ from core.providers import (
 from core.utils import generate_id
 
 from .base_router import BaseRouterV3
-
 
 logger = logging.getLogger()
 
@@ -53,22 +52,17 @@ class ChunksRouter(BaseRouterV3):
     def _select_filters(
         self,
         auth_user: Any,
-        search_settings: SearchSettings | KGSearchSettings,
+        search_settings: SearchSettings,
     ) -> dict[str, Any]:
-        selected_collections = {
-            str(cid) for cid in set(search_settings.selected_collection_ids)
-        }
 
-        if auth_user.is_superuser:
-            if selected_collections:
-                # For superusers, we only filter by selected collections
-                filters = {
-                    "collection_ids": {"$overlap": list(selected_collections)}
-                }
-            else:
-                filters = {}
-        else:
+        filters = copy(search_settings.filters)
+        selected_collections = None
+        if not auth_user.is_superuser:
             user_collections = set(auth_user.collection_ids)
+            for key in filters.keys():
+                if "collection_ids" in key:
+                    selected_collections = set(filters[key]["$overlap"])
+                    break
 
             if selected_collections:
                 allowed_collections = user_collections.intersection(
@@ -77,7 +71,7 @@ class ChunksRouter(BaseRouterV3):
             else:
                 allowed_collections = user_collections
             # for non-superusers, we filter by user_id and selected & allowed collections
-            filters = {
+            collection_filters = {
                 "$or": [
                     {"user_id": {"$eq": auth_user.id}},
                     {
@@ -88,192 +82,13 @@ class ChunksRouter(BaseRouterV3):
                 ]  # type: ignore
             }
 
-        if search_settings.filters != {}:
-            filters = {"$and": [filters, search_settings.filters]}  # type: ignore
+            filters.pop("collection_ids", None)
+
+            filters = {"$and": [collection_filters, filters]}  # type: ignore
 
         return filters
 
     def _setup_routes(self):
-        @self.router.post(
-            "/chunks",
-            summary="Create Chunks",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.chunks.create(
-                                chunks=[
-                                    {
-                                        "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-                                        "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-                                        "collection_ids": ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
-                                        "metadata": {"key": "value"},
-                                        "text": "Some text content"
-                                    }
-                                ],
-                                run_with_orchestration=False
-                            )
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
-                            const { r2rClient } = require("r2r-js");
-
-                            const client = new r2rClient("http://localhost:7272");
-
-                            function main() {
-                                const response = await client.chunks.create({
-                                    chunks: [
-                                        {
-                                            id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-                                            documentId: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-                                            collectionIds: ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
-                                            metadata: {key: "value"},
-                                            text: "Some text content"
-                                        }
-                                    ],
-                                    run_with_orchestration: false
-                                });
-                            }
-
-                            main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X POST "https://api.example.com/v3/chunks" \\
-                                -H "Content-Type: application/json" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" \\
-                                -d '{
-                                "chunks": [{
-                                    "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-                                    "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-                                    "collection_ids": ["b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"],
-                                    "metadata": {"key": "value"},
-                                    "text": "Some text content"
-                                }],
-                                "run_with_orchestration": false
-                                }'
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def create_chunks(
-            # TODO: We should allow ingestion directly into a collection
-            raw_chunks: list[UnprocessedChunk] = Body(
-                ..., description="List of chunks to create"
-            ),
-            run_with_orchestration: Optional[bool] = Body(True),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> Any:
-            """
-            Create multiple chunks and process them through the ingestion pipeline.
-
-            This endpoint allows creating multiple chunks at once, optionally associating them
-            with documents and collections. The chunks will be processed asynchronously if
-            run_with_orchestration is True.
-
-            Maximum of 100,000 chunks can be created in a single request.
-
-            Note, it is not yet possible to add chunks to an existing document using this endpoint.
-            """
-            default_document_id = generate_id()
-            if len(raw_chunks) > MAX_CHUNKS_PER_REQUEST:
-                raise R2RException(
-                    f"Maximum of {MAX_CHUNKS_PER_REQUEST} chunks per request",
-                    400,
-                )
-            if len(raw_chunks) == 0:
-                raise R2RException("No chunks provided", 400)
-
-            # Group chunks by document_id for efficiency
-            chunks_by_document: dict = {}
-            for chunk in raw_chunks:
-                if chunk.document_id not in chunks_by_document:
-                    chunks_by_document[chunk.document_id] = []
-                chunks_by_document[chunk.document_id].append(chunk)
-
-            responses = []
-            # FIXME: Need to verify that the collection_id workflow is valid
-            for document_id, doc_chunks in chunks_by_document.items():
-                document_id = document_id or default_document_id
-                # Convert UnprocessedChunks to RawChunks for ingestion
-                # FIXME: Metadata doesn't seem to be getting passed through
-                raw_chunks_for_doc = [
-                    UnprocessedChunk(
-                        text=chunk.text if hasattr(chunk, "text") else "",
-                        metadata=chunk.metadata,
-                        id=chunk.id,
-                    )
-                    for chunk in doc_chunks
-                ]
-
-                # Prepare workflow input
-                workflow_input = {
-                    "document_id": str(document_id),
-                    "chunks": [
-                        chunk.model_dump() for chunk in raw_chunks_for_doc
-                    ],
-                    "metadata": {},  # Base metadata for the document
-                    "user": auth_user.model_dump_json(),
-                }
-
-                # TODO - Modify create_chunks so that we can add chunks to existing document
-
-                if run_with_orchestration:
-                    # Run ingestion with orchestration
-                    raw_message = (
-                        await self.orchestration_provider.run_workflow(
-                            "ingest-chunks",
-                            {"request": workflow_input},
-                            options={
-                                "additional_metadata": {
-                                    "document_id": str(document_id),
-                                }
-                            },
-                        )
-                    )
-                    raw_message["document_id"] = str(document_id)
-                    responses.append(raw_message)
-
-                else:
-                    logger.info(
-                        "Running chunk ingestion without orchestration."
-                    )
-                    from core.main.orchestration import (
-                        simple_ingestion_factory,
-                    )
-
-                    simple_ingestor = simple_ingestion_factory(
-                        self.services["ingestion"]
-                    )
-                    await simple_ingestor["ingest-chunks"](workflow_input)
-
-                    raw_message = {
-                        "message": "Ingestion task completed successfully.",
-                        "document_id": str(document_id),
-                        "task_id": None,
-                    }
-                    responses.append(raw_message)
-
-            return responses  # type: ignore
-
         @self.router.post(
             "/chunks/search",
             summary="Search Chunks",
@@ -286,11 +101,10 @@ class ChunksRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            results = client.chunks.search(
+                            response = client.chunks.search(
                                 query="search query",
-                                vector_search_settings={
-                                    "limit": 10,
-                                    "min_score": 0.7
+                                search_settings={
+                                    "limit": 10
                                 }
                             )
                             """
@@ -302,7 +116,7 @@ class ChunksRouter(BaseRouterV3):
         @self.base_endpoint
         async def search_chunks(
             query: str = Body(...),
-            vector_search_settings: SearchSettings = Body(
+            search_settings: SearchSettings = Body(
                 default_factory=SearchSettings,
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
@@ -317,18 +131,17 @@ class ChunksRouter(BaseRouterV3):
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
             """
 
-            vector_search_settings.filters = self._select_filters(
-                auth_user, vector_search_settings
+            search_settings.filters = self._select_filters(
+                auth_user, search_settings
             )
 
-            kg_search_settings = KGSearchSettings(use_kg_search=False)
+            search_settings.graph_settings = GraphSearchSettings(enabled=False)
 
             results = await self.services["retrieval"].search(
                 query=query,
-                vector_search_settings=vector_search_settings,
-                kg_search_settings=kg_search_settings,
+                search_settings=search_settings,
             )
-            return results["vector_search_results"]
+            return results["chunk_search_results"]
 
         @self.router.get(
             "/chunks/{id}",
@@ -342,7 +155,7 @@ class ChunksRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            chunk = client.chunks.retrieve(
+                            response = client.chunks.retrieve(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
@@ -393,9 +206,9 @@ class ChunksRouter(BaseRouterV3):
                 raise R2RException("Not authorized to access this chunk", 403)
 
             return ChunkResponse(  # type: ignore
-                id=chunk["chunk_id"],
+                id=chunk["id"],
                 document_id=chunk["document_id"],
-                user_id=chunk["user_id"],
+                owner_id=chunk["owner_id"],
                 collection_ids=chunk["collection_ids"],
                 text=chunk["text"],
                 metadata=chunk["metadata"],
@@ -414,9 +227,9 @@ class ChunksRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            result = client.chunks.update(
+                            response = client.chunks.update(
                                 {
-                                    "id": first_chunk_id,
+                                    "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
                                     "text": "Updated content",
                                     "metadata": {"key": "new value"}
                                 }
@@ -469,7 +282,7 @@ class ChunksRouter(BaseRouterV3):
 
             workflow_input = {
                 "document_id": str(existing_chunk["document_id"]),
-                "chunk_id": str(chunk_update.id),
+                "id": str(chunk_update.id),
                 "text": chunk_update.text,
                 "metadata": chunk_update.metadata
                 or existing_chunk["metadata"],
@@ -489,7 +302,7 @@ class ChunksRouter(BaseRouterV3):
             return ChunkResponse(  # type: ignore
                 id=chunk_update.id,
                 document_id=existing_chunk["document_id"],
-                user_id=existing_chunk["user_id"],
+                owner_id=existing_chunk["owner_id"],
                 collection_ids=existing_chunk["collection_ids"],
                 text=chunk_update.text,
                 metadata=chunk_update.metadata or existing_chunk["metadata"],
@@ -545,7 +358,7 @@ class ChunksRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            result = client.chunks.delete(
+                            response = client.chunks.delete(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
                             """
@@ -593,8 +406,8 @@ class ChunksRouter(BaseRouterV3):
 
             filters = {
                 "$and": [
-                    {"user_id": {"$eq": str(auth_user.id)}},
-                    {"chunk_id": {"$eq": id}},
+                    {"id": {"$eq": str(auth_user.id)}},
+                    {"id": {"$eq": id}},
                 ]
             }
             await self.services["management"].delete(filters=filters)
@@ -612,9 +425,9 @@ class ChunksRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            results = client.chunks.list(
+                            response = client.chunks.list(
                                 metadata_filter={"key": "value"},
-                                include_vectors=False
+                                include_vectors=False,
                                 offset=0,
                                 limit=10,
                             )
@@ -697,9 +510,9 @@ class ChunksRouter(BaseRouterV3):
             # Convert to response format
             chunks = [
                 ChunkResponse(
-                    id=chunk["chunk_id"],
+                    id=chunk["id"],
                     document_id=chunk["document_id"],
-                    user_id=chunk["user_id"],
+                    owner_id=chunk["owner_id"],
                     collection_ids=chunk["collection_ids"],
                     text=chunk["text"],
                     metadata=chunk["metadata"],
