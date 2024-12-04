@@ -63,27 +63,27 @@ The command above will install the `full` installation which includes Hatchet fo
 
 ## Getting Started
 
-- [Installation](/documentation/installation/overview): Quick installation of R2R using Docker or pip
-- [Quickstart](/documentation/quickstart): A quick introduction to R2R's core features
-- [Setup](/documentation/configuration/overview): Learn how to setup and configure R2R
-- [API & SDKs](/api-and-sdks/introduction): API reference and Python/JS SDKs for interacting with R2R
+- [Installation](https://r2r-docs.sciphi.ai/documentation/installation/overview): Quick installation of R2R using Docker or pip
+- [Quickstart](https://r2r-docs.sciphi.ai/documentation/quickstart): A quick introduction to R2R's core features
+- [Setup](https://r2r-docs.sciphi.ai/documentation/configuration/overview): Learn how to setup and configure R2R
+- [API & SDKs](https://r2r-docs.sciphi.ai/api-and-sdks/introduction): API reference and Python/JS SDKs for interacting with R2R
 
 ## Cookbooks
 
 - Advanced RAG Pipelines
-  - [RAG Agent](/cookbooks/rag-agent): R2R's powerful RAG agent
-  - [Hybrid Search](/cookbooks/hybrid-search): Introduction to hybrid search
-  - [Advanced RAG](/cookbooks/advanced-rag): Advanced RAG features
+  - [RAG Agent](https://r2r-docs.sciphi.ai/cookbooks/rag-agent): R2R's powerful RAG agent
+  - [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): Introduction to hybrid search
+  - [Advanced RAG](https://r2r-docs.sciphi.ai/cookbooks/advanced-rag): Advanced RAG features
 
 - Orchestration
-  - [Orchestration](/cookbooks/orchestration): R2R event orchestration
+  - [Orchestration](https://r2r-docs.sciphi.ai/cookbooks/orchestration): R2R event orchestration
 
-- Auth & Admin Features
-  - [Web Development](/cookbooks/web-dev): Building webapps using R2R
-  - [User Auth](/cookbooks/user-auth): Authenticating users
-  - [Collections](/cookbooks/collections): Document collections
-  - [Analytics & Observability](/cookbooks/observability): End-to-end logging and analytics
-  - [Web Application](/cookbooks/application): Connecting with the R2R Application
+- User Management
+  - [Web Development](https://r2r-docs.sciphi.ai/cookbooks/web-dev): Building webapps using R2R
+  - [User Auth](https://r2r-docs.sciphi.ai/cookbooks/user-auth): Authenticating users
+  - [Collections](https://r2r-docs.sciphi.ai/cookbooks/collections): Document collections
+  - [Analytics & Observability](https://r2r-docs.sciphi.ai/cookbooks/observability): End-to-end logging and analytics
+  - [Web Application](https://r2r-docs.sciphi.ai/cookbooks/application): Connecting with the R2R Application
 
 
 ## Community
