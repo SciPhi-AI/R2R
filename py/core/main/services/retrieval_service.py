@@ -290,7 +290,6 @@ class RetrievalService(Service):
                                 conversation_id, branch_id
                             )
                         )
-                        print("conversation = ", conversation)
                         if not conversation:
                             logger.error(
                                 f"No conversation found for ID: {conversation_id}"

@@ -61,7 +61,6 @@ class StreamingSearchRAGPipe(GeneratorPipe):
             result = format_search_results_for_stream(search_results)
             yield result
             gen_context = format_search_results_for_llm(search_results)
-            print("gen_context = ", gen_context)
             context += gen_context
 
         messages = (

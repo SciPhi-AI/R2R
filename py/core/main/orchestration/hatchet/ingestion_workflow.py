@@ -89,21 +89,6 @@ def hatchet_ingestion_factory(
                 async for extraction in extractions_generator:
                     extractions.append(extraction)
 
-                # serializable_extractions = [
-                #     extraction.to_dict() for extraction in extractions
-                # ]
-
-                # return {
-                #     "status": "Successfully extracted data",
-                #     "extractions": serializable_extractions,
-                #     "document_info": document_info.to_dict(),
-                # }
-
-                # @orchestration_provider.step(parents=["parse"], timeout="60m")
-                # async def embed(self, context: Context) -> dict:
-                #     document_info_dict = context.step_output("parse")["document_info"]
-                #     document_info = DocumentResponse(**document_info_dict)
-
                 await service.update_document_status(
                     document_info, status=IngestionStatus.AUGMENTING
                 )
@@ -141,16 +126,6 @@ def hatchet_ingestion_factory(
                 async for _ in storage_generator:
                     pass
 
-                #     return {
-                #         "document_info": document_info.to_dict(),
-                #     }
-
-                # @orchestration_provider.step(parents=["embed"], timeout="60m")
-                # async def finalize(self, context: Context) -> dict:
-                #     document_info_dict = context.step_output("embed")["document_info"]
-                #     print("Calling finalize for document_info_dict = ", document_info_dict)
-                #     document_info = DocumentResponse(**document_info_dict)
-
                 is_update = context.workflow_input()["request"].get(
                     "is_update"
                 )
@@ -170,7 +145,7 @@ def hatchet_ingestion_factory(
                 if not collection_ids:
                     # TODO: Move logic onto the `management service`
                     collection_id = generate_default_user_collection_id(
-                        document_info.user_id
+                        document_info.owner_id
                     )
                     await service.providers.database.assign_document_to_collection_relational(
                         document_id=document_info.id,
@@ -193,17 +168,10 @@ def hatchet_ingestion_factory(
                 else:
                     for collection_id in collection_ids:
                         try:
-                            # FIXME: Right now we just throw a warning if the collection already exists, but we should probably handle this more gracefully
-                            # await service.providers.database.create_collection(
-                            #     owner_id=document_info.user_id,
-                            #     name=document_info.title or "N/A",
-                            #     description="",
-                            #     collection_id=collection_id,
-                            # )
                             name = document_info.title or "N/A"
                             description = ""
                             result = await self.providers.database.create_collection(
-                                owner_id=document_info.user_id,
+                                owner_id=document_info.owner_id,
                                 name=name,
                                 description=description,
                                 collection_id=collection_id,
