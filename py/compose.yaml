@@ -14,17 +14,18 @@ services:
     image: pgvector/pgvector:pg16
     profiles: [postgres]
     environment:
-      - POSTGRES_USER=${R2R_POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${R2R_POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_HOST=${R2R_POSTGRES_HOST:-postgres}
-      - POSTGRES_PORT=${R2R_POSTGRES_PORT:-5432}
-      - POSTGRES_MAX_CONNECTIONS=${R2R_POSTGRES_MAX_CONNECTIONS:-1024}
+      - POSTGRES_USER=${R2R_POSTGRES_USER:-${POSTGRES_USER:-postgres}} # Eventually get rid of POSTGRES_USER, but for now keep it for backwards compatibility
+      - POSTGRES_PASSWORD=${R2R_POSTGRES_PASSWORD:-${POSTGRES_PASSWORD:-postgres}} # Eventually get rid of POSTGRES_PASSWORD, but for now keep it for backwards compatibility
+      - POSTGRES_HOST=${R2R_POSTGRES_HOST:-${POSTGRES_HOST:-postgres}} # Eventually get rid of POSTGRES_HOST, but for now keep it for backwards compatibility
+      - POSTGRES_PORT=${R2R_POSTGRES_PORT:-${POSTGRES_PORT:-5432}} # Eventually get rid of POSTGRES_PORT, but for now keep it for backwards compatibility
+      - POSTGRES_MAX_CONNECTIONS=${R2R_POSTGRES_MAX_CONNECTIONS:-${POSTGRES_MAX_CONNECTIONS:-1024}} # Eventually get rid of POSTGRES_MAX_CONNECTIONS, but for now keep it for backwards compatibility
+      - PGPORT=${R2R_POSTGRES_PORT:-5432}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - r2r-network
     ports:
-      - "${R2R_POSTGRES_PORT:-5432}:5432"
+      - "${R2R_POSTGRES_PORT:-5432}:${R2R_POSTGRES_PORT:-5432}"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${R2R_POSTGRES_USER:-postgres}"]
       interval: 10s

@@ -159,7 +159,6 @@ class R2RAuthProvider(AuthProvider):
         )
 
         if self.config.require_email_verification:
-            # Generate verification code and send email
             verification_code = (
                 self.crypto_provider.generate_verification_code()
             )
@@ -169,10 +168,16 @@ class R2RAuthProvider(AuthProvider):
                 new_user.id, verification_code, expiry
             )
             new_user.verification_code_expiry = expiry
-            # TODO - Integrate email provider(s)
+
+            # Safely get first name, defaulting to email if name is None
+            first_name = (
+                new_user.name.split(" ")[0]
+                if new_user.name
+                else email.split("@")[0]
+            )
 
             await self.email_provider.send_verification_email(
-                new_user.email, verification_code
+                new_user.email, verification_code, {"first_name": first_name}
             )
         else:
             expiry = datetime.now(timezone.utc) + timedelta(hours=366 * 10)
@@ -319,8 +324,13 @@ class R2RAuthProvider(AuthProvider):
             user.id, reset_token, expiry
         )
 
-        # TODO: Integrate with email provider to send reset link
-        await self.email_provider.send_password_reset_email(email, reset_token)
+        # Safely get first name, defaulting to email if name is None
+        first_name = (
+            user.name.split(" ")[0] if user.name else email.split("@")[0]
+        )
+        await self.email_provider.send_password_reset_email(
+            email, reset_token, {"first_name": first_name}
+        )
 
         return {"message": "If the email exists, a reset link has been sent"}
 
@@ -353,19 +363,6 @@ class R2RAuthProvider(AuthProvider):
         await self.database_provider.clean_expired_blacklisted_tokens()
 
     async def send_reset_email(self, email: str) -> dict:
-        """
-        Generate a new verification code and send a reset email to the user.
-        Returns the verification code for testing/sandbox environments.
-
-        Args:
-            email (str): The email address of the user
-
-        Returns:
-            dict: Contains verification_code and message
-
-        Raises:
-            R2RException: If user is not found
-        """
         user = await self.database_provider.get_user_by_email(email)
         if not user:
             raise R2RException(status_code=404, message="User not found")
@@ -381,9 +378,13 @@ class R2RAuthProvider(AuthProvider):
             expiry,
         )
 
+        # Safely get first name, defaulting to email if name is None
+        first_name = (
+            user.name.split(" ")[0] if user.name else email.split("@")[0]
+        )
         # Send verification email
         await self.email_provider.send_verification_email(
-            email, verification_code
+            email, verification_code, {"first_name": first_name}
         )
 
         return {

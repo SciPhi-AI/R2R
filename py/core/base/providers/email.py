@@ -2,6 +2,7 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import Optional
+import os
 
 from .base import Provider, ProviderConfig
 
@@ -13,27 +14,26 @@ class EmailConfig(ProviderConfig):
     smtp_password: Optional[str] = None
     from_email: Optional[str] = None
     use_tls: Optional[bool] = True
+    sendgrid_api_key: Optional[str] = None
+    verify_email_template_id: Optional[str] = None
+    reset_password_template_id: Optional[str] = None
+    frontend_url: Optional[str] = None
+    sender_name: Optional[str] = None
 
     @property
     def supported_providers(self) -> list[str]:
         return [
             "smtp",
             "console",
+            "sendgrid",
         ]  # Could add more providers like AWS SES, SendGrid etc.
 
     def validate_config(self) -> None:
-        pass
-        # if self.provider == "smtp":
-        #     if not all(
-        #         [
-        #             self.smtp_server,
-        #             self.smtp_port,
-        #             self.smtp_username,
-        #             self.smtp_password,
-        #             self.from_email,
-        #         ]
-        #     ):
-        #         raise ValueError("SMTP configuration is incomplete")
+        if self.provider == "sendgrid":
+            if not (self.sendgrid_api_key or os.getenv("SENDGRID_API_KEY")):
+                raise ValueError(
+                    "SendGrid API key is required when using SendGrid provider"
+                )
 
 
 logger = logging.getLogger(__name__)
@@ -55,17 +55,19 @@ class EmailProvider(Provider, ABC):
         subject: str,
         body: str,
         html_body: Optional[str] = None,
+        *args,
+        **kwargs,
     ) -> None:
         pass
 
     @abstractmethod
     async def send_verification_email(
-        self, to_email: str, verification_code: str
+        self, to_email: str, verification_code: str, *args, **kwargs
     ) -> None:
         pass
 
     @abstractmethod
     async def send_password_reset_email(
-        self, to_email: str, reset_token: str
+        self, to_email: str, reset_token: str, *args, **kwargs
     ) -> None:
         pass
