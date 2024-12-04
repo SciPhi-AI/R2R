@@ -5,8 +5,8 @@ from uuid import UUID
 from fastapi import HTTPException
 
 from core.base import CryptoProvider, UserHandler
-from core.base.abstractions import R2RException, UserStats
-from core.base.api.models import UserResponse
+from core.base.abstractions import R2RException
+from shared.abstractions import User
 from core.utils import generate_user_id
 
 from .base import PostgresConnectionManager, QueryBuilder
@@ -48,7 +48,7 @@ class PostgresUserHandler(UserHandler):
         """
         await self.connection_manager.execute_query(query)
 
-    async def get_user_by_id(self, id: UUID) -> UserResponse:
+    async def get_user_by_id(self, id: UUID) -> User:
         query, _ = (
             QueryBuilder(self._get_table_name("users"))
             .select(
@@ -75,7 +75,7 @@ class PostgresUserHandler(UserHandler):
         if not result:
             raise R2RException(status_code=404, message="User not found")
 
-        return UserResponse(
+        return User(
             id=result["id"],
             email=result["email"],
             hashed_password=result["hashed_password"],
@@ -90,7 +90,7 @@ class PostgresUserHandler(UserHandler):
             collection_ids=result["collection_ids"],
         )
 
-    async def get_user_by_email(self, email: str) -> UserResponse:
+    async def get_user_by_email(self, email: str) -> User:
         query, params = (
             QueryBuilder(self._get_table_name("users"))
             .select(
@@ -116,7 +116,7 @@ class PostgresUserHandler(UserHandler):
         if not result:
             raise R2RException(status_code=404, message="User not found")
 
-        return UserResponse(
+        return User(
             id=result["id"],
             email=result["email"],
             hashed_password=result["hashed_password"],
@@ -133,7 +133,7 @@ class PostgresUserHandler(UserHandler):
 
     async def create_user(
         self, email: str, password: str, is_superuser: bool = False
-    ) -> UserResponse:
+    ) -> User:
         try:
             if await self.get_user_by_email(email):
                 raise R2RException(
@@ -168,7 +168,7 @@ class PostgresUserHandler(UserHandler):
                 detail="Failed to create user",
             )
 
-        return UserResponse(
+        return User(
             id=result["id"],
             email=result["email"],
             is_superuser=result["is_superuser"],
@@ -180,7 +180,7 @@ class PostgresUserHandler(UserHandler):
             hashed_password=hashed_password,
         )
 
-    async def update_user(self, user: UserResponse) -> UserResponse:
+    async def update_user(self, user: User) -> User:
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET email = $1, is_superuser = $2, is_active = $3, is_verified = $4, updated_at = NOW(),
@@ -209,7 +209,7 @@ class PostgresUserHandler(UserHandler):
                 detail="Failed to update user",
             )
 
-        return UserResponse(
+        return User(
             id=result["id"],
             email=result["email"],
             is_superuser=result["is_superuser"],
@@ -267,7 +267,7 @@ class PostgresUserHandler(UserHandler):
             query, [new_hashed_password, id]
         )
 
-    async def get_all_users(self) -> list[UserResponse]:
+    async def get_all_users(self) -> list[User]:
         query = f"""
             SELECT id, email, is_superuser, is_active, is_verified, created_at, updated_at, collection_ids
             FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
@@ -275,7 +275,7 @@ class PostgresUserHandler(UserHandler):
         results = await self.connection_manager.fetch_query(query)
 
         return [
-            UserResponse(
+            User(
                 id=result["id"],
                 email=result["email"],
                 hashed_password="null",
@@ -418,7 +418,7 @@ class PostgresUserHandler(UserHandler):
 
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, list[UserResponse] | int]:
+    ) -> dict[str, list[User] | int]:
         """
         Get all users in a specific collection with pagination.
 
@@ -428,7 +428,7 @@ class PostgresUserHandler(UserHandler):
             limit (int): The maximum number of users to return.
 
         Returns:
-            List[UserResponse]: A list of UserResponse objects representing the users in the collection.
+            List[User]: A list of User objects representing the users in the collection.
 
         Raises:
             R2RException: If the collection doesn't exist.
@@ -454,7 +454,7 @@ class PostgresUserHandler(UserHandler):
         results = await self.connection_manager.fetch_query(query, conditions)
 
         users = [
-            UserResponse(
+            User(
                 id=row["id"],
                 email=row["email"],
                 is_active=row["is_active"],
@@ -515,9 +515,18 @@ class PostgresUserHandler(UserHandler):
         offset: int,
         limit: int,
         user_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, list[UserStats] | int]:
+    ) -> dict[str, list[User] | int]:
+
         query = f"""
-            WITH user_docs AS (
+            WITH user_document_ids AS (
+                SELECT
+                    u.id as user_id,
+                    ARRAY_AGG(d.id) FILTER (WHERE d.id IS NOT NULL) AS doc_ids
+                FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
+                LEFT JOIN {self._get_table_name('documents')} d ON u.id = d.owner_id
+                GROUP BY u.id
+            ),
+            user_docs AS (
                 SELECT
                     u.id,
                     u.email,
@@ -529,14 +538,17 @@ class PostgresUserHandler(UserHandler):
                     u.collection_ids,
                     COUNT(d.id) AS num_files,
                     COALESCE(SUM(d.size_in_bytes), 0) AS total_size_in_bytes,
-                    ARRAY_AGG(d.id) FILTER (WHERE d.id IS NOT NULL) AS document_ids,
-                    COUNT(*) OVER() AS total_entries
+                    ud.doc_ids as document_ids
                 FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
                 LEFT JOIN {self._get_table_name('documents')} d ON u.id = d.owner_id
+                LEFT JOIN user_document_ids ud ON u.id = ud.user_id
                 {' WHERE u.id = ANY($3::uuid[])' if user_ids else ''}
-                GROUP BY u.id, u.email, u.is_superuser, u.is_active, u.is_verified, u.created_at, u.updated_at, u.collection_ids
+                GROUP BY u.id, u.email, u.is_superuser, u.is_active, u.is_verified,
+                         u.created_at, u.updated_at, u.collection_ids, ud.doc_ids
             )
-            SELECT *
+            SELECT
+                user_docs.*,
+                COUNT(*) OVER() AS total_entries
             FROM user_docs
             ORDER BY email
             OFFSET $1
@@ -553,25 +565,22 @@ class PostgresUserHandler(UserHandler):
 
         results = await self.connection_manager.fetch_query(query, params)
 
-        for row in results:
-            print(f"document_ids type: {type(row[11])}, value: {row[11]}")
-
         users = [
-            UserStats(
-                id=row[0],
-                email=row[1],
-                is_superuser=row[2],
-                is_active=row[3],
-                is_verified=row[4],
-                created_at=row[5],
-                updated_at=row[6],
-                collection_ids=row[7] or [],
-                num_files=row[9],
-                total_size_in_bytes=row[10],
+            User(
+                id=row["id"],
+                email=row["email"],
+                is_superuser=row["is_superuser"],
+                is_active=row["is_active"],
+                is_verified=row["is_verified"],
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
+                collection_ids=row["collection_ids"] or [],
+                num_files=row["num_files"],
+                total_size_in_bytes=row["total_size_in_bytes"],
                 document_ids=(
                     []
-                    if row[11] is None
-                    else [str(doc_id) for doc_id in row[11]]
+                    if row["document_ids"] is None
+                    else [doc_id for doc_id in row["document_ids"]]
                 ),
             )
             for row in results

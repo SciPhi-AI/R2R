@@ -55,7 +55,6 @@ __all__ = [
     # User abstractions
     "Token",
     "TokenData",
-    "UserStats",
     # Vector abstractions
     "Vector",
     "VectorEntry",
@@ -73,7 +72,7 @@ __all__ = [
     ## API
     # Auth Responses
     "TokenResponse",
-    "UserResponse",
+    "User",
     ## LOGGING
     # Basic types
     "RunType",

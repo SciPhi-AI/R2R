@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from typing import Optional
 from uuid import UUID
 
-from core.base.api.models import UserResponse
+from core.base.api.models import User
 from core.base.logger.base import RunType
 from core.base.utils import generate_id
 
@@ -35,7 +35,7 @@ class RunManager:
     async def log_run_info(
         self,
         run_type: RunType,
-        user: UserResponse,
+        user: User,
     ):
         if asyncio.iscoroutine(user):
             user = await user

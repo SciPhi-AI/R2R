@@ -11,7 +11,6 @@ from core.base.abstractions import KGRunType
 from core.base.api.models import (
     WrappedCommunitiesResponse,
     WrappedEntitiesResponse,
-    WrappedKGTunePromptResponse,
     WrappedRelationshipsResponse,
 )
 from core.base.logger.base import RunType
@@ -468,7 +467,7 @@ class KGRouter(BaseRouter):
                 100, description="Limit for chunk pagination."
             ),
             auth_user=Depends(self.service.providers.auth.auth_wrapper),
-        ) -> WrappedKGTunePromptResponse:
+        ):
             """
             Auto-tune the prompt for a specific collection.
             """

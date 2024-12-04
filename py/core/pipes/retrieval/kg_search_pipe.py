@@ -101,10 +101,6 @@ class KGSearchSearchPipe(GeneratorPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[GraphSearchResult, None]:
-        # search over communities and
-        # do 3 searches. One over entities, one over relationships, one over communities
-        print("graph_search_settings = ", search_settings)
-        print("doing local search...")
         async for message in input.message:
             query_embedding = (
                 await self.embedding_provider.async_get_embedding(message)

@@ -339,7 +339,6 @@ class RetrievalRouter(BaseRouter):
             This endpoint uses the language model to generate completions for the provided messages.
             The generation process can be customized using the generation_config parameter.
             """
-            print("messages = ", messages)
 
             return await self.service.completion(
                 messages=[message.to_dict() for message in messages],

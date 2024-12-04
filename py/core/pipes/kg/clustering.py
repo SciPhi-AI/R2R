@@ -49,15 +49,9 @@ class KGClusteringPipe(AsyncPipe):
         Clusters the knowledge graph relationships into communities using hierarchical Leiden algorithm. Uses graspologic library.
         """
 
-        # relationships = await self.database_provider.graph_handler.relationships
-
         num_communities = await self.database_provider.graph_handler.perform_graph_clustering(
             collection_id=collection_id,
             leiden_params=leiden_params,
-        )
-
-        logger.info(
-            f"Clustering completed. Generated {num_communities} communities."
         )
 
         return {

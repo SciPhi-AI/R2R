@@ -12,7 +12,6 @@ from core.base.abstractions import (
     Community,
     DocumentResponse,
     Entity,
-    Graph,
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
@@ -23,14 +22,13 @@ from core.base.abstractions import (
     Message,
     Relationship,
     SearchSettings,
-    UserStats,
     VectorEntry,
     VectorTableName,
+    User,
 )
 from core.base.api.models import (
     CollectionResponse,
     GraphResponse,
-    UserResponse,
 )
 
 from ..logger import RunInfoLog
@@ -345,19 +343,21 @@ class UserHandler(Handler):
     TABLE_NAME = "users"
 
     @abstractmethod
-    async def get_user_by_id(self, user_id: UUID) -> UserResponse:
+    async def get_user_by_id(self, user_id: UUID) -> User:
         pass
 
     @abstractmethod
-    async def get_user_by_email(self, email: str) -> UserResponse:
+    async def get_user_by_email(self, email: str) -> User:
         pass
 
     @abstractmethod
-    async def create_user(self, email: str, password: str) -> UserResponse:
+    async def create_user(
+        self, email: str, password: str, is_superuser: bool
+    ) -> User:
         pass
 
     @abstractmethod
-    async def update_user(self, user: UserResponse) -> UserResponse:
+    async def update_user(self, user: User) -> User:
         pass
 
     @abstractmethod
@@ -371,7 +371,7 @@ class UserHandler(Handler):
         pass
 
     @abstractmethod
-    async def get_all_users(self) -> list[UserResponse]:
+    async def get_all_users(self) -> list[User]:
         pass
 
     @abstractmethod
@@ -427,7 +427,7 @@ class UserHandler(Handler):
     @abstractmethod
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, list[UserResponse] | int]:
+    ) -> dict[str, list[User] | int]:
         pass
 
     @abstractmethod
@@ -450,7 +450,7 @@ class UserHandler(Handler):
         offset: int,
         limit: int,
         user_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, list[UserStats] | int]:
+    ) -> dict[str, list[User] | int]:
         pass
 
     @abstractmethod
@@ -996,8 +996,6 @@ class DatabaseProvider(Provider):
         description: str = "",
         collection_id: Optional[UUID] = None,
     ) -> CollectionResponse:
-        print("~" * 100)
-        print("create_collection in database being called...")
         return await self.collections_handler.create_collection(
             owner_id=owner_id,
             name=name,
@@ -1079,20 +1077,22 @@ class DatabaseProvider(Provider):
         )
 
     # User handler methods
-    async def get_user_by_id(self, user_id: UUID) -> UserResponse:
+    async def get_user_by_id(self, user_id: UUID) -> User:
         return await self.user_handler.get_user_by_id(user_id)
 
-    async def get_user_by_email(self, email: str) -> UserResponse:
+    async def get_user_by_email(self, email: str) -> User:
         return await self.user_handler.get_user_by_email(email)
 
     async def create_user(
         self, email: str, password: str, is_superuser: bool = False
-    ) -> UserResponse:
+    ) -> User:
         return await self.user_handler.create_user(
-            email, password, is_superuser
+            email=email,
+            password=password,
+            is_superuser=is_superuser,
         )
 
-    async def update_user(self, user: UserResponse) -> UserResponse:
+    async def update_user(self, user: User) -> User:
         return await self.user_handler.update_user(user)
 
     async def delete_user_relational(self, user_id: UUID) -> None:
@@ -1105,7 +1105,7 @@ class DatabaseProvider(Provider):
             user_id, new_hashed_password
         )
 
-    async def get_all_users(self) -> list[UserResponse]:
+    async def get_all_users(self) -> list[User]:
         return await self.user_handler.get_all_users()
 
     async def store_verification_code(
@@ -1162,7 +1162,7 @@ class DatabaseProvider(Provider):
 
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, list[UserResponse] | int]:
+    ) -> dict[str, list[User] | int]:
         return await self.user_handler.get_users_in_collection(
             collection_id, offset, limit
         )
@@ -1185,7 +1185,7 @@ class DatabaseProvider(Provider):
         offset: int,
         limit: int,
         user_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, list[UserStats] | int]:
+    ) -> dict[str, list[User] | int]:
         return await self.user_handler.get_users_overview(
             offset=offset,
             limit=limit,

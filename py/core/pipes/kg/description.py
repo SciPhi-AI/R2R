@@ -129,8 +129,6 @@ class KGEntityDescriptionPipe(AsyncPipe):
                     )
                 )[0]
 
-                print("out_entity = ", out_entity)
-
                 # upsert the entity and its embedding
                 await self.database_provider.graph_handler.add_entities(
                     [out_entity],

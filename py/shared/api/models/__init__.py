@@ -16,14 +16,12 @@ from shared.api.models.ingestion.responses import (
     WrappedMetadataUpdateResponse,
     WrappedUpdateResponse,
 )
-from shared.api.models.kg.responses import (  # TODO: Need to review anything above this
+from shared.api.models.kg.responses import (
     GraphResponse,
-    KGEnrichmentResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
-    WrappedKGEnrichmentResponse,
 )
-from shared.api.models.management.responses import (  # Chunk Responses; Conversation Responses; Document Responses; Collection Responses; Prompt Responses; System Responses; User Responses
+from shared.api.models.management.responses import (
     AnalyticsResponse,
     ChunkResponse,
     CollectionResponse,
@@ -32,7 +30,6 @@ from shared.api.models.management.responses import (  # Chunk Responses; Convers
     PromptResponse,
     ServerStats,
     SettingsResponse,
-    UserResponse,
     WrappedAnalyticsResponse,
     WrappedChunkResponse,
     WrappedChunksResponse,
@@ -73,9 +70,6 @@ __all__ = [
     "WrappedIngestionResponse",
     "WrappedUpdateResponse",
     "WrappedMetadataUpdateResponse",
-    # Restructure Responses
-    "KGEnrichmentResponse",
-    "WrappedKGEnrichmentResponse",
     # TODO: Need to review anything above this
     "GraphResponse",
     "WrappedGraphResponse",
@@ -110,7 +104,6 @@ __all__ = [
     "WrappedConversationResponse",
     "WrappedConversationsResponse",
     # User Responses
-    "UserResponse",
     "WrappedUserResponse",
     "WrappedUsersResponse",
     # Base Responses

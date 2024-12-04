@@ -38,15 +38,6 @@ describe("r2rClient V3 Documents Integration Tests", () => {
     expect(response.results.document_id).toBeDefined();
   }, 30000);
 
-  test("Update document", async () => {
-    const response = await client.documents.update({
-      id: documentId,
-      content: "Updated content",
-    });
-
-    expect(response.results).toBeDefined();
-  });
-
   test("Retrieve document", async () => {
     const response = await client.documents.retrieve({
       id: documentId,

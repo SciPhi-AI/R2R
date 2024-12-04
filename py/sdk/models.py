@@ -19,12 +19,11 @@ from shared.abstractions import (
     R2RSerializable,
     SearchSettings,
     Token,
+    User,
 )
 from shared.api.models import (
     CombinedSearchResponse,
-    KGEnrichmentResponse,
     RAGResponse,
-    UserResponse,
 )
 
 __all__ = [
@@ -48,8 +47,7 @@ __all__ = [
     "ChunkSearchResult",
     "SearchSettings",
     "KGEntityDeduplicationSettings",
-    "KGEnrichmentResponse",
     "RAGResponse",
     "CombinedSearchResponse",
-    "UserResponse",
+    "User",
 ]

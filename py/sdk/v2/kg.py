@@ -54,7 +54,7 @@ class KGMixins:
             run_type (Optional[Union[str, KGRunType]]): The type of run to perform.
             kg_enrichment_settings (Optional[Union[dict, KGEnrichmentSettings]]): Settings for the graph enrichment process.
         Returns:
-            KGEnrichmentResponse: Results of the graph enrichment process.
+            Results of the graph enrichment process.
         """
         if isinstance(kg_enrichment_settings, KGEnrichmentSettings):
             kg_enrichment_settings = kg_enrichment_settings.model_dump()

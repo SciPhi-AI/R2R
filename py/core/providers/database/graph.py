@@ -372,9 +372,7 @@ class PostgresEntityHandler(EntityHandler):
                 WHERE id = ANY($1) AND parent_id = $2
                 RETURNING id
             """
-            print("QUERY = ", QUERY)
-            print("entity_ids = ", entity_ids)
-            print("parent_id = ", parent_id)
+
             results = await self.connection_manager.fetch_query(
                 QUERY, [entity_ids, parent_id]
             )
@@ -974,16 +972,13 @@ class PostgresCommunityHandler(CommunityHandler):
             DELETE FROM {self._get_table_name(table_name)}
             WHERE id = $1 AND collection_id = $2
         """
-        print("query = ", query)
-        print("parent_id = ", parent_id)
-        print("community_id = ", community_id)
+
         params = [community_id, parent_id]
 
         try:
             results = await self.connection_manager.execute_query(
                 query, params
             )
-            print("results = ", results)
         except Exception as e:
             raise HTTPException(
                 status_code=500,
@@ -999,7 +994,6 @@ class PostgresCommunityHandler(CommunityHandler):
             results = await self.connection_manager.execute_query(
                 query, params
             )
-            print("results = ", results)
         except Exception as e:
             raise HTTPException(
                 status_code=500,
@@ -1131,7 +1125,6 @@ class PostgresGraphHandler(GraphHandler):
         await self.connection_manager.execute_query(QUERY)
 
         for handler in self.handlers:
-            print(f"Creating tables for {handler.__class__.__name__}")
             await handler.create_tables()
 
     async def create(
@@ -1197,8 +1190,6 @@ class PostgresGraphHandler(GraphHandler):
             R2RException: If deletion fails
         """
         try:
-            # Delete all graph entities
-            print(f"Attemping to delete all entities for {parent_id}")
             entity_delete_query = f"""
                 DELETE FROM {self._get_table_name("graphs_entities")}
                 WHERE parent_id = $1
@@ -1941,45 +1932,11 @@ class PostgresGraphHandler(GraphHandler):
         document_ids: Optional[list[UUID]] = None,
     ) -> list[Relationship]:
 
-        logger.info(
-            f"Getting all relationships for {collection_id} and {graph_id}"
-        )
-
-        # if collection_id is not None:
-
-        #     # getting all documents for a collection
-        #     if document_ids is None:
-        #         QUERY = f"""
-        #             select distinct document_id from {self._get_table_name("documents")} where $1 = ANY(collection_ids)
-        #         """
-        #         document_ids_list = await self.connection_manager.fetch_query(
-        #             QUERY, [collection_id]
-        #         )
-        #         document_ids = [
-        #             doc_id["document_id"] for doc_id in document_ids_list
-        #         ]
-
         QUERY = f"""
             SELECT id, subject, predicate, weight, object, parent_id FROM {self._get_table_name("graphs_relationships")} WHERE parent_id = ANY($1)
         """
         relationships = await self.connection_manager.fetch_query(
             QUERY, [collection_id]
-        )
-
-        logger.info(
-            f"Got {len(relationships)} relationships for {collection_id}"
-        )
-
-        # else:
-        #     QUERY = f"""
-        #         SELECT sid as id, subject, predicate, weight, object, document_id FROM {self._get_table_name("relationship")} WHERE $1 = ANY(graph_ids)
-        #     """
-        #     relationships = await self.connection_manager.fetch_query(
-        #         QUERY, [graph_id]
-        #     )
-
-        logger.info(
-            f"Got {len(relationships)} relationships for {collection_id or graph_id}"
         )
 
         return [Relationship(**relationship) for relationship in relationships]
@@ -2219,16 +2176,13 @@ class PostgresGraphHandler(GraphHandler):
             if offset >= count:
                 break
 
-        logger.info(
-            f"Got {len(all_relationships)} relationships for {collection_id}"
-        )
-
         relationship_ids_cache = await self._get_relationship_ids_cache(
             relationships
         )
-        print("relationship_ids_cache = ", relationship_ids_cache)
 
-        logger.info(f"Clustering with settings: {leiden_params}")
+        logger.info(
+            f"Clustering over {len(all_relationships)} relationships for {collection_id} with settings: {leiden_params}"
+        )
         return await self._cluster_and_add_community_info(
             relationships=relationships,
             relationship_ids_cache=relationship_ids_cache,
@@ -2259,7 +2213,6 @@ class PostgresGraphHandler(GraphHandler):
         entities_list = await self.connection_manager.fetch_query(
             QUERY1, [document_id]
         )
-        print("entities_list = ", entities_list)
         entities_list = [Entity(**entity) for entity in entities_list]
 
         QUERY2 = f"""
@@ -2315,9 +2268,6 @@ class PostgresGraphHandler(GraphHandler):
                     if op == "$overlap":
                         # Match if collection_id equals any of the provided IDs
                         parameters.append(clause)  # Add the whole array of IDs
-                        print("clause = ", clause)
-                        print("key = ", key)
-                        print("value = ", value)
 
                         return f"parent_id = ANY(${len(parameters)})"  # TODO - this is hard coded to assume graph id - collection id
                 raise Exception(
@@ -2442,7 +2392,6 @@ class PostgresGraphHandler(GraphHandler):
         #     property_names.append("collection_id")
 
         filters = kwargs.get("filters", {})
-        print("filters = ", filters)
         limit = kwargs.get("limit", 10)
         use_fulltext_search = kwargs.get("use_fulltext_search", True)
         use_hybrid_search = kwargs.get("use_hybrid_search", True)
@@ -2452,15 +2401,13 @@ class PostgresGraphHandler(GraphHandler):
             )
 
         table_name = f"graphs_{search_type}"
-        print("table_name = ", table_name)
-        # if  "collection_id" in filters and "collection_ids" not in property_names:
-        #     property_names.append("collection_id")
         property_names_str = ", ".join(property_names)
         where_clause = ""
         params: list[Union[str, int, bytes]] = [str(query_embedding), limit]
         if filters:
             where_clause = self._build_filters(filters, params)
             where_clause = f"WHERE {where_clause}"
+
         # Modified query to include similarity score while keeping same structure
         QUERY = f"""
             SELECT
@@ -2481,7 +2428,6 @@ class PostgresGraphHandler(GraphHandler):
                 for property_name in property_names
             }
             output["similarity_score"] = 1 - float(result["similarity_score"])
-            print("output = ", output)
             yield output
 
     async def _create_graph_and_cluster(
@@ -2536,19 +2482,8 @@ class PostgresGraphHandler(GraphHandler):
             f"Cached {len(relationship_ids_cache)} relationship ids, time {time.time() - start_time:.2f} seconds."
         )
 
-        # upsert the communities into the database.
-        print(
-            "relationship_ids(item.node) = ",
-            relationship_ids(hierarchical_communities[0].node),
-        )
-        print("community = ", hierarchical_communities[0])
-        print("cluster = ", hierarchical_communities[0].cluster)
-
-        # print("inputs = ", inputs)
-        # await self.add_community_info(inputs)
-
         num_communities = (
-            max([item.cluster for item in hierarchical_communities]) + 1
+            max(item.cluster for item in hierarchical_communities) + 1
         )
 
         logger.info(
@@ -2652,7 +2587,7 @@ class PostgresGraphHandler(GraphHandler):
             SELECT COUNT({count_value}) FROM {self._get_table_name(entity_table_name)}
             WHERE {" AND ".join(conditions)}
         """
-        print("QUERY = ", QUERY)
+
         return (await self.connection_manager.fetch_query(QUERY, params))[0][
             "count"
         ]

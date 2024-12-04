@@ -4,9 +4,9 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from shared.abstractions import R2RSerializable
 from shared.abstractions.document import DocumentResponse
 from shared.abstractions.llm import Message
+from shared.abstractions.user import User
 from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
 
 
@@ -50,25 +50,6 @@ class SettingsResponse(BaseModel):
     prompts: dict[str, Any]
     r2r_project_name: str
     # r2r_version: str
-
-
-class UserResponse(R2RSerializable):
-    id: UUID
-    email: str
-    is_active: bool = True
-    is_superuser: bool = False
-    created_at: datetime = datetime.now()
-    updated_at: datetime = datetime.now()
-    is_verified: bool = False
-    collection_ids: list[UUID] = []
-    graph_ids: list[UUID] = []
-
-    # Optional fields (to update or set at creation)
-    hashed_password: Optional[str] = None
-    verification_code_expiry: Optional[datetime] = None
-    name: Optional[str] = None
-    bio: Optional[str] = None
-    profile_picture: Optional[str] = None
 
 
 class ChunkResponse(BaseModel):
@@ -161,8 +142,8 @@ WrappedSettingsResponse = ResultsWrapper[SettingsResponse]
 WrappedServerStatsResponse = ResultsWrapper[ServerStats]
 
 # User Responses
-WrappedUserResponse = ResultsWrapper[UserResponse]
-WrappedUsersResponse = PaginatedResultsWrapper[list[UserResponse]]
+WrappedUserResponse = ResultsWrapper[User]
+WrappedUsersResponse = PaginatedResultsWrapper[list[User]]
 
 # TODO: anything below this hasn't been reviewed
 WrappedLogsResponse = ResultsWrapper[list[LogResponse]]

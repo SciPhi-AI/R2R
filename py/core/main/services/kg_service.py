@@ -866,7 +866,6 @@ class KgService(Service):
     ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
         start_time = time.time()
 
-        print("....")
         logger.info(
             f"KGExtractionPipe: Processing document {document_id} for KG extraction",
         )
@@ -1011,19 +1010,15 @@ class KgService(Service):
                 "relation_types": "\n".join(relation_types),
             },
         )
-        print("starting a job....")
 
         for attempt in range(retries):
             try:
-                print("getting a response....")
-
                 response = await self.providers.llm.aget_completion(
                     messages,
                     generation_config=generation_config,
                 )
 
                 kg_extraction = response.choices[0].message.content
-                print("kg_extraction = ", kg_extraction)
 
                 if not kg_extraction:
                     raise R2RException(
@@ -1052,7 +1047,6 @@ class KgService(Service):
                     relationships = re.findall(
                         relationship_pattern, response_str
                     )
-                    print("found len(relationships) = ", len(relationships))
 
                     entities_arr = []
                     for entity in entities:
@@ -1075,7 +1069,6 @@ class KgService(Service):
                                 attributes={},
                             )
                         )
-                    print("found len(entities) = ", len(entities))
 
                     relations_arr = []
                     for relationship in relationships:
@@ -1147,7 +1140,6 @@ class KgService(Service):
         for extraction in kg_extractions:
             entities_id_map = {}
             for entity in extraction.entities:
-                print("entity = ", entity)
                 result = await self.providers.database.graph_handler.entities.create(
                     name=entity.name,
                     parent_id=entity.parent_id,
@@ -1163,12 +1155,6 @@ class KgService(Service):
             if extraction.relationships:
 
                 for relationship in extraction.relationships:
-                    print("relationship.subject = ", relationship.subject)
-                    print(
-                        "entities_id_map.get(relationship.subject, None) = ",
-                        entities_id_map.get(relationship.subject, None),
-                    )
-
                     await self.providers.database.graph_handler.relationships.create(
                         subject=relationship.subject,
                         subject_id=entities_id_map.get(

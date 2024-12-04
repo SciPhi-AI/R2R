@@ -64,7 +64,7 @@ from shared.abstractions.search import (
     KGSearchResultType,
     SearchSettings,
 )
-from shared.abstractions.user import Token, TokenData, UserStats
+from shared.abstractions.user import Token, TokenData, User
 from shared.abstractions.vector import (
     IndexArgsHNSW,
     IndexArgsIVFFlat,
@@ -145,7 +145,7 @@ __all__ = [
     # User abstractions
     "Token",
     "TokenData",
-    "UserStats",
+    "User",
     # Vector abstractions
     "Vector",
     "VectorEntry",

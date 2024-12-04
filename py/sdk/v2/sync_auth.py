@@ -5,12 +5,12 @@ from uuid import UUID
 
 from typing_extensions import deprecated
 
-from ..models import Token, UserResponse
+from ..models import Token, User
 
 
 class SyncAuthMixins:
     @deprecated("Use client.users.register() instead")
-    def register(self, email: str, password: str) -> UserResponse:
+    def register(self, email: str, password: str) -> User:
         """
         Registers a new user with the given email and password.
 
@@ -19,7 +19,7 @@ class SyncAuthMixins:
             password (str): The password of the user to register.
 
         Returns:
-            UserResponse: The response from the server.
+            User: The response from the server.
         """
         data = {"email": email, "password": password}
         return self._make_request("POST", "register", json=data)  # type: ignore
@@ -72,12 +72,12 @@ class SyncAuthMixins:
         return response
 
     @deprecated("Use client.users.retrieve() instead")
-    def user(self) -> UserResponse:
+    def user(self) -> User:
         """
         Retrieves the user information for the currently authenticated user.
 
         Returns:
-            UserResponse: The response from the server.
+            User: The response from the server.
         """
         return self._make_request("GET", "user")  # type: ignore
 
@@ -90,7 +90,7 @@ class SyncAuthMixins:
         name: Optional[str] = None,
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
-    ) -> UserResponse:
+    ) -> User:
         """
         Updates the profile information for the currently authenticated user.
 
@@ -103,7 +103,7 @@ class SyncAuthMixins:
             profile_picture (str, optional): The updated profile picture URL for the user.
 
         Returns:
-            UserResponse: The response from the server.
+            User: The response from the server.
         """
         data = {
             "user_id": user_id,

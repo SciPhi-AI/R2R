@@ -16,8 +16,6 @@ from core.base.api.models import (
     WrappedEntityResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
-    WrappedKGEnrichmentResponse,
-    WrappedKGTunePromptResponse,
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,
 )
@@ -304,7 +302,7 @@ class GraphRouter(BaseRouterV3):
             ),
             run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):  # -> WrappedKGEnrichmentResponse:
+        ):
             """
             Creates communities in the graph by analyzing entity relationships and similarities.
 
@@ -324,7 +322,6 @@ class GraphRouter(BaseRouterV3):
                 - Community detection algorithm parameters
                 - Summary generation prompt
             """
-            print("collection_id = ", collection_id)
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can build communities", 403
@@ -1498,7 +1495,6 @@ class GraphRouter(BaseRouterV3):
                 offset=0,
                 limit=1,
             )
-            print(f"results: {results}")
             if len(results) == 0 or len(results[0]) == 0:
                 raise R2RException("Community not found", 404)
             return results[0][0]
@@ -1748,8 +1744,6 @@ class GraphRouter(BaseRouterV3):
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can `pull` a graph.", 403)
 
-            print("auth_user = ", auth_user)
-            print("auth_user.collection_ids = ", auth_user.collection_ids)
             if (
                 # not auth_user.is_superuser
                 collection_id

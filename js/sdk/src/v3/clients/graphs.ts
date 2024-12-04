@@ -514,8 +514,8 @@ export class GraphsClient {
    * Adds documents to a graph by copying their entities and relationships.
    *
    * This endpoint:
-   *  1. Copies document entities to the graph_entity table
-   *  2. Copies document relationships to the graph_relationship table
+   *  1. Copies document entities to the graphs_entities table
+   *  2. Copies document relationships to the graphs_relationships table
    *  3. Associates the documents with the graph
    *
    * When a document is added:

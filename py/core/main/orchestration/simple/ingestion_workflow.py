@@ -105,7 +105,6 @@ def simple_ingestion_factory(service: IngestionService):
                         status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                     )
                 else:
-                    print("collection_ids = ", collection_ids)
 
                     for collection_id in collection_ids:
                         try:
@@ -119,7 +118,6 @@ def simple_ingestion_factory(service: IngestionService):
                                 description=description,
                                 collection_id=collection_id,
                             )
-                            print("create collection result = ", result)
                             await service.providers.database.graph_handler.create(
                                 collection_id=collection_id,
                                 name=name,
@@ -131,18 +129,9 @@ def simple_ingestion_factory(service: IngestionService):
                                 f"Warning, could not create collection with error: {str(e)}"
                             )
 
-                        print(
-                            "Assigning docment to relational collection, collection_id = ",
-                            collection_id,
-                        )
-
                         await service.providers.database.assign_document_to_collection_relational(
                             document_id=document_info.id,
                             collection_id=collection_id,
-                        )
-                        print(
-                            "Assigning docment to relational vector, collection_id = ",
-                            collection_id,
                         )
 
                         await service.providers.database.assign_document_to_collection_vector(
@@ -323,23 +312,17 @@ def simple_ingestion_factory(service: IngestionService):
                     collection_id = generate_default_user_collection_id(
                         document_info.owner_id
                     )
-                    print(
-                        f"Assigning docment to relational collection, collection_id = {collection_id}"
-                    )
+
                     await service.providers.database.assign_document_to_collection_relational(
                         document_id=document_info.id,
                         collection_id=collection_id,
                     )
-                    print(
-                        f"Assigning docment to vector collection, collection_id = {collection_id}"
-                    )
+
                     await service.providers.database.assign_document_to_collection_vector(
                         document_id=document_info.id,
                         collection_id=collection_id,
                     )
-                    print(
-                        f"Setting graph sync status to outdated for collection_id = {collection_id}"
-                    )
+
                     await service.providers.database.set_workflow_status(
                         id=collection_id,
                         status_type="graph_sync_status",
@@ -352,7 +335,6 @@ def simple_ingestion_factory(service: IngestionService):
                     )
 
                 else:
-                    print("collection_ids = ", collection_ids)
                     for collection_id in collection_ids:
                         try:
 
@@ -364,7 +346,6 @@ def simple_ingestion_factory(service: IngestionService):
                                 description=description,
                                 collection_id=collection_id,
                             )
-                            print("create collection result = ", result)
                             await service.providers.database.graph_handler.create(
                                 collection_id=collection_id,
                                 name=name,
@@ -375,10 +356,6 @@ def simple_ingestion_factory(service: IngestionService):
                             logger.warning(
                                 f"Warning, could not create collection with error: {str(e)}"
                             )
-                        print(
-                            "Assigning docment to relational collection, collection_id = ",
-                            collection_id,
-                        )
 
                         await service.providers.database.assign_document_to_collection_relational(
                             document_id=document_info.id,

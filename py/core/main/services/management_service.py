@@ -18,7 +18,7 @@ from core.base import (
     Prompt,
     R2RException,
     RunManager,
-    UserResponse,
+    User,
 )
 from core.base.logger.base import RunType
 from core.base.utils import validate_uuid
@@ -582,13 +582,11 @@ class ManagementService(Service):
             name=name,
             description=description,
         )
-        print("create collection result = ", result)
         graph_result = await self.providers.database.graph_handler.create(
             collection_id=result.id,
             name=name,
             description=description,
         )
-        print("graph_result = ", graph_result)
 
         return result
 
@@ -649,7 +647,7 @@ class ManagementService(Service):
     @telemetry_event("GetUsersInCollection")
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
-    ) -> dict[str, list[UserResponse] | int]:
+    ) -> dict[str, list[User] | int]:
         return await self.providers.database.get_users_in_collection(
             collection_id, offset=offset, limit=limit
         )

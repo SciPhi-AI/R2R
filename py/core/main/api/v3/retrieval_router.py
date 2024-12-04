@@ -233,9 +233,6 @@ class RetrievalRouterV3(BaseRouterV3):
 
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
             """
-
-            print("search_settings = ", search_settings)
-
             search_settings.filters = self._select_filters(
                 auth_user, search_settings
             )

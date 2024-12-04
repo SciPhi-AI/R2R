@@ -208,7 +208,6 @@ def hatchet_ingestion_factory(
                                 description=description,
                                 collection_id=collection_id,
                             )
-                            print("create collection result = ", result)
                             await self.providers.database.graph_handler.create(
                                 collection_id=collection_id,
                                 name=name,

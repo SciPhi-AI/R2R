@@ -225,7 +225,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
-        print("community = ", community)
         await self.database_provider.graph_handler.add_community(community)
 
         return {

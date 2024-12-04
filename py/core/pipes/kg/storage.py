@@ -52,7 +52,6 @@ class KGStoragePipe(AsyncPipe):
         total_entities, total_relationships = 0, 0
 
         for extraction in kg_extractions:
-            print("extraction = ", extraction)
 
             total_entities, total_relationships = (
                 total_entities + len(extraction.entities),
@@ -67,9 +66,7 @@ class KGStoragePipe(AsyncPipe):
                             extraction.document_id
                         )
 
-                print("extraction.entities = ", extraction.entities)
                 for entity in extraction.entities:
-                    print("entity = ", entity)
                     await self.database_provider.graph_handler.entities.create(
                         **entity.to_dict()
                     )
@@ -107,7 +104,6 @@ class KGStoragePipe(AsyncPipe):
         errors = []
 
         async for kg_extraction in input.message:
-            print("kg_extraction = ", kg_extraction)
             if isinstance(kg_extraction, R2RDocumentProcessingError):
                 errors.append(kg_extraction)
                 continue

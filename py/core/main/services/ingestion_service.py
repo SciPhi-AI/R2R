@@ -31,7 +31,7 @@ from core.base.abstractions import (
     IndexMethod,
     VectorTableName,
 )
-from core.base.api.models import UserResponse
+from core.base.api.models import User
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 
@@ -71,7 +71,7 @@ class IngestionService(Service):
     async def ingest_file_ingress(
         self,
         file_data: dict,
-        user: UserResponse,
+        user: User,
         document_id: UUID,
         size_in_bytes,
         metadata: Optional[dict] = None,
@@ -148,7 +148,7 @@ class IngestionService(Service):
     def _create_document_info_from_file(
         self,
         document_id: UUID,
-        user: UserResponse,
+        user: User,
         file_name: str,
         metadata: dict,
         version: str,
@@ -187,7 +187,7 @@ class IngestionService(Service):
     def _create_document_info_from_chunks(
         self,
         document_id: UUID,
-        user: UserResponse,
+        user: User,
         chunks: list[RawChunk],
         metadata: dict,
         version: str,
@@ -260,10 +260,8 @@ class IngestionService(Service):
                     model=self.config.ingestion.document_summary_model
                 ),
             )
-            print("response = ", response)
 
             document_info.summary = response.choices[0].message.content  # type: ignore
-            print("document_info = ", document_info)
 
             if not document_info.summary:
                 raise ValueError("Expected a generated response.")
@@ -364,7 +362,7 @@ class IngestionService(Service):
         document_id: UUID,
         metadata: Optional[dict],
         chunks: list[RawChunk],
-        user: UserResponse,
+        user: User,
         *args: Any,
         **kwargs: Any,
     ) -> DocumentResponse:
@@ -411,7 +409,7 @@ class IngestionService(Service):
         document_id: UUID,
         chunk_id: UUID,
         text: str,
-        user: UserResponse,
+        user: User,
         metadata: Optional[dict] = None,
         *args: Any,
         **kwargs: Any,
@@ -689,7 +687,7 @@ class IngestionService(Service):
         self,
         document_id: UUID,
         metadata: dict,
-        user: UserResponse,
+        user: User,
     ) -> None:
         # Verify document exists and user has access
         existing_document = await self.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
@@ -722,7 +720,7 @@ class IngestionService(Service):
 
 class IngestionServiceAdapter:
     @staticmethod
-    def _parse_user_data(user_data) -> UserResponse:
+    def _parse_user_data(user_data) -> User:
         if isinstance(user_data, str):
             try:
                 user_data = json.loads(user_data)
@@ -730,7 +728,7 @@ class IngestionServiceAdapter:
                 raise ValueError(
                     f"Invalid user data format: {user_data}"
                 ) from e
-        return UserResponse.from_dict(user_data)
+        return User.from_dict(user_data)
 
     @staticmethod
     def _parse_chunk_enrichment_settings(
