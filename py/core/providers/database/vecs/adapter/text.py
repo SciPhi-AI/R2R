@@ -5,7 +5,7 @@ handling text data. It provides two main classes, `TextEmbedding` and `Paragraph
 All public classes, enums, and functions are re-exported by `vecs.adapters` module.
 """
 
-from typing import Any, Dict, Generator, Iterable, Literal, Optional, Tuple
+from typing import Any, Generator, Iterable, Literal, Optional, Tuple
 
 from flupy import flu
 from vecs.exc import MissingDependency
@@ -78,9 +78,9 @@ class TextEmbedding(AdapterStep):
 
     def __call__(
         self,
-        records: Iterable[Tuple[str, Any, Optional[Dict]]],
+        records: Iterable[Tuple[str, Any, Optional[dict]]],
         adapter_context: AdapterContext,  # pyright: ignore
-    ) -> Generator[Tuple[str, Any, Dict], None, None]:
+    ) -> Generator[Tuple[str, Any, dict], None, None]:
         """
         Converts each media in the records to an embedding and yields the result.
 
@@ -89,7 +89,7 @@ class TextEmbedding(AdapterStep):
             adapter_context: Context of the adapter.
 
         Yields:
-            Tuple[str, Any, Dict]: The id, the embedding, and the metadata.
+            Tuple[str, Any, dict]: The id, the embedding, and the metadata.
         """
         for batch in flu(records).chunk(self.batch_size):
             batch_records = [x for x in batch]
@@ -118,20 +118,20 @@ class ParagraphChunker(AdapterStep):
 
     def __call__(
         self,
-        records: Iterable[Tuple[str, Any, Optional[Dict]]],
+        records: Iterable[Tuple[str, Any, Optional[dict]]],
         adapter_context: AdapterContext,
-    ) -> Generator[Tuple[str, Any, Dict], None, None]:
+    ) -> Generator[Tuple[str, Any, dict], None, None]:
         """
         Splits each media in the records into paragraphs and yields each paragraph
         as a separate record. If the `skip_during_query` attribute is set to True,
         this step is skipped during querying.
 
         Args:
-            records (Iterable[Tuple[str, Any, Optional[Dict]]]): Iterable of tuples each containing an id, a media and an optional dict.
+            records (Iterable[Tuple[str, Any, Optional[dict]]]): Iterable of tuples each containing an id, a media and an optional dict.
             adapter_context (AdapterContext): Context of the adapter.
 
         Yields:
-            Tuple[str, Any, Dict]: The id appended with paragraph index, the paragraph, and the metadata.
+            Tuple[str, Any, dict]: The id appended with paragraph index, the paragraph, and the metadata.
         """
         if (
             adapter_context == AdapterContext("query")

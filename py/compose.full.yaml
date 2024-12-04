@@ -275,30 +275,30 @@ services:
     build:
       context: .
       args:
-        PORT: ${R2R_PORT:-${PORT:-7272}} # Eventually get rid of PORT, but for now keep it for backwards compatibility
+        PORT: ${R2R_PORT:-7272}
         R2R_PORT: ${R2R_PORT:-${PORT:-7272}}
-        HOST: ${R2R_HOST:-${HOST:-0.0.0.0}} # Eventually get rid of HOST, but for now keep it for backwards compatibility
-        R2R_HOST: ${R2R_HOST:-${HOST:-0.0.0.0}}
+        HOST: ${R2R_HOST:-0.0.0.0}
+        R2R_HOST: ${R2R_HOST:-0.0.0.0}
     ports:
-      - "${R2R_PORT:-${PORT:-7272}}:${R2R_PORT:-${PORT:-7272}}"
+      - "${R2R_PORT:-7272}:${R2R_PORT:-7272}"
     environment:
       - PYTHONUNBUFFERED=1
-      - R2R_PORT=${R2R_PORT:-${PORT:-7272}} # Eventually get rid of PORT, but for now keep it for backwards compatibility
-      - R2R_HOST=${R2R_HOST:-${HOST:-0.0.0.0}} # Eventually get rid of HOST, but for now keep it for backwards compatibility
+      - R2R_PORT=${R2R_PORT:-7272}
+      - R2R_HOST=${R2R_HOST:-0.0.0.0}
 
       # R2R
-      - R2R_CONFIG_NAME=${R2R_CONFIG_NAME:-${CONFIG_NAME:-}} # Eventually get rid of CONFIG_NAME, but for now keep it for backwards compatibility
-      - R2R_CONFIG_PATH=${R2R_CONFIG_PATH:-${CONFIG_PATH:-}} # Eventually get rid of CONFIG_PATH, but for now keep it for backwards compatibility
+      - R2R_CONFIG_NAME=${R2R_CONFIG_NAME:-}
+      - R2R_CONFIG_PATH=${R2R_CONFIG_PATH:-}
       - R2R_PROJECT_NAME=${R2R_PROJECT_NAME:-r2r_default}
 
       # Postgres
-      - R2R_POSTGRES_USER=${R2R_POSTGRES_USER:-${POSTGRES_USER:-postgres}} # Eventually get rid of POSTGRES_USER, but for now keep it for backwards compatibility
-      - R2R_POSTGRES_PASSWORD=${R2R_POSTGRES_PASSWORD:-${POSTGRES_PASSWORD:-postgres}} # Eventually get rid of POSTGRES_PASSWORD, but for now keep it for backwards compatibility
-      - R2R_POSTGRES_HOST=${R2R_POSTGRES_HOST:-${POSTGRES_HOST:-postgres}} # Eventually get rid of POSTGRES_HOST, but for now keep it for backwards compatibility
-      - R2R_POSTGRES_PORT=${R2R_POSTGRES_PORT:-${POSTGRES_PORT:-5432}} # Eventually get rid of POSTGRES_PORT, but for now keep it for backwards compatibility
-      - R2R_POSTGRES_DBNAME=${R2R_POSTGRES_DBNAME:-${POSTGRES_DBNAME:-postgres}} # Eventually get rid of POSTGRES_DBNAME, but for now keep it for backwards compatibility
-      - R2R_POSTGRES_MAX_CONNECTIONS=${R2R_POSTGRES_MAX_CONNECTIONS:-${POSTGRES_MAX_CONNECTIONS:-1024}} # Eventually get rid of POSTGRES_MAX_CONNECTIONS, but for now keep it for backwards compatibility
-      - R2R_POSTGRES_PROJECT_NAME=${R2R_POSTGRES_PROJECT_NAME:-${POSTGRES_PROJECT_NAME:-r2r_default}} # Eventually get rid of POSTGRES_PROJECT_NAME, but for now keep it for backwards compatibility
+      - R2R_POSTGRES_USER=${R2R_POSTGRES_USER:-postgres}
+      - R2R_POSTGRES_PASSWORD=${R2R_POSTGRES_PASSWORD:-postgres}
+      - R2R_POSTGRES_HOST=${R2R_POSTGRES_HOST:-postgres}
+      - R2R_POSTGRES_PORT=${R2R_POSTGRES_PORT:-5432}
+      - R2R_POSTGRES_DBNAME=${R2R_POSTGRES_DBNAME:-postgres}
+      - R2R_POSTGRES_MAX_CONNECTIONS=${R2R_POSTGRES_MAX_CONNECTIONS:-1024}
+      - R2R_POSTGRES_PROJECT_NAME=${R2R_POSTGRES_PROJECT_NAME:-r2r_default}
 
       # OpenAI
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
@@ -358,7 +358,7 @@ services:
     networks:
       - r2r-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${R2R_PORT:-7272}/v2/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${R2R_PORT:-7272}/v3/health"]
       interval: 6s
       timeout: 5s
       retries: 5

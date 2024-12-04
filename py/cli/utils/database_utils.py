@@ -1,9 +1,8 @@
-import configparser
 import logging.config
 import os
 import sys
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
 
 import alembic.config
 import asyncclick as click
@@ -12,7 +11,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError
 
 
-def get_default_db_vars() -> Dict[str, str]:
+def get_default_db_vars() -> dict[str, str]:
     """Get default database environment variables."""
     return {
         "R2R_POSTGRES_HOST": "localhost",

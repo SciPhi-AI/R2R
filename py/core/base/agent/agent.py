@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, AsyncGenerator, Dict, List, Optional, Type, Union
+from typing import Any, AsyncGenerator, Optional, Type
 
 from pydantic import BaseModel
 
@@ -21,16 +21,16 @@ logger = logging.getLogger()
 
 class Conversation:
     def __init__(self):
-        self.messages: List[Message] = []
+        self.messages: list[Message] = []
         self._lock = asyncio.Lock()
 
     def create_and_add_message(
         self,
-        role: Union[MessageType, str],
+        role: MessageType | str,
         content: Optional[str] = None,
         name: Optional[str] = None,
-        function_call: Optional[Dict[str, Any]] = None,
-        tool_calls: Optional[List[Dict[str, Any]]] = None,
+        function_call: Optional[dict[str, Any]] = None,
+        tool_calls: Optional[list[dict[str, Any]]] = None,
     ):
         message = Message(
             role=role,
@@ -91,12 +91,17 @@ class Agent(ABC):
         pass
 
     async def _setup(self, system_instruction: Optional[str] = None):
+        content = system_instruction or (
+            await self.database_provider.get_cached_prompt(
+                self.config.system_instruction_name
+            )
+        )
         await self.conversation.add_message(
             Message(
                 role="system",
                 content=system_instruction
                 or (
-                    await self.database_provider.get_prompt(
+                    await self.database_provider.get_cached_prompt(
                         self.config.system_instruction_name
                     )
                 ),
@@ -118,9 +123,7 @@ class Agent(ABC):
         messages: Optional[list[Message]] = None,
         *args,
         **kwargs,
-    ) -> Union[
-        list[LLMChatCompletion], AsyncGenerator[LLMChatCompletion, None]
-    ]:
+    ) -> list[LLMChatCompletion] | AsyncGenerator[LLMChatCompletion, None]:
         pass
 
     @abstractmethod
@@ -129,7 +132,7 @@ class Agent(ABC):
         response: Any,
         *args,
         **kwargs,
-    ) -> Union[None, AsyncGenerator[str, None]]:
+    ) -> None | AsyncGenerator[str, None]:
         pass
 
     async def execute_tool(self, tool_name: str, *args, **kwargs) -> str:

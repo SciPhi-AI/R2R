@@ -23,10 +23,10 @@ class IngestionConfig(ProviderConfig):
     audio_transcription_model: str = "openai/whisper-1"
 
     vision_img_prompt_name: str = "vision_img"
-    vision_img_model: str = "openai/gpt-4-mini"
+    vision_img_model: str = "openai/gpt-4o"
 
     vision_pdf_prompt_name: str = "vision_pdf"
-    vision_pdf_model: str = "openai/gpt-4-mini"
+    vision_pdf_model: str = "openai/gpt-4o"
 
     skip_document_summary: bool = False
     document_summary_system_prompt: str = "default_system"

@@ -1,15 +1,15 @@
 graphrag_entity_description:
   template: |
-    Provide a comprehensive yet concise summary of the given entity, incorporating its description and associated triples:
+    Provide a comprehensive yet concise summary of the given entity, incorporating its description and associated relationships:
 
     Entity Info:
     {entity_info}
-    Triples:
-    {triples_txt}
+    Relationships:
+    {relationships_txt}
 
     Your summary should:
     1. Clearly define the entity's core concept or purpose
-    2. Highlight key relationships or attributes from the triples
+    2. Highlight key relationships or attributes from the relationships
     3. Integrate any relevant information from the existing description
     4. Maintain a neutral, factual tone
     5. Be approximately 2-3 sentences long
@@ -17,4 +17,4 @@ graphrag_entity_description:
     Ensure the summary is coherent, informative, and captures the essence of the entity within the context of the provided information.
   input_types:
     entity_info: str
-    triples_txt: str
+    relationships_txt: str

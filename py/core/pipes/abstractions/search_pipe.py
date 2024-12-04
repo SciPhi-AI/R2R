@@ -3,17 +3,17 @@ from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional, Union
 from uuid import UUID
 
-from core.base import AsyncPipe, AsyncState, VectorSearchResult
+from core.base import AsyncPipe, AsyncState, ChunkSearchResult
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
 
-class SearchPipe(AsyncPipe[VectorSearchResult]):
+class SearchPipe(AsyncPipe[ChunkSearchResult]):
     class SearchConfig(AsyncPipe.PipeConfig):
         name: str = "default_vector_search"
         filters: dict = {}
-        search_limit: int = 10
+        limit: int = 10
 
     class Input(AsyncPipe.Input):
         message: Union[AsyncGenerator[str, None], str]
@@ -39,7 +39,7 @@ class SearchPipe(AsyncPipe[VectorSearchResult]):
         search_settings: Any,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[VectorSearchResult, None]:
+    ) -> AsyncGenerator[ChunkSearchResult, None]:
         pass
 
     @abstractmethod
@@ -50,5 +50,5 @@ class SearchPipe(AsyncPipe[VectorSearchResult]):
         run_id: UUID,
         *args: Any,
         **kwargs,
-    ) -> AsyncGenerator[VectorSearchResult, None]:
+    ) -> AsyncGenerator[ChunkSearchResult, None]:
         pass

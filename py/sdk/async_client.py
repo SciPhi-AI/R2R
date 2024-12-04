@@ -6,13 +6,25 @@ import httpx
 from shared.abstractions import R2RException
 
 from .base.base_client import BaseClient
-from .mixins import (
+from .v2 import (
     AuthMixins,
     IngestionMixins,
     KGMixins,
     ManagementMixins,
     RetrievalMixins,
     ServerMixins,
+)
+from .v3 import (
+    ChunksSDK,
+    CollectionsSDK,
+    ConversationsSDK,
+    DocumentsSDK,
+    GraphsSDK,
+    IndicesSDK,
+    PromptsSDK,
+    RetrievalSDK,
+    SystemSDK,
+    UsersSDK,
 )
 
 
@@ -27,12 +39,6 @@ class R2RAsyncClient(
 ):
     """
     Asynchronous client for interacting with the R2R API.
-
-    Args:
-        base_url (str, optional): The base URL of the R2R API. Defaults to "http://localhost:7272".
-        prefix (str, optional): The prefix for the API. Defaults to "/v2".
-        custom_client (httpx.AsyncClient, optional): A custom HTTP client. Defaults to None.
-        timeout (float, optional): The timeout for requests. Defaults to 300.0.
     """
 
     def __init__(
@@ -44,16 +50,27 @@ class R2RAsyncClient(
     ):
         super().__init__(base_url, prefix, timeout)
         self.client = custom_client or httpx.AsyncClient(timeout=timeout)
+        self.chunks = ChunksSDK(self)
+        self.collections = CollectionsSDK(self)
+        self.conversations = ConversationsSDK(self)
+        self.documents = DocumentsSDK(self)
+        self.graphs = GraphsSDK(self)
+        self.indices = IndicesSDK(self)
+        self.prompts = PromptsSDK(self)
+        self.retrieval = RetrievalSDK(self)
+        self.system = SystemSDK(self)
+        self.users = UsersSDK(self)
 
-    async def _make_request(self, method: str, endpoint: str, **kwargs):
-        url = self._get_full_url(endpoint)
+    async def _make_request(
+        self, method: str, endpoint: str, version: str = "v2", **kwargs
+    ):
+        url = self._get_full_url(endpoint, version)
         request_args = self._prepare_request_args(endpoint, **kwargs)
 
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.request(method, url, **request_args)
-                await self._handle_response(response)
-                return response.json() if response.content else None
+            response = await self.client.request(method, url, **request_args)
+            await self._handle_response(response)
+            return response.json() if response.content else None
         except httpx.RequestError as e:
             raise R2RException(
                 status_code=500,
@@ -61,9 +78,9 @@ class R2RAsyncClient(
             ) from e
 
     async def _make_streaming_request(
-        self, method: str, endpoint: str, **kwargs
+        self, method: str, endpoint: str, version: str = "v2", **kwargs
     ) -> AsyncGenerator[Any, None]:
-        url = self._get_full_url(endpoint)
+        url = self._get_full_url(endpoint, version)
         request_args = self._prepare_request_args(endpoint, **kwargs)
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:

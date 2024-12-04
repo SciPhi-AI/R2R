@@ -9,6 +9,7 @@ from fastapi.security import OAuth2PasswordBearer
 from core.base import (
     AuthConfig,
     AuthProvider,
+    CollectionResponse,
     CryptoProvider,
     DatabaseProvider,
     EmailProvider,
@@ -16,7 +17,7 @@ from core.base import (
     Token,
     TokenData,
 )
-from core.base.api.models import UserResponse
+from core.base.api.models import User
 
 DEFAULT_ACCESS_LIFETIME_IN_MINUTES = 3600
 DEFAULT_REFRESH_LIFETIME_IN_DAYS = 7
@@ -55,7 +56,9 @@ class R2RAuthProvider(AuthProvider):
     async def initialize(self):
         try:
             user = await self.register(
-                email=self.admin_email, password=self.admin_password
+                email=self.admin_email,
+                password=self.admin_password,
+                is_superuser=True,
             )
             await self.database_provider.mark_user_as_superuser(user.id)
         except R2RException:
@@ -113,7 +116,7 @@ class R2RAuthProvider(AuthProvider):
         except jwt.InvalidTokenError as e:
             raise R2RException(status_code=401, message="Invalid token") from e
 
-    async def user(self, token: str = Depends(oauth2_scheme)) -> UserResponse:
+    async def user(self, token: str = Depends(oauth2_scheme)) -> User:
         token_data = await self.decode_token(token)
         if not token_data.email:
             raise R2RException(
@@ -127,23 +130,32 @@ class R2RAuthProvider(AuthProvider):
         return user
 
     def get_current_active_user(
-        self, current_user: UserResponse = Depends(user)
-    ) -> UserResponse:
+        self, current_user: User = Depends(user)
+    ) -> User:
         if not current_user.is_active:
             raise R2RException(status_code=400, message="Inactive user")
         return current_user
 
-    async def register(self, email: str, password: str) -> UserResponse:
+    async def register(
+        self, email: str, password: str, is_superuser: bool = False
+    ) -> User:
         # Create new user and give them a default collection
-        new_user = await self.database_provider.create_user(email, password)
-        default_collection = (
-            await self.database_provider.create_default_collection(
-                new_user.id,
+        new_user = await self.database_provider.create_user(
+            email, password, is_superuser
+        )
+        default_collection: CollectionResponse = (
+            await self.database_provider.create_collection(
+                owner_id=new_user.id,
             )
+        )
+        await self.database_provider.graph_handler.create(
+            collection_id=default_collection.id,
+            name=default_collection.name,
+            description=default_collection.description,
         )
 
         await self.database_provider.add_user_to_collection(
-            new_user.id, default_collection.collection_id
+            new_user.id, default_collection.id
         )
 
         if self.config.require_email_verification:
@@ -235,7 +247,7 @@ class R2RAuthProvider(AuthProvider):
                 status_code=401, message="Incorrect email or password"
             )
 
-        if not user.is_verified:
+        if not user.is_verified and self.config.require_email_verification:
             logger.warning(f"Unverified user attempted login: {email}")
             raise R2RException(status_code=401, message="Email not verified")
 
@@ -272,7 +284,7 @@ class R2RAuthProvider(AuthProvider):
         }
 
     async def change_password(
-        self, user: UserResponse, current_password: str, new_password: str
+        self, user: User, current_password: str, new_password: str
     ) -> dict[str, str]:
         if not isinstance(user.hashed_password, str):
             logger.error(

@@ -19,7 +19,7 @@ logger = logging.getLogger()
 
 
 class StreamingSearchRAGPipe(GeneratorPipe):
-    VECTOR_SEARCH_STREAM_MARKER = (
+    CHUNK_SEARCH_STREAM_MARKER = (
         "search"  # TODO - change this to vector_search in next major release
     )
     KG_LOCAL_SEARCH_STREAM_MARKER = "kg_local_search"

@@ -3,7 +3,7 @@
     "results": {
       "vector_search_results": [
         {
-          "extraction_id": "0484dba9-2b51-5012-9aad-e6efe7e6688f",
+          "chunk_id": "0484dba9-2b51-5012-9aad-e6efe7e6688f",
           "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
           "collection_ids": [
@@ -25,7 +25,7 @@
           }
         },
         {
-          "extraction_id": "afa9d545-b0fb-57d2-aa8e-47b874b5671e",
+          "chunk_id": "afa9d545-b0fb-57d2-aa8e-47b874b5671e",
           "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
           "collection_ids": [
@@ -47,7 +47,7 @@
           }
         },
         {
-          "extraction_id": "57a92100-4201-5909-8794-229f3f111cf9",
+          "chunk_id": "57a92100-4201-5909-8794-229f3f111cf9",
           "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
           "collection_ids": [
@@ -69,7 +69,7 @@
           }
         },
         {
-          "extraction_id": "0621a428-a8a1-505f-81c0-b7d6daceda9a",
+          "chunk_id": "0621a428-a8a1-505f-81c0-b7d6daceda9a",
           "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
           "collection_ids": [
@@ -91,7 +91,7 @@
           }
         },
         {
-          "extraction_id": "1163974b-141e-50b7-8d19-d8d3d9143410",
+          "chunk_id": "1163974b-141e-50b7-8d19-d8d3d9143410",
           "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
           "collection_ids": [
@@ -113,7 +113,7 @@
           }
         },
         {
-          "extraction_id": "a2660071-661b-5928-ad52-c4106ea95ae9",
+          "chunk_id": "a2660071-661b-5928-ad52-c4106ea95ae9",
           "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
           "collection_ids": [
@@ -135,7 +135,7 @@
           }
         },
         {
-          "extraction_id": "8e93af52-b1cd-5c64-afa4-e3a7fcdf412b",
+          "chunk_id": "8e93af52-b1cd-5c64-afa4-e3a7fcdf412b",
           "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
           "collection_ids": [
@@ -157,7 +157,7 @@
           }
         },
         {
-          "extraction_id": "ccacb15d-aef0-5143-b448-380401c71cd1",
+          "chunk_id": "ccacb15d-aef0-5143-b448-380401c71cd1",
           "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
           "collection_ids": [
@@ -179,7 +179,7 @@
           }
         },
         {
-          "extraction_id": "6a340f36-ef68-59dd-b8a7-a5f5d6cd6d00",
+          "chunk_id": "6a340f36-ef68-59dd-b8a7-a5f5d6cd6d00",
           "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
           "collection_ids": [
@@ -201,7 +201,7 @@
           }
         },
         {
-          "extraction_id": "0a7e6a54-3804-5b5b-a9cd-a5b4a4753483",
+          "chunk_id": "0a7e6a54-3804-5b5b-a9cd-a5b4a4753483",
           "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
           "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
           "collection_ids": [
@@ -223,7 +223,7 @@
           }
         }
       ],
-      "kg_search_results": null
+      "graph_search_results": null
     }
   },
   "basic_rag": {
@@ -266,7 +266,7 @@
       "search_results": {
         "vector_search_results": [
           {
-            "extraction_id": "328e5142-bd6c-5553-b5a0-8fdbd72ee6c6",
+            "chunk_id": "328e5142-bd6c-5553-b5a0-8fdbd72ee6c6",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -288,7 +288,7 @@
             }
           },
           {
-            "extraction_id": "a0b5c2f6-7dcd-5865-b2c6-0b3cd2189e57",
+            "chunk_id": "a0b5c2f6-7dcd-5865-b2c6-0b3cd2189e57",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -310,7 +310,7 @@
             }
           },
           {
-            "extraction_id": "500bf649-b2a8-521b-bdb2-78cdc342531f",
+            "chunk_id": "500bf649-b2a8-521b-bdb2-78cdc342531f",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -332,7 +332,7 @@
             }
           },
           {
-            "extraction_id": "90b1f17b-a97f-5552-9951-fbc6df634039",
+            "chunk_id": "90b1f17b-a97f-5552-9951-fbc6df634039",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -354,7 +354,7 @@
             }
           },
           {
-            "extraction_id": "845a2b04-70ee-5a70-91fa-44016677fd92",
+            "chunk_id": "845a2b04-70ee-5a70-91fa-44016677fd92",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -376,7 +376,7 @@
             }
           },
           {
-            "extraction_id": "1739d713-3fb6-534f-8ddb-7ff9cd6484c7",
+            "chunk_id": "1739d713-3fb6-534f-8ddb-7ff9cd6484c7",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -398,7 +398,7 @@
             }
           },
           {
-            "extraction_id": "70e9089c-56e0-52f7-80ea-ad66fe1f9a79",
+            "chunk_id": "70e9089c-56e0-52f7-80ea-ad66fe1f9a79",
             "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -420,7 +420,7 @@
             }
           },
           {
-            "extraction_id": "5425859b-cbfa-54e4-9729-5f92c6f61efc",
+            "chunk_id": "5425859b-cbfa-54e4-9729-5f92c6f61efc",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -442,7 +442,7 @@
             }
           },
           {
-            "extraction_id": "9dae5d7c-4bcd-52f0-bdfc-a9e327c56069",
+            "chunk_id": "9dae5d7c-4bcd-52f0-bdfc-a9e327c56069",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -464,7 +464,7 @@
             }
           },
           {
-            "extraction_id": "9bba73a7-4ebf-51f2-8a55-553a93d2ac41",
+            "chunk_id": "9bba73a7-4ebf-51f2-8a55-553a93d2ac41",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -486,7 +486,7 @@
             }
           }
         ],
-        "kg_search_results": null
+        "graph_search_results": null
       }
     }
   },
@@ -530,7 +530,7 @@
       "search_results": {
         "vector_search_results": [
           {
-            "extraction_id": "c08344bb-1740-5330-a6e1-00b558a0008c",
+            "chunk_id": "c08344bb-1740-5330-a6e1-00b558a0008c",
             "document_id": "e797da22-8c5d-54e5-bed5-a55954cf6bf9",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -548,7 +548,7 @@
             }
           },
           {
-            "extraction_id": "996675d0-381f-5b26-b4db-5dcc72babdc2",
+            "chunk_id": "996675d0-381f-5b26-b4db-5dcc72babdc2",
             "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -570,7 +570,7 @@
             }
           },
           {
-            "extraction_id": "2ff890d6-cb3f-5c17-88c0-5194b98ba56e",
+            "chunk_id": "2ff890d6-cb3f-5c17-88c0-5194b98ba56e",
             "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -593,7 +593,7 @@
             }
           },
           {
-            "extraction_id": "b5e169c0-9779-5e30-a644-7bdf8308d8a5",
+            "chunk_id": "b5e169c0-9779-5e30-a644-7bdf8308d8a5",
             "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -615,7 +615,7 @@
             }
           },
           {
-            "extraction_id": "2d5c5f3b-571b-5a4a-a8ce-e07922823f78",
+            "chunk_id": "2d5c5f3b-571b-5a4a-a8ce-e07922823f78",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -637,7 +637,7 @@
             }
           },
           {
-            "extraction_id": "d0449e9c-80cb-5873-bb89-ada360f473cf",
+            "chunk_id": "d0449e9c-80cb-5873-bb89-ada360f473cf",
             "document_id": "2f576170-c4f9-5141-a910-a0924f341de4",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -659,7 +659,7 @@
             }
           },
           {
-            "extraction_id": "123a19db-e2ed-5112-9fbd-19afb707ffcb",
+            "chunk_id": "123a19db-e2ed-5112-9fbd-19afb707ffcb",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -681,7 +681,7 @@
             }
           },
           {
-            "extraction_id": "00983240-785a-5f53-ba0c-2f848e6f29bd",
+            "chunk_id": "00983240-785a-5f53-ba0c-2f848e6f29bd",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -704,7 +704,7 @@
             }
           },
           {
-            "extraction_id": "37b90a06-bb7d-5146-b667-18f63610ad8c",
+            "chunk_id": "37b90a06-bb7d-5146-b667-18f63610ad8c",
             "document_id": "d421207a-d799-5806-8d67-46b2005b15d4",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -725,7 +725,7 @@
             }
           },
           {
-            "extraction_id": "c775cf38-8737-59e8-96fc-4e403041eade",
+            "chunk_id": "c775cf38-8737-59e8-96fc-4e403041eade",
             "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
             "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
             "collection_ids": [
@@ -747,7 +747,7 @@
             }
           }
         ],
-        "kg_search_results": null
+        "graph_search_results": null
       }
     }
   },
@@ -757,7 +757,7 @@
         "choices": [
           {
             "message": {
-              "content": "<search>[{\"extraction_id\": \"31e7a71c-0f89-5b27-972e-89bb8eb1415a\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6675316889565188, \"text\": \"Total Stockholders\\u2019 Equity (Deficit) 1,676,163\\n\\n5,184\\n\\n\\u2014\\n\\n(26,298)\\n\\n28,637\\n\\n(1) 721,710 (2,038) (1,009,359) 1,393,998\\n\\nLyft, Inc. Consolidated Statements of Cash Flows (in thousands)\\n\\n2021\\n\\nCash flows from operating activities Net loss Adjustments to reconcile net loss to net cash used in operating activities\\n\\n$\\n\\n(1,009,359)\\n\\nDepreciation and amortization Stock-based compensation Amortization of premium on marketable securities Accretion of discount on marketable securities Amortization of debt discount and issuance costs Deferred income tax from convertible senior notes Loss on sale and disposal of assets, net Gain on divestiture Other Changes in operating assets and liabilities, net effects of acquisition\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 572, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 82, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"extraction_id\": \"ab62fbab-c5f8-5b3d-ab2e-2484c77c81fb\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6647442183050991, \"text\": \"79\\n\\n2019 3,615,960\\n\\n2,176,469 636,116 1,505,640 814,122 1,186,093 6,318,440 (2,702,480) \\u2014 102,595 (2,599,885) 2,356 (2,602,241)\\n\\n(11.44)\\n\\n227,498\\n\\n81,321 75,212 971,941 72,046 398,791\\n\\nLyft, Inc. Consolidated Statements of Comprehensive Loss (in thousands)\\n\\nNet loss Other comprehensive income (loss)\\n\\n$\\n\\nYear Ended December 31, 2020 (1,752,857) $\\n\\n2021 (1,009,359) $\\n\\nForeign currency translation adjustment Unrealized gain (loss) on marketable securities, net of taxes\\n\\nOther comprehensive income (loss)\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 567, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 79, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"extraction_id\": \"66efee73-7df1-5786-b56b-3b0a6f9bf390\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6629626355789533, \"text\": \"Overview\\n\\nLyft, Inc (the \\u201cCompany\\u201d or \\u201cLyft\\u201d) started a movement to revolutionize transportation. In 2012, we launched our peer-to-peer marketplace for on-demand ridesharing and have continued to pioneer innovations aligned with our mission. Today, Lyft is one of the largest multimodal transportation networks in the United States and Canada.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 16, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 5, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"extraction_id\": \"f043e24f-5d5d-531e-973a-277e65f3b10e\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6602276170118095, \"text\": \"Revenues from Contracts with Customers (ASC 606)\\n\\nWe generate substantially all our revenue from our ridesharing marketplace that connects drivers and riders. We recognize revenue from fees paid by drivers for use of our Lyft Platform offerings in accordance with ASC 606 as described in Note 2 of the notes to our consolidated financial statements. Drivers enter into terms of service (\\u201cToS\\u201d) with us in order to use our Lyft Driver App.\\n\\n58\\n\\n2019 to 2020 % Change\\n\\n19.0% (1.8)% (6.7)% 2.3%\\n\\nWe provide a service to drivers to complete a successful transportation service for riders. This service includes on-demand lead generation that assists drivers to find, receive and fulfill on-demand requests from riders seeking transportation services and related collection activities using our Lyft Platform. As a result, our single performance obligation in the transaction is to connect drivers with riders to facilitate the completion of a successful transportation service for riders.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 459, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 58, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"extraction_id\": \"095cb246-80ec-5c35-96b4-ba902851e0e7\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6476712260834182, \"text\": \"Corporate Information\\n\\nWe were incorporated in 2007 as Bounder Web, Inc., a Delaware corporation. In 2008, we changed our name to Zimride, Inc. We founded Lyft in 2012 and\\n\\nchanged our name to Lyft, Inc. in 2013 when we sold the assets related to our Zimride operations.\\n\\n13\\n\\nAvailable Information\\n\\nOur website is located at www.lyft.com, and our investor relations website is located at investor.lyft.com. Copies of our Annual Report on Form 10-K, Quarterly Reports on Form 10-Q, Current Reports on Form 8-K and amendments to these reports filed or furnished pursuant to Section 13(a) or 15(d) of the Exchange Act, as amended, are available free of charge on our investor relations website as soon as reasonably practicable after we file such material electronically with or furnish it to the Securities and Exchange Commission (the \\u201cSEC\\u201d). The SEC also maintains a website that contains our SEC filings at www.sec.gov.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 82, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 13, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"extraction_id\": \"0da7d65c-a0e7-541f-a404-71f32346d988\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6405097674715796, \"text\": \"We generate substantially all of our revenue from our ridesharing marketplace that connects drivers and riders. We collect service fees and commissions from drivers for their use of our ridesharing marketplace. As drivers accept more rider leads and complete more rides, we earn more revenue. We also generate revenue from riders renting Light Vehicles, drivers renting vehicles through Express Drive, Lyft Rentals renters, Lyft Driver Center and Lyft Auto Care users, and by making our ridesharing marketplace available to organizations through our Lyft Business offerings, such as our Concierge and Corporate Business Travel programs. In the second quarter of 2021, we began generating revenues from licensing and data access agreements, primarily with third-party autonomous vehicle companies.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 20, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 5, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"extraction_id\": \"f7cdb289-ca94-5e40-909d-7a01a8a5d378\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6394687509853404, \"text\": \"Revenue Recognition\\n\\nThe Company generates its revenue from its multimodal transportation networks that offer access to a variety of transportation options through the Lyft Platform and mobile-based applications. Substantially all of the Company\\u2019s revenue is generated from its ridesharing marketplace that connects drivers and riders and is recognized in accordance with Accounting Standards Codification Topic 606 (\\u201cASC 606\\u201d). In addition, the Company generates revenue in accordance with ASC 606 from licensing and data access, primarily with third-party autonomous vehicle companies. The Company also generates rental revenue from Flexdrive, its network of Light Vehicles and Lyft Rentals, which is recognized in accordance with Accounting Standards Codification Topic 842 (\\u201cASC 842\\u201d).\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 591, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 86, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"extraction_id\": \"14c06942-0f82-5a5f-9936-03919f6dac96\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6308834176729083, \"text\": \"Light Vehicle Rider and Lyft Rentals Renter Incentives\\n\\nIncentives offered to Light Vehicle riders and Lyft Rentals renters were not material for the years ended December 31, 2021 and 2020.\\n\\nFor the years ended December 31, 2021, 2020 and 2019, in relation to the driver, rider, Light Vehicle riders and Lyft Rentals renters incentive programs, the Company recorded $1.3 billion, $390.8 million and $560.3 million as a reduction to revenue and $64.7 million, $135.0 million and $381.5 million as sales and marketing expense, respectively.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 611, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 89, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"extraction_id\": \"e0f5bd80-c3d2-58d6-a310-e04fa1618a5a\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6294196468937618, \"text\": \"Software Development Costs\\n\\nThe Company incurs costs related to developing the Lyft Platform and related support systems. The Company capitalizes development costs related to the Lyft Platform and related support systems once the preliminary project stage is complete and it is probable that the project will be completed and the software will be used to perform the function intended. The Company capitalized $16.2 million and $12.8 million of software development costs during the year ended December 31, 2021 and 2020, respectively. For the year ended December 31, 2019, capitalized software development costs was not material.\\n\\nInsurance Reserves\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 649, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 94, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"extraction_id\": \"ab302f43-5dcf-5e04-82ee-754565cd1cda\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6209709459253888, \"text\": \"32.1\\u2020\\n\\nCertifications of Principal Executive Officer and Principal Financial Officer pursuant to 18 U.S.C. Section 1350, as adopted pursuant to Section 906 of the Sarbanes-Oxley Act of 2002.\\n\\n101\\n\\nThe following financial information from Lyft, Inc.\\u2019s Annual Report on Form 10-K for the fiscal year ended December 31, 2021 formatted in Inline XBRL (eXtensible Business Reporting Language): (i) Consolidated Statements of Operations for the fiscal years ended December 31, 2021, 2020 and 2019; (ii) Consolidated Statements of Comprehensive Income (Loss) for the fiscal years ended December 31, 2021, 2020, and 2019; (iii) Consolidated Balance Sheets as of December 31, 2021 and 2020; (iv) Consolidated Statements of Cash Flows for the fiscal years ended December 31, 2021, 2020, and 2019; (v) Consolidated Statements of Redeemable Convertible Preferred Stock and Stockholders\\u2019 Equity for the fiscal years ended December 31, 2021, 2020, and 2019; and (vi) Notes to the Consolidated Financial Statements.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 817, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 127, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}]</search><completion>Lyft's profit in 2020 was not a profit but a net loss. According to the provided context, Lyft reported a net loss of $1,752,857,000 for the year ended December 31, 2020 [2].</completion>"
+              "content": "<search>[{\"chunk_id\": \"31e7a71c-0f89-5b27-972e-89bb8eb1415a\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6675316889565188, \"text\": \"Total Stockholders\\u2019 Equity (Deficit) 1,676,163\\n\\n5,184\\n\\n\\u2014\\n\\n(26,298)\\n\\n28,637\\n\\n(1) 721,710 (2,038) (1,009,359) 1,393,998\\n\\nLyft, Inc. Consolidated Statements of Cash Flows (in thousands)\\n\\n2021\\n\\nCash flows from operating activities Net loss Adjustments to reconcile net loss to net cash used in operating activities\\n\\n$\\n\\n(1,009,359)\\n\\nDepreciation and amortization Stock-based compensation Amortization of premium on marketable securities Accretion of discount on marketable securities Amortization of debt discount and issuance costs Deferred income tax from convertible senior notes Loss on sale and disposal of assets, net Gain on divestiture Other Changes in operating assets and liabilities, net effects of acquisition\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 572, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 82, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"chunk_id\": \"ab62fbab-c5f8-5b3d-ab2e-2484c77c81fb\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6647442183050991, \"text\": \"79\\n\\n2019 3,615,960\\n\\n2,176,469 636,116 1,505,640 814,122 1,186,093 6,318,440 (2,702,480) \\u2014 102,595 (2,599,885) 2,356 (2,602,241)\\n\\n(11.44)\\n\\n227,498\\n\\n81,321 75,212 971,941 72,046 398,791\\n\\nLyft, Inc. Consolidated Statements of Comprehensive Loss (in thousands)\\n\\nNet loss Other comprehensive income (loss)\\n\\n$\\n\\nYear Ended December 31, 2020 (1,752,857) $\\n\\n2021 (1,009,359) $\\n\\nForeign currency translation adjustment Unrealized gain (loss) on marketable securities, net of taxes\\n\\nOther comprehensive income (loss)\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 567, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 79, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"chunk_id\": \"66efee73-7df1-5786-b56b-3b0a6f9bf390\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6629626355789533, \"text\": \"Overview\\n\\nLyft, Inc (the \\u201cCompany\\u201d or \\u201cLyft\\u201d) started a movement to revolutionize transportation. In 2012, we launched our peer-to-peer marketplace for on-demand ridesharing and have continued to pioneer innovations aligned with our mission. Today, Lyft is one of the largest multimodal transportation networks in the United States and Canada.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 16, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 5, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"chunk_id\": \"f043e24f-5d5d-531e-973a-277e65f3b10e\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6602276170118095, \"text\": \"Revenues from Contracts with Customers (ASC 606)\\n\\nWe generate substantially all our revenue from our ridesharing marketplace that connects drivers and riders. We recognize revenue from fees paid by drivers for use of our Lyft Platform offerings in accordance with ASC 606 as described in Note 2 of the notes to our consolidated financial statements. Drivers enter into terms of service (\\u201cToS\\u201d) with us in order to use our Lyft Driver App.\\n\\n58\\n\\n2019 to 2020 % Change\\n\\n19.0% (1.8)% (6.7)% 2.3%\\n\\nWe provide a service to drivers to complete a successful transportation service for riders. This service includes on-demand lead generation that assists drivers to find, receive and fulfill on-demand requests from riders seeking transportation services and related collection activities using our Lyft Platform. As a result, our single performance obligation in the transaction is to connect drivers with riders to facilitate the completion of a successful transportation service for riders.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 459, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 58, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"chunk_id\": \"095cb246-80ec-5c35-96b4-ba902851e0e7\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6476712260834182, \"text\": \"Corporate Information\\n\\nWe were incorporated in 2007 as Bounder Web, Inc., a Delaware corporation. In 2008, we changed our name to Zimride, Inc. We founded Lyft in 2012 and\\n\\nchanged our name to Lyft, Inc. in 2013 when we sold the assets related to our Zimride operations.\\n\\n13\\n\\nAvailable Information\\n\\nOur website is located at www.lyft.com, and our investor relations website is located at investor.lyft.com. Copies of our Annual Report on Form 10-K, Quarterly Reports on Form 10-Q, Current Reports on Form 8-K and amendments to these reports filed or furnished pursuant to Section 13(a) or 15(d) of the Exchange Act, as amended, are available free of charge on our investor relations website as soon as reasonably practicable after we file such material electronically with or furnish it to the Securities and Exchange Commission (the \\u201cSEC\\u201d). The SEC also maintains a website that contains our SEC filings at www.sec.gov.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 82, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 13, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"chunk_id\": \"0da7d65c-a0e7-541f-a404-71f32346d988\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6405097674715796, \"text\": \"We generate substantially all of our revenue from our ridesharing marketplace that connects drivers and riders. We collect service fees and commissions from drivers for their use of our ridesharing marketplace. As drivers accept more rider leads and complete more rides, we earn more revenue. We also generate revenue from riders renting Light Vehicles, drivers renting vehicles through Express Drive, Lyft Rentals renters, Lyft Driver Center and Lyft Auto Care users, and by making our ridesharing marketplace available to organizations through our Lyft Business offerings, such as our Concierge and Corporate Business Travel programs. In the second quarter of 2021, we began generating revenues from licensing and data access agreements, primarily with third-party autonomous vehicle companies.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 20, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 5, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"chunk_id\": \"f7cdb289-ca94-5e40-909d-7a01a8a5d378\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6394687509853404, \"text\": \"Revenue Recognition\\n\\nThe Company generates its revenue from its multimodal transportation networks that offer access to a variety of transportation options through the Lyft Platform and mobile-based applications. Substantially all of the Company\\u2019s revenue is generated from its ridesharing marketplace that connects drivers and riders and is recognized in accordance with Accounting Standards Codification Topic 606 (\\u201cASC 606\\u201d). In addition, the Company generates revenue in accordance with ASC 606 from licensing and data access, primarily with third-party autonomous vehicle companies. The Company also generates rental revenue from Flexdrive, its network of Light Vehicles and Lyft Rentals, which is recognized in accordance with Accounting Standards Codification Topic 842 (\\u201cASC 842\\u201d).\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 591, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 86, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"chunk_id\": \"14c06942-0f82-5a5f-9936-03919f6dac96\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6308834176729083, \"text\": \"Light Vehicle Rider and Lyft Rentals Renter Incentives\\n\\nIncentives offered to Light Vehicle riders and Lyft Rentals renters were not material for the years ended December 31, 2021 and 2020.\\n\\nFor the years ended December 31, 2021, 2020 and 2019, in relation to the driver, rider, Light Vehicle riders and Lyft Rentals renters incentive programs, the Company recorded $1.3 billion, $390.8 million and $560.3 million as a reduction to revenue and $64.7 million, $135.0 million and $381.5 million as sales and marketing expense, respectively.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 611, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 89, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"chunk_id\": \"e0f5bd80-c3d2-58d6-a310-e04fa1618a5a\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6294196468937618, \"text\": \"Software Development Costs\\n\\nThe Company incurs costs related to developing the Lyft Platform and related support systems. The Company capitalizes development costs related to the Lyft Platform and related support systems once the preliminary project stage is complete and it is probable that the project will be completed and the software will be used to perform the function intended. The Company capitalized $16.2 million and $12.8 million of software development costs during the year ended December 31, 2021 and 2020, respectively. For the year ended December 31, 2019, capitalized software development costs was not material.\\n\\nInsurance Reserves\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 649, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 94, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}, {\"chunk_id\": \"ab302f43-5dcf-5e04-82ee-754565cd1cda\", \"document_id\": \"2f576170-c4f9-5141-a910-a0924f341de4\", \"user_id\": \"2acb499e-8428-543b-bd85-0d9098718220\", \"collection_ids\": [\"122fdf6a-e116-546b-a8f6-e4cb2e2c0a09\"], \"score\": 0.6209709459253888, \"text\": \"32.1\\u2020\\n\\nCertifications of Principal Executive Officer and Principal Financial Officer pursuant to 18 U.S.C. Section 1350, as adopted pursuant to Section 906 of the Sarbanes-Oxley Act of 2002.\\n\\n101\\n\\nThe following financial information from Lyft, Inc.\\u2019s Annual Report on Form 10-K for the fiscal year ended December 31, 2021 formatted in Inline XBRL (eXtensible Business Reporting Language): (i) Consolidated Statements of Operations for the fiscal years ended December 31, 2021, 2020 and 2019; (ii) Consolidated Statements of Comprehensive Income (Loss) for the fiscal years ended December 31, 2021, 2020, and 2019; (iii) Consolidated Balance Sheets as of December 31, 2021 and 2020; (iv) Consolidated Statements of Cash Flows for the fiscal years ended December 31, 2021, 2020, and 2019; (v) Consolidated Statements of Redeemable Convertible Preferred Stock and Stockholders\\u2019 Equity for the fiscal years ended December 31, 2021, 2020, and 2019; and (vi) Notes to the Consolidated Financial Statements.\", \"metadata\": {\"version\": \"v0\", \"chunk_order\": 817, \"document_type\": \"pdf\", \"unstructured_filetype\": \"application/pdf\", \"unstructured_languages\": [\"eng\"], \"unstructured_page_number\": 127, \"partitioned_by_unstructured\": true, \"associated_query\": \"What was Lyft's profit in 2020?\"}}]</search><completion>Lyft's profit in 2020 was not a profit but a net loss. According to the provided context, Lyft reported a net loss of $1,752,857,000 for the year ended December 31, 2020 [2].</completion>"
             }
           }
         ]

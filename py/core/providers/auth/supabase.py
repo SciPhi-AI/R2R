@@ -15,7 +15,7 @@ from core.base import (
     Token,
     TokenData,
 )
-from core.base.api.models import UserResponse
+from core.base.api.models import User
 
 logger = logging.getLogger()
 
@@ -69,16 +69,15 @@ class SupabaseAuthProvider(AuthProvider):
             "decode_token is not used with Supabase authentication"
         )
 
-    async def register(self, email: str, password: str) -> UserResponse:  # type: ignore
+    async def register(self, email: str, password: str) -> User:  # type: ignore
         # Use Supabase client to create a new user
-        user = self.supabase.auth.sign_up(email=email, password=password)
 
-        if user:
+        if user := self.supabase.auth.sign_up(email=email, password=password):
             raise R2RException(
                 status_code=400,
                 message="Supabase provider implementation is still under construction",
             )
-            # return UserResponse(
+            # return User(
             #     id=user.id,
             #     email=user.email,
             #     is_active=True,
@@ -96,9 +95,9 @@ class SupabaseAuthProvider(AuthProvider):
         self, email: str, verification_code: str
     ) -> dict[str, str]:
         # Use Supabase client to verify email
-        response = self.supabase.auth.verify_email(email, verification_code)
-
-        if response:
+        if response := self.supabase.auth.verify_email(
+            email, verification_code
+        ):
             return {"message": "Email verified successfully"}
         else:
             raise R2RException(
@@ -107,8 +106,9 @@ class SupabaseAuthProvider(AuthProvider):
 
     async def login(self, email: str, password: str) -> dict[str, Token]:
         # Use Supabase client to authenticate user and get tokens
-        response = self.supabase.auth.sign_in(email=email, password=password)
-        if response:
+        if response := self.supabase.auth.sign_in(
+            email=email, password=password
+        ):
             access_token = response.access_token
             refresh_token = response.refresh_token
             return {
@@ -126,9 +126,7 @@ class SupabaseAuthProvider(AuthProvider):
         self, refresh_token: str
     ) -> dict[str, Token]:
         # Use Supabase client to refresh access token
-        response = self.supabase.auth.refresh_access_token(refresh_token)
-
-        if response:
+        if response := self.supabase.auth.refresh_access_token(refresh_token):
             new_access_token = response.access_token
             new_refresh_token = response.refresh_token
             return {
@@ -144,11 +142,10 @@ class SupabaseAuthProvider(AuthProvider):
                 status_code=401, message="Invalid refresh token"
             )
 
-    async def user(self, token: str = Depends(oauth2_scheme)) -> UserResponse:
+    async def user(self, token: str = Depends(oauth2_scheme)) -> User:
         # Use Supabase client to get user details from token
-        user = self.supabase.auth.get_user(token).user
-        if user:
-            return UserResponse(
+        if user := self.supabase.auth.get_user(token).user:
+            return User(
                 id=user.id,
                 email=user.email,
                 is_active=True,  # Assuming active if exists in Supabase
@@ -164,22 +161,20 @@ class SupabaseAuthProvider(AuthProvider):
             raise R2RException(status_code=401, message="Invalid token")
 
     def get_current_active_user(
-        self, current_user: UserResponse = Depends(user)
-    ) -> UserResponse:
+        self, current_user: User = Depends(user)
+    ) -> User:
         # Check if user is active
         if not current_user.is_active:
             raise R2RException(status_code=400, message="Inactive user")
         return current_user
 
     async def change_password(
-        self, user: UserResponse, current_password: str, new_password: str
+        self, user: User, current_password: str, new_password: str
     ) -> dict[str, str]:
         # Use Supabase client to update user password
-        response = self.supabase.auth.update(
+        if response := self.supabase.auth.update(
             user.id, {"password": new_password}
-        )
-
-        if response:
+        ):
             return {"message": "Password changed successfully"}
         else:
             raise R2RException(
@@ -188,9 +183,7 @@ class SupabaseAuthProvider(AuthProvider):
 
     async def request_password_reset(self, email: str) -> dict[str, str]:
         # Use Supabase client to send password reset email
-        response = self.supabase.auth.send_password_reset_email(email)
-
-        if response:
+        if response := self.supabase.auth.send_password_reset_email(email):
             return {
                 "message": "If the email exists, a reset link has been sent"
             }
@@ -203,11 +196,9 @@ class SupabaseAuthProvider(AuthProvider):
         self, reset_token: str, new_password: str
     ) -> dict[str, str]:
         # Use Supabase client to reset password with token
-        response = self.supabase.auth.reset_password_for_email(
+        if response := self.supabase.auth.reset_password_for_email(
             reset_token, new_password
-        )
-
-        if response:
+        ):
             return {"message": "Password reset successfully"}
         else:
             raise R2RException(

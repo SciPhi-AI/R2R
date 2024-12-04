@@ -2,12 +2,7 @@ import logging
 from typing import AsyncGenerator, Optional
 from uuid import UUID
 
-from core.base import (
-    AsyncState,
-    DatabaseProvider,
-    Document,
-    DocumentExtraction,
-)
+from core.base import AsyncState, DatabaseProvider, Document, DocumentChunk
 from core.base.abstractions import R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers.ingestion import IngestionProvider
@@ -45,7 +40,7 @@ class ParsingPipe(AsyncPipe):
         run_id: UUID,
         version: str,
         ingestion_config_override: Optional[dict],
-    ) -> AsyncGenerator[DocumentExtraction, None]:
+    ) -> AsyncGenerator[DocumentChunk, None]:
         try:
             ingestion_config_override = ingestion_config_override or {}
             override_provider = ingestion_config_override.pop("provider", None)
@@ -85,7 +80,7 @@ class ParsingPipe(AsyncPipe):
         run_id: UUID,
         *args,
         **kwargs,
-    ) -> AsyncGenerator[DocumentExtraction, None]:
+    ) -> AsyncGenerator[DocumentChunk, None]:
         ingestion_config = kwargs.get("ingestion_config")
 
         async for result in self._parse(

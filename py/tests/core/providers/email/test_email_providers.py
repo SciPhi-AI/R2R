@@ -1,4 +1,5 @@
 import pytest
+
 from core.base.providers.email import EmailConfig
 from core.providers.email import SendGridEmailProvider
 

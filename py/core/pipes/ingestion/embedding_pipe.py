@@ -4,7 +4,7 @@ from typing import Any, AsyncGenerator, Optional, Union
 
 from core.base import (
     AsyncState,
-    DocumentExtraction,
+    DocumentChunk,
     EmbeddingProvider,
     R2RDocumentProcessingError,
     Vector,
@@ -22,7 +22,7 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
     """
 
     class Input(AsyncPipe.Input):
-        message: list[DocumentExtraction]
+        message: list[DocumentChunk]
 
     def __init__(
         self,
@@ -40,23 +40,21 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
         self.embedding_provider = embedding_provider
         self.embedding_batch_size = embedding_batch_size
 
-    async def embed(
-        self, extractions: list[DocumentExtraction]
-    ) -> list[float]:
+    async def embed(self, extractions: list[DocumentChunk]) -> list[float]:
         return await self.embedding_provider.async_get_embeddings(
             [extraction.data for extraction in extractions],  # type: ignore
             EmbeddingProvider.PipeStage.BASE,
         )
 
     async def _process_batch(
-        self, extraction_batch: list[DocumentExtraction]
+        self, extraction_batch: list[DocumentChunk]
     ) -> list[VectorEntry]:
         vectors = await self.embed(extraction_batch)
         return [
             VectorEntry(
-                extraction_id=extraction.id,
+                id=extraction.id,
                 document_id=extraction.document_id,
-                user_id=extraction.user_id,
+                owner_id=extraction.owner_id,
                 collection_ids=extraction.collection_ids,
                 vector=Vector(data=raw_vector),
                 text=extraction.data,  # type: ignore
@@ -130,7 +128,7 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
                 self.log_queue.task_done()
 
     async def _process_extraction(
-        self, extraction: DocumentExtraction
+        self, extraction: DocumentChunk
     ) -> Union[VectorEntry, R2RDocumentProcessingError]:
         try:
             if isinstance(extraction.data, bytes):
@@ -144,9 +142,9 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
             )
 
             return VectorEntry(
-                extraction_id=extraction.id,
+                id=extraction.id,
                 document_id=extraction.document_id,
-                user_id=extraction.user_id,
+                owner_id=extraction.owner_id,
                 collection_ids=extraction.collection_ids,
                 vector=Vector(data=vectors[0]),
                 text=extraction.data,

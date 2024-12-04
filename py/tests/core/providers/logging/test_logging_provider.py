@@ -8,7 +8,7 @@ import pytest
 from core import (
     PersistentLoggingConfig,
     SqlitePersistentLoggingProvider,
-    generate_run_id,
+    generate_id,
 )
 
 logger = logging.getLogger()
@@ -16,7 +16,7 @@ logger = logging.getLogger()
 
 @pytest.mark.asyncio
 async def test_logging(local_logging_provider):
-    run_id = generate_run_id()
+    run_id = generate_id()
     await local_logging_provider.log(run_id, "key", "value")
     logs = await local_logging_provider.get_logs([run_id])
     assert len(logs) == 1
@@ -25,7 +25,7 @@ async def test_logging(local_logging_provider):
 
 
 async def test_multiple_log_entries(local_logging_provider):
-    run_ids = [generate_run_id() for _ in range(3)]
+    run_ids = [generate_id() for _ in range(3)]
     entries = [
         (run_id, f"key_{i}", f"value_{i}") for i, run_id in enumerate(run_ids)
     ]
@@ -70,7 +70,7 @@ async def test_multiple_log_entries(local_logging_provider):
 async def test_log_retrieval_limit(local_logging_provider):
     run_ids = []
     for i in range(10):
-        run_ids.append(generate_run_id())
+        run_ids.append(generate_id())
         await local_logging_provider.log(run_ids[-1], f"key_{i}", f"value_{i}")
 
     logs = await local_logging_provider.get_logs(run_ids[:5])
@@ -78,7 +78,7 @@ async def test_log_retrieval_limit(local_logging_provider):
 
 
 async def test_specific_run_type_retrieval(local_logging_provider):
-    run_id_0, run_id_1 = generate_run_id(), generate_run_id()
+    run_id_0, run_id_1 = generate_id(), generate_id()
 
     await local_logging_provider.log(run_id_0, "run_type", "RETRIEVAL")
     await local_logging_provider.log(run_id_0, "key_0", "value_0")
@@ -117,7 +117,7 @@ async def test_specific_run_type_retrieval(local_logging_provider):
 
 @pytest.mark.asyncio
 async def test_info_logging(local_logging_provider):
-    run_id = generate_run_id()
+    run_id = generate_id()
     user_id = uuid.uuid4()
     run_type = "RETRIEVAL"
     await local_logging_provider.info_log(run_id, run_type, user_id)
@@ -132,10 +132,10 @@ async def test_info_logging(local_logging_provider):
 async def test_get_info_logs_with_user_filter(local_logging_provider):
     user_id_1, user_id_2 = uuid.uuid4(), uuid.uuid4()
     await local_logging_provider.info_log(
-        generate_run_id(), "RETRIEVAL", user_id_1
+        generate_id(), "RETRIEVAL", user_id_1
     )
     await local_logging_provider.info_log(
-        generate_run_id(), "MANAGEMENT", user_id_2
+        generate_id(), "MANAGEMENT", user_id_2
     )
 
     info_logs = await local_logging_provider.get_info_logs(

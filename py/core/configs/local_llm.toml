@@ -28,32 +28,28 @@ concurrent_request_limit = 2
 [database]
 provider = "postgres"
 
-  [database.kg_creation_settings]
-    kg_entity_description_prompt = "graphrag_entity_description"
-    kg_triples_extraction_prompt = "graphrag_triples_extraction_few_shot"
+  [database.graph_creation_settings]
+    graph_entity_description_prompt = "graphrag_entity_description"
     entity_types = [] # if empty, all entities are extracted
     relation_types = [] # if empty, all relations are extracted
     fragment_merge_count = 4 # number of fragments to merge into a single extraction
-    max_knowledge_triples = 100
+    max_knowledge_relationships = 100
     max_description_input_length = 65536
-    generation_config = { model = "ollama/llama3.1" } # and other params, model used for triplet extraction
+    generation_config = { model = "ollama/llama3.1" } # and other params, model used for relationshipt extraction
 
-  [database.kg_entity_deduplication_settings]
-    kg_entity_deduplication_type = "by_name"
-    kg_entity_deduplication_prompt = "graphrag_entity_deduplication"
+  [database.graph_entity_deduplication_settings]
+    graph_entity_deduplication_type = "by_name"
+    graph_entity_deduplication_prompt = "graphrag_entity_deduplication"
     max_description_input_length = 65536
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for deduplication
 
-  [database.kg_enrichment_settings]
+  [database.graph_enrichment_settings]
     community_reports_prompt = "graphrag_community_reports"
     max_summary_input_length = 65536
     generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
     leiden_params = {}
 
-  [database.kg_search_settings]
-    entities_level = "document" # set to collection if you've run deduplication
-    map_system_prompt = "graphrag_map_system"
-    reduce_system_prompt = "graphrag_reduce_system"
+  [database.graph_search_settings]
     generation_config = { model = "ollama/llama3.1" }
 
 

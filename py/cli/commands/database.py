@@ -2,8 +2,6 @@ import sys
 
 import asyncclick as click
 
-from cli.command_group import cli
-
 from ..utils.database_utils import (
     check_database_connection,
     get_database_url_from_env,

@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator
 from uuid import UUID
 
 from core.base import (
@@ -10,12 +10,13 @@ from core.base import (
     EmbeddingProvider,
 )
 from core.base.abstractions import (
+    GraphSearchResult,
+    GraphSearchSettings,
     KGCommunityResult,
     KGEntityResult,
-    KGSearchMethod,
-    KGSearchResult,
+    KGRelationshipResult,
     KGSearchResultType,
-    KGSearchSettings,
+    SearchSettings,
 )
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
@@ -91,17 +92,17 @@ class KGSearchSearchPipe(GeneratorPipe):
         )
         return responses
 
-    async def local_search(
+    async def search(
         self,
         input: GeneratorPipe.Input,
         state: AsyncState,
         run_id: UUID,
-        kg_search_settings: KGSearchSettings,
+        search_settings: SearchSettings,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[KGSearchResult, None]:
-        # search over communities and
-        # do 3 searches. One over entities, one over relationships, one over communities
+    ) -> AsyncGenerator[GraphSearchResult, None]:
+        if search_settings.graph_settings.enabled == False:
+            return
 
         async for message in input.message:
             query_embedding = (
@@ -109,83 +110,129 @@ class KGSearchSearchPipe(GeneratorPipe):
             )
 
             # entity search
-            search_type = "__Entity__"
-            async for search_result in await self.database_provider.vector_query(  # type: ignore
+            search_type = "entities"
+            base_limit = search_settings.limit
+
+            if search_type not in search_settings.graph_settings.limits:
+                logger.warning(
+                    f"No limit set for graph search type {search_type}, defaulting to global settings limit of {base_limit}"
+                )
+            async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
                 message,
                 search_type=search_type,
-                search_type_limits=kg_search_settings.local_search_limits[
-                    search_type
-                ],
+                limit=search_settings.graph_settings.limits.get(
+                    search_type, base_limit
+                ),
                 query_embedding=query_embedding,
                 property_names=[
                     "name",
                     "description",
-                    "extraction_ids",
+                    "chunk_ids",
                 ],
-                filters=kg_search_settings.filters,
-                entities_level=kg_search_settings.entities_level,
+                filters=search_settings.filters,
             ):
-                yield KGSearchResult(
+                yield GraphSearchResult(
                     content=KGEntityResult(
                         name=search_result["name"],
                         description=search_result["description"],
                     ),
-                    method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.ENTITY,
-                    extraction_ids=search_result["extraction_ids"],
-                    metadata={"associated_query": message},
+                    score=(
+                        search_result["similarity_score"]
+                        if search_settings.include_scores
+                        else None
+                    ),
+                    # chunk_ids=search_result["chunk_ids"],
+                    metadata=(
+                        {
+                            "associated_query": message,
+                            **(search_result["metadata"] or {}),
+                        }
+                        if search_settings.include_metadatas
+                        else None
+                    ),
                 )
 
-            # relationship search
-            # disabled for now. We will check evaluations and see if we need it
-            # search_type = "__Relationship__"
-            # async for search_result in self.database_provider.vector_query(  # type: ignore
-            #     input,
-            #     search_type=search_type,
-            #     search_type_limits=kg_search_settings.local_search_limits[
-            #         search_type
-            #     ],
-            #     query_embedding=query_embedding,
-            #     property_names=[
-            #         "name",
-            #         "description",
-            #         "extraction_ids",
-            #         "document_ids",
-            #     ],
-            # ):
-            #     yield KGSearchResult(
-            #         content=KGRelationshipResult(
-            #             name=search_result["name"],
-            #             description=search_result["description"],
-            #         ),
-            #         method=KGSearchMethod.LOCAL,
-            #         result_type=KGSearchResultType.RELATIONSHIP,
-            #         # extraction_ids=search_result["extraction_ids"],
-            #         # document_ids=search_result["document_ids"],
-            #         metadata={"associated_query": message},
-            #     )
-
-            # community search
-            search_type = "__Community__"
-            async for search_result in await self.database_provider.vector_query(  # type: ignore
-                message,
+            # # relationship search
+            # # disabled for now. We will check evaluations and see if we need it
+            search_type = "relationships"
+            if search_type not in search_settings.graph_settings.limits:
+                logger.warning(
+                    f"No limit set for graph search type {search_type}, defaulting to global settings limit of {base_limit}"
+                )
+            async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
+                input,
                 search_type=search_type,
-                search_type_limits=kg_search_settings.local_search_limits[
-                    search_type
-                ],
-                embedding_type="embedding",
+                limit=search_settings.graph_settings.limits.get(
+                    search_type, base_limit
+                ),
                 query_embedding=query_embedding,
                 property_names=[
-                    "community_number",
+                    # "name",
+                    "subject",
+                    "predicate",
+                    "object",
+                    # "name",
+                    "description",
+                    # "chunk_ids",
+                    # "document_ids",
+                ],
+            ):
+                try:
+                    # TODO - remove this nasty hack
+                    search_result["metadata"] = json.loads(
+                        search_result["metadata"]
+                    )
+                except:
+                    pass
+
+                yield GraphSearchResult(
+                    content=KGRelationshipResult(
+                        # name=search_result["name"],
+                        subject=search_result["subject"],
+                        predicate=search_result["predicate"],
+                        object=search_result["object"],
+                        description=search_result["description"],
+                    ),
+                    result_type=KGSearchResultType.RELATIONSHIP,
+                    score=(
+                        search_result["similarity_score"]
+                        if search_settings.include_scores
+                        else None
+                    ),
+                    # chunk_ids=search_result["chunk_ids"],
+                    # document_ids=search_result["document_ids"],
+                    metadata=(
+                        {
+                            "associated_query": message,
+                            **(search_result["metadata"] or {}),
+                        }
+                        if search_settings.include_metadatas
+                        else None
+                    ),
+                )
+
+            # community search
+            search_type = "communities"
+            async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
+                message,
+                search_type=search_type,
+                limit=search_settings.graph_settings.limits.get(
+                    search_type, base_limit
+                ),
+                # embedding_type="embedding",
+                query_embedding=query_embedding,
+                property_names=[
+                    "community_id",
                     "name",
                     "findings",
                     "rating",
                     "rating_explanation",
                     "summary",
                 ],
-                filters=kg_search_settings.filters,
+                filters=search_settings.filters,
             ):
-                yield KGSearchResult(
+                yield GraphSearchResult(
                     content=KGCommunityResult(
                         name=search_result["name"],
                         summary=search_result["summary"],
@@ -193,11 +240,20 @@ class KGSearchSearchPipe(GeneratorPipe):
                         rating_explanation=search_result["rating_explanation"],
                         findings=search_result["findings"],
                     ),
-                    method=KGSearchMethod.LOCAL,
                     result_type=KGSearchResultType.COMMUNITY,
-                    metadata={
-                        "associated_query": message,
-                    },
+                    metadata=(
+                        {
+                            "associated_query": message,
+                            **(search_result["metadata"] or {}),
+                        }
+                        if search_settings.include_metadatas
+                        else None
+                    ),
+                    score=(
+                        search_result["similarity_score"]
+                        if search_settings.include_scores
+                        else None
+                    ),
                 )
 
     async def _run_logic(  # type: ignore
@@ -205,17 +261,10 @@ class KGSearchSearchPipe(GeneratorPipe):
         input: GeneratorPipe.Input,
         state: AsyncState,
         run_id: UUID,
-        kg_search_settings: KGSearchSettings,
+        search_settings: GraphSearchSettings,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[KGSearchResult, None]:
-        kg_search_type = kg_search_settings.kg_search_type
+    ) -> AsyncGenerator[GraphSearchResult, None]:
 
-        if kg_search_type == "local":
-            logger.info("Performing KG local search")
-            async for result in self.local_search(
-                input, state, run_id, kg_search_settings
-            ):
-                yield result
-        else:
-            raise ValueError(f"Unsupported KG search type: {kg_search_type}")
+        async for result in self.search(input, state, run_id, search_settings):
+            yield result

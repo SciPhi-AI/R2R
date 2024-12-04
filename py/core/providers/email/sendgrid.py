@@ -3,7 +3,8 @@ import os
 from typing import Optional
 
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Content, From
+from sendgrid.helpers.mail import Content, From, Mail
+
 from core.base import EmailConfig, EmailProvider
 
 logger = logging.getLogger(__name__)

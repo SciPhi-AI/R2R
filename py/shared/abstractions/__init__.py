@@ -1,27 +1,23 @@
 from .base import AsyncSyncMeta, R2RSerializable, syncable
 from .document import (
-    DataType,
     Document,
-    DocumentExtraction,
-    DocumentInfo,
+    DocumentChunk,
+    DocumentResponse,
     DocumentType,
     IngestionStatus,
     KGEnrichmentStatus,
     KGExtractionStatus,
     RawChunk,
+    UnprocessedChunk,
 )
 from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import R2RDocumentProcessingError, R2RException
-from .graph import (
-    Community,
-    CommunityReport,
-    Entity,
-    EntityType,
-    KGExtraction,
-    RelationshipType,
-    Triple,
-)
+from .graph import Community, Entity, KGExtraction, Relationship
 from .kg import (
+    GraphBuildSettings,
+    GraphCommunitySettings,
+    GraphEntitySettings,
+    GraphRelationshipSettings,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEntityDeduplicationSettings,
@@ -38,19 +34,19 @@ from .llm import (
 from .prompt import Prompt
 from .search import (
     AggregateSearchResult,
+    ChunkSearchResult,
+    ChunkSearchSettings,
+    GraphSearchResult,
+    GraphSearchSettings,
     HybridSearchSettings,
     KGCommunityResult,
     KGEntityResult,
     KGGlobalResult,
     KGRelationshipResult,
-    KGSearchMethod,
-    KGSearchResult,
     KGSearchResultType,
-    KGSearchSettings,
     SearchSettings,
-    VectorSearchResult,
 )
-from .user import Token, TokenData, UserStats
+from .user import Token, TokenData, User
 from .vector import (
     IndexArgsHNSW,
     IndexArgsIVFFlat,
@@ -72,15 +68,15 @@ __all__ = [
     # Completion abstractions
     "MessageType",
     # Document abstractions
-    "DataType",
     "Document",
-    "DocumentExtraction",
-    "DocumentInfo",
+    "DocumentChunk",
+    "DocumentResponse",
     "IngestionStatus",
     "KGExtractionStatus",
     "KGEnrichmentStatus",
     "DocumentType",
     "RawChunk",
+    "UnprocessedChunk",
     # Embedding abstractions
     "EmbeddingPurpose",
     "default_embedding_prefixes",
@@ -89,12 +85,10 @@ __all__ = [
     "R2RException",
     # Graph abstractions
     "Entity",
-    "EntityType",
-    "RelationshipType",
     "Community",
-    "CommunityReport",
+    "Community",
     "KGExtraction",
-    "Triple",
+    "Relationship",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",
@@ -105,15 +99,15 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
-    "KGSearchResult",
-    "KGSearchMethod",
+    "GraphSearchResult",
     "KGSearchResultType",
     "KGEntityResult",
     "KGRelationshipResult",
     "KGCommunityResult",
     "KGGlobalResult",
-    "KGSearchSettings",
-    "VectorSearchResult",
+    "GraphSearchSettings",
+    "ChunkSearchSettings",
+    "ChunkSearchResult",
     "SearchSettings",
     "HybridSearchSettings",
     # KG abstractions
@@ -121,10 +115,13 @@ __all__ = [
     "KGEnrichmentSettings",
     "KGExtraction",
     "KGRunType",
+    "GraphEntitySettings",
+    "GraphRelationshipSettings",
+    "GraphCommunitySettings",
     # User abstractions
     "Token",
     "TokenData",
-    "UserStats",
+    "User",
     # Vector abstractions
     "Vector",
     "VectorEntry",

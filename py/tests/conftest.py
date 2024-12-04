@@ -20,7 +20,7 @@ from core import (
     VectorEntry,
 )
 from core.base import (
-    DocumentInfo,
+    DocumentResponse,
     DocumentType,
     IngestionConfig,
     IngestionStatus,
@@ -59,7 +59,7 @@ def sample_entries(dimension, num_entries):
         vector_data = [random.random() for _ in range(dimension)]
         metadata = {"key": f"value_id_{id_value}", "raw_key": id_value}
         return VectorEntry(
-            extraction_id=uuid.uuid4(),
+            chunk_id=uuid.uuid4(),
             document_id=uuid.uuid4(),
             user_id=uuid.uuid4(),
             collection_ids=[uuid.uuid4()],
@@ -115,17 +115,17 @@ async def postgres_db_provider(
     await db.upsert_entries(sample_entries)
 
     # upsert into documents_overview
-    document_info = DocumentInfo(
+    document_info = DocumentResponse(
         id=UUID("9fbe403b-c11c-5aae-8ade-ef22980c3ad1"),
         collection_ids=[UUID("122fdf6a-e116-546b-a8f6-e4cb2e2c0a09")],
-        user_id=UUID("00000000-0000-0000-0000-000000000003"),
+        owner_id=UUID("00000000-0000-0000-0000-000000000003"),
         document_type=DocumentType.PDF,
         metadata={},
         title="Test Document for KG",
         version="1.0",
         size_in_bytes=1024,
         ingestion_status=IngestionStatus.PENDING,
-        kg_extraction_status=KGExtractionStatus.PENDING,
+        extraction_status=KGExtractionStatus.PENDING,
     )
     await db.upsert_documents_overview(document_info)
     yield db

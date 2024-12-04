@@ -1,7 +1,6 @@
 import logging
 
 # Keep '*' imports for enhanced development velocity
-# corresponding flake8 error codes are F403, F405
 from .agent import *
 from .base import *
 from .main import *
@@ -48,10 +47,9 @@ __all__ = [
     # Completion abstractions
     "MessageType",
     # Document abstractions
-    "DataType",
     "Document",
-    "DocumentExtraction",
-    "DocumentInfo",
+    "DocumentChunk",
+    "DocumentResponse",
     "IngestionStatus",
     "KGExtractionStatus",
     "KGEnrichmentStatus",
@@ -65,7 +63,7 @@ __all__ = [
     # KG abstractions
     "Entity",
     "KGExtraction",
-    "Triple",
+    "Relationship",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",
@@ -75,19 +73,20 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
-    "KGSearchResult",
-    "KGSearchSettings",
-    "VectorSearchResult",
+    "GraphSearchResult",
+    "ChunkSearchSettings",
+    "GraphSearchSettings",
+    "ChunkSearchResult",
     "SearchSettings",
     "HybridSearchSettings",
     # User abstractions
     "Token",
     "TokenData",
-    "UserStats",
     # Vector abstractions
     "Vector",
     "VectorEntry",
     "VectorType",
+    "IndexConfig",
     ## AGENT
     # Agent abstractions
     "Agent",
@@ -98,9 +97,8 @@ __all__ = [
     "ToolResult",
     ## API
     # Auth Responses
-    "GenericMessageResponse",
     "TokenResponse",
-    "UserResponse",
+    "User",
     ## LOGGING
     # Basic types
     "RunType",
@@ -151,12 +149,8 @@ __all__ = [
     "TextSplitter",
     "run_pipeline",
     "to_async_generator",
-    "generate_run_id",
+    "generate_id",
     "increment_version",
-    "EntityType",
-    "RelationshipType",
-    "format_entity_types",
-    "format_relations",
     "validate_uuid",
     ## MAIN
     ## R2R ABSTRACTIONS
@@ -180,10 +174,6 @@ __all__ = [
     "R2RAgentFactory",
     # R2R Routers
     "AuthRouter",
-    "IngestionRouter",
-    "ManagementRouter",
-    "RetrievalRouter",
-    "KGRouter",
     ## R2R SERVICES
     "AuthService",
     "IngestionService",
@@ -215,7 +205,7 @@ __all__ = [
     ## PIPES
     "SearchPipe",
     "EmbeddingPipe",
-    "KGTriplesExtractionPipe",
+    "KGExtractionPipe",
     "ParsingPipe",
     "QueryTransformPipe",
     "SearchRAGPipe",

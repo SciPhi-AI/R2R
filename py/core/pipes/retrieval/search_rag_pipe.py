@@ -91,19 +91,19 @@ class SearchRAGPipe(GeneratorPipe):
         total_results: int,
     ) -> Tuple[str, int]:
         context = f"Query:\n{query}\n\n"
-        if results.vector_search_results:
+        if results.chunk_search_results:
             context += f"Vector Search Results({iteration}):\n"
             it = total_results + 1
-            for result in results.vector_search_results:
+            for result in results.chunk_search_results:
                 context += f"[{it}]: {result.text}\n\n"
                 it += 1
             total_results = (
                 it - 1
             )  # Update total_results based on the last index used
-        if results.kg_search_results:
+        if results.graph_search_results:
             context += f"Knowledge Graph ({iteration}):\n"
             it = total_results + 1
-            for search_results in results.kg_search_results:  # [1]:
+            for search_results in results.graph_search_results:  # [1]:
                 if associated_query := search_results.metadata.get(
                     "associated_query"
                 ):

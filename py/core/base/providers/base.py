@@ -23,6 +23,7 @@ class ProviderConfig(BaseModel, ABC):
     provider: Optional[str] = None
 
     class Config:
+        populate_by_name = True
         arbitrary_types_allowed = True
         ignore_extra = True
 

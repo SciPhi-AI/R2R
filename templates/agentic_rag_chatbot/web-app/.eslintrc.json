@@ -1,4 +1,0 @@
-{
-  "ignorePatterns": ["public/data/**"],
-  "extends": ["next", "next/core-web-vitals"]
-}

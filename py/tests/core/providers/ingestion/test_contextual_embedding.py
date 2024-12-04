@@ -22,7 +22,7 @@ from shared.abstractions.ingestion import (
     ChunkEnrichmentSettings,
     ChunkEnrichmentStrategy,
 )
-from shared.api.models.auth.responses import UserResponse
+from shared.api.models.auth.responses import User
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ def sample_document_id():
 
 @pytest.fixture
 def sample_user():
-    return UserResponse(
+    return User(
         id=UUID("87654321-8765-4321-8765-432187654321"),
         email="test@example.com",
         is_superuser=True,
@@ -45,7 +45,7 @@ def collection_ids():
 
 
 @pytest.fixture
-def extraction_ids():
+def chunk_ids():
     return [
         UUID("fce959df-46a2-4983-aa8b-dd1f93777e02"),
         UUID("9a85269c-84cd-4dff-bf21-7bd09974f668"),
@@ -54,12 +54,10 @@ def extraction_ids():
 
 
 @pytest.fixture
-def sample_chunks(
-    sample_document_id, sample_user, collection_ids, extraction_ids
-):
+def sample_chunks(sample_document_id, sample_user, collection_ids, chunk_ids):
     return [
         VectorEntry(
-            extraction_id=extraction_ids[0],
+            chunk_id=chunk_ids[0],
             document_id=sample_document_id,
             user_id=sample_user.id,
             collection_ids=collection_ids,
@@ -72,7 +70,7 @@ def sample_chunks(
             metadata={"chunk_order": 0},
         ),
         VectorEntry(
-            extraction_id=extraction_ids[1],
+            chunk_id=chunk_ids[1],
             document_id=sample_document_id,
             user_id=sample_user.id,
             collection_ids=collection_ids,
@@ -85,7 +83,7 @@ def sample_chunks(
             metadata={"chunk_order": 1},
         ),
         VectorEntry(
-            extraction_id=extraction_ids[2],
+            chunk_id=chunk_ids[2],
             document_id=sample_document_id,
             user_id=sample_user.id,
             collection_ids=collection_ids,
@@ -188,15 +186,15 @@ async def test_chunk_enrichment_basic(
     await ingestion_service.chunk_enrichment(sample_document_id)
 
     # document chunks
-    document_chunks = (
-        await ingestion_service.providers.database.get_document_chunks(
+    list_document_chunks = (
+        await ingestion_service.providers.database.list_document_chunks(
             sample_document_id
         )
     )
 
-    assert len(document_chunks["results"]) == len(sample_chunks)
+    assert len(list_document_chunks["results"]) == len(sample_chunks)
 
-    for document_chunk in document_chunks["results"]:
+    for document_chunk in list_document_chunks["results"]:
         assert (
             document_chunk["metadata"]["chunk_enrichment_status"] == "success"
         )
@@ -228,4 +226,4 @@ async def test_chunk_enrichment_basic(
 #     Creates 200 RawChunks ("Chunk number {0-199}"), ingests and enriches them all to verify concurrent processing handles large batch correctly
 
 # test_vector_storage:
-#     Ingests chunks, enriches them, then verifies get_document_vectors() returns vectors with correct structure including vector data and extraction_id fields
+#     Ingests chunks, enriches them, then verifies get_document_vectors() returns vectors with correct structure including vector data and chunk_id fields

@@ -126,7 +126,7 @@ def main(
 
     client = R2RClient(base_url=base_url)
 
-    prompt = "graphrag_triples_extraction_few_shot"
+    prompt = "graphrag_relationships_extraction_few_shot"
 
     client.update_prompt(
         prompt,

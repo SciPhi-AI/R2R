@@ -448,7 +448,7 @@
     "results": [
       {
         "fragment_id": "67e7ab57-eaa0-57d8-9276-da273abcdabd",
-        "extraction_id": "286b3218-517c-50bf-b8ea-1262e8ec6b42",
+        "chunk_id": "286b3218-517c-50bf-b8ea-1262e8ec6b42",
         "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "collection_ids": [],

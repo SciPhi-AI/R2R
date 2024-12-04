@@ -69,12 +69,12 @@ class KGPromptTuningPipe(AsyncPipe):
                 messages=await self.database_provider.prompt_handler.get_message_payload(
                     task_prompt_name="prompt_tuning_task",
                     task_inputs={
-                        "prompt_template": current_prompt.template,
-                        "input_types": str(current_prompt.input_types),
+                        "prompt_template": current_prompt["template"],
+                        "input_types": str(current_prompt["input_types"]),
                         "sample_data": chunks,
                     },
                 ),
-                generation_config=self.database_provider.config.kg_creation_settings.generation_config,
+                generation_config=self.database_provider.config.graph_creation_settings.generation_config,
             )
 
             if not tuned_prompt:

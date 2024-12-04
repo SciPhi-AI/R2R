@@ -9,33 +9,31 @@
 
 <img width="1041" alt="r2r" src="https://github.com/user-attachments/assets/b6ee6a78-5d37-496d-ae10-ce18eee7a1d6">
 <h3 align="center">
-Build, scale, and deploy state of the art Retrieval-Augmented Generation applications.
+  Containerized, state of the art Retrieval-Augmented Generation (RAG) with a RESTful API
 </h3>
 
 # About
-R2R (RAG to Riches), the Elasticsearch for RAG, bridges the gap between experimenting with and deploying state of the art Retrieval-Augmented Generation (RAG) applications. It's a complete platform that helps you quickly build and launch scalable RAG solutions. Built around a containerized [RESTful API](https://r2r-docs.sciphi.ai/api-reference/introduction), R2R offers multimodal ingestion support, hybrid search, GraphRAG capabilities, user management, and observability features.
+R2R (RAG to Riches) is the most advanced AI retrieval system, supporting Retrieval-Augmented Generation (RAG) with production-ready features. Built around a containerized [RESTful API](https://r2r-docs.sciphi.ai/api-reference/introduction), R2R offers multimodal content ingestion, hybrid search functionality, configurable GraphRAG, and comprehensive user and document management.
 
 For a more complete view of R2R, check out the [full documentation](https://r2r-docs.sciphi.ai/).
 
 ## Key Features
-- [**📁 Multimodal Ingestion**](https://r2r-docs.sciphi.ai/documentation/configuration/ingestion/overview): Parse `.txt`, `.pdf`, `.json`, `.png`, `.mp3`, and more.
+- [**📁 Multimodal Ingestion**](https://r2r-docs.sciphi.ai/documentation/configuration/ingestion): Parse `.txt`, `.pdf`, `.json`, `.png`, `.mp3`, and more.
 - [**🔍 Hybrid Search**](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): Combine semantic and keyword search with reciprocal rank fusion for enhanced relevancy.
-- [**🔗 Graph RAG**](https://r2r-docs.sciphi.ai/cookbooks/graphrag): Automatically extract relationships and build knowledge graphs.
-- [**🗂️ App Management**](https://r2r-docs.sciphi.ai/cookbooks/user-auth): Efficiently manage documents and users with full authentication.
+- [**🔗 Knowledge Graphs**](https://r2r-docs.sciphi.ai/cookbooks/knowledge-graphs): Automatically extract entities and relationships and build knowledge graphs.
+- [**📊 GraphRAG**](https://r2r-docs.sciphi.ai/cookbooks/graphrag): Cluster and summarize communities with over your created graphs for even richer insights.
+- [**🗂️ User Management**](https://r2r-docs.sciphi.ai/cookbooks/user-auth): Efficiently manage documents and user roles within R2R.
 - [**🔭 Observability**](https://r2r-docs.sciphi.ai/cookbooks/observability): Observe and analyze your RAG engine performance.
-- [**🧩 Configurable**](https://r2r-docs.sciphi.ai/documentation/configuration/introduction): Provision your application using intuitive configuration files.
-- [**🖥️ Dashboard**](https://github.com/SciPhi-AI/R2R-Dashboard): An open-source React+Next.js app with optional authentication, to interact with R2R via GUI.
+- [**🧩 Configuration**](https://r2r-docs.sciphi.ai/documentation/configuration/overview): Setup your application using intuitive configuration files.
+- [**🖥️ Dashboard**](https://r2r-docs.sciphi.ai/cookbooks/application): An open-source React+Next.js admin dashboard to interact with R2R via GUI.
 
 
 ## [What's New](https://r2r-docs.sciphi.ai/introduction/whats-new)
 
-- Release 3.1.0&nbsp;&nbsp;&nbsp;&nbsp;September 6, 2024&nbsp;&nbsp;&nbsp;&nbsp;
+- Release 3.3.0&nbsp;&nbsp;&nbsp;&nbsp;December 3, 2024&nbsp;&nbsp;&nbsp;&nbsp;
 
-  Warning: These changes are breaking! We will be releasing a migration script soon.
-  - Orchestration with [Hatchet](https://github.com/hatchet-dev/hatchet)
-  - Default ingestion provider set to [Unstructured](https://docs.unstructured.io/welcome)
-  - Improved knowledge graph construction process
-
+  Warning: These changes are breaking!
+  - [V3 API Specification](https://r2r-docs.sciphi.ai/api-reference/introduction)
 
 ## Install with pip
 The recommended way to get started with R2R is by using our CLI.
@@ -63,34 +61,30 @@ r2r serve --docker --full
 
 The command above will install the `full` installation which includes Hatchet for orchestration and Unstructured.io for parsing.
 
-
 ## Getting Started
 
-- [Installation](https://r2r-docs.sciphi.ai/documentation/installation): Quick installation of R2R using Docker or pip
-- [Quickstart](https://r2r-docs.sciphi.ai/documentation/quickstart): A quick introduction to R2R's core features
-
-## API & SDKs
-
-- [SDK](https://r2r-docs.sciphi.ai/documentation/python-sdk): API reference and Python/JS SDKs for interacting with R2R
-- [API](https://r2r-docs.sciphi.ai/api-reference/introduction): API reference and Python/JS SDKs for interacting with R2R
-- [Configuration](https://r2r-docs.sciphi.ai/documentation/configuration/introduction): A guide on how to configure your R2R system
+- [Installation](/documentation/installation/overview): Quick installation of R2R using Docker or pip
+- [Quickstart](/documentation/quickstart): A quick introduction to R2R's core features
+- [Setup](/documentation/configuration/overview): Learn how to setup and configure R2R
+- [API & SDKs](/api-and-sdks/introduction): API reference and Python/JS SDKs for interacting with R2R
 
 ## Cookbooks
 
 - Advanced RAG Pipelines
-  - [RAG Agent](https://r2r-docs.sciphi.ai/cookbooks/agent): R2R's powerful RAG agent
-  - [Hybrid Search](https://r2r-docs.sciphi.ai/cookbooks/hybrid-search): Introduction to hybrid search
-  - [Advanced RAG](https://r2r-docs.sciphi.ai/cookbooks/advanced-rag): Advanced RAG features
+  - [RAG Agent](/cookbooks/rag-agent): R2R's powerful RAG agent
+  - [Hybrid Search](/cookbooks/hybrid-search): Introduction to hybrid search
+  - [Advanced RAG](/cookbooks/advanced-rag): Advanced RAG features
 
-- Knowledge Graphs
-  - [GraphRAG](https://r2r-docs.sciphi.ai/cookbooks/graphrag): Walkthrough of GraphRAG
+- Orchestration
+  - [Orchestration](/cookbooks/orchestration): R2R event orchestration
 
 - Auth & Admin Features
-  - [Web Development](https://r2r-docs.sciphi.ai/cookbooks/web-dev): Building webapps using R2R
-  - [User Auth](https://r2r-docs.sciphi.ai/cookbooks/user-auth): Authenticating users
-  - [Collections](https://r2r-docs.sciphi.ai/cookbooks/collections): Document collections
-  - [Analytics & Observability](https://r2r-docs.sciphi.ai/cookbooks/observability): End-to-end logging and analytics
-  - [Web Application](https://r2r-docs.sciphi.ai/cookbooks/application): Connecting with the R2R Application
+  - [Web Development](/cookbooks/web-dev): Building webapps using R2R
+  - [User Auth](/cookbooks/user-auth): Authenticating users
+  - [Collections](/cookbooks/collections): Document collections
+  - [Analytics & Observability](/cookbooks/observability): End-to-end logging and analytics
+  - [Web Application](/cookbooks/application): Connecting with the R2R Application
+
 
 ## Community
 

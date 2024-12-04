@@ -22,4 +22,5 @@ prompt_tuning_task:
     Return only the new prompt template, maintaining the exact format required for the input types.
   input_types:
     prompt_template: str
+    sample_data: str
     input_types: str

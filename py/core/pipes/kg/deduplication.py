@@ -1,9 +1,7 @@
 import json
 import logging
-from typing import Any, Union
+from typing import Any
 from uuid import UUID
-
-from fastapi import HTTPException
 
 from core.base import AsyncState
 from core.base.abstractions import Entity, KGEntityDeduplicationType
@@ -26,14 +24,12 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         self,
         config: AsyncPipe.PipeConfig,
         database_provider: PostgresDBProvider,
-        llm_provider: Union[
-            OpenAICompletionProvider, LiteLLMCompletionProvider
-        ],
-        embedding_provider: Union[
-            LiteLLMEmbeddingProvider,
-            OpenAIEmbeddingProvider,
-            OllamaEmbeddingProvider,
-        ],
+        llm_provider: OpenAICompletionProvider | LiteLLMCompletionProvider,
+        embedding_provider: (
+            LiteLLMEmbeddingProvider
+            | OpenAIEmbeddingProvider
+            | OllamaEmbeddingProvider
+        ),
         logging_provider: SqlitePersistentLoggingProvider,
         **kwargs,
     ):
@@ -46,130 +42,127 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         self.llm_provider = llm_provider
         self.embedding_provider = embedding_provider
 
-    async def kg_named_entity_deduplication(
-        self, collection_id: UUID, **kwargs
+    async def _get_entities(
+        self, graph_id: UUID | None, collection_id: UUID | None
     ):
-        try:
-            entity_count = await self.database_provider.get_entity_count(
-                collection_id=collection_id, distinct=True
+        if collection_id is not None:
+            return await self.database_provider.graph_handler.get_entities(
+                collection_id=collection_id, offset=0, limit=-1
             )
-
-            logger.info(
-                f"KGEntityDeduplicationPipe: Getting entities for collection {collection_id}"
-            )
-            logger.info(
-                f"KGEntityDeduplicationPipe: Entity count: {entity_count}"
-            )
-
-            entities = (
-                await self.database_provider.get_entities(
-                    collection_id=collection_id, offset=0, limit=-1
+        elif graph_id is not None:
+            # TODO: remove the tuple return type
+            return (
+                await self.database_provider.graph_handler.entities.get(
+                    id=graph_id,
+                    offset=0,
+                    limit=-1,
                 )
-            )["entities"]
-
-            logger.info(
-                f"KGEntityDeduplicationPipe: Got {len(entities)} entities for collection {collection_id}"
+            )[0]
+        else:
+            raise ValueError(
+                "Either graph_id or collection_id must be provided"
             )
 
-            # deduplicate entities by name
-            deduplicated_entities: dict[str, dict[str, list[str]]] = {}
-            deduplication_source_keys = [
-                "extraction_ids",
-                "document_id",
-                "attributes",
-            ]
-            deduplication_target_keys = [
-                "extraction_ids",
-                "document_ids",
-                "attributes",
-            ]
-            deduplication_keys = list(
-                zip(deduplication_source_keys, deduplication_target_keys)
-            )
-            for entity in entities:
-                if entity.name not in deduplicated_entities:
-                    deduplicated_entities[entity.name] = {
-                        target_key: [] for _, target_key in deduplication_keys
-                    }
-                for source_key, target_key in deduplication_keys:
-                    value = getattr(entity, source_key)
-                    if isinstance(value, list):
-                        deduplicated_entities[entity.name][target_key].extend(
-                            value
-                        )
-                    else:
-                        deduplicated_entities[entity.name][target_key].append(
-                            value
-                        )
+    async def kg_named_entity_deduplication(
+        self, graph_id: UUID | None, collection_id: UUID | None, **kwargs
+    ):
 
-            logger.info(
-                f"KGEntityDeduplicationPipe: Deduplicated {len(deduplicated_entities)} entities"
-            )
+        import numpy as np
 
-            # upsert deduplcated entities in the collection_entity table
-            deduplicated_entities_list = [
-                Entity(
-                    name=name,
-                    collection_id=collection_id,
-                    extraction_ids=entity["extraction_ids"],
-                    document_ids=entity["document_ids"],
-                    attributes={},
-                )
-                for name, entity in deduplicated_entities.items()
-            ]
+        entities = await self._get_entities(graph_id, collection_id)
 
-            logger.info(
-                f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {collection_id}"
-            )
-            await self.database_provider.add_entities(
-                deduplicated_entities_list,
-                table_name="collection_entity",
-                conflict_columns=["name", "collection_id", "attributes"],
-            )
+        logger.info(
+            f"KGEntityDeduplicationPipe: Got {len(entities)} entities for {graph_id or collection_id}"
+        )
 
-            yield {
-                "result": f"successfully deduplicated {len(entities)} entities to {len(deduplicated_entities)} entities for collection {collection_id}",
-                "num_entities": len(deduplicated_entities),
-            }
-        except Exception as e:
-            logger.error(
-                f"KGEntityDeduplicationPipe: Error in entity deduplication: {str(e)}"
+        # deduplicate entities by name
+        deduplicated_entities: dict[str, dict[str, list[str]]] = {}
+        deduplication_source_keys = [
+            "description",
+            "chunk_ids",
+            "document_id",
+            # "description_embedding",
+        ]
+        deduplication_target_keys = [
+            "description",
+            "chunk_ids",
+            "document_ids",
+            # "description_embedding",
+        ]
+        deduplication_keys = list(
+            zip(deduplication_source_keys, deduplication_target_keys)
+        )
+        for entity in entities:
+            if entity.name not in deduplicated_entities:
+                deduplicated_entities[entity.name] = {
+                    target_key: [] for _, target_key in deduplication_keys
+                }
+                # deduplicated_entities[entity.name]['total_entries'] = 0
+                # deduplicated_entities[entity.name]['description_embedding'] = np.zeros(len(json.loads(entity.description_embedding)))
+
+            for source_key, target_key in deduplication_keys:
+                value = getattr(entity, source_key)
+
+                # if source_key == "description_embedding":
+                #     deduplicated_entities[entity.name]['total_entries'] += 1
+                #     deduplicated_entities[entity.name][target_key] += np.array(json.loads(value))
+
+                if isinstance(value, list):
+                    deduplicated_entities[entity.name][target_key].extend(
+                        value
+                    )
+                else:
+                    deduplicated_entities[entity.name][target_key].append(
+                        value
+                    )
+
+        # upsert deduplcated entities in the collection_entity table
+        deduplicated_entities_list = [
+            Entity(
+                name=name,
+                # description="\n".join(entity["description"]),
+                # description_embedding=json.dumps((entity["description_embedding"] / entity['total_entries']).tolist()),
+                collection_id=collection_id,
+                graph_id=graph_id,
+                chunk_ids=list(set(entity["chunk_ids"])),
+                document_ids=list(set(entity["document_ids"])),
+                attributes={},
             )
-            raise HTTPException(
-                status_code=500,
-                detail=f"KGEntityDeduplicationPipe: Error deduplicating entities: {str(e)}",
-            )
+            for name, entity in deduplicated_entities.items()
+        ]
+
+        logger.info(
+            f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {graph_id}"
+        )
+
+        await self.database_provider.graph_handler.add_entities(
+            deduplicated_entities_list,
+            table_name="collection_entity",
+        )
+
+        yield {
+            "result": f"successfully deduplicated {len(entities)} entities to {len(deduplicated_entities)} entities for collection {graph_id}",
+            "num_entities": len(deduplicated_entities),
+        }
 
     async def kg_description_entity_deduplication(
-        self, collection_id: UUID, **kwargs
+        self, graph_id: UUID | None, collection_id: UUID | None, **kwargs
     ):
         from sklearn.cluster import DBSCAN
 
-        entities = (
-            await self.database_provider.get_entities(
-                collection_id=collection_id,
-                offset=0,
-                limit=-1,
-                extra_columns=["description_embedding"],
-            )
-        )["entities"]
-
+        entities = await self._get_entities(graph_id, collection_id)
         for entity in entities:
             entity.description_embedding = json.loads(
                 entity.description_embedding
             )
 
-        logger.info(
-            f"KGEntityDeduplicationPipe: Got {len(entities)} entities for collection {collection_id}"
-        )
-
         deduplication_source_keys = [
-            "extraction_ids",
+            "chunk_ids",
             "document_id",
             "attributes",
         ]
         deduplication_target_keys = [
-            "extraction_ids",
+            "chunk_ids",
             "document_ids",
             "attributes",
         ]
@@ -220,23 +213,24 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             description = "\n".join(descriptions[:5])
 
             # Collect all extraction IDs from entities in the cluster
-            extraction_ids = set()
+            chunk_ids = set()
             document_ids = set()
             for entity in entities:
-                if entity.extraction_ids:
-                    extraction_ids.update(entity.extraction_ids)
+                if entity.chunk_ids:
+                    chunk_ids.update(entity.chunk_ids)
                 if entity.document_id:
                     document_ids.add(entity.document_id)
 
-            extraction_ids_list = list(extraction_ids)
+            chunk_ids_list = list(chunk_ids)
             document_ids_list = list(document_ids)
 
             deduplicated_entities_list.append(
                 Entity(
                     name=longest_name,
                     description=description,
+                    graph_id=graph_id,
                     collection_id=collection_id,
-                    extraction_ids=extraction_ids_list,
+                    chunk_ids=chunk_ids_list,
                     document_ids=document_ids_list,
                     attributes={
                         "aliases": list(aliases),
@@ -245,24 +239,26 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             )
 
         logger.info(
-            f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {collection_id}"
+            f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {graph_id}"
         )
-        await self.database_provider.add_entities(
+        await self.database_provider.graph_handler.add_entities(
             deduplicated_entities_list,
             table_name="collection_entity",
-            conflict_columns=["name", "collection_id", "attributes"],
+            conflict_columns=["name", "graph_id", "attributes"],
         )
 
         yield {
-            "result": f"successfully deduplicated {len(entities)} entities to {len(deduplicated_entities)} entities for collection {collection_id}",
+            "result": f"successfully deduplicated {len(entities)} entities to {len(deduplicated_entities)} entities for collection {graph_id}",
             "num_entities": len(deduplicated_entities),
         }
 
-    async def kg_llm_entity_deduplication(self, collection_id: UUID, **kwargs):
-        # TODO: implement LLM based entity deduplication
-        raise NotImplementedError(
-            "LLM entity deduplication is not implemented yet"
-        )
+    # async def kg_llm_entity_deduplication(
+    #     self, graph_id: UUID, collection_id: UUID, **kwargs
+    # ):
+    #     # TODO: implement LLM based entity deduplication
+    #     raise NotImplementedError(
+    #         "LLM entity deduplication is not implemented yet"
+    #     )
 
     async def _run_logic(
         self,
@@ -274,43 +270,44 @@ class KGEntityDeduplicationPipe(AsyncPipe):
     ):
         # TODO: figure out why the return type AsyncGenerator[dict, None] is not working
 
-        collection_id = input.message["collection_id"]
+        graph_id = input.message.get("graph_id", None)
+        collection_id = input.message.get("collection_id", None)
 
-        kg_entity_deduplication_type = input.message[
-            "kg_entity_deduplication_type"
+        if graph_id and collection_id:
+            raise ValueError(
+                "graph_id and collection_id cannot both be provided"
+            )
+
+        graph_entity_deduplication_type = input.message[
+            "graph_entity_deduplication_type"
         ]
 
-        if kg_entity_deduplication_type == KGEntityDeduplicationType.BY_NAME:
-            logger.info(
-                f"KGEntityDeduplicationPipe: Running named entity deduplication for collection {collection_id}"
-            )
+        if (
+            graph_entity_deduplication_type
+            == KGEntityDeduplicationType.BY_NAME
+        ):
             async for result in self.kg_named_entity_deduplication(
-                collection_id, **kwargs
+                graph_id=graph_id, collection_id=collection_id, **kwargs
             ):
                 yield result
 
         elif (
-            kg_entity_deduplication_type
+            graph_entity_deduplication_type
             == KGEntityDeduplicationType.BY_DESCRIPTION
         ):
-            logger.info(
-                f"KGEntityDeduplicationPipe: Running description entity deduplication for collection {collection_id}"
-            )
-            async for result in self.kg_description_entity_deduplication(  # type: ignore
-                collection_id, **kwargs
+            async for result in self.kg_description_entity_deduplication(
+                graph_id=graph_id, collection_id=collection_id, **kwargs
             ):
                 yield result
 
-        elif kg_entity_deduplication_type == KGEntityDeduplicationType.BY_LLM:
-            logger.info(
-                f"KGEntityDeduplicationPipe: Running LLM entity deduplication for collection {collection_id}"
+        elif (
+            graph_entity_deduplication_type == KGEntityDeduplicationType.BY_LLM
+        ):
+            raise NotImplementedError(
+                "LLM entity deduplication is not implemented yet"
             )
-            async for result in self.kg_llm_entity_deduplication(  # type: ignore
-                collection_id, **kwargs
-            ):
-                yield result
 
         else:
             raise ValueError(
-                f"Invalid kg_entity_deduplication_type: {kg_entity_deduplication_type}"
+                f"Invalid graph_entity_deduplication_type: {graph_entity_deduplication_type}"
             )

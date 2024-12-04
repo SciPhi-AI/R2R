@@ -16,10 +16,9 @@ __all__ = [
     # Completion abstractions
     "MessageType",
     # Document abstractions
-    "DataType",
     "Document",
-    "DocumentExtraction",
-    "DocumentInfo",
+    "DocumentChunk",
+    "DocumentResponse",
     "IngestionStatus",
     "KGExtractionStatus",
     "KGEnrichmentStatus",
@@ -33,7 +32,11 @@ __all__ = [
     # KG abstractions
     "Entity",
     "KGExtraction",
-    "Triple",
+    "Relationship",
+    "Community",
+    "KGCreationSettings",
+    "KGEnrichmentSettings",
+    "KGRunType",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",
@@ -43,24 +46,21 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
-    "KGSearchResult",
-    "KGSearchSettings",
-    "VectorSearchResult",
+    "GraphSearchResult",
+    "GraphSearchSettings",
+    "ChunkSearchSettings",
+    "ChunkSearchResult",
     "SearchSettings",
     "HybridSearchSettings",
-    # KG abstractions
-    "KGCreationSettings",
-    "KGEnrichmentSettings",
-    "KGRunType",
     # User abstractions
     "Token",
     "TokenData",
-    "UserStats",
     # Vector abstractions
     "Vector",
     "VectorEntry",
     "VectorType",
     "StorageResult",
+    "IndexConfig",
     ## AGENT
     # Agent abstractions
     "Agent",
@@ -71,9 +71,8 @@ __all__ = [
     "ToolResult",
     ## API
     # Auth Responses
-    "GenericMessageResponse",
     "TokenResponse",
-    "UserResponse",
+    "User",
     ## LOGGING
     # Basic types
     "RunType",
@@ -132,15 +131,10 @@ __all__ = [
     "format_search_results_for_stream",
     "validate_uuid",
     # ID generation
-    "generate_run_id",
+    "generate_id",
     "generate_document_id",
     "generate_extraction_id",
     "generate_default_user_collection_id",
-    "generate_collection_id_from_name",
     "generate_user_id",
     "increment_version",
-    "EntityType",
-    "RelationshipType",
-    "format_entity_types",
-    "format_relations",
 ]

@@ -4,7 +4,7 @@ import json
 import logging
 from datetime import datetime
 from enum import Enum
-from typing import ClassVar, Optional, Union
+from typing import Optional
 from uuid import UUID, uuid4
 
 from pydantic import Field
@@ -12,8 +12,6 @@ from pydantic import Field
 from .base import R2RSerializable
 
 logger = logging.getLogger()
-
-DataType = Union[str, bytes]
 
 
 class DocumentType(str, Enum):
@@ -96,7 +94,7 @@ class DocumentType(str, Enum):
 class Document(R2RSerializable):
     id: UUID = Field(default_factory=uuid4)
     collection_ids: list[UUID]
-    user_id: UUID
+    owner_id: UUID
     document_type: DocumentType
     metadata: dict
 
@@ -106,6 +104,7 @@ class Document(R2RSerializable):
         json_encoders = {
             UUID: str,
         }
+        populate_by_name = True
 
 
 class IngestionStatus(str, Enum):
@@ -129,7 +128,7 @@ class IngestionStatus(str, Enum):
 
     @classmethod
     def table_name(cls) -> str:
-        return "document_info"
+        return "documents"
 
     @classmethod
     def id_column(cls) -> str:
@@ -150,11 +149,11 @@ class KGExtractionStatus(str, Enum):
 
     @classmethod
     def table_name(cls) -> str:
-        return "document_info"
+        return "documents"
 
     @classmethod
     def id_column(cls) -> str:
-        return "document_id"
+        return "id"
 
 
 class KGEnrichmentStatus(str, Enum):
@@ -175,22 +174,22 @@ class KGEnrichmentStatus(str, Enum):
 
     @classmethod
     def id_column(cls) -> str:
-        return "collection_id"
+        return "id"
 
 
-class DocumentInfo(R2RSerializable):
+class DocumentResponse(R2RSerializable):
     """Base class for document information handling."""
 
     id: UUID
     collection_ids: list[UUID]
-    user_id: UUID
+    owner_id: UUID
     document_type: DocumentType
     metadata: dict
     title: Optional[str] = None
     version: str
-    size_in_bytes: int
+    size_in_bytes: Optional[int]
     ingestion_status: IngestionStatus = IngestionStatus.PENDING
-    kg_extraction_status: KGExtractionStatus = KGExtractionStatus.PENDING
+    extraction_status: KGExtractionStatus = KGExtractionStatus.PENDING
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     ingestion_attempt_number: Optional[int] = None
@@ -207,16 +206,16 @@ class DocumentInfo(R2RSerializable):
             embedding = f"[{','.join(str(x) for x in self.summary_embedding)}]"
 
         return {
-            "document_id": self.id,
+            "id": self.id,
             "collection_ids": self.collection_ids,
-            "user_id": self.user_id,
+            "owner_id": self.owner_id,
             "document_type": self.document_type,
             "metadata": json.dumps(self.metadata),
             "title": self.title or "N/A",
             "version": self.version,
             "size_in_bytes": self.size_in_bytes,
             "ingestion_status": self.ingestion_status.value,
-            "kg_extraction_status": self.kg_extraction_status.value,
+            "extraction_status": self.extraction_status.value,
             "created_at": self.created_at or now,
             "updated_at": self.updated_at or now,
             "ingestion_attempt_number": self.ingestion_attempt_number or 0,
@@ -225,14 +224,32 @@ class DocumentInfo(R2RSerializable):
         }
 
 
-class DocumentExtraction(R2RSerializable):
+class UnprocessedChunk(R2RSerializable):
+    """An extraction from a document."""
+
+    id: Optional[UUID] = None
+    document_id: Optional[UUID] = None
+    collection_ids: list[UUID] = []
+    metadata: dict = {}
+    text: str
+
+
+class UpdateChunk(R2RSerializable):
+    """An extraction from a document."""
+
+    id: UUID
+    metadata: Optional[dict] = None
+    text: str
+
+
+class DocumentChunk(R2RSerializable):
     """An extraction from a document."""
 
     id: UUID
     document_id: UUID
     collection_ids: list[UUID]
-    user_id: UUID
-    data: DataType
+    owner_id: UUID
+    data: str | bytes
     metadata: dict
 
 

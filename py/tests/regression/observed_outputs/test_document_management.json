@@ -479,7 +479,7 @@
   "document_chunks_test": {
     "results": [
       {
-        "extraction_id": "bcd08cd0-1551-5ee2-ad08-551ae15e5ed1",
+        "chunk_id": "bcd08cd0-1551-5ee2-ad08-551ae15e5ed1",
         "document_id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
         "user_id": "2acb499e-8428-543b-bd85-0d9098718220",
         "collection_ids": [

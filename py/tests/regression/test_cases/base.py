@@ -1,9 +1,9 @@
 import json
 import os
 import re
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Optional
 
-from colorama import Fore, Style, init
+from colorama import Fore, Style
 from deepdiff import DeepDiff
 
 # TODO: need to import this from the package, not from the local directory
@@ -20,7 +20,7 @@ class RegressionTest:
         self,
         name: str,
         test_function: Callable[[R2RClient], Any],
-        expected_output: Dict[str, Any],
+        expected_output: dict[str, Any],
         exclude_paths: list[str] = [],
     ):
         self.name = name
@@ -36,19 +36,19 @@ class RegressionTest:
         result = self._run_test(client)
         self._save_expected_output(result)
 
-    def _run_test(self, client: R2RClient) -> Dict[str, Any]:
+    def _run_test(self, client: R2RClient) -> dict[str, Any]:
         return self.test_function(client)
 
-    def _load_expected_output(self) -> Dict[str, Any]:
+    def _load_expected_output(self) -> dict[str, Any]:
         with open(self.expected_output_file, "r") as f:
             return json.load(f)
 
-    def _save_expected_output(self, output: Dict[str, Any]):
+    def _save_expected_output(self, output: dict[str, Any]):
         with open(self.expected_output_file, "w") as f:
             json.dump(output, f, indent=2)
 
     def _compare_output(
-        self, actual: Dict[str, Any], expected: Dict[str, Any]
+        self, actual: dict[str, Any], expected: dict[str, Any]
     ) -> bool:
         diff = self._custom_diff(expected, actual)
         if diff:
@@ -58,8 +58,8 @@ class RegressionTest:
         return True
 
     def _custom_diff(
-        self, expected: Dict[str, Any], actual: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, expected: dict[str, Any], actual: dict[str, Any]
+    ) -> dict[str, Any]:
         diff = {}
 
         expected_results = expected.get("results", {})
@@ -157,7 +157,7 @@ class RegressionTest:
         else:
             return str(deep_diff)
 
-    def _get_completion_content(self, data: Dict[str, Any]) -> Optional[str]:
+    def _get_completion_content(self, data: dict[str, Any]) -> Optional[str]:
         try:
             return data["completion"]["choices"][0]["message"]["content"]
         except (KeyError, IndexError):
@@ -254,7 +254,7 @@ class BaseTest:
         with open(self.expected_outputs_file, "w") as f:
             json.dump(actual_outputs, f, indent=2)
 
-    def _load_expected_outputs(self) -> Dict[str, Any]:
+    def _load_expected_outputs(self) -> dict[str, Any]:
         if os.path.exists(self.expected_outputs_file):
             with open(self.expected_outputs_file, "r") as f:
                 return json.load(f)
@@ -263,11 +263,11 @@ class BaseTest:
     def set_exclude_paths(self, test_name: str, exclude_paths: list[str] = []):
         self.exclude_paths_map[_to_snake_case(test_name)] = exclude_paths
 
-    def get_test_cases(self) -> Dict[str, callable]:
+    def get_test_cases(self) -> dict[str, callable]:
         raise NotImplementedError(
             "Subclasses must implement get_test_cases method"
         )
 
-    def _load_expected_outputs(self) -> Dict[str, Any]:
+    def _load_expected_outputs(self) -> dict[str, Any]:
         with open(self.expected_outputs_file, "r") as f:
             return json.load(f)

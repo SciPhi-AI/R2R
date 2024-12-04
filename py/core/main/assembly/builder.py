@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Type
+from typing import Any, Optional, Type
 
 from core.agent import R2RRAGAgent
 from core.base import (
@@ -17,11 +17,17 @@ from core.pipelines import KGEnrichmentPipeline, RAGPipeline, SearchPipeline
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 from ..abstractions import R2RProviders
-from ..api.auth_router import AuthRouter
-from ..api.ingestion_router import IngestionRouter
-from ..api.kg_router import KGRouter
-from ..api.management_router import ManagementRouter
-from ..api.retrieval_router import RetrievalRouter
+from ..api.v3.auth_router import AuthRouter
+from ..api.v3.chunks_router import ChunksRouter
+from ..api.v3.collections_router import CollectionsRouter
+from ..api.v3.conversations_router import ConversationsRouter
+from ..api.v3.documents_router import DocumentsRouter
+from ..api.v3.graph_router import GraphRouter
+from ..api.v3.indices_router import IndicesRouter
+from ..api.v3.prompts_router import PromptsRouter
+from ..api.v3.retrieval_router import RetrievalRouterV3
+from ..api.v3.system_router import SystemRouter
+from ..api.v3.users_router import UsersRouter
 from ..app import R2RApp
 from ..config import R2RConfig
 from ..services.auth_service import AuthService
@@ -176,8 +182,8 @@ class R2RBuilder:
         ).create_pipelines(*args, **kwargs)
 
     def _create_services(
-        self, service_params: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, service_params: dict[str, Any]
+    ) -> dict[str, Any]:
         services = {}
         for service_type, override in vars(self.service_overrides).items():
             logger.info(f"Creating {service_type} service")
@@ -231,22 +237,58 @@ class R2RBuilder:
 
         routers = {
             "auth_router": AuthRouter(
-                services["auth"], orchestration_provider=orchestration_provider
-            ).get_router(),
-            "ingestion_router": IngestionRouter(
-                services["ingestion"],
+                providers=providers,
+                services=services,
                 orchestration_provider=orchestration_provider,
             ).get_router(),
-            "management_router": ManagementRouter(
-                services["management"],
+            "documents_router": DocumentsRouter(
+                providers=providers,
+                services=services,
                 orchestration_provider=orchestration_provider,
             ).get_router(),
-            "retrieval_router": RetrievalRouter(
-                services["retrieval"],
+            "chunks_router": ChunksRouter(
+                providers=providers,
+                services=services,
                 orchestration_provider=orchestration_provider,
             ).get_router(),
-            "kg_router": KGRouter(
-                services["kg"],
+            "indices_router": IndicesRouter(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "users_router": UsersRouter(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "collections_router": CollectionsRouter(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "conversations_router": ConversationsRouter(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "prompts_router": PromptsRouter(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "retrieval_router_v3": RetrievalRouterV3(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "system_router": SystemRouter(
+                providers=providers,
+                services=services,
+                orchestration_provider=orchestration_provider,
+            ).get_router(),
+            "graph_router": GraphRouter(
+                providers=providers,
+                services=services,
                 orchestration_provider=orchestration_provider,
             ).get_router(),
         }
