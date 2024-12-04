@@ -28,8 +28,8 @@ class PostgresDocumentHandler(DocumentHandler):
     TABLE_NAME = "documents"
     COLUMN_VARS = [
         "extraction_id",
-        "document_id",
-        "user_id",
+        "id",
+        "owner_id",
         "collection_ids",
     ]
 
@@ -49,9 +49,9 @@ class PostgresDocumentHandler(DocumentHandler):
         try:
             query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)} (
-                document_id UUID PRIMARY KEY,
+                id UUID PRIMARY KEY,
                 collection_ids UUID[],
-                user_id UUID,
+                owner_id UUID,
                 type TEXT,
                 metadata JSONB,
                 title TEXT,
@@ -64,7 +64,7 @@ class PostgresDocumentHandler(DocumentHandler):
                 created_at TIMESTAMPTZ DEFAULT NOW(),
                 updated_at TIMESTAMPTZ DEFAULT NOW(),
                 ingestion_attempt_number INT DEFAULT 0,
-                doc_search_vector tsvector GENERATED ALWAYS AS (
+                raw_tsvector tsvector GENERATED ALWAYS AS (
                     setweight(to_tsvector('english', COALESCE(title, '')), 'A') ||
                     setweight(to_tsvector('english', COALESCE(summary, '')), 'B') ||
                     setweight(to_tsvector('english', COALESCE((metadata->>'description')::text, '')), 'C')
@@ -76,7 +76,7 @@ class PostgresDocumentHandler(DocumentHandler):
             -- Full text search index
             CREATE INDEX IF NOT EXISTS idx_doc_search_{self.project_name}
             ON {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
-            USING GIN (doc_search_vector);
+            USING GIN (raw_tsvector);
             """
             await self.connection_manager.execute_query(query)
         except Exception as e:
@@ -90,7 +90,7 @@ class PostgresDocumentHandler(DocumentHandler):
 
         # TODO: make this an arg
         max_retries = 20
-        for document_info in documents_overview:
+        for document in documents_overview:
             retries = 0
             while retries < max_retries:
                 try:
@@ -99,13 +99,13 @@ class PostgresDocumentHandler(DocumentHandler):
                             # Lock the row for update
                             check_query = f"""
                             SELECT ingestion_attempt_number, ingestion_status FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
-                            WHERE document_id = $1 FOR UPDATE
+                            WHERE id = $1 FOR UPDATE
                             """
                             existing_doc = await conn.fetchrow(
-                                check_query, document_info.id
+                                check_query, document.id
                             )
 
-                            db_entry = document_info.convert_to_db_entry()
+                            db_entry = document.convert_to_db_entry()
 
                             if existing_doc:
                                 db_version = existing_doc[
@@ -132,17 +132,17 @@ class PostgresDocumentHandler(DocumentHandler):
 
                                 update_query = f"""
                                 UPDATE {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
-                                SET collection_ids = $1, user_id = $2, type = $3, metadata = $4,
+                                SET collection_ids = $1, owner_id = $2, type = $3, metadata = $4,
                                     title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
                                     extraction_status = $9, updated_at = $10, ingestion_attempt_number = $11,
                                     summary = $12, summary_embedding = $13
-                                WHERE document_id = $14
+                                WHERE id = $14
                                 """
 
                                 await conn.execute(
                                     update_query,
                                     db_entry["collection_ids"],
-                                    db_entry["user_id"],
+                                    db_entry["owner_id"],
                                     db_entry["document_type"],
                                     db_entry["metadata"],
                                     db_entry["title"],
@@ -154,22 +154,22 @@ class PostgresDocumentHandler(DocumentHandler):
                                     new_attempt_number,
                                     db_entry["summary"],
                                     db_entry["summary_embedding"],
-                                    document_info.id,
+                                    document.id,
                                 )
                             else:
 
                                 insert_query = f"""
                                 INSERT INTO {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
-                                (document_id, collection_ids, user_id, type, metadata, title, version,
+                                (id, collection_ids, owner_id, type, metadata, title, version,
                                 size_in_bytes, ingestion_status, extraction_status, created_at,
                                 updated_at, ingestion_attempt_number, summary, summary_embedding)
                                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                                 """
                                 await conn.execute(
                                     insert_query,
-                                    db_entry["document_id"],
+                                    db_entry["id"],
                                     db_entry["collection_ids"],
-                                    db_entry["user_id"],
+                                    db_entry["owner_id"],
                                     db_entry["document_type"],
                                     db_entry["metadata"],
                                     db_entry["title"],
@@ -192,7 +192,7 @@ class PostgresDocumentHandler(DocumentHandler):
                     retries += 1
                     if retries == max_retries:
                         logger.error(
-                            f"Failed to update document {document_info.id} after {max_retries} attempts. Error: {str(e)}"
+                            f"Failed to update document {document.id} after {max_retries} attempts. Error: {str(e)}"
                         )
                         raise
                     else:
@@ -204,16 +204,16 @@ class PostgresDocumentHandler(DocumentHandler):
     ) -> None:
         query = f"""
         DELETE FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
-        WHERE document_id = $1
+        WHERE id = $1
         """
 
         params = [str(document_id)]
 
         if version:
             query += " AND version = $2"
-            params = [str(document_id), version]
+            params.append(version)
 
-        await self.connection_manager.execute_query(query, params)
+        await self.connection_manager.execute_query(query=query, params=params)
 
     async def _get_status_from_table(
         self,
@@ -258,13 +258,13 @@ class PostgresDocumentHandler(DocumentHandler):
             status_type (str): The type of status to retrieve.
         """
         query = f"""
-            SELECT document_id FROM {self._get_table_name(table_name)}
+            SELECT id FROM {self._get_table_name(table_name)}
             WHERE {status_type} = ANY($1) and $2 = ANY(collection_ids)
         """
         records = await self.connection_manager.fetch_query(
             query, [status, collection_id]
         )
-        return [record["document_id"] for record in records]
+        return [record["id"] for record in records]
 
     async def _set_status_in_table(
         self,
@@ -398,12 +398,12 @@ class PostgresDocumentHandler(DocumentHandler):
         param_index = 1
 
         if filter_document_ids:
-            conditions.append(f"document_id = ANY(${param_index})")
+            conditions.append(f"id = ANY(${param_index})")
             params.append(filter_document_ids)
             param_index += 1
 
         if filter_user_ids:
-            conditions.append(f"user_id = ANY(${param_index})")
+            conditions.append(f"owner_id = ANY(${param_index})")
             params.append(filter_user_ids)
             param_index += 1
 
@@ -420,7 +420,7 @@ class PostgresDocumentHandler(DocumentHandler):
             base_query += " WHERE " + " AND ".join(conditions)
         # Construct the SELECT part of the query based on column existence
         select_fields = """
-            SELECT document_id, collection_ids, user_id, type, metadata, title, version,
+            SELECT id, collection_ids, owner_id, type, metadata, title, version,
                 size_in_bytes, ingestion_status, extraction_status, created_at, updated_at,
                 summary, summary_embedding,
                 COUNT(*) OVER() AS total_entries
@@ -465,14 +465,14 @@ class PostgresDocumentHandler(DocumentHandler):
                             ]
                     except Exception as e:
                         logger.warning(
-                            f"Failed to parse embedding for document {row['document_id']}: {e}"
+                            f"Failed to parse embedding for document {row['id']}: {e}"
                         )
 
                 documents.append(
                     DocumentResponse(
-                        id=row["document_id"],
+                        id=row["id"],
                         collection_ids=row["collection_ids"],
-                        user_id=row["user_id"],
+                        owner_id=row["owner_id"],
                         document_type=DocumentType(row["type"]),
                         metadata=json.loads(row["metadata"]),
                         title=row["title"],
@@ -511,7 +511,7 @@ class PostgresDocumentHandler(DocumentHandler):
             filter_clause = self._build_filters(
                 search_settings.filters, params
             )
-            print('filter_clause = ', filter_clause)
+            print("filter_clause = ", filter_clause)
             where_clauses.append(filter_clause)
 
         where_clause = " AND ".join(where_clauses)
@@ -519,9 +519,9 @@ class PostgresDocumentHandler(DocumentHandler):
         query = f"""
         WITH document_scores AS (
             SELECT
-                document_id,
+                id,
                 collection_ids,
-                user_id,
+                owner_id,
                 type,
                 metadata,
                 title,
@@ -551,9 +551,9 @@ class PostgresDocumentHandler(DocumentHandler):
 
         return [
             DocumentResponse(
-                id=row["document_id"],
+                id=row["id"],
                 collection_ids=row["collection_ids"],
-                user_id=row["user_id"],
+                owner_id=row["owner_id"],
                 document_type=DocumentType(row["type"]),
                 metadata={
                     **(
@@ -586,9 +586,7 @@ class PostgresDocumentHandler(DocumentHandler):
     ) -> list[DocumentResponse]:
         """Enhanced full-text search using generated tsvector."""
 
-        where_clauses = [
-            "doc_search_vector @@ websearch_to_tsquery('english', $1)"
-        ]
+        where_clauses = ["raw_tsvector @@ websearch_to_tsquery('english', $1)"]
         params: list[str | int | bytes] = [query_text]
 
         # Handle filters
@@ -603,9 +601,9 @@ class PostgresDocumentHandler(DocumentHandler):
         query = f"""
         WITH document_scores AS (
             SELECT
-                document_id,
+                id,
                 collection_ids,
-                user_id,
+                owner_id,
                 type,
                 metadata,
                 title,
@@ -617,7 +615,7 @@ class PostgresDocumentHandler(DocumentHandler):
                 updated_at,
                 summary,
                 summary_embedding,
-                ts_rank_cd(doc_search_vector, websearch_to_tsquery('english', $1), 32) as text_score
+                ts_rank_cd(raw_tsvector, websearch_to_tsquery('english', $1), 32) as text_score
             FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
             WHERE {where_clause}
             ORDER BY text_score DESC
@@ -633,9 +631,9 @@ class PostgresDocumentHandler(DocumentHandler):
 
         return [
             DocumentResponse(
-                id=row["document_id"],
+                id=row["id"],
                 collection_ids=row["collection_ids"],
-                user_id=row["user_id"],
+                owner_id=row["owner_id"],
                 document_type=DocumentType(row["type"]),
                 metadata={
                     **(
@@ -715,12 +713,8 @@ class PostgresDocumentHandler(DocumentHandler):
 
         # Calculate RRF scores using hybrid search settings
         rrf_k = search_settings.hybrid_settings.rrf_k
-        semantic_weight = (
-            search_settings.hybrid_settings.semantic_weight
-        )
-        full_text_weight = (
-            search_settings.hybrid_settings.full_text_weight
-        )
+        semantic_weight = search_settings.hybrid_settings.semantic_weight
+        full_text_weight = search_settings.hybrid_settings.full_text_weight
 
         for scores in doc_scores.values():
             semantic_score = 1 / (rrf_k + scores["semantic_rank"])

@@ -110,74 +110,6 @@ class DocumentsSDK:
                 version="v3",
             )
 
-    async def update(
-        self,
-        id: str | UUID,
-        file_path: Optional[str] = None,
-        content: Optional[str] = None,
-        metadata: Optional[dict] = None,
-        ingestion_config: Optional[dict] = None,
-        run_with_orchestration: Optional[bool] = True,
-    ) -> WrappedIngestionResponse:
-        """
-        Update an existing document.
-
-        Args:
-            id (Union[str, UUID]): ID of document to update
-            file_path (Optional[str]): Path to the new file
-            content (Optional[str]): New text content
-            metadata (Optional[dict]): Updated metadata
-            ingestion_config (Optional[dict]): Custom ingestion configuration
-            run_with_orchestration (Optional[bool]): Whether to run with orchestration
-
-        Returns:
-            dict: Update results containing processed document information
-        """
-        if not file_path and not content:
-            raise ValueError("Either file_path or content must be provided")
-        if file_path and content:
-            raise ValueError("Cannot provide both file_path and content")
-
-        data = {}
-        files = None
-
-        if metadata:
-            data["metadata"] = json.dumps([metadata])
-        if ingestion_config:
-            data["ingestion_config"] = json.dumps(ingestion_config)
-        if run_with_orchestration is not None:
-            data["run_with_orchestration"] = str(run_with_orchestration)
-
-        if file_path:
-            # Create a new file instance that will remain open during the request
-            file_instance = open(file_path, "rb")
-            files = [
-                (
-                    "file",
-                    (file_path, file_instance, "application/octet-stream"),
-                )
-            ]
-            try:
-                result = await self.client._make_request(
-                    "POST",
-                    f"documents/{str(id)}",
-                    data=data,
-                    files=files,
-                    version="v3",
-                )
-            finally:
-                # Ensure we close the file after the request is complete
-                file_instance.close()
-            return result
-        else:
-            data["content"] = content  # type: ignore
-            return await self.client._make_request(
-                "POST",
-                f"documents/{str(id)}",
-                data=data,
-                version="v3",
-            )
-
     async def retrieve(
         self,
         id: str | UUID,
@@ -196,7 +128,6 @@ class DocumentsSDK:
             f"documents/{str(id)}",
             version="v3",
         )
-
 
     async def download(
         self,
@@ -323,13 +254,13 @@ class DocumentsSDK:
     ) -> dict:
         """
         Extract entities and relationships from a document.
-        
+
         Args:
             id (Union[str, UUID]): ID of document to extract from
             run_type (Optional[str]): Whether to return an estimate or run extraction
             settings (Optional[dict]): Settings for extraction process
             run_with_orchestration (Optional[bool]): Whether to run with orchestration
-            
+
         Returns:
             dict: Extraction results or cost estimate
         """
@@ -357,13 +288,13 @@ class DocumentsSDK:
     ) -> dict:
         """
         List entities extracted from a document.
-        
+
         Args:
             id (Union[str, UUID]): ID of document to get entities from
             offset (Optional[int]): Number of items to skip
             limit (Optional[int]): Max number of items to return
             include_embeddings (Optional[bool]): Whether to include embeddings
-            
+
         Returns:
             dict: List of entities and pagination info
         """
@@ -373,7 +304,7 @@ class DocumentsSDK:
             "include_embeddings": include_embeddings,
         }
         return await self.client._make_request(
-            "GET", 
+            "GET",
             f"documents/{str(id)}/entities",
             params=params,
             version="v3",
@@ -389,14 +320,14 @@ class DocumentsSDK:
     ) -> dict:
         """
         List relationships extracted from a document.
-        
+
         Args:
             id (Union[str, UUID]): ID of document to get relationships from
             offset (Optional[int]): Number of items to skip
             limit (Optional[int]): Max number of items to return
             entity_names (Optional[list[str]]): Filter by entity names
             relationship_types (Optional[list[str]]): Filter by relationship types
-            
+
         Returns:
             dict: List of relationships and pagination info
         """
@@ -408,14 +339,14 @@ class DocumentsSDK:
             params["entity_names"] = entity_names
         if relationship_types:
             params["relationship_types"] = relationship_types
-            
+
         return await self.client._make_request(
             "GET",
             f"documents/{str(id)}/relationships",
             params=params,
             version="v3",
         )
-    
+
     # async def extract(
     #     self,
     #     id: str | UUID,

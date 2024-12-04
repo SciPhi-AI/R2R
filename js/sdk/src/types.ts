@@ -235,7 +235,7 @@ export interface TokenResponse {
   refresh_token: string;
 }
 
-export interface UserResponse {
+export interface User {
   id: string;
   email: string;
   is_active: boolean;
@@ -329,5 +329,5 @@ export type WrappedServerStatsResponse = ResultsWrapper<ServerStats>;
 
 // User Responses
 export type WrappedTokenResponse = ResultsWrapper<TokenResponse>;
-export type WrappedUserResponse = ResultsWrapper<UserResponse>;
-export type WrappedUsersResponse = PaginatedResultsWrapper<UserResponse[]>;
+export type WrappedUserResponse = ResultsWrapper<User>;
+export type WrappedUsersResponse = PaginatedResultsWrapper<User[]>;

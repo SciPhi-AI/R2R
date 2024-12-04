@@ -18,7 +18,7 @@ from core.base import (
     Prompt,
     R2RException,
     RunManager,
-    UserResponse,
+    User,
 )
 from core.base.logger.base import RunType
 from core.base.utils import validate_uuid
@@ -374,10 +374,12 @@ class ManagementService(Service):
                             f"Error deleting document ID {document_id} from documents_overview: {e}"
                         )
                 await self.providers.database.graph_handler.entities.delete(
-                    parent_id=document_id, store_type="document"
+                    parent_id=document_id,
+                    store_type="documents",  # type: ignore
                 )
                 await self.providers.database.graph_handler.relationships.delete(
-                    parent_id=document_id, store_type="document"
+                    parent_id=document_id,
+                    store_type="documents",  # type: ignore
                 )
                 collections = (
                     await self.providers.database.get_collections_overview(
@@ -571,24 +573,20 @@ class ManagementService(Service):
     @telemetry_event("CreateCollection")
     async def create_collection(
         self,
-        user_id: UUID,
+        owner_id: UUID,
         name: Optional[str] = None,
         description: str = "",
     ) -> CollectionResponse:
         result = await self.providers.database.create_collection(
-            user_id=user_id,
+            owner_id=owner_id,
             name=name,
             description=description,
         )
-        print("create collection result = ", result)
         graph_result = await self.providers.database.graph_handler.create(
             collection_id=result.id,
-            # user_id=user_id,
             name=name,
             description=description,
-            graph_id=result.id,
         )
-        print("graph_result = ", graph_result)
 
         return result
 
@@ -649,7 +647,7 @@ class ManagementService(Service):
     @telemetry_event("GetUsersInCollection")
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
-    ) -> dict[str, list[UserResponse] | int]:
+    ) -> dict[str, list[User] | int]:
         return await self.providers.database.get_users_in_collection(
             collection_id, offset=offset, limit=limit
         )

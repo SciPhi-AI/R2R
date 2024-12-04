@@ -15,10 +15,8 @@ from .exception import R2RDocumentProcessingError, R2RException
 from .graph import (
     Community,
     Entity,
-    EntityType,
     KGExtraction,
     Relationship,
-    RelationshipType,
 )
 from .kg import (
     GraphBuildSettings,
@@ -53,7 +51,7 @@ from .search import (
     KGSearchResultType,
     SearchSettings,
 )
-from .user import Token, TokenData, UserStats
+from .user import Token, TokenData, User
 from .vector import (
     IndexArgsHNSW,
     IndexArgsIVFFlat,
@@ -92,8 +90,6 @@ __all__ = [
     "R2RException",
     # Graph abstractions
     "Entity",
-    "EntityType",
-    "RelationshipType",
     "Community",
     "Community",
     "KGExtraction",
@@ -130,7 +126,7 @@ __all__ = [
     # User abstractions
     "Token",
     "TokenData",
-    "UserStats",
+    "User",
     # Vector abstractions
     "Vector",
     "VectorEntry",

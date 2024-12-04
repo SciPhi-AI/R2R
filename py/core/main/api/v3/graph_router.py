@@ -16,8 +16,6 @@ from core.base.api.models import (
     WrappedEntityResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
-    WrappedKGEnrichmentResponse,
-    WrappedKGTunePromptResponse,
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,
 )
@@ -335,7 +333,7 @@ class GraphRouter(BaseRouterV3):
             ),
             run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):  # -> WrappedKGEnrichmentResponse:
+        ):
             """
             Creates communities in the graph by analyzing entity relationships and similarities.
 
@@ -355,7 +353,6 @@ class GraphRouter(BaseRouterV3):
                 - Community detection algorithm parameters
                 - Summary generation prompt
             """
-            print("collection_id = ", collection_id)
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only superusers can build communities", 403
@@ -567,9 +564,8 @@ class GraphRouter(BaseRouterV3):
                 )
 
             if (
-                # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                not auth_user.is_superuser
+                and id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -830,7 +826,7 @@ class GraphRouter(BaseRouterV3):
 
             result = await self.providers.database.graph_handler.entities.get(
                 parent_id=collection_id,
-                store_type="graph",
+                store_type="graphs",
                 offset=0,
                 limit=1,
                 entity_ids=[entity_id],
@@ -1113,7 +1109,7 @@ class GraphRouter(BaseRouterV3):
             results = (
                 await self.providers.database.graph_handler.relationships.get(
                     parent_id=collection_id,
-                    store_type="graph",
+                    store_type="graphs",
                     offset=0,
                     limit=1,
                     relationship_ids=[relationship_id],
@@ -1525,11 +1521,10 @@ class GraphRouter(BaseRouterV3):
             ].providers.database.graph_handler.communities.get(
                 parent_id=collection_id,
                 community_ids=[community_id],
-                store_type="graph",
+                store_type="graphs",
                 offset=0,
                 limit=1,
             )
-            print(f"results: {results}")
             if len(results) == 0 or len(results[0]) == 0:
                 raise R2RException("Community not found", 404)
             return results[0][0]
@@ -1765,8 +1760,8 @@ class GraphRouter(BaseRouterV3):
             Adds documents to a graph by copying their entities and relationships.
 
             This endpoint:
-            1. Copies document entities to the graph_entity table
-            2. Copies document relationships to the graph_relationship table
+            1. Copies document entities to the graphs_entities table
+            2. Copies document relationships to the graphs_relationships table
             3. Associates the documents with the graph
 
             When a document is added:
@@ -1785,8 +1780,6 @@ class GraphRouter(BaseRouterV3):
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can `pull` a graph.", 403)
 
-            print("auth_user = ", auth_user)
-            print("auth_user.collection_ids = ", auth_user.collection_ids)
             if (
                 # not auth_user.is_superuser
                 collection_id
@@ -1837,7 +1830,7 @@ class GraphRouter(BaseRouterV3):
                 entities = (
                     await self.providers.database.graph_handler.entities.get(
                         parent_id=document.id,
-                        store_type="document",
+                        store_type="documents",
                         offset=0,
                         limit=100,
                     )
@@ -1882,92 +1875,3 @@ class GraphRouter(BaseRouterV3):
                 )
 
             return GenericBooleanResponse(success=success)  # type: ignore
-
-        # @self.router.delete(
-        #     "/graphs/{collection_id}/documents/{document_id}",
-        #     summary="Remove document from graph",
-        #     openapi_extra={
-        #         "x-codeSamples": [
-        #             {
-        #                 "lang": "Python",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     from r2r import R2RClient
-
-        #                     client = R2RClient("http://localhost:7272")
-        #                     # when using auth, do client.login(...)
-
-        #                     response = client.graphs.remove_document(
-        #                         collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-        #                         document_id="f98db41a-5555-4444-3333-222222222222"
-        #                     )"""
-        #                 ),
-        #             },
-        #             {
-        #                 "lang": "JavaScript",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     const { r2rClient } = require("r2r-js");
-
-        #                     const client = new r2rClient("http://localhost:7272");
-
-        #                     async function main() {
-        #                         const response = await client.graphs.removeDocument({
-        #                             collectionId: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-        #                             documentId: "f98db41a-5555-4444-3333-222222222222"
-        #                         });
-        #                     }
-
-        #                     main();
-        #                     """
-        #                 ),
-        #             },
-        #         ]
-        #     },
-        # )
-        # @self.base_endpoint
-        # async def remove_document(
-        #     collection_id: UUID = Path(
-        #         ...,
-        #         description="The ID of the graph to remove the document from.",
-        #     ),
-        #     document_id: UUID = Path(
-        #         ..., description="The ID of the document to remove."
-        #     ),
-        #     auth_user=Depends(self.providers.auth.auth_wrapper),
-        # ) -> WrappedBooleanResponse:
-        #     """
-        #     Removes a document from a graph and removes any associated entities
-
-        #     This endpoint:
-        #     1. Removes the document ID from the graph's document_ids array
-        #     2. Optionally deletes the document's copied entities and relationships
-
-        #     The user must have access to both the graph and the document being removed.
-        #     """
-        #     if (
-        #         not auth_user.is_superuser
-        #         and collection_id not in auth_user.collection_ids
-        #     ):
-        #         raise R2RException(
-        #             "The currently authenticated user does not have access to the collection associated with the given graph.",
-        #             403,
-        #         )
-
-        #     if (
-        #         not auth_user.is_superuser
-        #         and document_id not in auth_user.document_ids
-        #     ):
-        #         raise R2RException(
-        #             "The currently authenticated user does not have access to the collection associated with the given graph.",
-        #             403,
-        #         )
-
-        #     success = (
-        #         await self.providers.database.graph_handler.remove_documents(
-        #             id=collection_id,
-        #             document_ids=[document_id],  # , delete_data=delete_data
-        #         )
-        #     )
-
-        #     return GenericBooleanResponse(success=success)  # type: ignore

@@ -142,7 +142,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
 
         if graph_id is not None:
             return await self.database_provider.graph_handler.entities.get(
-                id=graph_id,
+                parent_id=graph_id,
                 offset=offset,
                 limit=limit,
                 level=level,
@@ -150,8 +150,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
 
         elif collection_id is not None:
             return await self.database_provider.graph_handler.get_entities(
-                collection_id=collection_id,
-                entity_table_name=f"{level}_entity",
+                parent_id=collection_id,
                 offset=offset,
                 limit=limit,
             )
@@ -188,17 +187,18 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         )
 
         entities = await self._get_entities(
-            graph_id, collection_id, offset, limit, level="graph"  # type: ignore
+            graph_id,
+            collection_id,
+            offset,
+            limit,  # type: ignore
         )
 
         entity_names = [entity.name for entity in entities]
 
         entity_descriptions = (
             await self.database_provider.graph_handler.get_entities(
-                graph_id=graph_id,
-                collection_id=collection_id,
+                parent_id=collection_id,
                 entity_names=entity_names,
-                entity_table_name="entity",
                 offset=offset,
                 limit=limit,
             )

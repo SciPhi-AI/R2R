@@ -5,9 +5,8 @@ from typing import Optional
 from fastapi import Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from ...utils import generate_user_id
 from ..abstractions import R2RException, Token, TokenData
-from ..api.models import UserResponse
+from ..api.models import User
 from .base import Provider, ProviderConfig
 from .crypto import CryptoProvider
 from .database import DatabaseProvider
@@ -59,24 +58,8 @@ class AuthProvider(Provider, ABC):
         super().__init__(config)
         self.config: AuthConfig = config  # for type hinting
 
-    async def _get_default_admin_user(self) -> UserResponse:
-        result = await self.database_provider.get_user_by_email(
-            self.admin_email
-        )
-        print("result = ", result)
-        return result
-
-        # return UserResponse(
-        #     id=generate_user_id(self.admin_email),
-        #     email=self.admin_email,
-        #     hashed_password=self.crypto_provider.get_password_hash(
-        #         self.admin_password
-        #     ),
-        #     is_superuser=True,
-        #     is_active=True,
-        #     is_verified=True,
-        #     collection_ids=self.database_provider.get_user_by_email
-        # )
+    async def _get_default_admin_user(self) -> User:
+        return await self.database_provider.get_user_by_email(self.admin_email)
 
     @abstractmethod
     def create_access_token(self, data: dict) -> str:
@@ -91,17 +74,15 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    async def user(self, token: str) -> UserResponse:
+    async def user(self, token: str) -> User:
         pass
 
     @abstractmethod
-    def get_current_active_user(
-        self, current_user: UserResponse
-    ) -> UserResponse:
+    def get_current_active_user(self, current_user: User) -> User:
         pass
 
     @abstractmethod
-    async def register(self, email: str, password: str) -> UserResponse:
+    async def register(self, email: str, password: str) -> User:
         pass
 
     @abstractmethod
@@ -122,7 +103,7 @@ class AuthProvider(Provider, ABC):
 
     async def auth_wrapper(
         self, auth: Optional[HTTPAuthorizationCredentials] = Security(security)
-    ) -> UserResponse:
+    ) -> User:
         if not self.config.require_authentication and auth is None:
             return await self._get_default_admin_user()
 
@@ -142,7 +123,7 @@ class AuthProvider(Provider, ABC):
 
     @abstractmethod
     async def change_password(
-        self, user: UserResponse, current_password: str, new_password: str
+        self, user: User, current_password: str, new_password: str
     ) -> dict[str, str]:
         pass
 

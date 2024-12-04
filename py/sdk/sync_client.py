@@ -6,6 +6,7 @@ from typing import Any
 
 from .async_client import R2RAsyncClient
 
+
 class R2RClient(R2RAsyncClient):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
@@ -17,7 +18,6 @@ class R2RClient(R2RAsyncClient):
 
         # Only wrap v3 methods since they're already working
         self._wrap_v3_methods()
-
 
     def _make_sync_request(self, *args, **kwargs):
         """Sync version of _make_request for v2 methods"""
@@ -67,6 +67,8 @@ class R2RClient(R2RAsyncClient):
                         if self._loop.is_running():
                             self._loop.call_soon_threadsafe(self._sync_close)
                         else:
-                            asyncio.run_coroutine_threadsafe(self._async_close(), self._loop)
+                            asyncio.run_coroutine_threadsafe(
+                                self._async_close(), self._loop
+                            )
                     finally:
                         self._loop.close()

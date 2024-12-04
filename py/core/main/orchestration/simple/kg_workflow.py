@@ -75,8 +75,6 @@ def simple_kg_factory(service: KgService):
                 if len(batch) < batch_size:
                     break
 
-            # documents = service.providers.database.collections_handler.documents_in_collection(input_data.get("collection_id"), offset=0, limit=1000)
-            print("extracting for documents = ", documents)
             document_ids = [document.id for document in documents]
 
         logger.info(
@@ -91,10 +89,6 @@ def simple_kg_factory(service: KgService):
                     document_id=document_id,
                     **input_data["graph_creation_settings"],
                 ):
-                    print(
-                        "found extraction w/ entities = = ",
-                        len(extraction.entities),
-                    )
                     extractions.append(extraction)
                 await service.store_kg_extractions(extractions)
 
@@ -117,7 +111,6 @@ def simple_kg_factory(service: KgService):
             id=input_data.get("collection_id", None),
             status_type="graph_cluster_status",
         )
-        print("workflow_status = ", workflow_status)
         if workflow_status == KGEnrichmentStatus.SUCCESS:
             raise R2RException(
                 "Communities have already been built for this collection. To build communities again, first submit a POST request to `graphs/{collection_id}/reset` to erase the previously built communities.",
@@ -130,27 +123,28 @@ def simple_kg_factory(service: KgService):
                 # graph_id=input_data.get("graph_id", None),
                 **input_data["graph_enrichment_settings"],
             )
-            print("num_communities = ", num_communities)
             num_communities = num_communities[0]["num_communities"]
-            # # TODO - Do not hardcode the number of parallel communities,
-            # # make it a configurable parameter at runtime & add server-side defaults
+            # TODO - Do not hardcode the number of parallel communities,
+            # make it a configurable parameter at runtime & add server-side defaults
 
             if num_communities == 0:
                 raise R2RException("No communities found", 400)
 
-            parallel_communities = min(100, num_communities)
+            parallel_communities = min(100, num_communities[0])
 
-            total_workflows = math.ceil(num_communities / parallel_communities)
+            total_workflows = math.ceil(
+                num_communities[0] / parallel_communities
+            )
             for i in range(total_workflows):
                 input_data_copy = input_data.copy()
                 input_data_copy["offset"] = i * parallel_communities
                 input_data_copy["limit"] = min(
                     parallel_communities,
-                    num_communities - i * parallel_communities,
+                    num_communities[0] - i * parallel_communities,
                 )
-                # running i'th workflow out of total_workflows
+
                 logger.info(
-                    f"Running kg community summary for {i+1}'th workflow out of total {total_workflows} workflows"
+                    f"Running kg community summary for workflow {i+1} of {total_workflows}"
                 )
                 await kg_community_summary(
                     input_data=input_data_copy,
@@ -161,9 +155,6 @@ def simple_kg_factory(service: KgService):
                 status_type="graph_cluster_status",
                 status=KGEnrichmentStatus.SUCCESS,
             )
-            # return {
-            #     "result": "successfully ran kg community summary workflows"
-            # }
 
         except Exception as e:
 

@@ -13,7 +13,7 @@ logger = logging.getLogger()
 class Prompt(BaseModel):
     """A prompt that can be formatted with inputs."""
 
-    prompt_id: UUID = Field(default_factory=uuid4)
+    id: UUID = Field(default_factory=uuid4)
     name: str
     template: str
     input_types: dict[str, str]

@@ -200,9 +200,6 @@ class RetrievalRouterV3(BaseRouterV3):
 
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
             """
-
-            print("search_settings = ", search_settings)
-
             search_settings.filters = self._select_filters(
                 auth_user, search_settings
             )
@@ -729,4 +726,77 @@ class RetrievalRouterV3(BaseRouterV3):
             return await self.services["retrieval"].completion(
                 messages=messages,
                 generation_config=generation_config,
+            )
+
+        @self.router.post(
+            "/retrieval/embedding",
+            summary="Generate Embeddings",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.retrieval.embedding(
+                                text="Who is Aristotle?",
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.retrieval.embedding({
+                                    text: "Who is Aristotle?",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "Shell",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/retrieval/embedding" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "text": "Who is Aristotle?",
+                                }'
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def embedding(
+            text: str = Body(
+                ...,
+                description="Text to generate embeddings for",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Generate embeddings for the provided text using the specified model.
+
+            This endpoint uses the language model to generate embeddings for the provided text.
+            The model parameter specifies the model to use for generating embeddings.
+            """
+
+            return await self.services["retrieval"].embedding(
+                text=text,
             )

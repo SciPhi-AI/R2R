@@ -9,6 +9,7 @@ from shared.api.models.management.responses import (
 )
 from ..models import SearchSettings
 
+
 class ChunksSDK:
     """
     SDK for interacting with chunks in the v3 API.
@@ -176,12 +177,11 @@ class ChunksSDK:
             version="v3",
         )
 
-
     async def search(
         self,
         query: str,
         search_settings: Optional[dict | SearchSettings] = None,
-    ): # -> CombinedSearchResponse:
+    ):  # -> CombinedSearchResponse:
         """
         Conduct a vector and/or KG search.
 

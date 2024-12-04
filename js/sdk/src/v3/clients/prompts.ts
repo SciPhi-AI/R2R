@@ -59,7 +59,6 @@ export class PromptsClient {
     promptOverride?: string;
   }): Promise<WrappedPromptResponse> {
     const data: Record<string, any> = {
-      name: options.name,
       ...(options.inputs && { inputs: options.inputs }),
       ...(options.promptOverride && {
         promptOverride: options.promptOverride,

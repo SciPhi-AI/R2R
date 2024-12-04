@@ -103,17 +103,14 @@ class KGSearchSearchPipe(GeneratorPipe):
     ) -> AsyncGenerator[GraphSearchResult, None]:
         if search_settings.graph_settings.enabled == False:
             return
-        # search over communities and
-        # do 3 searches. One over entities, one over relationships, one over communities
-        print("graph_search_settings = ", search_settings)
-        print("doing local search...")
+
         async for message in input.message:
             query_embedding = (
                 await self.embedding_provider.async_get_embedding(message)
             )
 
             # entity search
-            search_type = "entity"
+            search_type = "entities"
             base_limit = search_settings.limit
 
             if search_type not in search_settings.graph_settings.limits:
@@ -158,7 +155,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # # relationship search
             # # disabled for now. We will check evaluations and see if we need it
-            search_type = "relationship"
+            search_type = "relationships"
             if search_type not in search_settings.graph_settings.limits:
                 logger.warning(
                     f"No limit set for graph search type {search_type}, defaulting to global settings limit of {base_limit}"
@@ -216,7 +213,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                 )
 
             # community search
-            search_type = "community"
+            search_type = "communities"
             async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
                 message,
                 search_type=search_type,

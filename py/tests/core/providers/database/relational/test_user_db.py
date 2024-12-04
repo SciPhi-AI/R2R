@@ -4,7 +4,7 @@ from uuid import UUID
 
 import pytest
 
-from core.base.api.models import UserResponse
+from core.base.api.models import User
 
 
 @pytest.mark.asyncio
@@ -12,7 +12,7 @@ async def test_create_user(temporary_postgres_db_provider):
     user = await temporary_postgres_db_provider.create_user(
         "test@example.com", "password"
     )
-    assert isinstance(user, UserResponse)
+    assert isinstance(user, User)
     assert user.email == "test@example.com"
 
 
@@ -57,7 +57,7 @@ async def test_update_user(temporary_postgres_db_provider):
     user = await temporary_postgres_db_provider.create_user(
         "test@example.com", "password"
     )
-    updated_user = UserResponse(
+    updated_user = User(
         id=user.id,
         email="updated@example.com",
         is_superuser=True,

@@ -22,7 +22,7 @@ from r2r import R2RAsyncClient
 
 # revision identifiers, used by Alembic.
 revision: str = "2fac23e4d91b"
-down_revision: Union[str, None] = "e342e632358b"
+down_revision: Union[str, None] = "d342e632358a"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -119,7 +119,7 @@ async def async_generate_all_summaries():
                 document_text += f"Document Metadata:\n{metadata}\n"
 
             full_chunks = (
-                await client.list_document_chunks(document["id"], limit=10)
+                await client.document_chunks(document["id"], limit=10)
             )["results"]
 
             document_text += "Document Content:\n"
@@ -157,7 +157,7 @@ async def async_generate_all_summaries():
             summary_text = summary["results"]["choices"][0]["message"][
                 "content"
             ]
-            embedding_vector = client.embedding(summary_text)["results"][0]
+            embedding_vector = await client.embedding(summary_text)
             # embedding_response = await openai_client.embeddings.create(
             #     model=embedding_model, input=summary_text, dimensions=dimension
             # )
@@ -218,14 +218,16 @@ def upgrade() -> None:
     if check_if_upgrade_needed():
         # Load the document summaries
         generate_all_summaries()
+        document_summaries = None
         try:
             with open("document_summaries.json", "r") as f:
                 document_summaries = json.load(f)
             print(f"Loaded {len(document_summaries)} document summaries")
         except FileNotFoundError:
-            raise ValueError(
-                "document_summaries.json not found. Please run the summary generation script first."
+            print(
+                "document_summaries.json not found. Continuing without summaries and/or summary embeddings."
             )
+            pass
         except json.JSONDecodeError:
             raise ValueError("Invalid document_summaries.json file")
 
@@ -267,42 +269,28 @@ def upgrade() -> None:
         """
         )
 
-        # Update existing documents with summaries and embeddings
-        for doc_id, doc_data in document_summaries.items():
-            # Convert the embedding array to the PostgreSQL vector format
-            embedding_str = (
-                f"[{','.join(str(x) for x in doc_data['embedding'])}]"
+        if document_summaries:
+            # Update existing documents with summaries and embeddings
+            for doc_id, doc_data in document_summaries.items():
+                # Convert the embedding array to the PostgreSQL vector format
+                embedding_str = (
+                    f"[{','.join(str(x) for x in doc_data['embedding'])}]"
+                )
+
+                # Use plain SQL with proper escaping for PostgreSQL
+                op.execute(
+                    f"""
+                    UPDATE {project_name}.document_info
+                    SET
+                        summary = '{doc_data['summary'].replace("'", "''")}',
+                        summary_embedding = '{embedding_str}'::vector({dimension})
+                    WHERE document_id = '{doc_id}'::uuid;
+                    """
+                )
+        else:
+            print(
+                "No document summaries found, skipping update of existing documents"
             )
-
-            # Use plain SQL with proper escaping for PostgreSQL
-            op.execute(
-                f"""
-                UPDATE {project_name}.document_info
-                SET
-                    summary = '{doc_data['summary'].replace("'", "''")}',
-                    summary_embedding = '{embedding_str}'::vector({dimension})
-                WHERE document_id = '{doc_id}'::uuid;
-                """
-            )
-
-        op.add_column(
-            "collections",
-            sa.Column("user_id", sa.UUID(), nullable=True),
-            schema=project_name,
-        )
-
-        # Add step to drop sid columns from all relevant tables
-        tables = [
-            "chunk_entity",
-            "document_entity",
-            "graph_entity",
-            "chunk_relationship",
-            "community_info",
-            "community",
-        ]
-
-        for table in tables:
-            op.drop_column(table, "sid", schema=project_name)
 
 
 def downgrade() -> None:
@@ -318,32 +306,6 @@ def downgrade() -> None:
         """
     )
 
-    # Drop the user_id column from collections table
-    op.drop_column("collections", "user_id", schema=project_name)
-
-    # Drop the summary and embedding columns
+    # Now we can safely drop the summary and embedding columns
     op.drop_column("document_info", "summary_embedding", schema=project_name)
     op.drop_column("document_info", "summary", schema=project_name)
-
-    # Add step to restore sid columns
-    tables = [
-        "chunk_entity",
-        "document_entity",
-        "graph_entity",
-        "chunk_relationship",
-        "community_info",
-        "community",
-    ]
-
-    for table in tables:
-        op.add_column(
-            table,
-            sa.Column(
-                "sid",
-                sa.Integer(),
-                server_default=sa.text(
-                    "nextval('" + project_name + "." + table + "_sid_seq')"
-                ),
-            ),
-            schema=project_name,
-        )

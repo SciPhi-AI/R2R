@@ -22,7 +22,7 @@ from core.base import (
 from core.base.api.models import (
     CombinedSearchResponse,
     RAGResponse,
-    UserResponse,
+    User,
 )
 from core.base.logger.base import RunType
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
@@ -142,6 +142,13 @@ class RetrievalService(Service):
             *args,
             **kwargs,
         )
+
+    @telemetry_event("Embedding")
+    async def embedding(
+        self,
+        text: str,
+    ):
+        return await self.providers.embedding.async_get_embedding(text=text)
 
     @telemetry_event("RAG")
     async def rag(
@@ -287,7 +294,7 @@ class RetrievalService(Service):
                                 conversation_id, branch_id
                             )
                         )
-                        print('conversation = ', conversation)
+                        print("conversation = ", conversation)
                         if not conversation:
                             logger.error(
                                 f"No conversation found for ID: {conversation_id}"
@@ -412,13 +419,13 @@ class RetrievalServiceAdapter:
                 user_data = json.loads(user_data)
             except json.JSONDecodeError:
                 raise ValueError(f"Invalid user data format: {user_data}")
-        return UserResponse.from_dict(user_data)
+        return User.from_dict(user_data)
 
     @staticmethod
     def prepare_search_input(
         query: str,
         search_settings: SearchSettings,
-        user: UserResponse,
+        user: User,
     ) -> dict:
         return {
             "query": query,
@@ -442,7 +449,7 @@ class RetrievalServiceAdapter:
         search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,
         task_prompt_override: Optional[str],
-        user: UserResponse,
+        user: User,
     ) -> dict:
         return {
             "query": query,
@@ -473,7 +480,7 @@ class RetrievalServiceAdapter:
         rag_generation_config: GenerationConfig,
         task_prompt_override: Optional[str],
         include_title_if_available: bool,
-        user: UserResponse,
+        user: User,
         conversation_id: Optional[str] = None,
         branch_id: Optional[str] = None,
     ) -> dict:

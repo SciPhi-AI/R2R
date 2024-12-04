@@ -21,14 +21,10 @@ from shared.abstractions.exception import (
 )
 from shared.abstractions.graph import (
     Community,
-    CommunityInfo,
-    DataLevel,
     Entity,
-    EntityType,
     Graph,
     KGExtraction,
     Relationship,
-    RelationshipType,
 )
 from shared.abstractions.ingestion import (
     ChunkEnrichmentSettings,
@@ -68,7 +64,7 @@ from shared.abstractions.search import (
     KGSearchResultType,
     SearchSettings,
 )
-from shared.abstractions.user import Token, TokenData, UserStats
+from shared.abstractions.user import Token, TokenData, User
 from shared.abstractions.vector import (
     IndexArgsHNSW,
     IndexArgsIVFFlat,
@@ -110,13 +106,9 @@ __all__ = [
     "R2RException",
     # Graph abstractions
     "Entity",
-    "EntityType",
-    "RelationshipType",
     "Community",
-    "CommunityInfo",
     "KGExtraction",
     "Relationship",
-    "DataLevel",
     # Index abstractions
     "IndexConfig",
     # LLM abstractions
@@ -153,7 +145,7 @@ __all__ = [
     # User abstractions
     "Token",
     "TokenData",
-    "UserStats",
+    "User",
     # Vector abstractions
     "Vector",
     "VectorEntry",
