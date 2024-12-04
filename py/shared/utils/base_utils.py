@@ -32,32 +32,46 @@ def format_search_results_for_llm(results: AggregateSearchResult) -> str:
 
     if results.graph_search_results:
         formatted_results.append("KG Search Results:")
+        print("results.graph_search_results = ", results.graph_search_results)
         for kg_result in results.graph_search_results:
-            formatted_results.extend(
-                (
-                    f"Source [{source_counter}]:",
-                    f"Name: {kg_result.content.name}",
-                )
-            )
+            try:
+                formatted_results.extend((f"Source [{source_counter}]:",))
+            except AttributeError:
+                raise ValueError(f"Invalid KG search result: {kg_result}")
+                # formatted_results.extend(
+                #     (
+                #         f"Source [{source_counter}]:",
+                #         f"Type: {kg_result.content.type}",
+                #     )
+                # )
 
             if isinstance(kg_result.content, KGCommunityResult):
                 formatted_results.extend(
                     (
+                        f"Name: {kg_result.content.name}",
                         f"Summary: {kg_result.content.summary}",
-                        f"Rating: {kg_result.content.rating}",
-                        f"Rating Explanation: {kg_result.content.rating_explanation}",
-                        "Findings:",
+                        # f"Rating: {kg_result.content.rating}",
+                        # f"Rating Explanation: {kg_result.content.rating_explanation}",
+                        # "Findings:",
                     )
                 )
-                formatted_results.extend(
-                    f"- {finding}" for finding in kg_result.content.findings
-                )
+                # formatted_results.append(
+                #     f"- {finding}" for finding in kg_result.content.findings
+                # )
             elif isinstance(
                 kg_result.content,
-                (KGEntityResult, KGRelationshipResult, KGGlobalResult),
+                KGEntityResult,
             ):
+                formatted_results.extend(
+                    [
+                        f"Name: {kg_result.content.name}",
+                        f"Description: {kg_result.content.description}",
+                    ]
+                )
+            elif isinstance(kg_result.content, KGRelationshipResult):
                 formatted_results.append(
-                    f"Description: {kg_result.content.description}"
+                    f"Relationship: {kg_result.content.subject} - {kg_result.content.predicate} - {kg_result.content.object}",
+                    # f"Description: {kg_result.content.description}"
                 )
 
             if kg_result.metadata:

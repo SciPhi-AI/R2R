@@ -274,7 +274,7 @@ class GraphsSDK:
     async def build(
         self,
         collection_id: str | UUID,
-        settings: dict,
+        settings: Optional[dict] = None,
         run_type: str = "estimate",
         run_with_orchestration: bool = True,
     ) -> WrappedBooleanResponse:
@@ -291,14 +291,14 @@ class GraphsSDK:
             dict: Success message
         """
         data = {
-            "settings": settings,
             "run_type": run_type,
             "run_with_orchestration": run_with_orchestration,
         }
-
+        if settings:
+            data["settings"] = settings
         return await self.client._make_request(
             "POST",
-            f"graphs/{str(collection_id)}/build",
+            f"graphs/{str(collection_id)}/communities/build",
             json=data,
             version="v3",
         )

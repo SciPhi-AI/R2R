@@ -511,6 +511,7 @@ class PostgresDocumentHandler(DocumentHandler):
             filter_clause = self._build_filters(
                 search_settings.filters, params
             )
+            print('filter_clause = ', filter_clause)
             where_clauses.append(filter_clause)
 
         where_clause = " AND ".join(where_clauses)
@@ -711,12 +712,12 @@ class PostgresDocumentHandler(DocumentHandler):
                 }
 
         # Calculate RRF scores using hybrid search settings
-        rrf_k = search_settings.hybrid_search_settings.rrf_k
+        rrf_k = search_settings.hybrid_settings.rrf_k
         semantic_weight = (
-            search_settings.hybrid_search_settings.semantic_weight
+            search_settings.hybrid_settings.semantic_weight
         )
         full_text_weight = (
-            search_settings.hybrid_search_settings.full_text_weight
+            search_settings.hybrid_settings.full_text_weight
         )
 
         for scores in doc_scores.values():

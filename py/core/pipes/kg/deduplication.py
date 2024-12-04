@@ -278,18 +278,21 @@ class KGEntityDeduplicationPipe(AsyncPipe):
                 "graph_id and collection_id cannot both be provided"
             )
 
-        kg_entity_deduplication_type = input.message[
-            "kg_entity_deduplication_type"
+        graph_entity_deduplication_type = input.message[
+            "graph_entity_deduplication_type"
         ]
 
-        if kg_entity_deduplication_type == KGEntityDeduplicationType.BY_NAME:
+        if (
+            graph_entity_deduplication_type
+            == KGEntityDeduplicationType.BY_NAME
+        ):
             async for result in self.kg_named_entity_deduplication(
                 graph_id=graph_id, collection_id=collection_id, **kwargs
             ):
                 yield result
 
         elif (
-            kg_entity_deduplication_type
+            graph_entity_deduplication_type
             == KGEntityDeduplicationType.BY_DESCRIPTION
         ):
             async for result in self.kg_description_entity_deduplication(
@@ -297,12 +300,14 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             ):
                 yield result
 
-        elif kg_entity_deduplication_type == KGEntityDeduplicationType.BY_LLM:
+        elif (
+            graph_entity_deduplication_type == KGEntityDeduplicationType.BY_LLM
+        ):
             raise NotImplementedError(
                 "LLM entity deduplication is not implemented yet"
             )
 
         else:
             raise ValueError(
-                f"Invalid kg_entity_deduplication_type: {kg_entity_deduplication_type}"
+                f"Invalid graph_entity_deduplication_type: {graph_entity_deduplication_type}"
             )

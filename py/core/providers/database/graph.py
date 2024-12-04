@@ -1177,17 +1177,7 @@ class PostgresGraphHandler(GraphHandler):
 
     async def reset(self, parent_id: UUID) -> None:
         """
-        Completely delete a graph and all associated data.
-
-        This method:
-        1. Removes graph associations from users
-        2. Deletes all graph entities
-        3. Deletes all graph relationships
-        4. Deletes all graph communities and community info
-        5. Removes the graph record itself
-
-        Raises:
-            R2RException: If deletion fails
+        Completely reset a graph and all associated data.
         """
         try:
             entity_delete_query = f"""
@@ -1462,7 +1452,7 @@ class PostgresGraphHandler(GraphHandler):
 
     async def get_creation_estimate(
         self,
-        kg_creation_settings: KGCreationSettings,
+        graph_creation_settings: KGCreationSettings,
         document_id: Optional[UUID] = None,
         collection_id: Optional[UUID] = None,
     ):
@@ -1491,7 +1481,7 @@ class PostgresGraphHandler(GraphHandler):
 
         total_chunks = (
             sum(doc["chunk_count"] for doc in chunk_counts)
-            // kg_creation_settings.chunk_merge_count
+            // graph_creation_settings.chunk_merge_count
         )
         estimated_entities = (total_chunks * 10, total_chunks * 20)
         estimated_relationships = (
@@ -1506,7 +1496,7 @@ class PostgresGraphHandler(GraphHandler):
             2000 * calls // 1000000 for calls in estimated_llm_calls
         )
         cost_per_million = llm_cost_per_million_tokens(
-            kg_creation_settings.generation_config.model
+            graph_creation_settings.generation_config.model
         )
         estimated_cost = tuple(
             tokens * cost_per_million for tokens in total_in_out_tokens
@@ -1543,7 +1533,7 @@ class PostgresGraphHandler(GraphHandler):
         self,
         collection_id: UUID | None = None,
         graph_id: UUID | None = None,
-        kg_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings(),
+        graph_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings(),
     ):
         """Get the estimated cost and time for enriching a KG."""
         if collection_id is not None:
@@ -1601,7 +1591,7 @@ class PostgresGraphHandler(GraphHandler):
             2000 * calls / 1000000 for calls in estimated_llm_calls
         )
         cost_per_million = llm_cost_per_million_tokens(
-            kg_enrichment_settings.generation_config.model  # type: ignore
+            graph_enrichment_settings.generation_config.model  # type: ignore
         )
         estimated_cost = tuple(
             tokens * cost_per_million for tokens in tokens_in_millions
@@ -2417,6 +2407,7 @@ class PostgresGraphHandler(GraphHandler):
             ORDER BY {embedding_type} <=> $1
             LIMIT $2;
         """
+        print('QUERY = ', QUERY)
         results = await self.connection_manager.fetch_query(
             QUERY, tuple(params)
         )

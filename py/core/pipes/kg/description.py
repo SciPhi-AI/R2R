@@ -98,7 +98,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                     (
                         await self.llm_provider.aget_completion(
                             messages=await self.database_provider.prompt_handler.get_message_payload(
-                                task_prompt_name=self.database_provider.config.kg_creation_settings.graphrag_entity_description,
+                                task_prompt_name=self.database_provider.config.graph_creation_settings.graph_entity_description_prompt,
                                 task_inputs={
                                     "entity_info": truncate_info(
                                         entity_info,
@@ -110,7 +110,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                                     ),
                                 },
                             ),
-                            generation_config=self.database_provider.config.kg_creation_settings.generation_config,
+                            generation_config=self.database_provider.config.graph_creation_settings.generation_config,
                         )
                     )
                     .choices[0]

@@ -74,7 +74,7 @@ class KGPromptTuningPipe(AsyncPipe):
                         "sample_data": chunks,
                     },
                 ),
-                generation_config=self.database_provider.config.kg_creation_settings.generation_config,
+                generation_config=self.database_provider.config.graph_creation_settings.generation_config,
             )
 
             if not tuned_prompt:

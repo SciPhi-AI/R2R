@@ -28,12 +28,12 @@ def simple_kg_factory(service: KgService):
             # if key == "graph_id":
             #     input_data[key] = uuid.UUID(value)
 
-            if key == "kg_creation_settings":
+            if key == "graph_creation_settings":
                 input_data[key] = json.loads(value)
                 input_data[key]["generation_config"] = GenerationConfig(
                     **input_data[key]["generation_config"]
                 )
-            if key == "kg_enrichment_settings":
+            if key == "graph_enrichment_settings":
                 input_data[key] = json.loads(value)
                 input_data[key]["generation_config"] = GenerationConfig(
                     **input_data[key]["generation_config"]
@@ -87,7 +87,7 @@ def simple_kg_factory(service: KgService):
                 extractions = []
                 async for extraction in service.kg_extraction(
                     document_id=document_id,
-                    **input_data["kg_creation_settings"],
+                    **input_data["graph_creation_settings"],
                 ):
                     extractions.append(extraction)
                 await service.store_kg_extractions(extractions)
@@ -95,7 +95,7 @@ def simple_kg_factory(service: KgService):
                 # Describe the entities in the graph
                 await service.kg_entity_description(
                     document_id=document_id,
-                    **input_data["kg_creation_settings"],
+                    **input_data["graph_creation_settings"],
                 )
 
             except Exception as e:
@@ -121,7 +121,7 @@ def simple_kg_factory(service: KgService):
             num_communities = await service.kg_clustering(
                 collection_id=input_data.get("collection_id", None),
                 # graph_id=input_data.get("graph_id", None),
-                **input_data["kg_enrichment_settings"],
+                **input_data["graph_enrichment_settings"],
             )
             num_communities = num_communities[0]["num_communities"]
             # TODO - Do not hardcode the number of parallel communities,
@@ -176,15 +176,16 @@ def simple_kg_factory(service: KgService):
             offset=input_data["offset"],
             limit=input_data["limit"],
             collection_id=input_data.get("collection_id", None),
-            **input_data["kg_enrichment_settings"],
+            # graph_id=input_data.get("graph_id", None),
+            **input_data["graph_enrichment_settings"],
         )
 
     async def entity_deduplication_workflow(input_data):
 
         # TODO: We should determine how we want to handle the input here and syncronize it across all simple orchestration methods
-        if isinstance(input_data["kg_entity_deduplication_settings"], str):
-            input_data["kg_entity_deduplication_settings"] = json.loads(
-                input_data["kg_entity_deduplication_settings"]
+        if isinstance(input_data["graph_entity_deduplication_settings"], str):
+            input_data["graph_entity_deduplication_settings"] = json.loads(
+                input_data["graph_entity_deduplication_settings"]
             )
 
         collection_id = input_data.get("collection_id", None)
@@ -194,7 +195,7 @@ def simple_kg_factory(service: KgService):
             await service.kg_entity_deduplication(
                 collection_id=collection_id,
                 graph_id=graph_id,
-                **input_data["kg_entity_deduplication_settings"],
+                **input_data["graph_entity_deduplication_settings"],
             )
         )[0]["num_entities"]
 
@@ -202,7 +203,7 @@ def simple_kg_factory(service: KgService):
             collection_id=collection_id,
             offset=0,
             limit=number_of_distinct_entities,
-            **input_data["kg_entity_deduplication_settings"],
+            **input_data["graph_entity_deduplication_settings"],
         )
 
     return {

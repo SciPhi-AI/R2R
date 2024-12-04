@@ -116,9 +116,9 @@ class DatabaseConfig(ProviderConfig):
     # KG settings
     batch_size: Optional[int] = 1
     kg_store_path: Optional[str] = None
-    kg_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings()
-    kg_creation_settings: KGCreationSettings = KGCreationSettings()
-    kg_entity_deduplication_settings: KGEntityDeduplicationSettings = (
+    graph_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings()
+    graph_creation_settings: KGCreationSettings = KGCreationSettings()
+    graph_entity_deduplication_settings: KGEntityDeduplicationSettings = (
         KGEntityDeduplicationSettings()
     )
     graph_search_settings: GraphSearchSettings = GraphSearchSettings()

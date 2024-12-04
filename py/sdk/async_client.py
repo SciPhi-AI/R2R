@@ -6,14 +6,6 @@ import httpx
 from shared.abstractions import R2RException
 
 from .base.base_client import BaseClient
-from .v2 import (
-    AuthMixins,
-    IngestionMixins,
-    KGMixins,
-    ManagementMixins,
-    RetrievalMixins,
-    ServerMixins,
-)
 from .v3 import (
     ChunksSDK,
     CollectionsSDK,
@@ -28,15 +20,7 @@ from .v3 import (
 )
 
 
-class R2RAsyncClient(
-    BaseClient,
-    AuthMixins,
-    IngestionMixins,
-    KGMixins,
-    ManagementMixins,
-    RetrievalMixins,
-    ServerMixins,
-):
+class R2RAsyncClient(BaseClient):
     """
     Asynchronous client for interacting with the R2R API.
     """

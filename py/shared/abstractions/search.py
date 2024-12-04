@@ -215,16 +215,15 @@ class ChunkSearchSettings(R2RSerializable):
         default=40,
         description="Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed.",
     )
+    enabled: bool = Field(
+        default=True,
+        description="Whether to enable chunk search",
+    )
 
 
 class GraphSearchSettings(R2RSerializable):
     """Settings specific to knowledge graph search."""
 
-    kg_search_type: str = Field(
-        alias="kgSearchType",
-        default="local",
-        description="KG search type ('global' or 'local')",
-    )
     kg_search_level: Optional[str] = Field(
         alias="kgSearchLevel",
         default=None,
@@ -324,9 +323,9 @@ class SearchSettings(R2RSerializable):
     search_strategy: str = Field(
         alias="searchStrategy",
         default="vanilla",
-        description="Search strategy to use (e.g., 'default', 'query_fusion', 'hyde')",
+        description="Search strategy to use (e.g., 'vanilla', 'query_fusion', 'hyde')",
     )
-    hybrid_search_settings: HybridSearchSettings = Field(
+    hybrid_settings: HybridSearchSettings = Field(
         alias="hybridSearchSettings",
         default_factory=HybridSearchSettings,
         description="Settings for hybrid search (only used if `use_semantic_search` and `use_fulltext_search` are both true)",
@@ -347,28 +346,27 @@ class SearchSettings(R2RSerializable):
         json_encoders = {UUID: str}
         json_schema_extra = {
             "use_semantic_search": True,
-            "use_semantic_search": True,
             "use_fulltext_search": False,
-            "use_hybrid_search": True,
-            "use_kg_search": True,
+            "use_hybrid_search": False,
             "filters": {"category": "technology"},
             "limit": 20,
             "offset": 0,
             "search_strategy": "vanilla",
-            "hybrid_search_settings": {
+            "hybrid_settings": {
                 "full_text_weight": 1.0,
                 "semantic_weight": 5.0,
                 "full_text_limit": 200,
                 "rrf_k": 50,
             },
             "chunk_settings": {
+                "enabled": True,
                 "index_measure": "cosine_distance",
                 "include_metadata": True,
                 "probes": 10,
                 "ef_search": 40,
             },
             "graph_settings": {
-                "kg_search_type": "local",
+                "enabled": True,
                 "kg_search_level": "0",
                 "generation_config": GenerationConfig.Config.json_schema_extra,
                 "max_community_description_length": 65536,

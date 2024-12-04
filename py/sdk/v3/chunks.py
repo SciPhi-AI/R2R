@@ -7,7 +7,7 @@ from shared.api.models.management.responses import (
     WrappedChunkResponse,
     WrappedChunksResponse,
 )
-
+from ..models import SearchSettings
 
 class ChunksSDK:
     """
@@ -173,5 +173,35 @@ class ChunksSDK:
             "GET",
             "chunks",
             params=params,
+            version="v3",
+        )
+
+
+    async def search(
+        self,
+        query: str,
+        search_settings: Optional[dict | SearchSettings] = None,
+    ): # -> CombinedSearchResponse:
+        """
+        Conduct a vector and/or KG search.
+
+        Args:
+            query (str): The query to search for.
+            search_settings (Optional[dict, SearchSettings]]): Vector search settings.
+
+        Returns:
+            CombinedSearchResponse: The search response.
+        """
+        if search_settings and not isinstance(search_settings, dict):
+            search_settings = search_settings.model_dump()
+
+        data = {
+            "query": query,
+            "search_settings": search_settings,
+        }
+        return await self.client._make_request(
+            "POST",
+            "chunks/search",
+            json=data,
             version="v3",
         )
