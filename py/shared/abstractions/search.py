@@ -223,12 +223,6 @@ class ChunkSearchSettings(R2RSerializable):
 
 class GraphSearchSettings(R2RSerializable):
     """Settings specific to knowledge graph search."""
-
-    kg_search_level: Optional[str] = Field(
-        alias="kgSearchLevel",
-        default=None,
-        description="KG search level",
-    )
     generation_config: GenerationConfig = Field(
         alias="generationConfig",
         default_factory=GenerationConfig,
@@ -367,7 +361,6 @@ class SearchSettings(R2RSerializable):
             },
             "graph_settings": {
                 "enabled": True,
-                "kg_search_level": "0",
                 "generation_config": GenerationConfig.Config.json_schema_extra,
                 "max_community_description_length": 65536,
                 "max_llm_queries_for_global_search": 250,

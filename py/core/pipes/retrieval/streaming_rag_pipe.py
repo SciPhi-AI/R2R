@@ -1,6 +1,5 @@
 import logging
-from datetime import datetime
-from typing import Any, AsyncGenerator, Generator, Optional
+from typing import Any, AsyncGenerator, Generator
 from uuid import UUID
 
 from core.base import (
@@ -22,8 +21,6 @@ class StreamingSearchRAGPipe(GeneratorPipe):
     CHUNK_SEARCH_STREAM_MARKER = (
         "search"  # TODO - change this to vector_search in next major release
     )
-    KG_LOCAL_SEARCH_STREAM_MARKER = "kg_local_search"
-    KG_GLOBAL_SEARCH_STREAM_MARKER = "kg_global_search"
     COMPLETION_STREAM_MARKER = "completion"
 
     def __init__(

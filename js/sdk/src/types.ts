@@ -1,3 +1,6 @@
+import { GenerationConfig } from "r2r-js";
+import { ChunkSearchSettings, HybridSearchSettings } from "./models";
+
 export interface UnprocessedChunk {
   id: string;
   document_id?: string;
@@ -178,6 +181,24 @@ export interface RelationshipResponse {
 }
 
 // Retrieval types
+export interface GraphSearchSettings {
+  generation_config?: GenerationConfig;
+}
+
+export interface SearchSettings {
+  use_hybrid_search?: boolean;
+  use_semantic_search?: boolean;
+  use_full_text_search?: boolean;
+  filters?: Record<string, any>;
+  limit?: number;
+  offset?: number;
+  include_metadata?: boolean;
+  include_scores: boolean;
+  search_strategy?: string;
+  hybrid_settings?: HybridSearchSettings;
+  chunk_settings?: ChunkSearchSettings;
+  graph_settings?: GraphSearchSettings;
+}
 export interface VectorSearchResult {
   chunk_id: string;
   document_id: string;
