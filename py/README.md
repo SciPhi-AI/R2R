@@ -33,7 +33,7 @@ For a more complete view of R2R, check out the [full documentation](https://r2r-
 - Release 3.3.0&nbsp;&nbsp;&nbsp;&nbsp;December 3, 2024&nbsp;&nbsp;&nbsp;&nbsp;
 
   Warning: These changes are breaking!
-  - [V3 API Specification](https://r2r-docs.sciphi.ai/api-reference/introduction)
+  - [V3 API Specification](https://r2r-docs.sciphi.ai/api-and-sdks/introduction)
 
 ## Install with pip
 The recommended way to get started with R2R is by using our CLI.
