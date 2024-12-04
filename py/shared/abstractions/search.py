@@ -223,6 +223,7 @@ class ChunkSearchSettings(R2RSerializable):
 
 class GraphSearchSettings(R2RSerializable):
     """Settings specific to knowledge graph search."""
+
     generation_config: GenerationConfig = Field(
         alias="generationConfig",
         default_factory=GenerationConfig,
