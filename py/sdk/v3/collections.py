@@ -272,7 +272,6 @@ class CollectionsSDK:
         )
         return result.get("results", True)
 
-
     async def extract(
         self,
         id: str | UUID,
@@ -282,15 +281,15 @@ class CollectionsSDK:
     ) -> dict:
         """
         Extract entities and relationships from documents in a collection.
-        
+
         Args:
             id (str | UUID): Collection ID to extract from
-            run_type (Optional[str]): Whether to return an estimate of the creation cost or to actually extract. 
+            run_type (Optional[str]): Whether to return an estimate of the creation cost or to actually extract.
                 Defaults to "RUN"
             settings (Optional[dict]): Settings for the entities and relationships extraction process
             run_with_orchestration (Optional[bool]): Whether to run the extraction process with orchestration.
                 Defaults to True
-        
+
         Returns:
             dict: Result of the extraction process, containing either:
                 - For estimates: message, task_id, id, and estimate
@@ -300,11 +299,11 @@ class CollectionsSDK:
             # "run_type": run_type,
             "run_with_orchestration": run_with_orchestration
         }
-        
+
         data = {}
         if settings is not None:
             data["settings"] = settings
-            
+
         return await self.client._make_request(
             "POST",
             f"collections/{str(id)}/extract",

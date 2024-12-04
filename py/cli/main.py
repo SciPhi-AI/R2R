@@ -9,11 +9,12 @@ from cli.commands import (  # V3 methods
     retrieval,
     system,
     users,
-    graphs
+    graphs,
 )
 
 # TODO: Remove old commands in a later release
 from cli.utils.telemetry import posthog, telemetry
+
 
 def add_command_with_telemetry(command):
     cli.add_command(telemetry(command))

@@ -1241,7 +1241,7 @@ class PostgresGraphHandler(GraphHandler):
                 )
                 if not result or not result["exists"]:
                     raise R2RException(f"Graph {graph_id} not found", 404)
-                
+
                 document_ids = result["document_ids"] or []
 
                 # Remove graph_id from users
@@ -1318,7 +1318,7 @@ class PostgresGraphHandler(GraphHandler):
             except Exception as e:
                 logger.error(f"Error resetting graph {graph_id}: {str(e)}")
                 raise R2RException(f"Failed to reset graph: {str(e)}", 500)
-            
+
     # async def reset(self, graph_id: UUID) -> None:
     #     """
     #     Completely delete a graph and all associated data.
@@ -3169,7 +3169,7 @@ class PostgresGraphHandler(GraphHandler):
             ORDER BY {embedding_type} <=> $1
             LIMIT $2;
         """
-        print('QUERY = ', QUERY)
+        print("QUERY = ", QUERY)
         results = await self.connection_manager.fetch_query(
             QUERY, tuple(params)
         )
