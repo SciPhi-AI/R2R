@@ -204,8 +204,6 @@ class KGExtractionPipe(AsyncPipe[dict]):
         )
 
         return KGExtraction(
-            chunk_ids=[extraction.id for extraction in extractions],
-            document_id=extractions[0].document_id,
             entities=[],
             relationships=[],
         )
@@ -245,7 +243,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
             DocumentChunk(
                 id=extraction["id"],
                 document_id=extraction["document_id"],
-                user_id=extraction["user_id"],
+                owner_id=extraction["owner_id"],
                 collection_ids=extraction["collection_ids"],
                 data=extraction["text"],
                 metadata=extraction["metadata"],

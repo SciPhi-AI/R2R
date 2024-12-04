@@ -17,7 +17,7 @@ from core.base import (
     Token,
     TokenData,
 )
-from core.base.api.models import UserResponse
+from core.base.api.models import User
 
 DEFAULT_ACCESS_LIFETIME_IN_MINUTES = 3600
 DEFAULT_REFRESH_LIFETIME_IN_DAYS = 7
@@ -116,7 +116,7 @@ class R2RAuthProvider(AuthProvider):
         except jwt.InvalidTokenError as e:
             raise R2RException(status_code=401, message="Invalid token") from e
 
-    async def user(self, token: str = Depends(oauth2_scheme)) -> UserResponse:
+    async def user(self, token: str = Depends(oauth2_scheme)) -> User:
         token_data = await self.decode_token(token)
         if not token_data.email:
             raise R2RException(
@@ -130,29 +130,28 @@ class R2RAuthProvider(AuthProvider):
         return user
 
     def get_current_active_user(
-        self, current_user: UserResponse = Depends(user)
-    ) -> UserResponse:
+        self, current_user: User = Depends(user)
+    ) -> User:
         if not current_user.is_active:
             raise R2RException(status_code=400, message="Inactive user")
         return current_user
 
     async def register(
         self, email: str, password: str, is_superuser: bool = False
-    ) -> UserResponse:
+    ) -> User:
         # Create new user and give them a default collection
         new_user = await self.database_provider.create_user(
             email, password, is_superuser
         )
         default_collection: CollectionResponse = (
             await self.database_provider.create_collection(
-                user_id=new_user.id,
+                owner_id=new_user.id,
             )
         )
         await self.database_provider.graph_handler.create(
             collection_id=default_collection.id,
             name=default_collection.name,
             description=default_collection.description,
-            graph_id=default_collection.id,
         )
 
         await self.database_provider.add_user_to_collection(
@@ -280,7 +279,7 @@ class R2RAuthProvider(AuthProvider):
         }
 
     async def change_password(
-        self, user: UserResponse, current_password: str, new_password: str
+        self, user: User, current_password: str, new_password: str
     ) -> dict[str, str]:
         if not isinstance(user.hashed_password, str):
             logger.error(

@@ -27,7 +27,8 @@ export class DocumentsClient {
   /**
    * Create a new document from either a file or content.
    * @param file The file to upload, if any
-   * @param content Optional text content to upload, if no file path is provided
+   * @param raw_text Optional raw text content to upload, if no file path is provided
+   * @param chunks Optional array of pre-processed text chunks to ingest
    * @param id Optional ID to assign to the document
    * @param collectionIds Collection IDs to associate with the document. If none are provided, the document will be assigned to the user's default collection.
    * @param metadata Optional metadata to assign to the document
@@ -38,19 +39,22 @@ export class DocumentsClient {
   @feature("documents.create")
   async create(options: {
     file?: FileInput;
-    content?: string;
+    raw_text?: string;
+    chunks?: string[];
     id?: string;
     metadata?: Record<string, any>;
     ingestionConfig?: Record<string, any>;
     collectionIds?: string[];
     runWithOrchestration?: boolean;
   }): Promise<WrappedIngestionResponse> {
-    if (!options.file && !options.content) {
-      throw new Error("Either file or content must be provided");
+    const inputCount = [options.file, options.raw_text, options.chunks].filter(
+      (x) => x !== undefined,
+    ).length;
+    if (inputCount === 0) {
+      throw new Error("Either file, raw_text, or chunks must be provided");
     }
-
-    if (options.file && options.content) {
-      throw new Error("Cannot provide both file and content");
+    if (inputCount > 1) {
+      throw new Error("Only one of file, raw_text, or chunks may be provided");
     }
 
     const formData = new FormData();
@@ -95,8 +99,11 @@ export class DocumentsClient {
       await processPath(options.file);
     }
 
-    if (options.content) {
-      formData.append("content", options.content);
+    if (options.raw_text) {
+      formData.append("raw_text", options.raw_text);
+    }
+    if (options.chunks) {
+      formData.append("chunks", JSON.stringify(options.chunks));
     }
     if (options.id) {
       formData.append("id", options.id);
@@ -125,102 +132,6 @@ export class DocumentsClient {
     formData.append("file_names", JSON.stringify(processedFiles));
 
     return this.client.makeRequest("POST", "documents", {
-      data: formData,
-      headers: formData.getHeaders?.() ?? {
-        "Content-Type": "multipart/form-data",
-      },
-      transformRequest: [
-        (data: any, headers: Record<string, string>) => {
-          delete headers["Content-Type"];
-          return data;
-        },
-      ],
-    });
-  }
-
-  /**
-   * Update an existing document.
-   * @param id ID of document to update
-   * @param file Optional new file to ingest
-   * @param content Optional new text content
-   * @param metadata Optional new metadata
-   * @param ingestionConfig Custom ingestion configuration
-   * @param runWithOrchestration Whether to run with orchestration
-   * @returns
-   */
-  @feature("documents.update")
-  async update(options: {
-    id: string;
-    file?: FileInput;
-    content?: string;
-    metadata?: Record<string, any>;
-    ingestionConfig?: Record<string, any>;
-    runWithOrchestration?: boolean;
-  }): Promise<WrappedIngestionResponse> {
-    const formData = new FormData();
-    const processedFiles: string[] = [];
-
-    const processPath = async (path: FileInput): Promise<void> => {
-      const appendFile = (
-        file: File | NodeJS.ReadableStream,
-        filename: string,
-      ) => {
-        formData.append(`file`, file, filename);
-        processedFiles.push(filename);
-      };
-
-      if (typeof path === "string") {
-        if (typeof window === "undefined") {
-          const stat = await fs.promises.stat(path);
-          if (stat.isDirectory()) {
-            throw new Error("Directories are not supported in update()");
-          } else {
-            appendFile(fs.createReadStream(path), path.split("/").pop() || "");
-          }
-        } else {
-          console.warn(
-            "File path provided in browser environment. This is not supported.",
-          );
-        }
-      } else if (path instanceof File) {
-        appendFile(path, path.name);
-      } else if ("path" in path && "name" in path) {
-        if (typeof window === "undefined") {
-          appendFile(fs.createReadStream(path.path), path.name);
-        } else {
-          console.warn(
-            "File path provided in browser environment. This is not supported.",
-          );
-        }
-      }
-    };
-
-    if (options.file) {
-      await processPath(options.file);
-    }
-
-    if (options.content) {
-      formData.append("content", options.content);
-    }
-    if (options.metadata) {
-      formData.append("metadata", JSON.stringify([options.metadata]));
-    }
-    if (options.ingestionConfig) {
-      formData.append(
-        "ingestion_config",
-        JSON.stringify(options.ingestionConfig),
-      );
-    }
-    if (options.runWithOrchestration !== undefined) {
-      formData.append(
-        "run_with_orchestration",
-        String(options.runWithOrchestration),
-      );
-    }
-
-    formData.append("file_names", JSON.stringify(processedFiles));
-
-    return this.client.makeRequest("POST", `documents/${options.id}`, {
       data: formData,
       headers: formData.getHeaders?.() ?? {
         "Content-Type": "multipart/form-data",

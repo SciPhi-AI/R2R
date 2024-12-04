@@ -4,7 +4,7 @@ from typing import Any
 from uuid import UUID
 
 from core.base import AsyncState
-from core.base.abstractions import DataLevel, Entity, KGEntityDeduplicationType
+from core.base.abstractions import Entity, KGEntityDeduplicationType
 from core.base.pipes import AsyncPipe
 from core.providers import (
     LiteLLMCompletionProvider,
@@ -53,7 +53,6 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             # TODO: remove the tuple return type
             return (
                 await self.database_provider.graph_handler.entities.get(
-                    level=DataLevel.GRAPH,
                     id=graph_id,
                     offset=0,
                     limit=-1,
@@ -82,14 +81,12 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             "description",
             "chunk_ids",
             "document_id",
-            "attributes",
             # "description_embedding",
         ]
         deduplication_target_keys = [
             "description",
             "chunk_ids",
             "document_ids",
-            "attributes",
             # "description_embedding",
         ]
         deduplication_keys = list(

@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 from core.base import R2RException, RunManager, Token
-from core.base.api.models import UserResponse
+from core.base.api.models import User
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 from core.utils import generate_default_user_collection_id
@@ -35,7 +35,7 @@ class AuthService(Service):
         )
 
     @telemetry_event("RegisterUser")
-    async def register(self, email: str, password: str) -> UserResponse:
+    async def register(self, email: str, password: str) -> User:
         return await self.providers.auth.register(email, password)
 
     @telemetry_event("VerifyEmail")
@@ -74,7 +74,7 @@ class AuthService(Service):
         return await self.providers.auth.login(email, password)
 
     @telemetry_event("GetCurrentUser")
-    async def user(self, token: str) -> UserResponse:
+    async def user(self, token: str) -> User:
         token_data = await self.providers.auth.decode_token(token)
         if not token_data.email:
             raise R2RException(
@@ -97,7 +97,7 @@ class AuthService(Service):
 
     @telemetry_event("ChangePassword")
     async def change_password(
-        self, user: UserResponse, current_password: str, new_password: str
+        self, user: User, current_password: str, new_password: str
     ) -> dict[str, str]:
         if not user:
             raise R2RException(status_code=404, message="User not found")
@@ -130,10 +130,8 @@ class AuthService(Service):
         name: Optional[str] = None,
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
-    ) -> UserResponse:
-        user: UserResponse = await self.providers.database.get_user_by_id(
-            user_id
-        )
+    ) -> User:
+        user: User = await self.providers.database.get_user_by_id(user_id)
         if not user:
             raise R2RException(status_code=404, message="User not found")
         if email is not None:
@@ -202,14 +200,17 @@ class AuthService(Service):
 
     @telemetry_event("GetUserVerificationCode")
     async def get_user_verification_code(
-        self, user_id: UUID, *args, **kwargs
+        self,
+        user_id: UUID,
     ) -> dict:
         """
         Get only the verification code data for a specific user.
         This method should be called after superuser authorization has been verified.
         """
         verification_data = (
-            await self.providers.database.get_user_validation_data(user_id)
+            await self.providers.database.get_user_validation_data(
+                user_id=user_id
+            )
         )
         return {
             "verification_code": verification_data["verification_data"][
@@ -222,14 +223,17 @@ class AuthService(Service):
 
     @telemetry_event("GetUserVerificationCode")
     async def get_user_reset_token(
-        self, user_id: UUID, *args, **kwargs
+        self,
+        user_id: UUID,
     ) -> dict:
         """
         Get only the verification code data for a specific user.
         This method should be called after superuser authorization has been verified.
         """
         verification_data = (
-            await self.providers.database.get_user_validation_data(user_id)
+            await self.providers.database.get_user_validation_data(
+                user_id=user_id
+            )
         )
         return {
             "reset_token": verification_data["verification_data"][

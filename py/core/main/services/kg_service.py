@@ -18,7 +18,6 @@ from core.base import (
 )
 from core.base.abstractions import (
     Community,
-    DataLevel,
     Entity,
     GenerationConfig,
     Graph,
@@ -151,7 +150,7 @@ class KgService(Service):
         return await self.providers.database.graph_handler.entities.create(
             name=name,
             parent_id=parent_id,
-            store_type="graph",  # type: ignore
+            store_type="graphs",  # type: ignore
             category=category,
             description=description,
             description_embedding=description_embedding,
@@ -176,7 +175,7 @@ class KgService(Service):
 
         return await self.providers.database.graph_handler.entities.update(
             entity_id=entity_id,
-            store_type="graph",  # type: ignore
+            store_type="graphs",  # type: ignore
             name=name,
             description=description,
             description_embedding=description_embedding,
@@ -193,7 +192,7 @@ class KgService(Service):
         return await self.providers.database.graph_handler.entities.delete(
             parent_id=parent_id,
             entity_ids=[entity_id],
-            store_type="graph",  # type: ignore
+            store_type="graphs",  # type: ignore
         )
 
     @telemetry_event("get_entities")
@@ -246,7 +245,7 @@ class KgService(Service):
                 description_embedding=description_embedding,
                 weight=weight,
                 metadata=metadata,
-                store_type="graph",  # type: ignore
+                store_type="graphs",  # type: ignore
             )
         )
 
@@ -260,7 +259,7 @@ class KgService(Service):
             await self.providers.database.graph_handler.relationships.delete(
                 parent_id=parent_id,
                 relationship_ids=[relationship_id],
-                store_type="graph",  # type: ignore
+                store_type="graphs",  # type: ignore
             )
         )
 
@@ -296,7 +295,7 @@ class KgService(Service):
                 description_embedding=description_embedding,
                 weight=weight,
                 metadata=metadata,
-                store_type="graph",  # type: ignore
+                store_type="graphs",  # type: ignore
             )
         )
 
@@ -311,7 +310,7 @@ class KgService(Service):
     ):
         return await self.providers.database.graph_handler.relationships.get(
             parent_id=parent_id,
-            store_type="graph",  # type: ignore
+            store_type="graphs",  # type: ignore
             offset=offset,
             limit=limit,
             relationship_ids=relationship_ids,
@@ -333,7 +332,7 @@ class KgService(Service):
         )
         return await self.providers.database.graph_handler.communities.create(
             parent_id=parent_id,
-            store_type="graph",  # type: ignore
+            store_type="graphs",  # type: ignore
             name=name,
             summary=summary,
             description_embedding=description_embedding,
@@ -360,7 +359,7 @@ class KgService(Service):
 
         return await self.providers.database.graph_handler.communities.update(
             community_id=community_id,
-            store_type="graph",  # type: ignore
+            store_type="graphs",  # type: ignore
             name=name,
             summary=summary,
             summary_embedding=summary_embedding,
@@ -389,7 +388,7 @@ class KgService(Service):
     ):
         return await self.providers.database.graph_handler.communities.get(
             parent_id=collection_id,
-            store_type="graph",  # type: ignore
+            store_type="graphs",  # type: ignore
             offset=offset,
             limit=limit,
         )
@@ -444,23 +443,15 @@ class KgService(Service):
             filter_collection_id=collection_id,
         )
 
-    @telemetry_event("get_graphs")
-    async def get_graphs(
-        self, offset: int, limit: int, graph_id: Optional[UUID] = None
-    ) -> Graph:
-        return await self.providers.database.graph_handler.get(
-            offset=offset, limit=limit, graph_id=graph_id
-        )
-
     @telemetry_event("update_graph")
     async def update_graph(
         self,
-        graph_id: UUID,
+        collection_id: UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> GraphResponse:
         return await self.providers.database.graph_handler.update(
-            graph_id=graph_id,
+            collection_id=collection_id,
             name=name,
             description=description,
         )
@@ -468,25 +459,13 @@ class KgService(Service):
     @telemetry_event("reset_graph_v3")
     async def reset_graph_v3(self, id: UUID) -> bool:
         await self.providers.database.graph_handler.reset(
-            graph_id=id,
+            parent_id=id,
         )
         await self.providers.database.document_handler.set_workflow_status(
             id=id,
             status_type="graph_cluster_status",
             status=KGEnrichmentStatus.PENDING,
         )
-        return True
-
-    @telemetry_event("delete_graph_v3")
-    async def delete_graph_v3(self, id: UUID) -> bool:
-        await self.providers.database.graph_handler.delete(
-            graph_id=id,
-        )
-        # await self.providers.database.document_handler.set_workflow_status(
-        #     id=id,
-        #     status_type="graph_cluster_status",
-        #     status=KGEnrichmentStatus.PENDING,
-        # )
         return True
 
     @telemetry_event("get_document_ids_for_create_graph")
@@ -530,7 +509,7 @@ class KgService(Service):
             await self.providers.database.graph_handler.get_entity_count(
                 document_id=document_id,
                 distinct=True,
-                entity_table_name="document_entity",
+                entity_table_name="documents_entities",
             )
         )
 
@@ -602,7 +581,6 @@ class KgService(Service):
             input=self.pipes.kg_clustering_pipe.Input(
                 message={
                     "collection_id": collection_id,
-                    # "graph_id": graph_id,
                     "generation_config": generation_config,
                     "leiden_params": leiden_params,
                     "logger": logger,
@@ -888,7 +866,6 @@ class KgService(Service):
     ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
         start_time = time.time()
 
-        print("....")
         logger.info(
             f"KGExtractionPipe: Processing document {document_id} for KG extraction",
         )
@@ -909,7 +886,7 @@ class KgService(Service):
                     DocumentChunk(
                         id=chunk["id"],
                         document_id=chunk["document_id"],
-                        user_id=chunk["user_id"],
+                        owner_id=chunk["owner_id"],
                         collection_ids=chunk["collection_ids"],
                         data=chunk["text"],
                         metadata=chunk["metadata"],
@@ -1033,19 +1010,15 @@ class KgService(Service):
                 "relation_types": "\n".join(relation_types),
             },
         )
-        print("starting a job....")
 
         for attempt in range(retries):
             try:
-                print("getting a response....")
-
                 response = await self.providers.llm.aget_completion(
                     messages,
                     generation_config=generation_config,
                 )
 
                 kg_extraction = response.choices[0].message.content
-                print("kg_extraction = ", kg_extraction)
 
                 if not kg_extraction:
                     raise R2RException(
@@ -1074,7 +1047,6 @@ class KgService(Service):
                     relationships = re.findall(
                         relationship_pattern, response_str
                     )
-                    print("found len(relationships) = ", len(relationships))
 
                     entities_arr = []
                     for entity in entities:
@@ -1097,7 +1069,6 @@ class KgService(Service):
                                 attributes={},
                             )
                         )
-                    print("found len(entities) = ", len(entities))
 
                     relations_arr = []
                     for relationship in relationships:
@@ -1148,8 +1119,6 @@ class KgService(Service):
                     print(
                         f"Failed after retries with for chunk {chunks[0].id} of document {chunks[0].document_id}: {e}"
                     )
-                    # raise e # you should raise an error.
-        # add metadata to entities and relationships
 
         print(
             f"KGExtractionPipe: Completed task number {task_id} of {total_tasks} for document {chunks[0].document_id}",
@@ -1168,18 +1137,13 @@ class KgService(Service):
         Stores a batch of knowledge graph extractions in the graph database.
         """
 
-        total_entities, total_relationships = 0, 0
-
-        print("received len(kg_extractions) = ", len(kg_extractions))
         for extraction in kg_extractions:
-
             entities_id_map = {}
             for entity in extraction.entities:
-                print("entity = ", entity)
                 result = await self.providers.database.graph_handler.entities.create(
                     name=entity.name,
                     parent_id=entity.parent_id,
-                    store_type="document",  # type: ignore
+                    store_type="documents",  # type: ignore
                     category=entity.category,
                     description=entity.description,
                     description_embedding=entity.description_embedding,
@@ -1191,12 +1155,6 @@ class KgService(Service):
             if extraction.relationships:
 
                 for relationship in extraction.relationships:
-                    print("relationship.subject = ", relationship.subject)
-                    print(
-                        "entities_id_map.get(relationship.subject, None) = ",
-                        entities_id_map.get(relationship.subject, None),
-                    )
-
                     await self.providers.database.graph_handler.relationships.create(
                         subject=relationship.subject,
                         subject_id=entities_id_map.get(
@@ -1212,5 +1170,5 @@ class KgService(Service):
                         description_embedding=relationship.description_embedding,
                         weight=relationship.weight,
                         metadata=relationship.metadata,
-                        store_type="document",  # type: ignore
+                        store_type="documents",  # type: ignore
                     )

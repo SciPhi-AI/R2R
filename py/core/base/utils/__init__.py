@@ -4,8 +4,6 @@ from shared.utils import (
     _decorate_vector_type,
     _get_str_estimation_output,
     decrement_version,
-    format_entity_types,
-    format_relations,
     format_search_results_for_llm,
     format_search_results_for_stream,
     generate_default_prompt_id,
@@ -22,8 +20,6 @@ from shared.utils import (
 )
 
 __all__ = [
-    "format_entity_types",
-    "format_relations",
     "format_search_results_for_stream",
     "format_search_results_for_llm",
     "generate_id",

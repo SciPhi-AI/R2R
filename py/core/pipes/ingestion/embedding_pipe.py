@@ -52,9 +52,9 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
         vectors = await self.embed(extraction_batch)
         return [
             VectorEntry(
-                chunk_id=extraction.id,
+                id=extraction.id,
                 document_id=extraction.document_id,
-                user_id=extraction.user_id,
+                owner_id=extraction.owner_id,
                 collection_ids=extraction.collection_ids,
                 vector=Vector(data=raw_vector),
                 text=extraction.data,  # type: ignore
@@ -142,9 +142,9 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
             )
 
             return VectorEntry(
-                chunk_id=extraction.id,
+                id=extraction.id,
                 document_id=extraction.document_id,
-                user_id=extraction.user_id,
+                owner_id=extraction.owner_id,
                 collection_ids=extraction.collection_ids,
                 vector=Vector(data=vectors[0]),
                 text=extraction.data,

@@ -84,7 +84,7 @@ def simple_ingestion_factory(service: IngestionService):
                 if not collection_ids:
                     # TODO: Move logic onto the `management service`
                     collection_id = generate_default_user_collection_id(
-                        document_info.user_id
+                        document_info.owner_id
                     )
                     await service.providers.database.assign_document_to_collection_relational(
                         document_id=document_info.id,
@@ -105,7 +105,6 @@ def simple_ingestion_factory(service: IngestionService):
                         status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                     )
                 else:
-                    print("collection_ids = ", collection_ids)
 
                     for collection_id in collection_ids:
                         try:
@@ -114,12 +113,11 @@ def simple_ingestion_factory(service: IngestionService):
                             description = f"A collection started during {document_info.title} ingestion"
 
                             result = await service.providers.database.create_collection(
-                                user_id=document_info.user_id,
+                                owner_id=document_info.owner_id,
                                 name=name,
                                 description=description,
                                 collection_id=collection_id,
                             )
-                            print("create collection result = ", result)
                             await service.providers.database.graph_handler.create(
                                 collection_id=collection_id,
                                 name=name,
@@ -131,18 +129,9 @@ def simple_ingestion_factory(service: IngestionService):
                                 f"Warning, could not create collection with error: {str(e)}"
                             )
 
-                        print(
-                            "Assigning docment to relational collection, collection_id = ",
-                            collection_id,
-                        )
-
                         await service.providers.database.assign_document_to_collection_relational(
                             document_id=document_info.id,
                             collection_id=collection_id,
-                        )
-                        print(
-                            "Assigning docment to relational vector, collection_id = ",
-                            collection_id,
                         )
 
                         await service.providers.database.assign_document_to_collection_vector(
@@ -184,7 +173,6 @@ def simple_ingestion_factory(service: IngestionService):
             )
 
     async def update_files(input_data):
-        from core.base import IngestionStatus
         from core.main import IngestionServiceAdapter
 
         parsed_data = IngestionServiceAdapter.parse_update_files_input(
@@ -290,7 +278,7 @@ def simple_ingestion_factory(service: IngestionService):
                     ),
                     document_id=document_id,
                     collection_ids=[],
-                    user_id=document_info.user_id,
+                    owner_id=document_info.owner_id,
                     data=chunk.text,
                     metadata=parsed_data["metadata"],
                 ).model_dump()
@@ -321,18 +309,20 @@ def simple_ingestion_factory(service: IngestionService):
             try:
                 # TODO - Move logic onto management service
                 if not collection_ids:
-                    # TODO: Move logic onto the `management service`
                     collection_id = generate_default_user_collection_id(
-                        document_info.user_id
+                        document_info.owner_id
                     )
+
                     await service.providers.database.assign_document_to_collection_relational(
                         document_id=document_info.id,
                         collection_id=collection_id,
                     )
+
                     await service.providers.database.assign_document_to_collection_vector(
                         document_id=document_info.id,
                         collection_id=collection_id,
                     )
+
                     await service.providers.database.set_workflow_status(
                         id=collection_id,
                         status_type="graph_sync_status",
@@ -345,19 +335,17 @@ def simple_ingestion_factory(service: IngestionService):
                     )
 
                 else:
-                    print("collection_ids = ", collection_ids)
                     for collection_id in collection_ids:
                         try:
 
                             name = document_info.title or "N/A"
                             description = ""
                             result = await service.providers.database.create_collection(
-                                user_id=document_info.user_id,
+                                owner_id=document_info.owner_id,
                                 name=name,
                                 description=description,
                                 collection_id=collection_id,
                             )
-                            print("create collection result = ", result)
                             await service.providers.database.graph_handler.create(
                                 collection_id=collection_id,
                                 name=name,
@@ -368,10 +356,6 @@ def simple_ingestion_factory(service: IngestionService):
                             logger.warning(
                                 f"Warning, could not create collection with error: {str(e)}"
                             )
-                        print(
-                            "Assigning docment to relational collection, collection_id = ",
-                            collection_id,
-                        )
 
                         await service.providers.database.assign_document_to_collection_relational(
                             document_id=document_info.id,
@@ -420,9 +404,9 @@ def simple_ingestion_factory(service: IngestionService):
                 else parsed_data["document_id"]
             )
             extraction_uuid = (
-                UUID(parsed_data["chunk_id"])
-                if isinstance(parsed_data["chunk_id"], str)
-                else parsed_data["chunk_id"]
+                UUID(parsed_data["id"])
+                if isinstance(parsed_data["id"], str)
+                else parsed_data["id"]
             )
 
             await service.update_chunk_ingress(

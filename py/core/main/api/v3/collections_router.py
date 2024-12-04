@@ -119,7 +119,7 @@ class CollectionsRouter(BaseRouterV3):
             and optional description. The user creating the collection is automatically added as a member.
             """
             collection = await self.services["management"].create_collection(
-                user_id=auth_user.id,
+                owner_id=auth_user.id,
                 name=name,
                 description=description,
             )

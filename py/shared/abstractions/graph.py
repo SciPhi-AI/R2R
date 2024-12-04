@@ -1,35 +1,12 @@
 import json
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import Field
 
 from .base import R2RSerializable
-
-
-class EntityType(R2RSerializable):
-    id: str
-    name: str
-    description: str | None = None
-
-
-class RelationshipType(R2RSerializable):
-    id: str
-    name: str
-    description: str | None = None
-
-
-class DataLevel(str, Enum):
-    GRAPH = "graph"
-    COLLECTION = "collection"
-    DOCUMENT = "document"
-    CHUNK = "chunk"
-
-    def __str__(self):
-        return self.value
 
 
 class Entity(R2RSerializable):
@@ -84,24 +61,6 @@ class Relationship(R2RSerializable):
 
 
 @dataclass
-class CommunityInfo(R2RSerializable):
-    """A protocol for a community in the system."""
-
-    node: str
-    cluster: UUID
-    level: Optional[int]
-    parent_cluster: int | None
-    is_final_cluster: bool
-    id: Optional[UUID | int] = None
-    graph_id: Optional[UUID] = None
-    collection_id: Optional[UUID] = None  # for backwards compatibility
-    relationship_ids: Optional[list[UUID]] = None
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-
-@dataclass
 class Community(R2RSerializable):
 
     name: str = ""
@@ -111,7 +70,6 @@ class Community(R2RSerializable):
     findings: list[str] = []
     id: Optional[int | UUID] = None
     community_id: Optional[UUID] = None
-    graph_id: Optional[UUID] = None
     collection_id: Optional[UUID] = None
     rating: float | None = None
     rating_explanation: str | None = None
@@ -162,8 +120,6 @@ class Graph(R2RSerializable):
         alias="updatedAt",
         default_factory=datetime.utcnow,
     )
-    statistics: dict[str, Any] = {}
-    attributes: dict[str, Any] = {}
     status: str = "pending"
 
     class Config:
@@ -177,18 +133,7 @@ class Graph(R2RSerializable):
         parsed_data: dict[str, Any] = (
             json.loads(data) if isinstance(data, str) else data
         )
-
-        # Convert string representations to dicts before validation
-        if isinstance(parsed_data.get("attributes", {}), str):
-            parsed_data["attributes"] = json.loads(parsed_data["attributes"])
-        if isinstance(parsed_data.get("statistics", {}), str):
-            parsed_data["statistics"] = json.loads(parsed_data["statistics"])
         return cls(**parsed_data)
 
     def __init__(self, **kwargs):
-        # Convert string representations to dicts before calling super().__init__
-        if isinstance(kwargs.get("attributes", {}), str):
-            kwargs["attributes"] = json.loads(kwargs["attributes"])
-        if isinstance(kwargs.get("statistics", {}), str):
-            kwargs["statistics"] = json.loads(kwargs["statistics"])
         super().__init__(**kwargs)

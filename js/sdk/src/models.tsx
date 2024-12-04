@@ -61,8 +61,6 @@ export interface KGSearchSettings {
   kgSearchType?: "local";
   kgSearchLevel?: number | null;
   generationConfig?: GenerationConfig;
-  // entityTypes?: any[];
-  // relationships?: any[];
   maxCommunityDescriptionLength?: number;
   maxLlmQueriesForGlobalSearch?: number;
   localSearchLimits?: Record<string, number>;

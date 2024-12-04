@@ -36,7 +36,6 @@ class RetrievalSDK:
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
 
-        print("calling with graph_search_settings = ", search_settings)
         data = {
             "query": query,
             "search_settings": search_settings,
@@ -69,6 +68,21 @@ class RetrievalSDK:
         return await self.client._make_request(
             "POST",
             "retrieval/completion",
+            json=data,
+            version="v3",
+        )
+
+    async def embedding(
+        self,
+        text: str,
+    ):
+        data = {
+            "text": text,
+        }
+
+        return await self.client._make_request(
+            "POST",
+            "retrieval/embedding",
             json=data,
             version="v3",
         )

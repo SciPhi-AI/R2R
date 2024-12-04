@@ -195,6 +195,95 @@ class PromptsRouter(BaseRouterV3):
                 },
             )
 
+        @self.router.post(
+            "/prompts/{name}",
+            summary="Get a specific prompt",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.prompts.get(
+                                "greeting_prompt",
+                                inputs={"name": "John"},
+                                prompt_override="Hi, {name}!"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.prompts.retrieve({
+                                    name: "greeting_prompt",
+                                    inputs: { name: "John" },
+                                    promptOverride: "Hi, {name}!",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r prompts retrieve greeting_prompt --inputs '{"name": "John"}' --prompt-override "Hi, {name}!"
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/prompts/greeting_prompt?inputs=%7B%22name%22%3A%22John%22%7D&prompt_override=Hi%2C%20%7Bname%7D!" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def get_prompt(
+            name: str = Path(..., description="Prompt name"),
+            inputs: Optional[dict[str, str]] = Body(
+                None, description="Prompt inputs"
+            ),
+            prompt_override: Optional[str] = Query(
+                None, description="Prompt override"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedPromptResponse:
+            """
+            Get a specific prompt by name, optionally with inputs and override.
+
+            This endpoint retrieves a specific prompt and allows for optional inputs and template override.
+            Only superusers can access this endpoint.
+            """
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can retrieve prompts.",
+                    403,
+                )
+            result = await self.services["management"].get_prompt(
+                name, inputs, prompt_override
+            )
+            return result  # type: ignore
+
         @self.router.put(
             "/prompts/{name}",
             summary="Update an existing prompt",

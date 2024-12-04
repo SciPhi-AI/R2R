@@ -1,5 +1,5 @@
 import logging
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator
 from uuid import UUID
 
 from core.base import (
@@ -43,22 +43,15 @@ class KGClusteringPipe(AsyncPipe):
     async def cluster_kg(
         self,
         collection_id: UUID,
-        graph_id: UUID,
         leiden_params: dict,
     ):
         """
         Clusters the knowledge graph relationships into communities using hierarchical Leiden algorithm. Uses graspologic library.
         """
 
-        # relationships = await self.database_provider.graph_handler.relationships
-
         num_communities = await self.database_provider.graph_handler.perform_graph_clustering(
             collection_id=collection_id,
             leiden_params=leiden_params,
-        )
-
-        logger.info(
-            f"Clustering completed. Generated {num_communities} communities."
         )
 
         return {
@@ -78,11 +71,9 @@ class KGClusteringPipe(AsyncPipe):
         """
 
         collection_id = input.message.get("collection_id", None)
-        graph_id = input.message.get("graph_id", None)
         leiden_params = input.message["leiden_params"]
 
         yield await self.cluster_kg(
             collection_id=collection_id,
-            graph_id=graph_id,
             leiden_params=leiden_params,
         )

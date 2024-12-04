@@ -34,7 +34,6 @@ __all__ = [
     "KGExtraction",
     "Relationship",
     "Community",
-    "CommunityInfo",
     "KGCreationSettings",
     "KGEnrichmentSettings",
     "KGRunType",
@@ -56,7 +55,6 @@ __all__ = [
     # User abstractions
     "Token",
     "TokenData",
-    "UserStats",
     # Vector abstractions
     "Vector",
     "VectorEntry",
@@ -74,7 +72,7 @@ __all__ = [
     ## API
     # Auth Responses
     "TokenResponse",
-    "UserResponse",
+    "User",
     ## LOGGING
     # Basic types
     "RunType",
@@ -139,8 +137,4 @@ __all__ = [
     "generate_default_user_collection_id",
     "generate_user_id",
     "increment_version",
-    "EntityType",
-    "RelationshipType",
-    "format_entity_types",
-    "format_relations",
 ]

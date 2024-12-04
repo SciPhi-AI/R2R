@@ -10,10 +10,8 @@ from pydantic import BaseModel
 from core.base.abstractions import (
     ChunkSearchResult,
     Community,
-    CommunityInfo,
     DocumentResponse,
     Entity,
-    Graph,
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
@@ -24,15 +22,11 @@ from core.base.abstractions import (
     Message,
     Relationship,
     SearchSettings,
-    UserStats,
+    User,
     VectorEntry,
     VectorTableName,
 )
-from core.base.api.models import (
-    CollectionResponse,
-    GraphResponse,
-    UserResponse,
-)
+from core.base.api.models import CollectionResponse, GraphResponse
 
 from ..logger import RunInfoLog
 from ..logger.base import RunType
@@ -54,7 +48,6 @@ from ..abstractions import (
     KGEntityDeduplicationSettings,
     KGExtraction,
     Relationship,
-    RelationshipType,
 )
 from .base import ProviderConfig
 
@@ -266,7 +259,7 @@ class CollectionsHandler(Handler):
     @abstractmethod
     async def create_collection(
         self,
-        user_id: UUID,
+        owner_id: UUID,
         name: Optional[str] = None,
         description: str = "",
         collection_id: Optional[UUID] = None,
@@ -347,19 +340,21 @@ class UserHandler(Handler):
     TABLE_NAME = "users"
 
     @abstractmethod
-    async def get_user_by_id(self, user_id: UUID) -> UserResponse:
+    async def get_user_by_id(self, user_id: UUID) -> User:
         pass
 
     @abstractmethod
-    async def get_user_by_email(self, email: str) -> UserResponse:
+    async def get_user_by_email(self, email: str) -> User:
         pass
 
     @abstractmethod
-    async def create_user(self, email: str, password: str) -> UserResponse:
+    async def create_user(
+        self, email: str, password: str, is_superuser: bool
+    ) -> User:
         pass
 
     @abstractmethod
-    async def update_user(self, user: UserResponse) -> UserResponse:
+    async def update_user(self, user: User) -> User:
         pass
 
     @abstractmethod
@@ -373,7 +368,7 @@ class UserHandler(Handler):
         pass
 
     @abstractmethod
-    async def get_all_users(self) -> list[UserResponse]:
+    async def get_all_users(self) -> list[User]:
         pass
 
     @abstractmethod
@@ -427,19 +422,9 @@ class UserHandler(Handler):
         pass
 
     @abstractmethod
-    async def add_user_to_graph(self, user_id: UUID, graph_id: UUID) -> bool:
-        pass
-
-    @abstractmethod
-    async def remove_user_from_graph(
-        self, user_id: UUID, graph_id: UUID
-    ) -> bool:
-        pass
-
-    @abstractmethod
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, list[UserResponse] | int]:
+    ) -> dict[str, list[User] | int]:
         pass
 
     @abstractmethod
@@ -462,12 +447,13 @@ class UserHandler(Handler):
         offset: int,
         limit: int,
         user_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, list[UserStats] | int]:
+    ) -> dict[str, list[User] | int]:
         pass
 
     @abstractmethod
     async def get_user_validation_data(
-        self, user_id: UUID, *args, **kwargs
+        self,
+        user_id: UUID,
     ) -> dict:
         """
         Get verification data for a specific user.
@@ -668,28 +654,6 @@ class CommunityHandler(Handler):
         pass
 
 
-class CommunityInfoHandler(Handler):
-    @abstractmethod
-    async def create(self, *args: Any, **kwargs: Any) -> None:
-        """Create community info in storage."""
-        pass
-
-    @abstractmethod
-    async def get(self, *args: Any, **kwargs: Any) -> list[CommunityInfo]:
-        """Get community info from storage."""
-        pass
-
-    @abstractmethod
-    async def update(self, *args: Any, **kwargs: Any) -> None:
-        """Update community info in storage."""
-        pass
-
-    @abstractmethod
-    async def delete(self, *args: Any, **kwargs: Any) -> None:
-        """Delete community info from storage."""
-        pass
-
-
 class GraphHandler(Handler):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -701,11 +665,6 @@ class GraphHandler(Handler):
         pass
 
     @abstractmethod
-    async def get(self, *args: Any, **kwargs: Any) -> list[Graph]:
-        """Get graph"""
-        pass
-
-    @abstractmethod
     async def update(
         self,
         graph_id: UUID,
@@ -713,11 +672,6 @@ class GraphHandler(Handler):
         description: Optional[str],
     ) -> GraphResponse:
         """Update graph"""
-        pass
-
-    @abstractmethod
-    async def delete(self, graph_id: UUID) -> None:
-        """Delete graph"""
         pass
 
 
@@ -1034,24 +988,17 @@ class DatabaseProvider(Provider):
 
     async def create_collection(
         self,
-        user_id: UUID,
+        owner_id: UUID,
         name: Optional[str] = None,
         description: str = "",
         collection_id: Optional[UUID] = None,
     ) -> CollectionResponse:
-        print("~" * 100)
-        print("create_collection in database being called...")
-        result = await self.collections_handler.create_collection(
-            user_id=user_id,
+        return await self.collections_handler.create_collection(
+            owner_id=owner_id,
             name=name,
             description=description,
             collection_id=collection_id,
         )
-        print("user_id = ", user_id)
-        print("result.id = ", result.id)
-
-        await self.user_handler.add_user_to_collection(user_id, result.id)
-        return result
 
     async def update_collection(
         self,
@@ -1127,20 +1074,22 @@ class DatabaseProvider(Provider):
         )
 
     # User handler methods
-    async def get_user_by_id(self, user_id: UUID) -> UserResponse:
+    async def get_user_by_id(self, user_id: UUID) -> User:
         return await self.user_handler.get_user_by_id(user_id)
 
-    async def get_user_by_email(self, email: str) -> UserResponse:
+    async def get_user_by_email(self, email: str) -> User:
         return await self.user_handler.get_user_by_email(email)
 
     async def create_user(
         self, email: str, password: str, is_superuser: bool = False
-    ) -> UserResponse:
+    ) -> User:
         return await self.user_handler.create_user(
-            email, password, is_superuser
+            email=email,
+            password=password,
+            is_superuser=is_superuser,
         )
 
-    async def update_user(self, user: UserResponse) -> UserResponse:
+    async def update_user(self, user: User) -> User:
         return await self.user_handler.update_user(user)
 
     async def delete_user_relational(self, user_id: UUID) -> None:
@@ -1153,7 +1102,7 @@ class DatabaseProvider(Provider):
             user_id, new_hashed_password
         )
 
-    async def get_all_users(self) -> list[UserResponse]:
+    async def get_all_users(self) -> list[User]:
         return await self.user_handler.get_all_users()
 
     async def store_verification_code(
@@ -1210,7 +1159,7 @@ class DatabaseProvider(Provider):
 
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, list[UserResponse] | int]:
+    ) -> dict[str, list[User] | int]:
         return await self.user_handler.get_users_in_collection(
             collection_id, offset, limit
         )
@@ -1233,7 +1182,7 @@ class DatabaseProvider(Provider):
         offset: int,
         limit: int,
         user_ids: Optional[list[UUID]] = None,
-    ) -> dict[str, list[UserStats] | int]:
+    ) -> dict[str, list[User] | int]:
         return await self.user_handler.get_users_overview(
             offset=offset,
             limit=limit,
@@ -1241,9 +1190,12 @@ class DatabaseProvider(Provider):
         )
 
     async def get_user_validation_data(
-        self, user_id: UUID, *args, **kwargs
+        self,
+        user_id: UUID,
     ) -> dict:
-        return await self.user_handler.get_user_validation_data(user_id)
+        return await self.user_handler.get_user_validation_data(
+            user_id=user_id
+        )
 
     # Vector handler methods
     async def upsert(self, entry: VectorEntry) -> None:

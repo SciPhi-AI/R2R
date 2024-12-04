@@ -234,7 +234,6 @@ class DocumentsRouter(BaseRouterV3):
                 )
             # Check if the user is a superuser
             metadata = metadata or {}
-            print("metadata = ", metadata)
             if not auth_user.is_superuser:
                 if "user_id" in metadata and (
                     not auth_user.is_superuser
@@ -309,7 +308,7 @@ class DocumentsRouter(BaseRouterV3):
                     )
                     await simple_ingestor["ingest-chunks"](workflow_input)
 
-                    return {
+                    return {  # type: ignore
                         "message": "Document created and ingested successfully.",
                         "document_id": str(document_id),
                         "task_id": None,
@@ -343,279 +342,53 @@ class DocumentsRouter(BaseRouterV3):
                         message="Either a file or content must be provided.",
                     )
 
-                # collection_uuids = None
-                # print('collection_ids = ', collection_ids)
-                # if collection_ids:
-                #     try:
-                #         collection_uuids = [UUID(cid) for cid in collection_ids]
-                #     except ValueError:
-                #         raise R2RException(
-                #             status_code=422,
-                #             message="Collection IDs must be valid UUIDs.",
-                #         )
+            workflow_input = {
+                "file_data": file_data,
+                "document_id": str(document_id),
+                "collection_ids": collection_ids,
+                "metadata": metadata,
+                "ingestion_config": ingestion_config,
+                "user": auth_user.model_dump_json(),
+                "size_in_bytes": content_length,
+                "is_update": False,
+            }
 
-                workflow_input = {
-                    "file_data": file_data,
-                    "document_id": str(document_id),
-                    "collection_ids": collection_ids,
-                    "metadata": metadata,
-                    "ingestion_config": ingestion_config,
-                    "user": auth_user.model_dump_json(),
-                    "size_in_bytes": content_length,
-                    "is_update": False,
-                }
+            file_name = file_data["filename"]
+            await self.providers.database.store_file(
+                document_id,
+                file_name,
+                file_content,
+                file_data["content_type"],
+            )
 
-                file_name = file_data["filename"]
-                await self.providers.database.store_file(
-                    document_id,
-                    file_name,
-                    file_content,
-                    file_data["content_type"],
+            if run_with_orchestration:
+                raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
+                    "ingest-files",
+                    {"request": workflow_input},
+                    options={
+                        "additional_metadata": {
+                            "document_id": str(document_id),
+                        }
+                    },
                 )
-                if run_with_orchestration:
-                    raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
-                        "ingest-files",
-                        {"request": workflow_input},
-                        options={
-                            "additional_metadata": {
-                                "document_id": str(document_id),
-                            }
-                        },
-                    )
-                    raw_message["document_id"] = str(document_id)
-                    return raw_message  # type: ignore
-                else:
-                    logger.info(
-                        f"Running ingestion without orchestration for file {file_name} and document_id {document_id}."
-                    )
-                    # TODO - Clean up implementation logic here to be more explicitly `synchronous`
-                    from core.main.orchestration import (
-                        simple_ingestion_factory,
-                    )
+                raw_message["document_id"] = str(document_id)
+                return raw_message  # type: ignore
+            else:
+                logger.info(
+                    f"Running ingestion without orchestration for file {file_name} and document_id {document_id}."
+                )
+                # TODO - Clean up implementation logic here to be more explicitly `synchronous`
+                from core.main.orchestration import simple_ingestion_factory
 
-                    simple_ingestor = simple_ingestion_factory(
-                        self.services["ingestion"]
-                    )
-                    await simple_ingestor["ingest-files"](workflow_input)
-                    return {  # type: ignore
-                        "message": "Document created and ingested successfully.",
-                        "document_id": str(document_id),
-                        "task_id": None,
-                    }
-
-        # @self.router.post(
-        #     "/documents/{id}",
-        #     summary="Update a document",
-        #     openapi_extra={
-        #         "x-codeSamples": [
-        #             {
-        #                 "lang": "Python",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     from r2r import R2RClient
-
-        #                     client = R2RClient("http://localhost:7272")
-        #                     # when using auth, do client.login(...)
-
-        #                     result = client.documents.update(
-        #                         file_path="pg_essay_1.html",
-        #                         id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
-        #                     )
-        #                     """
-        #                 ),
-        #             },
-        #             {
-        #                 "lang": "JavaScript",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     const { r2rClient } = require("r2r-js");
-
-        #                     const client = new r2rClient("http://localhost:7272");
-
-        #                     function main() {
-        #                         const response = await client.documents.update({
-        #                             file: { path: "pg_essay_1.html", name: "pg_essay_1.html" },
-        #                             id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        #                         });
-        #                     }
-
-        #                     main();
-        #                     """
-        #                 ),
-        #             },
-        #             {
-        #                 "lang": "CLI",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     r2r documents update /path/to/file.txt --id=b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
-        #                     """
-        #                 ),
-        #             },
-        #             {
-        #                 "lang": "cURL",
-        #                 "source": textwrap.dedent(
-        #                     """
-        #                     curl -X POST "https://api.example.com/document/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"  \\
-        #                     -H "Content-Type: multipart/form-data"  \\
-        #                     -H "Authorization: Bearer YOUR_API_KEY"  \\
-        #                     -F "file=@pg_essay_1.html;type=text/plain"
-        #                     """
-        #                 ),
-        #             },
-        #         ]
-        #     },
-        # )
-        # @self.base_endpoint
-        # async def update_document(  # type: ignore
-        #     file: Optional[UploadFile] = File(
-        #         None,
-        #         description="The file to ingest. Either a file or content must be provided, but not both.",
-        #     ),
-        #     content: Optional[str] = Form(
-        #         None,
-        #         description="The text content to ingest. Either a file or content must be provided, but not both.",
-        #     ),
-        #     id: UUID = Path(
-        #         ...,
-        #         description="The ID of the document. If not provided, a new ID will be generated.",
-        #     ),
-        #     metadata: Optional[list[dict]] = Form(
-        #         None,
-        #         description="Metadata to associate with the document, such as title, description, or custom fields.",
-        #     ),
-        #     ingestion_config: Optional[Json[dict]] = Form(
-        #         None,
-        #         description="An optional dictionary to override the default chunking configuration for the ingestion process. If not provided, the system will use the default server-side chunking configuration.",
-        #     ),
-        #     run_with_orchestration: Optional[bool] = Form(
-        #         True,
-        #         description="Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.",
-        #     ),
-        #     auth_user=Depends(self.providers.auth.auth_wrapper),
-        # ) -> WrappedIngestionResponse:
-        #     """
-        #     Updates an existing document with new content and/or metadata. This will trigger
-        #     reprocessing of the document's chunks and knowledge graph data.
-
-        #     Either a new file or text content must be provided, but not both. The update process
-        #     runs asynchronously and its progress can be tracked using the returned task_id.
-
-        #     Metadata can be updated to change the document's title, description, or other fields. These changes are additive w.r.t. the existing metadata, but for chunks and knowledge graph data, the update is a full replacement.
-
-        #     Regular users can only update their own documents. Superusers can update any document.
-        #     All previous document versions are preserved in the system.
-        #     """
-        #     if file and content:
-        #         raise R2RException(
-        #             status_code=422,
-        #             message="Both a file and content cannot be provided.",
-        #         )
-
-        #     if (not file and not content) and metadata:
-        #         pass
-        #         # metadata update only
-        #         ## TODO - Uncomment after merging in `main`
-        #         # workflow_input = {
-        #         #     "document_id": str(id),
-        #         #     "metadata": metadata,
-        #         #     "user": auth_user.model_dump_json(),
-        #         # }
-
-        #         # logger.info(
-        #         #     "Running document metadata update without orchestration."
-        #         # )
-        #         # from core.main.orchestration import simple_ingestion_factory
-
-        #         # simple_ingestor = simple_ingestion_factory(self.service)
-        #         # await simple_ingestor["update-document-metadata"](
-        #         #     workflow_input
-        #         # )
-        #         # return {  # type: ignore
-        #         #     "message": "Update metadata task completed successfully.",
-        #         #     "id": str(document_id),
-        #         #     "task_id": None,
-        #         # }
-
-        #     else:
-        #         metadata = metadata or {}  # type: ignore
-
-        #         # Check if the user is a superuser
-        #         if not auth_user.is_superuser:
-        #             if (
-        #                 metadata is not None
-        #                 and "user_id" in metadata
-        #                 and metadata["user_id"] != str(auth_user.id)  # type: ignore
-        #             ):
-        #                 raise R2RException(
-        #                     status_code=403,
-        #                     message="Non-superusers cannot set user_id in metadata.",
-        #                 )
-        #             metadata["user_id"] = str(auth_user.id)  # type: ignore
-
-        #         if file:
-        #             file_data = await self._process_file(file)
-        #             content_length = len(file_data["content"])
-        #             file_content = BytesIO(
-        #                 base64.b64decode(file_data["content"])
-        #             )
-        #             file_data.pop("content", None)
-        #         elif content:
-        #             content_length = len(content)
-        #             file_content = BytesIO(content.encode("utf-8"))
-        #             file_data = {
-        #                 "filename": f"N/A",
-        #                 "content_type": "text/plain",
-        #             }
-        #         else:
-        #             raise R2RException(
-        #                 status_code=422,
-        #                 message="Either a file or content must be provided.",
-        #             )
-        #         await self.providers.database.store_file(
-        #             id,
-        #             file_data["filename"],
-        #             file_content,
-        #             file_data["content_type"],
-        #         )
-
-        #         workflow_input = {
-        #             "file_datas": [file_data],
-        #             "document_ids": [str(id)],
-        #             "metadatas": [metadata],
-        #             "ingestion_config": ingestion_config,
-        #             "user": auth_user.model_dump_json(),
-        #             "file_sizes_in_bytes": [content_length],
-        #             "is_update": False,
-        #             "user": auth_user.model_dump_json(),
-        #             "is_update": True,
-        #         }
-
-        #         if run_with_orchestration:
-        #             raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
-        #                 "update-files", {"request": workflow_input}, {}
-        #             )
-        #             raw_message["message"] = "Update task queued successfully."
-        #             raw_message["document_id"] = workflow_input[
-        #                 "document_ids"
-        #             ][0]
-
-        #             return raw_message  # type: ignore
-        #         else:
-        #             logger.info("Running update without orchestration.")
-        #             # TODO - Clean up implementation logic here to be more explicitly `synchronous`
-        #             from core.main.orchestration import (
-        #                 simple_ingestion_factory,
-        #             )
-
-        #             simple_ingestor = simple_ingestion_factory(
-        #                 self.services["ingestion"]
-        #             )
-        #             await simple_ingestor["update-files"](workflow_input)
-        #             return {  # type: ignore
-        #                 "message": "Update task completed successfully.",
-        #                 "document_id": workflow_input["document_ids"],
-        #                 "task_id": None,
-        #             }
+                simple_ingestor = simple_ingestion_factory(
+                    self.services["ingestion"]
+                )
+                await simple_ingestor["ingest-files"](workflow_input)
+                return {  # type: ignore
+                    "message": "Document created and ingested successfully.",
+                    "document_id": str(document_id),
+                    "task_id": None,
+                }
 
         @self.router.get(
             "/documents",
@@ -937,7 +710,7 @@ class DocumentsRouter(BaseRouterV3):
                 )
 
             is_owner = str(
-                list_document_chunks["results"][0].get("user_id")
+                list_document_chunks["results"][0].get("owner_id")
             ) == str(auth_user.id)
             document_collections = await self.services[
                 "management"
@@ -1125,7 +898,7 @@ class DocumentsRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
                             response = client.documents.delete_by_filter(
-                                filters={"document_type": {"$eq": "txt"}} 
+                                filters={"document_type": {"$eq": "txt"}}
                             )
                             """
                         ),
@@ -1540,7 +1313,7 @@ class DocumentsRouter(BaseRouterV3):
             entities, count = (
                 await self.providers.database.graph_handler.entities.get(
                     parent_id=id,
-                    store_type="document",
+                    store_type="documents",
                     offset=offset,
                     limit=limit,
                     include_embeddings=include_embeddings,
@@ -1678,7 +1451,7 @@ class DocumentsRouter(BaseRouterV3):
             relationships, count = (
                 await self.providers.database.graph_handler.relationships.get(
                     parent_id=id,
-                    store_type="document",
+                    store_type="documents",
                     entity_names=entity_names,
                     relationship_types=relationship_types,
                     offset=offset,
