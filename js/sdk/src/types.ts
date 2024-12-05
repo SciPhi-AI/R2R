@@ -1,3 +1,6 @@
+import { GenerationConfig } from "r2r-js";
+import { ChunkSearchSettings, HybridSearchSettings } from "./models";
+
 export interface UnprocessedChunk {
   id: string;
   document_id?: string;
@@ -38,9 +41,11 @@ export interface ChunkResponse {
 // Collection types
 export interface CollectionResponse {
   id: string;
-  user_id?: string;
+  owner_id?: string;
   name: string;
   description?: string;
+  graph_cluster_status: string;
+  graph_sync_status: string;
   created_at: string;
   updated_at: string;
   user_count: number;
@@ -88,14 +93,14 @@ export interface BranchResponse {
 export interface DocumentResponse {
   id: string;
   collection_ids: string[];
-  user_id: string;
+  owner_id: string;
   document_type: string;
   metadata: Record<string, any>;
   title?: string;
   version: string;
   size_in_bytes?: number;
   ingestion_status: string;
-  kg_extraction_status: string;
+  extraction_status: string;
   created_at: string;
   updated_at: string;
   ingestion_attempt_number?: number;
@@ -106,20 +111,13 @@ export interface DocumentResponse {
 // Entity types
 export interface EntityResponse {
   id: string;
-  sid?: string;
   name: string;
-  category?: string;
   description?: string;
-  chunk_ids: string[];
+  category?: string;
+  metadata: Record<string, any>;
+  parent_id?: string;
+  chunk_ids?: string[];
   description_embedding?: string;
-  document_id: string;
-  document_ids: string[];
-  graph_ids: string[];
-  user_id: string;
-  last_modified_by: string;
-  created_at: string;
-  updated_at: string;
-  attributes?: Record<string, any>;
 }
 
 // Graph types
@@ -183,6 +181,24 @@ export interface RelationshipResponse {
 }
 
 // Retrieval types
+export interface GraphSearchSettings {
+  generation_config?: GenerationConfig;
+}
+
+export interface SearchSettings {
+  use_hybrid_search?: boolean;
+  use_semantic_search?: boolean;
+  use_full_text_search?: boolean;
+  filters?: Record<string, any>;
+  limit?: number;
+  offset?: number;
+  include_metadata?: boolean;
+  include_scores: boolean;
+  search_strategy?: string;
+  hybrid_settings?: HybridSearchSettings;
+  chunk_settings?: ChunkSearchSettings;
+  graph_settings?: GraphSearchSettings;
+}
 export interface VectorSearchResult {
   chunk_id: string;
   document_id: string;

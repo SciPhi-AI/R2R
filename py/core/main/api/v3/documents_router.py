@@ -828,7 +828,7 @@ class DocumentsRouter(BaseRouterV3):
 
             document = documents_overview_response["results"][0]
 
-            is_owner = str(document.user_id) == str(auth_user.id)
+            is_owner = str(document.owner_id) == str(auth_user.id)
 
             if not auth_user.is_superuser and not is_owner:
                 document_collections = await self.services[

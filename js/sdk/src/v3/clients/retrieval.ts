@@ -7,6 +7,7 @@ import {
   GenerationConfig,
 } from "../../models";
 import { feature } from "../../feature";
+import { SearchSettings, WrappedSearchResponse } from "../../types";
 
 export class RetrievalClient {
   constructor(private client: r2rClient) {}
@@ -29,16 +30,12 @@ export class RetrievalClient {
   @feature("retrieval.search")
   async search(options: {
     query: string;
-    vectorSearchSettings?: ChunkSearchSettings | Record<string, any>;
-    kgSearchSettings?: KGSearchSettings | Record<string, any>;
-  }): Promise<any> {
+    searchSettings?: SearchSettings | Record<string, any>;
+  }): Promise<WrappedSearchResponse> {
     const data = {
       query: options.query,
-      ...(options.vectorSearchSettings && {
-        vectorSearchSettings: options.vectorSearchSettings,
-      }),
-      ...(options.kgSearchSettings && {
-        kgSearchSettings: options.kgSearchSettings,
+      ...(options.searchSettings && {
+        searchSettings: options.searchSettings,
       }),
     };
 

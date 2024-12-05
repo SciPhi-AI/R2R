@@ -9,7 +9,6 @@ from fastapi.responses import StreamingResponse
 
 from core.base import (
     GenerationConfig,
-    GraphSearchSettings,
     Message,
     R2RException,
     SearchSettings,
