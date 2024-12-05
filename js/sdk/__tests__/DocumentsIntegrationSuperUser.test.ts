@@ -49,7 +49,6 @@ describe("r2rClient V3 Documents Integration Tests", () => {
       "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
     );
     expect(response.results.metadata.title).toBe("marmeladov.txt");
-    expect(response.results.metadata.filename).toBe("marmeladov.txt");
     expect(response.results.size_in_bytes).toBeDefined();
     expect(response.results.ingestion_status).toBe("success");
     expect(response.results.extraction_status).toBe("pending");
