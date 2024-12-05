@@ -24,6 +24,52 @@ def hatchet_kg_factory(
     orchestration_provider: OrchestrationProvider, service: KgService
 ) -> dict[str, "Hatchet.Workflow"]:
 
+    def convert_to_dict(input_data):
+        """
+        Converts input data back to a plain dictionary format, handling special cases like UUID and GenerationConfig.
+        This is the inverse of get_input_data_dict.
+
+        Args:
+            input_data: Dictionary containing the input data with potentially special types
+
+        Returns:
+            Dictionary with all values converted to basic Python types
+        """
+        output_data = {}
+
+        for key, value in input_data.items():
+            if value is None:
+                output_data[key] = None
+                continue
+
+            # Convert UUID to string
+            if isinstance(value, uuid.UUID):
+                output_data[key] = str(value)
+
+            try:
+                output_data[key] = value.model_dump()
+            except:
+                # Handle nested dictionaries that might contain settings
+                if isinstance(value, dict):
+                    output_data[key] = convert_to_dict(value)
+
+                # Handle lists that might contain dictionaries
+                elif isinstance(value, list):
+                    output_data[key] = [
+                        (
+                            convert_to_dict(item)
+                            if isinstance(item, dict)
+                            else item
+                        )
+                        for item in value
+                    ]
+
+                # All other types can be directly assigned
+                else:
+                    output_data[key] = value
+
+        return output_data
+
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
 
@@ -40,15 +86,24 @@ def hatchet_kg_factory(
                 input_data[key] = uuid.UUID(value)
 
             if key == "graph_creation_settings":
-                input_data[key] = json.loads(value)
+                try:
+                    input_data[key] = json.loads(value)
+                except:
+                    pass
                 input_data[key]["generation_config"] = GenerationConfig(
                     **input_data[key]["generation_config"]
                 )
             if key == "graph_enrichment_settings":
-                input_data[key] = json.loads(value)
+                try:
+                    input_data[key] = json.loads(value)
+                except:
+                    pass
 
             if key == "graph_entity_deduplication_settings":
-                input_data[key] = json.loads(value)
+                try:
+                    input_data[key] = json.loads(value)
+                except:
+                    pass
 
                 if isinstance(input_data[key]["generation_config"], str):
                     input_data[key]["generation_config"] = json.loads(
@@ -94,27 +149,64 @@ def hatchet_kg_factory(
             )
 
             # context.log(f"Running KG Extraction for collection ID: {input_data['graph_id']}")
-            document_id = input_data["document_id"]
+            document_id = input_data.get("document_id", None)
+            collection_id = input_data.get("collection_id", None)
+            if collection_id and document_id:
+                raise R2RException(
+                    "Both collection_id and document_id were provided. Please provide only one.",
+                    400,
+                )
+            elif collection_id:
+                document_ids = (
+                    await self.kg_service.get_document_ids_for_create_graph(
+                        collection_id=collection_id,
+                        **input_data["graph_creation_settings"],
+                    )
+                )
+                workflows = []
+
+                for document_id in document_ids:
+                    input_data_copy = input_data.copy()
+                    input_data_copy["document_id"] = document_id
+                    input_data_copy.pop("collection_id", None)
+
+                    workflows.append(
+                        context.aio.spawn_workflow(
+                            "kg-extract",
+                            {
+                                "request": {
+                                    **input_data_copy,
+                                }
+                            },
+                            key=str(document_id),
+                        )
+                    )
+                # Wait for all workflows to complete
+                results = await asyncio.gather(*workflows)
+                return {
+                    "result": f"successfully submitted extraction request {document_id} in {time.time() - start_time:.2f} seconds",
+                }
 
             # await self.kg_service.kg_relationships_extraction(
             #     document_id=document_id,
             #     **input_data["graph_creation_settings"],
             # )
-            extractions = []
-            async for extraction in service.kg_extraction(
-                document_id=document_id,
-                **input_data["graph_creation_settings"],
-            ):
-                print(
-                    "found extraction w/ entities = = ",
-                    len(extraction.entities),
-                )
-                extractions.append(extraction)
-            await service.store_kg_extractions(extractions)
+            else:
+                extractions = []
+                async for extraction in service.kg_extraction(
+                    document_id=document_id,
+                    **input_data["graph_creation_settings"],
+                ):
+                    print(
+                        "found extraction w/ entities = = ",
+                        len(extraction.entities),
+                    )
+                    extractions.append(extraction)
+                await service.store_kg_extractions(extractions)
 
-            logger.info(
-                f"Successfully ran kg relationships extraction for document {document_id}"
-            )
+                logger.info(
+                    f"Successfully ran kg relationships extraction for document {document_id}"
+                )
 
             return {
                 "result": f"successfully ran kg relationships extraction for document {document_id} in {time.time() - start_time:.2f} seconds",
@@ -128,7 +220,7 @@ def hatchet_kg_factory(
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
-            document_id = input_data["document_id"]
+            document_id = input_data.get("document_id", None)
 
             await self.kg_service.kg_entity_description(
                 document_id=document_id,
@@ -171,44 +263,97 @@ def hatchet_kg_factory(
 
     @orchestration_provider.workflow(name="extract-triples", timeout="600m")
     class CreateGraphWorkflow:
+
+        @orchestration_provider.concurrency(  # type: ignore
+            max_runs=orchestration_provider.config.kg_concurrency_limit,  # type: ignore
+            limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
+        )
+        def concurrency(self, context: Context) -> str:
+            # TODO: Possible bug in hatchet, the job can't find context.workflow_input() when rerun
+            try:
+                return str(
+                    context.workflow_input()["request"]["collection_id"]
+                )
+            except Exception as e:
+                pass
+
         def __init__(self, kg_service: KgService):
             self.kg_service = kg_service
 
         @orchestration_provider.step(retries=1)
         async def kg_extraction(self, context: Context) -> dict:
-            input_data = get_input_data_dict(
-                context.workflow_input()["request"]
-            )
-            document_id = input_data["document_id"]
+            request = context.workflow_input()["request"]
+            print('context.workflow_input()["request"] = ', request)
 
-            # Extract relationships and store them
-            extractions = []
-            async for extraction in self.kg_service.kg_extraction(
-                document_id=document_id,
-                **input_data["graph_creation_settings"],
-            ):
-                logger.info(
-                    f"Found extraction with {len(extraction.entities)} entities"
+            input_data = get_input_data_dict(request)
+            document_id = input_data.get("document_id", None)
+            collection_id = input_data.get("collection_id", None)
+
+            if collection_id and not document_id:
+                document_ids = (
+                    await self.kg_service.get_document_ids_for_create_graph(
+                        collection_id=collection_id,
+                        **input_data["graph_creation_settings"],
+                    )
                 )
-                extractions.append(extraction)
+                workflows = []
 
-            await self.kg_service.store_kg_extractions(extractions)
+                for document_id in document_ids:
+                    print("extracting = ", document_id)
+                    input_data_copy = input_data.copy()
+                    input_data_copy["collection_id"] = str(
+                        input_data_copy["collection_id"]
+                    )
+                    input_data_copy["document_id"] = str(document_id)
 
-            logger.info(
-                f"Successfully ran kg relationships extraction for document {document_id}"
-            )
+                    workflows.append(
+                        context.aio.spawn_workflow(
+                            "extract-triples",
+                            {
+                                "request": {
+                                    **convert_to_dict(input_data_copy),
+                                }
+                            },
+                            key=str(document_id),
+                        )
+                    )
+                # Wait for all workflows to complete
+                results = await asyncio.gather(*workflows)
+                return {
+                    "result": f"successfully submitted kg relationships extraction for document {document_id}",
+                    "document_id": str(collection_id),
+                }
 
-            return {
-                "result": f"successfully ran kg relationships extraction for document {document_id}",
-                "document_id": str(document_id),
-            }
+            else:
+
+                # Extract relationships and store them
+                extractions = []
+                async for extraction in self.kg_service.kg_extraction(
+                    document_id=document_id,
+                    **input_data["graph_creation_settings"],
+                ):
+                    logger.info(
+                        f"Found extraction with {len(extraction.entities)} entities"
+                    )
+                    extractions.append(extraction)
+
+                await self.kg_service.store_kg_extractions(extractions)
+
+                logger.info(
+                    f"Successfully ran kg relationships extraction for document {document_id}"
+                )
+
+                return {
+                    "result": f"successfully ran kg relationships extraction for document {document_id}",
+                    "document_id": str(document_id),
+                }
 
         @orchestration_provider.step(retries=1, parents=["kg_extraction"])
         async def kg_entity_description(self, context: Context) -> dict:
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
-            document_id = input_data["document_id"]
+            document_id = input_data.get("document_id", None)
 
             # Describe the entities in the graph
             await self.kg_service.kg_entity_description(
@@ -710,7 +855,7 @@ def hatchet_kg_factory(
             self.kg_service = kg_service
 
         @orchestration_provider.concurrency(  # type: ignore
-            max_runs=orchestration_provider.config.kg_enrichment_concurrency_limit,  # type: ignore
+            max_runs=orchestration_provider.config.kg_concurrency_limit,  # type: ignore
             limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
         )
         def concurrency(self, context: Context) -> str:

@@ -7,6 +7,7 @@ from core.base import (
     AsyncState,
     CompletionProvider,
     DatabaseProvider,
+    KGSearchResultType
 )
 from core.base.abstractions import GenerationConfig, RAGCompletion
 
@@ -59,7 +60,6 @@ class SearchRAGPipe(GeneratorPipe):
             )
             context += context_piece
             search_iteration += 1
-
         messages = (
             await self.database_provider.prompt_handler.get_message_payload(
                 system_prompt_name=self.config.system_prompt,
@@ -103,15 +103,21 @@ class SearchRAGPipe(GeneratorPipe):
         if results.graph_search_results:
             context += f"Knowledge Graph ({iteration}):\n"
             it = total_results + 1
-            for search_results in results.graph_search_results:  # [1]:
-                if associated_query := search_results.metadata.get(
-                    "associated_query"
-                ):
-                    context += f"Query: {associated_query}\n\n"
-                context += f"Results:\n"
-                for search_result in search_results:
-                    context += f"[{it}]: {search_result}\n\n"
-                    it += 1
+            for search_result in results.graph_search_results:  # [1]:
+                # if associated_query := search_results.metadata.get(
+                #     "associated_query"
+                # ):
+                #     context += f"Query: {associated_query}\n\n"
+                # context += f"Results:\n"
+                if search_result.result_type == KGSearchResultType.ENTITY:
+                    context += f"[{it}]: Entity Name - {search_result.content.name}\n\nDescription - {search_result.content.description}\n\n"
+                elif search_result.result_type == KGSearchResultType.RELATIONSHIP:
+                    context += f"[{it}]: Relationship - {search_result.content.subject} - {search_result.content.predicate} - {search_result.content.object}\n\n"
+                else:
+                        context += f"[{it}]: Community Name - {search_result.content.name}\n\nDescription - {search_result.content.summary}\n\n"
+
+
+                it += 1
             total_results = (
                 it - 1
             )  # Update total_results based on the last index used
