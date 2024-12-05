@@ -46,22 +46,6 @@ def hatchet_kg_factory(
             if isinstance(value, uuid.UUID):
                 output_data[key] = str(value)
 
-            # Convert GenerationConfig to dict
-            # elif hasattr(value, 'model_dump') and hasattr(value, '_defaults'):  # Check if it's a GenerationConfig
-            #     config_dict = {
-            #         "model": value.model,
-            #         "temperature": value.temperature,
-            #         "top_p": value.top_p,
-            #         "max_tokens_to_sample": value.max_tokens_to_sample,
-            #         "stream": value.stream,
-            #         "functions": value.functions,
-            #         "tools": value.tools,
-            #         "add_generation_kwargs": value.add_generation_kwargs,
-            #         "api_base": value.api_base,
-            #         "response_format": value.response_format
-            #     }
-            #     output_data[key] = {k: v for k, v in config_dict.items() if v is not None}
-
             try:
                 output_data[key] = value.model_dump()
             except:
