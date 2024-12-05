@@ -115,11 +115,7 @@ class IngestionService(Service):
 
             if not is_update and len(existing_document_info) > 0:
                 existing_doc = existing_document_info[0]
-                if (
-                    existing_doc.version >= version
-                    and existing_doc.ingestion_status
-                    == IngestionStatus.SUCCESS
-                ):
+                if existing_doc.ingestion_status == IngestionStatus.SUCCESS:
                     raise R2RException(
                         status_code=409,
                         message=f"Document {document_id} already exists. Submit a DELETE request to `/documents/{document_id}` to delete this document and allow for re-ingestion.",
@@ -127,7 +123,7 @@ class IngestionService(Service):
                 elif existing_doc.ingestion_status != IngestionStatus.FAILED:
                     raise R2RException(
                         status_code=409,
-                        message=f"Document {document_id} is currently ingesting.",
+                        message=f"Document {document_id} is currently ingesting with status {existing_doc.ingestion_status}.",
                     )
 
             await self.providers.database.upsert_documents_overview(

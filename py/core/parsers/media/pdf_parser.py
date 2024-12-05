@@ -4,7 +4,9 @@ import base64
 import logging
 import os
 import string
+import tempfile
 import unicodedata
+import uuid
 from io import BytesIO
 from typing import AsyncGenerator
 
@@ -45,6 +47,15 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             raise ImportError(
                 "Please install the `litellm` package to use the VLMPDFParser."
             )
+
+    def _create_temp_dir(self) -> str:
+        """Create a unique temporary directory for PDF processing."""
+        # Create a unique directory name using UUID
+        unique_id = str(uuid.uuid4())
+        temp_base = tempfile.gettempdir()
+        temp_dir = os.path.join(temp_base, f"pdf_images_{unique_id}")
+        os.makedirs(temp_dir, exist_ok=True)
+        return temp_dir
 
     async def convert_pdf_to_images(
         self, pdf_path: str, temp_dir: str
@@ -145,8 +156,9 @@ class VLMPDFParser(AsyncParser[str | bytes]):
         temp_dir = None
         try:
             # Create temporary directory for image processing
-            temp_dir = os.path.join(os.getcwd(), "temp_pdf_images")
-            os.makedirs(temp_dir, exist_ok=True)
+            # temp_dir = os.path.join(os.getcwd(), "temp_pdf_images")
+            # os.makedirs(temp_dir, exist_ok=True)
+            temp_dir = self._create_temp_dir()
 
             # Handle both file path and bytes input
             if isinstance(data, bytes):

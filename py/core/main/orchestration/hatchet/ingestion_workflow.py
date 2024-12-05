@@ -56,7 +56,7 @@ def hatchet_ingestion_factory(
             except Exception as e:
                 return str(uuid.uuid4())
 
-        @orchestration_provider.step(timeout="60m")
+        @orchestration_provider.step(retries=0, timeout="60m")
         async def parse(self, context: Context) -> dict:
             try:
                 logger.info("Initiating ingestion workflow, step: parse")

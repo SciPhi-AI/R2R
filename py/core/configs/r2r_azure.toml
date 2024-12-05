@@ -24,7 +24,8 @@ batch_size = 256
 
 [embedding]
 provider = "litellm"
-base_model = "openai/text-embedding-3-small" # continue with `openai` for embeddings, due to server rate limit on azure
+base_model = "azure/text-embedding-3-small" # continue with `openai` for embeddings, due to server rate limit on azure
+base_dimension = 512
 
 [file]
 provider = "postgres"

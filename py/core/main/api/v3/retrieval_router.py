@@ -105,7 +105,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
                                     use_semantic_search: true,
                                     chunk_settings: {
-                                        limit: 20, // separate limit for chunk vs. graph
+                                        limit: 20, # separate limit for chunk vs. graph
                                         enabled: true
                                     },
                                     graph_settings: {
@@ -131,7 +131,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                         filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
                                         use_semantic_search: true,
                                         chunk_settings: {
-                                            limit: 20, // separate limit for chunk vs. graph
+                                            limit: 20, # separate limit for chunk vs. graph
                                             enabled: true
                                         },
                                         graph_settings: {
@@ -166,7 +166,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
                                     use_semantic_search: true,
                                     chunk_settings: {
-                                        limit: 20, // separate limit for chunk vs. graph
+                                        limit: 20, # separate limit for chunk vs. graph
                                         enabled: true
                                     },
                                     graph_settings: {
@@ -262,7 +262,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                         filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
                                         use_semantic_search: true,
                                         chunk_settings: {
-                                            limit: 20, // separate limit for chunk vs. graph
+                                            limit: 20, # separate limit for chunk vs. graph
                                             enabled: true
                                         },
                                         graph_settings: {
@@ -436,7 +436,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                         filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
                                         use_semantic_search: true,
                                         chunk_settings: {
-                                            limit: 20, // separate limit for chunk vs. graph
+                                            limit: 20, # separate limit for chunk vs. graph
                                             enabled: true
                                         },
                                         graph_settings: {

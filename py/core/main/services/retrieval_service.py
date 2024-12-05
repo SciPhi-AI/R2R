@@ -133,7 +133,7 @@ class RetrievalService(Service):
         **kwargs,
     ):
         return await self.providers.llm.aget_completion(
-            messages,
+            [message.to_dict() for message in messages],
             generation_config,
             *args,
             **kwargs,
