@@ -212,17 +212,19 @@ export interface VectorSearchResult {
   metadata?: Record<string, any>;
 }
 
-export interface KGSearchResult {
-  method: string;
-  content: string;
-  result_type?: string;
-  chunks_ids?: string[];
-  metadata?: Record<string, any>;
+type KGSearchResultType = "entity" | "relationship" | "community" | "global";
+
+interface GraphSearchResult {
+  content: any;
+  result_type?: KGSearchResultType;
+  chunk_ids?: string[];
+  metadata: Record<string, any>;
+  score?: number;
 }
 
 export interface CombinedSearchResponse {
-  vector_search_results: VectorSearchResult[];
-  graph_search_results?: KGSearchResult[];
+  chunk_search_results: VectorSearchResult[];
+  graph_search_results?: GraphSearchResult[];
 }
 
 // System types
