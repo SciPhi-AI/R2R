@@ -17,78 +17,9 @@ export interface RefreshTokenResponse {
   };
 }
 
-export interface GenerationConfig {
-  model?: string;
-  temperature?: number;
-  topP?: number;
-  maxTokensToSample?: number;
-  stream?: boolean;
-  functions?: Array<Record<string, any>>;
-  tools?: Array<Record<string, any>>;
-  addGenerationKwargs?: Record<string, any>;
-  apiBase?: string;
-  responseFormat?: string;
-}
-
-export interface HybridSearchSettings {
-  fullTextWeight: number;
-  semanticWeight: number;
-  fullTextLimit: number;
-  rrfK: number;
-}
-
-export interface ChunkSearchSettings {
-  useVectorSearch?: boolean;
-  useHybridSearch?: boolean;
-  filters?: Record<string, any>;
-  searchLimit?: number;
-  offset?: number;
-  selectedCollectionIds?: string[];
-  indexMeasure: IndexMeasure;
-  includeScores?: boolean;
-  includeMetadatas?: boolean;
-  probes?: number;
-  efSearch?: number;
-  hybridSearchSettings?: HybridSearchSettings;
-  searchStrategy?: string;
-}
-
-export interface KGSearchSettings {
-  useKgSearch?: boolean;
-  filters?: Record<string, any>;
-  selectedCollectionIds?: string[];
-  graphragMapSystemPrompt?: string;
-  kgSearchType?: "local";
-  kgSearchLevel?: number | null;
-  generationConfig?: GenerationConfig;
-  maxCommunityDescriptionLength?: number;
-  maxLlmQueriesForGlobalSearch?: number;
-  localSearchLimits?: Record<string, number>;
-}
-
 export enum KGRunType {
   ESTIMATE = "estimate",
   RUN = "run",
-}
-
-export interface KGCreationSettings {
-  kgRelationshipsExtractionPrompt?: string;
-  kgEntityDescriptionPrompt?: string;
-  forceKgCreation?: boolean;
-  entityTypes?: string[];
-  relationTypes?: string[];
-  extractionsMergeCount?: number;
-  maxKnowledgeRelationships?: number;
-  maxDescriptionInputLength?: number;
-  generationConfig?: GenerationConfig;
-}
-
-export interface KGEnrichmentSettings {
-  forceKgEnrichment?: boolean;
-  communityReportsPrompt?: string;
-  maxSummaryInputLength?: number;
-  generationConfig?: GenerationConfig;
-  leidenParams?: Record<string, any>;
 }
 
 export interface KGEntityDeduplicationSettings {
@@ -119,12 +50,6 @@ export interface Message {
 
 export interface R2RDocumentChunksRequest {
   documentId: string;
-}
-
-export enum IndexMeasure {
-  COSINE_DISTANCE = "cosine_distance",
-  L2_DISTANCE = "l2_distance",
-  MAX_INNER_PRODUCT = "max_inner_product",
 }
 
 export interface RawChunk {

@@ -14,11 +14,9 @@ class Collection(BaseModel):
     name: str
     description: Optional[str] = None
     created_at: datetime = Field(
-        alias="createdAt",
         default_factory=datetime.utcnow,
     )
     updated_at: datetime = Field(
-        alias="updatedAt",
         default_factory=datetime.utcnow,
     )
 

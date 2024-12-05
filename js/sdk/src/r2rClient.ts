@@ -27,13 +27,8 @@ import {
   TokenInfo,
   Message,
   RefreshTokenResponse,
-  ChunkSearchSettings,
-  KGSearchSettings,
   KGRunType,
-  KGCreationSettings,
-  KGEnrichmentSettings,
   KGEntityDeduplicationSettings,
-  GenerationConfig,
   RawChunk,
 } from "./models";
 
@@ -1615,7 +1610,7 @@ export class r2rClient extends BaseClient {
   async createGraph(
     collection_id?: string,
     run_type?: KGRunType,
-    graph_creation_settings?: KGCreationSettings | Record<string, any>,
+    graph_creation_settings?: Record<string, any>,
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
 
@@ -1643,7 +1638,7 @@ export class r2rClient extends BaseClient {
   async enrichGraph(
     collection_id?: string,
     run_type?: KGRunType,
-    graph_enrichment_settings?: KGEnrichmentSettings | Record<string, any>,
+    graph_enrichment_settings?: Record<string, any>,
   ): Promise<any> {
     this._ensureAuthenticated();
 
@@ -1866,7 +1861,7 @@ export class r2rClient extends BaseClient {
   @feature("searchDocuments")
   async searchDocuments(
     query: string,
-    vector_search_settings?: ChunkSearchSettings | Record<string, any>,
+    vector_search_settings?: Record<string, any>,
   ): Promise<any> {
     this._ensureAuthenticated();
     const json_data: Record<string, any> = {
@@ -1894,8 +1889,8 @@ export class r2rClient extends BaseClient {
   @feature("search")
   async search(
     query: string,
-    vector_search_settings?: ChunkSearchSettings | Record<string, any>,
-    graph_search_settings?: KGSearchSettings | Record<string, any>,
+    vector_search_settings?: Record<string, any>,
+    graph_search_settings?: Record<string, any>,
   ): Promise<any> {
     this._ensureAuthenticated();
 
@@ -1926,9 +1921,9 @@ export class r2rClient extends BaseClient {
   @feature("rag")
   async rag(
     query: string,
-    vector_search_settings?: ChunkSearchSettings | Record<string, any>,
-    graph_search_settings?: KGSearchSettings | Record<string, any>,
-    rag_generation_config?: GenerationConfig | Record<string, any>,
+    vector_search_settings?: Record<string, any>,
+    graph_search_settings?: Record<string, any>,
+    rag_generation_config?: Record<string, any>,
     task_prompt_override?: string,
     include_title_if_available?: boolean,
   ): Promise<any | AsyncGenerator<string, void, unknown>> {
@@ -1986,9 +1981,9 @@ export class r2rClient extends BaseClient {
   @feature("agent")
   async agent(
     messages: Message[],
-    rag_generation_config?: GenerationConfig | Record<string, any>,
-    vector_search_settings?: ChunkSearchSettings | Record<string, any>,
-    graph_search_settings?: KGSearchSettings | Record<string, any>,
+    rag_generation_config?: Record<string, any>,
+    vector_search_settings?: Record<string, any>,
+    graph_search_settings?: Record<string, any>,
     task_prompt_override?: string,
     include_title_if_available?: boolean,
     conversation_id?: string,

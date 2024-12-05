@@ -171,7 +171,6 @@ class GraphCommunitySettings(R2RSerializable):
     graphrag_communities: str = Field(
         default="graphrag_communities",
         description="The prompt to use for knowledge graph enrichment.",
-        alias="graphrag_communities",  # TODO - mark deprecated & remove
     )
 
     max_summary_input_length: int = Field(

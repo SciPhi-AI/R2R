@@ -257,7 +257,6 @@ class ChunkSearchSettings(R2RSerializable):
     """Settings specific to chunk/vector search."""
 
     index_measure: IndexMeasure = Field(
-        alias="indexMeasure",
         default=IndexMeasure.cosine_distance,
         description="The distance measure to use for indexing",
     )
@@ -266,7 +265,6 @@ class ChunkSearchSettings(R2RSerializable):
         description="Number of ivfflat index lists to query. Higher increases accuracy but decreases speed.",
     )
     ef_search: int = Field(
-        alias="efSearch",
         default=40,
         description="Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed.",
     )
@@ -280,30 +278,24 @@ class GraphSearchSettings(R2RSerializable):
     """Settings specific to knowledge graph search."""
 
     generation_config: GenerationConfig = Field(
-        alias="generationConfig",
         default_factory=GenerationConfig,
         description="Configuration for text generation during graph search.",
     )
     graphrag_map_system: str = Field(
-        alias="graphragMapSystem",
         default="graphrag_map_system",
         description="The system prompt for the graphrag map prompt.",
     )
     graphrag_reduce_system: str = Field(
-        alias="graphragReduceSystem",
         default="graphrag_reduce_system",
         description="The system prompt for the graphrag reduce prompt.",
     )
     max_community_description_length: int = Field(
-        alias="maxCommunityDescriptionLength",
         default=65536,
     )
     max_llm_queries_for_global_search: int = Field(
-        alias="maxLLMQueriesForGlobalSearch",
         default=250,
     )
     limits: dict[str, int] = Field(
-        alias="localSearchLimits",
         default={},
     )
     enabled: bool = Field(
@@ -319,17 +311,14 @@ class SearchSettings(R2RSerializable):
     use_hybrid_search: bool = Field(
         default=False,
         description="Whether to perform a hybrid search. This is equivalent to setting `use_semantic_search=True` and `use_fulltext_search=True`, e.g. combining vector and keyword search.",
-        alias="useHybridSearch",
     )
     use_semantic_search: bool = Field(
         default=True,
         description="Whether to use semantic search",
-        alias="useSemanticSearch",
     )
     use_fulltext_search: bool = Field(
         default=False,
         description="Whether to use full-text search",
-        alias="useFulltextSearch",
     )
 
     # Common search parameters
@@ -359,24 +348,20 @@ class SearchSettings(R2RSerializable):
         description="Offset to paginate search results",
     )
     include_metadatas: bool = Field(
-        alias="includeMetadatas",
         default=True,
         description="Whether to include element metadata in the search results",
     )
     include_scores: bool = Field(
-        alias="includeScores",
         default=True,
         description="Whether to include search score values in the search results",
     )
 
     # Search strategy and settings
     search_strategy: str = Field(
-        alias="searchStrategy",
         default="vanilla",
         description="Search strategy to use (e.g., 'vanilla', 'query_fusion', 'hyde')",
     )
     hybrid_settings: HybridSearchSettings = Field(
-        alias="hybridSearchSettings",
         default_factory=HybridSearchSettings,
         description="Settings for hybrid search (only used if `use_semantic_search` and `use_fulltext_search` are both true)",
     )
