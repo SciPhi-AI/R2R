@@ -288,11 +288,7 @@ def hatchet_kg_factory(
             input_data = get_input_data_dict(request)
             document_id = input_data.get("document_id", None)
             collection_id = input_data.get("collection_id", None)
-            # if collection_id and document_id:
-            #     raise R2RException(
-            #         "Both collection_id and document_id were provided. Please provide only one.",
-            #         400,
-            #     )
+
             if collection_id and not document_id:
                 document_ids = (
                     await self.kg_service.get_document_ids_for_create_graph(
@@ -300,7 +296,6 @@ def hatchet_kg_factory(
                         **input_data["graph_creation_settings"],
                     )
                 )
-                print("document ids to extract = ", document_ids)
                 workflows = []
 
                 for document_id in document_ids:
