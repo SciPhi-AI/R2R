@@ -1,5 +1,8 @@
-import { GenerationConfig } from "r2r-js";
-import { ChunkSearchSettings, HybridSearchSettings } from "./models";
+import {
+  ChunkSearchSettings,
+  GenerationConfig,
+  HybridSearchSettings,
+} from "./models";
 
 export interface UnprocessedChunk {
   id: string;
