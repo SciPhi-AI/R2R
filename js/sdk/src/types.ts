@@ -212,9 +212,9 @@ export interface VectorSearchResult {
   metadata?: Record<string, any>;
 }
 
-type KGSearchResultType = "entity" | "relationship" | "community" | "global";
+export type KGSearchResultType = "entity" | "relationship" | "community" | "global";
 
-interface GraphSearchResult {
+export interface GraphSearchResult {
   content: any;
   result_type?: KGSearchResultType;
   chunk_ids?: string[];
