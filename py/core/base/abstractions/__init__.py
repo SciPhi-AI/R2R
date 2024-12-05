@@ -63,6 +63,7 @@ from shared.abstractions.search import (
     KGRelationshipResult,
     KGSearchResultType,
     SearchSettings,
+    WebSearchResponse,
 )
 from shared.abstractions.user import Token, TokenData, User
 from shared.abstractions.vector import (
@@ -120,6 +121,7 @@ __all__ = [
     # Prompt abstractions
     "Prompt",
     # Search abstractions
+    "WebSearchResponse",
     "AggregateSearchResult",
     "GraphSearchResult",
     "KGSearchResultType",

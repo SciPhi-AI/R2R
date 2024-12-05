@@ -46,6 +46,7 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
+    "WebSearchResponse",
     "GraphSearchResult",
     "GraphSearchSettings",
     "ChunkSearchSettings",

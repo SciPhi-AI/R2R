@@ -7,12 +7,7 @@ from uuid import UUID
 from fastapi import Body, Depends
 from fastapi.responses import StreamingResponse
 
-from core.base import (
-    GenerationConfig,
-    Message,
-    R2RException,
-    SearchSettings,
-)
+from core.base import GenerationConfig, Message, R2RException, SearchSettings
 from core.base.api.models import (
     WrappedAgentResponse,
     WrappedCompletionResponse,
