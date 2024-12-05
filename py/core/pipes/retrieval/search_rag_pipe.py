@@ -7,7 +7,7 @@ from core.base import (
     AsyncState,
     CompletionProvider,
     DatabaseProvider,
-    KGSearchResultType
+    KGSearchResultType,
 )
 from core.base.abstractions import GenerationConfig, RAGCompletion
 
@@ -111,11 +111,13 @@ class SearchRAGPipe(GeneratorPipe):
                 # context += f"Results:\n"
                 if search_result.result_type == KGSearchResultType.ENTITY:
                     context += f"[{it}]: Entity Name - {search_result.content.name}\n\nDescription - {search_result.content.description}\n\n"
-                elif search_result.result_type == KGSearchResultType.RELATIONSHIP:
+                elif (
+                    search_result.result_type
+                    == KGSearchResultType.RELATIONSHIP
+                ):
                     context += f"[{it}]: Relationship - {search_result.content.subject} - {search_result.content.predicate} - {search_result.content.object}\n\n"
                 else:
-                        context += f"[{it}]: Community Name - {search_result.content.name}\n\nDescription - {search_result.content.summary}\n\n"
-
+                    context += f"[{it}]: Community Name - {search_result.content.name}\n\nDescription - {search_result.content.summary}\n\n"
 
                 it += 1
             total_results = (

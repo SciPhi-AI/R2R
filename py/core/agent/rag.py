@@ -9,7 +9,7 @@ from core.base.abstractions import (
     AggregateSearchResult,
     GraphSearchSettings,
     SearchSettings,
-    WebSearchResponse
+    WebSearchResponse,
 )
 from core.base.agent import AgentConfig, Tool
 from core.base.providers import CompletionProvider
@@ -37,7 +37,7 @@ class RAGAgentMixin:
                 self._tools.append(self.web_search())
             else:
                 raise ValueError(f"Unsupported tool name: {tool_name}")
-            
+
     def web_search(self) -> Tool:
         return Tool(
             name="web_search",
@@ -65,18 +65,17 @@ class RAGAgentMixin:
         **kwargs,
     ) -> list[AggregateSearchResult]:
         from .serper import SerperClient
+
         serper_client = SerperClient()
         # TODO - make async!
         # TODO - Move to search pipeline, make configurable.
-        raw_results =  serper_client.get_raw(query)
+        raw_results = serper_client.get_raw(query)
         web_response = WebSearchResponse.from_serper_results(raw_results)
         return AggregateSearchResult(
             chunk_search_results=None,
             graph_search_results=None,
-            web_search_results=web_response.organic_results, # TODO - How do we feel about throwing away so much info?
+            web_search_results=web_response.organic_results,  # TODO - How do we feel about throwing away so much info?
         )
-
-
 
     def local_search(self) -> Tool:
         return Tool(

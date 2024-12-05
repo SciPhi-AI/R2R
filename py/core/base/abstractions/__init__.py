@@ -51,7 +51,6 @@ from shared.abstractions.llm import (
 )
 from shared.abstractions.prompt import Prompt
 from shared.abstractions.search import (
-    WebSearchResponse,
     AggregateSearchResult,
     ChunkSearchResult,
     ChunkSearchSettings,
@@ -64,6 +63,7 @@ from shared.abstractions.search import (
     KGRelationshipResult,
     KGSearchResultType,
     SearchSettings,
+    WebSearchResponse,
 )
 from shared.abstractions.user import Token, TokenData, User
 from shared.abstractions.vector import (
