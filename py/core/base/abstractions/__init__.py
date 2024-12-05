@@ -51,6 +51,7 @@ from shared.abstractions.llm import (
 )
 from shared.abstractions.prompt import Prompt
 from shared.abstractions.search import (
+    WebSearchResponse,
     AggregateSearchResult,
     ChunkSearchResult,
     ChunkSearchSettings,
@@ -120,6 +121,7 @@ __all__ = [
     # Prompt abstractions
     "Prompt",
     # Search abstractions
+    "WebSearchResponse",
     "AggregateSearchResult",
     "GraphSearchResult",
     "KGSearchResultType",

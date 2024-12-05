@@ -81,17 +81,28 @@ def format_search_results_for_llm(results: AggregateSearchResult) -> str:
                 )
 
             source_counter += 1
+    if results.web_search_results:
+        formatted_results.append("Web Search Results:")
+        for result in results.web_search_results:
+            formatted_results.extend((
+                f"Source [{source_counter}]:",
+                f"Title: {result.title}",
+                f"Link: {result.link}",
+                f"Snippet: {result.snippet}"
+            ))
+            if result.date:
+                formatted_results.append(f"Date: {result.date}")
+            source_counter += 1
 
     return "\n".join(formatted_results)
 
-
-def format_search_results_for_stream(
-    result: AggregateSearchResult,
-) -> str:
-    CHUNK_SEARCH_STREAM_MARKER = "chunk_search"  # TODO - change this to vector_search in next major release
+def format_search_results_for_stream(result: AggregateSearchResult) -> str:
+    CHUNK_SEARCH_STREAM_MARKER = "chunk_search"  
     GRAPH_SEARCH_STREAM_MARKER = "graph_search"
-
+    WEB_SEARCH_STREAM_MARKER = "web_search"
+    
     context = ""
+    
     if result.chunk_search_results:
         context += f"<{CHUNK_SEARCH_STREAM_MARKER}>"
         vector_results_list = [
@@ -108,8 +119,15 @@ def format_search_results_for_stream(
         context += json.dumps(kg_results_list, default=str)
         context += f"</{GRAPH_SEARCH_STREAM_MARKER}>"
 
-    return context
+    if result.web_search_results:
+        context += f"<{WEB_SEARCH_STREAM_MARKER}>"
+        web_results_list = [
+            result.to_dict() for result in result.web_search_results
+        ]
+        context += json.dumps(web_results_list, default=str)
+        context += f"</{WEB_SEARCH_STREAM_MARKER}>"
 
+    return context
 
 if TYPE_CHECKING:
     from ..pipeline.base_pipeline import AsyncPipeline

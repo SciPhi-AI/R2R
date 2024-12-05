@@ -146,17 +146,65 @@ class GraphSearchResult(R2RSerializable):
         }
 
 
+class WebSearchResult(R2RSerializable):
+    title: str
+    link: str
+    snippet: str 
+    position: int
+    type: str = "organic"
+    date: Optional[str] = None
+    sitelinks: Optional[list[dict]] = None
+
+class RelatedSearchResult(R2RSerializable):
+    query: str
+    type: str = "related"
+
+class PeopleAlsoAskResult(R2RSerializable):
+    question: str
+    snippet: str
+    link: str
+    title: str
+    type: str = "peopleAlsoAsk" 
+
+class WebSearchResponse(R2RSerializable):
+    organic_results: list[WebSearchResult] = []
+    related_searches: list[RelatedSearchResult] = []
+    people_also_ask: list[PeopleAlsoAskResult] = []
+
+    @classmethod
+    def from_serper_results(cls, results: list[dict]) -> "WebSearchResponse":
+        organic = []
+        related = []
+        paa = []
+        
+        for result in results:
+            if result["type"] == "organic":
+                organic.append(WebSearchResult(**result))
+            elif result["type"] == "relatedSearches":
+                related.append(RelatedSearchResult(**result))
+            elif result["type"] == "peopleAlsoAsk":
+                paa.append(PeopleAlsoAskResult(**result))
+                
+        return cls(
+            organic_results=organic,
+            related_searches=related,
+            people_also_ask=paa
+        )
+
+
+
 class AggregateSearchResult(R2RSerializable):
     """Result of an aggregate search operation."""
 
     chunk_search_results: Optional[list[ChunkSearchResult]]
     graph_search_results: Optional[list[GraphSearchResult]] = None
+    web_search_results: Optional[list[WebSearchResult]] = None
 
     def __str__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results})"
 
     def __repr__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results})"
 
     def as_dict(self) -> dict:
         return {
@@ -165,7 +213,9 @@ class AggregateSearchResult(R2RSerializable):
                 if self.chunk_search_results
                 else []
             ),
-            "graph_search_results": self.graph_search_results or None,
+            "graph_search_results": [result.to_dict() for result in self.graph_search_results],
+            "web_search_results": [result.to_dict() for result in self.web_search_results]
+
         }
 
 
