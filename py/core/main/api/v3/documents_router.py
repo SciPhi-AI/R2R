@@ -275,7 +275,6 @@ class DocumentsRouter(BaseRouterV3):
                 ingestion_mode=ingestion_mode,
                 ingestion_config=ingestion_config,
             )
-            print('effective_ingestion_config = ', effective_ingestion_config)
             if not file and not raw_text and not chunks:
                 raise R2RException(
                     status_code=422,
@@ -404,7 +403,11 @@ class DocumentsRouter(BaseRouterV3):
             workflow_input = {
                 "file_data": file_data,
                 "document_id": str(document_id),
-                "collection_ids": collection_ids,
+                "collection_ids": (
+                    [str(cid) for cid in collection_ids]
+                    if collection_ids
+                    else None
+                ),
                 "metadata": metadata,
                 "ingestion_config": effective_ingestion_config.model_dump(),
                 "user": auth_user.model_dump_json(),
