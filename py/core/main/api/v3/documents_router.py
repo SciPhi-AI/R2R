@@ -324,10 +324,6 @@ class DocumentsRouter(BaseRouterV3):
                 ingestion_mode=ingestion_mode,
                 ingestion_config=ingestion_config,
             )
-<<<<<<< HEAD
-            print("effective_ingestion_config = ", effective_ingestion_config)
-=======
->>>>>>> 66f7f26d7778f9cbda2f039661204db80feb68d5
             if not file and not raw_text and not chunks:
                 raise R2RException(
                     status_code=422,
