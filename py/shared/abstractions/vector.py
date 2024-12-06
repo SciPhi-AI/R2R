@@ -202,7 +202,7 @@ class VectorEntry(R2RSerializable):
             f"VectorEntry("
             f"chunk_id={self.id}, "
             f"document_id={self.document_id}, "
-            f"user_id={self.owner_id}, "
+            f"owner_id={self.owner_id}, "
             f"collection_ids={self.collection_ids}, "
             f"vector={self.vector}, "
             f"text={self.text}, "

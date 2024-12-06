@@ -19,8 +19,8 @@ from core.base.logger.base import (
     RunType,
 )
 from shared.api.models.management.responses import (
-    MessageResponse,
     ConversationResponse,
+    MessageResponse,
 )
 
 logger = logging.getLogger()
@@ -726,6 +726,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 (str(conversation_id),),
             ) as cursor:
                 row = await cursor.fetchone()
+                print(f"Row: {row}")
                 branch_id = row[0] if row else None
 
         # If no branch exists, return empty results but with required fields

@@ -47,6 +47,7 @@ from .search import (
     KGSearchResultType,
     SearchMode,
     SearchSettings,
+    select_search_filters,
 )
 from .user import Token, TokenData, User
 from .vector import (
@@ -111,6 +112,7 @@ __all__ = [
     "ChunkSearchSettings",
     "ChunkSearchResult",
     "SearchSettings",
+    "select_search_filters",
     "HybridSearchSettings",
     "SearchMode",
     # KG abstractions

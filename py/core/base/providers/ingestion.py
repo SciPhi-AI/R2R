@@ -1,15 +1,15 @@
 import logging
 from abc import ABC
 from enum import Enum
+from typing import ClassVar
+
+from pydantic import BaseModel, Field
 
 from core.base.abstractions import ChunkEnrichmentSettings
 
-from .base import Provider, ProviderConfig
+from .base import AppConfig, Provider, ProviderConfig
 from .database import DatabaseProvider
 from .llm import CompletionProvider
-from .base import AppConfig
-from typing import ClassVar
-from pydantic import BaseModel, Field
 
 logger = logging.getLogger()
 

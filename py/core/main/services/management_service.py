@@ -257,7 +257,7 @@ class ManagementService(Service):
                         message=f"Invalid filter field: {field}",
                     )
 
-            for field in ["document_id", "user_id", "chunk_id"]:
+            for field in ["document_id", "owner_id", "chunk_id"]:
                 if field in filters:
                     op = next(iter(filters[field].keys()))
                     try:
@@ -307,10 +307,10 @@ class ManagementService(Service):
                     relational_filters.setdefault(
                         "filter_document_ids", []
                     ).append(filter_dict["document_id"]["$eq"])
-                if "user_id" in filter_dict:
+                if "owner_id" in filter_dict:
                     relational_filters.setdefault(
                         "filter_user_ids", []
-                    ).append(filter_dict["user_id"]["$eq"])
+                    ).append(filter_dict["owner_id"]["$eq"])
                 if "collection_ids" in filter_dict:
                     relational_filters.setdefault(
                         "filter_collection_ids", []

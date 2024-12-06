@@ -16,6 +16,7 @@ from core.base import (
     SearchSettings,
     UnprocessedChunk,
     UpdateChunk,
+    select_search_filters,
 )
 from core.base.api.models import (
     GenericBooleanResponse,
@@ -48,45 +49,6 @@ class ChunksRouter(BaseRouterV3):
         run_type: RunType = RunType.INGESTION,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
-
-    def _select_filters(
-        self,
-        auth_user: Any,
-        search_settings: SearchSettings,
-    ) -> dict[str, Any]:
-
-        filters = copy(search_settings.filters)
-        selected_collections = None
-        if not auth_user.is_superuser:
-            user_collections = set(auth_user.collection_ids)
-            for key in filters.keys():
-                if "collection_ids" in key:
-                    selected_collections = set(filters[key]["$overlap"])
-                    break
-
-            if selected_collections:
-                allowed_collections = user_collections.intersection(
-                    selected_collections
-                )
-            else:
-                allowed_collections = user_collections
-            # for non-superusers, we filter by user_id and selected & allowed collections
-            collection_filters = {
-                "$or": [
-                    {"user_id": {"$eq": auth_user.id}},
-                    {
-                        "collection_ids": {
-                            "$overlap": list(allowed_collections)
-                        }
-                    },
-                ]  # type: ignore
-            }
-
-            filters.pop("collection_ids", None)
-
-            filters = {"$and": [collection_filters, filters]}  # type: ignore
-
-        return filters
 
     def _setup_routes(self):
         @self.router.post(
@@ -131,7 +93,7 @@ class ChunksRouter(BaseRouterV3):
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
             """
 
-            search_settings.filters = self._select_filters(
+            search_settings.filters = select_search_filters(
                 auth_user, search_settings
             )
 
@@ -201,7 +163,7 @@ class ChunksRouter(BaseRouterV3):
             # document = await self.services["management"].get_document(chunk.document_id)
             # TODO - Add collection ID check
             if not auth_user.is_superuser and str(auth_user.id) != str(
-                chunk["user_id"]
+                chunk["owner_id"]
             ):
                 raise R2RException("Not authorized to access this chunk", 403)
 
@@ -308,43 +270,6 @@ class ChunksRouter(BaseRouterV3):
                 metadata=chunk_update.metadata or existing_chunk["metadata"],
                 # vector = existing_chunk.get('vector')
             )
-
-        #         @self.router.post(
-        #             "/chunks/{id}/enrich",
-        #             summary="Enrich Chunk",
-        #             openapi_extra={
-        #                 "x-codeSamples": [
-        #                     {
-        #                         "lang": "Python",
-        #                         "source": """
-        # from r2r import R2RClient
-
-        # client = R2RClient("http://localhost:7272")
-        # result = client.chunks.enrich(
-        #     id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
-        #     enrichment_config={"key": "value"}
-        # )
-        # """,
-        #                     }
-        #                 ]
-        #             },
-        #         )
-        #         @self.base_endpoint
-        #         async def enrich_chunk(
-        #             id: UUID = Path(...),
-        #             enrichment_config: dict = Body(...),
-        #             auth_user=Depends(self.providers.auth.auth_wrapper),
-        #         ) -> ResultsWrapper[ChunkResponse]:
-        #             """
-        #             Enrich a chunk with additional processing and metadata.
-
-        #             This endpoint allows adding additional enrichments to an existing chunk,
-        #             such as entity extraction, classification, or custom processing defined
-        #             in the enrichment_config.
-
-        #             Users can only enrich chunks they own unless they are superusers.
-        #             """
-        #             pass
 
         @self.router.delete(
             "/chunks/{id}",
@@ -493,7 +418,7 @@ class ChunksRouter(BaseRouterV3):
 
             # Add user access control filter
             if not auth_user.is_superuser:
-                filters["user_id"] = {"$eq": str(auth_user.id)}
+                filters["owner_id"] = {"$eq": str(auth_user.id)}
 
             # Add metadata filters if provided
             if metadata_filter:

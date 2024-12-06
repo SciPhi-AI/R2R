@@ -22,6 +22,7 @@ from shared.abstractions import (
     SearchSettings,
     Token,
     User,
+    select_search_filters,
 )
 from shared.api.models import CombinedSearchResponse, RAGResponse
 
@@ -45,6 +46,7 @@ __all__ = [
     "Token",
     "ChunkSearchResult",
     "SearchSettings",
+    "select_search_filters",
     "SearchMode",
     "KGEntityDeduplicationSettings",
     "RAGResponse",

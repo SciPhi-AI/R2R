@@ -1,5 +1,6 @@
 """Abstractions for search functionality."""
 
+from copy import copy
 from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
@@ -461,3 +462,38 @@ class SearchMode(str, Enum):
     basic = "basic"
     advanced = "advanced"
     custom = "custom"
+
+
+def select_search_filters(
+    auth_user: Any,
+    search_settings: SearchSettings,
+) -> dict[str, Any]:
+
+    filters = copy(search_settings.filters)
+    selected_collections = None
+    if not auth_user.is_superuser:
+        user_collections = set(auth_user.collection_ids)
+        for key in filters.keys():
+            if "collection_ids" in key:
+                selected_collections = set(filters[key]["$overlap"])
+                break
+
+        if selected_collections:
+            allowed_collections = user_collections.intersection(
+                selected_collections
+            )
+        else:
+            allowed_collections = user_collections
+        # for non-superusers, we filter by user_id and selected & allowed collections
+        collection_filters = {
+            "$or": [
+                {"owner_id": {"$eq": auth_user.id}},
+                {"collection_ids": {"$overlap": list(allowed_collections)}},
+            ]  # type: ignore
+        }
+
+        filters.pop("collection_ids", None)
+
+        filters = {"$and": [collection_filters, filters]}  # type: ignore
+
+    return filters

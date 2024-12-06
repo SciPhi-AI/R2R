@@ -24,7 +24,6 @@ from core.base.api.models import CombinedSearchResponse, RAGResponse, User
 from core.base.logger.base import RunType
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
-
 from shared.api.models.management.responses import MessageResponse
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -120,7 +119,6 @@ class RetrievalService(Service):
         settings: SearchSettings,
         query_embedding: Optional[list[float]] = None,
     ) -> list[DocumentResponse]:
-
         return await self.providers.database.search_documents(
             query_text=query,
             settings=settings,

@@ -65,6 +65,7 @@ from shared.abstractions.search import (
     SearchMode,
     SearchSettings,
     WebSearchResponse,
+    select_search_filters,
 )
 from shared.abstractions.user import Token, TokenData, User
 from shared.abstractions.vector import (
@@ -134,6 +135,7 @@ __all__ = [
     "ChunkSearchSettings",
     "ChunkSearchResult",
     "SearchSettings",
+    "select_search_filters",
     "SearchMode",
     "HybridSearchSettings",
     # KG abstractions
