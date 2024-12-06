@@ -1,4 +1,5 @@
-import logging
+from core.utils.logging_config import configure_logging
+
 import os
 from contextlib import asynccontextmanager
 from typing import Optional
@@ -12,7 +13,8 @@ from core.base import R2RException
 
 from .assembly import R2RBuilder, R2RConfig
 
-logger = logging.getLogger()
+logger, log_file = configure_logging()
+
 
 # Global scheduler
 scheduler = AsyncIOScheduler()
@@ -64,8 +66,6 @@ async def create_r2r_app(
     return await builder.build()
 
 
-logging.basicConfig(level=logging.INFO)
-
 config_name = os.getenv("R2R_CONFIG_NAME", None)
 config_path = os.getenv("R2R_CONFIG_PATH", None)
 
@@ -95,7 +95,10 @@ logger.info(
 )
 
 # Create the FastAPI app
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    log_config=None,
+)
 
 
 @app.exception_handler(R2RException)
