@@ -217,10 +217,10 @@ class AggregateSearchResult(R2RSerializable):
             ),
             "graph_search_results": [
                 result.to_dict() for result in self.graph_search_results
-            ],
+            ] if self.graph_search_results else [],
             "web_search_results": [
                 result.to_dict() for result in self.web_search_results
-            ],
+            ] if self.web_search_results else [],
         }
 
 
