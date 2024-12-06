@@ -19,6 +19,7 @@ from shared.abstractions import (
     R2RSerializable,
     SearchSettings,
     SearchMode,
+    IngestionMode,
     Token,
     User,
 )
@@ -44,6 +45,7 @@ __all__ = [
     "Token",
     "ChunkSearchResult",
     "SearchSettings",
+    "SearchMode",
     "KGEntityDeduplicationSettings",
     "RAGResponse",
     "CombinedSearchResponse",

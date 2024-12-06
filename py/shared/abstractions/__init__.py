@@ -8,6 +8,7 @@ from .document import (
     KGEnrichmentStatus,
     KGExtractionStatus,
     RawChunk,
+    IngestionMode,
     UnprocessedChunk,
 )
 from .embedding import EmbeddingPurpose, default_embedding_prefixes

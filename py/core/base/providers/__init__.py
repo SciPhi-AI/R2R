@@ -18,7 +18,7 @@ from .database import (
 )
 from .email import EmailConfig, EmailProvider
 from .embedding import EmbeddingConfig, EmbeddingProvider
-from .ingestion import ChunkingStrategy, IngestionConfig, IngestionProvider
+from .ingestion import ChunkingStrategy, IngestionConfig, IngestionProvider, IngestionMode
 from .llm import CompletionConfig, CompletionProvider
 from .orchestration import OrchestrationConfig, OrchestrationProvider, Workflow
 
@@ -31,6 +31,7 @@ __all__ = [
     "Provider",
     "ProviderConfig",
     # Ingestion provider
+    "IngestionMode",
     "IngestionConfig",
     "IngestionProvider",
     "ChunkingStrategy",

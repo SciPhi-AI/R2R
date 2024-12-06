@@ -255,3 +255,128 @@ class DocumentChunk(R2RSerializable):
 
 class RawChunk(R2RSerializable):
     text: str
+
+
+class IngestionMode(str, Enum):
+    hi_res = "hi-res"
+    fast = "fast"
+    custom = "custom"
+
+
+class ChunkEnrichmentStrategy(str, Enum):
+    SEMANTIC = "semantic"
+    NEIGHBORHOOD = "neighborhood"
+
+    def __str__(self) -> str:
+        return self.value
+
+from .llm import GenerationConfig
+
+class ChunkEnrichmentSettings(R2RSerializable):
+    """
+    Settings for chunk enrichment.
+    """
+
+    enable_chunk_enrichment: bool = Field(
+        default=False,
+        description="Whether to enable chunk enrichment or not",
+    )
+    strategies: list[ChunkEnrichmentStrategy] = Field(
+        default=[],
+        description="The strategies to use for chunk enrichment. Union of chunks obtained from each strategy is used as context.",
+    )
+    forward_chunks: int = Field(
+        default=3,
+        description="The number after the current chunk to include in the LLM context while enriching",
+    )
+    backward_chunks: int = Field(
+        default=3,
+        description="The number of chunks before the current chunk in the LLM context while enriching",
+    )
+    semantic_neighbors: int = Field(
+        default=10, description="The number of semantic neighbors to include"
+    )
+    semantic_similarity_threshold: float = Field(
+        default=0.7,
+        description="The similarity threshold for semantic neighbors",
+    )
+    generation_config: GenerationConfig = Field(
+        default=GenerationConfig(),
+        description="The generation config to use for chunk enrichment",
+    )
+
+## TODO - Move ingestion config 
+
+class IngestionConfig(R2RSerializable):
+    provider: str = "r2r"
+    excluded_parsers: list[str] = ["mp4"]
+    chunk_enrichment_settings: ChunkEnrichmentSettings = (
+        ChunkEnrichmentSettings()
+    )
+    extra_parsers: dict[str, str] = {}
+
+    audio_transcription_model: str = "openai/whisper-1"
+
+    vision_img_prompt_name: str = "vision_img"
+    vision_img_model: str = "openai/gpt-4o"
+
+    vision_pdf_prompt_name: str = "vision_pdf"
+    vision_pdf_model: str = "openai/gpt-4o"
+
+    skip_document_summary: bool = False
+    document_summary_system_prompt: str = "default_system"
+    document_summary_task_prompt: str = "default_summary"
+    chunks_for_document_summary: int = 128
+    document_summary_model: str = "openai/gpt-4o-mini"
+
+    @property
+    def supported_providers(self) -> list[str]:
+        return ["r2r", "unstructured_local", "unstructured_api"]
+
+    def validate_config(self) -> None:
+        if self.provider not in self.supported_providers:
+            raise ValueError(f"Provider {self.provider} is not supported.")
+
+
+    @classmethod
+    def get_default(cls, mode: str) -> "IngestionConfig":
+        """Return default ingestion configuration for a given mode."""
+        if mode == "hi-res":
+            # More thorough parsing, no skipping summaries, possibly larger `chunks_for_document_summary`.
+            return cls(
+                provider="r2r",
+                excluded_parsers=["mp4"],
+                chunk_enrichment_settings=ChunkEnrichmentSettings(),  # default
+                extra_parsers={},
+                audio_transcription_model="openai/whisper-1",
+                vision_img_prompt_name="vision_img",
+                vision_img_model="openai/gpt-4o",
+                vision_pdf_prompt_name="vision_pdf",
+                vision_pdf_model="openai/gpt-4o",
+                skip_document_summary=False,
+                document_summary_system_prompt="default_system",
+                document_summary_task_prompt="default_summary",
+                chunks_for_document_summary=256,  # larger for hi-res
+                document_summary_model="openai/gpt-4o-mini",
+            )
+        elif mode == "fast":
+            # Skip summaries and other enrichment steps for speed.
+            return cls(
+                provider="r2r",
+                excluded_parsers=["mp4"],
+                chunk_enrichment_settings=ChunkEnrichmentSettings(), # default
+                extra_parsers={},
+                audio_transcription_model="openai/whisper-1",
+                vision_img_prompt_name="vision_img",
+                vision_img_model="openai/gpt-4o",
+                vision_pdf_prompt_name="vision_pdf",
+                vision_pdf_model="openai/gpt-4o",
+                skip_document_summary=True,  # skip summaries
+                document_summary_system_prompt="default_system",
+                document_summary_task_prompt="default_summary",
+                chunks_for_document_summary=64,
+                document_summary_model="openai/gpt-4o-mini",
+            )
+        else:
+            # For `custom` or any unrecognized mode, return a base config
+            return cls()

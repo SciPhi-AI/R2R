@@ -118,6 +118,7 @@ __all__ = [
     "EmbeddingConfig",
     "EmbeddingProvider",
     # Ingestion provider
+    "IngestionMode",
     "IngestionConfig",
     "IngestionProvider",
     "ChunkingStrategy",

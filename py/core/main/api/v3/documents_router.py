@@ -17,6 +17,8 @@ from core.base import (
     UnprocessedChunk,
     Workflow,
     generate_document_id,
+    IngestionMode,
+    IngestionConfig,
     generate_id,
 )
 from core.base.abstractions import KGCreationSettings, KGRunType
@@ -43,6 +45,15 @@ from .base_router import BaseRouterV3
 logger = logging.getLogger()
 MAX_CHUNKS_PER_REQUEST = 1024 * 100
 
+
+def merge_ingestion_config(base: IngestionConfig, overrides: IngestionConfig) -> IngestionConfig:
+    base_dict = base.model_dump()
+    overrides_dict = overrides.model_dump(exclude_unset=True)
+
+    for k, v in overrides_dict.items():
+        base_dict[k] = v
+
+    return IngestionConfig(**base_dict)
 
 class DocumentsRouter(BaseRouterV3):
     def __init__(
@@ -105,6 +116,24 @@ class DocumentsRouter(BaseRouterV3):
                 ),
             },
         )
+
+    def _prepare_ingestion_config(
+        self,
+        ingestion_mode: IngestionMode,
+        ingestion_config: Optional[IngestionConfig],
+    ) -> IngestionConfig:
+        # If not custom, start from defaults
+        if ingestion_mode != IngestionMode.custom:
+            effective_config = IngestionConfig.get_default(ingestion_mode.value, app=self.providers.auth.config.app)
+            if ingestion_config:
+                effective_config = merge_ingestion_config(effective_config, ingestion_config)
+        else:
+            # custom mode
+            effective_config = ingestion_config or IngestionConfig(app=self.providers.auth.config.app)
+
+        effective_config.validate_config()
+        return effective_config
+
 
     def _setup_routes(self):
         @self.router.post(
@@ -199,7 +228,18 @@ class DocumentsRouter(BaseRouterV3):
                 None,
                 description="Metadata to associate with the document, such as title, description, or custom fields.",
             ),
-            ingestion_config: Optional[Json[dict]] = Form(
+            ingestion_mode: IngestionMode = Form(
+                default=IngestionMode.custom,
+                description=(
+                    "Ingestion modes:\n"
+                    "- `hi-res`: Thorough ingestion with full summaries and enrichment.\n"
+                    "- `fast`: Quick ingestion with minimal enrichment and no summaries.\n"
+                    "- `custom`: Full control via `ingestion_config`.\n\n"
+                    "If `filters` or `limit` (in `ingestion_config`) are provided alongside `hi-res` or `fast`, "
+                    "they will override the default settings for that mode."
+                ),
+            ),
+            ingestion_config: Optional[Json[IngestionConfig]] = Form(
                 None,
                 description="An optional dictionary to override the default chunking configuration for the ingestion process. If not provided, the system will use the default server-side chunking configuration.",
             ),
@@ -210,14 +250,23 @@ class DocumentsRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedIngestionResponse:
             """
-            Creates a new Document object from an input file or text content. The document will be processed
-            to create chunks for vector indexing and search.
+            Creates a new Document object from an input file, text content, or chunks. The chosen `ingestion_mode` determines
+            how the ingestion process is configured:
+
+            **Ingestion Modes:**
+            - `hi-res`: Comprehensive parsing and enrichment, including summaries and possibly more thorough parsing.
+            - `fast`: Speed-focused ingestion that skips certain enrichment steps like summaries.
+            - `custom`: Provide a full `ingestion_config` to customize the entire ingestion process.
 
             Either a file or text content must be provided, but not both. Documents are shared through `Collections` which allow for tightly specified cross-user interactions.
 
             The ingestion process runs asynchronously and its progress can be tracked using the returned
             task_id.
             """
+            effective_ingestion_config = self._prepare_ingestion_config(
+                ingestion_mode=ingestion_mode,
+                ingestion_config=ingestion_config,
+            )
             if not file and not raw_text and not chunks:
                 raise R2RException(
                     status_code=422,
@@ -275,6 +324,7 @@ class DocumentsRouter(BaseRouterV3):
                     ],
                     "metadata": metadata,  # Base metadata for the document
                     "user": auth_user.model_dump_json(),
+                    "ingestion_config": effective_ingestion_config.model_dump(),
                 }
 
                 # TODO - Modify create_chunks so that we can add chunks to existing document
@@ -347,7 +397,7 @@ class DocumentsRouter(BaseRouterV3):
                 "document_id": str(document_id),
                 "collection_ids": collection_ids,
                 "metadata": metadata,
-                "ingestion_config": ingestion_config,
+                "ingestion_config": effective_ingestion_config.model_dump(),
                 "user": auth_user.model_dump_json(),
                 "size_in_bytes": content_length,
                 "is_update": False,
