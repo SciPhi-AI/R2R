@@ -12,7 +12,7 @@ from shared.api.models.management.responses import (
     WrappedDocumentsResponse,
 )
 
-from ..models import IngestionMode, SearchSettings
+from ..models import IngestionMode, SearchSettings, SearchMode
 
 
 class DocumentsSDK:

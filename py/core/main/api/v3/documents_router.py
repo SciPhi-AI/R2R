@@ -22,6 +22,7 @@ from core.base import (
     Workflow,
     generate_document_id,
     generate_id,
+    select_search_filters
 )
 from core.base.abstractions import KGCreationSettings, KGRunType
 from core.base.api.models import (
@@ -114,7 +115,7 @@ class DocumentsRouter(BaseRouterV3):
             effective_settings = search_settings or SearchSettings()
 
         # Apply user-specific filters
-        effective_settings.filters = self._select_filters(
+        effective_settings.filters = select_search_filters(
             auth_user, effective_settings
         )
 
@@ -341,17 +342,6 @@ class DocumentsRouter(BaseRouterV3):
                 )
             # Check if the user is a superuser
             metadata = metadata or {}
-            if not auth_user.is_superuser:
-                if "owner_id" in metadata and (
-                    not auth_user.is_superuser
-                    and metadata["owner_id"] != str(auth_user.id)
-                ):
-                    raise R2RException(
-                        status_code=403,
-                        message="Non-superusers cannot set user_id in metadata.",
-                    )
-                # If user is not a superuser, set user_id in metadata
-                metadata["owner_id"] = str(auth_user.id)
 
             if chunks:
                 if len(chunks) == 0:
@@ -1618,7 +1608,7 @@ class DocumentsRouter(BaseRouterV3):
             results = await self.services["retrieval"].search_documents(
                 query=query,
                 query_embedding=query_embedding,
-                settings=settings,
+                settings=effective_settings,
             )
             return results
 

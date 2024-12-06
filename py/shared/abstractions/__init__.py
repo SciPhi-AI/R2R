@@ -46,6 +46,7 @@ from .search import (
     KGRelationshipResult,
     KGSearchResultType,
     SearchMode,
+    select_search_filters,
     SearchSettings,
 )
 from .user import Token, TokenData, User
@@ -111,6 +112,7 @@ __all__ = [
     "ChunkSearchSettings",
     "ChunkSearchResult",
     "SearchSettings",
+    "select_search_filters",
     "HybridSearchSettings",
     "SearchMode",
     # KG abstractions

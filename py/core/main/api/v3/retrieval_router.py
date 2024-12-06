@@ -13,6 +13,7 @@ from core.base import (
     R2RException,
     SearchMode,
     SearchSettings,
+    select_search_filters
 )
 from core.base.api.models import (
     WrappedAgentResponse,
@@ -84,50 +85,12 @@ class RetrievalRouterV3(BaseRouterV3):
             effective_settings = search_settings or SearchSettings()
 
         # Apply user-specific filters
-        effective_settings.filters = self._select_filters(
+        effective_settings.filters = select_search_filters(
             auth_user, effective_settings
         )
 
         return effective_settings
 
-    def _select_filters(
-        self,
-        auth_user: Any,
-        search_settings: SearchSettings,
-    ) -> dict[str, Any]:
-
-        filters = copy(search_settings.filters)
-        selected_collections = None
-        if not auth_user.is_superuser:
-            user_collections = set(auth_user.collection_ids)
-            for key in filters.keys():
-                if "collection_ids" in key:
-                    selected_collections = set(filters[key]["$overlap"])
-                    break
-
-            if selected_collections:
-                allowed_collections = user_collections.intersection(
-                    selected_collections
-                )
-            else:
-                allowed_collections = user_collections
-            # for non-superusers, we filter by user_id and selected & allowed collections
-            collection_filters = {
-                "$or": [
-                    {"owner_id": {"$eq": auth_user.id}},
-                    {
-                        "collection_ids": {
-                            "$overlap": list(allowed_collections)
-                        }
-                    },
-                ]  # type: ignore
-            }
-
-            filters.pop("collection_ids", None)
-
-            filters = {"$and": [collection_filters, filters]}  # type: ignore
-
-        return filters
 
     def _setup_routes(self):
 
@@ -854,7 +817,6 @@ class RetrievalRouterV3(BaseRouterV3):
             The messages list should contain alternating user and assistant messages, with an optional
             system message at the start. Each message should have a 'role' and 'content'.
             """
-            print('messages = ', messages)
 
             return await self.services["retrieval"].completion(
                 messages=messages,
