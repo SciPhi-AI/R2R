@@ -302,32 +302,31 @@ class RetrievalService(Service):
                 ids = []
 
                 if conversation_id:
-                    # Fetch existing conversation
-                    conversation = (
-                        await self.logging_connection.get_conversation(
-                            conversation_id, branch_id
-                        )
-                    )
-                    if not conversation:
-                        logger.error(
-                            f"No conversation found for ID: {conversation_id}"
-                        )
-                        raise R2RException(
-                            status_code=404,
-                            message=f"Conversation not found: {conversation_id}",
-                        )
-                    # Assuming 'conversation' is a list of dicts with 'id' and 'message' keys
-                    messages_from_conversation = []
-                    for resp in conversation:
-                        if isinstance(resp, dict):
-                            msg = Message.from_dict(resp["message"])
-                            messages_from_conversation.append(msg)
-                            ids.append(resp["id"])
-                        else:
-                            logger.error(
-                                f"Unexpected type in conversation: {type(resp)}"
+                    try:
+                        # Fetch existing conversation
+                        conversation = (
+                            await self.logging_connection.get_conversation(
+                                conversation_id=conversation_id,
+                                branch_id=branch_id,
                             )
-                    messages = messages_from_conversation + messages
+                        )
+                    except Exception as e:
+                        logger.error(f"Error logging conversation: {str(e)}")
+                    # Assuming 'conversation' is a list of dicts with 'id' and 'message' keys
+
+                    if conversation is not None:
+                        print("Gets into messages_from_conversation")
+                        messages_from_conversation: list[Message] = []
+                        for resp in conversation:
+                            if isinstance(resp, dict):
+                                msg = Message.from_dict(resp["message"])
+                                messages_from_conversation.append(msg)
+                                ids.append(resp["id"])
+                            else:
+                                logger.warning(
+                                    f"Unexpected type in conversation: {type(resp)}\n{resp}"
+                                )
+                        messages = messages_from_conversation + messages
                 else:
                     # Create new conversation
                     conversation_id = (
@@ -399,8 +398,6 @@ class RetrievalService(Service):
                     search_settings=search_settings,
                     rag_generation_config=rag_generation_config,
                     include_title_if_available=include_title_if_available,
-                    *args,
-                    **kwargs,
                 )
 
                 # Save the assistant's reply to the conversation
@@ -428,7 +425,7 @@ class RetrievalService(Service):
                     value=latency,
                 )
                 return {
-                    "messages": [msg.to_dict() for msg in results],
+                    "messages": results,
                     "conversation_id": str(
                         conversation_id
                     ),  # Ensure it's a string
@@ -443,7 +440,7 @@ class RetrievalService(Service):
                     )
                 raise HTTPException(
                     status_code=500,
-                    detail="Internal Server Error",
+                    detail=f"Internal Server Error - {str(e)}",
                 )
 
 
