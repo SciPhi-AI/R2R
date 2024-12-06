@@ -4,6 +4,7 @@ from .document import (
     DocumentChunk,
     DocumentResponse,
     DocumentType,
+    IngestionMode,
     IngestionStatus,
     KGEnrichmentStatus,
     KGExtractionStatus,
@@ -44,6 +45,7 @@ from .search import (
     KGGlobalResult,
     KGRelationshipResult,
     KGSearchResultType,
+    SearchMode,
     SearchSettings,
 )
 from .user import Token, TokenData, User
@@ -110,6 +112,7 @@ __all__ = [
     "ChunkSearchResult",
     "SearchSettings",
     "HybridSearchSettings",
+    "SearchMode",
     # KG abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",

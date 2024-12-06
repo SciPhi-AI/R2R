@@ -62,6 +62,7 @@ from shared.abstractions.search import (
     KGGlobalResult,
     KGRelationshipResult,
     KGSearchResultType,
+    SearchMode,
     SearchSettings,
     WebSearchResponse,
 )
@@ -133,6 +134,7 @@ __all__ = [
     "ChunkSearchSettings",
     "ChunkSearchResult",
     "SearchSettings",
+    "SearchMode",
     "HybridSearchSettings",
     # KG abstractions
     "KGCreationSettings",

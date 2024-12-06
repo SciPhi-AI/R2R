@@ -52,6 +52,7 @@ __all__ = [
     "ChunkSearchSettings",
     "ChunkSearchResult",
     "SearchSettings",
+    "SearchMode",
     "HybridSearchSettings",
     # User abstractions
     "Token",
@@ -117,6 +118,7 @@ __all__ = [
     "EmbeddingConfig",
     "EmbeddingProvider",
     # Ingestion provider
+    "IngestionMode",
     "IngestionConfig",
     "IngestionProvider",
     "ChunkingStrategy",

@@ -15,6 +15,7 @@ from core.base import (
     Message,
     R2RException,
     RunManager,
+    SearchMode,
     SearchSettings,
     manage_run,
     to_async_generator,

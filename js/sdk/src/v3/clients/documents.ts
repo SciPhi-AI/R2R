@@ -46,6 +46,7 @@ export class DocumentsClient {
     ingestionConfig?: Record<string, any>;
     collectionIds?: string[];
     runWithOrchestration?: boolean;
+    ingestionMode?: "hi-res" | "fast" | "custom";
   }): Promise<WrappedIngestionResponse> {
     const inputCount = [options.file, options.raw_text, options.chunks].filter(
       (x) => x !== undefined,
@@ -127,6 +128,9 @@ export class DocumentsClient {
         "run_with_orchestration",
         String(options.runWithOrchestration),
       );
+    }
+    if (options.ingestionMode) {
+      formData.append("ingestion_mode", options.ingestionMode);
     }
 
     formData.append("file_names", JSON.stringify(processedFiles));
