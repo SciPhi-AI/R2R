@@ -12,7 +12,7 @@ from shared.api.models.management.responses import (
     WrappedDocumentsResponse,
 )
 
-from ..models import IngestionMode
+from ..models import IngestionMode, SearchSettings
 
 
 class DocumentsSDK:
@@ -404,5 +404,42 @@ class DocumentsSDK:
             "GET",
             "documents",
             params=params,
+            version="v3",
+        )
+
+
+    async def search(
+        self,
+        query: str,
+        # search_mode: Optional[str | SearchMode] = "custom",
+        search_settings: Optional[dict | SearchSettings] = None,
+    ):
+        """
+        Conduct a vector and/or KG search.
+
+        Args:
+            query (str): The query to search for.
+            search_settings (Optional[dict, SearchSettings]]): Vector search settings.
+
+        Returns:
+            CombinedSearchResponse: The search response.
+        """
+        # if search_mode and not isinstance(search_mode, str):
+        #     search_mode = search_mode.value
+
+        if search_settings and not isinstance(search_settings, dict):
+            search_settings = search_settings.model_dump()
+
+        data = {
+            "query": query,
+            "search_settings": search_settings,
+        }
+        # if search_mode:
+        # data["search_mode"] = search_mode
+
+        return await self.client._make_request(
+            "POST",
+            "documents/search",
+            json=data,
             version="v3",
         )

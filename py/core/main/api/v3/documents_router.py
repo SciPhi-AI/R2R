@@ -15,6 +15,7 @@ from core.base import (
     IngestionConfig,
     IngestionMode,
     R2RException,
+    SearchSettings,
     RunType,
     UnprocessedChunk,
     Workflow,
@@ -1519,6 +1520,45 @@ class DocumentsRouter(BaseRouterV3):
             )
 
             return relationships, {"total_entries": count}  # type: ignore
+
+        @self.router.post(
+            "/documents/search",
+            summary="Search document summaries",
+        )
+        @self.base_endpoint
+        async def search_documents(
+            query: str = Body(
+                ..., 
+                description="The search query to perform.",
+            ),
+            settings: SearchSettings = Body(
+                default_factory=SearchSettings,
+                description="Settings for document search",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ): # -> WrappedDocumentSearchResponse:  # type: ignore
+            """
+            Perform a search query on the vector database and knowledge graph.
+
+            This endpoint allows for complex filtering of search results using PostgreSQL-based queries.
+            Filters can be applied to various fields such as document_id, and internal metadata values.
+
+
+            Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+            """
+
+            query_embedding = (
+                await self.service.providers.embedding.async_get_embedding(
+                    query
+                )
+            )
+            results = await self.services["retrieval"].search_documents(
+                query=query,
+                query_embedding=query_embedding,
+                settings=settings,
+            )
+            return results
+
 
     @staticmethod
     async def _process_file(file):
