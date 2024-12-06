@@ -77,7 +77,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             """
             CREATE TABLE IF NOT EXISTS conversations (
                 id TEXT PRIMARY KEY,
-                user_id UUID,
+                user_id TEXT,
                 created_at REAL
                 name TEXT
             );
@@ -199,7 +199,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             run_type = excluded.run_type,
             user_id = excluded.user_id
             """,
-            (str(run_id), run_type, str(user_id)),
+            (str(run_id), str(run_type), str(user_id)),
         )
         await self.conn.commit()
 
@@ -222,7 +222,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         params = []
         if run_type_filter:
             conditions.append("run_type = ?")
-            params.append(run_type_filter)
+            params.append(str(run_type_filter))
         if user_ids:
             conditions.append(f"user_id IN ({','.join(['?']*len(user_ids))})")
             params.extend([str(user_id) for user_id in user_ids])
@@ -407,7 +407,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 INSERT INTO message_branches (message_id, branch_id)
                 SELECT ?, branch_id FROM message_branches WHERE message_id = ?
                 """,
-                (message_id, parent_id),
+                (message_id, str(parent_id)),
             )
         else:
             # For messages with no parent, use the most recent branch, or create a new one
@@ -418,7 +418,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 ORDER BY created_at DESC
                 LIMIT 1
                 """,
-                (conversation_id,),
+                (str(conversation_id),),
             ) as cursor:
                 row = await cursor.fetchone()
                 if row is not None:
@@ -430,7 +430,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                         """
                         INSERT INTO branches (id, conversation_id, branch_point_id, created_at) VALUES (?, ?, NULL, ?)
                         """,
-                        (branch_id, conversation_id, created_at),
+                        (branch_id, str(conversation_id), created_at),
                     )
                 await self.conn.execute(
                     """
@@ -479,7 +479,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
         created_at = datetime.utcnow().timestamp()
         await self.conn.execute(
             "INSERT INTO branches (id, conversation_id, branch_point_id, created_at) VALUES (?, ?, ?, ?)",
-            (new_branch_id, conversation_id, message_id, created_at),
+            (new_branch_id, conversation_id, str(message_id), created_at),
         )
 
         # Add the edited message with the same parent_id
@@ -669,6 +669,39 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 "Initialize the connection pool before attempting to log."
             )
 
+        # Debug: Check if messages exist for this conversation
+        async with self.conn.execute(
+            "SELECT id, content, parent_id FROM messages WHERE conversation_id = ?",
+            (str(conversation_id),),
+        ) as cursor:
+            messages = await cursor.fetchall()
+
+        if branch_id is None:
+            # Debug: Check branches query
+            async with self.conn.execute(
+                """
+                SELECT id FROM branches
+                WHERE conversation_id = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (str(conversation_id),),
+            ) as cursor:
+                row = await cursor.fetchone()
+                branch_id = row[0] if row else None
+
+        if branch_id:
+            # Debug: Check message_branches entries
+            async with self.conn.execute(
+                """
+                SELECT message_id, branch_id
+                FROM message_branches
+                WHERE branch_id = ?
+                """,
+                (str(branch_id),),
+            ) as cursor:
+                message_branches = await cursor.fetchall()
+
         # Get conversation details first
         async with self.conn.execute(
             "SELECT created_at FROM conversations WHERE id = ?",
@@ -681,7 +714,6 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 )
             conversation_created_at = row[0]
 
-        print(f"Getting a branch_id: {branch_id}")
         if branch_id is None:
             # Get the most recent branch by created_at timestamp
             async with self.conn.execute(
@@ -694,7 +726,6 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 (str(conversation_id),),
             ) as cursor:
                 row = await cursor.fetchone()
-                print(f"Row: {row}")
                 branch_id = row[0] if row else None
 
         # If no branch exists, return empty results but with required fields
@@ -711,7 +742,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 SELECT m.id, m.content, m.parent_id, 0, m.created_at, m.metadata
                 FROM messages m
                 JOIN message_branches mb ON m.id = mb.message_id
-                WHERE mb.branch_id = ? AND m.parent_id IS NULL
+                WHERE mb.branch_id = ? AND (m.parent_id IS NULL OR m.parent_id = 'None')
                 UNION
                 SELECT m.id, m.content, m.parent_id, bm.depth + 1, m.created_at, m.metadata
                 FROM messages m
