@@ -12,9 +12,8 @@ from shared.api.models.management.responses import (
     WrappedDocumentsResponse,
 )
 
-from ..models import (
-    IngestionMode,
-)
+from ..models import IngestionMode
+
 
 class DocumentsSDK:
     """
@@ -71,8 +70,8 @@ class DocumentsSDK:
         if ingestion_config:
             if not isinstance(ingestion_config, dict):
                 ingestion_config = ingestion_config.model_dump()
-            ingestion_config['app'] = {}
-            data["ingestion_config"] =  json.dumps(ingestion_config)
+            ingestion_config["app"] = {}
+            data["ingestion_config"] = json.dumps(ingestion_config)
         if collection_ids:
             collection_ids = [str(collection_id) for collection_id in collection_ids]  # type: ignore
             data["collection_ids"] = json.dumps(collection_ids)

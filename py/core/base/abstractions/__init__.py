@@ -62,8 +62,8 @@ from shared.abstractions.search import (
     KGGlobalResult,
     KGRelationshipResult,
     KGSearchResultType,
-    SearchSettings,
     SearchMode,
+    SearchSettings,
     WebSearchResponse,
 )
 from shared.abstractions.user import Token, TokenData, User

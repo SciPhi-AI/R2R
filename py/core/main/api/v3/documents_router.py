@@ -12,13 +12,13 @@ from fastapi.responses import StreamingResponse
 from pydantic import Json
 
 from core.base import (
+    IngestionConfig,
+    IngestionMode,
     R2RException,
     RunType,
     UnprocessedChunk,
     Workflow,
     generate_document_id,
-    IngestionMode,
-    IngestionConfig,
     generate_id,
 )
 from core.base.abstractions import KGCreationSettings, KGRunType
@@ -46,7 +46,9 @@ logger = logging.getLogger()
 MAX_CHUNKS_PER_REQUEST = 1024 * 100
 
 
-def merge_ingestion_config(base: IngestionConfig, overrides: IngestionConfig) -> IngestionConfig:
+def merge_ingestion_config(
+    base: IngestionConfig, overrides: IngestionConfig
+) -> IngestionConfig:
     base_dict = base.model_dump()
     overrides_dict = overrides.model_dump(exclude_unset=True)
 
@@ -54,6 +56,7 @@ def merge_ingestion_config(base: IngestionConfig, overrides: IngestionConfig) ->
         base_dict[k] = v
 
     return IngestionConfig(**base_dict)
+
 
 class DocumentsRouter(BaseRouterV3):
     def __init__(
@@ -124,16 +127,21 @@ class DocumentsRouter(BaseRouterV3):
     ) -> IngestionConfig:
         # If not custom, start from defaults
         if ingestion_mode != IngestionMode.custom:
-            effective_config = IngestionConfig.get_default(ingestion_mode.value, app=self.providers.auth.config.app)
+            effective_config = IngestionConfig.get_default(
+                ingestion_mode.value, app=self.providers.auth.config.app
+            )
             if ingestion_config:
-                effective_config = merge_ingestion_config(effective_config, ingestion_config)
+                effective_config = merge_ingestion_config(
+                    effective_config, ingestion_config
+                )
         else:
             # custom mode
-            effective_config = ingestion_config or IngestionConfig(app=self.providers.auth.config.app)
+            effective_config = ingestion_config or IngestionConfig(
+                app=self.providers.auth.config.app
+            )
 
         effective_config.validate_config()
         return effective_config
-
 
     def _setup_routes(self):
         @self.router.post(

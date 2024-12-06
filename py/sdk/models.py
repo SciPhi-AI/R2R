@@ -4,6 +4,7 @@ from shared.abstractions import (
     GraphSearchResult,
     GraphSearchSettings,
     HybridSearchSettings,
+    IngestionMode,
     KGCommunityResult,
     KGCreationSettings,
     KGEnrichmentSettings,
@@ -17,9 +18,8 @@ from shared.abstractions import (
     MessageType,
     R2RException,
     R2RSerializable,
-    SearchSettings,
     SearchMode,
-    IngestionMode,
+    SearchSettings,
     Token,
     User,
 )

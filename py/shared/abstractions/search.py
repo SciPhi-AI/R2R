@@ -450,6 +450,7 @@ class SearchSettings(R2RSerializable):
             # For 'custom' or unrecognized modes, return a basic empty config.
             return cls()
 
+
 class SearchMode(str, Enum):
     """Search modes for the search endpoint."""
 

@@ -6,8 +6,8 @@ from ..models import (
     GraphSearchSettings,
     Message,
     RAGResponse,
+    SearchMode,
     SearchSettings,
-    SearchMode
 )
 
 
@@ -47,7 +47,7 @@ class RetrievalSDK:
         }
         if search_mode:
             data["search_mode"] = search_mode
-            
+
         return await self.client._make_request(
             "POST",
             "retrieval/search",

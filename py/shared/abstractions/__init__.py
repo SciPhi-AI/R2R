@@ -4,11 +4,11 @@ from .document import (
     DocumentChunk,
     DocumentResponse,
     DocumentType,
+    IngestionMode,
     IngestionStatus,
     KGEnrichmentStatus,
     KGExtractionStatus,
     RawChunk,
-    IngestionMode,
     UnprocessedChunk,
 )
 from .embedding import EmbeddingPurpose, default_embedding_prefixes
@@ -42,10 +42,10 @@ from .search import (
     HybridSearchSettings,
     KGCommunityResult,
     KGEntityResult,
-    SearchMode,
     KGGlobalResult,
     KGRelationshipResult,
     KGSearchResultType,
+    SearchMode,
     SearchSettings,
 )
 from .user import Token, TokenData, User

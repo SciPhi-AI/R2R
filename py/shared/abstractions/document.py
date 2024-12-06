@@ -270,7 +270,9 @@ class ChunkEnrichmentStrategy(str, Enum):
     def __str__(self) -> str:
         return self.value
 
+
 from .llm import GenerationConfig
+
 
 class ChunkEnrichmentSettings(R2RSerializable):
     """
@@ -305,7 +307,9 @@ class ChunkEnrichmentSettings(R2RSerializable):
         description="The generation config to use for chunk enrichment",
     )
 
-## TODO - Move ingestion config 
+
+## TODO - Move ingestion config
+
 
 class IngestionConfig(R2RSerializable):
     provider: str = "r2r"
@@ -337,7 +341,6 @@ class IngestionConfig(R2RSerializable):
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} is not supported.")
 
-
     @classmethod
     def get_default(cls, mode: str) -> "IngestionConfig":
         """Return default ingestion configuration for a given mode."""
@@ -364,7 +367,7 @@ class IngestionConfig(R2RSerializable):
             return cls(
                 provider="r2r",
                 excluded_parsers=["mp4"],
-                chunk_enrichment_settings=ChunkEnrichmentSettings(), # default
+                chunk_enrichment_settings=ChunkEnrichmentSettings(),  # default
                 extra_parsers={},
                 audio_transcription_model="openai/whisper-1",
                 vision_img_prompt_name="vision_img",

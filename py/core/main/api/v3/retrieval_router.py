@@ -7,7 +7,13 @@ from uuid import UUID
 from fastapi import Body, Depends
 from fastapi.responses import StreamingResponse
 
-from core.base import GenerationConfig, Message, R2RException, SearchSettings, SearchMode
+from core.base import (
+    GenerationConfig,
+    Message,
+    R2RException,
+    SearchMode,
+    SearchSettings,
+)
 from core.base.api.models import (
     WrappedAgentResponse,
     WrappedCompletionResponse,
@@ -22,18 +28,22 @@ from core.providers import (
 
 from .base_router import BaseRouterV3
 
-def merge_search_settings(base: SearchSettings, overrides: SearchSettings) -> SearchSettings:
+
+def merge_search_settings(
+    base: SearchSettings, overrides: SearchSettings
+) -> SearchSettings:
     # Convert both to dict
     base_dict = base.model_dump()
     overrides_dict = overrides.model_dump(exclude_unset=True)
-    
+
     # Update base_dict with values from overrides_dict
     # This ensures that any field set in overrides takes precedence
     for k, v in overrides_dict.items():
         base_dict[k] = v
-    
+
     # Construct a new SearchSettings from the merged dict
     return SearchSettings(**base_dict)
+
 
 class RetrievalRouterV3(BaseRouterV3):
     def __init__(
@@ -50,7 +60,6 @@ class RetrievalRouterV3(BaseRouterV3):
     def _register_workflows(self):
         pass
 
-
     def _prepare_search_settings(
         self,
         auth_user: Any,
@@ -58,7 +67,7 @@ class RetrievalRouterV3(BaseRouterV3):
         search_settings: Optional[SearchSettings],
     ) -> SearchSettings:
         """
-        Prepare the effective search settings based on the provided search_mode, 
+        Prepare the effective search settings based on the provided search_mode,
         optional user-overrides in search_settings, and applied filters.
         """
 
@@ -67,13 +76,17 @@ class RetrievalRouterV3(BaseRouterV3):
             effective_settings = SearchSettings.get_default(search_mode.value)
             if search_settings:
                 # Merge user-provided overrides
-                effective_settings = merge_search_settings(effective_settings, search_settings)
+                effective_settings = merge_search_settings(
+                    effective_settings, search_settings
+                )
         else:
             # Custom mode: use provided settings or defaults
             effective_settings = search_settings or SearchSettings()
 
         # Apply user-specific filters
-        effective_settings.filters = self._select_filters(auth_user, effective_settings)
+        effective_settings.filters = self._select_filters(
+            auth_user, effective_settings
+        )
 
         return effective_settings
 
@@ -289,13 +302,14 @@ class RetrievalRouterV3(BaseRouterV3):
             Provide the entire `search_settings` to define your search exactly as you want it.
             """
 
-            effective_settings = self._prepare_search_settings(auth_user, search_mode, search_settings)
+            effective_settings = self._prepare_search_settings(
+                auth_user, search_mode, search_settings
+            )
             results = await self.services["retrieval"].search(
                 query=query,
                 search_settings=effective_settings,
             )
             return results
-
 
         @self.router.post(
             "/retrieval/rag",
@@ -455,7 +469,9 @@ class RetrievalRouterV3(BaseRouterV3):
             The generation process can be customized using the `rag_generation_config` parameter.
             """
 
-            effective_settings = self._prepare_search_settings(auth_user, search_mode, search_settings)
+            effective_settings = self._prepare_search_settings(
+                auth_user, search_mode, search_settings
+            )
 
             response = await self.services["retrieval"].rag(
                 query=query,
@@ -620,7 +636,7 @@ class RetrievalRouterV3(BaseRouterV3):
                     "these settings are used as-is. For `basic` or `advanced`, these settings will override the default mode configuration.\n\n"
                     "Common overrides include `filters` to narrow results and `limit` to control how many results are returned."
                 ),
-            ),            
+            ),
             rag_generation_config: GenerationConfig = Body(
                 default_factory=GenerationConfig,
                 description="Configuration for RAG generation",
@@ -675,7 +691,9 @@ class RetrievalRouterV3(BaseRouterV3):
             information, providing detailed, factual responses with proper attribution to source documents.
             """
 
-            effective_settings = self._prepare_search_settings(auth_user, search_mode, search_settings)
+            effective_settings = self._prepare_search_settings(
+                auth_user, search_mode, search_settings
+            )
 
             try:
                 response = await self.services["retrieval"].agent(

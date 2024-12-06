@@ -43,18 +43,12 @@ class IngestionConfig(ProviderConfig):
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} is not supported.")
 
-
     @classmethod
     def get_default(cls, mode: str, app) -> "IngestionConfig":
         """Return default ingestion configuration for a given mode."""
         if mode == "hi-res":
             # More thorough parsing, no skipping summaries, possibly larger `chunks_for_document_summary`.
-            return cls(
-                app=app,
-                parser_overrides={
-                    "pdf": "zerox"
-                }
-            )
+            return cls(app=app, parser_overrides={"pdf": "zerox"})
         # elif mode == "fast":
         #     # Skip summaries and other enrichment steps for speed.
         #     return cls(
@@ -62,9 +56,8 @@ class IngestionConfig(ProviderConfig):
         #     )
         else:
             # For `custom` or any unrecognized mode, return a base config
-            return cls(
-                app=app
-            )
+            return cls(app=app)
+
 
 class IngestionProvider(Provider, ABC):
 
@@ -89,6 +82,7 @@ class ChunkingStrategy(str, Enum):
     CHARACTER = "character"
     BASIC = "basic"
     BY_TITLE = "by_title"
+
 
 class IngestionMode(str, Enum):
     hi_res = "hi-res"
