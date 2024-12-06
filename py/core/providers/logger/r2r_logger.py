@@ -714,7 +714,6 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 )
             conversation_created_at = row[0]
 
-        print(f"Getting a branch_id: {branch_id}")
         if branch_id is None:
             # Get the most recent branch by created_at timestamp
             async with self.conn.execute(

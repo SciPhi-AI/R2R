@@ -72,7 +72,6 @@ class RetrievalSDK:
             "messages": [msg.model_dump() for msg in cast_messages],
             "generation_config": generation_config,
         }
-        print("data = ", data)
         return await self.client._make_request(
             "POST",
             "retrieval/completion",
