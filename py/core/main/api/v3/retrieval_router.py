@@ -114,7 +114,7 @@ class RetrievalRouterV3(BaseRouterV3):
             # for non-superusers, we filter by user_id and selected & allowed collections
             collection_filters = {
                 "$or": [
-                    {"user_id": {"$eq": auth_user.id}},
+                    {"owner_id": {"$eq": auth_user.id}},
                     {
                         "collection_ids": {
                             "$overlap": list(allowed_collections)
@@ -854,6 +854,7 @@ class RetrievalRouterV3(BaseRouterV3):
             The messages list should contain alternating user and assistant messages, with an optional
             system message at the start. Each message should have a 'role' and 'content'.
             """
+            print('messages = ', messages)
 
             return await self.services["retrieval"].completion(
                 messages=messages,

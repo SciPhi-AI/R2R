@@ -166,16 +166,16 @@ class IngestionRouter(BaseRouter):
             # Check if the user is a superuser
             if not auth_user.is_superuser:
                 for metadata in metadatas or []:
-                    if "user_id" in metadata and (
+                    if "owner_id" in metadata and (
                         not auth_user.is_superuser
-                        and metadata["user_id"] != str(auth_user.id)
+                        and metadata["owner_id"] != str(auth_user.id)
                     ):
                         raise R2RException(
                             status_code=403,
                             message="Non-superusers cannot set user_id in metadata.",
                         )
                     # If user is not a superuser, set user_id in metadata
-                    metadata["user_id"] = str(auth_user.id)
+                    metadata["owner_id"] = str(auth_user.id)
 
             file_datas = await self._process_files(files)
 
@@ -293,14 +293,14 @@ class IngestionRouter(BaseRouter):
             """
             if not auth_user.is_superuser:
                 for metadata in metadatas or []:
-                    if "user_id" in metadata and metadata["user_id"] != str(
+                    if "owner_id" in metadata and metadata["owner_id"] != str(
                         auth_user.id
                     ):
                         raise R2RException(
                             status_code=403,
-                            message="Non-superusers cannot set user_id in metadata.",
+                            message="Non-superusers cannot set owner_id in metadata.",
                         )
-                    metadata["user_id"] = str(auth_user.id)
+                    metadata["owner_id"] = str(auth_user.id)
 
             file_datas = await self._process_files(files)
 

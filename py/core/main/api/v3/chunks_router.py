@@ -73,7 +73,7 @@ class ChunksRouter(BaseRouterV3):
             # for non-superusers, we filter by user_id and selected & allowed collections
             collection_filters = {
                 "$or": [
-                    {"user_id": {"$eq": auth_user.id}},
+                    {"owner_id": {"$eq": auth_user.id}},
                     {
                         "collection_ids": {
                             "$overlap": list(allowed_collections)
@@ -201,7 +201,7 @@ class ChunksRouter(BaseRouterV3):
             # document = await self.services["management"].get_document(chunk.document_id)
             # TODO - Add collection ID check
             if not auth_user.is_superuser and str(auth_user.id) != str(
-                chunk["user_id"]
+                chunk["owner_id"]
             ):
                 raise R2RException("Not authorized to access this chunk", 403)
 
@@ -493,7 +493,7 @@ class ChunksRouter(BaseRouterV3):
 
             # Add user access control filter
             if not auth_user.is_superuser:
-                filters["user_id"] = {"$eq": str(auth_user.id)}
+                filters["owner_id"] = {"$eq": str(auth_user.id)}
 
             # Add metadata filters if provided
             if metadata_filter:

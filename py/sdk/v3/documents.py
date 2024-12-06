@@ -411,7 +411,7 @@ class DocumentsSDK:
     async def search(
         self,
         query: str,
-        # search_mode: Optional[str | SearchMode] = "custom",
+        search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
     ):
         """
@@ -429,13 +429,12 @@ class DocumentsSDK:
 
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
-
         data = {
             "query": query,
             "search_settings": search_settings,
         }
-        # if search_mode:
-        # data["search_mode"] = search_mode
+        if search_mode:
+            data["search_mode"] = search_mode
 
         return await self.client._make_request(
             "POST",

@@ -120,7 +120,7 @@ class RetrievalService(Service):
         settings: SearchSettings,
         query_embedding: Optional[list[float]] = None,
     ) -> list[DocumentResponse]:
-
+        print('settings = ', settings)
         return await self.providers.database.search_documents(
             query_text=query,
             settings=settings,

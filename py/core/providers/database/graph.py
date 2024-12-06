@@ -2267,14 +2267,24 @@ class PostgresGraphHandler(GraphHandler):
                 logger.warning(
                     "Filtering by `document_id` is not supported with graph search, ignoring."
                 )
+                return ""  # Return an empty condition instead of None
+
             elif key == "chunk_id":
                 logger.warning(
                     "Filtering by `chunk_id` is not supported with graph search, ignoring."
                 )
+                return ""  # Return an empty condition instead of None
+
             elif key == "user_id":
                 logger.warning(
                     "Filtering by `user_id` is not supported with graph search, ignoring. Use `collection_ids` instead."
                 )
+                return ""  # Return an empty condition instead of None
+            elif key == "owner_id":
+                logger.warning(
+                    "Filtering by `owner_id` is not supported with graph search, ignoring. Use `collection_ids` instead."
+                )
+                return ""  # Return an empty condition instead of None
 
             else:
                 # Handle JSON-based filters
@@ -2395,8 +2405,9 @@ class PostgresGraphHandler(GraphHandler):
         where_clause = ""
         params: list[Union[str, int, bytes]] = [str(query_embedding), limit]
         if filters:
-            where_clause = self._build_filters(filters, params)
-            where_clause = f"WHERE {where_clause}"
+            conditions_list = self._build_filters(filters, params)
+            if conditions_list:
+                where_clause = "WHERE " + " AND ".join(conditions_list)
 
         # Modified query to include similarity score while keeping same structure
         QUERY = f"""
@@ -2407,6 +2418,7 @@ class PostgresGraphHandler(GraphHandler):
             ORDER BY {embedding_type} <=> $1
             LIMIT $2;
         """
+        print('QUERY = ', QUERY)
         results = await self.connection_manager.fetch_query(
             QUERY, tuple(params)
         )

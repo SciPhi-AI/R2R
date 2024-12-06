@@ -4,7 +4,7 @@ import logging
 import mimetypes
 import textwrap
 from io import BytesIO
-from typing import Optional
+from typing import Optional, Any
 from uuid import UUID
 
 from fastapi import Body, Depends, File, Form, Path, Query, UploadFile
@@ -18,6 +18,7 @@ from core.base import (
     SearchSettings,
     RunType,
     UnprocessedChunk,
+    SearchMode,
     Workflow,
     generate_document_id,
     generate_id,
@@ -47,6 +48,22 @@ logger = logging.getLogger()
 MAX_CHUNKS_PER_REQUEST = 1024 * 100
 
 
+def merge_search_settings(
+    base: SearchSettings, overrides: SearchSettings
+) -> SearchSettings:
+    # Convert both to dict
+    base_dict = base.model_dump()
+    overrides_dict = overrides.model_dump(exclude_unset=True)
+
+    # Update base_dict with values from overrides_dict
+    # This ensures that any field set in overrides takes precedence
+    for k, v in overrides_dict.items():
+        base_dict[k] = v
+
+    # Construct a new SearchSettings from the merged dict
+    return SearchSettings(**base_dict)
+
+
 def merge_ingestion_config(
     base: IngestionConfig, overrides: IngestionConfig
 ) -> IngestionConfig:
@@ -71,6 +88,37 @@ class DocumentsRouter(BaseRouterV3):
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
         self._register_workflows()
+
+
+    def _prepare_search_settings(
+        self,
+        auth_user: Any,
+        search_mode: SearchMode,
+        search_settings: Optional[SearchSettings],
+    ) -> SearchSettings:
+        """
+        Prepare the effective search settings based on the provided search_mode,
+        optional user-overrides in search_settings, and applied filters.
+        """
+
+        if search_mode != SearchMode.custom:
+            # Start from mode defaults
+            effective_settings = SearchSettings.get_default(search_mode.value)
+            if search_settings:
+                # Merge user-provided overrides
+                effective_settings = merge_search_settings(
+                    effective_settings, search_settings
+                )
+        else:
+            # Custom mode: use provided settings or defaults
+            effective_settings = search_settings or SearchSettings()
+
+        # Apply user-specific filters
+        effective_settings.filters = self._select_filters(
+            auth_user, effective_settings
+        )
+
+        return effective_settings
 
     # TODO - Remove this legacy method
     def _register_workflows(self):
@@ -294,16 +342,16 @@ class DocumentsRouter(BaseRouterV3):
             # Check if the user is a superuser
             metadata = metadata or {}
             if not auth_user.is_superuser:
-                if "user_id" in metadata and (
+                if "owner_id" in metadata and (
                     not auth_user.is_superuser
-                    and metadata["user_id"] != str(auth_user.id)
+                    and metadata["owner_id"] != str(auth_user.id)
                 ):
                     raise R2RException(
                         status_code=403,
                         message="Non-superusers cannot set user_id in metadata.",
                     )
                 # If user is not a superuser, set user_id in metadata
-                metadata["user_id"] = str(auth_user.id)
+                metadata["owner_id"] = str(auth_user.id)
 
             if chunks:
                 if len(chunks) == 0:
@@ -987,7 +1035,7 @@ class DocumentsRouter(BaseRouterV3):
             """
 
             filters_dict = {
-                "$and": [{"user_id": {"$eq": str(auth_user.id)}}, filters]
+                "$and": [{"owner_id": {"$eq": str(auth_user.id)}}, filters]
             }
             await self.services["management"].delete(filters=filters_dict)
 
@@ -1531,14 +1579,26 @@ class DocumentsRouter(BaseRouterV3):
                 ..., 
                 description="The search query to perform.",
             ),
-            settings: SearchSettings = Body(
+            search_mode: SearchMode = Body(
+                default=SearchMode.custom,
+                description=(
+                    "Default value of `custom` allows full control over search settings.\n\n"
+                    "Pre-configured search modes:\n"
+                    "`basic`: A simple semantic-based search.\n"
+                    "`advanced`: A more powerful hybrid search combining semantic and full-text.\n"
+                    "`custom`: Full control via `search_settings`.\n\n"
+                    "If `filters` or `limit` are provided alongside `basic` or `advanced`, "
+                    "they will override the default settings for that mode."
+                ),
+            ),
+            search_settings: SearchSettings = Body(
                 default_factory=SearchSettings,
                 description="Settings for document search",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ): # -> WrappedDocumentSearchResponse:  # type: ignore
             """
-            Perform a search query on the vector database and knowledge graph.
+            Perform a search query on the automatically generated document summaries in the system.
 
             This endpoint allows for complex filtering of search results using PostgreSQL-based queries.
             Filters can be applied to various fields such as document_id, and internal metadata values.
@@ -1546,9 +1606,12 @@ class DocumentsRouter(BaseRouterV3):
 
             Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
             """
+            effective_settings = self._prepare_search_settings(
+                auth_user, search_mode, search_settings
+            )
 
             query_embedding = (
-                await self.service.providers.embedding.async_get_embedding(
+                await self.providers.embedding.async_get_embedding(
                     query
                 )
             )
