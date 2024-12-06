@@ -41,7 +41,6 @@ def simple_ingestion_factory(service: IngestionService):
             )
 
             ingestion_config = parsed_data["ingestion_config"]
-            print("ingestion_config = ", ingestion_config)
             extractions_generator = await service.parse_file(
                 document_info, ingestion_config
             )
