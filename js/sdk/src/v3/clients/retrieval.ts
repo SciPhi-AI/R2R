@@ -28,12 +28,16 @@ export class RetrievalClient {
   @feature("retrieval.search")
   async search(options: {
     query: string;
+    searchMode?: "advanced" | "basic" | "custom";
     searchSettings?: SearchSettings | Record<string, any>;
   }): Promise<WrappedSearchResponse> {
     const data = {
       query: options.query,
       ...(options.searchSettings && {
         search_settings: options.searchSettings,
+      }),
+      ...(options.searchMode && {
+        search_mode: options.searchMode,
       }),
     };
 
@@ -60,6 +64,7 @@ export class RetrievalClient {
   @feature("retrieval.rag")
   async rag(options: {
     query: string;
+    searchMode?: "advanced" | "basic" | "custom";
     searchSettings?: SearchSettings | Record<string, any>;
     ragGenerationConfig?: GenerationConfig | Record<string, any>;
     taskPromptOverride?: string;
@@ -67,6 +72,9 @@ export class RetrievalClient {
   }): Promise<any | AsyncGenerator<string, void, unknown>> {
     const data = {
       query: options.query,
+      ...(options.searchMode && {
+        search_mode: options.searchMode,
+      }),
       ...(options.searchSettings && {
         search_settings: options.searchSettings,
       }),
@@ -155,6 +163,7 @@ export class RetrievalClient {
   @feature("retrieval.agent")
   async agent(options: {
     message: Message;
+    searchMode?: "advanced" | "basic" | "custom";
     searchSettings?: SearchSettings | Record<string, any>;
     ragGenerationConfig?: GenerationConfig | Record<string, any>;
     taskPromptOverride?: string;
@@ -164,6 +173,9 @@ export class RetrievalClient {
   }): Promise<any | AsyncGenerator<string, void, unknown>> {
     const data: Record<string, any> = {
       message: options.message,
+      ...(options.searchMode && {
+        search_mode: options.searchMode,
+      }),
       ...(options.searchSettings && {
         search_settings: options.searchSettings,
       }),

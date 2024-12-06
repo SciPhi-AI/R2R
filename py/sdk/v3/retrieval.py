@@ -22,7 +22,7 @@ class RetrievalSDK:
     async def search(
         self,
         query: str,
-        search_mode: Optional[str | SearchMode] = "basic",
+        search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> CombinedSearchResponse:
         """
@@ -99,6 +99,7 @@ class RetrievalSDK:
         self,
         query: str,
         rag_generation_config: Optional[dict | GenerationConfig] = None,
+        search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
@@ -130,6 +131,8 @@ class RetrievalSDK:
             "task_prompt_override": task_prompt_override,
             "include_title_if_available": include_title_if_available,
         }
+        if search_mode:
+            data["search_mode"] = search_mode
 
         if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
@@ -152,6 +155,7 @@ class RetrievalSDK:
         self,
         message: Optional[dict | Message] = None,
         rag_generation_config: Optional[dict | GenerationConfig] = None,
+        search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
@@ -185,6 +189,8 @@ class RetrievalSDK:
             "conversation_id": conversation_id,
             "branch_id": branch_id,
         }
+        if search_mode:
+            data["search_mode"] = search_mode
 
         if message:
             cast_message: Message = (
