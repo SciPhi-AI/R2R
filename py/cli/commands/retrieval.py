@@ -81,6 +81,7 @@ async def search(ctx, query, **kwargs):
     with timer():
         results = await client.retrieval.search(
             query,
+            "custom",
             search_settings,
         )
 
