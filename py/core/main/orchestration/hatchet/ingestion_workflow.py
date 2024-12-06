@@ -166,7 +166,8 @@ def hatchet_ingestion_factory(
                         status=KGEnrichmentStatus.OUTDATED,
                     )
                 else:
-                    for collection_id in collection_ids:
+                    for collection_id_str in collection_ids:
+                        collection_id = UUID(collection_id_str)
                         try:
                             name = document_info.title or "N/A"
                             description = ""
@@ -523,7 +524,8 @@ def hatchet_ingestion_factory(
                         status=KGEnrichmentStatus.OUTDATED,
                     )
                 else:
-                    for collection_id in collection_ids:
+                    for collection_id_str in collection_ids:
+                        collection_id = UUID(collection_id_str)
                         try:
                             name = document_info.title or "N/A"
                             description = ""
