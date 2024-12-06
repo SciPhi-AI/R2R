@@ -424,3 +424,35 @@ class SearchSettings(R2RSerializable):
     def model_dump(self, *args, **kwargs):
         dump = super().model_dump(*args, **kwargs)
         return dump
+
+    @classmethod
+    def get_default(cls, mode: str) -> "SearchSettings":
+        """Return default search settings for a given mode."""
+        if mode == "basic":
+            # A simpler search that relies primarily on semantic search.
+            return cls(
+                use_semantic_search=True,
+                use_fulltext_search=False,
+                use_hybrid_search=False,
+                search_strategy="vanilla",
+                # Other relevant defaults can be provided here as needed
+            )
+        elif mode == "advanced":
+            # A more powerful, combined search that leverages both semantic and fulltext.
+            return cls(
+                use_semantic_search=True,
+                use_fulltext_search=True,
+                use_hybrid_search=True,
+                search_strategy="hyde",
+                # Other advanced defaults as needed
+            )
+        else:
+            # For 'custom' or unrecognized modes, return a basic empty config.
+            return cls()
+
+class SearchMode(str, Enum):
+    """Search modes for the search endpoint."""
+
+    basic = "basic"
+    advanced = "advanced"
+    custom = "custom"

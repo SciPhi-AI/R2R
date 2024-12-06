@@ -7,6 +7,7 @@ from ..models import (
     Message,
     RAGResponse,
     SearchSettings,
+    SearchMode
 )
 
 
@@ -21,6 +22,7 @@ class RetrievalSDK:
     async def search(
         self,
         query: str,
+        search_mode: Optional[str | SearchMode] = "basic",
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> CombinedSearchResponse:
         """
@@ -33,6 +35,9 @@ class RetrievalSDK:
         Returns:
             CombinedSearchResponse: The search response.
         """
+        if search_mode and not isinstance(search_mode, str):
+            search_mode = search_mode.value
+
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
 
@@ -40,6 +45,9 @@ class RetrievalSDK:
             "query": query,
             "search_settings": search_settings,
         }
+        if search_mode:
+            data["search_mode"] = search_mode
+            
         return await self.client._make_request(
             "POST",
             "retrieval/search",

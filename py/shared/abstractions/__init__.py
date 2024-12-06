@@ -41,6 +41,7 @@ from .search import (
     HybridSearchSettings,
     KGCommunityResult,
     KGEntityResult,
+    SearchMode,
     KGGlobalResult,
     KGRelationshipResult,
     KGSearchResultType,
@@ -110,6 +111,7 @@ __all__ = [
     "ChunkSearchResult",
     "SearchSettings",
     "HybridSearchSettings",
+    "SearchMode",
     # KG abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",

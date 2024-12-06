@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import Body, Depends
 from fastapi.responses import StreamingResponse
 
-from core.base import GenerationConfig, Message, R2RException, SearchSettings
+from core.base import GenerationConfig, Message, R2RException, SearchSettings, SearchMode
 from core.base.api.models import (
     WrappedAgentResponse,
     WrappedCompletionResponse,
@@ -22,6 +22,18 @@ from core.providers import (
 
 from .base_router import BaseRouterV3
 
+def merge_search_settings(base: SearchSettings, overrides: SearchSettings) -> SearchSettings:
+    # Convert both to dict
+    base_dict = base.model_dump()
+    overrides_dict = overrides.model_dump(exclude_unset=True)
+    
+    # Update base_dict with values from overrides_dict
+    # This ensures that any field set in overrides takes precedence
+    for k, v in overrides_dict.items():
+        base_dict[k] = v
+    
+    # Construct a new SearchSettings from the merged dict
+    return SearchSettings(**base_dict)
 
 class RetrievalRouterV3(BaseRouterV3):
     def __init__(
@@ -37,6 +49,33 @@ class RetrievalRouterV3(BaseRouterV3):
 
     def _register_workflows(self):
         pass
+
+
+    def _prepare_search_settings(
+        self,
+        auth_user: Any,
+        search_mode: SearchMode,
+        search_settings: Optional[SearchSettings],
+    ) -> SearchSettings:
+        """
+        Prepare the effective search settings based on the provided search_mode, 
+        optional user-overrides in search_settings, and applied filters.
+        """
+
+        if search_mode != SearchMode.custom:
+            # Start from mode defaults
+            effective_settings = SearchSettings.get_default(search_mode.value)
+            if search_settings:
+                # Merge user-provided overrides
+                effective_settings = merge_search_settings(effective_settings, search_settings)
+        else:
+            # Custom mode: use provided settings or defaults
+            effective_settings = search_settings or SearchSettings()
+
+        # Apply user-specific filters
+        effective_settings.filters = self._select_filters(auth_user, effective_settings)
+
+        return effective_settings
 
     def _select_filters(
         self,
@@ -91,20 +130,34 @@ class RetrievalRouterV3(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
+                            # if using auth, do client.login(...)
 
-                            response =client.retrieval.search(
+                            # Basic mode, no overrides
+                            response = client.retrieval.search(
                                 query="Who is Aristotle?",
-                                search_settings: {
-                                    filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    use_semantic_search: true,
-                                    chunk_settings: {
-                                        limit: 20, # separate limit for chunk vs. graph
-                                        enabled: true
-                                    },
-                                    graph_settings: {
-                                        enabled: true,
-                                    },
+                                search_mode="basic"
+                            )
+
+                            # Advanced mode with overrides
+                            response = client.retrieval.search(
+                                query="Who is Aristotle?",
+                                search_mode="advanced",
+                                search_settings={
+                                    "filters": {"document_id": {"$eq": "3e157b3a-..."}},
+                                    "limit": 5
+                                }
+                            )
+
+                            # Custom mode with full control
+                            response = client.retrieval.search(
+                                query="Who is Aristotle?",
+                                search_mode="custom",
+                                search_settings={
+                                    "use_semantic_search": True,
+                                    "filters": {"category": {"$like": "%philosophy%"}},
+                                    "limit": 20,
+                                    "chunk_settings": {"limit": 20},
+                                    "graph_settings": {"enabled": True}
                                 }
                             )
                             """
@@ -180,29 +233,69 @@ class RetrievalRouterV3(BaseRouterV3):
                 ...,
                 description="Search query to find relevant documents",
             ),
-            search_settings: SearchSettings = Body(
-                default_factory=SearchSettings,
-                description="Settings for vector-based search",
+            search_mode: SearchMode = Body(
+                default=SearchMode.custom,
+                description=(
+                    "Default value of `custom` allows full control over search settings.\n\n"
+                    "Pre-configured search modes:\n"
+                    "`basic`: A simple semantic-based search.\n"
+                    "`advanced`: A more powerful hybrid search combining semantic and full-text.\n"
+                    "`custom`: Full control via `search_settings`.\n\n"
+                    "If `filters` or `limit` are provided alongside `basic` or `advanced`, "
+                    "they will override the default settings for that mode."
+                ),
+            ),
+            search_settings: Optional[SearchSettings] = Body(
+                None,
+                description=(
+                    "The search configuration object. If `search_mode` is `custom`, "
+                    "these settings are used as-is. For `basic` or `advanced`, these settings will override the default mode configuration.\n\n"
+                    "Common overrides include `filters` to narrow results and `limit` to control how many results are returned."
+                ),
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedSearchResponse:
             """
-            Perform a search query on the vector database and knowledge graph and any other configured search engines.
+            Perform a search query against vector and/or graph-based databases.
 
-            This endpoint allows for complex filtering of search results using PostgreSQL-based queries.
-            Filters can be applied to various fields such as document_id, and internal metadata values.
+            **Search Modes:**
+            - `basic`: Defaults to semantic search. Simple and easy to use.
+            - `advanced`: Combines semantic search with full-text search for more comprehensive results.
+            - `custom`: Complete control over how search is performed. Provide a full `SearchSettings` object.
 
-            Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+            **Filters:**
+            Apply filters directly inside `search_settings.filters`. For example:
+            ```json
+            {
+            "filters": {"document_id": {"$eq": "3e157b3a-..."}}
+            }
+            ```
+            Supported operators: `$eq`, `$neq`, `$gt`, `$gte`, `$lt`, `$lte`, `$like`, `$ilike`, `$in`, `$nin`.
+
+            **Limit:**
+            Control how many results you get by specifying `limit` inside `search_settings`. For example:
+            ```json
+            {
+            "limit": 20
+            }
+            ```
+
+            **Examples:**
+            - Using `basic` mode and no overrides:
+            Just specify `search_mode="basic"`.
+            - Using `advanced` mode and applying a filter:
+            Specify `search_mode="advanced"` and include `search_settings={"filters": {...}, "limit": 5}` to override defaults.
+            - Using `custom` mode:
+            Provide the entire `search_settings` to define your search exactly as you want it.
             """
-            search_settings.filters = self._select_filters(
-                auth_user, search_settings
-            )
 
+            effective_settings = self._prepare_search_settings(auth_user, search_mode, search_settings)
             results = await self.services["retrieval"].search(
                 query=query,
-                search_settings=search_settings,
+                search_settings=effective_settings,
             )
             return results
+
 
         @self.router.post(
             "/retrieval/rag",
@@ -318,9 +411,25 @@ class RetrievalRouterV3(BaseRouterV3):
         @self.base_endpoint
         async def rag_app(
             query: str = Body(...),
-            search_settings: SearchSettings = Body(
-                default_factory=SearchSettings,
-                description="Settings for vector-based search",
+            search_mode: SearchMode = Body(
+                default=SearchMode.custom,
+                description=(
+                    "Default value of `custom` allows full control over search settings.\n\n"
+                    "Pre-configured search modes:\n"
+                    "`basic`: A simple semantic-based search.\n"
+                    "`advanced`: A more powerful hybrid search combining semantic and full-text.\n"
+                    "`custom`: Full control via `search_settings`.\n\n"
+                    "If `filters` or `limit` are provided alongside `basic` or `advanced`, "
+                    "they will override the default settings for that mode."
+                ),
+            ),
+            search_settings: Optional[SearchSettings] = Body(
+                None,
+                description=(
+                    "The search configuration object. If `search_mode` is `custom`, "
+                    "these settings are used as-is. For `basic` or `advanced`, these settings will override the default mode configuration.\n\n"
+                    "Common overrides include `filters` to narrow results and `limit` to control how many results are returned."
+                ),
             ),
             rag_generation_config: GenerationConfig = Body(
                 default_factory=GenerationConfig,
@@ -346,13 +455,11 @@ class RetrievalRouterV3(BaseRouterV3):
             The generation process can be customized using the `rag_generation_config` parameter.
             """
 
-            search_settings.filters = self._select_filters(
-                auth_user, search_settings
-            )
+            effective_settings = self._prepare_search_settings(auth_user, search_mode, search_settings)
 
             response = await self.services["retrieval"].rag(
                 query=query,
-                search_settings=search_settings,
+                search_settings=effective_settings,
                 rag_generation_config=rag_generation_config,
                 task_prompt_override=task_prompt_override,
                 include_title_if_available=include_title_if_available,
@@ -494,10 +601,26 @@ class RetrievalRouterV3(BaseRouterV3):
                 deprecated=True,
                 description="List of messages (deprecated, use message instead)",
             ),
-            search_settings: SearchSettings = Body(
-                default_factory=SearchSettings,
-                description="Settings for vector-based search",
+            search_mode: SearchMode = Body(
+                default=SearchMode.custom,
+                description=(
+                    "Default value of `custom` allows full control over search settings.\n\n"
+                    "Pre-configured search modes:\n"
+                    "`basic`: A simple semantic-based search.\n"
+                    "`advanced`: A more powerful hybrid search combining semantic and full-text.\n"
+                    "`custom`: Full control via `search_settings`.\n\n"
+                    "If `filters` or `limit` are provided alongside `basic` or `advanced`, "
+                    "they will override the default settings for that mode."
+                ),
             ),
+            search_settings: Optional[SearchSettings] = Body(
+                None,
+                description=(
+                    "The search configuration object. If `search_mode` is `custom`, "
+                    "these settings are used as-is. For `basic` or `advanced`, these settings will override the default mode configuration.\n\n"
+                    "Common overrides include `filters` to narrow results and `limit` to control how many results are returned."
+                ),
+            ),            
             rag_generation_config: GenerationConfig = Body(
                 default_factory=GenerationConfig,
                 description="Configuration for RAG generation",
@@ -552,16 +675,13 @@ class RetrievalRouterV3(BaseRouterV3):
             information, providing detailed, factual responses with proper attribution to source documents.
             """
 
-            search_settings.filters = self._select_filters(
-                auth_user=auth_user,
-                search_settings=search_settings,
-            )
+            effective_settings = self._prepare_search_settings(auth_user, search_mode, search_settings)
 
             try:
                 response = await self.services["retrieval"].agent(
                     message=message,
                     messages=messages,
-                    search_settings=search_settings,
+                    search_settings=effective_settings,
                     rag_generation_config=rag_generation_config,
                     task_prompt_override=task_prompt_override,
                     include_title_if_available=include_title_if_available,

@@ -79,6 +79,7 @@ __all__ = [
     "GraphSearchSettings",
     "ChunkSearchResult",
     "SearchSettings",
+    "SearchMode",
     "HybridSearchSettings",
     # User abstractions
     "Token",

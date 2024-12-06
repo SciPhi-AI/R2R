@@ -18,6 +18,7 @@ from shared.abstractions import (
     R2RException,
     R2RSerializable,
     SearchSettings,
+    SearchMode,
     Token,
     User,
 )
