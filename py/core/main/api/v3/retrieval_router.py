@@ -13,7 +13,7 @@ from core.base import (
     R2RException,
     SearchMode,
     SearchSettings,
-    select_search_filters
+    select_search_filters,
 )
 from core.base.api.models import (
     WrappedAgentResponse,
@@ -90,7 +90,6 @@ class RetrievalRouterV3(BaseRouterV3):
         )
 
         return effective_settings
-
 
     def _setup_routes(self):
 

@@ -108,6 +108,7 @@ class R2RApp:
 
     async def serve(self, host: str = "0.0.0.0", port: int = 7272):
         import uvicorn
+
         from core.utils.logging_config import configure_logging
 
         configure_logging()

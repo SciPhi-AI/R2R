@@ -12,7 +12,7 @@ from shared.api.models.management.responses import (
     WrappedDocumentsResponse,
 )
 
-from ..models import IngestionMode, SearchSettings, SearchMode
+from ..models import IngestionMode, SearchMode, SearchSettings
 
 
 class DocumentsSDK:
@@ -406,7 +406,6 @@ class DocumentsSDK:
             params=params,
             version="v3",
         )
-
 
     async def search(
         self,

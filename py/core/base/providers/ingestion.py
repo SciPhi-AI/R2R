@@ -1,17 +1,18 @@
 import logging
 from abc import ABC
 from enum import Enum
+from typing import ClassVar
+
+from pydantic import BaseModel, Field
 
 from core.base.abstractions import ChunkEnrichmentSettings
 
-from .base import Provider, ProviderConfig
+from .base import AppConfig, Provider, ProviderConfig
 from .database import DatabaseProvider
 from .llm import CompletionProvider
-from .base import AppConfig
-from typing import ClassVar
-from pydantic import BaseModel, Field
 
 logger = logging.getLogger()
+
 
 class IngestionConfig(ProviderConfig):
     _defaults: ClassVar[dict] = {
@@ -31,7 +32,7 @@ class IngestionConfig(ProviderConfig):
         "chunks_for_document_summary": 128,
         "document_summary_model": "openai/gpt-4o-mini",
         "parser_overrides": {},
-        "extra_fields": {}
+        "extra_fields": {},
     }
 
     provider: str = Field(
@@ -41,40 +42,58 @@ class IngestionConfig(ProviderConfig):
         default_factory=lambda: IngestionConfig._defaults["excluded_parsers"]
     )
     chunk_enrichment_settings: ChunkEnrichmentSettings = Field(
-        default_factory=lambda: IngestionConfig._defaults["chunk_enrichment_settings"]
+        default_factory=lambda: IngestionConfig._defaults[
+            "chunk_enrichment_settings"
+        ]
     )
     extra_parsers: dict[str, str] = Field(
         default_factory=lambda: IngestionConfig._defaults["extra_parsers"]
     )
     audio_transcription_model: str = Field(
-        default_factory=lambda: IngestionConfig._defaults["audio_transcription_model"]
+        default_factory=lambda: IngestionConfig._defaults[
+            "audio_transcription_model"
+        ]
     )
     vision_img_prompt_name: str = Field(
-        default_factory=lambda: IngestionConfig._defaults["vision_img_prompt_name"]
+        default_factory=lambda: IngestionConfig._defaults[
+            "vision_img_prompt_name"
+        ]
     )
     vision_img_model: str = Field(
         default_factory=lambda: IngestionConfig._defaults["vision_img_model"]
     )
     vision_pdf_prompt_name: str = Field(
-        default_factory=lambda: IngestionConfig._defaults["vision_pdf_prompt_name"]
+        default_factory=lambda: IngestionConfig._defaults[
+            "vision_pdf_prompt_name"
+        ]
     )
     vision_pdf_model: str = Field(
         default_factory=lambda: IngestionConfig._defaults["vision_pdf_model"]
     )
     skip_document_summary: bool = Field(
-        default_factory=lambda: IngestionConfig._defaults["skip_document_summary"]
+        default_factory=lambda: IngestionConfig._defaults[
+            "skip_document_summary"
+        ]
     )
     document_summary_system_prompt: str = Field(
-        default_factory=lambda: IngestionConfig._defaults["document_summary_system_prompt"]
+        default_factory=lambda: IngestionConfig._defaults[
+            "document_summary_system_prompt"
+        ]
     )
     document_summary_task_prompt: str = Field(
-        default_factory=lambda: IngestionConfig._defaults["document_summary_task_prompt"]
+        default_factory=lambda: IngestionConfig._defaults[
+            "document_summary_task_prompt"
+        ]
     )
     chunks_for_document_summary: int = Field(
-        default_factory=lambda: IngestionConfig._defaults["chunks_for_document_summary"]
+        default_factory=lambda: IngestionConfig._defaults[
+            "chunks_for_document_summary"
+        ]
     )
     document_summary_model: str = Field(
-        default_factory=lambda: IngestionConfig._defaults["document_summary_model"]
+        default_factory=lambda: IngestionConfig._defaults[
+            "document_summary_model"
+        ]
     )
     parser_overrides: dict[str, str] = Field(
         default_factory=lambda: IngestionConfig._defaults["parser_overrides"]
@@ -121,7 +140,6 @@ class IngestionConfig(ProviderConfig):
             # For `custom` or any unrecognized mode, return a base config
             return cls(app=app)
 
-
     @classmethod
     def set_default(cls, **kwargs):
         for key, value in kwargs.items():
@@ -131,7 +149,7 @@ class IngestionConfig(ProviderConfig):
                 raise AttributeError(
                     f"No default attribute '{key}' in GenerationConfig"
                 )
-            
+
     class Config:
         populate_by_name = True
         json_schema_extra = {
@@ -151,6 +169,7 @@ class IngestionConfig(ProviderConfig):
             "document_summary_model": "openai/gpt-4o-mini",
             "parser_overrides": {},
         }
+
 
 class IngestionProvider(Provider, ABC):
 

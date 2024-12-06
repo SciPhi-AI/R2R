@@ -1,5 +1,3 @@
-from core.utils.logging_config import configure_logging
-
 import os
 from contextlib import asynccontextmanager
 from typing import Optional
@@ -10,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from core.base import R2RException
+from core.utils.logging_config import configure_logging
 
 from .assembly import R2RBuilder, R2RConfig
 

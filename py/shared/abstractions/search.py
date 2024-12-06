@@ -216,12 +216,16 @@ class AggregateSearchResult(R2RSerializable):
                 if self.chunk_search_results
                 else []
             ),
-            "graph_search_results": [
-                result.to_dict() for result in self.graph_search_results
-            ] if self.graph_search_results else [],
-            "web_search_results": [
-                result.to_dict() for result in self.web_search_results
-            ] if self.web_search_results else [],
+            "graph_search_results": (
+                [result.to_dict() for result in self.graph_search_results]
+                if self.graph_search_results
+                else []
+            ),
+            "web_search_results": (
+                [result.to_dict() for result in self.web_search_results]
+                if self.web_search_results
+                else []
+            ),
         }
 
 
@@ -460,7 +464,6 @@ class SearchMode(str, Enum):
     custom = "custom"
 
 
-
 def select_search_filters(
     auth_user: Any,
     search_settings: SearchSettings,
@@ -485,11 +488,7 @@ def select_search_filters(
         collection_filters = {
             "$or": [
                 {"owner_id": {"$eq": auth_user.id}},
-                {
-                    "collection_ids": {
-                        "$overlap": list(allowed_collections)
-                    }
-                },
+                {"collection_ids": {"$overlap": list(allowed_collections)}},
             ]  # type: ignore
         }
 

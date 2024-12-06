@@ -46,8 +46,8 @@ from .search import (
     KGRelationshipResult,
     KGSearchResultType,
     SearchMode,
-    select_search_filters,
     SearchSettings,
+    select_search_filters,
 )
 from .user import Token, TokenData, User
 from .vector import (

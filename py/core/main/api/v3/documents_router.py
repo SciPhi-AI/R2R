@@ -4,7 +4,7 @@ import logging
 import mimetypes
 import textwrap
 from io import BytesIO
-from typing import Optional, Any
+from typing import Any, Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, File, Form, Path, Query, UploadFile
@@ -15,14 +15,14 @@ from core.base import (
     IngestionConfig,
     IngestionMode,
     R2RException,
-    SearchSettings,
     RunType,
-    UnprocessedChunk,
     SearchMode,
+    SearchSettings,
+    UnprocessedChunk,
     Workflow,
     generate_document_id,
     generate_id,
-    select_search_filters
+    select_search_filters,
 )
 from core.base.abstractions import KGCreationSettings, KGRunType
 from core.base.api.models import (
@@ -89,7 +89,6 @@ class DocumentsRouter(BaseRouterV3):
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
         self._register_workflows()
-
 
     def _prepare_search_settings(
         self,
@@ -325,7 +324,7 @@ class DocumentsRouter(BaseRouterV3):
                 ingestion_mode=ingestion_mode,
                 ingestion_config=ingestion_config,
             )
-            print('effective_ingestion_config = ', effective_ingestion_config)
+            print("effective_ingestion_config = ", effective_ingestion_config)
             if not file and not raw_text and not chunks:
                 raise R2RException(
                     status_code=422,
@@ -1566,7 +1565,7 @@ class DocumentsRouter(BaseRouterV3):
         @self.base_endpoint
         async def search_documents(
             query: str = Body(
-                ..., 
+                ...,
                 description="The search query to perform.",
             ),
             search_mode: SearchMode = Body(
@@ -1586,7 +1585,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Settings for document search",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ): # -> WrappedDocumentSearchResponse:  # type: ignore
+        ):  # -> WrappedDocumentSearchResponse:  # type: ignore
             """
             Perform a search query on the automatically generated document summaries in the system.
 
@@ -1601,9 +1600,7 @@ class DocumentsRouter(BaseRouterV3):
             )
 
             query_embedding = (
-                await self.providers.embedding.async_get_embedding(
-                    query
-                )
+                await self.providers.embedding.async_get_embedding(query)
             )
             results = await self.services["retrieval"].search_documents(
                 query=query,
@@ -1611,7 +1608,6 @@ class DocumentsRouter(BaseRouterV3):
                 settings=effective_settings,
             )
             return results
-
 
     @staticmethod
     async def _process_file(file):

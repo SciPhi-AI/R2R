@@ -1,8 +1,8 @@
 import logging
-import sys
-from pathlib import Path
 import logging.config
 import re
+import sys
+from pathlib import Path
 
 
 class HTTPStatusFilter(logging.Filter):

@@ -64,8 +64,8 @@ from shared.abstractions.search import (
     KGSearchResultType,
     SearchMode,
     SearchSettings,
-    select_search_filters,
     WebSearchResponse,
+    select_search_filters,
 )
 from shared.abstractions.user import Token, TokenData, User
 from shared.abstractions.vector import (

@@ -20,9 +20,9 @@ from shared.abstractions import (
     R2RSerializable,
     SearchMode,
     SearchSettings,
-    select_search_filters,
     Token,
     User,
+    select_search_filters,
 )
 from shared.api.models import CombinedSearchResponse, RAGResponse
 

@@ -16,7 +16,7 @@ from core.base import (
     SearchSettings,
     UnprocessedChunk,
     UpdateChunk,
-    select_search_filters
+    select_search_filters,
 )
 from core.base.api.models import (
     GenericBooleanResponse,
@@ -49,7 +49,6 @@ class ChunksRouter(BaseRouterV3):
         run_type: RunType = RunType.INGESTION,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
-
 
     def _setup_routes(self):
         @self.router.post(

@@ -19,8 +19,8 @@ from core.base.logger.base import (
     RunType,
 )
 from shared.api.models.management.responses import (
-    MessageResponse,
     ConversationResponse,
+    MessageResponse,
 )
 
 logger = logging.getLogger()
