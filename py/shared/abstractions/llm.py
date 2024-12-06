@@ -52,13 +52,11 @@ class GenerationConfig(R2RSerializable):
     )
     top_p: float = Field(
         default_factory=lambda: GenerationConfig._defaults["top_p"],
-        alias="topP",
     )
     max_tokens_to_sample: int = Field(
         default_factory=lambda: GenerationConfig._defaults[
             "max_tokens_to_sample"
         ],
-        alias="maxTokensToSample",
     )
     stream: bool = Field(
         default_factory=lambda: GenerationConfig._defaults["stream"]
@@ -73,11 +71,9 @@ class GenerationConfig(R2RSerializable):
         default_factory=lambda: GenerationConfig._defaults[
             "add_generation_kwargs"
         ],
-        alias="addGenerationKwargs",
     )
     api_base: Optional[str] = Field(
         default_factory=lambda: GenerationConfig._defaults["api_base"],
-        alias="apiBase",
     )
     response_format: Optional[dict | BaseModel] = None
 

@@ -1,9 +1,3 @@
-import {
-  ChunkSearchSettings,
-  GenerationConfig,
-  HybridSearchSettings,
-} from "./models";
-
 export interface UnprocessedChunk {
   id: string;
   document_id?: string;
@@ -134,6 +128,13 @@ export interface GraphResponse {
   updated_at: string;
 }
 
+// Index types
+export enum IndexMeasure {
+  COSINE_DISTANCE = "cosine_distance",
+  L2_DISTANCE = "l2_distance",
+  MAX_INNER_PRODUCT = "max_inner_product",
+}
+
 // Ingestion types
 export interface IngestionResponse {
   message: string;
@@ -184,8 +185,41 @@ export interface RelationshipResponse {
 }
 
 // Retrieval types
+export interface ChunkSearchSettings {
+  index_measure?: IndexMeasure;
+  probes?: number;
+  ef_search?: number;
+  enabled?: boolean;
+}
+
+export interface GenerationConfig {
+  model?: string;
+  temperature?: number;
+  top_p?: number;
+  max_tokens_to_sample?: number;
+  stream?: boolean;
+  functions?: Array<Record<string, any>>;
+  tools?: Array<Record<string, any>>;
+  add_generation_kwargs?: Record<string, any>;
+  api_base?: string;
+  response_format?: string;
+}
+
+export interface HybridSearchSettings {
+  full_text_weight?: number;
+  semantic_weight?: number;
+  full_text_limit?: number;
+  rrf_k?: number;
+}
+
 export interface GraphSearchSettings {
   generation_config?: GenerationConfig;
+  graphrag_map_system?: string;
+  graphrag_reduce_system?: string;
+  max_community_description_length?: number;
+  max_llm_queries_for_global_search?: number;
+  limits?: Record<string, any>;
+  enabled?: boolean;
 }
 
 export interface SearchSettings {
@@ -196,7 +230,7 @@ export interface SearchSettings {
   limit?: number;
   offset?: number;
   include_metadata?: boolean;
-  include_scores: boolean;
+  include_scores?: boolean;
   search_strategy?: string;
   hybrid_settings?: HybridSearchSettings;
   chunk_settings?: ChunkSearchSettings;
@@ -212,7 +246,11 @@ export interface VectorSearchResult {
   metadata?: Record<string, any>;
 }
 
-export type KGSearchResultType = "entity" | "relationship" | "community" | "global";
+export type KGSearchResultType =
+  | "entity"
+  | "relationship"
+  | "community"
+  | "global";
 
 export interface GraphSearchResult {
   content: any;

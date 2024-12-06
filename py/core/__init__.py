@@ -73,11 +73,13 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
+    "WebSearchResponse",
     "GraphSearchResult",
     "ChunkSearchSettings",
     "GraphSearchSettings",
     "ChunkSearchResult",
     "SearchSettings",
+    "SearchMode",
     "HybridSearchSettings",
     # User abstractions
     "Token",

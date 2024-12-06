@@ -12,6 +12,8 @@ from shared.api.models.management.responses import (
     WrappedDocumentsResponse,
 )
 
+from ..models import IngestionMode
+
 
 class DocumentsSDK:
     """
@@ -27,9 +29,10 @@ class DocumentsSDK:
         raw_text: Optional[str] = None,
         chunks: Optional[list[str]] = None,
         id: Optional[str | UUID] = None,
+        ingestion_mode: Optional[str] = None,
         collection_ids: Optional[list[str | UUID]] = None,
         metadata: Optional[dict] = None,
-        ingestion_config: Optional[dict] = None,
+        ingestion_config: Optional[dict | IngestionMode] = None,
         run_with_orchestration: Optional[bool] = True,
     ) -> WrappedIngestionResponse:
         """
@@ -65,13 +68,17 @@ class DocumentsSDK:
         if metadata:
             data["metadata"] = json.dumps(metadata)
         if ingestion_config:
+            if not isinstance(ingestion_config, dict):
+                ingestion_config = ingestion_config.model_dump()
+            ingestion_config["app"] = {}
             data["ingestion_config"] = json.dumps(ingestion_config)
         if collection_ids:
             collection_ids = [str(collection_id) for collection_id in collection_ids]  # type: ignore
             data["collection_ids"] = json.dumps(collection_ids)
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
-
+        if ingestion_mode is not None:
+            data["ingestion_mode"] = ingestion_mode
         if file_path:
             # Create a new file instance that will remain open during the request
             file_instance = open(file_path, "rb")

@@ -1,7 +1,6 @@
 import logging
 from abc import ABC
 from enum import Enum
-from typing import Optional
 
 from core.base.abstractions import ChunkEnrichmentSettings
 
@@ -34,6 +33,8 @@ class IngestionConfig(ProviderConfig):
     chunks_for_document_summary: int = 128
     document_summary_model: str = "openai/gpt-4o-mini"
 
+    parser_overrides: dict[str, str] = {}
+
     @property
     def supported_providers(self) -> list[str]:
         return ["r2r", "unstructured_local", "unstructured_api"]
@@ -41,6 +42,21 @@ class IngestionConfig(ProviderConfig):
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider {self.provider} is not supported.")
+
+    @classmethod
+    def get_default(cls, mode: str, app) -> "IngestionConfig":
+        """Return default ingestion configuration for a given mode."""
+        if mode == "hi-res":
+            # More thorough parsing, no skipping summaries, possibly larger `chunks_for_document_summary`.
+            return cls(app=app, parser_overrides={"pdf": "zerox"})
+        # elif mode == "fast":
+        #     # Skip summaries and other enrichment steps for speed.
+        #     return cls(
+        #         app=app,
+        #     )
+        else:
+            # For `custom` or any unrecognized mode, return a base config
+            return cls(app=app)
 
 
 class IngestionProvider(Provider, ABC):
@@ -66,3 +82,9 @@ class ChunkingStrategy(str, Enum):
     CHARACTER = "character"
     BASIC = "basic"
     BY_TITLE = "by_title"
+
+
+class IngestionMode(str, Enum):
+    hi_res = "hi-res"
+    fast = "fast"
+    custom = "custom"

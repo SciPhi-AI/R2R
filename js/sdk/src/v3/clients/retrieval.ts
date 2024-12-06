@@ -1,13 +1,12 @@
 import { r2rClient } from "../../r2rClient";
 
-import {
-  Message,
-  ChunkSearchSettings,
-  KGSearchSettings,
-  GenerationConfig,
-} from "../../models";
+import { Message } from "../../models";
 import { feature } from "../../feature";
-import { SearchSettings, WrappedSearchResponse } from "../../types";
+import {
+  SearchSettings,
+  WrappedSearchResponse,
+  GenerationConfig,
+} from "../../types";
 
 export class RetrievalClient {
   constructor(private client: r2rClient) {}
@@ -23,19 +22,22 @@ export class RetrievalClient {
    * Allowed operators include: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`,
    * `like`, `ilike`, `in`, and `nin`.
    * @param query Search query to find relevant documents
-   * @param VectorSearchSettings Settings for vector-based search
-   * @param KGSearchSettings Settings for knowledge graph search
+   * @param searchSettings Settings for the search
    * @returns
    */
   @feature("retrieval.search")
   async search(options: {
     query: string;
+    searchMode?: "advanced" | "basic" | "custom";
     searchSettings?: SearchSettings | Record<string, any>;
   }): Promise<WrappedSearchResponse> {
     const data = {
       query: options.query,
       ...(options.searchSettings && {
-        searchSettings: options.searchSettings,
+        search_settings: options.searchSettings,
+      }),
+      ...(options.searchMode && {
+        search_mode: options.searchMode,
       }),
     };
 
@@ -53,9 +55,8 @@ export class RetrievalClient {
    *
    * The generation process can be customized using the `rag_generation_config` parameter.
    * @param query
+   * @param searchSettings Settings for the search
    * @param ragGenerationConfig Configuration for RAG generation
-   * @param vectorSearchSettings Settings for vector-based search
-   * @param kgSearchSettings Settings for knowledge graph search
    * @param taskPromptOverride Optional custom prompt to override default
    * @param includeTitleIfAvailable Include document titles in responses when available
    * @returns
@@ -63,28 +64,28 @@ export class RetrievalClient {
   @feature("retrieval.rag")
   async rag(options: {
     query: string;
+    searchMode?: "advanced" | "basic" | "custom";
+    searchSettings?: SearchSettings | Record<string, any>;
     ragGenerationConfig?: GenerationConfig | Record<string, any>;
-    vectorSearchSettings?: ChunkSearchSettings | Record<string, any>;
-    kgSearchSettings?: KGSearchSettings | Record<string, any>;
     taskPromptOverride?: string;
     includeTitleIfAvailable?: boolean;
   }): Promise<any | AsyncGenerator<string, void, unknown>> {
     const data = {
       query: options.query,
-      ...(options.vectorSearchSettings && {
-        vectorSearchSettings: options.vectorSearchSettings,
+      ...(options.searchMode && {
+        search_mode: options.searchMode,
+      }),
+      ...(options.searchSettings && {
+        search_settings: options.searchSettings,
       }),
       ...(options.ragGenerationConfig && {
-        ragGenerationConfig: options.ragGenerationConfig,
-      }),
-      ...(options.kgSearchSettings && {
-        kgSearchSettings: options.kgSearchSettings,
+        rag_generation_config: options.ragGenerationConfig,
       }),
       ...(options.taskPromptOverride && {
-        taskPromptOverride: options.taskPromptOverride,
+        task_prompt_override: options.taskPromptOverride,
       }),
       ...(options.includeTitleIfAvailable && {
-        includeTitleIfAvailable: options.includeTitleIfAvailable,
+        include_title_if_available: options.includeTitleIfAvailable,
       }),
     };
 
@@ -151,9 +152,8 @@ export class RetrievalClient {
    * find and synthesize information, providing detailed, factual responses
    * with proper attribution to source documents.
    * @param message Current message to process
+   * @param searchSettings Settings for the search
    * @param ragGenerationConfig Configuration for RAG generation
-   * @param vectorSearchSettings Settings for vector-based search
-   * @param kgSearchSettings Settings for knowledge graph search
    * @param taskPromptOverride Optional custom prompt to override default
    * @param includeTitleIfAvailable Include document titles in responses when available
    * @param conversationId ID of the conversation
@@ -163,9 +163,9 @@ export class RetrievalClient {
   @feature("retrieval.agent")
   async agent(options: {
     message: Message;
+    searchMode?: "advanced" | "basic" | "custom";
+    searchSettings?: SearchSettings | Record<string, any>;
     ragGenerationConfig?: GenerationConfig | Record<string, any>;
-    vectorSearchSettings?: ChunkSearchSettings | Record<string, any>;
-    kgSearchSettings?: KGSearchSettings | Record<string, any>;
     taskPromptOverride?: string;
     includeTitleIfAvailable?: boolean;
     conversationId?: string;
@@ -173,26 +173,26 @@ export class RetrievalClient {
   }): Promise<any | AsyncGenerator<string, void, unknown>> {
     const data: Record<string, any> = {
       message: options.message,
-      ...(options.vectorSearchSettings && {
-        vectorSearchSettings: options.vectorSearchSettings,
+      ...(options.searchMode && {
+        search_mode: options.searchMode,
       }),
-      ...(options.kgSearchSettings && {
-        kgSearchSettings: options.kgSearchSettings,
+      ...(options.searchSettings && {
+        search_settings: options.searchSettings,
       }),
       ...(options.ragGenerationConfig && {
-        ragGenerationConfig: options.ragGenerationConfig,
+        rag_generation_config: options.ragGenerationConfig,
       }),
       ...(options.taskPromptOverride && {
-        taskPromptOverride: options.taskPromptOverride,
+        task_prompt_override: options.taskPromptOverride,
       }),
       ...(options.includeTitleIfAvailable && {
-        includeTitleIfAvailable: options.includeTitleIfAvailable,
+        include_title_if_available: options.includeTitleIfAvailable,
       }),
       ...(options.conversationId && {
-        conversationId: options.conversationId,
+        conversation_id: options.conversationId,
       }),
       ...(options.branchId && {
-        branchId: options.branchId,
+        branch_id: options.branchId,
       }),
     };
 
@@ -243,7 +243,7 @@ export class RetrievalClient {
     const data = {
       messages: options.messages,
       ...(options.generationConfig && {
-        generationConfig: options.generationConfig,
+        generation_config: options.generationConfig,
       }),
     };
 

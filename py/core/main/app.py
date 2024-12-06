@@ -16,6 +16,7 @@ from .api.v3.conversations_router import ConversationsRouter
 from .api.v3.documents_router import DocumentsRouter
 from .api.v3.graph_router import GraphRouter
 from .api.v3.indices_router import IndicesRouter
+from .api.v3.logs_router import LogsRouter
 from .api.v3.prompts_router import PromptsRouter
 from .api.v3.retrieval_router import RetrievalRouterV3
 from .api.v3.system_router import SystemRouter
@@ -31,30 +32,32 @@ class R2RApp:
             HatchetOrchestrationProvider | SimpleOrchestrationProvider
         ),
         auth_router: AuthRouter,
-        documents_router: DocumentsRouter,
         chunks_router: ChunksRouter,
-        indices_router: IndicesRouter,
-        users_router: UsersRouter,
         collections_router: CollectionsRouter,
         conversations_router: ConversationsRouter,
+        documents_router: DocumentsRouter,
+        graph_router: GraphRouter,
+        indices_router: IndicesRouter,
+        logs_router: LogsRouter,
         prompts_router: PromptsRouter,
         retrieval_router_v3: RetrievalRouterV3,
         system_router: SystemRouter,
-        graph_router: GraphRouter,
+        users_router: UsersRouter,
     ):
         self.config = config
         self.auth_router = auth_router
-        self.orchestration_provider = orchestration_provider
-        self.documents_router = documents_router
         self.chunks_router = chunks_router
-        self.indices_router = indices_router
-        self.users_router = users_router
         self.collections_router = collections_router
         self.conversations_router = conversations_router
+        self.documents_router = documents_router
+        self.graph_router = graph_router
+        self.indices_router = indices_router
+        self.logs_router = logs_router
+        self.orchestration_provider = orchestration_provider
         self.prompts_router = prompts_router
         self.retrieval_router_v3 = retrieval_router_v3
         self.system_router = system_router
-        self.graph_router = graph_router
+        self.users_router = users_router
 
         self.app = FastAPI()
 
@@ -73,16 +76,17 @@ class R2RApp:
 
     def _setup_routes(self):
 
-        self.app.include_router(self.documents_router, prefix="/v3")
         self.app.include_router(self.chunks_router, prefix="/v3")
-        self.app.include_router(self.indices_router, prefix="/v3")
-        self.app.include_router(self.users_router, prefix="/v3")
         self.app.include_router(self.collections_router, prefix="/v3")
         self.app.include_router(self.conversations_router, prefix="/v3")
+        self.app.include_router(self.documents_router, prefix="/v3")
+        self.app.include_router(self.graph_router, prefix="/v3")
+        self.app.include_router(self.indices_router, prefix="/v3")
+        self.app.include_router(self.logs_router, prefix="/v3")
         self.app.include_router(self.prompts_router, prefix="/v3")
         self.app.include_router(self.retrieval_router_v3, prefix="/v3")
-        self.app.include_router(self.graph_router, prefix="/v3")
         self.app.include_router(self.system_router, prefix="/v3")
+        self.app.include_router(self.users_router, prefix="/v3")
 
         @self.app.get("/openapi_spec", include_in_schema=False)
         async def openapi_spec():
@@ -103,10 +107,16 @@ class R2RApp:
         )
 
     async def serve(self, host: str = "0.0.0.0", port: int = 7272):
-        # Start the Hatchet worker in a separate thread
         import uvicorn
+        from core.utils.logging_config import configure_logging
 
-        # Run the FastAPI app
-        config = uvicorn.Config(self.app, host=host, port=port)
+        configure_logging()
+
+        config = uvicorn.Config(
+            self.app,
+            host=host,
+            port=port,
+            log_config=None,
+        )
         server = uvicorn.Server(config)
         await server.serve()

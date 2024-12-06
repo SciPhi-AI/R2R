@@ -15,6 +15,7 @@ from core.base import (
     Message,
     R2RException,
     RunManager,
+    SearchMode,
     SearchSettings,
     manage_run,
     to_async_generator,
@@ -270,67 +271,96 @@ class RetrievalService(Service):
                         message="Either message or messages should be provided",
                     )
 
-                # Transform UUID filters to strings
-                for filter, value in search_settings.filters.items():
-                    if isinstance(value, UUID):
-                        search_settings.filters[filter] = str(value)
-
-                ids = None
-
-                if not messages:
-                    if not message:
+                # Ensure 'message' is a Message instance
+                if message and not isinstance(message, Message):
+                    if isinstance(message, dict):
+                        message = Message.from_dict(message)
+                    else:
                         raise R2RException(
                             status_code=400,
-                            message="Message not provided",
+                            message="Invalid message format",
                         )
-                    # Fetch or create conversation
-                    if conversation_id:
-                        conversation = (
-                            await self.logging_connection.get_conversation(
-                                conversation_id, branch_id
-                            )
+
+                # Ensure 'messages' is a list of Message instances
+                if messages:
+                    messages = [
+                        (
+                            msg
+                            if isinstance(msg, Message)
+                            else Message.from_dict(msg)
                         )
-                        if not conversation:
+                        for msg in messages
+                    ]
+                else:
+                    messages = []
+
+                # Transform UUID filters to strings
+                for filter_key, value in search_settings.filters.items():
+                    if isinstance(value, UUID):
+                        search_settings.filters[filter_key] = str(value)
+
+                ids = []
+
+                if conversation_id:
+                    # Fetch existing conversation
+                    conversation = (
+                        await self.logging_connection.get_conversation(
+                            conversation_id, branch_id
+                        )
+                    )
+                    if not conversation:
+                        logger.error(
+                            f"No conversation found for ID: {conversation_id}"
+                        )
+                        raise R2RException(
+                            status_code=404,
+                            message=f"Conversation not found: {conversation_id}",
+                        )
+                    # Assuming 'conversation' is a list of dicts with 'id' and 'message' keys
+                    messages_from_conversation = []
+                    for resp in conversation:
+                        if isinstance(resp, dict):
+                            msg = Message.from_dict(resp["message"])
+                            messages_from_conversation.append(msg)
+                            ids.append(resp["id"])
+                        else:
                             logger.error(
-                                f"No conversation found for ID: {conversation_id}"
+                                f"Unexpected type in conversation: {type(resp)}"
                             )
-                            raise R2RException(
-                                status_code=404,
-                                message=f"Conversation not found: {conversation_id}",
-                            )
-                        messages = [resp.message for resp in conversation] + [  # type: ignore
-                            message
-                        ]
-                        ids = [resp.id for resp in conversation]
-                    else:
-                        conversation = (
-                            await self.logging_connection.create_conversation()
-                        )
-                        conversation_id = conversation["id"]
+                    messages = messages_from_conversation + messages
+                else:
+                    # Create new conversation
+                    conversation_id = (
+                        await self.logging_connection.create_conversation()
+                    )
+                    ids = []
+                    # messages already initialized earlier
 
-                        parent_id = None
-                        if conversation_id and messages:
-                            for inner_message in messages[:-1]:
-                                parent_id = await self.logging_connection.add_message(
-                                    conversation_id,  # Use the stored conversation_id
-                                    inner_message,
-                                    parent_id,
-                                )
-                    messages = messages or []
+                # Append 'message' to 'messages' if provided
+                if message:
+                    messages.append(message)
 
-                    if message and not messages:
-                        messages = [message]
+                if not messages:
+                    raise R2RException(
+                        status_code=400,
+                        message="No messages to process",
+                    )
 
-                current_message = messages[-1]  # type: ignore
+                current_message = messages[-1]
 
                 # Save the new message to the conversation
-                message = await self.logging_connection.add_message(
-                    conversation_id,  # type: ignore
-                    current_message,  # type: ignore
-                    parent_id=str(ids[-2]) if (ids and len(ids) > 1) else None,  # type: ignore
+                parent_id = ids[-1] if ids else None
+
+                message_response = await self.logging_connection.add_message(
+                    conversation_id,
+                    current_message,
+                    parent_id=parent_id,
                 )
-                if message is not None:
-                    message_id = message["id"]  # type: ignore
+
+                if message_response is not None:
+                    message_id = message_response["id"]
+                else:
+                    message_id = None
 
                 if rag_generation_config.stream:
                     t1 = time.time()
@@ -372,9 +402,20 @@ class RetrievalService(Service):
                     *args,
                     **kwargs,
                 )
+
+                # Save the assistant's reply to the conversation
+                if isinstance(results[-1], dict):
+                    assistant_message = Message(**results[-1])
+                elif isinstance(results[-1], Message):
+                    assistant_message = results[-1]
+                else:
+                    assistant_message = Message(
+                        role="assistant", content=str(results[-1])
+                    )
+
                 await self.logging_connection.add_message(
                     conversation_id=conversation_id,
-                    content=Message(**results[-1]),
+                    content=assistant_message,
                     parent_id=message_id,
                 )
 
@@ -387,7 +428,7 @@ class RetrievalService(Service):
                     value=latency,
                 )
                 return {
-                    "messages": results,
+                    "messages": [msg.to_dict() for msg in results],
                     "conversation_id": str(
                         conversation_id
                     ),  # Ensure it's a string

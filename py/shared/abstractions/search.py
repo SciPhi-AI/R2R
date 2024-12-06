@@ -146,17 +146,67 @@ class GraphSearchResult(R2RSerializable):
         }
 
 
+class WebSearchResult(R2RSerializable):
+    title: str
+    link: str
+    snippet: str
+    position: int
+    type: str = "organic"
+    date: Optional[str] = None
+    sitelinks: Optional[list[dict]] = None
+
+
+class RelatedSearchResult(R2RSerializable):
+    query: str
+    type: str = "related"
+
+
+class PeopleAlsoAskResult(R2RSerializable):
+    question: str
+    snippet: str
+    link: str
+    title: str
+    type: str = "peopleAlsoAsk"
+
+
+class WebSearchResponse(R2RSerializable):
+    organic_results: list[WebSearchResult] = []
+    related_searches: list[RelatedSearchResult] = []
+    people_also_ask: list[PeopleAlsoAskResult] = []
+
+    @classmethod
+    def from_serper_results(cls, results: list[dict]) -> "WebSearchResponse":
+        organic = []
+        related = []
+        paa = []
+
+        for result in results:
+            if result["type"] == "organic":
+                organic.append(WebSearchResult(**result))
+            elif result["type"] == "relatedSearches":
+                related.append(RelatedSearchResult(**result))
+            elif result["type"] == "peopleAlsoAsk":
+                paa.append(PeopleAlsoAskResult(**result))
+
+        return cls(
+            organic_results=organic,
+            related_searches=related,
+            people_also_ask=paa,
+        )
+
+
 class AggregateSearchResult(R2RSerializable):
     """Result of an aggregate search operation."""
 
     chunk_search_results: Optional[list[ChunkSearchResult]]
     graph_search_results: Optional[list[GraphSearchResult]] = None
+    web_search_results: Optional[list[WebSearchResult]] = None
 
     def __str__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results})"
 
     def __repr__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results})"
 
     def as_dict(self) -> dict:
         return {
@@ -165,7 +215,12 @@ class AggregateSearchResult(R2RSerializable):
                 if self.chunk_search_results
                 else []
             ),
-            "graph_search_results": self.graph_search_results or None,
+            "graph_search_results": [
+                result.to_dict() for result in self.graph_search_results
+            ],
+            "web_search_results": [
+                result.to_dict() for result in self.web_search_results
+            ],
         }
 
 
@@ -202,7 +257,6 @@ class ChunkSearchSettings(R2RSerializable):
     """Settings specific to chunk/vector search."""
 
     index_measure: IndexMeasure = Field(
-        alias="indexMeasure",
         default=IndexMeasure.cosine_distance,
         description="The distance measure to use for indexing",
     )
@@ -211,7 +265,6 @@ class ChunkSearchSettings(R2RSerializable):
         description="Number of ivfflat index lists to query. Higher increases accuracy but decreases speed.",
     )
     ef_search: int = Field(
-        alias="efSearch",
         default=40,
         description="Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed.",
     )
@@ -225,30 +278,24 @@ class GraphSearchSettings(R2RSerializable):
     """Settings specific to knowledge graph search."""
 
     generation_config: GenerationConfig = Field(
-        alias="generationConfig",
         default_factory=GenerationConfig,
         description="Configuration for text generation during graph search.",
     )
     graphrag_map_system: str = Field(
-        alias="graphragMapSystem",
         default="graphrag_map_system",
         description="The system prompt for the graphrag map prompt.",
     )
     graphrag_reduce_system: str = Field(
-        alias="graphragReduceSystem",
         default="graphrag_reduce_system",
         description="The system prompt for the graphrag reduce prompt.",
     )
     max_community_description_length: int = Field(
-        alias="maxCommunityDescriptionLength",
         default=65536,
     )
     max_llm_queries_for_global_search: int = Field(
-        alias="maxLLMQueriesForGlobalSearch",
         default=250,
     )
     limits: dict[str, int] = Field(
-        alias="localSearchLimits",
         default={},
     )
     enabled: bool = Field(
@@ -264,17 +311,14 @@ class SearchSettings(R2RSerializable):
     use_hybrid_search: bool = Field(
         default=False,
         description="Whether to perform a hybrid search. This is equivalent to setting `use_semantic_search=True` and `use_fulltext_search=True`, e.g. combining vector and keyword search.",
-        alias="useHybridSearch",
     )
     use_semantic_search: bool = Field(
         default=True,
         description="Whether to use semantic search",
-        alias="useSemanticSearch",
     )
     use_fulltext_search: bool = Field(
         default=False,
         description="Whether to use full-text search",
-        alias="useFulltextSearch",
     )
 
     # Common search parameters
@@ -304,24 +348,20 @@ class SearchSettings(R2RSerializable):
         description="Offset to paginate search results",
     )
     include_metadatas: bool = Field(
-        alias="includeMetadatas",
         default=True,
         description="Whether to include element metadata in the search results",
     )
     include_scores: bool = Field(
-        alias="includeScores",
         default=True,
         description="Whether to include search score values in the search results",
     )
 
     # Search strategy and settings
     search_strategy: str = Field(
-        alias="searchStrategy",
         default="vanilla",
         description="Search strategy to use (e.g., 'vanilla', 'query_fusion', 'hyde')",
     )
     hybrid_settings: HybridSearchSettings = Field(
-        alias="hybridSearchSettings",
         default_factory=HybridSearchSettings,
         description="Settings for hybrid search (only used if `use_semantic_search` and `use_fulltext_search` are both true)",
     )
@@ -384,3 +424,36 @@ class SearchSettings(R2RSerializable):
     def model_dump(self, *args, **kwargs):
         dump = super().model_dump(*args, **kwargs)
         return dump
+
+    @classmethod
+    def get_default(cls, mode: str) -> "SearchSettings":
+        """Return default search settings for a given mode."""
+        if mode == "basic":
+            # A simpler search that relies primarily on semantic search.
+            return cls(
+                use_semantic_search=True,
+                use_fulltext_search=False,
+                use_hybrid_search=False,
+                search_strategy="vanilla",
+                # Other relevant defaults can be provided here as needed
+            )
+        elif mode == "advanced":
+            # A more powerful, combined search that leverages both semantic and fulltext.
+            return cls(
+                use_semantic_search=True,
+                use_fulltext_search=True,
+                use_hybrid_search=True,
+                search_strategy="hyde",
+                # Other advanced defaults as needed
+            )
+        else:
+            # For 'custom' or unrecognized modes, return a basic empty config.
+            return cls()
+
+
+class SearchMode(str, Enum):
+    """Search modes for the search endpoint."""
+
+    basic = "basic"
+    advanced = "advanced"
+    custom = "custom"

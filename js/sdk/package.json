@@ -1,6 +1,6 @@
 {
   "name": "r2r-js",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "",
   "main": "dist/index.js",
   "browser": "dist/index.browser.js",

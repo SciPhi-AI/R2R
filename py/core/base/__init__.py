@@ -46,11 +46,13 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
+    "WebSearchResponse",
     "GraphSearchResult",
     "GraphSearchSettings",
     "ChunkSearchSettings",
     "ChunkSearchResult",
     "SearchSettings",
+    "SearchMode",
     "HybridSearchSettings",
     # User abstractions
     "Token",
@@ -116,6 +118,7 @@ __all__ = [
     "EmbeddingConfig",
     "EmbeddingProvider",
     # Ingestion provider
+    "IngestionMode",
     "IngestionConfig",
     "IngestionProvider",
     "ChunkingStrategy",

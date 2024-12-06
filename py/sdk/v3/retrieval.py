@@ -6,6 +6,7 @@ from ..models import (
     GraphSearchSettings,
     Message,
     RAGResponse,
+    SearchMode,
     SearchSettings,
 )
 
@@ -21,6 +22,7 @@ class RetrievalSDK:
     async def search(
         self,
         query: str,
+        search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> CombinedSearchResponse:
         """
@@ -33,6 +35,9 @@ class RetrievalSDK:
         Returns:
             CombinedSearchResponse: The search response.
         """
+        if search_mode and not isinstance(search_mode, str):
+            search_mode = search_mode.value
+
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
 
@@ -40,6 +45,9 @@ class RetrievalSDK:
             "query": query,
             "search_settings": search_settings,
         }
+        if search_mode:
+            data["search_mode"] = search_mode
+
         return await self.client._make_request(
             "POST",
             "retrieval/search",
@@ -91,6 +99,7 @@ class RetrievalSDK:
         self,
         query: str,
         rag_generation_config: Optional[dict | GenerationConfig] = None,
+        search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
@@ -122,6 +131,8 @@ class RetrievalSDK:
             "task_prompt_override": task_prompt_override,
             "include_title_if_available": include_title_if_available,
         }
+        if search_mode:
+            data["search_mode"] = search_mode
 
         if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
@@ -144,6 +155,7 @@ class RetrievalSDK:
         self,
         message: Optional[dict | Message] = None,
         rag_generation_config: Optional[dict | GenerationConfig] = None,
+        search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
@@ -177,6 +189,8 @@ class RetrievalSDK:
             "conversation_id": conversation_id,
             "branch_id": branch_id,
         }
+        if search_mode:
+            data["search_mode"] = search_mode
 
         if message:
             cast_message: Message = (
