@@ -123,6 +123,11 @@ class R2RConfig:
         self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore
         self.orchestration = OrchestrationConfig.create(**self.orchestration, app=self.app)  # type: ignore
 
+
+        IngestionConfig.set_default(
+            **self.ingestion.dict()
+        )
+
         # override GenerationConfig defaults
         GenerationConfig.set_default(
             **self.completion.generation_config.dict()
