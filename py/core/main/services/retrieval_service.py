@@ -25,6 +25,8 @@ from core.base.logger.base import RunType
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 
+from shared.api.models.management.responses import MessageResponse
+
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
@@ -248,17 +250,13 @@ class RetrievalService(Service):
         search_settings: SearchSettings = SearchSettings(),
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
-        conversation_id: Optional[str] = None,
-        branch_id: Optional[str] = None,
+        conversation_id: Optional[UUID] = None,
+        branch_id: Optional[UUID] = None,
         message: Optional[Message] = None,
         messages: Optional[list[Message]] = None,
-        *args,
-        **kwargs,
     ):
         async with manage_run(self.run_manager, RunType.RETRIEVAL) as run_id:
             try:
-                t0 = time.time()
-
                 if message and messages:
                     raise R2RException(
                         status_code=400,
@@ -278,19 +276,35 @@ class RetrievalService(Service):
                     else:
                         raise R2RException(
                             status_code=400,
-                            message="Invalid message format",
+                            message="""
+                                Invalid message format. The expected format contains:
+                                    role: MessageType | 'system' | 'user' | 'assistant' | 'function'
+                                    content: Optional[str]
+                                    name: Optional[str]
+                                    function_call: Optional[dict[str, Any]]
+                                    tool_calls: Optional[list[dict[str, Any]]]
+                                    """,
                         )
 
                 # Ensure 'messages' is a list of Message instances
                 if messages:
-                    messages = [
-                        (
-                            msg
-                            if isinstance(msg, Message)
-                            else Message.from_dict(msg)
-                        )
-                        for msg in messages
-                    ]
+                    processed_messages = []
+                    for message in messages:
+                        if isinstance(message, Message):
+                            processed_messages.append(message)
+                        elif hasattr(message, "dict"):
+                            processed_messages.append(
+                                Message.from_dict(message.dict())
+                            )
+                        elif isinstance(message, dict):
+                            processed_messages.append(
+                                Message.from_dict(message)
+                            )
+                        else:
+                            processed_messages.append(
+                                Message.from_dict(str(message))
+                            )
+                    messages = processed_messages
                 else:
                     messages = []
 
@@ -301,9 +315,8 @@ class RetrievalService(Service):
 
                 ids = []
 
-                if conversation_id:
+                if conversation_id:  # Fetch the existing conversation
                     try:
-                        # Fetch existing conversation
                         conversation = (
                             await self.logging_connection.get_conversation(
                                 conversation_id=conversation_id,
@@ -311,31 +324,27 @@ class RetrievalService(Service):
                             )
                         )
                     except Exception as e:
-                        logger.error(f"Error logging conversation: {str(e)}")
-                    # Assuming 'conversation' is a list of dicts with 'id' and 'message' keys
+                        logger.error(f"Error fetching conversation: {str(e)}")
 
                     if conversation is not None:
-                        print("Gets into messages_from_conversation")
                         messages_from_conversation: list[Message] = []
-                        for resp in conversation:
-                            if isinstance(resp, dict):
-                                msg = Message.from_dict(resp["message"])
-                                messages_from_conversation.append(msg)
-                                ids.append(resp["id"])
+                        for message_response in conversation:
+                            if isinstance(message_response, MessageResponse):
+                                messages_from_conversation.append(
+                                    message_response.message
+                                )
+                                ids.append(message_response.id)
                             else:
                                 logger.warning(
-                                    f"Unexpected type in conversation: {type(resp)}\n{resp}"
+                                    f"Unexpected type in conversation found: {type(message_response)}\n{message_response}"
                                 )
                         messages = messages_from_conversation + messages
-                else:
-                    # Create new conversation
-                    conversation_id = (
+                else:  # Create new conversation
+                    conversation_response = (
                         await self.logging_connection.create_conversation()
                     )
-                    ids = []
-                    # messages already initialized earlier
+                    conversation_id = conversation_response.id
 
-                # Append 'message' to 'messages' if provided
                 if message:
                     messages.append(message)
 
@@ -349,27 +358,19 @@ class RetrievalService(Service):
 
                 # Save the new message to the conversation
                 parent_id = ids[-1] if ids else None
-
                 message_response = await self.logging_connection.add_message(
-                    conversation_id,
-                    current_message,
+                    conversation_id=conversation_id,
+                    content=current_message,
                     parent_id=parent_id,
                 )
 
-                if message_response is not None:
-                    message_id = message_response["id"]
-                else:
-                    message_id = None
+                message_id = (
+                    message_response.id
+                    if message_response is not None
+                    else None
+                )
 
                 if rag_generation_config.stream:
-                    t1 = time.time()
-                    latency = f"{t1 - t0:.2f}"
-
-                    await self.logging_connection.log(
-                        run_id=run_id,
-                        key="rag_agent_generation_latency",
-                        value=latency,
-                    )
 
                     async def stream_response():
                         async with manage_run(self.run_manager, "rag_agent"):
@@ -385,8 +386,6 @@ class RetrievalService(Service):
                                 search_settings=search_settings,
                                 rag_generation_config=rag_generation_config,
                                 include_title_if_available=include_title_if_available,
-                                *args,
-                                **kwargs,
                             ):
                                 yield chunk
 
@@ -416,14 +415,6 @@ class RetrievalService(Service):
                     parent_id=message_id,
                 )
 
-                t1 = time.time()
-                latency = f"{t1 - t0:.2f}"
-
-                await self.logging_connection.log(
-                    run_id=run_id,
-                    key="rag_agent_generation_latency",
-                    value=latency,
-                )
                 return {
                     "messages": results,
                     "conversation_id": str(
@@ -432,7 +423,7 @@ class RetrievalService(Service):
                 }
 
             except Exception as e:
-                logger.error(f"Pipeline error: {str(e)}")
+                logger.error(f"Error in agent response: {str(e)}")
                 if "NoneType" in str(e):
                     raise HTTPException(
                         status_code=502,
