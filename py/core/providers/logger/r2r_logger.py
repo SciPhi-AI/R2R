@@ -679,6 +679,7 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 )
             conversation_created_at = row[0]
 
+        print(f"Getting a branch_id: {branch_id}")
         if branch_id is None:
             # Get the most recent branch by created_at timestamp
             async with self.conn.execute(
@@ -691,14 +692,19 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 (conversation_id,),
             ) as cursor:
                 row = await cursor.fetchone()
+                print(f"Row: {row}")
                 branch_id = row[0] if row else None
 
         # If no branch exists, return empty results but with required fields
         if branch_id is None:
-            return {
-                "id": conversation_id,
-                "created_at": conversation_created_at,
-            }
+            logger.warning(
+                f"No branches found for conversation ID {conversation_id}"
+            )
+            return None
+            # return {
+            #     "id": conversation_id,
+            #     "created_at": conversation_created_at,
+            # }
 
         # Get all messages for this branch
         async with self.conn.execute(
