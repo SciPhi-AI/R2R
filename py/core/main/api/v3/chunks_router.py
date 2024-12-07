@@ -331,7 +331,7 @@ class ChunksRouter(BaseRouterV3):
 
             filters = {
                 "$and": [
-                    {"id": {"$eq": str(auth_user.id)}},
+                    {"owner_id": {"$eq": str(auth_user.id)}},
                     {"id": {"$eq": id}},
                 ]
             }
