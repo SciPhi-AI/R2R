@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import textwrap
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -28,6 +29,7 @@ class SemaphoreConnectionPool:
             self.pool = await asyncpg.create_pool(
                 self.connection_string,
                 max_size=self.postgres_configuration_settings.max_connections,
+                statement_cache_size=self.postgres_configuration_settings.statement_cache_size,
             )
 
             logger.info(
@@ -146,13 +148,33 @@ class PostgresConnectionManager(DatabaseConnectionManager):
     async def fetch_query(self, query, params=None):
         if not self.pool:
             raise ValueError("PostgresConnectionManager is not initialized.")
-        async with self.pool.get_connection() as conn:
-            async with conn.transaction():
-                return (
-                    await conn.fetch(query, *params)
-                    if params
-                    else await conn.fetch(query)
-                )
+        try:
+            async with self.pool.get_connection() as conn:
+                async with conn.transaction():
+                    return (
+                        await conn.fetch(query, *params)
+                        if params
+                        else await conn.fetch(query)
+                    )
+        except asyncpg.exceptions.DuplicatePreparedStatementError:
+            error_msg = textwrap.dedent(
+                """
+                Database Configuration Error
+
+                Your database provider does not support statement caching.
+
+                To fix this, either:
+                • Set R2R_POSTGRES_STATEMENT_CACHE_SIZE=0 in your environment
+                • Add statement_cache_size = 0 to your database configuration:
+
+                    [database.postgres_configuration_settings]
+                    statement_cache_size = 0
+
+                This is required when using connection poolers like PgBouncer or
+                managed database services like Supabase.
+            """
+            ).strip()
+            raise ValueError(error_msg) from None
 
     async def fetchrow_query(self, query, params=None):
         if not self.pool:

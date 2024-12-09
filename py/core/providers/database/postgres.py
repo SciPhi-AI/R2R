@@ -208,31 +208,35 @@ class PostgresDBProvider(DatabaseProvider):
         settings = PostgresConfigurationSettings()
 
         env_mapping = {
-            "max_connections": "R2R_POSTGRES_MAX_CONNECTIONS",
-            "shared_buffers": "R2R_POSTGRES_SHARED_BUFFERS",
-            "effective_cache_size": "R2R_POSTGRES_EFFECTIVE_CACHE_SIZE",
-            "maintenance_work_mem": "R2R_POSTGRES_MAINTENANCE_WORK_MEM",
             "checkpoint_completion_target": "R2R_POSTGRES_CHECKPOINT_COMPLETION_TARGET",
-            "wal_buffers": "R2R_POSTGRES_WAL_BUFFERS",
             "default_statistics_target": "R2R_POSTGRES_DEFAULT_STATISTICS_TARGET",
-            "random_page_cost": "R2R_POSTGRES_RANDOM_PAGE_COST",
+            "effective_cache_size": "R2R_POSTGRES_EFFECTIVE_CACHE_SIZE",
             "effective_io_concurrency": "R2R_POSTGRES_EFFECTIVE_IO_CONCURRENCY",
-            "work_mem": "R2R_POSTGRES_WORK_MEM",
             "huge_pages": "R2R_POSTGRES_HUGE_PAGES",
+            "maintenance_work_mem": "R2R_POSTGRES_MAINTENANCE_WORK_MEM",
             "min_wal_size": "R2R_POSTGRES_MIN_WAL_SIZE",
-            "max_wal_size": "R2R_POSTGRES_MAX_WAL_SIZE",
-            "max_worker_processes": "R2R_POSTGRES_MAX_WORKER_PROCESSES",
+            "max_connections": "R2R_POSTGRES_MAX_CONNECTIONS",
             "max_parallel_workers_per_gather": "R2R_POSTGRES_MAX_PARALLEL_WORKERS_PER_GATHER",
             "max_parallel_workers": "R2R_POSTGRES_MAX_PARALLEL_WORKERS",
             "max_parallel_maintenance_workers": "R2R_POSTGRES_MAX_PARALLEL_MAINTENANCE_WORKERS",
+            "max_wal_size": "R2R_POSTGRES_MAX_WAL_SIZE",
+            "max_worker_processes": "R2R_POSTGRES_MAX_WORKER_PROCESSES",
+            "random_page_cost": "R2R_POSTGRES_RANDOM_PAGE_COST",
+            "statement_cache_size": "R2R_POSTGRES_STATEMENT_CACHE_SIZE",
+            "shared_buffers": "R2R_POSTGRES_SHARED_BUFFERS",
+            "wal_buffers": "R2R_POSTGRES_WAL_BUFFERS",
+            "work_mem": "R2R_POSTGRES_WORK_MEM",
         }
 
         for setting, env_var in env_mapping.items():
             value = getattr(
                 config.postgres_configuration_settings, setting, None
-            ) or os.getenv(env_var)
+            )
+            if value is None:
+                value = os.getenv(env_var)
 
-            if value is not None and value != "":
+            print(f"Setting: {setting}, Value: {value}")
+            if value is not None:
                 field_type = settings.__annotations__[setting]
                 if field_type == Optional[int]:
                     value = int(value)
