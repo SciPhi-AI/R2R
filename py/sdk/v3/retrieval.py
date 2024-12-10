@@ -90,7 +90,7 @@ class RetrievalSDK:
         return await self.client._make_request(
             "POST",
             "retrieval/embedding",
-            json=data,
+            data=data,
             version="v3",
         )
 

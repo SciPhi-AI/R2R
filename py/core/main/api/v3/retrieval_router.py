@@ -263,7 +263,8 @@ class RetrievalRouterV3(BaseRouterV3):
             - Using `custom` mode:
             Provide the entire `search_settings` to define your search exactly as you want it.
             """
-
+            if query == "":
+                raise R2RException("Query cannot be empty", 400)
             effective_settings = self._prepare_search_settings(
                 auth_user, search_mode, search_settings
             )

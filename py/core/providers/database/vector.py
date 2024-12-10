@@ -137,7 +137,7 @@ class PostgresChunkHandler(ChunkHandler):
             vec vector({self.dimension}),
             {binary_col}
             text TEXT,
-            metadata JSONB
+            metadata JSONB,
             fts tsvector GENERATED ALWAYS AS (to_tsvector('english', text)) STORED
         );
         CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} (document_id);
@@ -946,14 +946,22 @@ class PostgresChunkHandler(ChunkHandler):
                         parameters.append(json.dumps(clause))
                         return f"{json_col}->'{key}' = ANY(SELECT jsonb_array_elements(${len(parameters)}::jsonb))"
                     elif op == "$contains":
-                        if not isinstance(clause, (int, str, float, list)):
-                            raise FilterError(
-                                "argument to $contains filter must be a scalar or array"
-                            )
+                        if isinstance(clause, (int, float, str)):
+                            clause = [clause]
+                        # Now clause is guaranteed to be a list or array-like structure.
                         parameters.append(json.dumps(clause))
                         return (
                             f"{json_col}->'{key}' @> ${len(parameters)}::jsonb"
                         )
+
+                        # if not isinstance(clause, (int, str, float, list)):
+                        #     raise FilterError(
+                        #         "argument to $contains filter must be a scalar or array"
+                        #     )
+                        # parameters.append(json.dumps(clause))
+                        # return (
+                        #     f"{json_col}->'{key}' @> ${len(parameters)}::jsonb"
+                        # )
 
         def parse_filter(filter_dict: dict) -> str:
             filter_conditions = []
