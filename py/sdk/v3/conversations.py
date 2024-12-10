@@ -137,7 +137,7 @@ class ConversationsSDK:
         return await self.client._make_request(
             "POST",
             f"conversations/{str(id)}/messages",
-            data=data,
+            json=data,
             version="v3",
         )
 

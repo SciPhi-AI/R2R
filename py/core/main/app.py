@@ -9,7 +9,6 @@ from core.providers import (
     SimpleOrchestrationProvider,
 )
 
-from .api.v3.auth_router import AuthRouter
 from .api.v3.chunks_router import ChunksRouter
 from .api.v3.collections_router import CollectionsRouter
 from .api.v3.conversations_router import ConversationsRouter
@@ -31,7 +30,6 @@ class R2RApp:
         orchestration_provider: (
             HatchetOrchestrationProvider | SimpleOrchestrationProvider
         ),
-        auth_router: AuthRouter,
         chunks_router: ChunksRouter,
         collections_router: CollectionsRouter,
         conversations_router: ConversationsRouter,
@@ -45,7 +43,6 @@ class R2RApp:
         users_router: UsersRouter,
     ):
         self.config = config
-        self.auth_router = auth_router
         self.chunks_router = chunks_router
         self.collections_router = collections_router
         self.conversations_router = conversations_router
