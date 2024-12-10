@@ -446,9 +446,12 @@ class RetrievalRouterV3(BaseRouterV3):
             if rag_generation_config.stream:
 
                 async def stream_generator():
-                    async for chunk in response:
-                        yield chunk
-                        await asyncio.sleep(0)
+                    try:
+                        async for chunk in response:
+                            yield chunk
+                    except GeneratorExit:
+                        # Clean up if needed, then return
+                        return
 
                 return StreamingResponse(
                     stream_generator(), media_type="application/json"
@@ -674,9 +677,12 @@ class RetrievalRouterV3(BaseRouterV3):
                 if rag_generation_config.stream:
 
                     async def stream_generator():
-                        async for chunk in response:
-                            yield chunk
-                            await asyncio.sleep(0)
+                        try:
+                            async for chunk in response:
+                                yield chunk
+                        except GeneratorExit:
+                            # Clean up if needed, then return
+                            return
 
                     return StreamingResponse(
                         stream_generator(), media_type="application/json"

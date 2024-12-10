@@ -59,7 +59,7 @@ class MultiSearchPipe(AsyncPipe):
         query_transform_generation_config = (
             query_transform_generation_config
             or copy(kwargs.get("rag_generation_config", None))
-            or GenerationConfig(model="gpt-4o")
+            or GenerationConfig(model="azure/gpt-4o")
         )
         query_transform_generation_config.stream = False
 

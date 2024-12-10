@@ -324,6 +324,7 @@ class ChunksRouter(BaseRouterV3):
             """
             # Get the existing chunk to get its chunk_id
             existing_chunk = await self.services["ingestion"].get_chunk(id)
+            print("existing_chunk = ", existing_chunk)
             if existing_chunk is None:
                 raise R2RException(
                     message=f"Chunk {id} not found", status_code=404
@@ -332,7 +333,7 @@ class ChunksRouter(BaseRouterV3):
             filters = {
                 "$and": [
                     {"owner_id": {"$eq": str(auth_user.id)}},
-                    {"id": {"$eq": id}},
+                    {"chunk_id": {"$eq": str(id)}},
                 ]
             }
             await self.services["management"].delete(filters=filters)

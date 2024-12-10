@@ -1,6 +1,7 @@
 import logging
 import os
 from collections import defaultdict
+from copy import copy
 from typing import Any, BinaryIO, Optional, Tuple
 from uuid import UUID
 
@@ -283,9 +284,31 @@ class ManagementService(Service):
         logger.info(f"Deleting entries with filters: {filters}")
 
         try:
+
+            def transform_chunk_id_to_id(
+                filters: dict[str, Any]
+            ) -> dict[str, Any]:
+                if isinstance(filters, dict):
+                    transformed = {}
+                    for key, value in filters.items():
+                        if key == "chunk_id":
+                            transformed["id"] = value
+                        elif key in ["$and", "$or"]:
+                            transformed[key] = [
+                                transform_chunk_id_to_id(item)
+                                for item in value
+                            ]
+                        else:
+                            transformed[key] = transform_chunk_id_to_id(value)
+                    return transformed
+                return filters
+
+            filters_xf = transform_chunk_id_to_id(copy(filters))
+
             vector_delete_results = await self.providers.database.delete(
-                filters
+                filters_xf
             )
+            print("vector_delete_results = ", vector_delete_results)
         except Exception as e:
             logger.error(f"Error deleting from vector database: {e}")
             vector_delete_results = {}

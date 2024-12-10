@@ -98,7 +98,7 @@ class R2RAsyncClient(
                     if line.strip():  # Ignore empty lines
                         try:
                             yield json.loads(line)
-                        except json.JSONDecodeError:
+                        except:  #  json.JSONDecodeError:
                             yield line
 
     async def _handle_response(self, response):

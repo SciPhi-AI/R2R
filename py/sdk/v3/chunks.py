@@ -19,37 +19,6 @@ class ChunksSDK:
     def __init__(self, client):
         self.client = client
 
-    async def create(
-        self,
-        chunks: list[dict],
-        run_with_orchestration: Optional[bool] = True,
-    ) -> list[dict]:
-        """
-        Create multiple chunks.
-
-        Args:
-            chunks: List of UnprocessedChunk objects containing:
-                - id: Optional[UUID]
-                - document_id: Optional[UUID]
-                - collection_ids: list[UUID]
-                - metadata: dict
-                - text: str
-            run_with_orchestration: Whether to run the chunks through orchestration
-
-        Returns:
-            list[dict]: List of creation results containing processed chunk information
-        """
-        data = {
-            "chunks": chunks,
-            "run_with_orchestration": run_with_orchestration,
-        }
-        return await self.client._make_request(
-            "POST",
-            "chunks",
-            json=data,
-            version="v3",
-        )
-
     async def update(
         self,
         chunk: dict[str, str],
