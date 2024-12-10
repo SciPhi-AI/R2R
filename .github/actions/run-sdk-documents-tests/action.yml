@@ -22,12 +22,12 @@ runs:
       working-directory: ./py
       shell: bash
       run: poetry run python tests/integration/runner_documents.py test_download_document
-    
+
     - name: List collections (SDK)
       working-directory: ./py
       shell: bash
       run: poetry run python tests/integration/runner_documents.py test_list_document_collections
-    
+
     - name: Extract document (SDK)
       working-directory: ./py
       shell: bash
@@ -38,6 +38,10 @@ runs:
       shell: bash
       run: poetry run python tests/integration/runner_documents.py test_list_entities
 
+    - name: List Relationships (SDK)
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/runner_documents.py test_list_relationships
 
     - name: Delete document (SDK)
       working-directory: ./py
@@ -48,4 +52,3 @@ runs:
       working-directory: ./py
       shell: bash
       run: poetry run python tests/integration/runner_documents.py test_delete_document_by_filter
-    

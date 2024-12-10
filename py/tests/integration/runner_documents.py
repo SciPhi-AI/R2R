@@ -187,6 +187,11 @@ def test_list_entities():
     if not isinstance(entities, list):
         print("Failed to list entities.")
         sys.exit(1)
+
+    if len(entities) == 0:
+        print("List entities test passed (no entities extracted yet)")
+        raise R2RException("No entities extracted yet")
+
     print("List entities test passed")
     print("~" * 100)
 
@@ -201,6 +206,13 @@ def test_list_relationships():
     if not isinstance(relationships, list):
         print("Failed to list relationships.")
         sys.exit(1)
+
+    if len(relationships) == 0:
+        print(
+            "List relationships test passed (no relationships extracted yet)"
+        )
+        raise R2RException("No relationships extracted yet")
+
     print("List relationships test passed")
     print("~" * 100)
 
