@@ -1,4 +1,3 @@
-import time
 import json
 import logging
 from typing import Any, Optional
@@ -292,7 +291,6 @@ class PostgresCollectionHandler(CollectionsHandler):
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
     ) -> dict[str, list[CollectionResponse] | int]:
-        t0 = time.time()
         conditions = []
         params: list[Any] = []
         param_index = 1
@@ -349,24 +347,15 @@ class PostgresCollectionHandler(CollectionsHandler):
             params.append(limit)
 
         try:
-            t2 = time.time()
             results = await self.connection_manager.fetch_query(query, params)
-            t3 = time.time()
-            print(f"Time in fetch_query: {t3 - t2}")
 
             if not results:
                 return {"results": [], "total_entries": 0}
 
             total_entries = results[0]["total_entries"] if results else 0
 
-            t4 = time.time()
             collections = [CollectionResponse(**row) for row in results]
-            t5 = time.time()
 
-            print(f"Time in creating CollectionResponse objects: {t5 - t4}")
-
-            t1 = time.time()
-            print(f"Total time in get_collections_overview: {t1 - t0}")
             return {"results": collections, "total_entries": total_entries}
         except Exception as e:
             raise HTTPException(
@@ -427,6 +416,15 @@ class PostgresCollectionHandler(CollectionsHandler):
                     status_code=409,
                     message="Document is already assigned to the collection",
                 )
+
+            update_collection_query = f"""
+                UPDATE {self._get_table_name('collections')}
+                SET document_count = document_count + 1
+                WHERE id = $1
+            """
+            await self.connection_manager.execute_query(
+                query=update_collection_query, params=[collection_id]
+            )
 
             return collection_id
 
