@@ -2405,9 +2405,14 @@ class PostgresGraphHandler(GraphHandler):
         where_clause = ""
         params: list[Union[str, int, bytes]] = [str(query_embedding), limit]
         if filters:
-            conditions_list = self._build_filters(filters, params)
-            if conditions_list:
-                where_clause = "WHERE " + " AND ".join(conditions_list)
+            # conditions_list = self._build_filters(filters, params)
+            # if conditions_list:
+            #     where_clause = "WHERE " + " AND ".join(conditions_list)
+            conditions_clause = self._build_filters(filters, params)
+            if conditions_clause:
+                where_clause = f"WHERE {conditions_clause}"
+            else:
+                where_clause = ""
 
         # Modified query to include similarity score while keeping same structure
         QUERY = f"""
