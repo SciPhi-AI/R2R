@@ -1,4 +1,5 @@
 import json
+from io import BytesIO
 from typing import Any, AsyncGenerator
 
 import httpx
@@ -70,7 +71,14 @@ class R2RAsyncClient(
         try:
             response = await self.client.request(method, url, **request_args)
             await self._handle_response(response)
-            return response.json() if response.content else None
+            # return response.json() if response.content else None
+            # In async_client.py, inside _make_request:
+            if "application/json" in response.headers.get("Content-Type", ""):
+                return response.json() if response.content else None
+            else:
+                # Return raw binary content as BytesIO
+                return BytesIO(response.content)
+
         except httpx.RequestError as e:
             raise R2RException(
                 status_code=500,

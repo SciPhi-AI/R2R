@@ -1029,6 +1029,7 @@ class DocumentsRouter(BaseRouterV3):
             filters_dict = {
                 "$and": [{"owner_id": {"$eq": str(auth_user.id)}}, filters]
             }
+            print("filters_dict = ", filters_dict)
             await self.services["management"].delete(filters=filters_dict)
 
             return GenericBooleanResponse(success=True)  # type: ignore
@@ -1104,7 +1105,7 @@ class DocumentsRouter(BaseRouterV3):
             filters = {
                 "$and": [
                     {"owner_id": {"$eq": str(auth_user.id)}},
-                    {"id": {"$eq": id}},
+                    {"document_id": {"$eq": str(id)}},
                 ]
             }
             await self.services["management"].delete(filters=filters)
