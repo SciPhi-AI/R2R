@@ -11,7 +11,7 @@ from uuid import UUID
 
 from fastapi.responses import StreamingResponse
 
-from core.base import Message
+from core.base import Message, R2RException
 from core.base.logger.base import (
     PersistentLoggingConfig,
     PersistentLoggingProvider,
@@ -669,74 +669,44 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
                 "Initialize the connection pool before attempting to log."
             )
 
-        # Debug: Check if messages exist for this conversation
-        async with self.conn.execute(
-            "SELECT id, content, parent_id FROM messages WHERE conversation_id = ?",
-            (str(conversation_id),),
-        ) as cursor:
-            messages = await cursor.fetchall()
-
-        if branch_id is None:
-            # Debug: Check branches query
-            async with self.conn.execute(
-                """
-                SELECT id FROM branches
-                WHERE conversation_id = ?
-                ORDER BY created_at DESC
-                LIMIT 1
-                """,
-                (str(conversation_id),),
-            ) as cursor:
-                row = await cursor.fetchone()
-                branch_id = row[0] if row else None
-
-        if branch_id:
-            # Debug: Check message_branches entries
-            async with self.conn.execute(
-                """
-                SELECT message_id, branch_id
-                FROM message_branches
-                WHERE branch_id = ?
-                """,
-                (str(branch_id),),
-            ) as cursor:
-                message_branches = await cursor.fetchall()
-
-        # Get conversation details first
+        # Retrieve conversation details
         async with self.conn.execute(
             "SELECT created_at FROM conversations WHERE id = ?",
             (str(conversation_id),),
         ) as cursor:
             row = await cursor.fetchone()
-            if row is None:
-                raise ValueError(
-                    Message=f"Conversation {conversation_id} not found"
-                )
-            conversation_created_at = row[0]
 
+        if row is None:
+            # No conversation found, raise a 404 error
+            raise R2RException(
+                status_code=404,
+                message=f"Conversation {conversation_id} not found.",
+            )
+
+        conversation_created_at = row[0]
+
+        # If no branch_id provided, get the most recent branch
         if branch_id is None:
-            # Get the most recent branch by created_at timestamp
             async with self.conn.execute(
                 """
                 SELECT id FROM branches
                 WHERE conversation_id = ?
                 ORDER BY created_at DESC
                 LIMIT 1
-            """,
+                """,
                 (str(conversation_id),),
             ) as cursor:
                 row = await cursor.fetchone()
-                print(f"Row: {row}")
                 branch_id = row[0] if row else None
 
-        # If no branch exists, return empty results but with required fields
+        # If no branch is found, return empty list
         if branch_id is None:
             logger.warning(
                 f"No branches found for conversation ID {conversation_id}"
             )
-            return None
+            return []
 
-        # Get all messages for this branch
+        # Retrieve messages for the found branch
         async with self.conn.execute(
             """
             WITH RECURSIVE branch_messages(id, content, parent_id, depth, created_at, metadata) AS (
@@ -757,14 +727,19 @@ class SqlitePersistentLoggingProvider(PersistentLoggingProvider):
             (str(branch_id), str(branch_id)),
         ) as cursor:
             rows = await cursor.fetchall()
-            return [
-                MessageResponse(
-                    id=row[0],
-                    message=Message.parse_raw(row[1]),
-                    metadata=json.loads(row[3]) if row[3] else {},
-                )
-                for row in rows
-            ]
+
+        # If no messages found in that branch, return empty list
+        if not rows:
+            return []
+
+        return [
+            MessageResponse(
+                id=row[0],
+                message=Message.parse_raw(row[1]),
+                metadata=json.loads(row[3]) if row[3] else {},
+            )
+            for row in rows
+        ]
 
     async def get_branches(
         self,

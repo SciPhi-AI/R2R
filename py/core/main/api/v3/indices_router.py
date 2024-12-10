@@ -58,7 +58,7 @@ class IndicesRouter(BaseRouterV3):
                             # Create an HNSW index for efficient similarity search
                             result = client.indices.create(
                                 config={
-                                    "table_name": "vectors",  # The table containing vector embeddings
+                                    "table_name": "chunks",  # The table containing vector embeddings
                                     "index_method": "hnsw",   # Hierarchical Navigable Small World graph
                                     "index_measure": "cosine_distance",  # Similarity measure
                                     "index_arguments": {
@@ -76,7 +76,7 @@ class IndicesRouter(BaseRouterV3):
                             # Create an IVF-Flat index for balanced performance
                             result = client.indices.create(
                                 config={
-                                    "table_name": "vectors",
+                                    "table_name": "chunks",
                                     "index_method": "ivf_flat", # Inverted File with Flat storage
                                     "index_measure": "l2_distance",
                                     "index_arguments": {
@@ -220,7 +220,7 @@ class IndicesRouter(BaseRouterV3):
                 f"Creating vector index for {config.table_name} with method {config.index_method}, measure {config.index_measure}, concurrently {config.concurrently}"
             )
 
-            raw_message = await self.orchestration_provider.run_workflow(
+            result = await self.orchestration_provider.run_workflow(
                 "create-vector-index",
                 {
                     "request": {
@@ -238,7 +238,7 @@ class IndicesRouter(BaseRouterV3):
                 },
             )
 
-            return GenericMessageResponse(message=raw_message)  # type: ignore
+            return result
 
         @self.router.get(
             "/indices",
@@ -256,8 +256,7 @@ class IndicesRouter(BaseRouterV3):
                             # List all indices
                             indices = client.indices.list(
                                 offset=0,
-                                limit=10,
-                                filters={"table_name": "vectors"}
+                                limit=10
                             )
 
                             # Print index details
@@ -316,7 +315,7 @@ class IndicesRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def list_indices(
-            filters: list[str] = Query([]),
+            # filters: list[str] = Query([]),
             offset: int = Query(
                 0,
                 ge=0,
@@ -345,7 +344,7 @@ class IndicesRouter(BaseRouterV3):
             """
             # TODO: Implement index listing logic
             indices = await self.providers.database.list_indices(
-                offset=offset, limit=limit, filters=filters
+                offset=offset, limit=limit  # , filters=filters
             )
             return {"indices": indices["indices"]}, indices["page_info"]  # type: ignore
 
@@ -443,7 +442,9 @@ class IndicesRouter(BaseRouterV3):
             """
             # TODO: Implement get index logic
             indices = await self.providers.database.list_indices(
-                filters={"index_name": index_name, "table_name": table_name}
+                filters={"index_name": index_name, "table_name": table_name},
+                limit=1,
+                offset=0,
             )
             if len(indices["indices"]) != 1:
                 raise R2RException(
@@ -608,7 +609,7 @@ class IndicesRouter(BaseRouterV3):
                 f"Deleting vector index {index_name} from table {table_name}"
             )
 
-            raw_message = await self.orchestration_provider.run_workflow(
+            return await self.orchestration_provider.run_workflow(
                 "delete-vector-index",
                 {
                     "request": {
@@ -621,5 +622,3 @@ class IndicesRouter(BaseRouterV3):
                     "additional_metadata": {},
                 },
             )
-
-            return GenericMessageResponse(message=raw_message)  # type: ignore

@@ -38,7 +38,6 @@ provider = "bcrypt"
 provider = "postgres"
 default_collection_name = "Default"
 default_collection_description = "Your default collection."
-enable_fts = true # whether or not to enable full-text search, e.g `hybrid search`
 
 # KG settings
 batch_size = 256

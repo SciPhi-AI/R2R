@@ -97,7 +97,6 @@ class DatabaseConfig(ProviderConfig):
     ] = None
     default_collection_name: str = "Default"
     default_collection_description: str = "Your default collection."
-    enable_fts: bool = False
 
     # KG settings
     batch_size: Optional[int] = 1

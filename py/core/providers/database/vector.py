@@ -96,12 +96,10 @@ class PostgresChunkHandler(ChunkHandler):
         connection_manager: PostgresConnectionManager,
         dimension: int,
         quantization_type: VectorQuantizationType,
-        enable_fts: bool = False,
     ):
         super().__init__(project_name, connection_manager)
         self.dimension = dimension
         self.quantization_type = quantization_type
-        self.enable_fts = enable_fts
 
     async def create_tables(self):
         # Check for old table name first
@@ -139,17 +137,14 @@ class PostgresChunkHandler(ChunkHandler):
             vec vector({self.dimension}),
             {binary_col}
             text TEXT,
-            metadata JSONB
-            {",fts tsvector GENERATED ALWAYS AS (to_tsvector('english', text)) STORED" if self.enable_fts else ""}
+            metadata JSONB,
+            fts tsvector GENERATED ALWAYS AS (to_tsvector('english', text)) STORED
         );
         CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} (document_id);
         CREATE INDEX IF NOT EXISTS idx_vectors_owner_id ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} (owner_id);
         CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} USING GIN (collection_ids);
+        CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} USING GIN (to_tsvector('english', text));
         """
-        if self.enable_fts:
-            query += f"""
-            CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} USING GIN (to_tsvector('english', text));
-            """
 
         await self.connection_manager.execute_query(query)
 
@@ -431,10 +426,6 @@ class PostgresChunkHandler(ChunkHandler):
     async def full_text_search(
         self, query_text: str, search_settings: SearchSettings
     ) -> list[ChunkSearchResult]:
-        if not self.enable_fts:
-            raise ValueError(
-                "Full-text search is not enabled for this collection."
-            )
 
         where_clauses = []
         params: list[str | int | bytes] = [query_text]
@@ -955,14 +946,22 @@ class PostgresChunkHandler(ChunkHandler):
                         parameters.append(json.dumps(clause))
                         return f"{json_col}->'{key}' = ANY(SELECT jsonb_array_elements(${len(parameters)}::jsonb))"
                     elif op == "$contains":
-                        if not isinstance(clause, (int, str, float, list)):
-                            raise FilterError(
-                                "argument to $contains filter must be a scalar or array"
-                            )
+                        if isinstance(clause, (int, float, str)):
+                            clause = [clause]
+                        # Now clause is guaranteed to be a list or array-like structure.
                         parameters.append(json.dumps(clause))
                         return (
                             f"{json_col}->'{key}' @> ${len(parameters)}::jsonb"
                         )
+
+                        # if not isinstance(clause, (int, str, float, list)):
+                        #     raise FilterError(
+                        #         "argument to $contains filter must be a scalar or array"
+                        #     )
+                        # parameters.append(json.dumps(clause))
+                        # return (
+                        #     f"{json_col}->'{key}' @> ${len(parameters)}::jsonb"
+                        # )
 
         def parse_filter(filter_dict: dict) -> str:
             filter_conditions = []
@@ -1135,7 +1134,7 @@ class PostgresChunkHandler(ChunkHandler):
             table_name_str = (
                 f"{self.project_name}.{VectorTableName.COMMUNITIES}"
             )
-            col_name = "embedding"
+            col_name = "description_embedding"
         else:
             raise ArgError("invalid table name")
 
