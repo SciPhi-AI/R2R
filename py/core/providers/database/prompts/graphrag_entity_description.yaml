@@ -1,20 +1,39 @@
 graphrag_entity_description:
   template: |
-    Provide a comprehensive yet concise summary of the given entity, incorporating its description and associated relationships:
+    Given the following information about an entity:
 
-    Entity Info:
+    Document Summary:
+    {document_summary}
+
+    Entity Information:
     {entity_info}
-    Relationships:
+
+    Relationship Data:
     {relationships_txt}
 
-    Your summary should:
-    1. Clearly define the entity's core concept or purpose
-    2. Highlight key relationships or attributes from the relationships
-    3. Integrate any relevant information from the existing description
-    4. Maintain a neutral, factual tone
-    5. Be approximately 2-3 sentences long
+    Generate a comprehensive entity description that:
 
-    Ensure the summary is coherent, informative, and captures the essence of the entity within the context of the provided information.
+    1. Opens with a clear definition statement identifying the entity's primary classification and core function
+    2. Incorporates key data points from both the document summary and relationship information
+    3. Emphasizes the entity's role within its broader context or system
+    4. Highlights critical relationships, particularly those that:
+      - Demonstrate hierarchical connections
+      - Show functional dependencies
+      - Indicate primary use cases or applications
+
+    Format Requirements:
+    - Length: 2-3 sentences
+    - Style: Technical and precise
+    - Structure: Definition + Context + Key Relationships
+    - Tone: Objective and authoritative
+
+    Integration Guidelines:
+    - Prioritize information that appears in multiple sources
+    - Resolve any conflicting information by favoring the most specific source
+    - Include temporal context if relevant to the entity's current state or evolution
+
+    Output should reflect the entity's complete nature while maintaining concision and clarity.
   input_types:
+    document_summary: str
     entity_info: str
     relationships_txt: str

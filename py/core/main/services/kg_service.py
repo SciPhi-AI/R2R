@@ -1001,9 +1001,19 @@ class KgService(Service):
         # combine all extractions into a single string
         combined_extraction: str = " ".join([chunk.data for chunk in chunks])  # type: ignore
 
+        response = await self.providers.database.document_handler.get_documents_overview(  # type: ignore
+            offset=0,
+            limit=1,
+            filter_document_ids=[chunks[0].document_id],
+        )
+        document_summary = (
+            response["results"][0].summary if response["results"] else None
+        )
+
         messages = await self.providers.database.prompt_handler.get_message_payload(
             task_prompt_name=self.providers.database.config.graph_creation_settings.graphrag_relationships_extraction_few_shot,
             task_inputs={
+                "document_summary": document_summary,
                 "input": combined_extraction,
                 "max_knowledge_relationships": max_knowledge_relationships,
                 "entity_types": "\n".join(entity_types),
