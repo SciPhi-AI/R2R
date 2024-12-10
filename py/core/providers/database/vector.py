@@ -1135,7 +1135,7 @@ class PostgresChunkHandler(ChunkHandler):
             table_name_str = (
                 f"{self.project_name}.{VectorTableName.COMMUNITIES}"
             )
-            col_name = "embedding"
+            col_name = "description_embedding"
         else:
             raise ArgError("invalid table name")
 
