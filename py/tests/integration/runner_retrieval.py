@@ -207,6 +207,93 @@ def test_error_handling():
 def create_client(base_url):
     return R2RClient(base_url)
 
+def test_no_results_scenario():
+    print("Testing: No results scenario")
+    # Query a nonsense term that should return no results
+    resp = client.retrieval.search(query="aslkfjaldfjal", search_mode="basic")
+    # Expect no results
+    results = resp.get("results", [])
+    assert_http_error(len(results) == 0, "Expected no results for nonsense query")
+    print("No results scenario test passed")
+    print("~" * 100)
+
+def test_pagination_limit_zero():
+    print("Testing: Pagination with limit=1")
+    client.documents.create(
+        chunks=["a", "b", "c"], # multi-chunks
+    )
+    resp = client.retrieval.search(query="Aristotle", search_mode="basic", search_settings={"limit": 1})
+    results = resp["chunk_search_results"]
+    assert len(results) == 1, "Expected one result with limit=1"
+
+def test_pagination_offset():
+    print("Testing: Pagination offset beyond total results")
+    # First, do a normal search to find out total_entries
+    resp0 = client.retrieval.search(query="Aristotle", search_mode="basic", search_settings={"limit": 1, "offset": 0})["results"]
+    resp1 = client.retrieval.search(query="Aristotle", search_mode="basic", search_settings={"limit": 1, "offset": 1})["results"]
+    assert resp0["chunk_search_results"][0]["text"] != resp1["chunk_search_results"][0]["text"], "Offset beyond results should return different results"
+
+
+def test_rag_task_prompt_override():
+    print("Testing: RAG with task_prompt_override")
+    # Provide a unique prompt override that should appear in the final answer
+    custom_prompt = """
+    Answer the query given immediately below given the context which follows later. Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context. Pay close attention to the title of each given source to ensure it is consistent with the query.
+
+
+    ### Query:
+
+    {query}
+
+
+    ### Context:
+    {context}
+
+    You must end your answer with the phrase: [END-TEST-PROMPT]"""
+    resp = client.retrieval.rag(
+        query="Tell me about Aristotle",
+        rag_generation_config={"stream": False, "max_tokens": 50},
+        search_settings={"use_semantic_search": True, "limit": 3},
+        task_prompt_override=custom_prompt
+    )
+
+    answer = resp["results"]["completion"]["choices"][0]["message"]["content"]
+    # Check if our unique phrase is in the answer
+    assert_http_error("[END-TEST-PROMPT]" in answer, "Custom prompt override not reflected in RAG answer")
+    print("RAG task_prompt_override test passed")
+    print("~" * 100)
+
+def test_agent_conversation_id():
+    print("Testing: Agent with conversation_id")
+    # Start a conversation
+    # conversation_id = str(uuid.uuid4())
+    conversation = client.conversations.create()["results"]
+    conversation_id = conversation["id"]
+    msg = Message(role="user", content="What is Aristotle known for?")
+    resp = client.retrieval.agent(
+        message=msg,
+        rag_generation_config={"stream": False, "max_tokens": 50},
+        search_settings={"use_semantic_search": True, "limit": 3},
+        conversation_id=conversation_id
+    )
+
+    # Expect results
+    results = resp.get("results", [])
+    assert_http_error(len(results) > 0, "No results from agent with conversation_id")
+    # Send a follow-up message in the same conversation
+    msg2 = Message(role="user", content="Can you elaborate more?")
+    resp2 = client.retrieval.agent(
+        message=msg2,
+        rag_generation_config={"stream": False, "max_tokens": 50},
+        search_settings={"use_semantic_search": True, "limit": 3},
+        conversation_id=conversation_id
+    )
+    # Expect some continuity; we mainly check for no error and some reply
+    results2 = resp2.get("results", [])
+    assert_http_error(len(results2) > 0, "No results from agent in second turn of conversation")
+    print("Agent conversation_id test passed")
+    print("~" * 100)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

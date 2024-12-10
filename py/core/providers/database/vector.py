@@ -96,12 +96,10 @@ class PostgresChunkHandler(ChunkHandler):
         connection_manager: PostgresConnectionManager,
         dimension: int,
         quantization_type: VectorQuantizationType,
-        enable_fts: bool = False,
     ):
         super().__init__(project_name, connection_manager)
         self.dimension = dimension
         self.quantization_type = quantization_type
-        self.enable_fts = enable_fts
 
     async def create_tables(self):
         # Check for old table name first
@@ -140,16 +138,13 @@ class PostgresChunkHandler(ChunkHandler):
             {binary_col}
             text TEXT,
             metadata JSONB
-            {",fts tsvector GENERATED ALWAYS AS (to_tsvector('english', text)) STORED" if self.enable_fts else ""}
+            fts tsvector GENERATED ALWAYS AS (to_tsvector('english', text)) STORED
         );
         CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} (document_id);
         CREATE INDEX IF NOT EXISTS idx_vectors_owner_id ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} (owner_id);
         CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} USING GIN (collection_ids);
+        CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} USING GIN (to_tsvector('english', text));
         """
-        if self.enable_fts:
-            query += f"""
-            CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} USING GIN (to_tsvector('english', text));
-            """
 
         await self.connection_manager.execute_query(query)
 
@@ -431,10 +426,6 @@ class PostgresChunkHandler(ChunkHandler):
     async def full_text_search(
         self, query_text: str, search_settings: SearchSettings
     ) -> list[ChunkSearchResult]:
-        if not self.enable_fts:
-            raise ValueError(
-                "Full-text search is not enabled for this collection."
-            )
 
         where_clauses = []
         params: list[str | int | bytes] = [query_text]
