@@ -1,0 +1,51 @@
+name: 'Run SDK Ingestion Tests'
+description: 'Runs SDK retrieval tests for R2R'
+runs:
+  using: "composite"
+  steps:
+    - name: Create document (SDK)
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/runner_documents.py test_create_document
+
+    - name: List documents (SDK)
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/runner_documents.py test_list_documents
+
+    - name: Retrieve document (SDK)
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/runner_documents.py test_retrieve_document
+
+    - name: Download document (SDK)
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/runner_documents.py test_download_document
+    
+    - name: List collections (SDK)
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/runner_documents.py test_list_document_collections
+    
+    - name: Extract document (SDK)
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/runner_documents.py test_extract_document
+
+    - name: List entities (SDK)
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/runner_documents.py test_list_entities
+
+
+    - name: Delete document (SDK)
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/runner_documents.py test_delete_document
+
+    - name: Delete document by filters (SDK)
+      working-directory: ./py
+      shell: bash
+      run: poetry run python tests/integration/runner_documents.py test_delete_document_by_filter
+    

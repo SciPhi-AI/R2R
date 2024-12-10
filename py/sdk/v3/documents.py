@@ -152,25 +152,6 @@ class DocumentsSDK:
             raise ValueError("Expected BytesIO response")
         return response
 
-    # async def download(
-    #     self,
-    #     id: str | UUID,
-    # ) -> BytesIO:
-    #     """
-    #     Download a document's file content.
-
-    #     Args:
-    #         id (Union[str, UUID]): ID of document to download
-
-    #     Returns:
-    #         BytesIO: File content as a binary stream
-    #     """
-    #     return await self.client._make_request(
-    #         "GET",
-    #         f"documents/{str(id)}/download",
-    #         version="v3",
-    #     )
-
     async def delete(
         self,
         id: str | UUID,
