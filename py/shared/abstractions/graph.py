@@ -109,7 +109,7 @@ class KGExtraction(R2RSerializable):
 
 
 class Graph(R2RSerializable):
-    id: UUID = Field(default=None)
+    id: UUID | None = Field()
     name: str
     description: Optional[str] = None
     created_at: datetime = Field(

@@ -1,4 +1,3 @@
-import time
 import logging
 import textwrap
 from typing import Optional
@@ -213,7 +212,6 @@ class CollectionsRouter(BaseRouterV3):
 
             The collections are returned in order of last modification, with most recent first.
             """
-            t0 = time.time()
             requesting_user_id = (
                 None if auth_user.is_superuser else [auth_user.id]
             )
@@ -227,12 +225,6 @@ class CollectionsRouter(BaseRouterV3):
                 collection_ids=collection_uuids,
                 offset=offset,
                 limit=limit,
-            )
-
-            t1 = time.time()
-
-            print(
-                f"Time taken in list_collections on collections router: {t1-t0}"
             )
 
             return (  # type: ignore

@@ -35,14 +35,26 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   test("Retrieve collection", async () => {
     const response = await client.collections.retrieve({ id: collectionId });
     expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(collectionId);
+    expect(response.results.name).toBe("Test Collection");
+    expect(response.results.description).toBeNull();
   });
 
   test("Update collection", async () => {
     const response = await client.collections.update({
       id: collectionId,
       name: "Updated Test Collection",
+      generateDescription: true,
     });
     expect(response.results).toBeDefined();
+  }, 10000);
+
+  test("Retrieve updated collection", async () => {
+    const response = await client.collections.retrieve({ id: collectionId });
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(collectionId);
+    expect(response.results.name).toBe("Updated Test Collection");
+    expect(response.results.description).toBeDefined();
   });
 
   test("Ingest document and assign to collection", async () => {
