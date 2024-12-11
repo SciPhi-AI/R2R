@@ -2247,134 +2247,230 @@ class PostgresGraphHandler(GraphHandler):
 
         return entity_map
 
-    def _build_filters(
-        self, filters: dict, parameters: list[Union[str, int, bytes]]
-    ) -> str:
-        def parse_condition(key: str, value: Any) -> str:  # type: ignore
-            # nonlocal parameters
-            if key == "collection_ids":
-                if isinstance(value, dict):
-                    op, clause = next(iter(value.items()))
-                    if op == "$overlap":
-                        # Match if collection_id equals any of the provided IDs
-                        parameters.append(clause)  # Add the whole array of IDs
+        # def _build_filters(
+        #     self, filters: dict, parameters: list[Union[str, int, bytes]]
+        # ) -> str:
+        #     def parse_condition(key: str, value: Any) -> str:  # type: ignore
+        #         # nonlocal parameters
+        #         if key == "collection_ids":
+        #             if isinstance(value, dict):
+        #                 op, clause = next(iter(value.items()))
+        #                 if op == "$overlap":
+        #                     # Match if collection_id equals any of the provided IDs
+        #                     parameters.append(clause)  # Add the whole array of IDs
 
-                        return f"parent_id = ANY(${len(parameters)})"  # TODO - this is hard coded to assume graph id - collection id
-                raise Exception(
-                    "Unknown filter for `collection_ids`, only `$overlap` is supported"
-                )
-            elif key == "document_id":
-                logger.warning(
-                    "Filtering by `document_id` is not supported with graph search, ignoring."
-                )
-                return ""  # Return an empty condition instead of None
+        #                     return f"parent_id = ANY(${len(parameters)})"  # TODO - this is hard coded to assume graph id - collection id
+        #             raise Exception(
+        #                 "Unknown filter for `collection_ids`, only `$overlap` is supported"
+        #             )
+        #         elif key == "document_id":
+        #             logger.warning(
+        #                 "Filtering by `document_id` is not supported with graph search, ignoring."
+        #             )
+        #             return ""  # Return an empty condition instead of None
 
-            elif key == "chunk_id":
-                logger.warning(
-                    "Filtering by `chunk_id` is not supported with graph search, ignoring."
-                )
-                return ""  # Return an empty condition instead of None
+        #         elif key == "chunk_id":
+        #             logger.warning(
+        #                 "Filtering by `chunk_id` is not supported with graph search, ignoring."
+        #             )
+        #             return ""  # Return an empty condition instead of None
 
-            elif key == "user_id":
-                logger.warning(
-                    "Filtering by `user_id` is not supported with graph search, ignoring. Use `collection_ids` instead."
-                )
-                return ""  # Return an empty condition instead of None
-            elif key == "owner_id":
-                logger.warning(
-                    "Filtering by `owner_id` is not supported with graph search, ignoring. Use `collection_ids` instead."
-                )
-                return ""  # Return an empty condition instead of None
+        #         elif key == "user_id":
+        #             logger.warning(
+        #                 "Filtering by `user_id` is not supported with graph search, ignoring. Use `collection_ids` instead."
+        #             )
+        #             return ""  # Return an empty condition instead of None
+        #         elif key == "owner_id":
+        #             logger.warning(
+        #                 "Filtering by `owner_id` is not supported with graph search, ignoring. Use `collection_ids` instead."
+        #             )
+        #             return ""  # Return an empty condition instead of None
 
-            else:
-                # Handle JSON-based filters
-                json_col = "metadata"
-                if key.startswith("metadata."):
-                    key = key.split("metadata.")[1]
-                if isinstance(value, dict):
-                    op, clause = next(iter(value.items()))
-                    if op not in (
-                        "$eq",
-                        "$ne",
-                        "$lt",
-                        "$lte",
-                        "$gt",
-                        "$gte",
-                        "$in",
-                        "$contains",
-                    ):
-                        raise Exception("unknown operator")
+        #         else:
+        #             # Handle JSON-based filters
+        #             json_col = "metadata"
+        #             if key.startswith("metadata."):
+        #                 key = key.split("metadata.")[1]
+        #             if isinstance(value, dict):
+        #                 op, clause = next(iter(value.items()))
+        #                 if op not in (
+        #                     "$eq",
+        #                     "$ne",
+        #                     "$lt",
+        #                     "$lte",
+        #                     "$gt",
+        #                     "$gte",
+        #                     "$in",
+        #                     "$contains",
+        #                 ):
+        #                     raise Exception("unknown operator")
 
-                    if op == "$eq":
-                        parameters.append(json.dumps(clause))
-                        return (
-                            f"{json_col}->'{key}' = ${len(parameters)}::jsonb"
-                        )
-                    elif op == "$ne":
-                        parameters.append(json.dumps(clause))
-                        return (
-                            f"{json_col}->'{key}' != ${len(parameters)}::jsonb"
-                        )
-                    elif op == "$lt":
-                        parameters.append(json.dumps(clause))
-                        return f"({json_col}->'{key}')::float < (${len(parameters)}::jsonb)::float"
-                    elif op == "$lte":
-                        parameters.append(json.dumps(clause))
-                        return f"({json_col}->'{key}')::float <= (${len(parameters)}::jsonb)::float"
-                    elif op == "$gt":
-                        parameters.append(json.dumps(clause))
-                        return f"({json_col}->'{key}')::float > (${len(parameters)}::jsonb)::float"
-                    elif op == "$gte":
-                        parameters.append(json.dumps(clause))
-                        return f"({json_col}->'{key}')::float >= (${len(parameters)}::jsonb)::float"
-                    elif op == "$in":
-                        if not isinstance(clause, list):
-                            raise Exception(
-                                "argument to $in filter must be a list"
-                            )
-                        parameters.append(json.dumps(clause))
-                        return f"{json_col}->'{key}' = ANY(SELECT jsonb_array_elements(${len(parameters)}::jsonb))"
-                    elif op == "$contains":
-                        if not isinstance(clause, (int, str, float, list)):
-                            raise Exception(
-                                "argument to $contains filter must be a scalar or array"
-                            )
-                        parameters.append(json.dumps(clause))
-                        return (
-                            f"{json_col}->'{key}' @> ${len(parameters)}::jsonb"
-                        )
+        #                 if op == "$eq":
+        #                     parameters.append(json.dumps(clause))
+        #                     return (
+        #                         f"{json_col}->'{key}' = ${len(parameters)}::jsonb"
+        #                     )
+        #                 elif op == "$ne":
+        #                     parameters.append(json.dumps(clause))
+        #                     return (
+        #                         f"{json_col}->'{key}' != ${len(parameters)}::jsonb"
+        #                     )
+        #                 elif op == "$lt":
+        #                     parameters.append(json.dumps(clause))
+        #                     return f"({json_col}->'{key}')::float < (${len(parameters)}::jsonb)::float"
+        #                 elif op == "$lte":
+        #                     parameters.append(json.dumps(clause))
+        #                     return f"({json_col}->'{key}')::float <= (${len(parameters)}::jsonb)::float"
+        #                 elif op == "$gt":
+        #                     parameters.append(json.dumps(clause))
+        #                     return f"({json_col}->'{key}')::float > (${len(parameters)}::jsonb)::float"
+        #                 elif op == "$gte":
+        #                     parameters.append(json.dumps(clause))
+        #                     return f"({json_col}->'{key}')::float >= (${len(parameters)}::jsonb)::float"
+        #                 elif op == "$in":
+        #                     if not isinstance(clause, list):
+        #                         raise Exception(
+        #                             "argument to $in filter must be a list"
+        #                         )
+        #                     parameters.append(json.dumps(clause))
+        #                     return f"{json_col}->'{key}' = ANY(SELECT jsonb_array_elements(${len(parameters)}::jsonb))"
+        #                 elif op == "$contains":
+        #                     if not isinstance(clause, (int, str, float, list)):
+        #                         raise Exception(
+        #                             "argument to $contains filter must be a scalar or array"
+        #                         )
+        #                     parameters.append(json.dumps(clause))
+        #                     return (
+        #                         f"{json_col}->'{key}' @> ${len(parameters)}::jsonb"
+        #                     )
 
-        def parse_filter(filter_dict: dict) -> str:
-            filter_conditions = []
-            for key, value in filter_dict.items():
-                if key == "$and":
-                    and_conditions = [
-                        parse_filter(f) for f in value if f
-                    ]  # Skip empty dictionaries
-                    if and_conditions:
-                        filter_conditions.append(
-                            f"({' AND '.join(and_conditions)})"
-                        )
-                elif key == "$or":
-                    or_conditions = [
-                        parse_filter(f) for f in value if f
-                    ]  # Skip empty dictionaries
-                    if or_conditions:
-                        filter_conditions.append(
-                            f"({' OR '.join(or_conditions)})"
-                        )
-                else:
-                    filter_conditions.append(parse_condition(key, value))
+        #     def parse_filter(filter_dict: dict) -> str:
+        #         filter_conditions = []
+        #         for key, value in filter_dict.items():
+        #             if key == "$and":
+        #                 # Process sub-filters for AND
+        #                 and_conditions = [parse_filter(f) for f in value if f]
+        #                 # Filter out empty strings
+        #                 and_conditions = [c for c in and_conditions if c.strip()]
+        #                 if and_conditions:
+        #                     # Join them with AND if non-empty
+        #                     filter_conditions.append(f"({' AND '.join(and_conditions)})")
 
-            # Check if there is only a single condition
-            if len(filter_conditions) == 1:
-                return filter_conditions[0]
-            else:
-                return " AND ".join(filter_conditions)
+        #             elif key == "$or":
+        #                 # Process sub-filters for OR
+        #                 or_conditions = [parse_filter(f) for f in value if f]
+        #                 # Filter out empty strings
+        #                 or_conditions = [c for c in or_conditions if c.strip()]
+        #                 if or_conditions:
+        #                     # Join them with OR if non-empty
+        #                     filter_conditions.append(f"({' OR '.join(or_conditions)})")
+
+        #             else:
+        #                 # Regular condition
+        #                 condition_str = parse_condition(key, value)
+        #                 if condition_str and condition_str.strip():
+        #                     filter_conditions.append(condition_str)
+
+        #         # If we have no conditions at all, return empty string
+        #         if not filter_conditions:
+        #             return ""
+
+        #         # If multiple conditions, join with AND by default
+        #         if len(filter_conditions) == 1:
+        #             return filter_conditions[0]
+        #         else:
+        #             return " AND ".join(filter_conditions)
+
+        # def parse_filter(filter_dict: dict) -> str:
+        #     filter_conditions = []
+        #     for key, value in filter_dict.items():
+        #         if key == "$and":
+        #             and_conditions = [
+        #                 parse_filter(f) for f in value if f
+        #             ]  # Skip empty dictionaries
+        #             if and_conditions:
+        #                 filter_conditions.append(
+        #                     f"({' AND '.join(and_conditions)})"
+        #                 )
+        #         elif key == "$or":
+        #             or_conditions = [
+        #                 parse_filter(f) for f in value if f
+        #             ]  # Skip empty dictionaries
+        #             if or_conditions:
+        #                 filter_conditions.append(
+        #                     f"({' OR '.join(or_conditions)})"
+        #                 )
+        #         else:
+        #             filter_conditions.append(parse_condition(key, value))
+
+        #     # Check if there is only a single condition
+        #     if len(filter_conditions) == 1:
+        #         return filter_conditions[0]
+        #     else:
+        #         return " AND ".join(filter_conditions)
 
         where_clause = parse_filter(filters)
 
         return where_clause
+
+    # async def graph_search(
+    #     self, query: str, **kwargs: Any
+    # ) -> AsyncGenerator[Any, None]:
+    #     """
+    #     Perform semantic search with similarity scores while maintaining exact same structure.
+    #     """
+    #     query_embedding = kwargs.get("query_embedding", None)
+    #     search_type = kwargs.get("search_type", "entities")
+    #     embedding_type = kwargs.get("embedding_type", "description_embedding")
+    #     property_names = kwargs.get("property_names", ["name", "description"])
+    #     if "metadata" not in property_names:
+    #         property_names.append("metadata")
+    #     # if search_type == "community" and "collection_id" not in property_names:
+    #     #     property_names.append("collection_id")
+
+    #     filters = kwargs.get("filters", {})
+    #     limit = kwargs.get("limit", 10)
+    #     use_fulltext_search = kwargs.get("use_fulltext_search", True)
+    #     use_hybrid_search = kwargs.get("use_hybrid_search", True)
+    #     if use_hybrid_search or use_fulltext_search:
+    #         logger.warning(
+    #             "Hybrid and fulltext search not supported for graph search, ignoring."
+    #         )
+
+    #     table_name = f"graphs_{search_type}"
+    #     property_names_str = ", ".join(property_names)
+    #     where_clause = ""
+    #     params: list[Union[str, int, bytes]] = [str(query_embedding), limit]
+    #     if filters:
+    #         # conditions_list = self._build_filters(filters, params)
+    #         # if conditions_list:
+    #         #     where_clause = "WHERE " + " AND ".join(conditions_list)
+    #         conditions_clause = self._build_filters(filters, params)
+    #         if conditions_clause:
+    #             where_clause = f"WHERE {conditions_clause}"
+    #         else:
+    #             where_clause = ""
+    #     # Modified query to include similarity score while keeping same structure
+    #     QUERY = f"""
+    #         SELECT
+    #             {property_names_str},
+    #             ({embedding_type} <=> $1) as similarity_score
+    #         FROM {self._get_table_name(table_name)} {where_clause}
+    #         ORDER BY {embedding_type} <=> $1
+    #         LIMIT $2;
+    #     """
+    #     results = await self.connection_manager.fetch_query(
+    #         QUERY, tuple(params)
+    #     )
+
+    #     for result in results:
+    #         # import pdb; pdb.set_trace()
+    #         output = {
+    #             property_name: result[property_name]
+    #             for property_name in property_names
+    #         }
+    #         output["similarity_score"] = 1 - float(result["similarity_score"])
+    #         yield output
 
     async def graph_search(
         self, query: str, **kwargs: Any
@@ -2382,19 +2478,28 @@ class PostgresGraphHandler(GraphHandler):
         """
         Perform semantic search with similarity scores while maintaining exact same structure.
         """
+
         query_embedding = kwargs.get("query_embedding", None)
-        search_type = kwargs.get("search_type", "entities")
+        if query_embedding is None:
+            raise ValueError(
+                "query_embedding must be provided for semantic search"
+            )
+
+        search_type = kwargs.get(
+            "search_type", "entities"
+        )  # entities | relationships | communities
         embedding_type = kwargs.get("embedding_type", "description_embedding")
         property_names = kwargs.get("property_names", ["name", "description"])
+
+        # Add metadata if not present
         if "metadata" not in property_names:
             property_names.append("metadata")
-        # if search_type == "community" and "collection_id" not in property_names:
-        #     property_names.append("collection_id")
 
         filters = kwargs.get("filters", {})
         limit = kwargs.get("limit", 10)
         use_fulltext_search = kwargs.get("use_fulltext_search", True)
         use_hybrid_search = kwargs.get("use_hybrid_search", True)
+
         if use_hybrid_search or use_fulltext_search:
             logger.warning(
                 "Hybrid and fulltext search not supported for graph search, ignoring."
@@ -2402,38 +2507,153 @@ class PostgresGraphHandler(GraphHandler):
 
         table_name = f"graphs_{search_type}"
         property_names_str = ", ".join(property_names)
-        where_clause = ""
-        params: list[Union[str, int, bytes]] = [str(query_embedding), limit]
-        if filters:
-            # conditions_list = self._build_filters(filters, params)
-            # if conditions_list:
-            #     where_clause = "WHERE " + " AND ".join(conditions_list)
-            conditions_clause = self._build_filters(filters, params)
-            if conditions_clause:
-                where_clause = f"WHERE {conditions_clause}"
-            else:
-                where_clause = ""
-        # Modified query to include similarity score while keeping same structure
+
+        # Build the WHERE clause from filters
+        params: list[Union[str, int, bytes]] = [
+            json.dumps(query_embedding),
+            limit,
+        ]
+        conditions_clause = self._build_filters(filters, params, search_type)
+        where_clause = (
+            f"WHERE {conditions_clause}" if conditions_clause else ""
+        )
+
+        # Construct the query
+        # Note: For vector similarity, we use <=> for distance. The smaller the number, the more similar.
+        # We'll convert that to similarity_score by doing (1 - distance).
         QUERY = f"""
             SELECT
                 {property_names_str},
                 ({embedding_type} <=> $1) as similarity_score
-            FROM {self._get_table_name(table_name)} {where_clause}
+            FROM {self._get_table_name(table_name)}
+            {where_clause}
             ORDER BY {embedding_type} <=> $1
             LIMIT $2;
         """
+
         results = await self.connection_manager.fetch_query(
             QUERY, tuple(params)
         )
 
         for result in results:
-            # import pdb; pdb.set_trace()
             output = {
-                property_name: result[property_name]
-                for property_name in property_names
+                prop: result[prop] for prop in property_names if prop in result
             }
             output["similarity_score"] = 1 - float(result["similarity_score"])
             yield output
+
+    def _build_filters(
+        self, filter_dict: dict, parameters: list[Any], search_type: str
+    ) -> str:
+        """
+        Build a WHERE clause from a nested filter dictionary for the graph search.
+        For communities we use collection_id as primary key filter; for entities/relationships we use parent_id.
+        """
+
+        # Determine primary identifier column depending on search_type
+        # communities: use collection_id
+        # entities/relationships: use parent_id
+        base_id_column = (
+            "collection_id" if search_type == "communities" else "parent_id"
+        )
+
+        def parse_condition(key: str, value: Any) -> str:
+            # This function returns a single condition (string) or empty if no valid condition.
+            # Supported keys:
+            # - base_id_column (collection_id or parent_id)
+            # - metadata fields: metadata.some_field
+            # Supported ops: $eq, $ne, $lt, $lte, $gt, $gte, $in, $contains
+            if key == base_id_column:
+                # e.g. {"collection_id": {"$eq": "<some-uuid>"}}
+                if isinstance(value, dict):
+                    op, clause = next(iter(value.items()))
+                    if op == "$eq":
+                        parameters.append(str(clause))
+                        return f"{base_id_column} = ${len(parameters)}::uuid"
+                    elif op == "$in":
+                        # $in expects a list of UUIDs
+                        parameters.append([str(x) for x in clause])
+                        return f"{base_id_column} = ANY(${len(parameters)}::uuid[])"
+                else:
+                    # direct equality?
+                    parameters.append(str(value))
+                    return f"{base_id_column} = ${len(parameters)}::uuid"
+
+            elif key.startswith("metadata."):
+                # Handle metadata filters
+                # Example: {"metadata.some_key": {"$eq": "value"}}
+                field = key.split("metadata.")[1]
+
+                if isinstance(value, dict):
+                    op, clause = next(iter(value.items()))
+                    if op == "$eq":
+                        parameters.append(clause)
+                        return f"(metadata->>'{field}') = ${len(parameters)}"
+                    elif op == "$ne":
+                        parameters.append(clause)
+                        return f"(metadata->>'{field}') != ${len(parameters)}"
+                    elif op == "$lt":
+                        parameters.append(clause)
+                        return f"(metadata->>'{field}')::float < ${len(parameters)}::float"
+                    elif op == "$lte":
+                        parameters.append(clause)
+                        return f"(metadata->>'{field}')::float <= ${len(parameters)}::float"
+                    elif op == "$gt":
+                        parameters.append(clause)
+                        return f"(metadata->>'{field}')::float > ${len(parameters)}::float"
+                    elif op == "$gte":
+                        parameters.append(clause)
+                        return f"(metadata->>'{field}')::float >= ${len(parameters)}::float"
+                    elif op == "$in":
+                        # For $in, we assume an array of values and check if the field is in that set.
+                        # Note: This is simplistic, adjust as needed.
+                        parameters.append(clause)
+                        # convert field to text and check membership
+                        return f"(metadata->>'{field}') = ANY(SELECT jsonb_array_elements_text(${len(parameters)}::jsonb))"
+                    elif op == "$contains":
+                        # $contains for metadata likely means metadata @> clause in JSON.
+                        # If clause is dict or list, we use json containment.
+                        parameters.append(json.dumps(clause))
+                        return f"metadata @> ${len(parameters)}::jsonb"
+                else:
+                    # direct equality
+                    parameters.append(value)
+                    return f"(metadata->>'{field}') = ${len(parameters)}"
+
+            # Add additional conditions for other columns if needed
+            # If key not recognized, return empty so it doesn't break query
+            return ""
+
+        def parse_filter(fd: dict) -> str:
+            filter_conditions = []
+            for k, v in fd.items():
+                if k == "$and":
+                    and_parts = [parse_filter(sub) for sub in v if sub]
+                    # Remove empty strings
+                    and_parts = [x for x in and_parts if x.strip()]
+                    if and_parts:
+                        filter_conditions.append(
+                            f"({' AND '.join(and_parts)})"
+                        )
+                elif k == "$or":
+                    or_parts = [parse_filter(sub) for sub in v if sub]
+                    # Remove empty strings
+                    or_parts = [x for x in or_parts if x.strip()]
+                    if or_parts:
+                        filter_conditions.append(f"({' OR '.join(or_parts)})")
+                else:
+                    # Regular condition
+                    c = parse_condition(k, v)
+                    if c and c.strip():
+                        filter_conditions.append(c)
+
+            if not filter_conditions:
+                return ""
+            if len(filter_conditions) == 1:
+                return filter_conditions[0]
+            return " AND ".join(filter_conditions)
+
+        return parse_filter(filter_dict)
 
     async def _create_graph_and_cluster(
         self, relationships: list[Relationship], leiden_params: dict[str, Any]
