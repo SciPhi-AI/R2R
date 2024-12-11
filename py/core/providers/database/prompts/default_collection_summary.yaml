@@ -1,0 +1,41 @@
+default_collection_summary:
+  template: >
+    ## Task:
+
+    Generate a comprehensive collection-level summary that describes the overall content, themes, and relationships across multiple documents. The summary should provide a high-level understanding of what the collection contains and represents.
+
+    ### Input Documents:
+
+    Document Summaries:
+    {document_summaries}
+
+    ### Requirements:
+
+    1. SCOPE
+    - Synthesize key themes and patterns across all documents
+    - Identify common topics, entities, and relationships
+    - Capture the collection's overall purpose or domain
+
+    2. STRUCTURE
+    - Target length: Approximately 3-4 concise sentences
+    - Focus on collective insights rather than individual document details
+
+    3. CONTENT GUIDELINES
+    - Emphasize shared concepts and recurring elements
+    - Highlight any temporal or thematic progression
+    - Identify key stakeholders or entities that appear across documents
+    - Note any significant relationships between documents
+
+    4. INTEGRATION PRINCIPLES
+    - Connect related concepts across different documents
+    - Identify overarching narratives or frameworks
+    - Preserve important context from individual documents
+    - Balance breadth of coverage with depth of insight
+
+    ### Query:
+
+    Generate a collection-level summary following the above requirements. Focus on synthesizing the key themes and relationships across all documents while maintaining clarity and concision.
+
+    ## Response:
+  input_types:
+    document_summaries: str

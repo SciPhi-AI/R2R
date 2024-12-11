@@ -21,7 +21,6 @@ from core.providers import (
     SimpleOrchestrationProvider,
 )
 from core.utils import (
-    generate_default_user_collection_id,
     update_settings_from_dict,
 )
 
@@ -399,6 +398,10 @@ class CollectionsRouter(BaseRouterV3):
             description: Optional[str] = Body(
                 None, description="An optional description of the collection"
             ),
+            generate_description: Optional[bool] = Body(
+                False,
+                description="Whether to generate a new synthetic description for the collection",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedCollectionResponse:
             """
@@ -416,10 +419,17 @@ class CollectionsRouter(BaseRouterV3):
                     403,
                 )
 
+            if generate_description and description is not None:
+                raise R2RException(
+                    "Cannot provide both a description and request to synthetically generate a new one.",
+                    400,
+                )
+
             return await self.services["management"].update_collection(  # type: ignore
                 id,
                 name=name,
                 description=description,
+                generate_description=generate_description,
             )
 
         @self.router.delete(

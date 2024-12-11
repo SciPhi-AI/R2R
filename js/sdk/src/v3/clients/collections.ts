@@ -70,6 +70,7 @@ export class CollectionsClient {
    * @param id Collection ID to update
    * @param name Optional new name for the collection
    * @param description Optional new description for the collection
+   * @param generateDescription Whether to generate a new synthetic description for the collection
    * @returns
    */
   @feature("collections.update")
@@ -77,10 +78,14 @@ export class CollectionsClient {
     id: string;
     name?: string;
     description?: string;
+    generateDescription?: boolean;
   }): Promise<WrappedCollectionResponse> {
     const data = {
       ...(options.name && { name: options.name }),
       ...(options.description && { description: options.description }),
+      ...(options.generateDescription && {
+        generate_description: options.generateDescription,
+      }),
     };
 
     return this.client.makeRequest("POST", `collections/${options.id}`, {

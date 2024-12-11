@@ -137,7 +137,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         community_id: UUID,
         max_summary_input_length: int,
         generation_config: GenerationConfig,
-        collection_id: UUID | None,
+        collection_id: UUID,
         nodes: list[str],
         all_entities: list[Entity],
         all_relationships: list[Relationship],
@@ -145,6 +145,15 @@ class KGCommunitySummaryPipe(AsyncPipe):
         """
         Process a community by summarizing it and creating a summary embedding and storing it to a database.
         """
+
+        response = await self.database_provider.collections_handler.get_collections_overview(  # type: ignore
+            offset=0,
+            limit=1,
+            filter_collection_ids=[collection_id],
+        )
+        collection_description = (
+            response["results"][0].description if response["results"] else None  # type: ignore
+        )
 
         entities = [entity for entity in all_entities if entity.name in nodes]
         relationships = [
@@ -158,6 +167,12 @@ class KGCommunitySummaryPipe(AsyncPipe):
                 f"Community {community_id} has no entities or relationships."
             )
 
+        input_text = await self.community_summary_prompt(
+            entities,
+            relationships,
+            max_summary_input_length,
+        )
+
         for attempt in range(3):
 
             description = (
@@ -166,13 +181,8 @@ class KGCommunitySummaryPipe(AsyncPipe):
                         messages=await self.database_provider.prompt_handler.get_message_payload(
                             task_prompt_name=self.database_provider.config.graph_enrichment_settings.graphrag_communities,
                             task_inputs={
-                                "input_text": (
-                                    await self.community_summary_prompt(
-                                        entities,
-                                        relationships,
-                                        max_summary_input_length,
-                                    )
-                                ),
+                                "collection_description": collection_description,
+                                "input_text": input_text,
                             },
                         ),
                         generation_config=generation_config,

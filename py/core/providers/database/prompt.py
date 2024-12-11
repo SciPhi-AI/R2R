@@ -366,7 +366,9 @@ class PostgresPromptHandler(CacheablePromptHandler):
             for key, value in inputs.items():
                 expected_type = input_types.get(key)
                 if not expected_type:
-                    raise ValueError(f"Unexpected input key: {key}")
+                    raise ValueError(
+                        f"Unexpected input key: {key} expected input types: {input_types}"
+                    )
             return template.format(**inputs)
 
         return template

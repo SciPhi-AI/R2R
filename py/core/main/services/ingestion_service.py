@@ -249,7 +249,6 @@ class IngestionService(Service):
                 task_prompt_name=self.config.ingestion.document_summary_task_prompt,
                 task_inputs={"document": document},
             )
-            # FIXME: Why are we hardcoding the model here?
             response = await self.providers.llm.aget_completion(
                 messages=messages,
                 generation_config=GenerationConfig(

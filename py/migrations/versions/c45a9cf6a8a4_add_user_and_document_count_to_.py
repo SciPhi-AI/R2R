@@ -1,7 +1,7 @@
 """Add user and document count to collection
 
 Revision ID: c45a9cf6a8a4
-Revises: 
+Revises:
 Create Date: 2024-12-10 13:28:07.798167
 
 """
