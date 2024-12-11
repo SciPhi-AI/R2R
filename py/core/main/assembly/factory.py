@@ -387,7 +387,6 @@ class R2RPipeFactory:
         kg_entity_deduplication_pipe: Optional[AsyncPipe] = None,
         kg_entity_deduplication_summary_pipe: Optional[AsyncPipe] = None,
         kg_community_summary_pipe: Optional[AsyncPipe] = None,
-        kg_prompt_tuning_pipe: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
     ) -> R2RPipes:
@@ -426,8 +425,6 @@ class R2RPipeFactory:
             ),
             kg_community_summary_pipe=kg_community_summary_pipe
             or self.create_kg_community_summary_pipe(*args, **kwargs),
-            kg_prompt_tuning_pipe=kg_prompt_tuning_pipe
-            or self.create_kg_prompt_tuning_pipe(*args, **kwargs),
         )
 
     def create_parsing_pipe(self, *args, **kwargs) -> Any:
@@ -672,16 +669,6 @@ class R2RPipeFactory:
             config=AsyncPipe.PipeConfig(
                 name="kg_entity_deduplication_summary_pipe"
             ),
-        )
-
-    def create_kg_prompt_tuning_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import KGPromptTuningPipe
-
-        return KGPromptTuningPipe(
-            logging_provider=self.providers.logging,
-            database_provider=self.providers.database,
-            llm_provider=self.providers.llm,
-            config=AsyncPipe.PipeConfig(name="kg_prompt_tuning_pipe"),
         )
 
 

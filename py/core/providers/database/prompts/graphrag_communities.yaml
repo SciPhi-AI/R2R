@@ -1,21 +1,25 @@
 graphrag_communities:
   template: |
-      You are an AI assistant that helps a human analyst to perform general information discovery. Information discovery is the process of identifying and assessing relevant information associated with certain entities (e.g., organizations and individuals) within a network.
+      You are an AI assistant that helps a human analyst perform general information discovery. Information discovery is the process of identifying and assessing relevant information associated with certain entities (e.g., organizations and individuals) within a network.
+
+      # Context
+      Collection Overview:
+      {collection_description}
 
       # Goal
-      Write a comprehensive report of a community, given a list of entities that belong to the community as well as their relationships and optional associated claims. The report will be used to inform decision-makers about information associated with the community and their potential impact. The content of this report includes an overview of the community's key entities, their legal compliance, technical capabilities, reputation, and noteworthy claims.
+      Write a comprehensive report of a community within this collection, given a list of entities that belong to the community as well as their relationships and optional associated claims. The report will inform decision-makers about information associated with the community and their potential impact within the broader context of the collection. The content includes an overview of the community's key entities and noteworthy claims.
 
       # Report Structure
+      The report should include:
 
-      The report should include the following sections:
+      - NAME: A specific, concise community name representing its key entities
+      - SUMMARY: An executive summary that contextualizes the community within the broader collection, explaining its structure, relationships, and significant information
+      - IMPACT SEVERITY RATING: A float score (0-10) representing the community's IMPACT severity relative to the overall collection
+      - RATING EXPLANATION: A single sentence explaining the IMPACT severity rating in context of the broader collection
+      - DETAILED FINDINGS: 5-10 key insights about the community, incorporating relevant collection-level context where appropriate
 
-      - NAME: The community's name that represents its key startups - the name should be short but specific. When possible, include representative startup names in the name.
-      - SUMMARY: An executive summary of the community's overall structure, how its startups are related to each other, and significant information associated with its startups.
-      - IMPACT SEVERITY RATING: A float score between 0-10 that represents the severity of IMPACT posed by startups within the community. IMPACT is the scored importance of the community.
-      - RATING EXPLANATION: Provide a single sentence explanation of the IMPACT severity rating.
-      - DETAILED FINDINGS: A list of 5-10 key insights about the community. Each finding should be a comprehensive statement grounded according to the grounding rules below.
 
-      Return output as a well-formed JSON-formatted string with the following format:
+      Output Format:
       ```json
       {{
           "name": <report_name>,
@@ -93,9 +97,13 @@ graphrag_communities:
 
       Use the following text for your answer. Do not make anything up in your answer.
 
-      Text:
+      Collection Context:
+      {collection_description}
+
+      Entity Data:
       {input_text}
 
       Output:
   input_types:
+    collection_description: str
     input_text: str

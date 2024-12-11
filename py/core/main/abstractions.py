@@ -1,5 +1,3 @@
-from typing import Union
-
 from pydantic import BaseModel
 
 from core.agent import R2RRAGAgent, R2RStreamingRAGAgent
@@ -26,22 +24,22 @@ from core.providers import (
 
 
 class R2RProviders(BaseModel):
-    auth: Union[R2RAuthProvider, SupabaseAuthProvider]
+    auth: R2RAuthProvider | SupabaseAuthProvider
     database: PostgresDBProvider
-    ingestion: Union[R2RIngestionProvider, UnstructuredIngestionProvider]
-    embedding: Union[
-        LiteLLMEmbeddingProvider,
-        OpenAIEmbeddingProvider,
-        OllamaEmbeddingProvider,
-    ]
-    llm: Union[LiteLLMCompletionProvider, OpenAICompletionProvider]
-    orchestration: Union[
-        HatchetOrchestrationProvider, SimpleOrchestrationProvider
-    ]
+    ingestion: R2RIngestionProvider | UnstructuredIngestionProvider
+    embedding: (
+        LiteLLMEmbeddingProvider
+        | OpenAIEmbeddingProvider
+        | OllamaEmbeddingProvider
+    )
+    llm: LiteLLMCompletionProvider | OpenAICompletionProvider
+    orchestration: HatchetOrchestrationProvider | SimpleOrchestrationProvider
     logging: SqlitePersistentLoggingProvider
-    email: Union[
-        AsyncSMTPEmailProvider, ConsoleMockEmailProvider, SendGridEmailProvider
-    ]
+    email: (
+        AsyncSMTPEmailProvider
+        | ConsoleMockEmailProvider
+        | SendGridEmailProvider
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -58,7 +56,6 @@ class R2RPipes(BaseModel):
     kg_entity_deduplication_pipe: AsyncPipe
     kg_entity_deduplication_summary_pipe: AsyncPipe
     kg_community_summary_pipe: AsyncPipe
-    kg_prompt_tuning_pipe: AsyncPipe
     rag_pipe: AsyncPipe
     streaming_rag_pipe: AsyncPipe
     vector_storage_pipe: AsyncPipe
