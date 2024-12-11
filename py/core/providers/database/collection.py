@@ -300,7 +300,7 @@ class PostgresCollectionHandler(CollectionsHandler):
                 f"""
                 c.id IN (
                     SELECT unnest(collection_ids)
-                    FROM r2r_default.users
+                    FROM {self.project_name}.users
                     WHERE id = ANY(${param_index})
                 )
             """
@@ -313,7 +313,7 @@ class PostgresCollectionHandler(CollectionsHandler):
                 f"""
                 c.id IN (
                     SELECT unnest(collection_ids)
-                    FROM r2r_default.documents
+                    FROM {self.project_name}.documents
                     WHERE id = ANY(${param_index})
                 )
             """
@@ -334,7 +334,7 @@ class PostgresCollectionHandler(CollectionsHandler):
             SELECT
                 c.*,
                 COUNT(*) OVER() as total_entries
-            FROM r2r_default.collections c
+            FROM {self.project_name}.collections c
             {where_clause}
             ORDER BY created_at DESC
             OFFSET ${param_index}
