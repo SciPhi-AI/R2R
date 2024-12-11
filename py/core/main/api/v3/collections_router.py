@@ -1,6 +1,6 @@
-import time
 import logging
 import textwrap
+import time
 from typing import Optional
 from uuid import UUID
 

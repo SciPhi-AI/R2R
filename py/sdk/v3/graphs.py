@@ -475,3 +475,130 @@ class GraphsSDK:
             f"graphs/{str(collection_id)}/documents/{str(document_id)}",
             version="v3",
         )
+
+    async def create_entity(
+        self,
+        collection_id: str | UUID,
+        name: str,
+        description: str,
+        category: Optional[str] = None,
+        metadata: Optional[dict] = None,
+    ) -> WrappedEntityResponse:
+        """
+        Creates a new entity in the graph.
+
+        Args:
+            collection_id (str | UUID): The collection ID corresponding to the graph
+            name (str): The name of the entity to create
+            description (Optional[str]): The description of the entity
+            category (Optional[str]): The category of the entity
+            metadata (Optional[dict]): Additional metadata for the entity
+
+        Returns:
+            dict: Created entity information
+        """
+        data = {
+            "name": name,
+            "description": description,
+        }
+        if category is not None:
+            data["category"] = category
+        if metadata is not None:
+            data["metadata"] = metadata
+
+        return await self.client._make_request(
+            "POST",
+            f"graphs/{str(collection_id)}/entities",
+            json=data,
+            version="v3",
+        )
+
+    async def create_relationship(
+        self,
+        collection_id: str | UUID,
+        subject: str,
+        subject_id: str | UUID,
+        predicate: str,
+        object: str,
+        object_id: str | UUID,
+        description: str,
+        weight: Optional[float] = None,
+        metadata: Optional[dict] = None,
+    ) -> WrappedRelationshipResponse:
+        """
+        Creates a new relationship in the graph.
+
+        Args:
+            collection_id (str | UUID): The collection ID corresponding to the graph
+            subject (str): The subject of the relationship
+            subject_id (str | UUID): The ID of the subject entity
+            predicate (str): The predicate/type of the relationship
+            object (str): The object of the relationship
+            object_id (str | UUID): The ID of the object entity
+            description (Optional[str]): Description of the relationship
+            weight (Optional[float]): Weight/strength of the relationship
+            metadata (Optional[dict]): Additional metadata for the relationship
+
+        Returns:
+            dict: Created relationship information
+        """
+        data = {
+            "subject": subject,
+            "subject_id": str(subject_id),
+            "predicate": predicate,
+            "object": object,
+            "object_id": str(object_id),
+            "description": description,
+        }
+        if weight is not None:
+            data["weight"] = weight
+        if metadata is not None:
+            data["metadata"] = metadata
+
+        return await self.client._make_request(
+            "POST",
+            f"graphs/{str(collection_id)}/relationships",
+            json=data,
+            version="v3",
+        )
+
+    async def create_community(
+        self,
+        collection_id: str | UUID,
+        name: str,
+        summary: str,
+        findings: Optional[_list[str]] = None,
+        rating: Optional[float] = None,
+        rating_explanation: Optional[str] = None,
+    ) -> WrappedCommunityResponse:
+        """
+        Creates a new community in the graph.
+
+        Args:
+            collection_id (str | UUID): The collection ID corresponding to the graph
+            name (str): The name of the community
+            summary (str): A summary description of the community
+            findings (Optional[list[str]]): List of findings about the community
+            rating (Optional[float]): Rating between 1 and 10
+            rating_explanation (Optional[str]): Explanation for the rating
+
+        Returns:
+            dict: Created community information
+        """
+        data = {
+            "name": name,
+            "summary": summary,
+        }
+        if findings is not None:
+            data["findings"] = findings
+        if rating is not None:
+            data["rating"] = rating
+        if rating_explanation is not None:
+            data["rating_explanation"] = rating_explanation
+
+        return await self.client._make_request(
+            "POST",
+            f"graphs/{str(collection_id)}/communities",
+            json=data,
+            version="v3",
+        )

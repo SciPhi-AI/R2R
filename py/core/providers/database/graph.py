@@ -2413,7 +2413,6 @@ class PostgresGraphHandler(GraphHandler):
                 where_clause = f"WHERE {conditions_clause}"
             else:
                 where_clause = ""
-
         # Modified query to include similarity score while keeping same structure
         QUERY = f"""
             SELECT

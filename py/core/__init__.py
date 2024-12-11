@@ -175,8 +175,6 @@ __all__ = [
     "R2RPipeFactory",
     "R2RPipelineFactory",
     "R2RAgentFactory",
-    # R2R Routers
-    "AuthRouter",
     ## R2R SERVICES
     "AuthService",
     "IngestionService",

@@ -14,9 +14,6 @@ __all__ = [
     "R2RPipelines",
     "R2RAgents",
     ## R2R API
-    # Routes
-    "AuthRouter",
-    ## R2R APP
     "R2RApp",
     ## R2R ASSEMBLY
     # Builder
