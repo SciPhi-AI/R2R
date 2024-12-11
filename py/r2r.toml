@@ -38,6 +38,8 @@ provider = "bcrypt"
 provider = "postgres"
 default_collection_name = "Default"
 default_collection_description = "Your default collection."
+# collection_summary_system_prompt = 'default_system'
+# collection_summary_task_prompt = 'default_collection_summary'
 
 # KG settings
 batch_size = 256

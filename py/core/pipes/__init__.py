@@ -9,7 +9,6 @@ from .kg.deduplication import KGEntityDeduplicationPipe
 from .kg.deduplication_summary import KGEntityDeduplicationSummaryPipe
 from .kg.description import KGEntityDescriptionPipe
 from .kg.extraction import KGExtractionPipe
-from .kg.prompt_tuning import KGPromptTuningPipe
 from .kg.storage import KGStoragePipe
 from .retrieval.kg_search_pipe import KGSearchSearchPipe
 from .retrieval.multi_search import MultiSearchPipe
@@ -39,5 +38,4 @@ __all__ = [
     "RoutingSearchPipe",
     "KGEntityDeduplicationPipe",
     "KGEntityDeduplicationSummaryPipe",
-    "KGPromptTuningPipe",
 ]

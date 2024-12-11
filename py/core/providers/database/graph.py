@@ -2246,7 +2246,7 @@ class PostgresGraphHandler(GraphHandler):
                 )
 
         return entity_map
-        
+
     async def graph_search(
         self, query: str, **kwargs: Any
     ) -> AsyncGenerator[Any, None]:

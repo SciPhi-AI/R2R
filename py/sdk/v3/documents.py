@@ -147,7 +147,6 @@ class DocumentsSDK:
             version="v3",
             # No json parsing here, if possible
         )
-        print(response)
         if not isinstance(response, BytesIO):
             raise ValueError("Expected BytesIO response")
         return response

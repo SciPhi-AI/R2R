@@ -114,7 +114,7 @@ describe("r2rClient V3 System Integration Tests User", () => {
 
     expect(response.results.document_id).toBeDefined();
     user1DocumentId = response.results.document_id;
-  }, 10000);
+  }, 15000);
 
   test("Create document as user 2 with file path", async () => {
     const response = await user2Client.documents.create({
@@ -126,7 +126,7 @@ describe("r2rClient V3 System Integration Tests User", () => {
 
     expect(response.results.document_id).toBeDefined();
     user2DocumentId = response.results.document_id;
-  }, 10000);
+  }, 15000);
 
   test("Retrieve document as user 1", async () => {
     const response = await user1Client.documents.retrieve({

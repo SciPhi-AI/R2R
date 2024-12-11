@@ -258,13 +258,6 @@ class IndicesRouter(BaseRouterV3):
                                 offset=0,
                                 limit=10
                             )
-
-                            # Print index details
-                            for idx in indices:
-                                print(f"Index: {idx['name']}")
-                                print(f"Method: {idx['method']}")
-                                print(f"Size: {idx['size_bytes'] / 1024 / 1024:.2f} MB")
-                                print(f"Row count: {idx['row_count']}")
                             """
                         ),
                     },
@@ -363,11 +356,6 @@ class IndicesRouter(BaseRouterV3):
 
                             # Get detailed information about a specific index
                             index = client.indices.retrieve("index_1")
-
-                            # Access index details
-                            print(f"Index Method: {index['method']}")
-                            print(f"Parameters: {index['parameters']}")
-                            print(f"Performance Stats: {index['stats']}")
                             """
                         ),
                     },

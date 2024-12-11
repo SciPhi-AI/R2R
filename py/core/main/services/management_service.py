@@ -12,6 +12,7 @@ from core.base import (
     AnalysisTypes,
     CollectionResponse,
     DocumentResponse,
+    GenerationConfig,
     KGEnrichmentStatus,
     LogFilterCriteria,
     LogProcessor,
@@ -308,7 +309,6 @@ class ManagementService(Service):
             vector_delete_results = await self.providers.database.delete(
                 filters_xf
             )
-            print("vector_delete_results = ", vector_delete_results)
         except Exception as e:
             logger.error(f"Error deleting from vector database: {e}")
             vector_delete_results = {}
@@ -618,7 +618,12 @@ class ManagementService(Service):
         collection_id: UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        generate_description: bool = False,
     ) -> CollectionResponse:
+        if generate_description:
+            description = await self.summarize_collection(
+                id=collection_id, offset=0, limit=100
+            )
         return await self.providers.database.update_collection(
             collection_id=collection_id,
             name=name,
@@ -681,6 +686,45 @@ class ManagementService(Service):
         return await self.providers.database.documents_in_collection(
             collection_id, offset=offset, limit=limit
         )
+
+    @telemetry_event("SummarizeCollection")
+    async def summarize_collection(
+        self, id: UUID, offset: int, limit: int
+    ) -> str:
+        documents_in_collection_response = await self.documents_in_collection(
+            collection_id=id,
+            offset=offset,
+            limit=limit,
+        )
+
+        document_summaries = [
+            document.summary
+            for document in documents_in_collection_response["results"]
+        ]
+
+        logger.info(
+            f"Summarizing collection {id} with {len(document_summaries)} of {documents_in_collection_response['total_entries']} documents."
+        )
+
+        formatted_summaries = "\n\n".join(document_summaries)
+
+        messages = await self.providers.database.prompt_handler.get_message_payload(
+            system_prompt_name=self.config.database.collection_summary_system_prompt,
+            task_prompt_name=self.config.database.collection_summary_task_prompt,
+            task_inputs={"document_summaries": formatted_summaries},
+        )
+
+        response = await self.providers.llm.aget_completion(
+            messages=messages,
+            generation_config=GenerationConfig(
+                model=self.config.ingestion.document_summary_model
+            ),
+        )
+
+        collection_summary = response.choices[0].message.content
+        if not collection_summary:
+            raise ValueError("Expected a generated response.")
+        return collection_summary
 
     @telemetry_event("AddPrompt")
     async def add_prompt(

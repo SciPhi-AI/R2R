@@ -155,16 +155,6 @@ def test_graph_operations(collection_id):
     )
     print("Communities:", communities_list)
 
-    # Test 8: Tune Prompt
-    print("\n--- Test 8: Tune Prompt ---")
-    tune_result = client.graphs.tune_prompt(
-        collection_id=collection_id,
-        prompt_name="graphrag_relationships_extraction_few_shot",
-        documents_limit=100,
-        chunks_limit=1000,
-    )
-    print("Prompt tuning result:", tune_result)
-
     # Test 9: Entity Deduplication
     print("\n--- Test 9: Entity Deduplication ---")
     dedup_result = client.graphs.deduplicate_entities(

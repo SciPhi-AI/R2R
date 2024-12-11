@@ -233,7 +233,6 @@ class PostgresDBProvider(DatabaseProvider):
             if value is None:
                 value = os.getenv(env_var)
 
-            print(f"Setting: {setting}, Value: {value}")
             if value is not None:
                 field_type = settings.__annotations__[setting]
                 if field_type == Optional[int]:

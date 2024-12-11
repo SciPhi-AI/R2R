@@ -90,6 +90,7 @@ class CollectionsSDK:
         id: str | UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        generate_description: Optional[bool] = False,
     ) -> WrappedCollectionResponse:
         """
         Update collection information.
@@ -98,6 +99,7 @@ class CollectionsSDK:
             id (str | UUID): Collection ID to update
             name (Optional[str]): Optional new name for the collection
             description (Optional[str]): Optional new description for the collection
+            generate_description (Optional[bool]): Whether to generate a new synthetic description for the collection.
 
         Returns:
             dict: Updated collection information
@@ -107,6 +109,8 @@ class CollectionsSDK:
             data["name"] = name
         if description is not None:
             data["description"] = description
+        if generate_description:
+            data["generate_description"] = str(generate_description)
 
         return await self.client._make_request(
             "POST",

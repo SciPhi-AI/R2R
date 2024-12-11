@@ -233,7 +233,7 @@ export class GraphsClient {
     predicate: string;
     object: string;
     objectId: string;
-    description?: string;
+    description: string;
     weight?: number;
     metadata?: Record<string, any>;
   }): Promise<WrappedRelationshipResponse> {
@@ -243,7 +243,7 @@ export class GraphsClient {
       predicate: options.predicate,
       object: options.object,
       object_id: options.objectId,
-      ...(options.description && { description: options.description }),
+      description: options.description,
       ...(options.weight && { weight: options.weight }),
       ...(options.metadata && { metadata: options.metadata }),
     };

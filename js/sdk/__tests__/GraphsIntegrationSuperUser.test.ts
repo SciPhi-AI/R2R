@@ -228,6 +228,7 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
       predicate: "falls in love with",
       object: "Dunia",
       objectId: entity2Id,
+      description: "Razumikhn and Dunia are central to the story",
     });
 
     relationshipId = response.results.id;
@@ -236,6 +237,7 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
     expect(response.results.subject).toBe("Razumikhin");
     expect(response.results.object).toBe("Dunia");
     expect(response.results.predicate).toBe("falls in love with");
+    expect(response.results.description).toBe("Razumikhn and Dunia are central to the story");
   });
 
   test("Retrieve the relationship", async () => {

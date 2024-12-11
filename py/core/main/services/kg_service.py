@@ -4,10 +4,8 @@ import logging
 import math
 import re
 import time
-from typing import Any, AsyncGenerator, Optional, Union
+from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
-
-from fastapi import HTTPException
 
 from core.base import (
     DocumentChunk,
@@ -20,7 +18,6 @@ from core.base.abstractions import (
     Community,
     Entity,
     GenerationConfig,
-    Graph,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEnrichmentStatus,
@@ -769,88 +766,6 @@ class KgService(Service):
 
         return await _collect_results(deduplication_summary_results)
 
-    @telemetry_event("tune_prompt")
-    async def tune_prompt(
-        self,
-        prompt_name: str,
-        collection_id: UUID,
-        documents_offset: int = 0,
-        documents_limit: int = 100,
-        chunks_offset: int = 0,
-        chunks_limit: int = 100,
-        **kwargs,
-    ):
-
-        document_response = (
-            await self.providers.database.documents_in_collection(
-                collection_id, offset=documents_offset, limit=documents_limit
-            )
-        )
-        results = document_response["results"]
-
-        if isinstance(results, int):
-            raise TypeError("Expected list of documents, got count instead")
-
-        documents = results
-
-        if not documents:
-            raise R2RException(
-                message="No documents found in collection",
-                status_code=404,
-            )
-
-        all_chunks = []
-
-        for document in documents:
-            chunks_response = (
-                await self.providers.database.list_document_chunks(
-                    document.id,
-                    offset=chunks_offset,
-                    limit=chunks_limit,
-                )
-            )
-
-            if chunks := chunks_response.get("results", []):
-                all_chunks.extend(chunks)
-            else:
-                logger.warning(f"No chunks found for document {document.id}")
-
-        if not all_chunks:
-            raise R2RException(
-                message="No chunks found in documents",
-                status_code=404,
-            )
-
-        chunk_texts = [
-            chunk["text"] for chunk in all_chunks if chunk.get("text")
-        ]
-
-        # Pass chunks to the tuning pipe
-        tune_prompt_results = await self.pipes.kg_prompt_tuning_pipe.run(
-            input=self.pipes.kg_prompt_tuning_pipe.Input(
-                message={
-                    "collection_id": collection_id,
-                    "prompt_name": prompt_name,
-                    "chunks": chunk_texts,  # Pass just the text content
-                    **kwargs,
-                }
-            ),
-            state=None,
-            run_manager=self.run_manager,
-        )
-
-        results = []
-        async for result in tune_prompt_results:
-            results.append(result)
-
-        if not results:
-            raise HTTPException(
-                status_code=500,
-                detail="No results generated from prompt tuning",
-            )
-
-        return results[0]
-
     async def kg_extraction(  # type: ignore
         self,
         document_id: UUID,
@@ -863,7 +778,7 @@ class KgService(Service):
         total_tasks: Optional[int] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
+    ) -> AsyncGenerator[KGExtraction | R2RDocumentProcessingError, None]:
         start_time = time.time()
 
         logger.info(
@@ -1126,11 +1041,11 @@ class KgService(Service):
                 if attempt < retries - 1:
                     await asyncio.sleep(delay)
                 else:
-                    print(
+                    logger.warning(
                         f"Failed after retries with for chunk {chunks[0].id} of document {chunks[0].document_id}: {e}"
                     )
 
-        print(
+        logger.info(
             f"KGExtractionPipe: Completed task number {task_id} of {total_tasks} for document {chunks[0].document_id}",
         )
 
@@ -1167,14 +1082,10 @@ class KgService(Service):
                 for relationship in extraction.relationships:
                     await self.providers.database.graph_handler.relationships.create(
                         subject=relationship.subject,
-                        subject_id=entities_id_map.get(
-                            relationship.subject, None
-                        ),
+                        subject_id=entities_id_map.get(relationship.subject),
                         predicate=relationship.predicate,
                         object=relationship.object,
-                        object_id=entities_id_map.get(
-                            relationship.object, None
-                        ),
+                        object_id=entities_id_map.get(relationship.object),
                         parent_id=relationship.parent_id,
                         description=relationship.description,
                         description_embedding=relationship.description_embedding,

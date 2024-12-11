@@ -4,7 +4,7 @@ import sys
 import time
 import uuid
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional
 
 from r2r import R2RClient, R2RException
 
@@ -39,7 +39,7 @@ def create_test_user(base_url: str) -> TestUser:
 
 
 def create_test_document(
-    client: R2RClient, content: str, collection_ids: List[str] = None
+    client: R2RClient, content: str, collection_ids: list[str] = None
 ) -> str:
     """Create a test document and return its ID"""
     response = client.documents.create(
