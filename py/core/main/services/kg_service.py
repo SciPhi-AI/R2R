@@ -1041,11 +1041,11 @@ class KgService(Service):
                 if attempt < retries - 1:
                     await asyncio.sleep(delay)
                 else:
-                    print(
+                    logger.warning(
                         f"Failed after retries with for chunk {chunks[0].id} of document {chunks[0].document_id}: {e}"
                     )
 
-        print(
+        logger.info(
             f"KGExtractionPipe: Completed task number {task_id} of {total_tasks} for document {chunks[0].document_id}",
         )
 

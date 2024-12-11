@@ -197,10 +197,6 @@ def hatchet_kg_factory(
                     document_id=document_id,
                     **input_data["graph_creation_settings"],
                 ):
-                    print(
-                        "found extraction w/ entities = = ",
-                        len(extraction.entities),
-                    )
                     extractions.append(extraction)
                 await service.store_kg_extractions(extractions)
 
@@ -283,7 +279,6 @@ def hatchet_kg_factory(
         @orchestration_provider.step(retries=1)
         async def kg_extraction(self, context: Context) -> dict:
             request = context.workflow_input()["request"]
-            print('context.workflow_input()["request"] = ', request)
 
             input_data = get_input_data_dict(request)
             document_id = input_data.get("document_id", None)
@@ -299,7 +294,6 @@ def hatchet_kg_factory(
                 workflows = []
 
                 for document_id in document_ids:
-                    print("extracting = ", document_id)
                     input_data_copy = input_data.copy()
                     input_data_copy["collection_id"] = str(
                         input_data_copy["collection_id"]

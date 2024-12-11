@@ -19,6 +19,15 @@ repos:
 
   - repo: local
     hooks:
+      - id: check-print-statements
+        name: Check for print statements
+        entry: bash -c 'echo "Checking for print statements..." && find . -name "*.py" ! -path "./py/cli/*" ! -path "./py/core/examples/*" ! -path "./py/migrations/*" ! -path "./py/tests/*" | xargs grep -n "print(" || exit 0 && echo "Found print statements!" && exit 1'
+        language: system
+        types: [python]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
       - id: isort
         name: isort
         entry: bash -c 'cd py && poetry run isort $(git diff --cached --name-only --diff-filter=ACM | grep ".py$" | xargs -I {} echo ../{}) || true'
