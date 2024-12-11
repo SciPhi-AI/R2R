@@ -291,10 +291,10 @@ class KGCommunitySummaryPipe(AsyncPipe):
         # Organize clusters
         clusters: dict[Any] = {}
         for item in community_clusters:
-            cluster_id = item.cluster
+            cluster_id = item["cluster"]
             if cluster_id not in clusters:
                 clusters[cluster_id] = []
-            clusters[cluster_id].append(item.node)
+            clusters[cluster_id].append(item["node"])
 
         # Now, process the clusters
         for _, nodes in clusters.items():

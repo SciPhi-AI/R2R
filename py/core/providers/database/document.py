@@ -453,7 +453,6 @@ class PostgresDocumentHandler(DocumentHandler):
 
         try:
             results = await self.connection_manager.fetch_query(query, params)
-            print("results = ", results)
             total_entries = results[0]["total_entries"] if results else 0
 
             documents = []

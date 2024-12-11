@@ -71,6 +71,35 @@ def test_rag_query():
     print("~" * 100)
 
 
+def test_rag_with_filter():
+    print("Testing: RAG query")
+    # Just do a standard RAG query without streaming
+    client.documents.create(
+        raw_text="Aristotle was a Greek philosopher who studied under Plato, his core contributions to philosophy were in logic.",
+        metadata={"tier": "test"},
+    )
+    resp = client.retrieval.rag(
+        query="What were aristotle's contributions to philosophy?",
+        rag_generation_config={"stream": False, "max_tokens": 100},
+        search_settings={
+            "filters": {"metadata.tier": {"$eq": "test"}},
+            "use_semantic_search": True,
+            "limit": 3,
+        },
+    )["results"]
+
+    print("response:", resp)
+    # # Check response structure
+    # if isinstance(resp, dict):
+    #     assert_http_error("answer" in resp and "sources" in resp, "RAG response missing 'answer' or 'sources'")
+    # else:
+    #     # Unexpected streaming or different type
+    #     print("Expected dict response for non-streaming RAG")
+    #     sys.exit(1)
+    print("RAG query test passed")
+    print("~" * 100)
+
+
 def test_rag_stream_query():
     print("Testing: RAG query with streaming")
     # Streamed responses come as an async generator from the SDK
