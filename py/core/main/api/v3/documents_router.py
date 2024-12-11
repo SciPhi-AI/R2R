@@ -693,9 +693,6 @@ class DocumentsRouter(BaseRouterV3):
                 None if auth_user.is_superuser else auth_user.collection_ids
             )
 
-            print("auth_user.id = ", auth_user.id)
-            print("auth_user.collection_ids = ", auth_user.collection_ids)
-            print("filter_collection_ids = ", filter_collection_ids)
 
             documents_overview_response = await self.services[
                 "management"
