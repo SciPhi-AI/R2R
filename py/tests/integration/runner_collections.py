@@ -144,6 +144,45 @@ def test_remove_document_from_collection():
 
 
 # If you had user management and separate user IDs, you would test add_user/remove_user here.
+def test_remove_non_member_user_from_collection():
+    print("Testing: Remove non-member user from a collection")
+
+    # Setup: Create a user and a collection
+    user_email = f"user_{uuid.uuid4()}@test.com"
+    password = "pwd123"
+    client.users.register(user_email, password)
+    client.users.login(user_email, password)
+
+    # Create a collection by the same user
+    collection_name = "Test Collection Non-member Removal"
+    collection_resp = client.collections.create(name=collection_name)[
+        "results"
+    ]
+    collection_id = collection_resp["id"]
+
+    # Create another user who will not be added to the collection
+    another_user_email = f"user2_{uuid.uuid4()}@test.com"
+    client.users.register(another_user_email, "pass456")
+    another_user_id = client.users.me()["results"]["id"]
+    client.users.logout()
+
+    # Re-login as collection owner
+    client.users.login(user_email, password)
+
+    # Attempt to remove the other user (who was never added)
+    try:
+        result = client.collections.remove_user(collection_id, another_user_id)
+        print("result = ", result)
+        print("Expected an error removing a non-member user, but got none.")
+        sys.exit(1)
+    except R2RException as e:
+        assert_http_error(
+            e.status_code == 404 or e.status_code == 400,
+            "Wrong error code for removing non-member user",
+        )
+
+    print("Remove non-member user from collection test passed")
+    print("~" * 100)
 
 
 def test_delete_collection():
@@ -164,6 +203,128 @@ def test_delete_collection():
             "Wrong error code retrieving deleted collection",
         )
     print("Delete collection test passed")
+    print("~" * 100)
+
+
+def test_add_user_to_non_existent_collection():
+    print("Testing: Add user to a non-existent collection")
+
+    # Create a regular user
+    user_email = f"test_user_{uuid.uuid4()}@test.com"
+    user_password = "test_password"
+    client.users.register(user_email, user_password)
+    client.users.login(user_email, user_password)
+    user_id = client.users.me()["results"]["id"]
+    client.users.logout()
+
+    # Re-login as superuser to try adding user to non-existent collection
+    SUPERUSER_EMAIL = "admin@example.com"
+    SUPERUSER_PASSWORD = "change_me_immediately"
+    client.users.login(SUPERUSER_EMAIL, SUPERUSER_PASSWORD)
+
+    fake_collection_id = uuid.uuid4()  # Non-existent collection ID
+    try:
+        client.collections.add_user(str(fake_collection_id), user_id)
+        print(
+            "Expected error when adding user to non-existent collection, got none."
+        )
+        sys.exit(1)
+    except R2RException as e:
+        assert_http_error(
+            e.status_code == 404,
+            "Wrong error code for non-existent collection",
+        )
+
+    print("Add user to non-existent collection test passed")
+    print("~" * 100)
+
+
+def test_remove_non_member_user_from_collection():
+    print("Testing: Remove non-member user from a collection")
+
+    # Create a user (Owner)
+    owner_email = f"owner_{uuid.uuid4()}@test.com"
+    owner_password = "password123"
+    client.users.register(owner_email, owner_password)
+    client.users.login(owner_email, owner_password)
+
+    # Create a collection by this owner
+    collection_name = "Collection Non-member Removal"
+    coll = client.collections.create(name=collection_name)["results"]
+    collection_id = coll["id"]
+
+    # Create another user who will NOT be added to this collection
+    other_user_email = f"other_{uuid.uuid4()}@test.com"
+    other_password = "password456"
+    client.users.register(other_user_email, other_password)
+    # Need the other user's ID but no need to keep them logged in
+    client.users.login(other_user_email, other_password)
+    other_user_id = client.users.me()["results"]["id"]
+    client.users.logout()
+
+    # Re-login as collection owner
+    client.users.login(owner_email, owner_password)
+
+    # Attempt to remove other_user, who is not a member
+    try:
+        client.collections.remove_user(collection_id, other_user_id)
+        print("Expected error removing non-member, got none.")
+        sys.exit(1)
+    except R2RException as e:
+        # Could be 404 or a specific error code based on your logic
+        assert_http_error(
+            e.status_code in [400, 404],
+            "Wrong error code for removing non-member user",
+        )
+
+    print("Remove non-member user from collection test passed")
+    print("~" * 100)
+
+
+def test_non_owner_delete_collection():
+    print("Testing: Non-owner tries to delete a collection")
+
+    # Create owner user
+    owner_email = f"owner_{uuid.uuid4()}@test.com"
+    owner_password = "pwd123"
+    client.users.register(owner_email, owner_password)
+    client.users.login(owner_email, owner_password)
+    coll = client.collections.create(name="Owner Collection")["results"]
+    coll_id = coll["id"]
+
+    # Create another user, add them to collection but not as owner
+    non_owner_email = f"nonowner_{uuid.uuid4()}@test.com"
+    non_owner_password = "pwd1234"
+    client.users.logout()
+    client.users.register(non_owner_email, non_owner_password)
+    client.users.login(non_owner_email, non_owner_password)
+    non_owner_id = client.users.me()["results"]["id"]
+    client.users.logout()
+
+    # Owner adds non-owner to collection
+    client.users.login(owner_email, owner_password)
+    client.collections.add_user(coll_id, non_owner_id)
+    client.users.logout()
+
+    # Non-owner tries to delete collection
+    client.users.login(non_owner_email, non_owner_password)
+    try:
+        result = client.collections.delete(coll_id)
+        print("result = ", result)
+        print("Expected error when non-owner tries to delete collection.")
+        sys.exit(1)
+    except R2RException as e:
+        assert_http_error(
+            e.status_code == 403,
+            "Wrong error code for non-owner deletion attempt",
+        )
+
+    # Cleanup
+    client.users.logout()
+    client.users.login(owner_email, owner_password)
+    client.collections.delete(coll_id)
+
+    print("Non-owner delete collection test passed")
     print("~" * 100)
 
 
