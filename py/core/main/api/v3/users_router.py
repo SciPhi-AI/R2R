@@ -1025,6 +1025,7 @@ class UsersRouter(BaseRouterV3):
                     403,
                 )
 
+            print(".... add_user_to_collection")
             # TODO - Do we need a check on user access to the collection?
             await self.services["management"].add_user_to_collection(  # type: ignore
                 id, collection_id

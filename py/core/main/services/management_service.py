@@ -471,12 +471,15 @@ class ManagementService(Service):
     async def assign_document_to_collection(
         self, document_id: UUID, collection_id: UUID
     ):
+        print("AA")
         await self.providers.database.assign_document_to_collection_vector(
             document_id, collection_id
         )
+        print("BB")
         await self.providers.database.assign_document_to_collection_relational(
             document_id, collection_id
         )
+        print("setting workflow status....")
         await self.providers.database.set_workflow_status(
             id=collection_id,
             status_type="graph_sync_status",

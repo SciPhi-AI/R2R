@@ -177,6 +177,7 @@ class PostgresConnectionManager(DatabaseConnectionManager):
             raise ValueError(error_msg) from None
 
     async def fetchrow_query(self, query, params=None):
+        print("query = ", query)
         if not self.pool:
             raise ValueError("PostgresConnectionManager is not initialized.")
         async with self.pool.get_connection() as conn:

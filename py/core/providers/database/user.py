@@ -385,9 +385,11 @@ class PostgresUserHandler(UserHandler):
             WHERE id = $2 AND NOT ($1 = ANY(collection_ids))
             RETURNING id
         """
+        print("___query___ = ", query)
         result = await self.connection_manager.fetchrow_query(
             query, [collection_id, id]
         )  # fetchrow instead of execute_query
+        print("final add_user_to_collection result = ", result)
         if not result:
             raise R2RException(
                 status_code=400, message="User already in collection"
