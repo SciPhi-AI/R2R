@@ -356,7 +356,6 @@ def simple_ingestion_factory(service: IngestionService):
                             logger.warning(
                                 f"Warning, could not create collection with error: {str(e)}"
                             )
-
                         await service.providers.database.assign_document_to_collection_relational(
                             document_id=document_info.id,
                             collection_id=collection_id,

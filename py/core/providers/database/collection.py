@@ -300,7 +300,7 @@ class PostgresCollectionHandler(CollectionsHandler):
                 f"""
                 c.id IN (
                     SELECT unnest(collection_ids)
-                    FROM r2r_default.users
+                    FROM {self.project_name}.users
                     WHERE id = ANY(${param_index})
                 )
             """
@@ -313,7 +313,7 @@ class PostgresCollectionHandler(CollectionsHandler):
                 f"""
                 c.id IN (
                     SELECT unnest(collection_ids)
-                    FROM r2r_default.documents
+                    FROM {self.project_name}.documents
                     WHERE id = ANY(${param_index})
                 )
             """
@@ -334,7 +334,7 @@ class PostgresCollectionHandler(CollectionsHandler):
             SELECT
                 c.*,
                 COUNT(*) OVER() as total_entries
-            FROM r2r_default.collections c
+            FROM {self.project_name}.collections c
             {where_clause}
             ORDER BY created_at DESC
             OFFSET ${param_index}
@@ -390,6 +390,7 @@ class PostgresCollectionHandler(CollectionsHandler):
                 SELECT 1 FROM {self._get_table_name('documents')}
                 WHERE id = $1
             """
+            print("document_check_query = ", document_check_query)
             document_exists = await self.connection_manager.fetchrow_query(
                 document_check_query, [document_id]
             )
