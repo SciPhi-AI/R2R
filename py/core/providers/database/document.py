@@ -394,21 +394,24 @@ class PostgresDocumentHandler(DocumentHandler):
         filter_collection_ids: Optional[list[UUID]] = None,
     ) -> dict[str, Any]:
         conditions = []
+        or_conditions = []
         params: list[Any] = []
         param_index = 1
 
+        # Handle document IDs with AND
         if filter_document_ids:
             conditions.append(f"id = ANY(${param_index})")
             params.append(filter_document_ids)
             param_index += 1
 
+        # Handle user_ids and collection_ids with OR
         if filter_user_ids:
-            conditions.append(f"owner_id = ANY(${param_index})")
+            or_conditions.append(f"owner_id = ANY(${param_index})")
             params.append(filter_user_ids)
             param_index += 1
 
         if filter_collection_ids:
-            conditions.append(f"collection_ids && ${param_index}")
+            or_conditions.append(f"collection_ids && ${param_index}")
             params.append(filter_collection_ids)
             param_index += 1
 
@@ -416,8 +419,16 @@ class PostgresDocumentHandler(DocumentHandler):
             FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
         """
 
+        # Combine conditions with appropriate AND/OR logic
+        where_conditions = []
         if conditions:
-            base_query += " WHERE " + " AND ".join(conditions)
+            where_conditions.append("(" + " AND ".join(conditions) + ")")
+        if or_conditions:
+            where_conditions.append("(" + " OR ".join(or_conditions) + ")")
+
+        if where_conditions:
+            base_query += " WHERE " + " AND ".join(where_conditions)
+
         # Construct the SELECT part of the query based on column existence
         select_fields = """
             SELECT id, collection_ids, owner_id, type, metadata, title, version,
@@ -442,6 +453,7 @@ class PostgresDocumentHandler(DocumentHandler):
 
         try:
             results = await self.connection_manager.fetch_query(query, params)
+            print("results = ", results)
             total_entries = results[0]["total_entries"] if results else 0
 
             documents = []

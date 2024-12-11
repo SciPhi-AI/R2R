@@ -492,9 +492,122 @@ def test_list_documents_with_pagination():
     print("~" * 100)
 
 
-# ---------------------------------------------------------------------------------
-# Test Runner Setup
-# ---------------------------------------------------------------------------------
+def test_ingest_invalid_chunks():
+    print("Testing: Ingestion with invalid chunk data")
+
+    # Attempt to create a document with invalid chunk data (e.g., a list containing non-string elements)
+    invalid_chunks = ["Valid chunk", 12345, {"not": "a string"}]
+
+    try:
+        client.documents.create(
+            chunks=invalid_chunks, run_with_orchestration=False
+        )
+        print("Expected validation error for invalid chunks, got none.")
+        sys.exit(1)
+    except R2RException as e:
+        # Expecting a 422 or 400 error for invalid input
+        assert_http_error(
+            e.status_code in [400, 422],
+            "Wrong error code for invalid chunks ingestion",
+        )
+
+    print("Ingestion with invalid chunks data test passed")
+    print("~" * 100)
+
+
+def test_ingest_too_many_chunks():
+    print("Testing: Ingestion with too many chunks")
+    # Assume MAX_CHUNKS_PER_REQUEST is 100000 as per your code snippet, adjust if different
+    excessive_chunks = ["Chunk"] * (
+        1024 * 100 + 1
+    )  # Just one more than allowed
+
+    try:
+        client.documents.create(
+            chunks=excessive_chunks, run_with_orchestration=False
+        )
+        print("Expected error for exceeding max chunks, got none.")
+        sys.exit(1)
+    except R2RException as e:
+        # Expecting a 400 error given the code snippet
+        assert_http_error(
+            e.status_code == 400, "Wrong error code for exceeding max chunks"
+        )
+
+    print("Ingestion with too many chunks test passed")
+    print("~" * 100)
+
+
+def test_delete_by_complex_filter():
+    print("Testing: Delete by filter with complex conditions")
+
+    # Create documents with varying metadata
+    doc1_id = client.documents.create(
+        raw_text="Doc with tag A",
+        metadata={"tag": "A"},
+        run_with_orchestration=False,
+    )["results"]["document_id"]
+    doc2_id = client.documents.create(
+        raw_text="Doc with tag B",
+        metadata={"tag": "B"},
+        run_with_orchestration=False,
+    )["results"]["document_id"]
+
+    # Complex filter: delete documents that have tag = "A" OR tag = "B"
+    # This depends on your filter schema, assuming something like:
+    # {"$or": [{"tag": {"$eq": "A"}}, {"tag": {"$eq": "B"}}]}
+    filters = {"$or": [{"tag": {"$eq": "A"}}, {"tag": {"$eq": "B"}}]}
+    del_resp = client.documents.delete_by_filter(filters)["results"]
+    assert_http_error(del_resp["success"], "Complex filter deletion failed")
+
+    # Verify both documents are deleted
+    for d_id in [doc1_id, doc2_id]:
+        try:
+            client.documents.retrieve(d_id)
+            print(f"Document {d_id} still exists after filter-based deletion.")
+            sys.exit(1)
+        except R2RException as e:
+            assert_http_error(
+                e.status_code == 404, "Wrong error after filter-based deletion"
+            )
+
+    print("Delete by complex filter test passed")
+    print("~" * 100)
+
+
+def test_search_documents_no_match():
+    print("Testing: Search documents with filters that return no results")
+
+    # Create a doc that doesn't match our search criteria
+    doc_id = client.documents.create(
+        raw_text="Just a random document",
+        metadata={"category": "unrelated"},
+        run_with_orchestration=False,
+    )["results"]["document_id"]
+
+    # Use a filter that doesn't match this doc
+    # Example: Searching for documents with category = "nonexistent"
+    search_results = client.documents.search(
+        query="nonexistent category",
+        search_mode="basic",
+        search_settings={
+            "filters": {"category": {"$eq": "doesnotexist"}},
+            "limit": 10,
+        },
+    )
+
+    assert_http_error(
+        "results" in search_results, "Search response missing results key"
+    )
+    assert_http_error(
+        len(search_results["results"]) == 0,
+        "Expected zero results for unmatched filter",
+    )
+
+    # Cleanup
+    client.documents.delete(id=doc_id)
+    print("Search documents no-match test passed")
+    print("~" * 100)
 
 
 def create_client(base_url):

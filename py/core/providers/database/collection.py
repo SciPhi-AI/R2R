@@ -390,7 +390,6 @@ class PostgresCollectionHandler(CollectionsHandler):
                 SELECT 1 FROM {self._get_table_name('documents')}
                 WHERE id = $1
             """
-            print("document_check_query = ", document_check_query)
             document_exists = await self.connection_manager.fetchrow_query(
                 document_check_query, [document_id]
             )

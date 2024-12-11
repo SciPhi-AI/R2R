@@ -360,6 +360,63 @@ def test_non_superuser_restrict_access():
     print("~" * 100)
 
 
+def test_superuser_downgrade_permissions():
+    print("Testing: Downgrading superuser and verifying permission revocation")
+
+    # Create a user and make them superuser (assume superuser can do that)
+    admin_email = "admin@example.com"
+    admin_password = "change_me_immediately"
+    client.users.login(admin_email, admin_password)
+
+    user_email = f"test_super_{uuid.uuid4()}@test.com"
+    user_password = "securepass"
+    new_user = client.users.register(user_email, user_password)["results"]
+    new_user_id = new_user["id"]
+
+    # Update them to superuser
+    updated_user = client.users.update(new_user_id, is_superuser=True)[
+        "results"
+    ]
+    assert_http_error(
+        updated_user["is_superuser"] == True, "User not upgraded to superuser"
+    )
+
+    # Logout admin
+    client.users.logout()
+    # Login as the new superuser
+    client.users.login(user_email, user_password)
+    # Confirm they can list users (superuser-only action)
+    all_users = client.users.list()["results"]
+    assert_http_error(
+        isinstance(all_users, list), "New superuser failed to list users"
+    )
+
+    # Downgrade the user back to normal (re-login as original admin)
+    client.users.logout()
+    client.users.login(admin_email, admin_password)
+    downgraded_user = client.users.update(new_user_id, is_superuser=False)[
+        "results"
+    ]
+    assert_http_error(
+        downgraded_user["is_superuser"] == False, "User not downgraded"
+    )
+
+    # Now login as downgraded user and verify they cannot list users
+    client.users.logout()
+    client.users.login(user_email, user_password)
+    try:
+        client.users.list()
+        print("Expected 403 error for non-superuser listing users.")
+        sys.exit(1)
+    except R2RException as e:
+        assert_http_error(
+            e.status_code == 403, "Wrong error code after downgrade"
+        )
+
+    print("Superuser downgrade permission revocation test passed")
+    print("~" * 100)
+
+
 # ---------------------------------------------------------------------------------
 # Test Runner Setup
 # ---------------------------------------------------------------------------------
