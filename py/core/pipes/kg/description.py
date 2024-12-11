@@ -4,13 +4,12 @@ import asyncio
 import logging
 import random
 import time
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator
 from uuid import UUID
 
 from core.base import (
     AsyncState,
     CompletionProvider,
-    DatabaseProvider,
     EmbeddingProvider,
 )
 from core.base.abstractions import Entity
@@ -74,8 +73,19 @@ class KGEntityDescriptionPipe(AsyncPipe):
             return truncated_info
 
         async def process_entity(
-            entities, relationships, max_description_input_length, document_id
+            entities,
+            relationships,
+            max_description_input_length,
+            document_id: UUID,
         ):
+            response = await self.database_provider.document_handler.get_documents_overview(  # type: ignore
+                offset=0,
+                limit=1,
+                filter_document_ids=[document_id],
+            )
+            document_summary = (
+                response["results"][0].summary if response["results"] else None
+            )
 
             entity_info = [
                 f"{entity.name}, {entity.description}" for entity in entities
@@ -100,6 +110,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                             messages=await self.database_provider.prompt_handler.get_message_payload(
                                 task_prompt_name=self.database_provider.config.graph_creation_settings.graph_entity_description_prompt,
                                 task_inputs={
+                                    "document_summary": document_summary,
                                     "entity_info": truncate_info(
                                         entity_info,
                                         max_description_input_length,
@@ -157,14 +168,16 @@ class KGEntityDescriptionPipe(AsyncPipe):
 
         workflows = []
 
-        for i, (entity_name, entity_info) in enumerate(entity_map.items()):
+        for _, (entity_name, entity_info) in enumerate(entity_map.items()):
             try:
                 workflows.append(
                     process_entity(
-                        entity_info["entities"],
-                        entity_info["relationships"],
-                        input.message["max_description_input_length"],
-                        document_id,
+                        entities=entity_info["entities"],
+                        relationships=entity_info["relationships"],
+                        max_description_input_length=input.message[
+                            "max_description_input_length"
+                        ],
+                        document_id=document_id,
                     )
                 )
             except Exception as e:

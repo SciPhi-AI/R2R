@@ -1,28 +1,36 @@
 graphrag_relationships_extraction_few_shot:
   template: >
     -Goal-
-    Given a text document, identify all entities and their entity types from the text and all relationships among the identified entities.
-    Given the text, extract up to {max_knowledge_relationships} entity-relation relationshipts.
+    Given both a document summary and full text, identify all entities and their entity types, along with all relationships among the identified entities.
+    Extract up to {max_knowledge_relationships} entity-relation relationships using both the summary context and full text.
+
+    -Context Summary-
+    {document_summary}
+
     -Steps-
     1. Identify all entities. For each identified entity, extract the following information:
+    1. Identify all entities given the full text, grounding and contextualizing them based on the summary. For each identified entity, extract:
     - entity_name: Name of the entity, capitalized
-    - entity_type: Type of the entity. If the list below is not empty, only extract entities of the given types. If this list is empty, extract all entities.
-    {entity_types}
-    - entity_description: Comprehensive description of the entity's attributes and activities that is explicitly mentioned in the text.
-    Format each entity as ("entity"$$$$<entity_name>$$$$<entity_type>$$$$<entity_description>).
-    Output additional entities based on the entity_description if they contain more named entities. You will later use this to create relationships between them.
-    2. From the entities identified in step 1, identify all pairs of (source_entity, target_entity) that are *clearly related* to each other.
-    For each pair of related entities, extract the following information:
-    - source_entity: name of the source entity, as identified in step 1
-    - target_entity: name of the target entity, as identified in step 1
-    - relation: relationship between source_entity and target_entity. If the list below is not empty, only extract relations of the given types. If this list is empty, extract all relations.
-    {relation_types}
-    - relationship_description: explanation as to why you think the source entity and the target entity are related to each other
-    - relationship_weight: a weight between 0 and 10 that represents the strength of the relationship between the source entity and the target entity
+    - entity_type: Type of the entity (constrained to {entity_types} if provided, otherwise all types)
+    - entity_description: Comprehensive description incorporating context from both summary and full text
+
+    Format each entity as ("entity"$$$$<entity_name>$$$$<entity_type>$$$$<entity_description>)
+    Note: Generate additional entities from descriptions if they contain named entities for relationship mapping.
+
+    2. From the identified entities, identify all related entity pairs, using both summary and full text context:
+    - source_entity: name of the source entity
+    - target_entity: name of the target entity
+    - relation: relationship type (constrained to {relation_types} if provided)
+    - relationship_description: justification based on both summary and full text context
+    - relationship_weight: strength score 0-10
+
     Format each relationship as ("relationship"$$$$<source_entity>$$$$<target_entity>$$$$<relation>$$$$<relationship_description>$$$$<relationship_weight>)
-    3. Make sure that each entity has at least one relationship. If you are not able to find a relationship from the pair of entities above, first create a new entity based on the source entity description and then create a relationship connecting them.
-       Again, make sure that each entity has at least one relationship. If you don't do this, you will be fired.
-    3. When finished, output in the format in as given in the examples below. Do not repeat the same entity or relationship multiple times.
+
+    3. Coverage Requirements:
+    - Each entity must have at least one relationship
+    - Create intermediate entities if needed to establish relationships
+    - Verify relationships against both summary and full text
+    - Resolve any discrepancies between sources
 
     Example 1:
     If the list is empty, extract all entities and relations.
@@ -111,12 +119,15 @@ graphrag_relationships_extraction_few_shot:
     Entity_types: {entity_types}
     Relation_types: {relation_types}
 
-    Text:
+    Document Summary:
+    {document_summary}
+
+    Full Text:
     {input}
     ######################
     Output:
-
   input_types:
+    document_summary: str
     max_knowledge_relationships: int
     input: str
     entity_types: list[str]
