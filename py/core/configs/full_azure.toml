@@ -10,10 +10,9 @@ concurrent_request_limit = 128
   [agent.generation_config]
   model = "azure/gpt-4o"
 
-# KG settings
-batch_size = 256
-
+[database]
   [database.graph_creation_settings]
+    clustering_mode = "remote"
     generation_config = { model = "azure/gpt-4o-mini" }
 
   [database.graph_entity_deduplication_settings]
