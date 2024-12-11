@@ -2250,8 +2250,6 @@ class PostgresGraphHandler(GraphHandler):
     def _build_filters(
         self, filters: dict, parameters: list[Union[str, int, bytes]]
     ) -> str:
-        print("filters = ", filters)
-
         def parse_condition(key: str, value: Any) -> str:  # type: ignore
             # nonlocal parameters
             if key == "collection_ids":
@@ -2415,7 +2413,6 @@ class PostgresGraphHandler(GraphHandler):
                 where_clause = f"WHERE {conditions_clause}"
             else:
                 where_clause = ""
-        print("filters = ", filters)
         # Modified query to include similarity score while keeping same structure
         QUERY = f"""
             SELECT
@@ -2425,8 +2422,6 @@ class PostgresGraphHandler(GraphHandler):
             ORDER BY {embedding_type} <=> $1
             LIMIT $2;
         """
-        print("QUERY = ", QUERY)
-        print("where_clause = ", where_clause)
         results = await self.connection_manager.fetch_query(
             QUERY, tuple(params)
         )

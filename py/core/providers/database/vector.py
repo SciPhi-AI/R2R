@@ -614,11 +614,9 @@ class PostgresChunkHandler(ChunkHandler):
         SET collection_ids = array_append(collection_ids, $1)
         WHERE document_id = $2 AND NOT ($1 = ANY(collection_ids));
         """
-        print("query = ", query)
         result = await self.connection_manager.execute_query(
             query, (str(collection_id), str(document_id))
         )
-        print("result = ", result)
         return result
 
     async def remove_document_from_collection_vector(

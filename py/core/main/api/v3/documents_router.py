@@ -584,7 +584,6 @@ class DocumentsRouter(BaseRouterV3):
             requesting_user_id = (
                 None if auth_user.is_superuser else [auth_user.id]
             )
-            print("auth_user.collection_ids = ", auth_user.collection_ids)
             filter_collection_ids = (
                 None if auth_user.is_superuser else auth_user.collection_ids
             )

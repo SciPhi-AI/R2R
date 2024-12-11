@@ -394,7 +394,6 @@ class PostgresCollectionHandler(CollectionsHandler):
             document_exists = await self.connection_manager.fetchrow_query(
                 document_check_query, [document_id]
             )
-            print("document_exists = ", document_exists)
 
             if not document_exists:
                 raise R2RException(
@@ -408,12 +407,9 @@ class PostgresCollectionHandler(CollectionsHandler):
                 WHERE id = $2 AND NOT ($1 = ANY(collection_ids))
                 RETURNING id
             """
-            print("assign_query = ", assign_query)
-            print("inputs = ", [collection_id, document_id])
             result = await self.connection_manager.fetchrow_query(
                 assign_query, [collection_id, document_id]
             )
-            print("result = ", result)
 
             if not result:
                 # Document exists but was already assigned to the collection

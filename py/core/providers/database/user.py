@@ -385,7 +385,6 @@ class PostgresUserHandler(UserHandler):
             WHERE id = $2 AND NOT ($1 = ANY(collection_ids))
             RETURNING id
         """
-        print("___query___ = ", query)
         result = await self.connection_manager.fetchrow_query(
             query, [collection_id, id]
         )
