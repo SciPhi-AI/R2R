@@ -48,30 +48,30 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
     def concurrency(self, *args, **kwargs) -> Callable:
         return self.orchestrator.concurrency(*args, **kwargs)
 
-    # async def start_worker(self):
-    #     if not self.worker:
-    #         raise ValueError(
-    #             "Worker not initialized. Call get_worker() first."
-    #         )
-
-    #     asyncio.create_task(self.worker.async_start())
-
-    # Instead of using asyncio.create_task, run the worker in a separate thread
-    def start_worker(self):
+    async def start_worker(self):
         if not self.worker:
             raise ValueError(
                 "Worker not initialized. Call get_worker() first."
             )
 
-        def run_worker():
-            # Create a new event loop for this thread
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(self.worker.async_start())
-            loop.run_forever()  # If needed, or just run_until_complete for one task
+        asyncio.create_task(self.worker.async_start())
 
-        thread = threading.Thread(target=run_worker, daemon=True)
-        thread.start()
+    # # Instead of using asyncio.create_task, run the worker in a separate thread
+    # def start_worker(self):
+    #     if not self.worker:
+    #         raise ValueError(
+    #             "Worker not initialized. Call get_worker() first."
+    #         )
+
+    #     def run_worker():
+    #         # Create a new event loop for this thread
+    #         loop = asyncio.new_event_loop()
+    #         asyncio.set_event_loop(loop)
+    #         loop.run_until_complete(self.worker.async_start())
+    #         loop.run_forever()  # If needed, or just run_until_complete for one task
+
+    #     thread = threading.Thread(target=run_worker, daemon=True)
+    #     thread.start()
 
     async def run_workflow(
         self,

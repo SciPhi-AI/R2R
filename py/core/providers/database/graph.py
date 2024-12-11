@@ -2291,62 +2291,6 @@ class PostgresGraphHandler(GraphHandler):
 
         return relationship_ids_cache
 
-    # async def perform_graph_clustering(
-    #     self,
-    #     collection_id: UUID,
-    #     leiden_params: dict[str, Any],
-    # ) -> Tuple[int, Any]:
-    #     """
-    #     Leiden clustering algorithm to cluster the knowledge graph relationships into communities.
-
-    #     Available parameters and defaults:
-    #         max_cluster_size: int = 1000,
-    #         starting_communities: Optional[dict[str, int]] = None,
-    #         extra_forced_iterations: int = 0,
-    #         resolution: int | float = 1.0,
-    #         randomness: int | float = 0.001,
-    #         use_modularity: bool = True,
-    #         random_seed: Optional[int] = None,
-    #         weight_attribute: str = "weight",
-    #         is_weighted: Optional[bool] = None,
-    #         weight_default: int| float = 1.0,
-    #         check_directed: bool = True,
-    #     """
-
-    #     offset = 0
-    #     page_size = 1000  # Increased batch size for efficiency
-    #     all_relationships = []
-    #     while True:
-    #         relationships, count = await self.relationships.get(
-    #             parent_id=collection_id,
-    #             store_type=StoreType.GRAPHS,
-    #             offset=offset,
-    #             limit=page_size,
-    #         )
-
-    #         if not relationships:
-    #             break
-
-    #         all_relationships.extend(relationships)
-    #         offset += len(relationships)
-
-    #         if offset >= count:
-    #             break
-
-    #     relationship_ids_cache = await self._get_relationship_ids_cache(
-    #         relationships
-    #     )
-
-    #     logger.info(
-    #         f"Clustering over {len(all_relationships)} relationships for {collection_id} with settings: {leiden_params}"
-    #     )
-    #     return await self._cluster_and_add_community_info(
-    #         relationships=relationships,
-    #         relationship_ids_cache=relationship_ids_cache,
-    #         leiden_params=leiden_params,
-    #         collection_id=collection_id,
-    #     )
-
     async def get_entity_map(
         self, offset: int, limit: int, document_id: UUID
     ) -> dict[str, dict[str, list[dict[str, Any]]]]:
@@ -2658,37 +2602,6 @@ class PostgresGraphHandler(GraphHandler):
         )
 
         return num_communities, hierarchical_communities
-
-    # async def _get_relationship_ids_cache(
-    #     self, relationships: list[Relationship]
-    # ) -> dict[str, list[int]]:
-
-    #     # caching the relationship ids
-    #     relationship_ids_cache = dict[str, list[int | UUID]]()
-    #     for relationship in relationships:
-    #         if (
-    #             relationship.subject not in relationship_ids_cache
-    #             and relationship.subject is not None
-    #         ):
-    #             relationship_ids_cache[relationship.subject] = []
-    #         if (
-    #             relationship.object not in relationship_ids_cache
-    #             and relationship.object is not None
-    #         ):
-    #             relationship_ids_cache[relationship.object] = []
-    #         if (
-    #             relationship.subject is not None
-    #             and relationship.id is not None
-    #         ):
-    #             relationship_ids_cache[relationship.subject].append(
-    #                 relationship.id
-    #             )
-    #         if relationship.object is not None and relationship.id is not None:
-    #             relationship_ids_cache[relationship.object].append(
-    #                 relationship.id
-    #             )
-
-    #     return relationship_ids_cache  # type: ignore
 
     async def _compute_leiden_communities(
         self,
