@@ -2130,6 +2130,7 @@ class PostgresGraphHandler(GraphHandler):
         self,
         collection_id: UUID,
         leiden_params: dict[str, Any],
+        clustering_mode: str,
     ) -> Tuple[int, Any]:
         """
         Calls the external clustering service to cluster the KG.
@@ -2168,6 +2169,7 @@ class PostgresGraphHandler(GraphHandler):
             relationship_ids_cache=relationship_ids_cache,
             leiden_params=leiden_params,
             collection_id=collection_id,
+            clustering_mode=clustering_mode,
         )
 
     async def _call_clustering_service(
@@ -2205,19 +2207,105 @@ class PostgresGraphHandler(GraphHandler):
         communities = data.get("communities", [])
         return communities
 
+    # async def _create_graph_and_cluster(
+    #     self, relationships: list[Relationship], leiden_params: dict[str, Any]
+    # ) -> Any:
+    #     """
+    #     Previously created a local graph and ran hierarchical_leiden.
+    #     Now it calls the external clustering service.
+    #     """
+    #     logger.info("Sending request to external clustering service...")
+    #     communities = await self._call_clustering_service(
+    #         relationships, leiden_params
+    #     )
+    #     logger.info("Received communities from clustering service.")
+    #     return communities
+
+    # async def _cluster_and_add_community_info(
+    #     self,
+    #     relationships: list[Relationship],
+    #     relationship_ids_cache: dict[str, list[int]],
+    #     leiden_params: dict[str, Any],
+    #     collection_id: Optional[UUID] = None,
+    # ) -> Tuple[int, Any]:
+
+    #     # Clear old information if needed (unchanged logic)
+    #     conditions = []
+    #     if collection_id is not None:
+    #         conditions.append("collection_id = $1")
+
+    #     await asyncio.sleep(0.1)
+
+    #     start_time = time.time()
+
+    #     logger.info(f"Creating graph and clustering for {collection_id}")
+
+    #     # Get communities from the external service
+    #     hierarchical_communities = await self._create_graph_and_cluster(
+    #         relationships=relationships,
+    #         leiden_params=leiden_params,
+    #     )
+
+    #     logger.info(
+    #         f"Computing Leiden communities completed, time {time.time() - start_time:.2f} seconds."
+    #     )
+
+    #     def relationship_ids(node: str) -> list[int]:
+    #         return relationship_ids_cache.get(node, [])
+
+    #     logger.info(
+    #         f"Cached {len(relationship_ids_cache)} relationship ids, time {time.time() - start_time:.2f} seconds."
+    #     )
+
+    #     # hierarchical_communities is now a list of dicts like:
+    #     # [{"node": str, "cluster": int, "level": int}, ...]
+
+    #     if not hierarchical_communities:
+    #         num_communities = 0
+    #     else:
+    #         num_communities = (
+    #             max(item["cluster"] for item in hierarchical_communities) + 1
+    #         )
+
+    #     logger.info(
+    #         f"Generated {num_communities} communities, time {time.time() - start_time:.2f} seconds."
+    #     )
+
+    #     return num_communities, hierarchical_communities
+
     async def _create_graph_and_cluster(
-        self, relationships: list[Relationship], leiden_params: dict[str, Any]
+        self,
+        relationships: list[Relationship],
+        leiden_params: dict[str, Any],
+        clustering_mode: str = "remote",
     ) -> Any:
         """
-        Previously created a local graph and ran hierarchical_leiden.
-        Now it calls the external clustering service.
+        Create a graph and cluster it. If clustering_mode='local', use hierarchical_leiden locally.
+        If clustering_mode='remote', call the external service.
         """
-        logger.info("Sending request to external clustering service...")
-        communities = await self._call_clustering_service(
-            relationships, leiden_params
-        )
-        logger.info("Received communities from clustering service.")
-        return communities
+
+        if clustering_mode == "remote":
+            logger.info("Sending request to external clustering service...")
+            communities = await self._call_clustering_service(
+                relationships, leiden_params
+            )
+            logger.info("Received communities from clustering service.")
+            return communities
+        else:
+            # Local mode: run hierarchical_leiden directly
+            G = self.nx.Graph()
+            for relationship in relationships:
+                G.add_edge(
+                    relationship.subject,
+                    relationship.object,
+                    weight=relationship.weight,
+                    id=relationship.id,
+                )
+
+            logger.info(
+                f"Graph has {len(G.nodes)} nodes and {len(G.edges)} edges"
+            )
+            return await self._compute_leiden_communities(G, leiden_params)
 
     async def _cluster_and_add_community_info(
         self,
@@ -2225,9 +2313,10 @@ class PostgresGraphHandler(GraphHandler):
         relationship_ids_cache: dict[str, list[int]],
         leiden_params: dict[str, Any],
         collection_id: Optional[UUID] = None,
+        clustering_mode: str = "local",
     ) -> Tuple[int, Any]:
 
-        # Clear old information if needed (unchanged logic)
+        # clear if there is any old information
         conditions = []
         if collection_id is not None:
             conditions.append("collection_id = $1")
@@ -2238,10 +2327,10 @@ class PostgresGraphHandler(GraphHandler):
 
         logger.info(f"Creating graph and clustering for {collection_id}")
 
-        # Get communities from the external service
         hierarchical_communities = await self._create_graph_and_cluster(
             relationships=relationships,
             leiden_params=leiden_params,
+            clustering_mode=clustering_mode,
         )
 
         logger.info(
@@ -2255,15 +2344,27 @@ class PostgresGraphHandler(GraphHandler):
             f"Cached {len(relationship_ids_cache)} relationship ids, time {time.time() - start_time:.2f} seconds."
         )
 
-        # hierarchical_communities is now a list of dicts like:
+        # If remote: hierarchical_communities is a list of dicts like:
         # [{"node": str, "cluster": int, "level": int}, ...]
+        # If local: hierarchical_communities is the returned structure from hierarchical_leiden (list of named tuples)
 
-        if not hierarchical_communities:
-            num_communities = 0
+        if clustering_mode == "remote":
+            if not hierarchical_communities:
+                num_communities = 0
+            else:
+                num_communities = (
+                    max(item["cluster"] for item in hierarchical_communities)
+                    + 1
+                )
         else:
-            num_communities = (
-                max(item["cluster"] for item in hierarchical_communities) + 1
-            )
+            # Local mode: hierarchical_communities returned by hierarchical_leiden
+            # According to the original code, it's likely a list of items with .cluster attribute
+            if not hierarchical_communities:
+                num_communities = 0
+            else:
+                num_communities = (
+                    max(item.cluster for item in hierarchical_communities) + 1
+                )
 
         logger.info(
             f"Generated {num_communities} communities, time {time.time() - start_time:.2f} seconds."
@@ -2557,51 +2658,6 @@ class PostgresGraphHandler(GraphHandler):
     #     logger.info(f"Graph has {len(G.nodes)} nodes and {len(G.edges)} edges")
 
     #     return await self._compute_leiden_communities(G, leiden_params)
-
-    async def _cluster_and_add_community_info(
-        self,
-        relationships: list[Relationship],
-        relationship_ids_cache: dict[str, list[int]],
-        leiden_params: dict[str, Any],
-        collection_id: Optional[UUID] = None,
-    ) -> Tuple[int, Any]:
-
-        # clear if there is any old information
-        conditions = []
-        if collection_id is not None:
-            conditions.append("collection_id = $1")
-
-        await asyncio.sleep(0.1)
-
-        start_time = time.time()
-
-        logger.info(f"Creating graph and clustering for {collection_id}")
-
-        hierarchical_communities = await self._create_graph_and_cluster(
-            relationships=relationships,
-            leiden_params=leiden_params,
-        )
-
-        logger.info(
-            f"Computing Leiden communities completed, time {time.time() - start_time:.2f} seconds."
-        )
-
-        def relationship_ids(node: str) -> list[int]:
-            return relationship_ids_cache.get(node, [])
-
-        logger.info(
-            f"Cached {len(relationship_ids_cache)} relationship ids, time {time.time() - start_time:.2f} seconds."
-        )
-
-        num_communities = (
-            max(item["cluster"] for item in hierarchical_communities) + 1
-        )
-
-        logger.info(
-            f"Generated {num_communities} communities, time {time.time() - start_time:.2f} seconds."
-        )
-
-        return num_communities, hierarchical_communities
 
     async def _compute_leiden_communities(
         self,
