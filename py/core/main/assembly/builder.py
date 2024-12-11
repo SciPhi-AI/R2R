@@ -17,7 +17,6 @@ from core.pipelines import KGEnrichmentPipeline, RAGPipeline, SearchPipeline
 from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 from ..abstractions import R2RProviders
-from ..api.v3.auth_router import AuthRouter
 from ..api.v3.chunks_router import ChunksRouter
 from ..api.v3.collections_router import CollectionsRouter
 from ..api.v3.conversations_router import ConversationsRouter
@@ -237,11 +236,6 @@ class R2RBuilder:
         orchestration_provider = providers.orchestration
 
         routers = {
-            "auth_router": AuthRouter(
-                providers=providers,
-                services=services,
-                orchestration_provider=orchestration_provider,
-            ).get_router(),
             "chunks_router": ChunksRouter(
                 providers=providers,
                 services=services,

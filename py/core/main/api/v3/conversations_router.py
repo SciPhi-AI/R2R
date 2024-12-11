@@ -272,10 +272,12 @@ class ConversationsRouter(BaseRouterV3):
 
             This endpoint retrieves detailed information about a single conversation identified by its UUID.
             """
-            return await self.services["management"].get_conversation(
+            conversation = await self.services["management"].get_conversation(
                 str(id),
                 branch_id,
             )
+            print("conversation", conversation)
+            return conversation
 
         @self.router.delete(
             "/conversations/{id}",

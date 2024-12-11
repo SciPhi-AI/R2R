@@ -551,15 +551,18 @@ def hatchet_ingestion_factory(
                             document_id=document_info.id,
                             collection_id=collection_id,
                         )
+
                         await service.providers.database.assign_document_to_collection_vector(
                             document_id=document_info.id,
                             collection_id=collection_id,
                         )
+
                         await service.providers.database.set_workflow_status(
                             id=collection_id,
                             status_type="graph_sync_status",
                             status=KGEnrichmentStatus.OUTDATED,
                         )
+
                         await service.providers.database.set_workflow_status(
                             id=collection_id,
                             status_type="graph_cluster_status",

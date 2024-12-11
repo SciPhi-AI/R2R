@@ -666,8 +666,8 @@ class GraphRouter(BaseRouterV3):
             name: str = Body(
                 ..., description="The name of the entity to create."
             ),
-            description: Optional[str] = Body(
-                None, description="The description of the entity to create."
+            description: str = Body(
+                ..., description="The description of the entity to create."
             ),
             category: Optional[str] = Body(
                 None, description="The category of the entity to create."
@@ -720,12 +720,12 @@ class GraphRouter(BaseRouterV3):
                 ...,
                 description="The ID of the object of the relationship to create.",
             ),
-            description: Optional[str] = Body(
-                None,
+            description: str = Body(
+                ...,
                 description="The description of the relationship to create.",
             ),
-            weight: Optional[float] = Body(
-                None, description="The weight of the relationship to create."
+            weight: float = Body(
+                1.0, description="The weight of the relationship to create."
             ),
             metadata: Optional[dict] = Body(
                 None, description="The metadata of the relationship to create."
@@ -747,7 +747,6 @@ class GraphRouter(BaseRouterV3):
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
-
             return await self.services["kg"].create_relationship(
                 subject=subject,
                 subject_id=subject_id,

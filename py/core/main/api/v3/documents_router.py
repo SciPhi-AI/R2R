@@ -693,6 +693,7 @@ class DocumentsRouter(BaseRouterV3):
                 None if auth_user.is_superuser else auth_user.collection_ids
             )
 
+
             documents_overview_response = await self.services[
                 "management"
             ].documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
