@@ -388,12 +388,22 @@ class PostgresUserHandler(UserHandler):
         print("___query___ = ", query)
         result = await self.connection_manager.fetchrow_query(
             query, [collection_id, id]
-        )  # fetchrow instead of execute_query
-        print("final add_user_to_collection result = ", result)
+        )
         if not result:
             raise R2RException(
                 status_code=400, message="User already in collection"
             )
+
+        update_collection_query = f"""
+            UPDATE {self._get_table_name('collections')}
+            SET user_count = user_count + 1
+            WHERE id = $1
+        """
+        await self.connection_manager.execute_query(
+            query=update_collection_query,
+            params=[collection_id],
+        )
+
         return True
 
     async def remove_user_from_collection(

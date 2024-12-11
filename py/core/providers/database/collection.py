@@ -48,7 +48,9 @@ class PostgresCollectionHandler(CollectionsHandler):
             graph_sync_status TEXT DEFAULT 'pending',
             graph_cluster_status TEXT DEFAULT 'pending',
             created_at TIMESTAMPTZ DEFAULT NOW(),
-            updated_at TIMESTAMPTZ DEFAULT NOW()
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
+            user_count INT DEFAULT 0,
+            document_count INT DEFAULT 0
         );
         """
         await self.connection_manager.execute_query(query)
@@ -293,17 +295,29 @@ class PostgresCollectionHandler(CollectionsHandler):
         params: list[Any] = []
         param_index = 1
 
-        # Build JOIN clauses based on filters
-        document_join = "JOIN" if filter_document_ids else "LEFT JOIN"
-        user_join = "JOIN" if filter_user_ids else "LEFT JOIN"
-
         if filter_user_ids:
-            conditions.append(f"u.id = ANY(${param_index})")
+            conditions.append(
+                f"""
+                c.id IN (
+                    SELECT unnest(collection_ids)
+                    FROM r2r_default.users
+                    WHERE id = ANY(${param_index})
+                )
+            """
+            )
             params.append(filter_user_ids)
             param_index += 1
 
         if filter_document_ids:
-            conditions.append(f"d.id = ANY(${param_index})")
+            conditions.append(
+                f"""
+                c.id IN (
+                    SELECT unnest(collection_ids)
+                    FROM r2r_default.documents
+                    WHERE id = ANY(${param_index})
+                )
+            """
+            )
             params.append(filter_document_ids)
             param_index += 1
 
@@ -317,28 +331,11 @@ class PostgresCollectionHandler(CollectionsHandler):
         )
 
         query = f"""
-            WITH collection_stats AS (
-                SELECT
-                    c.id,
-                    c.owner_id,
-                    c.name,
-                    c.description,
-                    c.created_at,
-                    c.updated_at,
-                    c.graph_sync_status,
-                    c.graph_cluster_status,
-                    COUNT(DISTINCT u.id) FILTER (WHERE u.id IS NOT NULL) as user_count,
-                    COUNT(DISTINCT d.id) FILTER (WHERE d.id IS NOT NULL) as document_count
-                FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} c
-                {user_join} {self._get_table_name('users')} u ON c.id = ANY(u.collection_ids)
-                {document_join} {self._get_table_name('documents')} d ON c.id = ANY(d.collection_ids)
-                {where_clause}
-                GROUP BY c.id, c.owner_id, c.name, c.description, c.created_at, c.updated_at, c.graph_cluster_status
-            )
             SELECT
-                *,
-                COUNT(*) OVER() AS total_entries
-            FROM collection_stats
+                c.*,
+                COUNT(*) OVER() as total_entries
+            FROM r2r_default.collections c
+            {where_clause}
             ORDER BY created_at DESC
             OFFSET ${param_index}
         """
@@ -351,26 +348,13 @@ class PostgresCollectionHandler(CollectionsHandler):
 
         try:
             results = await self.connection_manager.fetch_query(query, params)
+
             if not results:
                 return {"results": [], "total_entries": 0}
 
             total_entries = results[0]["total_entries"] if results else 0
 
-            collections = [
-                CollectionResponse(
-                    id=row["id"],
-                    owner_id=row["owner_id"],
-                    name=row["name"],
-                    description=row["description"],
-                    graph_sync_status=row["graph_sync_status"],
-                    graph_cluster_status=row["graph_cluster_status"],
-                    created_at=row["created_at"],
-                    updated_at=row["updated_at"],
-                    user_count=row["user_count"],
-                    document_count=row["document_count"],
-                )
-                for row in results
-            ]
+            collections = [CollectionResponse(**row) for row in results]
 
             return {"results": collections, "total_entries": total_entries}
         except Exception as e:
@@ -437,6 +421,15 @@ class PostgresCollectionHandler(CollectionsHandler):
                     status_code=409,
                     message="Document is already assigned to the collection",
                 )
+
+            update_collection_query = f"""
+                UPDATE {self._get_table_name('collections')}
+                SET document_count = document_count + 1
+                WHERE id = $1
+            """
+            await self.connection_manager.execute_query(
+                query=update_collection_query, params=[collection_id]
+            )
 
             return collection_id
 
