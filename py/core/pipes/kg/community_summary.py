@@ -261,6 +261,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         generation_config = input.message["generation_config"]
         max_summary_input_length = input.message["max_summary_input_length"]
         collection_id = input.message.get("collection_id", None)
+        clustering_mode = input.message.get("clustering_mode", None)
         community_summary_jobs = []
         logger = input.message.get("logger", logging.getLogger())
 
@@ -295,16 +296,23 @@ class KGCommunitySummaryPipe(AsyncPipe):
                 relationship_ids_cache={},
                 leiden_params=leiden_params,
                 collection_id=collection_id,
+                clustering_mode=clustering_mode,
             )
         )
 
         # Organize clusters
         clusters: dict[Any] = {}
         for item in community_clusters:
-            cluster_id = item.cluster
+            cluster_id = (
+                item["cluster"]
+                if clustering_mode == "remote"
+                else item.cluster
+            )
             if cluster_id not in clusters:
                 clusters[cluster_id] = []
-            clusters[cluster_id].append(item.node)
+            clusters[cluster_id].append(
+                item["node"] if clustering_mode == "remote" else item.node
+            )
 
         # Now, process the clusters
         for _, nodes in clusters.items():

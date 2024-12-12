@@ -44,6 +44,7 @@ class KGClusteringPipe(AsyncPipe):
         self,
         collection_id: UUID,
         leiden_params: dict,
+        clustering_mode: str,
     ):
         """
         Clusters the knowledge graph relationships into communities using hierarchical Leiden algorithm. Uses graspologic library.
@@ -52,6 +53,7 @@ class KGClusteringPipe(AsyncPipe):
         num_communities = await self.database_provider.graph_handler.perform_graph_clustering(
             collection_id=collection_id,
             leiden_params=leiden_params,
+            clustering_mode=clustering_mode,
         )
 
         return {
@@ -72,8 +74,10 @@ class KGClusteringPipe(AsyncPipe):
 
         collection_id = input.message.get("collection_id", None)
         leiden_params = input.message["leiden_params"]
+        clustering_mode = input.message["clustering_mode"]
 
         yield await self.cluster_kg(
             collection_id=collection_id,
             leiden_params=leiden_params,
+            clustering_mode=clustering_mode,
         )

@@ -260,12 +260,22 @@ services:
 
   unstructured:
     image: ${UNSTRUCTURED_IMAGE:-ragtoriches/unst-prod}
-    ports:
-      - "${R2R_UNSTRUCTURED_PORT:-7275}:7275"
     networks:
       - r2r-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7275/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  graph_clustering:
+    image: ${GRAPH_CLUSTERING_IMAGE:-ragtoriches/clustering-prod}
+    ports:
+      - "${R2R_GRAPH_CLUSTERING_PORT:-7276}:7276"
+    networks:
+      - r2r-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7276/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -342,13 +352,17 @@ services:
       # Unstructured
       - UNSTRUCTURED_API_KEY=${UNSTRUCTURED_API_KEY:-}
       - UNSTRUCTURED_API_URL=${UNSTRUCTURED_API_URL:-https://api.unstructured.io/general/v0/general}
-      - UNSTRUCTURED_LOCAL_URL=${UNSTRUCTURED_LOCAL_URL:-http://unstructured:7275}
+      - UNSTRUCTURED_SERVICE_URL=${UNSTRUCTURED_SERVICE_URL:-http://unstructured:7275}
       - UNSTRUCTURED_NUM_WORKERS=${UNSTRUCTURED_NUM_WORKERS:-10}
 
       # Hatchet
       - HATCHET_CLIENT_TLS_STRATEGY=none
       - HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH=${HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH:-134217728}
       - HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH=${HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH:-134217728}
+
+      # Graphologic
+      - CLUSTERING_SERVICE_URL=http://graph_clustering:7276
+
     command: >
       sh -c '
         if [ -z "$${HATCHET_CLIENT_TOKEN}" ]; then

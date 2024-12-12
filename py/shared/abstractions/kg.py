@@ -33,6 +33,11 @@ class KGEntityDeduplicationType(str, Enum):
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 
+    clustering_mode: str = Field(
+        default="local",
+        description="Whether to use remote clustering for graph creation.",
+    )
+
     graphrag_relationships_extraction_few_shot: str = Field(
         default="graphrag_relationships_extraction_few_shot",
         description="The prompt to use for knowledge graph extraction.",

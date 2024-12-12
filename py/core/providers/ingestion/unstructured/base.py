@@ -147,11 +147,11 @@ class UnstructuredIngestionProvider(IngestionProvider):
         else:
             try:
                 self.local_unstructured_url = os.environ[
-                    "UNSTRUCTURED_LOCAL_URL"
+                    "UNSTRUCTURED_SERVICE_URL"
                 ]
             except KeyError as e:
                 raise ValueError(
-                    "UNSTRUCTURED_LOCAL_URL environment variable is not set"
+                    "UNSTRUCTURED_SERVICE_URL environment variable is not set"
                 ) from e
 
             self.client = httpx.AsyncClient()

@@ -2,12 +2,14 @@ import asyncio
 import datetime
 import json
 import logging
+import os
 import time
 from enum import Enum
 from typing import Any, AsyncGenerator, Optional, Tuple, Union
 from uuid import UUID
 
 import asyncpg
+import httpx
 from asyncpg.exceptions import UndefinedTableError, UniqueViolationError
 from fastapi import HTTPException
 
@@ -2128,26 +2130,14 @@ class PostgresGraphHandler(GraphHandler):
         self,
         collection_id: UUID,
         leiden_params: dict[str, Any],
+        clustering_mode: str,
     ) -> Tuple[int, Any]:
         """
-        Leiden clustering algorithm to cluster the knowledge graph relationships into communities.
-
-        Available parameters and defaults:
-            max_cluster_size: int = 1000,
-            starting_communities: Optional[dict[str, int]] = None,
-            extra_forced_iterations: int = 0,
-            resolution: int | float = 1.0,
-            randomness: int | float = 0.001,
-            use_modularity: bool = True,
-            random_seed: Optional[int] = None,
-            weight_attribute: str = "weight",
-            is_weighted: Optional[bool] = None,
-            weight_default: int| float = 1.0,
-            check_directed: bool = True,
+        Calls the external clustering service to cluster the KG.
         """
 
         offset = 0
-        page_size = 1000  # Increased batch size for efficiency
+        page_size = 1000
         all_relationships = []
         while True:
             relationships, count = await self.relationships.get(
@@ -2167,18 +2157,240 @@ class PostgresGraphHandler(GraphHandler):
                 break
 
         relationship_ids_cache = await self._get_relationship_ids_cache(
-            relationships
+            all_relationships
         )
 
         logger.info(
             f"Clustering over {len(all_relationships)} relationships for {collection_id} with settings: {leiden_params}"
         )
+
         return await self._cluster_and_add_community_info(
-            relationships=relationships,
+            relationships=all_relationships,
             relationship_ids_cache=relationship_ids_cache,
             leiden_params=leiden_params,
             collection_id=collection_id,
+            clustering_mode=clustering_mode,
         )
+
+    async def _call_clustering_service(
+        self, relationships: list[Relationship], leiden_params: dict[str, Any]
+    ) -> list[dict]:
+        """
+        Calls the external Graspologic clustering service, sending relationships and parameters.
+        Expects a response with 'communities' field.
+        """
+        # Convert relationships to a JSON-friendly format
+        rel_data = []
+        for r in relationships:
+            rel_data.append(
+                {
+                    "id": str(r.id),
+                    "subject": r.subject,
+                    "object": r.object,
+                    "weight": r.weight if r.weight is not None else 1.0,
+                }
+            )
+
+        endpoint = os.environ.get("CLUSTERING_SERVICE_URL")
+        if not endpoint:
+            raise ValueError("CLUSTERING_SERVICE_URL not set.")
+
+        url = f"{endpoint}/cluster"
+
+        payload = {"relationships": rel_data, "leiden_params": leiden_params}
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, timeout=3600)
+            response.raise_for_status()
+
+        data = response.json()
+        communities = data.get("communities", [])
+        return communities
+
+    # async def _create_graph_and_cluster(
+    #     self, relationships: list[Relationship], leiden_params: dict[str, Any]
+    # ) -> Any:
+    #     """
+    #     Previously created a local graph and ran hierarchical_leiden.
+    #     Now it calls the external clustering service.
+    #     """
+    #     logger.info("Sending request to external clustering service...")
+    #     communities = await self._call_clustering_service(
+    #         relationships, leiden_params
+    #     )
+    #     logger.info("Received communities from clustering service.")
+    #     return communities
+
+    # async def _cluster_and_add_community_info(
+    #     self,
+    #     relationships: list[Relationship],
+    #     relationship_ids_cache: dict[str, list[int]],
+    #     leiden_params: dict[str, Any],
+    #     collection_id: Optional[UUID] = None,
+    # ) -> Tuple[int, Any]:
+
+    #     # Clear old information if needed (unchanged logic)
+    #     conditions = []
+    #     if collection_id is not None:
+    #         conditions.append("collection_id = $1")
+
+    #     await asyncio.sleep(0.1)
+
+    #     start_time = time.time()
+
+    #     logger.info(f"Creating graph and clustering for {collection_id}")
+
+    #     # Get communities from the external service
+    #     hierarchical_communities = await self._create_graph_and_cluster(
+    #         relationships=relationships,
+    #         leiden_params=leiden_params,
+    #     )
+
+    #     logger.info(
+    #         f"Computing Leiden communities completed, time {time.time() - start_time:.2f} seconds."
+    #     )
+
+    #     def relationship_ids(node: str) -> list[int]:
+    #         return relationship_ids_cache.get(node, [])
+
+    #     logger.info(
+    #         f"Cached {len(relationship_ids_cache)} relationship ids, time {time.time() - start_time:.2f} seconds."
+    #     )
+
+    #     # hierarchical_communities is now a list of dicts like:
+    #     # [{"node": str, "cluster": int, "level": int}, ...]
+
+    #     if not hierarchical_communities:
+    #         num_communities = 0
+    #     else:
+    #         num_communities = (
+    #             max(item["cluster"] for item in hierarchical_communities) + 1
+    #         )
+
+    #     logger.info(
+    #         f"Generated {num_communities} communities, time {time.time() - start_time:.2f} seconds."
+    #     )
+
+    #     return num_communities, hierarchical_communities
+
+    async def _create_graph_and_cluster(
+        self,
+        relationships: list[Relationship],
+        leiden_params: dict[str, Any],
+        clustering_mode: str = "remote",
+    ) -> Any:
+        """
+        Create a graph and cluster it. If clustering_mode='local', use hierarchical_leiden locally.
+        If clustering_mode='remote', call the external service.
+        """
+
+        if clustering_mode == "remote":
+            logger.info("Sending request to external clustering service...")
+            communities = await self._call_clustering_service(
+                relationships, leiden_params
+            )
+            logger.info("Received communities from clustering service.")
+            return communities
+        else:
+            # Local mode: run hierarchical_leiden directly
+            G = self.nx.Graph()
+            for relationship in relationships:
+                G.add_edge(
+                    relationship.subject,
+                    relationship.object,
+                    weight=relationship.weight,
+                    id=relationship.id,
+                )
+
+            logger.info(
+                f"Graph has {len(G.nodes)} nodes and {len(G.edges)} edges"
+            )
+            return await self._compute_leiden_communities(G, leiden_params)
+
+    async def _cluster_and_add_community_info(
+        self,
+        relationships: list[Relationship],
+        relationship_ids_cache: dict[str, list[int]],
+        leiden_params: dict[str, Any],
+        collection_id: Optional[UUID] = None,
+        clustering_mode: str = "local",
+    ) -> Tuple[int, Any]:
+
+        # clear if there is any old information
+        conditions = []
+        if collection_id is not None:
+            conditions.append("collection_id = $1")
+
+        await asyncio.sleep(0.1)
+
+        start_time = time.time()
+
+        logger.info(f"Creating graph and clustering for {collection_id}")
+
+        hierarchical_communities = await self._create_graph_and_cluster(
+            relationships=relationships,
+            leiden_params=leiden_params,
+            clustering_mode=clustering_mode,
+        )
+
+        logger.info(
+            f"Computing Leiden communities completed, time {time.time() - start_time:.2f} seconds."
+        )
+
+        def relationship_ids(node: str) -> list[int]:
+            return relationship_ids_cache.get(node, [])
+
+        logger.info(
+            f"Cached {len(relationship_ids_cache)} relationship ids, time {time.time() - start_time:.2f} seconds."
+        )
+
+        # If remote: hierarchical_communities is a list of dicts like:
+        # [{"node": str, "cluster": int, "level": int}, ...]
+        # If local: hierarchical_communities is the returned structure from hierarchical_leiden (list of named tuples)
+
+        if clustering_mode == "remote":
+            if not hierarchical_communities:
+                num_communities = 0
+            else:
+                num_communities = (
+                    max(item["cluster"] for item in hierarchical_communities)
+                    + 1
+                )
+        else:
+            # Local mode: hierarchical_communities returned by hierarchical_leiden
+            # According to the original code, it's likely a list of items with .cluster attribute
+            if not hierarchical_communities:
+                num_communities = 0
+            else:
+                num_communities = (
+                    max(item.cluster for item in hierarchical_communities) + 1
+                )
+
+        logger.info(
+            f"Generated {num_communities} communities, time {time.time() - start_time:.2f} seconds."
+        )
+
+        return num_communities, hierarchical_communities
+
+    async def _get_relationship_ids_cache(
+        self, relationships: list[Relationship]
+    ) -> dict[str, list[int]]:
+        relationship_ids_cache: dict[str, list[int]] = {}
+        for relationship in relationships:
+            if relationship.subject is not None:
+                relationship_ids_cache.setdefault(relationship.subject, [])
+                if relationship.id is not None:
+                    relationship_ids_cache[relationship.subject].append(
+                        relationship.id
+                    )
+            if relationship.object is not None:
+                relationship_ids_cache.setdefault(relationship.object, [])
+                if relationship.id is not None:
+                    relationship_ids_cache[relationship.object].append(
+                        relationship.id
+                    )
+
+        return relationship_ids_cache
 
     async def get_entity_map(
         self, offset: int, limit: int, document_id: UUID
@@ -2430,98 +2642,22 @@ class PostgresGraphHandler(GraphHandler):
 
         return parse_filter(filter_dict)
 
-    async def _create_graph_and_cluster(
-        self, relationships: list[Relationship], leiden_params: dict[str, Any]
-    ) -> Any:
+    # async def _create_graph_and_cluster(
+    #     self, relationships: list[Relationship], leiden_params: dict[str, Any]
+    # ) -> Any:
 
-        G = self.nx.Graph()
-        for relationship in relationships:
-            G.add_edge(
-                relationship.subject,
-                relationship.object,
-                weight=relationship.weight,
-                id=relationship.id,
-            )
+    #     G = self.nx.Graph()
+    #     for relationship in relationships:
+    #         G.add_edge(
+    #             relationship.subject,
+    #             relationship.object,
+    #             weight=relationship.weight,
+    #             id=relationship.id,
+    #         )
 
-        logger.info(f"Graph has {len(G.nodes)} nodes and {len(G.edges)} edges")
+    #     logger.info(f"Graph has {len(G.nodes)} nodes and {len(G.edges)} edges")
 
-        return await self._compute_leiden_communities(G, leiden_params)
-
-    async def _cluster_and_add_community_info(
-        self,
-        relationships: list[Relationship],
-        relationship_ids_cache: dict[str, list[int]],
-        leiden_params: dict[str, Any],
-        collection_id: Optional[UUID] = None,
-    ) -> Tuple[int, Any]:
-
-        # clear if there is any old information
-        conditions = []
-        if collection_id is not None:
-            conditions.append("collection_id = $1")
-
-        await asyncio.sleep(0.1)
-
-        start_time = time.time()
-
-        logger.info(f"Creating graph and clustering for {collection_id}")
-
-        hierarchical_communities = await self._create_graph_and_cluster(
-            relationships=relationships,
-            leiden_params=leiden_params,
-        )
-
-        logger.info(
-            f"Computing Leiden communities completed, time {time.time() - start_time:.2f} seconds."
-        )
-
-        def relationship_ids(node: str) -> list[int]:
-            return relationship_ids_cache.get(node, [])
-
-        logger.info(
-            f"Cached {len(relationship_ids_cache)} relationship ids, time {time.time() - start_time:.2f} seconds."
-        )
-
-        num_communities = (
-            max(item.cluster for item in hierarchical_communities) + 1
-        )
-
-        logger.info(
-            f"Generated {num_communities} communities, time {time.time() - start_time:.2f} seconds."
-        )
-
-        return num_communities, hierarchical_communities
-
-    async def _get_relationship_ids_cache(
-        self, relationships: list[Relationship]
-    ) -> dict[str, list[int]]:
-
-        # caching the relationship ids
-        relationship_ids_cache = dict[str, list[int | UUID]]()
-        for relationship in relationships:
-            if (
-                relationship.subject not in relationship_ids_cache
-                and relationship.subject is not None
-            ):
-                relationship_ids_cache[relationship.subject] = []
-            if (
-                relationship.object not in relationship_ids_cache
-                and relationship.object is not None
-            ):
-                relationship_ids_cache[relationship.object] = []
-            if (
-                relationship.subject is not None
-                and relationship.id is not None
-            ):
-                relationship_ids_cache[relationship.subject].append(
-                    relationship.id
-                )
-            if relationship.object is not None and relationship.id is not None:
-                relationship_ids_cache[relationship.object].append(
-                    relationship.id
-                )
-
-        return relationship_ids_cache  # type: ignore
+    #     return await self._compute_leiden_communities(G, leiden_params)
 
     async def _compute_leiden_communities(
         self,

@@ -581,6 +581,7 @@ class KgService(Service):
                     "generation_config": generation_config,
                     "leiden_params": leiden_params,
                     "logger": logger,
+                    "clustering_mode": self.config.database.graph_creation_settings.clustering_mode,
                 }
             ),
             state=None,
