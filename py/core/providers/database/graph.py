@@ -2191,9 +2191,9 @@ class PostgresGraphHandler(GraphHandler):
                 }
             )
 
-        endpoint = os.environ.get("GRAPHOLOGIC_SERVICE_URL")
+        endpoint = os.environ.get("CLUSTERING_SERVICE_URL")
         if not endpoint:
-            raise ValueError("GRAPHOLOGIC_SERVICE_URL not set.")
+            raise ValueError("CLUSTERING_SERVICE_URL not set.")
 
         url = f"{endpoint}/cluster"
 
