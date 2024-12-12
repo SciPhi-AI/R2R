@@ -1,4 +1,4 @@
-name: Build and Publish Unstructured Docker Image
+name: Build and Publish Cluster Docker Image
 
 on:
   workflow_dispatch:
