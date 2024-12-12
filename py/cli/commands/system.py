@@ -127,6 +127,11 @@ async def status(ctx):
     help="Which dev environment to pull the image from?",
 )
 @click.option(
+    "--scale",
+    default=None,
+    help="How many instances of the R2R service to run",
+)
+@click.option(
     "--exclude-postgres",
     is_flag=True,
     default=False,
@@ -143,6 +148,7 @@ async def serve(
     build,
     image,
     image_env,
+    scale,
     exclude_postgres,
 ):
     """Start the R2R server."""
@@ -243,6 +249,7 @@ async def serve(
             config_name,
             config_path,
             exclude_postgres,
+            scale,
         )
         if (
             "pytest" in sys.modules

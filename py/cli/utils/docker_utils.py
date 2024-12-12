@@ -134,6 +134,7 @@ def run_docker_serve(
     config_name: Optional[str] = None,
     config_path: Optional[str] = None,
     exclude_postgres: bool = False,
+    scale: Optional[int] = None,
 ):
     check_docker_compose_version()
     check_set_docker_env_vars(project_name, exclude_postgres)
@@ -160,6 +161,7 @@ def run_docker_serve(
         config_name,
         config_path,
         exclude_postgres,
+        scale,
     )
 
     click.secho("R2R now runs on port 7272 by default!", fg="yellow")
@@ -321,6 +323,9 @@ def get_compose_files():
     compose_files = {
         "base": os.path.join(package_dir, "compose.yaml"),
         "full": os.path.join(package_dir, "compose.full.yaml"),
+        "full_scale": os.path.join(
+            package_dir, "compose.full_with_replicas.yaml"
+        ),
     }
 
     for name, path in compose_files.items():
@@ -357,13 +362,18 @@ def build_docker_command(
     image,
     config_name,
     config_path,
-    exclude_postgres: bool = False,
+    exclude_postgres,
+    scale,
 ):
     if not full:
         base_command = f"docker compose -f {compose_files['base']}"
     else:
-        base_command = f"docker compose -f {compose_files['full']}"
+        if not scale:
+            base_command = f"docker compose -f {compose_files['full']}"
+        else:
+            base_command = f"docker compose -f {compose_files['full_scale']}"
 
+    print("base_command = ", base_command)
     base_command += (
         f" --project-name {project_name or ('r2r-full' if full else 'r2r')}"
     )
@@ -388,6 +398,8 @@ def build_docker_command(
     if not exclude_postgres:
         pull_command = f"{base_command} --profile postgres pull"
         up_command = f"{base_command} --profile postgres up -d"
+        if scale:
+            up_command += f" --scale r2r={scale}"
     else:
         pull_command = f"{base_command} pull"
         up_command = f"{base_command} up -d"
