@@ -269,13 +269,13 @@ services:
       retries: 5
 
   graph_clustering:
-    image: ${GRAPH_CLUSTERING_IMAGE:-your-registry/graph-clustering-service:latest}
+    image: ${GRAPH_CLUSTERING_IMAGE:ragtoriches/clustering-prod}
     ports:
-      - "${R2R_GRAPH_CLUSTERING_PORT:-8080}:8080"
+      - "${R2R_GRAPH_CLUSTERING_PORT:-7276}:7276"
     networks:
       - r2r-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:7276/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -361,7 +361,7 @@ services:
       - HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH=${HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH:-134217728}
 
       # Graphologic
-      - CLUSTERING_SERVICE_URL=http://graph_clustering:8080
+      - CLUSTERING_SERVICE_URL=http://graph_clustering:7276
 
     command: >
       sh -c '
