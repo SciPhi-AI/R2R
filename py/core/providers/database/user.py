@@ -376,8 +376,13 @@ class PostgresUserHandler(UserHandler):
     async def add_user_to_collection(
         self, id: UUID, collection_id: UUID
     ) -> bool:
+        # Check if the user exists
         if not await self.get_user_by_id(id):
             raise R2RException(status_code=404, message="User not found")
+
+        # Check if the collection exists
+        if not await self._collection_exists(collection_id):
+            raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
@@ -420,11 +425,14 @@ class PostgresUserHandler(UserHandler):
         result = await self.connection_manager.fetchrow_query(
             query, [collection_id, id]
         )
+        print("remove_user_from_collection result = ", result)
         if not result:
+            print("raising exception...")
             raise R2RException(
                 status_code=400,
                 message="User is not a member of the specified collection",
             )
+            print("....")
         return True
 
     async def get_users_in_collection(

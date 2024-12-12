@@ -1146,9 +1146,10 @@ class DatabaseProvider(Provider):
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
-        return await self.user_handler.remove_user_from_collection(
+        result = await self.user_handler.remove_user_from_collection(
             user_id, collection_id
         )
+        print("result = ", result)
 
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int, limit: int

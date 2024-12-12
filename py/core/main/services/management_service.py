@@ -667,9 +667,12 @@ class ManagementService(Service):
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
-        return await self.providers.database.remove_user_from_collection(
+
+        x = await self.providers.database.remove_user_from_collection(
             user_id, collection_id
         )
+        print("x = ", x)
+        return x
 
     @telemetry_event("GetUsersInCollection")
     async def get_users_in_collection(
