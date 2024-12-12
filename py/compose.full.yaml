@@ -269,7 +269,7 @@ services:
       retries: 5
 
   graph_clustering:
-    image: ${GRAPH_CLUSTERING_IMAGE:ragtoriches/clustering-prod}
+    image: ${GRAPH_CLUSTERING_IMAGE:-ragtoriches/clustering-prod}
     ports:
       - "${R2R_GRAPH_CLUSTERING_PORT:-7276}:7276"
     networks:
