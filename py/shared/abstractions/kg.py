@@ -33,8 +33,8 @@ class KGEntityDeduplicationType(str, Enum):
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 
-    clustering_mode: bool = Field(
-        default=False,
+    clustering_mode: str = Field(
+        default="local",
         description="Whether to use remote clustering for graph creation.",
     )
 

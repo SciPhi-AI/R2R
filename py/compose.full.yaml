@@ -361,7 +361,7 @@ services:
       - HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH=${HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH:-134217728}
 
       # Graphologic
-      - GRAPHOLOGIC_SERVICE_URL=http://graspologic_service:8080
+      - GRAPHOLOGIC_SERVICE_URL=http://graph_clustering:8080
 
     command: >
       sh -c '
