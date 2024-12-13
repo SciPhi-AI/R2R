@@ -12,25 +12,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
-    continue-on-error: true
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        test_category:
-          - cli-ingestion
-          - cli-retrieval
-          - sdk-ingestion
-          - sdk-retrieval
-          - sdk-auth
-          - sdk-collections
-          - sdk-prompts
+  integration-test:    # or whatever name you want to give this job
+    runs-on: ubuntu-latest
     env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       TELEMETRY_ENABLED: 'false'
       R2R_PROJECT_NAME: r2r_default
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
+      AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
+      AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
 
     steps:
       - name: Checkout code
@@ -38,8 +28,6 @@ jobs:
 
       - name: Set up Python and install dependencies
         uses: ./.github/actions/setup-python-full
-        with:
-          os: ${{ matrix.os }}
 
       - name: Setup and start Docker
         uses: ./.github/actions/setup-docker
@@ -53,45 +41,6 @@ jobs:
       - name: Start R2R Full server
         uses: ./.github/actions/start-r2r-full
 
-      - name: Run CLI Ingestion Tests
-        if: matrix.test_category == 'cli-ingestion'
-        uses: ./.github/actions/run-cli-ingestion-tests
-
-      - name: Run CLI Retrieval Tests
-        if: matrix.test_category == 'cli-retrieval'
-        uses: ./.github/actions/run-cli-retrieval-tests
-
-      - name: Run SDK Ingestion Tests
-        if: matrix.test_category == 'sdk-ingestion'
-        uses: ./.github/actions/run-sdk-ingestion-tests
-
-      - name: Run SDK Retrieval Tests
-        if: matrix.test_category == 'sdk-retrieval'
-        uses: ./.github/actions/run-sdk-retrieval-tests
-
-      - name: Run SDK Auth Tests
-        if: matrix.test_category == 'sdk-auth'
-        uses: ./.github/actions/run-sdk-auth-tests
-
-      - name: Run SDK Collections Tests
-        if: matrix.test_category == 'sdk-collections'
-        uses: ./.github/actions/run-sdk-collections-tests
-
-      - name: Run SDK Prompt Tests
-        if: matrix.test_category == 'sdk-prompts'
-        uses: ./.github/actions/run-sdk-prompt-management-tests
-
-      - name: Print Docker logs on failure
-        if: >
-          (matrix.test_category == 'cli-ingestion' && failure()) ||
-          (matrix.test_category == 'sdk-ingestion' && failure()) ||
-          (matrix.test_category == 'cli-retrieval' && failure()) ||
-          (matrix.test_category == 'sdk-retrieval' && failure()) ||
-          (matrix.test_category == 'sdk-auth' && failure()) ||
-          (matrix.test_category == 'sdk-collections' && failure()) ||
-          (matrix.test_category == 'sdk-prompts' && failure())
+      - name: Run R2R Full Python Integration Test
         run: |
-          echo "::group::Docker Logs"
-          docker ps -a
-          docker logs r2r-full-r2r-1
-          echo "::endgroup::"
+          python -m pytest

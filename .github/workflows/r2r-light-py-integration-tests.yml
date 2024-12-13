@@ -1,5 +1,3 @@
-# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-
 name: R2R Light Python Integration Test (ubuntu)
 
 on:
@@ -14,21 +12,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
-    continue-on-error: true
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        test_category:
-          - cli-ingestion
-          - cli-retrieval
-          - sdk-ingestion
-          - sdk-retrieval
-          - sdk-auth
-          - sdk-collections
-          - sdk-prompts
+  integration-test:
+    runs-on: ubuntu-latest
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
@@ -59,30 +44,6 @@ jobs:
       - name: Start R2R Light server
         uses: ./.github/actions/start-r2r-light
 
-      - name: Run CLI Ingestion Tests
-        if: matrix.test_category == 'cli-ingestion'
-        uses: ./.github/actions/run-cli-ingestion-tests
-
-      - name: Run CLI Retrieval Tests
-        if: matrix.test_category == 'cli-retrieval'
-        uses: ./.github/actions/run-cli-retrieval-tests
-
-      - name: Run SDK Ingestion Tests
-        if: matrix.test_category == 'sdk-ingestion'
-        uses: ./.github/actions/run-sdk-ingestion-tests
-
-      - name: Run SDK Retrieval Tests
-        if: matrix.test_category == 'sdk-retrieval'
-        uses: ./.github/actions/run-sdk-retrieval-tests
-
-      - name: Run SDK Auth Tests
-        if: matrix.test_category == 'sdk-auth'
-        uses: ./.github/actions/run-sdk-auth-tests
-
-      - name: Run SDK Collections Tests
-        if: matrix.test_category == 'sdk-collections'
-        uses: ./.github/actions/run-sdk-collections-tests
-
-      - name: Run SDK Prompt Tests
-        if: matrix.test_category == 'sdk-prompts'
-        uses: ./.github/actions/run-sdk-prompt-management-tests
+      - name: Run R2R Full Python Integration Test
+        run: |
+          python -m pytest

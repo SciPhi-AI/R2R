@@ -383,21 +383,13 @@ class GraphRouter(BaseRouterV3):
                     server_graph_enrichment_settings, graph_enrichment_settings
                 )
 
-            # If the run type is estimate, return an estimate of the enrichment cost
-            # if run_type is KGRunType.ESTIMATE:
-            #     return await self.services["kg"].get_enrichment_estimate(
-            #         collection_id=id,
-            #         graph_enrichment_settings=server_graph_enrichment_settings,
-            #     )
+            workflow_input = {
+                "collection_id": str(collection_id),
+                "graph_enrichment_settings": server_graph_enrichment_settings.model_dump_json(),
+                "user": auth_user.json(),
+            }
 
-            # Otherwise, run the enrichment workflow
-            # else:
             if run_with_orchestration:
-                workflow_input = {
-                    "collection_id": str(collection_id),
-                    "graph_enrichment_settings": server_graph_enrichment_settings.model_dump_json(),
-                    "user": auth_user.json(),
-                }
 
                 return await self.orchestration_provider.run_workflow(  # type: ignore
                     "build-communities", {"request": workflow_input}, {}

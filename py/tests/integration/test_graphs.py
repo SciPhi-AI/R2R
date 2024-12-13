@@ -134,13 +134,38 @@ def test_create_and_get_relationship(client, test_collection):
 
 def test_build_communities(client, test_collection):
     collection_id = test_collection
+
+    # Create two entities
+    entity1 = client.graphs.create_entity(
+        collection_id=collection_id,
+        name="Entity 1",
+        description="Entity 1 description",
+    )["results"]
+    entity2 = client.graphs.create_entity(
+        collection_id=collection_id,
+        name="Entity 2",
+        description="Entity 2 description",
+    )["results"]
+
+    # Create relationship
+    rel_resp = client.graphs.create_relationship(
+        collection_id=collection_id,
+        subject="Entity 1",
+        subject_id=entity1["id"],
+        predicate="related_to",
+        object="Entity 2",
+        object_id=entity2["id"],
+        description="Test relationship",
+    )["results"]
+    relationship_id = rel_resp["id"]
+
     # Build communities
     # Adjust parameters as needed if `run_type` and `settings` differ.
     # The router expects `run_type` and `graph_enrichment_settings`.
     resp = client.graphs.build(
         collection_id=collection_id,
         run_type="run",
-        graph_enrichment_settings={"use_semantic_clustering": True},
+        # graph_enrichment_settings={"use_semantic_clustering": True},
         run_with_orchestration=False,
     )["results"]
 

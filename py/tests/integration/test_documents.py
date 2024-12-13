@@ -157,7 +157,7 @@ def test_delete_document_by_filter(client):
     ), "Document still exists after filter-based deletion"
 
 
-@pytest.mark.skip(reason="Only if superuser-specific logic is implemented")
+# @pytest.mark.skip(reason="Only if superuser-specific logic is implemented")
 def test_list_document_collections(client, test_document):
     # This test assumes the currently logged in user is a superuser
     collections = client.documents.list_collections(id=test_document)[
@@ -168,9 +168,9 @@ def test_list_document_collections(client, test_document):
     ), "Document collections list is not a list"
 
 
-@pytest.mark.skip(
-    reason="Requires actual entity extraction logic implemented and superuser access"
-)
+# @pytest.mark.skip(
+#     reason="Requires actual entity extraction logic implemented and superuser access"
+# )
 def test_extract_document(client, test_document):
     run_resp = client.documents.extract(
         id=test_document, run_type="run", run_with_orchestration=False
@@ -178,7 +178,7 @@ def test_extract_document(client, test_document):
     assert "message" in run_resp, "No message after extraction run"
 
 
-@pytest.mark.skip(reason="Requires entity extraction results present")
+# @pytest.mark.skip(reason="Requires entity extraction results present")
 def test_list_entities(client, test_document):
     # If no entities extracted yet, this could raise an exception
     try:
@@ -189,7 +189,7 @@ def test_list_entities(client, test_document):
         pytest.skip(f"No entities extracted yet: {str(e)}")
 
 
-@pytest.mark.skip(reason="Requires relationship extraction results present")
+# @pytest.mark.skip(reason="Requires relationship extraction results present")
 def test_list_relationships(client, test_document):
     try:
         relationships = client.documents.list_relationships(id=test_document)[
@@ -260,7 +260,7 @@ def test_delete_document_non_existent(client):
     ), "Wrong error code for delete non-existent"
 
 
-@pytest.mark.skip(reason="If your API restricts this endpoint to superusers")
+# @pytest.mark.skip(reason="If your API restricts this endpoint to superusers")
 def test_get_document_collections_non_superuser(client):
     # Create a non-superuser client
     non_super_client = R2RClient(client.base_url)
