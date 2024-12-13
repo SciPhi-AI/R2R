@@ -7,7 +7,7 @@ from asyncpg.exceptions import UniqueViolationError
 from fastapi import HTTPException
 
 from core.base import (
-    CollectionsHandler,
+    Handler,
     DatabaseConfig,
     KGExtractionStatus,
     R2RException,
@@ -26,7 +26,7 @@ from .base import PostgresConnectionManager
 logger = logging.getLogger()
 
 
-class PostgresCollectionHandler(CollectionsHandler):
+class PostgresCollectionsHandler(Handler):
     TABLE_NAME = "collections"
 
     def __init__(
@@ -40,7 +40,7 @@ class PostgresCollectionHandler(CollectionsHandler):
 
     async def create_tables(self) -> None:
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresCollectionsHandler.TABLE_NAME)} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             owner_id UUID,
             name TEXT NOT NULL,
@@ -58,7 +58,7 @@ class PostgresCollectionHandler(CollectionsHandler):
     async def collection_exists(self, collection_id: UUID) -> bool:
         """Check if a collection exists."""
         query = f"""
-            SELECT 1 FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
+            SELECT 1 FROM {self._get_table_name(PostgresCollectionsHandler.TABLE_NAME)}
             WHERE id = $1
         """
         result = await self.connection_manager.fetchrow_query(
@@ -79,7 +79,7 @@ class PostgresCollectionHandler(CollectionsHandler):
             collection_id = generate_default_user_collection_id(owner_id)
 
         query = f"""
-            INSERT INTO {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
+            INSERT INTO {self._get_table_name(PostgresCollectionsHandler.TABLE_NAME)}
             (id, owner_id, name, description)
             VALUES ($1, $2, $3, $4)
             RETURNING id, owner_id, name, description, graph_sync_status, graph_cluster_status, created_at, updated_at
@@ -151,7 +151,7 @@ class PostgresCollectionHandler(CollectionsHandler):
 
         query = f"""
             WITH updated_collection AS (
-                UPDATE {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
+                UPDATE {self._get_table_name(PostgresCollectionsHandler.TABLE_NAME)}
                 SET {', '.join(update_fields)}
                 WHERE id = ${param_index}
                 RETURNING id, owner_id, name, description, graph_sync_status, graph_cluster_status, created_at, updated_at
@@ -219,7 +219,7 @@ class PostgresCollectionHandler(CollectionsHandler):
 
         # Delete the collection
         delete_query = f"""
-            DELETE FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
+            DELETE FROM {self._get_table_name(PostgresCollectionsHandler.TABLE_NAME)}
             WHERE id = $1
             RETURNING id
         """

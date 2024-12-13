@@ -619,10 +619,6 @@ class RetrievalRouterV3(BaseRouterV3):
                 default=None,
                 description="ID of the conversation",
             ),
-            branch_id: Optional[UUID] = Body(
-                default=None,
-                description="ID of the conversation branch",
-            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedAgentResponse:
             """
@@ -672,7 +668,6 @@ class RetrievalRouterV3(BaseRouterV3):
                     conversation_id=(
                         str(conversation_id) if conversation_id else None
                     ),
-                    branch_id=str(branch_id) if branch_id else None,
                 )
 
                 if rag_generation_config.stream:

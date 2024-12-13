@@ -3,7 +3,6 @@ from uuid import UUID
 
 from shared.api.models.base import WrappedBooleanResponse
 from shared.api.models.management.responses import (
-    WrappedBranchesResponse,
     WrappedConversationMessagesResponse,
     WrappedConversationResponse,
     WrappedConversationsResponse,
@@ -62,26 +61,19 @@ class ConversationsSDK:
     async def retrieve(
         self,
         id: str | UUID,
-        branch_id: Optional[str] = None,
     ) -> WrappedConversationMessagesResponse:
         """
         Get detailed information about a specific conversation.
 
         Args:
             id (Union[str, UUID]): The ID of the conversation to retrieve
-            branch_id (Optional[str]): The ID of the branch to retrieve
 
         Returns:
             dict: Detailed conversation information
         """
-        params = {}
-        if branch_id:
-            params["branch_id"] = branch_id
-
         return await self.client._make_request(
             "GET",
             f"conversations/{str(id)}",
-            params=params,
             version="v3",
         )
 
@@ -109,8 +101,8 @@ class ConversationsSDK:
         id: str | UUID,
         content: str,
         role: str,
-        parent_id: Optional[str] = None,
         metadata: Optional[dict] = None,
+        parent_id: Optional[str] = None,
     ) -> WrappedMessageResponse:
         """
         Add a new message to a conversation.
@@ -146,6 +138,7 @@ class ConversationsSDK:
         id: str | UUID,
         message_id: str,
         content: str,
+        metadata: Optional[dict] = None,
     ) -> dict:
         """
         Update an existing message in a conversation.
@@ -158,66 +151,13 @@ class ConversationsSDK:
         Returns:
             dict: Result of the operation, including the new message ID and branch ID
         """
+        data = {"content": content}
+        if metadata:
+            data["metadata"] = metadata
         # data = {"content": content}
         return await self.client._make_request(
-            "PUT",
+            "POST",
             f"conversations/{str(id)}/messages/{message_id}",
-            json=content,
+            json=data,
             version="v3",
         )
-
-    async def list_branches(
-        self,
-        id: str | UUID,
-    ) -> WrappedBranchesResponse:
-        """
-        List all branches in a conversation.
-
-        Args:
-            id (Union[str, UUID]): The ID of the conversation to list branches for
-
-        Returns:
-            dict: List of branches in the conversation
-        """
-        return await self.client._make_request(
-            "GET",
-            f"conversations/{str(id)}/branches",
-            version="v3",
-        )
-
-    # Commented methods to be added after more testing
-    # async def get_next_branch(
-    #     self,
-    #     id: Union[str, UUID],
-    #     branch_id: str,
-    # ) -> dict:
-    #     """
-    #     Get the next branch in the conversation.
-    #     """
-    #     return await self.client._make_request(
-    #         "GET", f"conversations/{str(id)}/branches/{branch_id}/next"
-    #     )
-
-    # async def get_previous_branch(
-    #     self,
-    #     id: Union[str, UUID],
-    #     branch_id: str,
-    # ) -> dict:
-    #     """
-    #     Get the previous branch in the conversation.
-    #     """
-    #     return await self.client._make_request(
-    #         "GET", f"conversations/{str(id)}/branches/{branch_id}/previous"
-    #     )
-
-    # async def create_branch(
-    #     self,
-    #     id: Union[str, UUID],
-    #     message_id: str,
-    # ) -> dict:
-    #     """
-    #     Create a new branch starting from a specific message.
-    #     """
-    #     return await self.client._make_request(
-    #         "POST", f"conversations/{str(id)}/messages/{message_id}/branch"
-    #     )

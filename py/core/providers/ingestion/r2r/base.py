@@ -19,7 +19,7 @@ from core.base import (
 from core.base.abstractions import DocumentChunk
 from core.utils import generate_extraction_id
 
-from ...database import PostgresDBProvider
+from ....database.postgres import PostgresDatabaseProvider
 from ...llm import LiteLLMCompletionProvider, OpenAICompletionProvider
 
 logger = logging.getLogger()
@@ -73,14 +73,14 @@ class R2RIngestionProvider(IngestionProvider):
     def __init__(
         self,
         config: R2RIngestionConfig,
-        database_provider: PostgresDBProvider,
+        database_provider: PostgresDatabaseProvider,
         llm_provider: Union[
             LiteLLMCompletionProvider, OpenAICompletionProvider
         ],
     ):
         super().__init__(config, database_provider, llm_provider)
         self.config: R2RIngestionConfig = config  # for type hinting
-        self.database_provider: PostgresDBProvider = database_provider
+        self.database_provider: PostgresDatabaseProvider = database_provider
         self.llm_provider: Union[
             LiteLLMCompletionProvider, OpenAICompletionProvider
         ] = llm_provider

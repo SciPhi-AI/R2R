@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 from shared.abstractions import Token
-from shared.api.models.base import ResultsWrapper
+from shared.api.models.base import R2RResults
 
 
 class TokenResponse(BaseModel):
@@ -10,4 +10,4 @@ class TokenResponse(BaseModel):
 
 
 # Create wrapped versions of each response
-WrappedTokenResponse = ResultsWrapper[TokenResponse]
+WrappedTokenResponse = R2RResults[TokenResponse]

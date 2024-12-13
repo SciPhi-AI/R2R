@@ -18,7 +18,6 @@ from core.base.abstractions import (
     KGSearchResultType,
     SearchSettings,
 )
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 from ..abstractions.generator_pipe import GeneratorPipe
 
@@ -36,7 +35,6 @@ class KGSearchSearchPipe(GeneratorPipe):
         database_provider: DatabaseProvider,
         embedding_provider: EmbeddingProvider,
         config: GeneratorPipe.PipeConfig,
-        logging_provider: SqlitePersistentLoggingProvider,
         *args,
         **kwargs,
     ):
@@ -47,7 +45,6 @@ class KGSearchSearchPipe(GeneratorPipe):
             llm_provider,
             database_provider,
             config,
-            logging_provider,
             *args,
             **kwargs,
         )
@@ -117,7 +114,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                 logger.warning(
                     f"No limit set for graph search type {search_type}, defaulting to global settings limit of {base_limit}"
                 )
-            async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
+            async for search_result in self.database_provider.graphs_handler.graph_search(  # type: ignore
                 message,
                 search_type=search_type,
                 limit=search_settings.graph_settings.limits.get(
@@ -160,7 +157,7 @@ class KGSearchSearchPipe(GeneratorPipe):
                 logger.warning(
                     f"No limit set for graph search type {search_type}, defaulting to global settings limit of {base_limit}"
                 )
-            async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
+            async for search_result in self.database_provider.graphs_handler.graph_search(  # type: ignore
                 input,
                 search_type=search_type,
                 limit=search_settings.graph_settings.limits.get(
@@ -214,7 +211,7 @@ class KGSearchSearchPipe(GeneratorPipe):
 
             # community search
             search_type = "communities"
-            async for search_result in self.database_provider.graph_handler.graph_search(  # type: ignore
+            async for search_result in self.database_provider.graphs_handler.graph_search(  # type: ignore
                 message,
                 search_type=search_type,
                 limit=search_settings.graph_settings.limits.get(

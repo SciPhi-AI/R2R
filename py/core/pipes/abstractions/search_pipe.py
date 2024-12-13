@@ -4,7 +4,6 @@ from typing import Any, AsyncGenerator, Optional, Union
 from uuid import UUID
 
 from core.base import AsyncPipe, AsyncState, ChunkSearchResult
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -21,13 +20,11 @@ class SearchPipe(AsyncPipe[ChunkSearchResult]):
     def __init__(
         self,
         config: AsyncPipe.PipeConfig,
-        logging_provider: SqlitePersistentLoggingProvider,
         *args,
         **kwargs,
     ):
         super().__init__(
             config,
-            logging_provider,
             *args,
             **kwargs,
         )

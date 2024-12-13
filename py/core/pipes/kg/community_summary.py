@@ -15,8 +15,8 @@ from core.base import (
     GenerationConfig,
 )
 from core.base.abstractions import Entity, Relationship
-from core.providers.database import PostgresDBProvider
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
+
+from ...database.postgres import PostgresDatabaseProvider
 
 logger = logging.getLogger()
 
@@ -28,11 +28,10 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     def __init__(
         self,
-        database_provider: PostgresDBProvider,
+        database_provider: PostgresDatabaseProvider,
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: SqlitePersistentLoggingProvider,
         *args,
         **kwargs,
     ):
@@ -40,7 +39,6 @@ class KGCommunitySummaryPipe(AsyncPipe):
         Initializes the KG clustering pipe with necessary components and configurations.
         """
         super().__init__(
-            logging_provider=logging_provider,
             config=config
             or AsyncPipe.PipeConfig(name="kg_community_summary_pipe"),
         )
@@ -178,7 +176,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             description = (
                 (
                     await self.llm_provider.aget_completion(
-                        messages=await self.database_provider.prompt_handler.get_message_payload(
+                        messages=await self.database_provider.prompts_handler.get_message_payload(
                             task_prompt_name=self.database_provider.config.graph_enrichment_settings.graphrag_communities,
                             task_inputs={
                                 "collection_description": collection_description,
@@ -235,7 +233,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             ),
         )
 
-        await self.database_provider.graph_handler.add_community(community)
+        await self.database_provider.graphs_handler.add_community(community)
 
         return {
             "community_id": community.community_id,
@@ -271,7 +269,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         )
 
         all_entities, _ = (
-            await self.database_provider.graph_handler.get_entities(
+            await self.database_provider.graphs_handler.get_entities(
                 parent_id=collection_id,
                 offset=0,
                 limit=-1,
@@ -280,7 +278,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         )
 
         all_relationships, _ = (
-            await self.database_provider.graph_handler.get_relationships(
+            await self.database_provider.graphs_handler.get_relationships(
                 parent_id=collection_id,
                 offset=0,
                 limit=-1,
@@ -291,7 +289,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         # Perform clustering
         leiden_params = input.message.get("leiden_params", {})
         _, community_clusters = (
-            await self.database_provider.graph_handler._cluster_and_add_community_info(
+            await self.database_provider.graphs_handler._cluster_and_add_community_info(
                 relationships=all_relationships,
                 relationship_ids_cache={},
                 leiden_params=leiden_params,

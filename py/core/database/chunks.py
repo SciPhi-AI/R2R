@@ -9,7 +9,7 @@ from uuid import UUID
 import numpy as np
 
 from core.base import (
-    ChunkHandler,
+    Handler,
     ChunkSearchResult,
     IndexArgsHNSW,
     IndexArgsIVFFlat,
@@ -80,7 +80,7 @@ class HybridSearchIntermediateResult(TypedDict):
     rrf_score: float
 
 
-class PostgresChunkHandler(ChunkHandler):
+class PostgresChunksHandler(Handler):
     TABLE_NAME = VectorTableName.CHUNKS
 
     COLUMN_VARS = [
@@ -129,7 +129,7 @@ class PostgresChunkHandler(ChunkHandler):
         )
 
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresChunksHandler.TABLE_NAME)} (
             id UUID PRIMARY KEY,
             document_id UUID,
             owner_id UUID,
@@ -140,10 +140,10 @@ class PostgresChunkHandler(ChunkHandler):
             metadata JSONB,
             fts tsvector GENERATED ALWAYS AS (to_tsvector('english', text)) STORED
         );
-        CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} (document_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_owner_id ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} (owner_id);
-        CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} USING GIN (collection_ids);
-        CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} USING GIN (to_tsvector('english', text));
+        CREATE INDEX IF NOT EXISTS idx_vectors_document_id ON {self._get_table_name(PostgresChunksHandler.TABLE_NAME)} (document_id);
+        CREATE INDEX IF NOT EXISTS idx_vectors_owner_id ON {self._get_table_name(PostgresChunksHandler.TABLE_NAME)} (owner_id);
+        CREATE INDEX IF NOT EXISTS idx_vectors_collection_ids ON {self._get_table_name(PostgresChunksHandler.TABLE_NAME)} USING GIN (collection_ids);
+        CREATE INDEX IF NOT EXISTS idx_vectors_text ON {self._get_table_name(PostgresChunksHandler.TABLE_NAME)} USING GIN (to_tsvector('english', text));
         """
 
         await self.connection_manager.execute_query(query)
@@ -157,7 +157,7 @@ class PostgresChunkHandler(ChunkHandler):
         if self.quantization_type == VectorQuantizationType.INT1:
             # For quantized vectors, use vec_binary column
             query = f"""
-            INSERT INTO {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+            INSERT INTO {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
             (id, document_id, owner_id, collection_ids, vec, vec_binary, text, metadata)
             VALUES ($1, $2, $3, $4, $5, $6::bit({self.dimension}), $7, $8)
             ON CONFLICT (id) DO UPDATE SET
@@ -187,7 +187,7 @@ class PostgresChunkHandler(ChunkHandler):
         else:
             # For regular vectors, use vec column only
             query = f"""
-            INSERT INTO {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+            INSERT INTO {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
             (id, document_id, owner_id, collection_ids, vec, text, metadata)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             ON CONFLICT (id) DO UPDATE SET
@@ -220,7 +220,7 @@ class PostgresChunkHandler(ChunkHandler):
         if self.quantization_type == VectorQuantizationType.INT1:
             # For quantized vectors, use vec_binary column
             query = f"""
-            INSERT INTO {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+            INSERT INTO {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
             (id, document_id, owner_id, collection_ids, vec, vec_binary, text, metadata)
             VALUES ($1, $2, $3, $4, $5, $6::bit({self.dimension}), $7, $8)
             ON CONFLICT (id) DO UPDATE SET
@@ -252,7 +252,7 @@ class PostgresChunkHandler(ChunkHandler):
         else:
             # For regular vectors, use vec column only
             query = f"""
-            INSERT INTO {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+            INSERT INTO {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
             (id, document_id, owner_id, collection_ids, vec, text, metadata)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             ON CONFLICT (id) DO UPDATE SET
@@ -288,7 +288,7 @@ class PostgresChunkHandler(ChunkHandler):
         except ValueError:
             raise ValueError("Invalid index measure")
 
-        table_name = self._get_table_name(PostgresChunkHandler.TABLE_NAME)
+        table_name = self._get_table_name(PostgresChunksHandler.TABLE_NAME)
         cols = [
             f"{table_name}.id",
             f"{table_name}.document_id",
@@ -449,7 +449,7 @@ class PostgresChunkHandler(ChunkHandler):
             SELECT
                 id, document_id, owner_id, collection_ids, text, metadata,
                 ts_rank(fts, websearch_to_tsquery('english', $1), 32) as rank
-            FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+            FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
             {where_clause}
         """
 
@@ -589,7 +589,7 @@ class PostgresChunkHandler(ChunkHandler):
         where_clause = self._build_filters(filters, params)
 
         query = f"""
-        DELETE FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+        DELETE FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
         WHERE {where_clause}
         RETURNING id, document_id, text;
         """
@@ -606,11 +606,11 @@ class PostgresChunkHandler(ChunkHandler):
             for result in results
         }
 
-    async def assign_document_to_collection_vector(
+    async def assign_document_chunks_to_collection(
         self, document_id: UUID, collection_id: UUID
     ) -> None:
         query = f"""
-        UPDATE {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+        UPDATE {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
         SET collection_ids = array_append(collection_ids, $1)
         WHERE document_id = $2 AND NOT ($1 = ANY(collection_ids));
         """
@@ -623,7 +623,7 @@ class PostgresChunkHandler(ChunkHandler):
         self, document_id: UUID, collection_id: UUID
     ) -> None:
         query = f"""
-        UPDATE {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+        UPDATE {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
         SET collection_ids = array_remove(collection_ids, $1)
         WHERE document_id = $2;
         """
@@ -633,14 +633,14 @@ class PostgresChunkHandler(ChunkHandler):
 
     async def delete_user_vector(self, owner_id: UUID) -> None:
         query = f"""
-        DELETE FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+        DELETE FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
         WHERE owner_id = $1;
         """
         await self.connection_manager.execute_query(query, (owner_id,))
 
     async def delete_collection_vector(self, collection_id: UUID) -> None:
         query = f"""
-         DELETE FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+         DELETE FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
          WHERE $1 = ANY(collection_ids)
          RETURNING collection_ids
          """
@@ -661,7 +661,7 @@ class PostgresChunkHandler(ChunkHandler):
 
         query = f"""
         SELECT id, document_id, owner_id, collection_ids, text, metadata{vector_select}, COUNT(*) OVER() AS total
-        FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+        FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
         WHERE document_id = $1
         ORDER BY (metadata->>'chunk_order')::integer
         OFFSET $2
@@ -696,7 +696,7 @@ class PostgresChunkHandler(ChunkHandler):
     async def get_chunk(self, id: UUID) -> dict:
         query = f"""
         SELECT id, document_id, owner_id, collection_ids, text, metadata
-        FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+        FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
         WHERE id = $1;
         """
 
@@ -1191,7 +1191,7 @@ class PostgresChunkHandler(ChunkHandler):
         similarity_threshold: float = 0.5,
     ) -> list[dict[str, Any]]:
 
-        table_name = self._get_table_name(PostgresChunkHandler.TABLE_NAME)
+        table_name = self._get_table_name(PostgresChunksHandler.TABLE_NAME)
         query = f"""
         WITH target_vector AS (
             SELECT vec FROM {table_name}
@@ -1268,7 +1268,7 @@ class PostgresChunkHandler(ChunkHandler):
         # Construct the final query
         query = f"""
         SELECT {select_clause}
-        FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+        FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
         {where_clause}
         LIMIT $%s
         OFFSET $%s
@@ -1364,7 +1364,7 @@ class PostgresChunkHandler(ChunkHandler):
                             32
                         )
                     END as metadata_rank
-                FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)} v
+                FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)} v
                 LEFT JOIN {self._get_table_name('documents')} d ON v.document_id = d.id
                 WHERE v.metadata IS NOT NULL
             ),
@@ -1379,7 +1379,7 @@ class PostgresChunkHandler(ChunkHandler):
                             32
                         )
                     ) as body_rank
-                FROM {self._get_table_name(PostgresChunkHandler.TABLE_NAME)}
+                FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
                 WHERE $1 != ''
                 {f"AND to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)" if settings.search_over_body else ""}
                 GROUP BY document_id

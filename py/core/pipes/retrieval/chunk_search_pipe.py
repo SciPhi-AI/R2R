@@ -66,20 +66,26 @@ class VectorSearchPipe(SearchPipe):
             and search_settings.use_semantic_search
         ) or search_settings.use_hybrid_search:
 
-            search_results = await self.database_provider.hybrid_search(
-                query_vector=query_vector,
-                query_text=message,
-                search_settings=search_settings,
+            search_results = (
+                await self.database_provider.chunks_handler.hybrid_search(
+                    query_vector=query_vector,
+                    query_text=message,
+                    search_settings=search_settings,
+                )
             )
         elif search_settings.use_fulltext_search:
-            search_results = await self.database_provider.full_text_search(
-                query_text=message,
-                search_settings=search_settings,
+            search_results = (
+                await self.database_provider.chunks_handler.full_text_search(
+                    query_text=message,
+                    search_settings=search_settings,
+                )
             )
         elif search_settings.use_semantic_search:
-            search_results = await self.database_provider.semantic_search(
-                query_vector=query_vector,
-                search_settings=search_settings,
+            search_results = (
+                await self.database_provider.chunks_handler.semantic_search(
+                    query_vector=query_vector,
+                    search_settings=search_settings,
+                )
             )
         else:
             raise ValueError(
@@ -112,10 +118,6 @@ class VectorSearchPipe(SearchPipe):
         **kwargs: Any,
     ) -> AsyncGenerator[ChunkSearchResult, None]:
         async for search_request in input.message:
-            await self.enqueue_log(
-                run_id=run_id, key="search_query", value=search_request
-            )
-
             search_results = []
             async for result in self.search(
                 search_request,
@@ -125,12 +127,6 @@ class VectorSearchPipe(SearchPipe):
             ):
                 search_results.append(result)
                 yield result
-
-            await self.enqueue_log(
-                run_id=run_id,
-                key="search_results",
-                value=json.dumps([ele.json() for ele in search_results]),
-            )
 
             await state.update(
                 self.config.name,

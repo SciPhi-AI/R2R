@@ -6,14 +6,14 @@ from uuid import UUID
 import asyncpg
 from fastapi import HTTPException
 
-from core.base import FileHandler, R2RException
+from core.base import Handler, R2RException
 
 from .base import PostgresConnectionManager
 
 logger = logging.getLogger()
 
 
-class PostgresFileHandler(FileHandler):
+class PostgresFilesHandler(Handler):
     """PostgreSQL implementation of the FileHandler."""
 
     TABLE_NAME = "files"
@@ -23,7 +23,7 @@ class PostgresFileHandler(FileHandler):
     async def create_tables(self) -> None:
         """Create the necessary tables for file storage."""
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresFileHandler.TABLE_NAME)} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresFilesHandler.TABLE_NAME)} (
             document_id UUID PRIMARY KEY,
             name TEXT NOT NULL,
             oid OID NOT NULL,
@@ -43,10 +43,10 @@ class PostgresFileHandler(FileHandler):
         $$ LANGUAGE plpgsql;
 
         DROP TRIGGER IF EXISTS update_files_updated_at
-        ON {self._get_table_name(PostgresFileHandler.TABLE_NAME)};
+        ON {self._get_table_name(PostgresFilesHandler.TABLE_NAME)};
 
         CREATE TRIGGER update_files_updated_at
-            BEFORE UPDATE ON {self._get_table_name(PostgresFileHandler.TABLE_NAME)}
+            BEFORE UPDATE ON {self._get_table_name(PostgresFilesHandler.TABLE_NAME)}
             FOR EACH ROW
             EXECUTE FUNCTION {self.project_name}.update_files_updated_at();
         """
@@ -62,7 +62,7 @@ class PostgresFileHandler(FileHandler):
     ) -> None:
         """Add or update a file entry in storage."""
         query = f"""
-        INSERT INTO {self._get_table_name(PostgresFileHandler.TABLE_NAME)}
+        INSERT INTO {self._get_table_name(PostgresFilesHandler.TABLE_NAME)}
         (document_id, name, oid, size, type)
         VALUES ($1, $2, $3, $4, $5)
         ON CONFLICT (document_id) DO UPDATE SET
@@ -127,7 +127,7 @@ class PostgresFileHandler(FileHandler):
         """Retrieve a file from storage."""
         query = f"""
         SELECT name, oid, size
-        FROM {self._get_table_name(PostgresFileHandler.TABLE_NAME)}
+        FROM {self._get_table_name(PostgresFilesHandler.TABLE_NAME)}
         WHERE document_id = $1
         """
 
@@ -197,7 +197,7 @@ class PostgresFileHandler(FileHandler):
     async def delete_file(self, document_id: UUID) -> bool:
         """Delete a file from storage."""
         query = f"""
-        SELECT oid FROM {self._get_table_name(PostgresFileHandler.TABLE_NAME)}
+        SELECT oid FROM {self._get_table_name(PostgresFilesHandler.TABLE_NAME)}
         WHERE document_id = $1
         """
 
@@ -213,7 +213,7 @@ class PostgresFileHandler(FileHandler):
                 await self._delete_lobject(conn, oid)
 
                 delete_query = f"""
-                DELETE FROM {self._get_table_name(PostgresFileHandler.TABLE_NAME)}
+                DELETE FROM {self._get_table_name(PostgresFilesHandler.TABLE_NAME)}
                 WHERE document_id = $1
                 """
                 await conn.execute(delete_query, document_id)
@@ -236,7 +236,7 @@ class PostgresFileHandler(FileHandler):
         params: list[Union[str, list[str], int]] = []
         query = f"""
         SELECT document_id, name, oid, size, type, created_at, updated_at
-        FROM {self._get_table_name(PostgresFileHandler.TABLE_NAME)}
+        FROM {self._get_table_name(PostgresFilesHandler.TABLE_NAME)}
         """
 
         if filter_document_ids:

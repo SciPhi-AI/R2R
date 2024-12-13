@@ -32,7 +32,6 @@ from core.base.abstractions import (
     VectorTableName,
 )
 from core.base.api.models import User
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -55,7 +54,6 @@ class IngestionService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: SqlitePersistentLoggingProvider,
     ) -> None:
         super().__init__(
             config,
@@ -64,7 +62,6 @@ class IngestionService(Service):
             pipelines,
             agents,
             run_manager,
-            logging_connection,
         )
 
     @telemetry_event("IngestFile")
@@ -76,7 +73,6 @@ class IngestionService(Service):
         size_in_bytes,
         metadata: Optional[dict] = None,
         version: Optional[str] = None,
-        is_update: bool = False,
         collection_ids: Optional[list[UUID]] = None,
         *args: Any,
         **kwargs: Any,
@@ -105,7 +101,7 @@ class IngestionService(Service):
             )
 
             existing_document_info = (
-                await self.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                await self.providers.database.documents_handler.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                     offset=0,
                     limit=100,
                     filter_user_ids=[user.id],
@@ -113,7 +109,7 @@ class IngestionService(Service):
                 )
             )["results"]
 
-            if not is_update and len(existing_document_info) > 0:
+            if len(existing_document_info) > 0:
                 existing_doc = existing_document_info[0]
                 if existing_doc.ingestion_status == IngestionStatus.SUCCESS:
                     raise R2RException(
@@ -126,7 +122,7 @@ class IngestionService(Service):
                         message=f"Document {document_id} is currently ingesting with status {existing_doc.ingestion_status}.",
                     )
 
-            await self.providers.database.upsert_documents_overview(
+            await self.providers.database.documents_handler.upsert_documents_overview(
                 document_info
             )
 
@@ -244,7 +240,7 @@ class IngestionService(Service):
             ]:
                 document += chunk["data"]
 
-            messages = await self.providers.database.prompt_handler.get_message_payload(
+            messages = await self.providers.database.prompts_handler.get_message_payload(
                 system_prompt_name=self.config.ingestion.document_summary_system_prompt,
                 task_prompt_name=self.config.ingestion.document_summary_task_prompt,
                 task_inputs={"document": document},
@@ -302,23 +298,8 @@ class IngestionService(Service):
         )
 
     async def finalize_ingestion(
-        self,
-        document_info: DocumentResponse,
-        is_update: bool = False,
+        self, document_info: DocumentResponse
     ) -> None:
-        if is_update:
-            await self.providers.database.delete(
-                filters={
-                    "$and": [
-                        {"document_id": {"$eq": document_info.id}},
-                        {
-                            "version": {
-                                "$eq": decrement_version(document_info.version)
-                            }
-                        },
-                    ]
-                }
-            )
 
         async def empty_generator():
             yield document_info
@@ -337,7 +318,7 @@ class IngestionService(Service):
         self, document_info: DocumentResponse
     ):
         try:
-            await self.providers.database.upsert_documents_overview(
+            await self.providers.database.documents_handler.upsert_documents_overview(
                 document_info
             )
         except Exception as e:
@@ -378,7 +359,7 @@ class IngestionService(Service):
         )
 
         existing_document_info = (
-            await self.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+            await self.providers.database.documents_handler.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                 offset=0,
                 limit=100,
                 filter_user_ids=[user.id],
@@ -394,7 +375,9 @@ class IngestionService(Service):
                     message=f"Document {document_id} was already ingested and is not in a failed state.",
                 )
 
-        await self.providers.database.upsert_documents_overview(document_info)
+        await self.providers.database.documents_handler.upsert_documents_overview(
+            document_info
+        )
 
         return document_info
 
@@ -410,7 +393,7 @@ class IngestionService(Service):
         **kwargs: Any,
     ) -> dict:
         # Verify chunk exists and user has access
-        existing_chunks = await self.providers.database.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+        existing_chunks = await self.providers.database.chunks_handler.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
             document_id=document_id,
             offset=0,
             limit=1,
@@ -422,7 +405,9 @@ class IngestionService(Service):
                 message=f"Chunk with chunk_id {chunk_id} not found.",
             )
 
-        existing_chunk = await self.providers.database.get_chunk(chunk_id)
+        existing_chunk = (
+            await self.providers.database.chunks_handler.get_chunk(chunk_id)
+        )
         if not existing_chunk:
             raise R2RException(
                 status_code=404,
@@ -500,7 +485,7 @@ class IngestionService(Service):
                     if chunk_idx + next < len(list_document_chunks)
                 )
             elif enrichment_strategy == ChunkEnrichmentStrategy.SEMANTIC:
-                semantic_neighbors = await self.providers.database.get_semantic_neighbors(
+                semantic_neighbors = await self.providers.database.chunks_handler.get_semantic_neighbors(
                     offset=0,
                     limit=chunk_enrichment_settings.semantic_neighbors,
                     document_id=document_id,
@@ -545,7 +530,7 @@ class IngestionService(Service):
             updated_chunk_text = (
                 (
                     await self.providers.llm.aget_completion(
-                        messages=await self.providers.database.prompt_handler.get_message_payload(
+                        messages=await self.providers.database.prompts_handler.get_message_payload(
                             task_prompt_name="chunk_enrichment",
                             task_inputs={
                                 "context_chunks": "\n".join(
@@ -600,7 +585,7 @@ class IngestionService(Service):
         )
         # get all list_document_chunks
         list_document_chunks = (
-            await self.providers.database.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+            await self.providers.database.chunks_handler.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                 document_id=document_id,
                 offset=0,
                 limit=100,
@@ -640,14 +625,16 @@ class IngestionService(Service):
         )
 
         # delete old chunks from vector db
-        await self.providers.database.delete(
+        await self.providers.database.chunks_handler.delete(
             filters={
                 "document_id": document_id,
             },
         )
 
         # embed and store the enriched chunk
-        await self.providers.database.upsert_entries(new_vector_entries)
+        await self.providers.database.chunks_handler.upsert_entries(
+            new_vector_entries
+        )
 
         return len(new_vector_entries)
 
@@ -661,7 +648,7 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ) -> dict:
-        return await self.providers.database.list_chunks(
+        return await self.providers.database.chunks_handler.list_chunks(
             offset=offset,
             limit=limit,
             filters=filters,
@@ -676,7 +663,7 @@ class IngestionService(Service):
         *args: Any,
         **kwargs: Any,
     ) -> dict:
-        return await self.providers.database.get_chunk(chunk_id)
+        return await self.providers.database.chunks_handler.get_chunk(chunk_id)
 
     async def update_document_metadata(
         self,
@@ -685,7 +672,7 @@ class IngestionService(Service):
         user: User,
     ) -> None:
         # Verify document exists and user has access
-        existing_document = await self.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+        existing_document = await self.providers.database.documents_handler.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
             offset=0,
             limit=100,
             filter_document_ids=[document_id],
@@ -708,7 +695,7 @@ class IngestionService(Service):
 
         # Update document metadata
         existing_document.metadata = merged_metadata  # type: ignore
-        await self.providers.database.upsert_documents_overview(
+        await self.providers.database.documents_handler.upsert_documents_overview(
             existing_document  # type: ignore
         )
 
@@ -750,7 +737,6 @@ class IngestionServiceAdapter:
             ),
             "version": data.get("version"),
             "ingestion_config": data["ingestion_config"] or {},
-            "is_update": data.get("is_update", False),
             "file_data": data["file_data"],
             "size_in_bytes": data["size_in_bytes"],
             "collection_ids": data.get("collection_ids", []),

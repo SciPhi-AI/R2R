@@ -1,17 +1,19 @@
 import logging
 from abc import ABC
 from enum import Enum
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from pydantic import BaseModel, Field
 
 from core.base.abstractions import ChunkEnrichmentSettings
 
 from .base import AppConfig, Provider, ProviderConfig
-from .database import DatabaseProvider
 from .llm import CompletionProvider
 
 logger = logging.getLogger()
+
+if TYPE_CHECKING:
+    from core.database import PostgresDatabaseProvider
 
 
 class IngestionConfig(ProviderConfig):
@@ -174,19 +176,19 @@ class IngestionConfig(ProviderConfig):
 class IngestionProvider(Provider, ABC):
 
     config: IngestionConfig
-    database_provider: DatabaseProvider
+    database_provider: "PostgresDatabaseProvider"
     llm_provider: CompletionProvider
 
     def __init__(
         self,
         config: IngestionConfig,
-        database_provider: DatabaseProvider,
+        database_provider: "PostgresDatabaseProvider",
         llm_provider: CompletionProvider,
     ):
         super().__init__(config)
         self.config: IngestionConfig = config
         self.llm_provider = llm_provider
-        self.database_provider = database_provider
+        self.database_provider: "PostgresDatabaseProvider" = database_provider
 
 
 class ChunkingStrategy(str, Enum):

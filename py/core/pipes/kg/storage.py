@@ -5,8 +5,7 @@ from uuid import UUID
 
 from core.base import AsyncState, KGExtraction, R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.database.postgres import PostgresDBProvider
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
+from core.database import PostgresDatabaseProvider
 
 logger = logging.getLogger()
 
@@ -18,9 +17,8 @@ class KGStoragePipe(AsyncPipe):
 
     def __init__(
         self,
-        database_provider: PostgresDBProvider,
+        database_provider: PostgresDatabaseProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: SqlitePersistentLoggingProvider,
         storage_batch_size: int = 1,
         *args,
         **kwargs,
@@ -34,7 +32,6 @@ class KGStoragePipe(AsyncPipe):
 
         super().__init__(
             config,
-            logging_provider,
             *args,
             **kwargs,
         )
@@ -67,7 +64,7 @@ class KGStoragePipe(AsyncPipe):
                         )
 
                 for entity in extraction.entities:
-                    await self.database_provider.graph_handler.entities.create(
+                    await self.database_provider.graphs_handler.entities.create(
                         **entity.to_dict()
                     )
 
@@ -81,7 +78,7 @@ class KGStoragePipe(AsyncPipe):
                         extraction.document_id
                     )
 
-                await self.database_provider.graph_handler.relationships.create(
+                await self.database_provider.graphs_handler.relationships.create(
                     extraction.relationships,
                 )
 

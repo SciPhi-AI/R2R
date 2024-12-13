@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 from core.agent import R2RRAGAgent, R2RStreamingRAGAgent
 from core.base.pipes import AsyncPipe
+from core.database import PostgresDatabaseProvider
 from core.pipelines import RAGPipeline, SearchPipeline
 from core.providers import (
     AsyncSMTPEmailProvider,
@@ -12,12 +13,10 @@ from core.providers import (
     OllamaEmbeddingProvider,
     OpenAICompletionProvider,
     OpenAIEmbeddingProvider,
-    PostgresDBProvider,
     R2RAuthProvider,
     R2RIngestionProvider,
     SendGridEmailProvider,
     SimpleOrchestrationProvider,
-    SqlitePersistentLoggingProvider,
     SupabaseAuthProvider,
     UnstructuredIngestionProvider,
 )
@@ -25,7 +24,7 @@ from core.providers import (
 
 class R2RProviders(BaseModel):
     auth: R2RAuthProvider | SupabaseAuthProvider
-    database: PostgresDBProvider
+    database: PostgresDatabaseProvider
     ingestion: R2RIngestionProvider | UnstructuredIngestionProvider
     embedding: (
         LiteLLMEmbeddingProvider
@@ -34,7 +33,6 @@ class R2RProviders(BaseModel):
     )
     llm: LiteLLMCompletionProvider | OpenAICompletionProvider
     orchestration: HatchetOrchestrationProvider | SimpleOrchestrationProvider
-    logging: SqlitePersistentLoggingProvider
     email: (
         AsyncSMTPEmailProvider
         | ConsoleMockEmailProvider

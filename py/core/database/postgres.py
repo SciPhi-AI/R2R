@@ -2,27 +2,33 @@
 import logging
 import os
 import warnings
-from typing import Any, Optional
+from typing import Any, Optional, TYPE_CHECKING
 
-from core.base import (
+from ..base.providers import (
     DatabaseConfig,
     DatabaseProvider,
     PostgresConfigurationSettings,
-    VectorQuantizationType,
 )
-from core.providers import BCryptProvider
-from core.providers.database.base import PostgresConnectionManager
-from core.providers.database.collection import PostgresCollectionHandler
-from core.providers.database.document import PostgresDocumentHandler
-from core.providers.database.file import PostgresFileHandler
-from core.providers.database.graph import PostgresGraphHandler
-from core.providers.database.logging import PostgresLoggingHandler
-from core.providers.database.prompt import PostgresPromptHandler
-from core.providers.database.tokens import PostgresTokenHandler
-from core.providers.database.user import PostgresUserHandler
-from core.providers.database.vector import PostgresChunkHandler
-
+from ..base.abstractions import VectorQuantizationType
+from .base import PostgresConnectionManager
+from .collections import PostgresCollectionsHandler
+from .documents import PostgresDocumentsHandler
+from .files import PostgresFilesHandler
+from .graphs import (
+    PostgresGraphsHandler,
+    PostgresRelationshipsHandler,
+    PostgresEntitiesHandler,
+    PostgresCommunitiesHandler,
+)
+from .prompts_handler import PostgresPromptsHandler
+from .tokens import PostgresTokensHandler
+from .users import PostgresUserHandler
+from .chunks import PostgresChunksHandler
+from .conversations import PostgresConversationsHandler
 from .base import SemaphoreConnectionPool
+
+if TYPE_CHECKING:
+    from ..providers.crypto import BCryptProvider
 
 logger = logging.getLogger()
 
@@ -36,7 +42,7 @@ def get_env_var(new_var, old_var, config_value):
     return value
 
 
-class PostgresDBProvider(DatabaseProvider):
+class PostgresDatabaseProvider(DatabaseProvider):
     # R2R configuration settings
     config: DatabaseConfig
     project_name: str
@@ -51,27 +57,30 @@ class PostgresDBProvider(DatabaseProvider):
     dimension: int
     conn: Optional[Any]
 
-    crypto_provider: BCryptProvider
+    crypto_provider: "BCryptProvider"
     postgres_configuration_settings: PostgresConfigurationSettings
     default_collection_name: str
     default_collection_description: str
 
     connection_manager: PostgresConnectionManager
-    document_handler: PostgresDocumentHandler
-    collections_handler: PostgresCollectionHandler
-    token_handler: PostgresTokenHandler
-    user_handler: PostgresUserHandler
-    vector_handler: PostgresChunkHandler
-    graph_handler: PostgresGraphHandler
-    prompt_handler: PostgresPromptHandler
-    file_handler: PostgresFileHandler
-    logging_handler: PostgresLoggingHandler
+    documents_handler: PostgresDocumentsHandler
+    collections_handler: PostgresCollectionsHandler
+    token_handler: PostgresTokensHandler
+    users_handler: PostgresUserHandler
+    chunks_handler: PostgresChunksHandler
+    entities_handler: PostgresEntitiesHandler
+    communities_handler: PostgresCommunitiesHandler
+    relationships_handler: PostgresRelationshipsHandler
+    graphs_handler: PostgresGraphsHandler
+    prompts_handler: PostgresPromptsHandler
+    files_handler: PostgresFilesHandler
+    conversation_handler: PostgresConversationsHandler
 
     def __init__(
         self,
         config: DatabaseConfig,
         dimension: int,
-        crypto_provider: BCryptProvider,
+        crypto_provider: "BCryptProvider",
         quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
         *args,
         **kwargs,
@@ -134,45 +143,64 @@ class PostgresDBProvider(DatabaseProvider):
         self.connection_manager: PostgresConnectionManager = (
             PostgresConnectionManager()
         )
-        self.document_handler = PostgresDocumentHandler(
+        self.documents_handler = PostgresDocumentsHandler(
             self.project_name, self.connection_manager, self.dimension
         )
-        self.token_handler = PostgresTokenHandler(
+        self.token_handler = PostgresTokensHandler(
             self.project_name, self.connection_manager
         )
-        self.collections_handler = PostgresCollectionHandler(
+        self.collections_handler = PostgresCollectionsHandler(
             self.project_name, self.connection_manager, self.config
         )
-        self.user_handler = PostgresUserHandler(
+        self.users_handler = PostgresUserHandler(
             self.project_name, self.connection_manager, self.crypto_provider
         )
-        self.vector_handler = PostgresChunkHandler(
+        self.chunks_handler = PostgresChunksHandler(
             self.project_name,
             self.connection_manager,
             self.dimension,
             self.quantization_type,
         )
-
-        self.graph_handler = PostgresGraphHandler(
+        self.conversation_handler = PostgresConversationsHandler(
+            self.project_name, self.connection_manager
+        )
+        self.entities_handler = PostgresEntitiesHandler(
             project_name=self.project_name,
             connection_manager=self.connection_manager,
             collections_handler=self.collections_handler,
             dimension=self.dimension,
             quantization_type=self.quantization_type,
         )
-
-        self.prompt_handler = PostgresPromptHandler(
+        self.relationships_handler = PostgresRelationshipsHandler(
+            project_name=self.project_name,
+            connection_manager=self.connection_manager,
+            collections_handler=self.collections_handler,
+            dimension=self.dimension,
+            quantization_type=self.quantization_type,
+        )
+        self.communities_handler = PostgresCommunitiesHandler(
+            project_name=self.project_name,
+            connection_manager=self.connection_manager,
+            collections_handler=self.collections_handler,
+            dimension=self.dimension,
+            quantization_type=self.quantization_type,
+        )
+        self.graphs_handler = PostgresGraphsHandler(
+            project_name=self.project_name,
+            connection_manager=self.connection_manager,
+            collections_handler=self.collections_handler,
+            dimension=self.dimension,
+            quantization_type=self.quantization_type,
+        )
+        self.prompts_handler = PostgresPromptsHandler(
             self.project_name, self.connection_manager
         )
-        self.file_handler = PostgresFileHandler(
-            self.project_name, self.connection_manager
-        )
-        self.logging_handler = PostgresLoggingHandler(
+        self.files_handler = PostgresFilesHandler(
             self.project_name, self.connection_manager
         )
 
     async def initialize(self):
-        logger.info("Initializing `PostgresDBProvider`.")
+        logger.info("Initializing `PostgresDatabaseProvider`.")
         self.pool = SemaphoreConnectionPool(
             self.connection_string, self.postgres_configuration_settings
         )
@@ -190,15 +218,18 @@ class PostgresDBProvider(DatabaseProvider):
                 f'CREATE SCHEMA IF NOT EXISTS "{self.project_name}";'
             )
 
-        await self.document_handler.create_tables()
+        await self.documents_handler.create_tables()
         await self.collections_handler.create_tables()
         await self.token_handler.create_tables()
-        await self.user_handler.create_tables()
-        await self.vector_handler.create_tables()
-        await self.prompt_handler.create_tables()
-        await self.file_handler.create_tables()
-        await self.graph_handler.create_tables()
-        await self.logging_handler.create_tables()
+        await self.users_handler.create_tables()
+        await self.chunks_handler.create_tables()
+        await self.prompts_handler.create_tables()
+        await self.files_handler.create_tables()
+        await self.graphs_handler.create_tables()
+        await self.communities_handler.create_tables()
+        await self.entities_handler.create_tables()
+        await self.relationships_handler.create_tables()
+        await self.conversation_handler.create_tables()
 
     def _get_postgres_configuration_settings(
         self, config: DatabaseConfig

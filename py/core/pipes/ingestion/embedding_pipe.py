@@ -11,7 +11,6 @@ from core.base import (
     VectorEntry,
 )
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -28,15 +27,11 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
         self,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: SqlitePersistentLoggingProvider,
         embedding_batch_size: int = 1,
         *args,
         **kwargs,
     ):
-        super().__init__(
-            config,
-            logging_provider,
-        )
+        super().__init__(config)
         self.embedding_provider = embedding_provider
         self.embedding_batch_size = embedding_batch_size
 
@@ -115,17 +110,6 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
             # Ensure all tasks are completed
             if tasks:
                 await asyncio.gather(*tasks, return_exceptions=True)
-            # Cancel the log worker task
-            if self.log_worker_task and not self.log_worker_task.done():
-                self.log_worker_task.cancel()
-                try:
-                    await self.log_worker_task
-                except asyncio.CancelledError:
-                    pass
-            # Ensure the log queue is empty
-            while not self.log_queue.empty():
-                await self.log_queue.get()
-                self.log_queue.task_done()
 
     async def _process_extraction(
         self, extraction: DocumentChunk

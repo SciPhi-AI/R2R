@@ -4,16 +4,16 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from core.base import CryptoProvider, UserHandler
+from core.base import CryptoProvider, Handler
 from core.base.abstractions import R2RException
 from core.utils import generate_user_id
 from shared.abstractions import User
 
 from .base import PostgresConnectionManager, QueryBuilder
-from .collection import PostgresCollectionHandler
+from .collections import PostgresCollectionsHandler
 
 
-class PostgresUserHandler(UserHandler):
+class PostgresUserHandler(Handler):
     TABLE_NAME = "users"
 
     def __init__(
@@ -425,14 +425,11 @@ class PostgresUserHandler(UserHandler):
         result = await self.connection_manager.fetchrow_query(
             query, [collection_id, id]
         )
-        print("remove_user_from_collection result = ", result)
         if not result:
-            print("raising exception...")
             raise R2RException(
                 status_code=400,
                 message="User is not a member of the specified collection",
             )
-            print("....")
         return True
 
     async def get_users_in_collection(
@@ -615,7 +612,7 @@ class PostgresUserHandler(UserHandler):
     async def _collection_exists(self, collection_id: UUID) -> bool:
         """Check if a collection exists."""
         query = f"""
-            SELECT 1 FROM {self._get_table_name(PostgresCollectionHandler.TABLE_NAME)}
+            SELECT 1 FROM {self._get_table_name(PostgresCollectionsHandler.TABLE_NAME)}
             WHERE id = $1
         """
         result = await self.connection_manager.fetchrow_query(

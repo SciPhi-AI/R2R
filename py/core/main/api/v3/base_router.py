@@ -59,12 +59,6 @@ class BaseRouterV3:
 
                 except Exception as e:
 
-                    await self.services["ingestion"].logging_connection.log(
-                        run_id=run_id,
-                        key="error",
-                        value=str(e),
-                    )
-
                     logger.error(
                         f"Error in base endpoint {func.__name__}() - \n\n{str(e)}",
                         exc_info=True,

@@ -5,8 +5,8 @@ from shared.api.models.auth.responses import (
 from shared.api.models.base import (
     GenericBooleanResponse,
     GenericMessageResponse,
-    PaginatedResultsWrapper,
-    ResultsWrapper,
+    PaginatedR2RResult,
+    R2RResults,
     WrappedBooleanResponse,
     WrappedGenericMessageResponse,
 )
@@ -43,8 +43,6 @@ from shared.api.models.management.responses import (  # Document Responses; Prom
     SettingsResponse,
     User,
     WrappedAnalyticsResponse,
-    WrappedBranchesResponse,
-    WrappedBranchResponse,
     WrappedChunkResponse,
     WrappedChunksResponse,
     WrappedCollectionResponse,
@@ -133,8 +131,6 @@ __all__ = [
     # Conversation Responses
     "WrappedMessageResponse",
     "WrappedMessagesResponse",
-    "WrappedBranchResponse",
-    "WrappedBranchesResponse",
     # Chunk Responses
     "WrappedChunkResponse",
     "WrappedChunksResponse",
@@ -143,8 +139,8 @@ __all__ = [
     "WrappedUserResponse",
     "WrappedUsersResponse",
     # Base Responses
-    "PaginatedResultsWrapper",
-    "ResultsWrapper",
+    "PaginatedR2RResult",
+    "R2RResults",
     "GenericBooleanResponse",
     "GenericMessageResponse",
     "WrappedBooleanResponse",

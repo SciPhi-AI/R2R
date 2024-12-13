@@ -9,7 +9,7 @@ from typing import Any, Generic, Optional, TypeVar
 
 import yaml
 
-from core.base import PromptHandler, generate_default_prompt_id
+from core.base import Handler, generate_default_prompt_id
 
 from .base import PostgresConnectionManager
 
@@ -110,7 +110,7 @@ class Cache(Generic[T]):
         del self._cache[lru_key]
 
 
-class CacheablePromptHandler(PromptHandler):
+class CacheablePromptHandler(Handler):
     """Abstract base class that adds caching capabilities to prompt handlers"""
 
     def __init__(
@@ -238,7 +238,7 @@ class CacheablePromptHandler(PromptHandler):
         pass
 
 
-class PostgresPromptHandler(CacheablePromptHandler):
+class PostgresPromptsHandler(CacheablePromptHandler):
     """PostgreSQL implementation of the CacheablePromptHandler."""
 
     def __init__(

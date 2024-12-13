@@ -6,15 +6,14 @@ from uuid import UUID
 from core.base import AsyncState
 from core.base.abstractions import Entity, KGEntityDeduplicationType
 from core.base.pipes import AsyncPipe
+from core.database import PostgresDatabaseProvider
 from core.providers import (
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
     OllamaEmbeddingProvider,
     OpenAICompletionProvider,
     OpenAIEmbeddingProvider,
-    PostgresDBProvider,
 )
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -23,18 +22,16 @@ class KGEntityDeduplicationPipe(AsyncPipe):
     def __init__(
         self,
         config: AsyncPipe.PipeConfig,
-        database_provider: PostgresDBProvider,
+        database_provider: PostgresDatabaseProvider,
         llm_provider: OpenAICompletionProvider | LiteLLMCompletionProvider,
         embedding_provider: (
             LiteLLMEmbeddingProvider
             | OpenAIEmbeddingProvider
             | OllamaEmbeddingProvider
         ),
-        logging_provider: SqlitePersistentLoggingProvider,
         **kwargs,
     ):
         super().__init__(
-            logging_provider=logging_provider,
             config=config
             or AsyncPipe.PipeConfig(name="kg_entity_deduplication_pipe"),
         )
@@ -46,13 +43,13 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         self, graph_id: UUID | None, collection_id: UUID | None
     ):
         if collection_id is not None:
-            return await self.database_provider.graph_handler.get_entities(
+            return await self.database_provider.graphs_handler.get_entities(
                 collection_id=collection_id, offset=0, limit=-1
             )
         elif graph_id is not None:
             # TODO: remove the tuple return type
             return (
-                await self.database_provider.graph_handler.entities.get(
+                await self.database_provider.graphs_handler.entities.get(
                     id=graph_id,
                     offset=0,
                     limit=-1,
@@ -135,7 +132,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
             f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {graph_id}"
         )
 
-        await self.database_provider.graph_handler.add_entities(
+        await self.database_provider.graphs_handler.add_entities(
             deduplicated_entities_list,
             table_name="collection_entity",
         )
@@ -241,7 +238,7 @@ class KGEntityDeduplicationPipe(AsyncPipe):
         logger.info(
             f"KGEntityDeduplicationPipe: Upserting {len(deduplicated_entities_list)} deduplicated entities for collection {graph_id}"
         )
-        await self.database_provider.graph_handler.add_entities(
+        await self.database_provider.graphs_handler.add_entities(
             deduplicated_entities_list,
             table_name="collection_entity",
             conflict_columns=["name", "graph_id", "attributes"],

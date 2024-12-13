@@ -5,11 +5,10 @@ from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import Message, RunType
+from core.base import Message, R2RException, RunType
 from core.base.api.models import (
     GenericBooleanResponse,
     WrappedBooleanResponse,
-    WrappedBranchesResponse,
     WrappedConversationMessagesResponse,
     WrappedConversationResponse,
     WrappedConversationsResponse,
@@ -249,7 +248,7 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000?branch_id=branch_1" \\
+                            curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
                             """
                         ),
@@ -262,9 +261,6 @@ class ConversationsRouter(BaseRouterV3):
             id: UUID = Path(
                 ..., description="The unique identifier of the conversation"
             ),
-            branch_id: Optional[str] = Query(
-                None, description="The ID of the specific branch to retrieve"
-            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedConversationMessagesResponse:
             """
@@ -273,8 +269,7 @@ class ConversationsRouter(BaseRouterV3):
             This endpoint retrieves detailed information about a single conversation identified by its UUID.
             """
             conversation = await self.services["management"].get_conversation(
-                str(id),
-                branch_id,
+                str(id)
             )
             return conversation
 
@@ -433,6 +428,10 @@ class ConversationsRouter(BaseRouterV3):
 
             This endpoint adds a new message to an existing conversation.
             """
+            if content == "":
+                raise R2RException("Content cannot be empty", status_code=400)
+            if role not in ["user", "assistant", "system"]:
+                raise R2RException("Invalid role", status_code=400)
             message = Message(role=role, content=content)
             return await self.services["management"].add_message(
                 str(id),
@@ -508,148 +507,17 @@ class ConversationsRouter(BaseRouterV3):
             content: str = Body(
                 ..., description="The new content for the message"
             ),
+            metadata: Optional[dict[str, str]] = Body(
+                None, description="Additional metadata for the message"
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> dict:
+        ) -> WrappedMessageResponse:
             """
             Update an existing message in a conversation.
 
             This endpoint updates the content of an existing message in a conversation.
             """
-            new_message_id, new_branch_id = await self.services[
-                "management"
-            ].edit_message(message_id, content)
-            return {  # type: ignore
-                "new_message_id": new_message_id,
-                "new_branch_id": new_branch_id,
-            }
-
-        @self.router.get(
-            "/conversations/{id}/branches",
-            summary="List branches in conversation",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient("http://localhost:7272")
-                            # when using auth, do client.login(...)
-
-                            result = client.conversations.list_branches("123e4567-e89b-12d3-a456-426614174000")
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
-                            const { r2rClient } = require("r2r-js");
-
-                            const client = new r2rClient("http://localhost:7272");
-
-                            function main() {
-                                const response = await client.conversations.listBranches({
-                                    id: "123e4567-e89b-12d3-a456-426614174000",
-                                });
-                            }
-
-                            main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r conversations list-branches 123e4567-e89b-12d3-a456-426614174000
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/branches" \\
-                                -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def list_branches(
-            id: UUID = Path(
-                ..., description="The unique identifier of the conversation"
-            ),
-            offset: int = Query(
-                0,
-                ge=0,
-                description="Specifies the number of objects to skip. Defaults to 0.",
-            ),
-            limit: int = Query(
-                100,
-                ge=1,
-                le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> WrappedBranchesResponse:
-            """
-            List all branches in a conversation.
-
-            This endpoint retrieves all branches associated with a specific conversation.
-            """
-            branches_response = await self.services[
-                "management"
-            ].branches_overview(
-                offset=offset,
-                limit=limit,
-                conversation_id=str(id),
+            messge_response = await self.services["management"].edit_message(
+                message_id, content, metadata
             )
-
-            return branches_response["results"], {  # type: ignore
-                "total_entries": branches_response["total_entries"]
-            }
-
-        # Commented endpoints to be published after more testing
-        # @self.router.get("/conversations/{id}/branches/{branch_id}/next")
-        # @self.base_endpoint
-        # async def get_next_branch(
-        #     id: UUID = Path(...),
-        #     branch_id: str = Path(...),
-        #     auth_user=Depends(self.providers.auth.auth_wrapper),
-        # ) -> dict:
-        #     """
-        #     Get the next branch in the conversation.
-        #     """
-        #     next_branch_id = await self.services.management.get_next_branch(branch_id)
-        #     return {"next_branch_id": next_branch_id}
-
-        # @self.router.get("/conversations/{id}/branches/{branch_id}/previous")
-        # @self.base_endpoint
-        # async def get_previous_branch(
-        #     id: UUID = Path(...),
-        #     branch_id: str = Path(...),
-        #     auth_user=Depends(self.providers.auth.auth_wrapper),
-        # ) -> dict:
-        #     """
-        #     Get the previous branch in the conversation.
-        #     """
-        #     prev_branch_id = await self.services.management.get_prev_branch(branch_id)
-        #     return {"prev_branch_id": prev_branch_id}
-
-        # @self.router.post("/conversations/{id}/messages/{message_id}/branch")
-        # @self.base_endpoint
-        # async def create_branch(
-        #     id: UUID = Path(...),
-        #     message_id: str = Path(...),
-        #     auth_user=Depends(self.providers.auth.auth_wrapper),
-        # ) -> dict:
-        #     """
-        #     Create a new branch starting from a specific message.
-        #     """
-        #     branch_id = await self.services.management.branch_at_message(message_id)
-        #     return {"branch_id": branch_id}
+            return messge_response

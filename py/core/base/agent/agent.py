@@ -79,7 +79,7 @@ class Agent(ABC):
         config: AgentConfig,
     ):
         self.llm_provider = llm_provider
-        self.database_provider = database_provider
+        self.database_provider: DatabaseProvider = database_provider
         self.config = config
         self.conversation = Conversation()
         self._completed = False
@@ -92,7 +92,7 @@ class Agent(ABC):
 
     async def _setup(self, system_instruction: Optional[str] = None):
         content = system_instruction or (
-            await self.database_provider.get_cached_prompt(
+            await self.database_provider.prompts_handler.get_cached_prompt(
                 self.config.system_instruction_name
             )
         )
@@ -101,7 +101,7 @@ class Agent(ABC):
                 role="system",
                 content=system_instruction
                 or (
-                    await self.database_provider.get_cached_prompt(
+                    await self.database_provider.prompts_handler.get_cached_prompt(
                         self.config.system_instruction_name
                     )
                 ),

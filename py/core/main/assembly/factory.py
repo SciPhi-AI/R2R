@@ -19,13 +19,13 @@ from core.base import (
 from core.pipelines import RAGPipeline, SearchPipeline
 from core.pipes import GeneratorPipe, MultiSearchPipe, SearchPipe
 from core.providers.email.sendgrid import SendGridEmailProvider
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 
 logger = logging.getLogger()
-from core.providers import (
+from core.database import PostgresDatabaseProvider
+from core.providers import (  # PostgresDatabaseProvider,
     AsyncSMTPEmailProvider,
     BCryptConfig,
     BCryptProvider,
@@ -36,7 +36,6 @@ from core.providers import (
     OllamaEmbeddingProvider,
     OpenAICompletionProvider,
     OpenAIEmbeddingProvider,
-    PostgresDBProvider,
     R2RAuthProvider,
     R2RIngestionConfig,
     R2RIngestionProvider,
@@ -55,7 +54,7 @@ class R2RProviderFactory:
     async def create_auth_provider(
         auth_config: AuthConfig,
         crypto_provider: BCryptProvider,
-        database_provider: PostgresDBProvider,
+        database_provider: PostgresDatabaseProvider,
         email_provider: Union[
             AsyncSMTPEmailProvider,
             ConsoleMockEmailProvider,
@@ -94,7 +93,7 @@ class R2RProviderFactory:
     @staticmethod
     def create_ingestion_provider(
         ingestion_config: IngestionConfig,
-        database_provider: PostgresDBProvider,
+        database_provider: PostgresDatabaseProvider,
         llm_provider: Union[
             LiteLLMCompletionProvider, OpenAICompletionProvider
         ],
@@ -156,7 +155,7 @@ class R2RProviderFactory:
         crypto_provider: BCryptProvider,
         *args,
         **kwargs,
-    ) -> PostgresDBProvider:
+    ) -> PostgresDatabaseProvider:
         if not self.config.embedding.base_dimension:
             raise ValueError(
                 "Embedding config must have a base dimension to initialize database."
@@ -167,9 +166,9 @@ class R2RProviderFactory:
             self.config.embedding.quantization_settings.quantization_type
         )
         if db_config.provider == "postgres":
-            from core.providers import PostgresDBProvider
+            from ...database.postgres import PostgresDatabaseProvider
 
-            database_provider = PostgresDBProvider(
+            database_provider = PostgresDatabaseProvider(
                 db_config,
                 dimension,
                 crypto_provider=crypto_provider,
@@ -264,7 +263,7 @@ class R2RProviderFactory:
             Union[R2RAuthProvider, SupabaseAuthProvider]
         ] = None,
         crypto_provider_override: Optional[BCryptProvider] = None,
-        database_provider_override: Optional[PostgresDBProvider] = None,
+        database_provider_override: Optional[PostgresDatabaseProvider] = None,
         email_provider_override: Optional[
             Union[
                 AsyncSMTPEmailProvider,
@@ -286,9 +285,6 @@ class R2RProviderFactory:
             Union[OpenAICompletionProvider, LiteLLMCompletionProvider]
         ] = None,
         orchestration_provider_override: Optional[Any] = None,
-        r2r_logging_provider_override: Optional[
-            SqlitePersistentLoggingProvider
-        ] = None,
         *args,
         **kwargs,
     ) -> R2RProviders:
@@ -348,12 +344,6 @@ class R2RProviderFactory:
             or self.create_orchestration_provider(self.config.orchestration)
         )
 
-        logging_provider = (
-            r2r_logging_provider_override
-            or SqlitePersistentLoggingProvider(self.config.logging)
-        )
-        await logging_provider.initialize()
-
         return R2RProviders(
             auth=auth_provider,
             database=database_provider,
@@ -362,7 +352,6 @@ class R2RProviderFactory:
             llm=llm_provider,
             email=email_provider,
             orchestration=orchestration_provider,
-            logging=logging_provider,
         )
 
 
@@ -431,7 +420,6 @@ class R2RPipeFactory:
         from core.pipes import ParsingPipe
 
         return ParsingPipe(
-            logging_provider=self.providers.logging,
             ingestion_provider=self.providers.ingestion,
             database_provider=self.providers.database,
             config=AsyncPipe.PipeConfig(name="parsing_pipe"),
@@ -444,7 +432,6 @@ class R2RPipeFactory:
         from core.pipes import EmbeddingPipe
 
         return EmbeddingPipe(
-            logging_provider=self.providers.logging,
             embedding_provider=self.providers.embedding,
             database_provider=self.providers.database,
             embedding_batch_size=self.config.embedding.batch_size,
@@ -458,7 +445,6 @@ class R2RPipeFactory:
         from core.pipes import VectorStoragePipe
 
         return VectorStoragePipe(
-            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             config=AsyncPipe.PipeConfig(name="vector_storage_pipe"),
         )
@@ -470,7 +456,6 @@ class R2RPipeFactory:
         from core.pipes import VectorSearchPipe
 
         return VectorSearchPipe(
-            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             embedding_provider=self.providers.embedding,
             config=SearchPipe.SearchConfig(name="vector_search_pipe"),
@@ -492,7 +477,6 @@ class R2RPipeFactory:
         )
 
         query_transform_pipe = QueryTransformPipe(
-            logging_provider=self.providers.logging,
             llm_provider=self.providers.llm,
             database_provider=self.providers.database,
             config=QueryTransformPipe.QueryTransformConfig(
@@ -502,7 +486,6 @@ class R2RPipeFactory:
         )
 
         return MultiSearchPipe(
-            logging_provider=self.providers.logging,
             query_transform_pipe=query_transform_pipe,
             inner_search_pipe=inner_search_pipe,
             config=multi_search_config,
@@ -533,7 +516,6 @@ class R2RPipeFactory:
         from core.pipes import RoutingSearchPipe
 
         return RoutingSearchPipe(
-            logging_provider=self.providers.logging,
             search_pipes={
                 "vanilla": vanilla_vector_search_pipe,
                 "hyde": hyde_search_pipe,
@@ -547,7 +529,6 @@ class R2RPipeFactory:
         from core.pipes import KGExtractionPipe
 
         return KGExtractionPipe(
-            logging_provider=self.providers.logging,
             llm_provider=self.providers.llm,
             database_provider=self.providers.database,
             config=AsyncPipe.PipeConfig(
@@ -559,7 +540,6 @@ class R2RPipeFactory:
         from core.pipes import KGStoragePipe
 
         return KGStoragePipe(
-            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             config=AsyncPipe.PipeConfig(name="kg_storage_pipe"),
         )
@@ -568,7 +548,6 @@ class R2RPipeFactory:
         from core.pipes import KGSearchSearchPipe
 
         return KGSearchSearchPipe(
-            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -582,7 +561,6 @@ class R2RPipeFactory:
             from core.pipes import StreamingSearchRAGPipe
 
             return StreamingSearchRAGPipe(
-                logging_provider=self.providers.logging,
                 llm_provider=self.providers.llm,
                 database_provider=self.providers.database,
                 config=GeneratorPipe.PipeConfig(
@@ -593,7 +571,6 @@ class R2RPipeFactory:
             from core.pipes import SearchRAGPipe
 
             return SearchRAGPipe(
-                logging_provider=self.providers.logging,
                 llm_provider=self.providers.llm,
                 database_provider=self.providers.database,
                 config=GeneratorPipe.PipeConfig(
@@ -605,7 +582,6 @@ class R2RPipeFactory:
         from core.pipes import KGEntityDescriptionPipe
 
         return KGEntityDescriptionPipe(
-            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -616,7 +592,6 @@ class R2RPipeFactory:
         from core.pipes import KGClusteringPipe
 
         return KGClusteringPipe(
-            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -627,7 +602,6 @@ class R2RPipeFactory:
         from core.pipes import KGEntityDeduplicationSummaryPipe
 
         return KGEntityDeduplicationSummaryPipe(
-            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -638,7 +612,6 @@ class R2RPipeFactory:
         from core.pipes import KGCommunitySummaryPipe
 
         return KGCommunitySummaryPipe(
-            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -649,7 +622,6 @@ class R2RPipeFactory:
         from core.pipes import KGEntityDeduplicationPipe
 
         return KGEntityDeduplicationPipe(
-            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -662,7 +634,6 @@ class R2RPipeFactory:
         from core.pipes import KGEntityDeduplicationSummaryPipe
 
         return KGEntityDeduplicationSummaryPipe(
-            logging_provider=self.providers.logging,
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -682,9 +653,7 @@ class R2RPipelineFactory:
 
     def create_search_pipeline(self, *args, **kwargs) -> SearchPipeline:
         """factory method to create an ingestion pipeline."""
-        search_pipeline = SearchPipeline(
-            logging_provider=self.providers.logging
-        )
+        search_pipeline = SearchPipeline()
 
         # Add vector search pipes if embedding provider and vector provider is set
         if (
@@ -711,7 +680,7 @@ class R2RPipelineFactory:
             self.pipes.streaming_rag_pipe if stream else self.pipes.rag_pipe
         )
 
-        rag_pipeline = RAGPipeline(logging_provider=self.providers.logging)
+        rag_pipeline = RAGPipeline()
         rag_pipeline.set_search_pipeline(search_pipeline)
         rag_pipeline.add_pipe(rag_pipe)
         return rag_pipeline

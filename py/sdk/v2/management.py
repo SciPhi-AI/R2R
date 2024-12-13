@@ -701,14 +701,12 @@ class ManagementMixins:
     async def get_conversation(
         self,
         conversation_id: Union[str, UUID],
-        branch_id: Optional[str] = None,
     ) -> dict:
         """
         Get a conversation by its ID.
 
         Args:
             conversation_id (Union[str, UUID]): The ID of the conversation to retrieve.
-            branch_id (Optional[str]): The ID of a specific branch to retrieve.
 
         Returns:
             dict: The conversation data.

@@ -8,14 +8,11 @@ from core.base.api.models import User
 from core.base.logger.base import RunType
 from core.base.utils import generate_id
 
-from .base import PersistentLoggingProvider
-
 run_id_var = contextvars.ContextVar("run_id", default=generate_id())
 
 
 class RunManager:
-    def __init__(self, logger: PersistentLoggingProvider):
-        self.logger = logger
+    def __init__(self):
         self.run_info: dict[UUID, dict] = {}
 
     async def set_run_info(self, run_type: str, run_id: Optional[UUID] = None):
@@ -39,15 +36,6 @@ class RunManager:
     ):
         if asyncio.iscoroutine(user):
             user = await user
-
-        if run_id := run_id_var.get():
-            await self.logger.info_log(
-                run_id=run_id,
-                run_type=run_type,
-                user_id=user.id,
-            )
-        else:
-            raise ValueError("No run ID set")
 
     async def clear_run_info(self, token: contextvars.Token):
         run_id = run_id_var.get()

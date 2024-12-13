@@ -4,7 +4,6 @@ from typing import Optional
 from ..base.logger.run_manager import RunManager
 from ..base.pipeline.base_pipeline import AsyncPipeline
 from ..base.pipes.base_pipe import AsyncPipe
-from ..providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -16,10 +15,9 @@ class KGEnrichmentPipeline(AsyncPipeline):
 
     def __init__(
         self,
-        logging_provider: SqlitePersistentLoggingProvider,
         run_manager: Optional[RunManager] = None,
     ):
-        super().__init__(logging_provider, run_manager)
+        super().__init__(run_manager)
 
     def add_pipe(
         self,

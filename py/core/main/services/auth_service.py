@@ -4,7 +4,6 @@ from uuid import UUID
 
 from core.base import R2RException, RunManager, Token
 from core.base.api.models import User
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 from core.utils import generate_default_user_collection_id
 
@@ -22,7 +21,6 @@ class AuthService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: SqlitePersistentLoggingProvider,
     ):
         super().__init__(
             config,
@@ -31,7 +29,6 @@ class AuthService(Service):
             pipelines,
             agents,
             run_manager,
-            logging_connection,
         )
 
     @telemetry_event("RegisterUser")
@@ -47,24 +44,26 @@ class AuthService(Service):
                 status_code=400, message="Email verification is not required"
             )
 
-        user_id = (
-            await self.providers.database.get_user_id_by_verification_code(
-                verification_code
-            )
+        user_id = await self.providers.database.users_handler.get_user_id_by_verification_code(
+            verification_code
         )
         if not user_id:
             raise R2RException(
                 status_code=400, message="Invalid or expired verification code"
             )
 
-        user = await self.providers.database.get_user_by_id(user_id)
+        user = await self.providers.database.users_handler.get_user_by_id(
+            user_id
+        )
         if not user or user.email != email:
             raise R2RException(
                 status_code=400, message="Invalid or expired verification code"
             )
 
-        await self.providers.database.mark_user_as_verified(user_id)
-        await self.providers.database.remove_verification_code(
+        await self.providers.database.users_handler.mark_user_as_verified(
+            user_id
+        )
+        await self.providers.database.users_handler.remove_verification_code(
             verification_code
         )
         return {"message": f"User account {user_id} verified successfully."}
@@ -80,7 +79,7 @@ class AuthService(Service):
             raise R2RException(
                 status_code=401, message="Invalid authentication credentials"
             )
-        user = await self.providers.database.get_user_by_email(
+        user = await self.providers.database.users_handler.get_user_by_email(
             token_data.email
         )
         if user is None:
@@ -131,7 +130,9 @@ class AuthService(Service):
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
     ) -> User:
-        user: User = await self.providers.database.get_user_by_id(user_id)
+        user: User = (
+            await self.providers.database.users_handler.get_user_by_id(user_id)
+        )
         if not user:
             raise R2RException(status_code=404, message="User not found")
         if email is not None:
@@ -144,7 +145,7 @@ class AuthService(Service):
             user.bio = bio
         if profile_picture is not None:
             user.profile_picture = profile_picture
-        return await self.providers.database.update_user(user)
+        return await self.providers.database.users_handler.update_user(user)
 
     @telemetry_event("DeleteUserAccount")
     async def delete_user(
@@ -154,7 +155,9 @@ class AuthService(Service):
         delete_vector_data: bool = False,
         is_superuser: bool = False,
     ) -> dict[str, str]:
-        user = await self.providers.database.get_user_by_id(user_id)
+        user = await self.providers.database.users_handler.get_user_by_id(
+            user_id
+        )
         if not user:
             raise R2RException(status_code=404, message="User not found")
         if not is_superuser and not password:
@@ -171,18 +174,22 @@ class AuthService(Service):
             )
         ):
             raise R2RException(status_code=400, message="Incorrect password")
-        await self.providers.database.delete_user_relational(user_id)
+        await self.providers.database.users_handler.delete_user_relational(
+            user_id
+        )
 
         # Delete user's default collection
         # TODO: We need to better define what happens to the user's data when they are deleted
         collection_id = generate_default_user_collection_id(user_id)
-        await self.providers.database.delete_collection_relational(
+        await self.providers.database.collections_handler.delete_collection_relational(
             collection_id
         )
 
         if delete_vector_data:
-            await self.providers.database.delete_user_vector(user_id)
-            await self.providers.database.delete_collection_vector(
+            await self.providers.database.chunks_handler.delete_user_vector(
+                user_id
+            )
+            await self.providers.database.chunks_handler.delete_collection_vector(
                 collection_id
             )
 
@@ -194,7 +201,7 @@ class AuthService(Service):
         max_age_hours: int = 7 * 24,
         current_time: Optional[datetime] = None,
     ):
-        await self.providers.database.clean_expired_blacklisted_tokens(
+        await self.providers.database.token_handler.clean_expired_blacklisted_tokens(
             max_age_hours, current_time
         )
 
@@ -207,10 +214,8 @@ class AuthService(Service):
         Get only the verification code data for a specific user.
         This method should be called after superuser authorization has been verified.
         """
-        verification_data = (
-            await self.providers.database.get_user_validation_data(
-                user_id=user_id
-            )
+        verification_data = await self.providers.database.users_handler.get_user_validation_data(
+            user_id=user_id
         )
         return {
             "verification_code": verification_data["verification_data"][
@@ -230,10 +235,8 @@ class AuthService(Service):
         Get only the verification code data for a specific user.
         This method should be called after superuser authorization has been verified.
         """
-        verification_data = (
-            await self.providers.database.get_user_validation_data(
-                user_id=user_id
-            )
+        verification_data = await self.providers.database.users_handler.get_user_validation_data(
+            user_id=user_id
         )
         return {
             "reset_token": verification_data["verification_data"][

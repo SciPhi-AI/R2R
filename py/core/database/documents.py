@@ -9,7 +9,7 @@ import asyncpg
 from fastapi import HTTPException
 
 from core.base import (
-    DocumentHandler,
+    Handler,
     DocumentResponse,
     DocumentType,
     IngestionStatus,
@@ -24,7 +24,7 @@ from .base import PostgresConnectionManager
 logger = logging.getLogger()
 
 
-class PostgresDocumentHandler(DocumentHandler):
+class PostgresDocumentsHandler(Handler):
     TABLE_NAME = "documents"
     COLUMN_VARS = [
         "extraction_id",
@@ -44,11 +44,11 @@ class PostgresDocumentHandler(DocumentHandler):
 
     async def create_tables(self):
         logger.info(
-            f"Creating table, if not exists: {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}"
+            f"Creating table, if not exists: {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}"
         )
         try:
             query = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)} (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)} (
                 id UUID PRIMARY KEY,
                 collection_ids UUID[],
                 owner_id UUID,
@@ -71,11 +71,11 @@ class PostgresDocumentHandler(DocumentHandler):
                 ) STORED
             );
             CREATE INDEX IF NOT EXISTS idx_collection_ids_{self.project_name}
-            ON {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)} USING GIN (collection_ids);
+            ON {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)} USING GIN (collection_ids);
 
             -- Full text search index
             CREATE INDEX IF NOT EXISTS idx_doc_search_{self.project_name}
-            ON {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
+            ON {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
             USING GIN (raw_tsvector);
             """
             await self.connection_manager.execute_query(query)
@@ -98,7 +98,7 @@ class PostgresDocumentHandler(DocumentHandler):
                         async with conn.transaction():
                             # Lock the row for update
                             check_query = f"""
-                            SELECT ingestion_attempt_number, ingestion_status FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
+                            SELECT ingestion_attempt_number, ingestion_status FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
                             WHERE id = $1 FOR UPDATE
                             """
                             existing_doc = await conn.fetchrow(
@@ -131,7 +131,7 @@ class PostgresDocumentHandler(DocumentHandler):
                                 )
 
                                 update_query = f"""
-                                UPDATE {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
+                                UPDATE {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
                                 SET collection_ids = $1, owner_id = $2, type = $3, metadata = $4,
                                     title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
                                     extraction_status = $9, updated_at = $10, ingestion_attempt_number = $11,
@@ -159,7 +159,7 @@ class PostgresDocumentHandler(DocumentHandler):
                             else:
 
                                 insert_query = f"""
-                                INSERT INTO {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
+                                INSERT INTO {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
                                 (id, collection_ids, owner_id, type, metadata, title, version,
                                 size_in_bytes, ingestion_status, extraction_status, created_at,
                                 updated_at, ingestion_attempt_number, summary, summary_embedding)
@@ -199,11 +199,11 @@ class PostgresDocumentHandler(DocumentHandler):
                         wait_time = 0.1 * (2**retries)  # Exponential backoff
                         await asyncio.sleep(wait_time)
 
-    async def delete_from_documents_overview(
+    async def delete(
         self, document_id: UUID, version: Optional[str] = None
     ) -> None:
         query = f"""
-        DELETE FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
+        DELETE FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
         WHERE id = $1
         """
 
@@ -416,7 +416,7 @@ class PostgresDocumentHandler(DocumentHandler):
             param_index += 1
 
         base_query = f"""
-            FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
+            FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
         """
 
         # Combine conditions with appropriate AND/OR logic
@@ -544,7 +544,7 @@ class PostgresDocumentHandler(DocumentHandler):
                 summary,
                 summary_embedding,
                 (summary_embedding <=> $1::vector({self.dimension})) as semantic_distance
-            FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
+            FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
             WHERE {where_clause}
             ORDER BY semantic_distance ASC
             LIMIT ${len(params) + 1}
@@ -626,7 +626,7 @@ class PostgresDocumentHandler(DocumentHandler):
                 summary,
                 summary_embedding,
                 ts_rank_cd(raw_tsvector, websearch_to_tsquery('english', $1), 32) as text_score
-            FROM {self._get_table_name(PostgresDocumentHandler.TABLE_NAME)}
+            FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
             WHERE {where_clause}
             ORDER BY text_score DESC
             LIMIT ${len(params) + 1}
@@ -770,37 +770,34 @@ class PostgresDocumentHandler(DocumentHandler):
         self,
         query_text: str,
         query_embedding: Optional[list[float]] = None,
-        search_settings: Optional[SearchSettings] = None,
+        settings: Optional[SearchSettings] = None,
     ) -> list[DocumentResponse]:
         """
         Main search method that delegates to the appropriate search method based on settings.
         """
-        if search_settings is None:
-            search_settings = SearchSettings()
+        if settings is None:
+            settings = SearchSettings()
 
         if (
-            search_settings.use_semantic_search
-            and search_settings.use_fulltext_search
-        ) or search_settings.use_hybrid_search:
+            settings.use_semantic_search and settings.use_fulltext_search
+        ) or settings.use_hybrid_search:
             if query_embedding is None:
                 raise ValueError(
                     "query_embedding is required for hybrid search"
                 )
             return await self.hybrid_document_search(
-                query_text, query_embedding, search_settings
+                query_text, query_embedding, settings
             )
-        elif search_settings.use_semantic_search:
+        elif settings.use_semantic_search:
             if query_embedding is None:
                 raise ValueError(
                     "query_embedding is required for vector search"
                 )
             return await self.semantic_document_search(
-                query_embedding, search_settings
+                query_embedding, settings
             )
         else:
-            return await self.full_text_document_search(
-                query_text, search_settings
-            )
+            return await self.full_text_document_search(query_text, settings)
 
     # TODO - Remove copy pasta, consolidate
     def _build_filters(

@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from shared.abstractions.document import DocumentResponse
 from shared.abstractions.llm import Message
 from shared.abstractions.user import User
-from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
+from shared.api.models.base import PaginatedR2RResult, R2RResults
 
 
 class PromptResponse(BaseModel):
@@ -100,53 +100,40 @@ class MessageResponse(BaseModel):
     metadata: dict[str, Any] = {}
 
 
-class BranchResponse(BaseModel):
-    branch_id: UUID
-    branch_point_id: Optional[UUID]
-    content: Optional[str]
-    created_at: datetime
-    user_id: Optional[UUID] = None
-    name: Optional[str] = None
-
-
 # Chunk Responses
-WrappedChunkResponse = ResultsWrapper[ChunkResponse]
-WrappedChunksResponse = PaginatedResultsWrapper[list[ChunkResponse]]
+WrappedChunkResponse = R2RResults[ChunkResponse]
+WrappedChunksResponse = PaginatedR2RResult[list[ChunkResponse]]
 
 # Collection Responses
-WrappedCollectionResponse = ResultsWrapper[CollectionResponse]
-WrappedCollectionsResponse = PaginatedResultsWrapper[list[CollectionResponse]]
+WrappedCollectionResponse = R2RResults[CollectionResponse]
+WrappedCollectionsResponse = PaginatedR2RResult[list[CollectionResponse]]
 
 
 # Conversation Responses
-WrappedConversationMessagesResponse = ResultsWrapper[list[MessageResponse]]
-WrappedConversationResponse = ResultsWrapper[ConversationResponse]
-WrappedConversationsResponse = PaginatedResultsWrapper[
-    list[ConversationResponse]
-]
-WrappedMessageResponse = ResultsWrapper[MessageResponse]
-WrappedMessagesResponse = PaginatedResultsWrapper[list[MessageResponse]]
-WrappedBranchResponse = ResultsWrapper[BranchResponse]
-WrappedBranchesResponse = PaginatedResultsWrapper[list[BranchResponse]]
+WrappedConversationMessagesResponse = R2RResults[list[MessageResponse]]
+WrappedConversationResponse = R2RResults[ConversationResponse]
+WrappedConversationsResponse = PaginatedR2RResult[list[ConversationResponse]]
+WrappedMessageResponse = R2RResults[MessageResponse]
+WrappedMessagesResponse = PaginatedR2RResult[list[MessageResponse]]
 
 # Document Responses
-WrappedDocumentResponse = ResultsWrapper[DocumentResponse]
-WrappedDocumentsResponse = PaginatedResultsWrapper[list[DocumentResponse]]
+WrappedDocumentResponse = R2RResults[DocumentResponse]
+WrappedDocumentsResponse = PaginatedR2RResult[list[DocumentResponse]]
 
 # Prompt Responses
-WrappedPromptResponse = ResultsWrapper[PromptResponse]
-WrappedPromptsResponse = PaginatedResultsWrapper[list[PromptResponse]]
+WrappedPromptResponse = R2RResults[PromptResponse]
+WrappedPromptsResponse = PaginatedR2RResult[list[PromptResponse]]
 
 # System Responses
-WrappedSettingsResponse = ResultsWrapper[SettingsResponse]
-WrappedServerStatsResponse = ResultsWrapper[ServerStats]
+WrappedSettingsResponse = R2RResults[SettingsResponse]
+WrappedServerStatsResponse = R2RResults[ServerStats]
 
 # User Responses
-WrappedUserResponse = ResultsWrapper[User]
-WrappedUsersResponse = PaginatedResultsWrapper[list[User]]
+WrappedUserResponse = R2RResults[User]
+WrappedUsersResponse = PaginatedR2RResult[list[User]]
 
 # TODO: anything below this hasn't been reviewed
-WrappedLogsResponse = ResultsWrapper[list[LogResponse]]
-WrappedAnalyticsResponse = ResultsWrapper[AnalyticsResponse]
-WrappedVerificationResult = ResultsWrapper[VerificationResult]
-WrappedResetDataResult = ResultsWrapper[ResetDataResult]
+WrappedLogsResponse = R2RResults[list[LogResponse]]
+WrappedAnalyticsResponse = R2RResults[AnalyticsResponse]
+WrappedVerificationResult = R2RResults[VerificationResult]
+WrappedResetDataResult = R2RResults[ResetDataResult]

@@ -3,6 +3,7 @@ import logging
 # Keep '*' imports for enhanced development velocity
 from .agent import *
 from .base import *
+from .database import *
 from .main import *
 from .parsers import *
 from .pipelines import *
@@ -105,13 +106,6 @@ __all__ = [
     ## LOGGING
     # Basic types
     "RunType",
-    "AnalysisTypes",
-    "LogAnalytics",
-    "LogAnalyticsConfig",
-    "LogFilterCriteria",
-    "LogProcessor",
-    # Logging Providers
-    "PersistentLoggingConfig",
     # Run Manager
     "RunManager",
     "manage_run",
@@ -223,7 +217,7 @@ __all__ = [
     "BCryptProvider",
     "BCryptConfig",
     # Database
-    "PostgresDBProvider",
+    "PostgresDatabaseProvider",
     # Embeddings
     "LiteLLMEmbeddingProvider",
     "OpenAIEmbeddingProvider",

@@ -27,12 +27,8 @@ from core.base.abstractions import (
     VectorQuantizationType,
 )
 from core.base.api.models import GraphResponse
-from core.base.providers.database import (
-    CommunityHandler,
-    EntityHandler,
-    GraphHandler,
-    RelationshipHandler,
-)
+from core.base.providers.database import Handler
+
 from core.base.utils import (
     _decorate_vector_type,
     _get_str_estimation_output,
@@ -40,7 +36,7 @@ from core.base.utils import (
 )
 
 from .base import PostgresConnectionManager
-from .collection import PostgresCollectionHandler
+from .collections import PostgresCollectionsHandler
 
 
 class StoreType(str, Enum):
@@ -51,7 +47,7 @@ class StoreType(str, Enum):
 logger = logging.getLogger()
 
 
-class PostgresEntityHandler(EntityHandler):
+class PostgresEntitiesHandler(Handler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.project_name: str = kwargs.get("project_name")  # type: ignore
         self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
@@ -388,7 +384,7 @@ class PostgresEntityHandler(EntityHandler):
                 )
 
 
-class PostgresRelationshipHandler(RelationshipHandler):
+class PostgresRelationshipsHandler(Handler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.project_name: str = kwargs.get("project_name")  # type: ignore
         self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
@@ -792,7 +788,7 @@ class PostgresRelationshipHandler(RelationshipHandler):
                 )
 
 
-class PostgresCommunityHandler(CommunityHandler):
+class PostgresCommunitiesHandler(Handler):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.project_name: str = kwargs.get("project_name")  # type: ignore
@@ -1074,7 +1070,7 @@ class PostgresCommunityHandler(CommunityHandler):
         return communities, count
 
 
-class PostgresGraphHandler(GraphHandler):
+class PostgresGraphsHandler(Handler):
     """Handler for Knowledge Graph METHODS in PostgreSQL."""
 
     TABLE_NAME = "graphs"
@@ -1089,11 +1085,11 @@ class PostgresGraphHandler(GraphHandler):
         self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
         self.dimension: int = kwargs.get("dimension")  # type: ignore
         self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
-        self.collections_handler: PostgresCollectionHandler = kwargs.get("collections_handler")  # type: ignore
+        self.collections_handler: PostgresCollectionsHandler = kwargs.get("collections_handler")  # type: ignore
 
-        self.entities = PostgresEntityHandler(*args, **kwargs)
-        self.relationships = PostgresRelationshipHandler(*args, **kwargs)
-        self.communities = PostgresCommunityHandler(*args, **kwargs)
+        self.entities = PostgresEntitiesHandler(*args, **kwargs)
+        self.relationships = PostgresRelationshipsHandler(*args, **kwargs)
+        self.communities = PostgresCommunitiesHandler(*args, **kwargs)
 
         self.handlers = [
             self.entities,
@@ -1108,7 +1104,7 @@ class PostgresGraphHandler(GraphHandler):
     async def create_tables(self) -> None:
         """Create the graph tables with mandatory collection_id support."""
         QUERY = f"""
-            CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresGraphHandler.TABLE_NAME)} (
+            CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresGraphsHandler.TABLE_NAME)} (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 collection_id UUID NOT NULL,
                 name TEXT NOT NULL,
@@ -1142,7 +1138,7 @@ class PostgresGraphHandler(GraphHandler):
         description = description or ""
 
         query = f"""
-            INSERT INTO {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
+            INSERT INTO {self._get_table_name(PostgresGraphsHandler.TABLE_NAME)}
             (id, collection_id, name, description, status)
             VALUES ($1, $2, $3, $4, $5)
             RETURNING id, collection_id, name, description, status, created_at, updated_at, document_ids
@@ -1257,7 +1253,7 @@ class PostgresGraphHandler(GraphHandler):
                     id, collection_id, name, description, status, created_at, updated_at, document_ids,
                     COUNT(*) OVER() as total_entries,
                     ROW_NUMBER() OVER (PARTITION BY collection_id ORDER BY created_at DESC) as rn
-                FROM {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
+                FROM {self._get_table_name(PostgresGraphsHandler.TABLE_NAME)}
                 {where_clause}
             )
             SELECT * FROM RankedGraphs
@@ -1305,14 +1301,14 @@ class PostgresGraphHandler(GraphHandler):
             params = [offset, limit]
 
             QUERY = f"""
-                SELECT * FROM {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
+                SELECT * FROM {self._get_table_name(PostgresGraphsHandler.TABLE_NAME)}
                 OFFSET $1 LIMIT $2
             """
 
             ret = await self.connection_manager.fetch_query(QUERY, params)
 
             COUNT_QUERY = f"""
-                SELECT COUNT(*) FROM {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
+                SELECT COUNT(*) FROM {self._get_table_name(PostgresGraphsHandler.TABLE_NAME)}
             """
             count = (await self.connection_manager.fetch_query(COUNT_QUERY))[
                 0
@@ -1325,7 +1321,7 @@ class PostgresGraphHandler(GraphHandler):
 
         else:
             QUERY = f"""
-                SELECT * FROM {self._get_table_name(PostgresGraphHandler.TABLE_NAME)} WHERE id = $1
+                SELECT * FROM {self._get_table_name(PostgresGraphsHandler.TABLE_NAME)} WHERE id = $1
             """
 
             params = [graph_id]  # type: ignore
@@ -1378,7 +1374,7 @@ class PostgresGraphHandler(GraphHandler):
 
         # Add document_ids to the graph
         UPDATE_GRAPH_QUERY = f"""
-            UPDATE {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresGraphsHandler.TABLE_NAME)}
             SET document_ids = array_cat(
                 CASE
                     WHEN document_ids IS NULL THEN ARRAY[]::uuid[]
@@ -1422,7 +1418,7 @@ class PostgresGraphHandler(GraphHandler):
         params.append(collection_id)
 
         query = f"""
-            UPDATE {self._get_table_name(PostgresGraphHandler.TABLE_NAME)}
+            UPDATE {self._get_table_name(PostgresGraphsHandler.TABLE_NAME)}
             SET {', '.join(update_fields)}
             WHERE id = ${param_index}
             RETURNING id, name, description, status, created_at, updated_at, collection_id, document_ids
@@ -2206,72 +2202,6 @@ class PostgresGraphHandler(GraphHandler):
         data = response.json()
         communities = data.get("communities", [])
         return communities
-
-    # async def _create_graph_and_cluster(
-    #     self, relationships: list[Relationship], leiden_params: dict[str, Any]
-    # ) -> Any:
-    #     """
-    #     Previously created a local graph and ran hierarchical_leiden.
-    #     Now it calls the external clustering service.
-    #     """
-    #     logger.info("Sending request to external clustering service...")
-    #     communities = await self._call_clustering_service(
-    #         relationships, leiden_params
-    #     )
-    #     logger.info("Received communities from clustering service.")
-    #     return communities
-
-    # async def _cluster_and_add_community_info(
-    #     self,
-    #     relationships: list[Relationship],
-    #     relationship_ids_cache: dict[str, list[int]],
-    #     leiden_params: dict[str, Any],
-    #     collection_id: Optional[UUID] = None,
-    # ) -> Tuple[int, Any]:
-
-    #     # Clear old information if needed (unchanged logic)
-    #     conditions = []
-    #     if collection_id is not None:
-    #         conditions.append("collection_id = $1")
-
-    #     await asyncio.sleep(0.1)
-
-    #     start_time = time.time()
-
-    #     logger.info(f"Creating graph and clustering for {collection_id}")
-
-    #     # Get communities from the external service
-    #     hierarchical_communities = await self._create_graph_and_cluster(
-    #         relationships=relationships,
-    #         leiden_params=leiden_params,
-    #     )
-
-    #     logger.info(
-    #         f"Computing Leiden communities completed, time {time.time() - start_time:.2f} seconds."
-    #     )
-
-    #     def relationship_ids(node: str) -> list[int]:
-    #         return relationship_ids_cache.get(node, [])
-
-    #     logger.info(
-    #         f"Cached {len(relationship_ids_cache)} relationship ids, time {time.time() - start_time:.2f} seconds."
-    #     )
-
-    #     # hierarchical_communities is now a list of dicts like:
-    #     # [{"node": str, "cluster": int, "level": int}, ...]
-
-    #     if not hierarchical_communities:
-    #         num_communities = 0
-    #     else:
-    #         num_communities = (
-    #             max(item["cluster"] for item in hierarchical_communities) + 1
-    #         )
-
-    #     logger.info(
-    #         f"Generated {num_communities} communities, time {time.time() - start_time:.2f} seconds."
-    #     )
-
-    #     return num_communities, hierarchical_communities
 
     async def _create_graph_and_cluster(
         self,

@@ -134,7 +134,6 @@ class SyncRetrievalMixins:
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
         conversation_id: Optional[str] = None,
-        branch_id: Optional[str] = None,
         # TODO - Deprecate messages
         messages: Optional[dict | Message] = None,
     ) -> list[Message] | AsyncGenerator[Message, None]:
@@ -169,7 +168,6 @@ class SyncRetrievalMixins:
             "task_prompt_override": task_prompt_override,
             "include_title_if_available": include_title_if_available,
             "conversation_id": conversation_id,
-            "branch_id": branch_id,
         }
 
         if message:

@@ -4,7 +4,6 @@ from uuid import UUID
 
 from core.base import AsyncState, DatabaseProvider, StorageResult, VectorEntry
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -17,7 +16,6 @@ class VectorStoragePipe(AsyncPipe[StorageResult]):
         self,
         database_provider: DatabaseProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: SqlitePersistentLoggingProvider,
         storage_batch_size: int = 128,
         *args,
         **kwargs,
@@ -27,7 +25,6 @@ class VectorStoragePipe(AsyncPipe[StorageResult]):
         """
         super().__init__(
             config,
-            logging_provider,
             *args,
             **kwargs,
         )
@@ -43,7 +40,9 @@ class VectorStoragePipe(AsyncPipe[StorageResult]):
         """
 
         try:
-            await self.database_provider.upsert_entries(vector_entries)
+            await self.database_provider.chunks_handler.upsert_entries(
+                vector_entries
+            )
         except Exception as e:
             error_message = (
                 f"Failed to store vector entries in the database: {e}"
