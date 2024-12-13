@@ -46,4 +46,4 @@ jobs:
 
       - name: Run R2R Full Python Integration Test
         run: |
-          python -m pytest
+          poetry run pytest
