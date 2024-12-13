@@ -13,18 +13,6 @@ runs:
         python-version: '3.12'
 
     - name: Install Poetry and dependencies on Ubuntu and macOS
-      if: inputs.os == 'ubuntu-latest' || inputs.os == 'macos-latest'
-      shell: bash
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
         cd py && poetry install -E core -E ingestion-bundle
-
-    - name: Install Poetry and dependencies on Windows
-      if: inputs.os == 'windows-latest'
-      shell: pwsh
-      run: |
-        (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
-        $env:PATH += ";$env:APPDATA\Python\Scripts"
-        poetry --version
-        cd py
-        poetry install -E core -E ingestion-bundle

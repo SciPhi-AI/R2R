@@ -33,13 +33,9 @@ jobs:
 
       - name: Set up Python and install dependencies
         uses: ./.github/actions/setup-python-light
-        with:
-          os: ${{ matrix.os }}
 
       - name: Setup and start PostgreSQL
         uses: ./.github/actions/setup-postgres-ext
-        with:
-          os: ${{ matrix.os }}
 
       - name: Start R2R Light server
         uses: ./.github/actions/start-r2r-light
