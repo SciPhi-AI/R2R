@@ -32,7 +32,7 @@ def superuser_login():
 
 def register_and_verify_user(email, password):
     # Register
-    user = client.users.register(email, password)["results"]
+    user = client.users.create(email, password)["results"]
     user_id = user["id"]
     # In a real scenario, you'd have to retrieve the verification code from an email box or a test hook.
     # For the sake of testing, we might have a method in dev to auto-verify.
@@ -52,7 +52,7 @@ def test_register_user():
     print("Testing: User registration")
     random_email = f"{uuid.uuid4()}@example.com"
     password = "test_password123"
-    user_resp = client.users.register(random_email, password)
+    user_resp = client.users.create(random_email, password)
     user = user_resp["results"]
     assert_http_error(
         "id" in user, "User registration failed, no user ID returned"
@@ -370,7 +370,7 @@ def test_superuser_downgrade_permissions():
 
     user_email = f"test_super_{uuid.uuid4()}@test.com"
     user_password = "securepass"
-    new_user = client.users.register(user_email, user_password)["results"]
+    new_user = client.users.create(user_email, user_password)["results"]
     new_user_id = new_user["id"]
 
     # Update them to superuser

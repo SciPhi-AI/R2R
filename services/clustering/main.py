@@ -1,14 +1,12 @@
 import logging
-from typing import Any, List, Optional
 
 import networkx as nx
-import uvicorn
 from fastapi import FastAPI, HTTPException
 
 # Make sure graspologic and networkx are installed
 # Requires that "graspologic[leiden]" extras are installed if needed.
 from graspologic.partition import hierarchical_leiden
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 app = FastAPI()
 logger = logging.getLogger("graspologic_service")
@@ -32,7 +30,7 @@ class LeidenParams(BaseModel):
     # Add any other parameters as needed.
 
 class ClusterRequest(BaseModel):
-    relationships: List[Relationship]
+    relationships: list[Relationship]
     leiden_params: LeidenParams
 
 class CommunityAssignment(BaseModel):
@@ -41,7 +39,7 @@ class CommunityAssignment(BaseModel):
     level: int
 
 class ClusterResponse(BaseModel):
-    communities: List[CommunityAssignment]
+    communities: list[CommunityAssignment]
 
 
 @app.post("/cluster", response_model=ClusterResponse)

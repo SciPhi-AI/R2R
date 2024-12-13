@@ -377,7 +377,7 @@ def test_extract_document_unauthorized():
     # In reality, you'd do something like client_non_superuser.login("user", "pass")
     client_non_superuser = create_client("http://localhost:7272")
     random_string = str(uuid.uuid4())
-    client_non_superuser.users.register(f"{random_string}@me.com", "password")
+    client_non_superuser.users.create(f"{random_string}@me.com", "password")
     client_non_superuser.users.login(f"{random_string}@me.com", "password")
 
     document_id = "db02076e-989a-59cd-98d5-e24e15a0bd27"
@@ -433,7 +433,7 @@ def test_get_document_collections_non_superuser():
     print("Testing: Collections endpoint as non-superuser")
     client_non_superuser = create_client("http://localhost:7272")
     random_string = str(uuid.uuid4())
-    client_non_superuser.users.register(f"{random_string}@me.com", "password")
+    client_non_superuser.users.create(f"{random_string}@me.com", "password")
     client_non_superuser.users.login(f"{random_string}@me.com", "password")
 
     # Without superuser perms, should fail
@@ -460,7 +460,7 @@ def test_access_document_not_owned():
     # Now try to retrieve with a non-superuser client
     client_non_superuser = create_client("http://localhost:7272")
     random_string = str(uuid.uuid4())
-    client_non_superuser.users.register(f"{random_string}@me.com", "password")
+    client_non_superuser.users.create(f"{random_string}@me.com", "password")
     client_non_superuser.users.login(f"{random_string}@me.com", "password")
 
     try:

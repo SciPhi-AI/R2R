@@ -823,10 +823,7 @@ class DocumentsRouter(BaseRouterV3):
             user_has_access = (
                 is_owner
                 or set(auth_user.collection_ids).intersection(
-                    {
-                        ele.collection_id
-                        for ele in document_collections["results"]
-                    }
+                    {ele.id for ele in document_collections["results"]}
                 )
                 != set()
             )

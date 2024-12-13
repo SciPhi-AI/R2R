@@ -188,7 +188,7 @@ def test_unauthorized_chunk_access():
     # Simulate non-owner client (no auth)
     client_non_owner = create_client("http://localhost:7272")
     random_string = str(uuid.uuid4())
-    client_non_owner.users.register(f"{random_string}@me.com", "password")
+    client_non_owner.users.create(f"{random_string}@me.com", "password")
     client_non_owner.users.login(f"{random_string}@me.com", "password")
 
     try:

@@ -150,7 +150,7 @@ def test_remove_non_member_user_from_collection():
     # Setup: Create a user and a collection
     user_email = f"user_{uuid.uuid4()}@test.com"
     password = "pwd123"
-    client.users.register(user_email, password)
+    client.users.create(user_email, password)
     client.users.login(user_email, password)
 
     # Create a collection by the same user
@@ -162,7 +162,7 @@ def test_remove_non_member_user_from_collection():
 
     # Create another user who will not be added to the collection
     another_user_email = f"user2_{uuid.uuid4()}@test.com"
-    client.users.register(another_user_email, "pass456")
+    client.users.create(another_user_email, "pass456")
     another_user_id = client.users.me()["results"]["id"]
     client.users.logout()
 
@@ -212,7 +212,7 @@ def test_add_user_to_non_existent_collection():
     # Create a regular user
     user_email = f"test_user_{uuid.uuid4()}@test.com"
     user_password = "test_password"
-    client.users.register(user_email, user_password)
+    client.users.create(user_email, user_password)
     client.users.login(user_email, user_password)
     user_id = client.users.me()["results"]["id"]
     client.users.logout()
@@ -245,7 +245,7 @@ def test_remove_non_member_user_from_collection():
     # Create a user (Owner)
     owner_email = f"owner_{uuid.uuid4()}@test.com"
     owner_password = "password123"
-    client.users.register(owner_email, owner_password)
+    client.users.create(owner_email, owner_password)
     client.users.login(owner_email, owner_password)
 
     # Create a collection by this owner
@@ -256,7 +256,7 @@ def test_remove_non_member_user_from_collection():
     # Create another user who will NOT be added to this collection
     other_user_email = f"other_{uuid.uuid4()}@test.com"
     other_password = "password456"
-    client.users.register(other_user_email, other_password)
+    client.users.create(other_user_email, other_password)
     # Need the other user's ID but no need to keep them logged in
     client.users.login(other_user_email, other_password)
     other_user_id = client.users.me()["results"]["id"]
@@ -287,7 +287,7 @@ def test_non_owner_delete_collection():
     # Create owner user
     owner_email = f"owner_{uuid.uuid4()}@test.com"
     owner_password = "pwd123"
-    client.users.register(owner_email, owner_password)
+    client.users.create(owner_email, owner_password)
     client.users.login(owner_email, owner_password)
     coll = client.collections.create(name="Owner Collection")["results"]
     coll_id = coll["id"]
@@ -296,7 +296,7 @@ def test_non_owner_delete_collection():
     non_owner_email = f"nonowner_{uuid.uuid4()}@test.com"
     non_owner_password = "pwd1234"
     client.users.logout()
-    client.users.register(non_owner_email, non_owner_password)
+    client.users.create(non_owner_email, non_owner_password)
     client.users.login(non_owner_email, non_owner_password)
     non_owner_id = client.users.me()["results"]["id"]
     client.users.logout()

@@ -30,7 +30,7 @@ def create_test_user(base_url: str) -> TestUser:
     password = f"pass_{random_string}"
 
     client = R2RClient(base_url)
-    user = client.users.register(email, password)["results"]
+    user = client.users.create(email, password)["results"]
     client.users.login(email, password)
 
     return TestUser(
@@ -68,13 +68,13 @@ def test_document_sharing_via_collections():
 
     f1 = random.randint(1, 1_000_000)
     f2 = random.randint(1, 1_000_000)
-    client.users.register(f"user2_{f2}@test.com", "password123")
+    client.users.create(f"user2_{f2}@test.com", "password123")
     client.users.login(f"user2_{f2}@test.com", "password123")
     user2_id = client.users.me()["results"]["id"]
     client.users.logout()
     print("user2_id = ", user2_id)
 
-    client.users.register(f"user1_{f1}@test.com", "password123")
+    client.users.create(f"user1_{f1}@test.com", "password123")
     client.users.login(f"user1_{f1}@test.com", "password123")
     user1_id = client.users.me()["results"]["id"]
     print("user1_id = ", user1_id)
@@ -123,14 +123,14 @@ def test_collection_document_removal():
     f2 = random.randint(1, 1_000_000)
 
     # Create and get user2 first
-    client.users.register(f"user2_{f2}@test.com", "password123")
+    client.users.create(f"user2_{f2}@test.com", "password123")
     client.users.login(f"user2_{f2}@test.com", "password123")
     user2_id = client.users.me()["results"]["id"]
     client.users.logout()
     print("user2_id = ", user2_id)
 
     # Create and login as user1
-    client.users.register(f"user1_{f1}@test.com", "password123")
+    client.users.create(f"user1_{f1}@test.com", "password123")
     client.users.login(f"user1_{f1}@test.com", "password123")
     user1_id = client.users.me()["results"]["id"]
     print("user1_id = ", user1_id)
@@ -197,13 +197,13 @@ def test_document_access_restrictions():
     f2 = random.randint(1, 1_000_000)
 
     # Create and get user2 first
-    client.users.register(f"user2_{f2}@test.com", "password123")
+    client.users.create(f"user2_{f2}@test.com", "password123")
     client.users.login(f"user2_{f2}@test.com", "password123")
     user2_id = client.users.me()["results"]["id"]
     client.users.logout()
 
     # Create and login as user1
-    client.users.register(f"user1_{f1}@test.com", "password123")
+    client.users.create(f"user1_{f1}@test.com", "password123")
     client.users.login(f"user1_{f1}@test.com", "password123")
     user1_id = client.users.me()["results"]["id"]
 
@@ -239,13 +239,13 @@ def test_document_search_across_users():
     f2 = random.randint(1, 1_000_000)
 
     # Create and get user2 first
-    client.users.register(f"user2_{f2}@test.com", "password123")
+    client.users.create(f"user2_{f2}@test.com", "password123")
     client.users.login(f"user2_{f2}@test.com", "password123")
     user2_id = client.users.me()["results"]["id"]
     client.users.logout()
 
     # Create and login as user1
-    client.users.register(f"user1_{f1}@test.com", "password123")
+    client.users.create(f"user1_{f1}@test.com", "password123")
     client.users.login(f"user1_{f1}@test.com", "password123")
     user1_id = client.users.me()["results"]["id"]
 
@@ -299,7 +299,7 @@ def test_concurrent_document_access():
     # Create three users with random IDs
     for i in range(3):
         f = random.randint(1, 1_000_000)
-        client.users.register(f"user{i}_{f}@test.com", "password123")
+        client.users.create(f"user{i}_{f}@test.com", "password123")
         client.users.login(f"user{i}_{f}@test.com", "password123")
         user_ids.append(client.users.me()["results"]["id"])
         credentials.append((f"user{i}_{f}@test.com", "password123"))
@@ -350,7 +350,7 @@ def test_multiple_collections_document_access():
     owner_password = "password"
     client = R2RClient(args.base_url)
 
-    client.users.register(owner_email, owner_password)
+    client.users.create(owner_email, owner_password)
     client.users.login(owner_email, owner_password)
 
     coll1 = client.collections.create(name="Collection One")["results"]["id"]
@@ -367,7 +367,7 @@ def test_multiple_collections_document_access():
     other_email = f"other_{uuid.uuid4()}@test.com"
     other_password = "password123"
     client.users.logout()
-    client.users.register(other_email, other_password)
+    client.users.create(other_email, other_password)
     client.users.login(other_email, other_password)
     other_user_id = client.users.me()["results"]["id"]
     client.users.logout()

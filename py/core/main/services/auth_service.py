@@ -176,8 +176,13 @@ class AuthService(Service):
         # Delete user's default collection
         # TODO: We need to better define what happens to the user's data when they are deleted
         collection_id = generate_default_user_collection_id(user_id)
+
+        await self.providers.database.graph_handler.delete_graph_for_collection(
+            collection_id=collection_id,
+        )
+
         await self.providers.database.delete_collection_relational(
-            collection_id
+            collection_id=collection_id,
         )
 
         if delete_vector_data:

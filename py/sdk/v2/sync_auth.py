@@ -9,7 +9,7 @@ from ..models import Token, User
 
 
 class SyncAuthMixins:
-    @deprecated("Use client.users.register() instead")
+    @deprecated("Use client.users.create() instead")
     def register(self, email: str, password: str) -> User:
         """
         Registers a new user with the given email and password.

@@ -1,3 +1,5 @@
+from __future__ import annotations  # for Python 3.10+
+from typing_extensions import deprecated
 from typing import Optional
 from uuid import UUID
 
@@ -19,6 +21,45 @@ class UsersSDK:
     def __init__(self, client):
         self.client = client
 
+    async def create(
+        self,
+        email: str,
+        password: str,
+        name: Optional[str] = None,
+        bio: Optional[str] = None,
+        profile_picture: Optional[str] = None,
+    ) -> WrappedUserResponse:
+        """
+        Register a new user.
+
+        Args:
+            email (str): User's email address
+            password (str): User's password
+            name (Optional[str]): The name for the new user
+            bio (Optional[str]): The bio for the new user
+            profile_picture (Optional[str]): New user profile picture
+
+        Returns:
+            UserResponse: New user information
+        """
+
+        data: dict = {"email": email, "password": password}
+
+        if name is not None:
+            data["name"] = name
+        if bio is not None:
+            data["bio"] = bio
+        if profile_picture is not None:
+            data["profile_picture"] = profile_picture
+
+        return await self.client._make_request(
+            "POST",
+            "users",
+            json=data,
+            version="v3",
+        )
+
+    @deprecated("Use client.users.create() instead")
     async def register(self, email: str, password: str) -> WrappedUserResponse:
         """
         Register a new user.
@@ -302,7 +343,9 @@ class UsersSDK:
             id (str | UUID): User ID to update
             username (Optional[str]): New username
             is_superuser (Optional[bool]): Update superuser status
-            metadata (Optional[Dict[str, Any]]): Update user metadata
+            name (Optional[str]): New name
+            bio (Optional[str]): New bio
+            profile_picture (Optional[str]): New profile picture
 
         Returns:
             dict: Updated user information
