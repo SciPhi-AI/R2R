@@ -4,16 +4,26 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'py/**'
+      - '.github/workflows/**'
+      - 'tests/**'
   pull_request:
     branches:
       - dev
       - dev-minor
       - main
+    paths:
+      - 'py/**'
+      - '.github/workflows/**'
+      - 'tests/**'
   workflow_dispatch:
 
 jobs:
-  integration-test:    # or whatever name you want to give this job
+  integration-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
     env:
       TELEMETRY_ENABLED: 'false'
       R2R_PROJECT_NAME: r2r_default
@@ -21,26 +31,80 @@ jobs:
       AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
       AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
       AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
+      PYTHONUNBUFFERED: '1'
+      PYTEST_ADDOPTS: '--color=yes'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+        with:
+          fetch-depth: 0
+      
       - name: Set up Python and install dependencies
         uses: ./.github/actions/setup-python-full
-
+        with:
+          os: ubuntu-latest
+          python-version: '3.12'
+          poetry-version: '1.7.1'
+          r2r-version: 'latest'
+      
       - name: Setup and start Docker
         uses: ./.github/actions/setup-docker
-
+        id: docker-setup
+      
       - name: Login Docker
         uses: ./.github/actions/login-docker
         with:
           docker_username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
           docker_password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
-
+      
       - name: Start R2R Full server
         uses: ./.github/actions/start-r2r-full
-
+      
+      - name: Wait for server to be ready
+        run: |
+          timeout=300  # 5 minutes timeout
+          while ! curl -s http://localhost:8000/health > /dev/null; do
+            if [ $timeout -le 0 ]; then
+              echo "Server failed to start within timeout"
+              exit 1
+            fi
+            echo "Waiting for server to be ready..."
+            sleep 5
+            timeout=$((timeout - 5))
+          done
+      
       - name: Run R2R Full Python Integration Test
         run: |
-          poetry run pytest
+          cd py && poetry run pytest tests/ \
+            --verbose \
+            --capture=no \
+            --log-cli-level=INFO \
+            --junit-xml=test-results/junit.xml \
+            --html=test-results/report.html
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: |
+            test-results/
+            pytest-logs/
+      
+      - name: Check for test failures
+        if: failure()
+        run: |
+          echo "::error::Integration tests failed. Check the test results artifact for details."
+          exit 1
+
+    services:
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
