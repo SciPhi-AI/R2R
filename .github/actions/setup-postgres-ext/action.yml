@@ -1,122 +1,111 @@
-name: 'R2R Light Python Integration Test (ubuntu)'
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'py/**'
-      - '.github/workflows/**'
-      - 'tests/**'
-  pull_request:
-    branches:
-      - dev
-      - dev-minor
-      - main
-    paths:
-      - 'py/**'
-      - '.github/workflows/**'
-      - 'tests/**'
-  workflow_dispatch:
+name: 'Setup PostgreSQL'
+description: 'Sets up PostgreSQL with pgvector'
+inputs:
+  os:
+    description: 'Operating system'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Setup PostgreSQL on Ubuntu
+      if: inputs.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        sudo apt-get purge -y 'postgresql-*'
+        sudo rm -rf /var/lib/postgresql /var/log/postgresql /etc/postgresql
 
-jobs:
-  integration-test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+        echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg
 
-    env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
-      AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
-      AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
-      TELEMETRY_ENABLED: 'false'
-      R2R_POSTGRES_HOST: localhost
-      R2R_POSTGRES_DBNAME: postgres
-      R2R_POSTGRES_PORT: '5432'
-      R2R_POSTGRES_PASSWORD: postgres
-      R2R_POSTGRES_USER: postgres
-      R2R_PROJECT_NAME: r2r_default
-      PYTHONUNBUFFERED: '1'
-      PYTEST_ADDOPTS: '--color=yes'
+        sudo apt-get update
+        sudo apt-get install -y postgresql-15 postgresql-client-15 postgresql-15-pgvector
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        sudo systemctl enable postgresql@15-main
+        sudo systemctl start postgresql@15-main
+        cd /
+        sudo -u postgres /usr/lib/postgresql/15/bin/psql -c "ALTER USER postgres PASSWORD 'postgres';"
+        sudo -u postgres /usr/lib/postgresql/15/bin/psql -c "CREATE EXTENSION vector;"
 
-      - name: Set up Python and install dependencies
-        uses: ./.github/actions/setup-python-light
-        with:
-          os: ubuntu-latest
-          python-version: '3.12'
-          poetry-version: '1.7.1'
-          r2r-version: 'latest'
+        # Set max_connections to 1024
+        echo "max_connections = 1024" | sudo tee -a /etc/postgresql/15/main/postgresql.conf
+        sudo systemctl reload postgresql@15-main
 
-      # Remove the setup-postgres-ext step since we're using the service
+    - name: Setup PostgreSQL on Windows
+      if: inputs.os == 'windows-latest'
+      shell: cmd
+      run: |
 
-      - name: Verify PostgreSQL and create extension
-        run: |
-          pg_isready -h localhost -p 5432
-          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+        echo Starting PostgreSQL setup and pgvector installation...
 
-      - name: Start R2R Light server
-        uses: ./.github/actions/start-r2r-light
-        id: start-server
+        echo Installing PostgreSQL...
+        choco install postgresql15 --params "/Password:postgres" --force
 
-      - name: Wait for server to be ready
-        run: |
-          timeout=180  # 3 minutes timeout
-          while ! curl -s http://localhost:8000/health > /dev/null; do
-            if [ $timeout -le 0 ]; then
-              echo "Server failed to start within timeout"
-              exit 1
-            fi
-            echo "Waiting for server to be ready..."
-            sleep 5
-            timeout=$((timeout - 5))
-          done
+        echo Updating PATH and setting PGPASSWORD...
+        set PATH=%PATH%;C:\Program Files\PostgreSQL\15\bin
+        set PGPASSWORD=postgres
+        echo PATH updated and PGPASSWORD set.
 
-      - name: Run R2R Light Python Integration Test
-        run: |
-          cd py && poetry run pytest tests/ \
-            --verbose \
-            --capture=no \
-            --log-cli-level=INFO \
-            --junit-xml=test-results/junit.xml \
-            --html=test-results/report.html
+        echo Altering PostgreSQL user password...
+        psql -U postgres -c "ALTER USER postgres PASSWORD 'postgres';"
+        echo PostgreSQL user password altered.
 
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-results
-          path: |
-            test-results/
-            pytest-logs/
+        echo Installing Visual Studio Build Tools...
+        choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart"
+        echo Visual Studio Build Tools installed.
 
-      - name: Check for test failures
-        if: failure()
-        run: |
-          echo "::error::Integration tests failed. Check the test results artifact for details."
-          exit 1
+        echo Setting up Visual Studio environment...
+        call "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+        echo Visual Studio environment set up.
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: postgres
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-          - 5432:5432
-        # Add pgvector installation
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-          --name postgres-container
-        # Install pgvector in the container
-        volumes:
-          - postgres-data:/var/lib/postgresql/data
+        echo Cloning and building pgvector...
+        set PGROOT=C:\Program Files\PostgreSQL\15
+        cd /d %TEMP%
+        git clone --branch v0.7.4 https://github.com/pgvector/pgvector.git
+        cd pgvector
+        echo pgvector cloned.
+
+        echo Creating vector extension...
+        psql -U postgres -c "CREATE EXTENSION vector;"
+        echo Vector extension created.
+
+        echo Building pgvector...
+        nmake /F Makefile.win
+        echo pgvector built.
+
+        echo Installing pgvector...
+        nmake /F Makefile.win install
+        echo pgvector installed.
+
+        echo Setting max_connections to 1024...
+        echo max_connections = 1024 >> "C:\Program Files\PostgreSQL\15\data\postgresql.conf"
+        echo max_connections set.
+
+        echo Restarting PostgreSQL service...
+        net stop postgresql-x64-15
+        net start postgresql-x64-15
+        echo PostgreSQL service restarted.
+
+        echo Setup complete!
+
+    - name: Setup PostgreSQL on macOS
+      if: inputs.os == 'macos-latest'
+      shell: bash
+      run: |
+        brew update
+        brew install postgresql@15
+
+        brew services start postgresql@15
+        sleep 5
+        /opt/homebrew/opt/postgresql@15/bin/createuser -s postgres
+        /opt/homebrew/opt/postgresql@15/bin/psql -d postgres -c "ALTER USER postgres PASSWORD 'postgres';"
+
+        cd /tmp
+        git clone --branch v0.7.4 https://github.com/pgvector/pgvector.git
+        cd pgvector
+        export PG_CONFIG=/opt/homebrew/opt/postgresql@15/bin/pg_config
+        make
+        make install # may need sudo
+
+        # Set max_connections to 1024
+        echo "max_connections = 1024" | sudo tee -a /opt/homebrew/var/postgresql@15/postgresql.conf
+        brew services restart postgresql@15
