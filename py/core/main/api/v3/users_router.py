@@ -31,7 +31,100 @@ class UsersRouter(BaseRouterV3):
 
     def _setup_routes(self):
 
-        # New authentication routes
+        @self.router.post(
+            "/users",
+            response_model=WrappedUserResponse,
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            new_user = client.users.create(
+                                email="jane.doe@example.com",
+                                password="secure_password123"
+                            )"""
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.users.create({
+                                    email: "jane.doe@example.com",
+                                    password: "secure_password123"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r users create jane.doe@example.com secure_password123
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/users" \\
+                                -H "Content-Type: application/json" \\
+                                -d '{
+                                    "email": "jane.doe@example.com",
+                                    "password": "secure_password123"
+                                }'"""
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def register(
+            email: EmailStr = Body(..., description="User's email address"),
+            password: str = Body(..., description="User's password"),
+            name: str | None = Body(
+                None, description="The name for the new user"
+            ),
+            bio: str | None = Body(
+                None, description="The bio for the new user"
+            ),
+            profile_picture: str | None = Body(
+                None, description="Updated user profile picture"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedUserResponse:
+            """Register a new user with the given email and password."""
+            print('email = ', email)
+            print('making request.....')
+            registration_response = await self.services["auth"].register(
+                email, password
+            )
+            print('registration_response = ', registration_response)
+
+            if name or bio or profile_picture:
+                return await self.services["auth"].update_user(
+                    user_id=registration_response.id,
+                    name=name,
+                    bio=bio,
+                    profile_picture=profile_picture,
+                )
+
+            return registration_response
+
+        # TODO: deprecated, remove in next release
         @self.router.post(
             "/users/register",
             response_model=WrappedUserResponse,

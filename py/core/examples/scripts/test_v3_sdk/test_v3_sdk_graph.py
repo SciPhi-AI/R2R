@@ -13,7 +13,7 @@ def setup_prerequisites():
 
     # # Login
     # try:
-    #     client.users.register(email=user_email, password="new_secure_password123")
+    #     client.users.create(email=user_email, password="new_secure_password123")
     # except Exception as e:
     #     print("User might already exist:", str(e))
 

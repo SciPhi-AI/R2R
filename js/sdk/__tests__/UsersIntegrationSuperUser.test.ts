@@ -13,7 +13,7 @@ describe("r2rClient V3 Users Integration Tests", () => {
   });
 
   test("Register a new user", async () => {
-    const response = await client.users.register({
+    const response = await client.users.create({
       email: "new_user@example.com",
       password: "change_me_immediately",
     });

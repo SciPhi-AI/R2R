@@ -256,13 +256,6 @@ export interface CombinedSearchResponse {
 }
 
 // System types
-export interface LogsResponse {
-  run_id: string;
-  run_type: string;
-  entries: Record<string, any>[];
-  timestamp?: string;
-  user_id?: string;
-}
 
 export interface ServerStats {
   start_time: string;
@@ -371,7 +364,6 @@ export type WrappedSearchResponse = ResultsWrapper<CombinedSearchResponse>;
 
 // System Responses
 export type WrappedSettingsResponse = ResultsWrapper<SettingsResponse>;
-export type WrappedLogsResponse = PaginatedResultsWrapper<LogsResponse[]>;
 export type WrappedServerStatsResponse = ResultsWrapper<ServerStats>;
 
 // User Responses

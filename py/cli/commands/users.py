@@ -17,12 +17,12 @@ def users():
 @click.argument("email", required=True, type=str)
 @click.argument("password", required=True, type=str)
 @pass_context
-async def register(ctx, email, password):
+async def create(ctx, email, password):
     """Create a new user."""
     client: R2RAsyncClient = ctx.obj
 
     with timer():
-        response = await client.users.register(email=email, password=password)
+        response = await client.users.create(email=email, password=password)
 
     click.echo(json.dumps(response, indent=2))
 

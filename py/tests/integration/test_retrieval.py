@@ -390,7 +390,7 @@ def test_complex_nested_filters(client, test_collection):
         search_settings={"filters": filters},
     )["results"]
     results = resp["chunk_search_results"]
-    print('results = ', results)
+    print("results = ", results)
     assert len(results) == 2, f"Expected 2 docs, got {len(results)}"
 
 

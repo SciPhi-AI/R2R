@@ -139,7 +139,6 @@ export class RetrievalClient {
    *    - Customizable generation parameters for response style and length
    *    - Source document citation with optional title inclusion
    *    - Streaming support for real-time responses
-   *    - Branch management for exploring different conversation paths
    *
    * Common Use Cases:
    *    - Research assistance and literature review
@@ -157,7 +156,6 @@ export class RetrievalClient {
    * @param taskPromptOverride Optional custom prompt to override default
    * @param includeTitleIfAvailable Include document titles in responses when available
    * @param conversationId ID of the conversation
-   * @param branchId ID of the conversation branch
    * @returns
    */
   @feature("retrieval.agent")
@@ -169,7 +167,6 @@ export class RetrievalClient {
     taskPromptOverride?: string;
     includeTitleIfAvailable?: boolean;
     conversationId?: string;
-    branchId?: string;
   }): Promise<any | AsyncGenerator<string, void, unknown>> {
     const data: Record<string, any> = {
       message: options.message,
@@ -190,9 +187,6 @@ export class RetrievalClient {
       }),
       ...(options.conversationId && {
         conversation_id: options.conversationId,
-      }),
-      ...(options.branchId && {
-        branch_id: options.branchId,
       }),
     };
 

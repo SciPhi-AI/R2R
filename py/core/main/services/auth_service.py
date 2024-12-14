@@ -185,6 +185,14 @@ class AuthService(Service):
             collection_id
         )
 
+        try:
+            await self.providers.database.graphs_handler.delete_graph_for_collection(
+                collection_id=collection_id,
+            )
+        except Exception as e:
+            # print(f"Error deleting graph for collection {collection_id}: {e}")
+            pass
+
         if delete_vector_data:
             await self.providers.database.chunks_handler.delete_user_vector(
                 user_id
