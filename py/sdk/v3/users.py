@@ -61,7 +61,7 @@ class UsersSDK:
             version="v3",
         )
 
-    @deprecated("Use client.users.create() instead")
+    # @deprecated("Use client.users.create() instead")
     async def register(self, email: str, password: str) -> WrappedUserResponse:
         """
         Register a new user.
