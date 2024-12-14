@@ -70,7 +70,7 @@ class PostgresLimitsHandler(Handler):
             route,
             {
                 "global_per_min": 60,
-                "route_per_min": 20,
+                "route_per_min": 30,
                 "monthly_limit": 10000,
             },
         )
