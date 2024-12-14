@@ -57,6 +57,7 @@ class RetrievalRouterV3(BaseRouterV3):
         run_type: RunType = RunType.RETRIEVAL,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
+
     def _register_workflows(self):
         pass
 

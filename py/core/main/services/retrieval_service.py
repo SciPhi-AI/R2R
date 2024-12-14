@@ -308,7 +308,9 @@ class RetrievalService(Service):
                 if conversation_id:  # Fetch the existing conversation
                     try:
                         conversation = await self.providers.database.conversations_handler.get_conversations_overview(
-                            conversation_id=conversation_id
+                            offset=0,
+                            limit=1,
+                            conversation_ids=[conversation_id],
                         )
                     except Exception as e:
                         logger.error(f"Error fetching conversation: {str(e)}")

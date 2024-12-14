@@ -84,18 +84,20 @@ class PostgresLimitsHandler(Handler):
 
         # Global per-minute check
         user_req_count = await self._count_requests(user_id, None, one_min_ago)
-        print('min req count = ', user_req_count)
+        print("min req count = ", user_req_count)
         if user_req_count >= global_per_min:
             raise ValueError("Global per-minute rate limit exceeded")
 
         # Per-route per-minute check
-        route_req_count = await self._count_requests(user_id, route, one_min_ago)
+        route_req_count = await self._count_requests(
+            user_id, route, one_min_ago
+        )
         if route_req_count >= route_per_min:
             raise ValueError("Per-route per-minute rate limit exceeded")
 
         # Monthly limit check
         monthly_count = await self._count_monthly_requests(user_id)
-        print('monthly_count = ', monthly_count)
+        print("monthly_count = ", monthly_count)
 
         if monthly_count >= monthly_limit:
             raise ValueError("Monthly rate limit exceeded")
@@ -106,7 +108,6 @@ class PostgresLimitsHandler(Handler):
         VALUES (CURRENT_TIMESTAMP AT TIME ZONE 'UTC', $1, $2)
         """
         await self.connection_manager.execute_query(query, [user_id, route])
-
 
 
 # import logging
