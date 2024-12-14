@@ -57,6 +57,7 @@ class RetrievalRouterV3(BaseRouterV3):
         run_type: RunType = RunType.RETRIEVAL,
     ):
         super().__init__(providers, services, orchestration_provider, run_type)
+        self.set_rate_limiting()
 
     def _register_workflows(self):
         pass
@@ -95,6 +96,7 @@ class RetrievalRouterV3(BaseRouterV3):
 
         @self.router.post(
             "/retrieval/search",
+            dependencies=[Depends(lambda: self.rate_limit_dependency)],
             summary="Search R2R",
             openapi_extra={
                 "x-codeSamples": [
@@ -276,6 +278,7 @@ class RetrievalRouterV3(BaseRouterV3):
 
         @self.router.post(
             "/retrieval/rag",
+            dependencies=[Depends(lambda: self.rate_limit_dependency)],
             summary="RAG Query",
             response_model=None,
             openapi_extra={
@@ -463,6 +466,7 @@ class RetrievalRouterV3(BaseRouterV3):
         @self.router.post(
             "/retrieval/agent",
             summary="RAG-powered Conversational Agent",
+            dependencies=[Depends(lambda: self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -690,6 +694,7 @@ class RetrievalRouterV3(BaseRouterV3):
 
         @self.router.post(
             "/retrieval/completion",
+            dependencies=[Depends(lambda: self.rate_limit_dependency)],
             summary="Generate Message Completions",
             openapi_extra={
                 "x-codeSamples": [
@@ -826,6 +831,7 @@ class RetrievalRouterV3(BaseRouterV3):
 
         @self.router.post(
             "/retrieval/embedding",
+            dependencies=[Depends(lambda: self.rate_limit_dependency)],
             summary="Generate Embeddings",
             openapi_extra={
                 "x-codeSamples": [

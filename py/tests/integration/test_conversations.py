@@ -8,7 +8,7 @@ from r2r import R2RClient, R2RException
 @pytest.fixture(scope="session")
 def config():
     class TestConfig:
-        base_url = "http://localhost:7275"
+        base_url = "http://localhost:7272"
         superuser_email = "admin@example.com"
         superuser_password = "change_me_immediately"
 
