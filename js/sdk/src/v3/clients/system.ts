@@ -2,7 +2,6 @@ import { feature } from "../../feature";
 import { r2rClient } from "../../r2rClient";
 import {
   WrappedGenericMessageResponse,
-  WrappedLogsResponse,
   WrappedServerStatsResponse,
   WrappedSettingsResponse,
 } from "../../types";
@@ -16,29 +15,6 @@ export class SystemClient {
   @feature("system.health")
   async health(): Promise<WrappedGenericMessageResponse> {
     return await this.client.makeRequest("GET", "health");
-  }
-
-  /**
-   * Get logs from the server.
-   * @param options
-   * @returns
-   */
-  @feature("system.logs")
-  async logs(options: {
-    runTypeFilter?: string;
-    offset?: number;
-    limit?: number;
-  }): Promise<WrappedLogsResponse> {
-    const params: Record<string, any> = {
-      offset: options.offset ?? 0,
-      limit: options.limit ?? 100,
-    };
-
-    if (options.runTypeFilter) {
-      params.runTypeFilter = options.runTypeFilter;
-    }
-
-    return this.client.makeRequest("GET", "system/logs", { params });
   }
 
   /**

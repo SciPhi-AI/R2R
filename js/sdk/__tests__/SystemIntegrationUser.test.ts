@@ -41,10 +41,6 @@ describe("r2rClient V3 System Integration Tests User", () => {
     expect(response.results).toBeDefined();
   });
 
-  test("Only a superuser can call the `system/logs` endpoint.", async () => {
-    await expect(client.system.logs({})).rejects.toThrow(/Status 403/);
-  });
-
   test("Only a superuser can call the `system/settings` endpoint.", async () => {
     await expect(client.system.settings()).rejects.toThrow(/Status 403/);
   });

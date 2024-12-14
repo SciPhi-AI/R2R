@@ -77,15 +77,6 @@ export interface MessageResponse {
   metadata: Record<string, any>;
 }
 
-export interface BranchResponse {
-  branch_id: string;
-  branch_point_id?: string;
-  content?: string;
-  created_at: string;
-  user_id?: string;
-  name?: string;
-}
-
 // Document types
 export interface DocumentResponse {
   id: string;
@@ -266,13 +257,6 @@ export interface CombinedSearchResponse {
 }
 
 // System types
-export interface LogsResponse {
-  run_id: string;
-  run_type: string;
-  entries: Record<string, any>[];
-  timestamp?: string;
-  user_id?: string;
-}
 
 export interface ServerStats {
   start_time: string;
@@ -344,8 +328,6 @@ export type WrappedMessageResponse = ResultsWrapper<MessageResponse>;
 export type WrappedMessagesResponse = PaginatedResultsWrapper<
   MessageResponse[]
 >;
-export type WrappedBranchResponse = ResultsWrapper<BranchResponse>;
-export type WrappedBranchesResponse = PaginatedResultsWrapper<BranchResponse[]>;
 
 // Document Responses
 export type WrappedDocumentResponse = ResultsWrapper<DocumentResponse>;
@@ -383,7 +365,6 @@ export type WrappedSearchResponse = ResultsWrapper<CombinedSearchResponse>;
 
 // System Responses
 export type WrappedSettingsResponse = ResultsWrapper<SettingsResponse>;
-export type WrappedLogsResponse = PaginatedResultsWrapper<LogsResponse[]>;
 export type WrappedServerStatsResponse = ResultsWrapper<ServerStats>;
 
 // User Responses
