@@ -1,30 +1,56 @@
 name: 'Setup Python for R2R Light'
 description: 'Sets up Python environment and installs dependencies using Poetry'
+
 inputs:
   os:
     description: 'Operating system'
     required: true
+  python-version:
+    description: 'Python version to use'
+    required: false
+    default: '3.12'
+  poetry-version:
+    description: 'Poetry version to install'
+    required: false
+    default: '1.7.1'
+
 runs:
   using: "composite"
   steps:
     - name: Set up Python environment
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12'
-
-    - name: Install Poetry and dependencies on Ubuntu and macOS
-      if: inputs.os == 'ubuntu-latest' || inputs.os == 'macos-latest'
+        python-version: ${{ inputs.python-version }}
+        cache: 'pip'
+    
+    - name: Install Poetry
       shell: bash
       run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-        cd py && poetry install -E core -E ingestion-bundle
-
-    - name: Install Poetry and dependencies on Windows
-      if: inputs.os == 'windows-latest'
-      shell: pwsh
+        curl -sSL https://install.python-poetry.org | python3 - --version ${{ inputs.poetry-version }}
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+    
+    - name: Set Poetry config
+      shell: bash
       run: |
-        (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
-        $env:PATH += ";$env:APPDATA\Python\Scripts"
-        poetry --version
-        cd py
-        poetry install -E core -E ingestion-bundle
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+    
+    - name: Cache Poetry dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pypoetry
+          py/.venv
+        key: ${{ runner.os }}-poetry-${{ hashFiles('py/poetry.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-poetry-
+    
+    - name: Install dependencies
+      shell: bash
+      working-directory: py
+      run: |
+        if [ ! -f "poetry.lock" ]; then
+          echo "No poetry.lock found, creating one..."
+          poetry lock
+        fi
+        poetry install -E core -E ingestion-bundle --no-interaction

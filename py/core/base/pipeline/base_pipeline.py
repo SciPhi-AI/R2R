@@ -5,7 +5,6 @@ import logging
 import traceback
 from typing import Any, AsyncGenerator, Optional
 
-from ..logger.base import PersistentLoggingProvider
 from ..logger.run_manager import RunManager, manage_run
 from ..pipes.base_pipe import AsyncPipe, AsyncState
 
@@ -17,17 +16,11 @@ class AsyncPipeline:
 
     def __init__(
         self,
-        logging_provider: PersistentLoggingProvider,
         run_manager: Optional[RunManager] = None,
     ):
-        # TODO - Deprecate
-        if logging_provider is None:
-            raise ValueError("Pipe logger is required.")
-
         self.pipes: list[AsyncPipe] = []
         self.upstream_outputs: list[list[dict[str, str]]] = []
-        self.logging_provider = logging_provider
-        self.run_manager = run_manager or RunManager(self.logging_provider)
+        self.run_manager = run_manager or RunManager()
         self.futures: dict[str, asyncio.Future] = {}
         self.level = 0
 

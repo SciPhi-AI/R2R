@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import functools
 import inspect
-from typing import Any
+from typing import Any, Callable, Coroutine, TypeVar
 
 from .async_client import R2RAsyncClient
 from .v2 import (
@@ -13,6 +13,8 @@ from .v2 import (
     SyncRetrievalMixins,
     SyncServerMixins,
 )
+
+T = TypeVar("T")
 
 
 class R2RClient(R2RAsyncClient):
@@ -97,7 +99,11 @@ class R2RClient(R2RAsyncClient):
                     wrapped = self._make_sync_method(attr)
                     setattr(sdk_obj, name, wrapped)
 
-    def _make_sync_method(self, async_method):
+    # def _make_sync_method(self, async_method):
+    def _make_sync_method(
+        self, async_method: Callable[..., Coroutine[Any, Any, T]]
+    ) -> Callable[..., T]:
+
         @functools.wraps(async_method)
         def wrapped(*args, **kwargs):
             return self._loop.run_until_complete(async_method(*args, **kwargs))

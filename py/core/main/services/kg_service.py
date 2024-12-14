@@ -27,7 +27,6 @@ from core.base.abstractions import (
     Relationship,
 )
 from core.base.api.models import GraphResponse
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -58,7 +57,6 @@ class KgService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: SqlitePersistentLoggingProvider,
     ):
         super().__init__(
             config,
@@ -67,7 +65,6 @@ class KgService(Service):
             pipelines,
             agents,
             run_manager,
-            logging_connection,
         )
 
     @telemetry_event("kg_relationships_extraction")
@@ -87,7 +84,7 @@ class KgService(Service):
                 f"KGService: Processing document {document_id} for KG extraction"
             )
 
-            await self.providers.database.set_workflow_status(
+            await self.providers.database.documents_handler.set_workflow_status(
                 id=document_id,
                 status_type="extraction_status",
                 status=KGExtractionStatus.PROCESSING,
@@ -121,7 +118,7 @@ class KgService(Service):
 
         except Exception as e:
             logger.error(f"KGService: Error in kg_extraction: {e}")
-            await self.providers.database.set_workflow_status(
+            await self.providers.database.documents_handler.set_workflow_status(
                 id=document_id,
                 status_type="extraction_status",
                 status=KGExtractionStatus.FAILED,
@@ -144,7 +141,7 @@ class KgService(Service):
             await self.providers.embedding.async_get_embedding(description)
         )
 
-        return await self.providers.database.graph_handler.entities.create(
+        return await self.providers.database.graphs_handler.entities.create(
             name=name,
             parent_id=parent_id,
             store_type="graphs",  # type: ignore
@@ -170,7 +167,7 @@ class KgService(Service):
                 await self.providers.embedding.async_get_embedding(description)
             )
 
-        return await self.providers.database.graph_handler.entities.update(
+        return await self.providers.database.graphs_handler.entities.update(
             entity_id=entity_id,
             store_type="graphs",  # type: ignore
             name=name,
@@ -186,7 +183,7 @@ class KgService(Service):
         parent_id: UUID,
         entity_id: UUID,
     ):
-        return await self.providers.database.graph_handler.entities.delete(
+        return await self.providers.database.graphs_handler.entities.delete(
             parent_id=parent_id,
             entity_ids=[entity_id],
             store_type="graphs",  # type: ignore
@@ -202,7 +199,7 @@ class KgService(Service):
         entity_names: Optional[list[str]] = None,
         include_embeddings: bool = False,
     ):
-        return await self.providers.database.graph_handler.get_entities(
+        return await self.providers.database.graphs_handler.get_entities(
             parent_id=parent_id,
             offset=offset,
             limit=limit,
@@ -231,7 +228,7 @@ class KgService(Service):
             )
 
         return (
-            await self.providers.database.graph_handler.relationships.create(
+            await self.providers.database.graphs_handler.relationships.create(
                 subject=subject,
                 subject_id=subject_id,
                 predicate=predicate,
@@ -253,7 +250,7 @@ class KgService(Service):
         relationship_id: UUID,
     ):
         return (
-            await self.providers.database.graph_handler.relationships.delete(
+            await self.providers.database.graphs_handler.relationships.delete(
                 parent_id=parent_id,
                 relationship_ids=[relationship_id],
                 store_type="graphs",  # type: ignore
@@ -281,7 +278,7 @@ class KgService(Service):
             )
 
         return (
-            await self.providers.database.graph_handler.relationships.update(
+            await self.providers.database.graphs_handler.relationships.update(
                 relationship_id=relationship_id,
                 subject=subject,
                 subject_id=subject_id,
@@ -305,7 +302,7 @@ class KgService(Service):
         relationship_ids: Optional[list[UUID]] = None,
         entity_names: Optional[list[str]] = None,
     ):
-        return await self.providers.database.graph_handler.relationships.get(
+        return await self.providers.database.graphs_handler.relationships.get(
             parent_id=parent_id,
             store_type="graphs",  # type: ignore
             offset=offset,
@@ -327,7 +324,7 @@ class KgService(Service):
         description_embedding = str(
             await self.providers.embedding.async_get_embedding(summary)
         )
-        return await self.providers.database.graph_handler.communities.create(
+        return await self.providers.database.graphs_handler.communities.create(
             parent_id=parent_id,
             store_type="graphs",  # type: ignore
             name=name,
@@ -354,7 +351,7 @@ class KgService(Service):
                 await self.providers.embedding.async_get_embedding(summary)
             )
 
-        return await self.providers.database.graph_handler.communities.update(
+        return await self.providers.database.graphs_handler.communities.update(
             community_id=community_id,
             store_type="graphs",  # type: ignore
             name=name,
@@ -371,7 +368,7 @@ class KgService(Service):
         parent_id: UUID,
         community_id: UUID,
     ) -> None:
-        await self.providers.database.graph_handler.communities.delete(
+        await self.providers.database.graphs_handler.communities.delete(
             parent_id=parent_id,
             community_id=community_id,
         )
@@ -383,7 +380,7 @@ class KgService(Service):
         offset: int,
         limit: int,
     ):
-        return await self.providers.database.graph_handler.communities.get(
+        return await self.providers.database.graphs_handler.communities.get(
             parent_id=collection_id,
             store_type="graphs",  # type: ignore
             offset=offset,
@@ -400,7 +397,7 @@ class KgService(Service):
         community_names: Optional[list[str]] = None,
         include_embeddings: bool = False,
     ):
-        return await self.providers.database.graph_handler.get_communities(
+        return await self.providers.database.graphs_handler.get_communities(
             parent_id=parent_id,
             offset=offset,
             limit=limit,
@@ -416,7 +413,7 @@ class KgService(Service):
     #     name: Optional[str],
     #     description: str = "",
     # ) -> GraphResponse:
-    #     return await self.providers.database.graph_handler.create(
+    #     return await self.providers.database.graphs_handler.create(
     #         collection_id=collection_id,
     #         user_id=user_id,
     #         name=name,
@@ -432,7 +429,7 @@ class KgService(Service):
         graph_ids: Optional[list[UUID]] = None,
         collection_id: Optional[UUID] = None,
     ) -> dict[str, list[GraphResponse] | int]:
-        return await self.providers.database.graph_handler.list_graphs(
+        return await self.providers.database.graphs_handler.list_graphs(
             offset=offset,
             limit=limit,
             # filter_user_ids=user_ids,
@@ -447,7 +444,7 @@ class KgService(Service):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> GraphResponse:
-        return await self.providers.database.graph_handler.update(
+        return await self.providers.database.graphs_handler.update(
             collection_id=collection_id,
             name=name,
             description=description,
@@ -455,10 +452,10 @@ class KgService(Service):
 
     @telemetry_event("reset_graph_v3")
     async def reset_graph_v3(self, id: UUID) -> bool:
-        await self.providers.database.graph_handler.reset(
+        await self.providers.database.graphs_handler.reset(
             parent_id=id,
         )
-        await self.providers.database.document_handler.set_workflow_status(
+        await self.providers.database.documents_handler.set_workflow_status(
             id=id,
             status_type="graph_cluster_status",
             status=KGEnrichmentStatus.PENDING,
@@ -482,7 +479,7 @@ class KgService(Service):
                 KGExtractionStatus.PROCESSING,
             ]
 
-        return await self.providers.database.get_document_ids_by_status(
+        return await self.providers.database.documents_handler.get_document_ids_by_status(
             status_type="extraction_status",
             status=[str(ele) for ele in document_status_filter],
             collection_id=collection_id,
@@ -503,7 +500,7 @@ class KgService(Service):
         )
 
         entity_count = (
-            await self.providers.database.graph_handler.get_entity_count(
+            await self.providers.database.graphs_handler.get_entity_count(
                 document_id=document_id,
                 distinct=True,
                 entity_table_name="documents_entities",
@@ -548,7 +545,7 @@ class KgService(Service):
                 f"KGService: Completed kg_entity_description for batch {i+1}/{num_batches} for document {document_id}"
             )
 
-        await self.providers.database.set_workflow_status(
+        await self.providers.database.documents_handler.set_workflow_status(
             id=document_id,
             status_type="extraction_status",
             status=KGExtractionStatus.SUCCESS,
@@ -644,7 +641,7 @@ class KgService(Service):
         cascade: bool,
         **kwargs,
     ):
-        return await self.providers.database.graph_handler.delete_graph_for_collection(
+        return await self.providers.database.graphs_handler.delete_graph_for_collection(
             collection_id=collection_id,
             cascade=cascade,
         )
@@ -656,7 +653,7 @@ class KgService(Service):
         collection_id: UUID,
         **kwargs,
     ):
-        return await self.providers.database.graph_handler.delete_node_via_document_id(
+        return await self.providers.database.graphs_handler.delete_node_via_document_id(
             document_id=document_id,
             collection_id=collection_id,
         )
@@ -670,7 +667,7 @@ class KgService(Service):
         **kwargs,
     ):
         return (
-            await self.providers.database.graph_handler.get_creation_estimate(
+            await self.providers.database.graphs_handler.get_creation_estimate(
                 document_id=document_id,
                 collection_id=collection_id,
                 graph_creation_settings=graph_creation_settings,
@@ -691,7 +688,7 @@ class KgService(Service):
                 "Either graph_id or collection_id must be provided"
             )
 
-        return await self.providers.database.graph_handler.get_enrichment_estimate(
+        return await self.providers.database.graphs_handler.get_enrichment_estimate(
             collection_id=collection_id,
             graph_id=graph_id,
             graph_enrichment_settings=graph_enrichment_settings,
@@ -704,7 +701,7 @@ class KgService(Service):
         kg_deduplication_settings: KGEntityDeduplicationSettings,
         **kwargs,
     ):
-        return await self.providers.database.graph_handler.get_deduplication_estimate(
+        return await self.providers.database.graphs_handler.get_deduplication_estimate(
             collection_id=collection_id,
             kg_deduplication_settings=kg_deduplication_settings,
         )
@@ -791,7 +788,7 @@ class KgService(Service):
         offset = 0
         chunks = []
         while True:
-            chunk_req = await self.providers.database.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+            chunk_req = await self.providers.database.chunks_handler.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                 document_id=document_id,
                 offset=offset,
                 limit=limit,
@@ -823,7 +820,7 @@ class KgService(Service):
             )
 
         if filter_out_existing_chunks:
-            existing_chunk_ids = await self.providers.database.graph_handler.get_existing_document_entity_chunk_ids(
+            existing_chunk_ids = await self.providers.database.graphs_handler.get_existing_document_entity_chunk_ids(
                 document_id=document_id
             )
             chunks = [
@@ -917,7 +914,7 @@ class KgService(Service):
         # combine all extractions into a single string
         combined_extraction: str = " ".join([chunk.data for chunk in chunks])  # type: ignore
 
-        response = await self.providers.database.document_handler.get_documents_overview(  # type: ignore
+        response = await self.providers.database.documents_handler.get_documents_overview(  # type: ignore
             offset=0,
             limit=1,
             filter_document_ids=[chunks[0].document_id],
@@ -926,7 +923,7 @@ class KgService(Service):
             response["results"][0].summary if response["results"] else None
         )
 
-        messages = await self.providers.database.prompt_handler.get_message_payload(
+        messages = await self.providers.database.prompts_handler.get_message_payload(
             task_prompt_name=self.providers.database.config.graph_creation_settings.graphrag_relationships_extraction_few_shot,
             task_inputs={
                 "document_summary": document_summary,
@@ -1066,7 +1063,7 @@ class KgService(Service):
         for extraction in kg_extractions:
             entities_id_map = {}
             for entity in extraction.entities:
-                result = await self.providers.database.graph_handler.entities.create(
+                result = await self.providers.database.graphs_handler.entities.create(
                     name=entity.name,
                     parent_id=entity.parent_id,
                     store_type="documents",  # type: ignore
@@ -1081,7 +1078,7 @@ class KgService(Service):
             if extraction.relationships:
 
                 for relationship in extraction.relationships:
-                    await self.providers.database.graph_handler.relationships.create(
+                    await self.providers.database.graphs_handler.relationships.create(
                         subject=relationship.subject,
                         subject_id=entities_id_map.get(relationship.subject),
                         predicate=relationship.predicate,

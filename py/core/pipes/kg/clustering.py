@@ -8,8 +8,9 @@ from core.base import (
     CompletionProvider,
     EmbeddingProvider,
 )
-from core.providers.database import PostgresDBProvider
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
+
+# from ...database.postgres import PostgresDatabaseProvider
+from core.database import PostgresDatabaseProvider
 
 logger = logging.getLogger()
 
@@ -21,11 +22,10 @@ class KGClusteringPipe(AsyncPipe):
 
     def __init__(
         self,
-        database_provider: PostgresDBProvider,
+        database_provider: PostgresDatabaseProvider,
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: SqlitePersistentLoggingProvider,
         *args,
         **kwargs,
     ):
@@ -33,7 +33,6 @@ class KGClusteringPipe(AsyncPipe):
         Initializes the KG clustering pipe with necessary components and configurations.
         """
         super().__init__(
-            logging_provider=logging_provider,
             config=config or AsyncPipe.PipeConfig(name="kg_cluster_pipe"),
         )
         self.database_provider = database_provider
@@ -50,7 +49,7 @@ class KGClusteringPipe(AsyncPipe):
         Clusters the knowledge graph relationships into communities using hierarchical Leiden algorithm. Uses graspologic library.
         """
 
-        num_communities = await self.database_provider.graph_handler.perform_graph_clustering(
+        num_communities = await self.database_provider.graphs_handler.perform_graph_clustering(
             collection_id=collection_id,
             leiden_params=leiden_params,
             clustering_mode=clustering_mode,

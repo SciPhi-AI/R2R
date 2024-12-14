@@ -6,15 +6,14 @@ from uuid import UUID
 from core.base import AsyncState
 from core.base.abstractions import Entity, GenerationConfig
 from core.base.pipes import AsyncPipe
-from core.providers import (
+from core.database import PostgresDatabaseProvider
+from core.providers import (  # PostgresDatabaseProvider,
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
     OllamaEmbeddingProvider,
     OpenAICompletionProvider,
     OpenAIEmbeddingProvider,
-    PostgresDBProvider,
 )
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 logger = logging.getLogger()
 
@@ -26,7 +25,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
 
     def __init__(
         self,
-        database_provider: PostgresDBProvider,
+        database_provider: PostgresDatabaseProvider,
         llm_provider: Union[
             LiteLLMCompletionProvider, OpenAICompletionProvider
         ],
@@ -36,12 +35,9 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             OllamaEmbeddingProvider,
         ],
         config: AsyncPipe.PipeConfig,
-        logging_provider: SqlitePersistentLoggingProvider,
         **kwargs,
     ):
-        super().__init__(
-            logging_provider=logging_provider, config=config, **kwargs
-        )
+        super().__init__(config=config, **kwargs)
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.embedding_provider = embedding_provider
@@ -64,7 +60,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             index += 1
 
         completion = await self.llm_provider.aget_completion(
-            messages=await self.database_provider.prompt_handler.get_message_payload(
+            messages=await self.database_provider.prompts_handler.get_message_payload(
                 task_prompt_name=self.database_provider.config.graph_entity_deduplication_settings.graph_entity_deduplication_prompt,
                 task_inputs={
                     "entity_name": entity_name,
@@ -120,7 +116,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             f"Upserting {len(entities_batch)} entities for graph {graph_id}"
         )
 
-        await self.database_provider.graph_handler.update_entity_descriptions(
+        await self.database_provider.graphs_handler.update_entity_descriptions(
             entities_batch
         )
 
@@ -141,7 +137,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
     ):
 
         if graph_id is not None:
-            return await self.database_provider.graph_handler.entities.get(
+            return await self.database_provider.graphs_handler.entities.get(
                 parent_id=graph_id,
                 offset=offset,
                 limit=limit,
@@ -149,7 +145,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
             )
 
         elif collection_id is not None:
-            return await self.database_provider.graph_handler.get_entities(
+            return await self.database_provider.graphs_handler.get_entities(
                 parent_id=collection_id,
                 offset=offset,
                 limit=limit,
@@ -196,7 +192,7 @@ class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
         entity_names = [entity.name for entity in entities]
 
         entity_descriptions = (
-            await self.database_provider.graph_handler.get_entities(
+            await self.database_provider.graphs_handler.get_entities(
                 parent_id=collection_id,
                 entity_names=entity_names,
                 offset=offset,

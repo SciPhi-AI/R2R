@@ -1444,13 +1444,11 @@ export class r2rClient extends BaseClient {
   @feature("getConversation")
   async getConversation(
     conversationId: string,
-    branchId?: string,
   ): Promise<Record<string, any>> {
     this._ensureAuthenticated();
-    const queryParams = branchId ? `?branch_id=${branchId}` : "";
     return this._makeRequest(
       "GET",
-      `get_conversation/${conversationId}${queryParams}`,
+      `get_conversation/${conversationId}`,
     );
   }
 
@@ -1974,7 +1972,6 @@ export class r2rClient extends BaseClient {
    * @param task_prompt_override Task prompt override.
    * @param include_title_if_available Include title if available.
    * @param conversation_id The ID of the conversation, if not a new conversation.
-   * @param branch_id The ID of the branch to use, if not a new branch.
    * @returns A promise that resolves to the response from the server.
    * @deprecated use `client.retrieval.agent` instead
    */
@@ -1987,7 +1984,6 @@ export class r2rClient extends BaseClient {
     task_prompt_override?: string,
     include_title_if_available?: boolean,
     conversation_id?: string,
-    branch_id?: string,
   ): Promise<any | AsyncGenerator<string, void, unknown>> {
     this._ensureAuthenticated();
 
@@ -1998,8 +1994,7 @@ export class r2rClient extends BaseClient {
       rag_generation_config,
       task_prompt_override,
       include_title_if_available,
-      conversation_id,
-      branch_id,
+      conversation_id
     };
 
     Object.keys(json_data).forEach(

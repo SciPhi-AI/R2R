@@ -20,13 +20,71 @@ from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
-from core.utils import (
-    update_settings_from_dict,
-)
+from core.utils import update_settings_from_dict
 
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
+
+
+from enum import Enum
+from uuid import UUID
+
+from core.base import R2RException
+
+
+class CollectionAction(str, Enum):
+    VIEW = "view"
+    EDIT = "edit"
+    DELETE = "delete"
+    MANAGE_USERS = "manage_users"
+    ADD_DOCUMENT = "add_document"
+    REMOVE_DOCUMENT = "remove_document"
+
+
+async def authorize_collection_action(
+    auth_user, collection_id: UUID, action: CollectionAction, services
+) -> bool:
+    """
+    Authorize a user's action on a given collection based on:
+    - If user is superuser (admin): Full access.
+    - If user is owner of the collection: Full access.
+    - If user is a member of the collection (in `collection_ids`): VIEW only.
+    - Otherwise: No access.
+    """
+
+    # Superusers have complete access
+    if auth_user.is_superuser:
+        return True
+
+    # Fetch collection details: owner_id and members
+    results = (
+        await services["management"].collections_overview(
+            0, 1, collection_ids=[collection_id]
+        )
+    )["results"]
+    if len(results) == 0:
+        raise R2RException("The specified collection does not exist.", 404)
+    details = results[0]
+    owner_id = details.owner_id
+
+    # Check if user is owner
+    if auth_user.id == owner_id:
+        # Owner can do all actions
+        return True
+
+    # Check if user is a member (non-owner)
+    if collection_id in auth_user.collection_ids:
+        # Members can only view
+        if action == CollectionAction.VIEW:
+            return True
+        else:
+            raise R2RException(
+                "Insufficient permissions for this action.", 403
+            )
+
+    # User is neither owner nor member
+    raise R2RException("You do not have access to this collection.", 403)
 
 
 class CollectionsRouter(BaseRouterV3):
@@ -304,14 +362,9 @@ class CollectionsRouter(BaseRouterV3):
             This endpoint retrieves detailed information about a single collection identified by its UUID.
             The user must have access to the collection to view its details.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
-                    403,
-                )
+            await authorize_collection_action(
+                auth_user, id, CollectionAction.VIEW, self.services
+            )
 
             collections_overview_response = await self.services[
                 "management"
@@ -321,7 +374,14 @@ class CollectionsRouter(BaseRouterV3):
                 offset=0,
                 limit=1,
             )
-            return collections_overview_response["results"][0]
+            overview = collections_overview_response["results"]
+
+            if len(overview) == 0:
+                raise R2RException(
+                    "The specified collection does not exist.",
+                    404,
+                )
+            return overview[0]
 
         @self.router.post(
             "/collections/{id}",
@@ -403,14 +463,9 @@ class CollectionsRouter(BaseRouterV3):
             This endpoint allows updating the name and description of an existing collection.
             The user must have appropriate permissions to modify the collection.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
-                    403,
-                )
+            await authorize_collection_action(
+                auth_user, id, CollectionAction.EDIT, self.services
+            )
 
             if generate_description and description is not None:
                 raise R2RException(
@@ -494,14 +549,9 @@ class CollectionsRouter(BaseRouterV3):
             The user must have appropriate permissions to delete the collection.
             Deleting a collection removes all associations but does not delete the documents within it.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
-                    403,
-                )
+            await authorize_collection_action(
+                auth_user, id, CollectionAction.DELETE, self.services
+            )
 
             await self.services["management"].delete_collection(id)
             return GenericBooleanResponse(success=True)  # type: ignore
@@ -567,14 +617,9 @@ class CollectionsRouter(BaseRouterV3):
             """
             Add a document to a collection.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
-                    403,
-                )
+            await authorize_collection_action(
+                auth_user, id, CollectionAction.ADD_DOCUMENT, self.services
+            )
 
             return await self.services[
                 "management"
@@ -662,14 +707,9 @@ class CollectionsRouter(BaseRouterV3):
             This endpoint retrieves a paginated list of documents associated with a specific collection.
             It supports sorting options to customize the order of returned documents.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
-                    403,
-                )
+            await authorize_collection_action(
+                auth_user, id, CollectionAction.VIEW, self.services
+            )
 
             documents_in_collection_response = await self.services[
                 "management"
@@ -750,15 +790,9 @@ class CollectionsRouter(BaseRouterV3):
             This endpoint removes the association between a document and a collection.
             It does not delete the document itself. The user must have permissions to modify the collection.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
-                    403,
-                )
-
+            await authorize_collection_action(
+                auth_user, id, CollectionAction.REMOVE_DOCUMENT, self.services
+            )
             await self.services["management"].remove_document_from_collection(
                 document_id, id
             )
@@ -848,14 +882,9 @@ class CollectionsRouter(BaseRouterV3):
             This endpoint retrieves a paginated list of users who have access to a specific collection.
             It supports sorting options to customize the order of returned users.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
-                    403,
-                )
+            await authorize_collection_action(
+                auth_user, id, CollectionAction.VIEW, self.services
+            )
 
             users_in_collection_response = await self.services[
                 "management"
@@ -937,14 +966,9 @@ class CollectionsRouter(BaseRouterV3):
             This endpoint grants a user access to a specific collection.
             The authenticated user must have admin permissions for the collection to add new users.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
-                    403,
-                )
+            await authorize_collection_action(
+                auth_user, id, CollectionAction.MANAGE_USERS, self.services
+            )
 
             result = await self.services["management"].add_user_to_collection(
                 user_id, id
@@ -1019,18 +1043,14 @@ class CollectionsRouter(BaseRouterV3):
             This endpoint revokes a user's access to a specific collection.
             The authenticated user must have admin permissions for the collection to remove users.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
-                    403,
-                )
-
-            await self.services["management"].remove_user_from_collection(
-                user_id, id
+            await authorize_collection_action(
+                auth_user, id, CollectionAction.MANAGE_USERS, self.services
             )
+
+            result = await self.services[
+                "management"
+            ].remove_user_from_collection(user_id, id)
+            print("result = ", result)
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
@@ -1082,6 +1102,9 @@ class CollectionsRouter(BaseRouterV3):
                 1. Parsing documents into semantic chunks
                 2. Extracting entities and relationships using LLMs
             """
+            await authorize_collection_action(
+                auth_user, id, CollectionAction.EDIT, self.services
+            )
 
             settings = settings.dict() if settings else None  # type: ignore
             if not auth_user.is_superuser:

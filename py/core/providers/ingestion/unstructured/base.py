@@ -25,7 +25,7 @@ from core.base.abstractions import R2RSerializable
 from core.base.providers.ingestion import IngestionConfig, IngestionProvider
 from core.utils import generate_extraction_id
 
-from ...database import PostgresDBProvider
+from ....database.postgres import PostgresDatabaseProvider
 from ...llm import LiteLLMCompletionProvider, OpenAICompletionProvider
 
 logger = logging.getLogger()
@@ -112,14 +112,14 @@ class UnstructuredIngestionProvider(IngestionProvider):
     def __init__(
         self,
         config: UnstructuredIngestionConfig,
-        database_provider: PostgresDBProvider,
+        database_provider: PostgresDatabaseProvider,
         llm_provider: Union[
             LiteLLMCompletionProvider, OpenAICompletionProvider
         ],
     ):
         super().__init__(config, database_provider, llm_provider)
         self.config: UnstructuredIngestionConfig = config
-        self.database_provider: PostgresDBProvider = database_provider
+        self.database_provider: PostgresDatabaseProvider = database_provider
         self.llm_provider: Union[
             LiteLLMCompletionProvider, OpenAICompletionProvider
         ] = llm_provider

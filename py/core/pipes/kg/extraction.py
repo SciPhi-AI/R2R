@@ -17,8 +17,8 @@ from core.base import (
     Relationship,
 )
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.database import PostgresDBProvider
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
+
+from ...database.postgres import PostgresDatabaseProvider
 
 logger = logging.getLogger()
 
@@ -43,10 +43,9 @@ class KGExtractionPipe(AsyncPipe[dict]):
 
     def __init__(
         self,
-        database_provider: PostgresDBProvider,
+        database_provider: PostgresDatabaseProvider,
         llm_provider: CompletionProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: SqlitePersistentLoggingProvider,
         kg_batch_size: int = 1,
         graph_rag: bool = True,
         id_prefix: str = "demo",
@@ -54,7 +53,6 @@ class KGExtractionPipe(AsyncPipe[dict]):
         **kwargs,
     ):
         super().__init__(
-            logging_provider=logging_provider,
             config=config
             or AsyncPipe.PipeConfig(
                 name="default_kg_relationships_extraction_pipe"
@@ -86,7 +84,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
         # combine all extractions into a single string
         combined_extraction: str = " ".join([extraction.data for extraction in extractions])  # type: ignore
 
-        messages = await self.database_provider.prompt_handler.get_message_payload(
+        messages = await self.database_provider.prompts_handler.get_message_payload(
             task_prompt_name=self.database_provider.config.graph_creation_settings.graphrag_relationships_extraction_few_shot,
             task_inputs={
                 "input": combined_extraction,
@@ -249,7 +247,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
                 metadata=extraction["metadata"],
             )
             for extraction in (
-                await self.database_provider.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                await self.database_provider.documents_handler.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                     document_id=document_id,
                     offset=0,
                     limit=100,
@@ -262,7 +260,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
         )
 
         if filter_out_existing_chunks:
-            existing_chunk_ids = await self.database_provider.graph_handler.get_existing_document_entity_chunk_ids(
+            existing_chunk_ids = await self.database_provider.graphs_handler.get_existing_document_entity_chunk_ids(
                 document_id=document_id
             )
             extractions = [

@@ -79,12 +79,6 @@ __all__ = [
     ## LOGGING
     # Basic types
     "RunType",
-    "AnalysisTypes",
-    "LogAnalytics",
-    "LogAnalyticsConfig",
-    "LogFilterCriteria",
-    "LogProcessor",
-    "PersistentLoggingConfig",
     # Run Manager
     "RunManager",
     "manage_run",
@@ -114,6 +108,7 @@ __all__ = [
     # Database providers
     "DatabaseConfig",
     "DatabaseProvider",
+    "Handler",
     "PostgresConfigurationSettings",
     # Embedding provider
     "EmbeddingConfig",

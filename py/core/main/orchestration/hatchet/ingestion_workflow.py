@@ -126,13 +126,7 @@ def hatchet_ingestion_factory(
                 async for _ in storage_generator:
                     pass
 
-                is_update = context.workflow_input()["request"].get(
-                    "is_update"
-                )
-
-                await self.ingestion_service.finalize_ingestion(
-                    document_info, is_update=is_update
-                )
+                await self.ingestion_service.finalize_ingestion(document_info)
 
                 await self.ingestion_service.update_document_status(
                     document_info,
@@ -147,20 +141,20 @@ def hatchet_ingestion_factory(
                     collection_id = generate_default_user_collection_id(
                         document_info.owner_id
                     )
-                    await service.providers.database.assign_document_to_collection_relational(
+                    await service.providers.database.collections_handler.assign_document_to_collection_relational(
                         document_id=document_info.id,
                         collection_id=collection_id,
                     )
-                    await service.providers.database.assign_document_to_collection_vector(
+                    await service.providers.database.chunks_handler.assign_document_chunks_to_collection(
                         document_id=document_info.id,
                         collection_id=collection_id,
                     )
-                    await service.providers.database.set_workflow_status(
+                    await service.providers.database.documents_handler.set_workflow_status(
                         id=collection_id,
                         status_type="graph_sync_status",
                         status=KGEnrichmentStatus.OUTDATED,
                     )
-                    await service.providers.database.set_workflow_status(
+                    await service.providers.database.documents_handler.set_workflow_status(
                         id=collection_id,
                         status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                         status=KGEnrichmentStatus.OUTDATED,
@@ -171,13 +165,13 @@ def hatchet_ingestion_factory(
                         try:
                             name = document_info.title or "N/A"
                             description = ""
-                            result = await self.providers.database.create_collection(
+                            await service.providers.database.collections_handler.create_collection(
                                 owner_id=document_info.owner_id,
                                 name=name,
                                 description=description,
                                 collection_id=collection_id,
                             )
-                            await self.providers.database.graph_handler.create(
+                            await self.providers.database.graphs_handler.create(
                                 collection_id=collection_id,
                                 name=name,
                                 description=description,
@@ -189,20 +183,20 @@ def hatchet_ingestion_factory(
                                 f"Warning, could not create collection with error: {str(e)}"
                             )
 
-                        await service.providers.database.assign_document_to_collection_relational(
+                        await service.providers.database.collections_handler.assign_document_to_collection_relational(
                             document_id=document_info.id,
                             collection_id=collection_id,
                         )
-                        await service.providers.database.assign_document_to_collection_vector(
+                        await service.providers.database.chunks_handler.assign_document_chunks_to_collection(
                             document_id=document_info.id,
                             collection_id=collection_id,
                         )
-                        await service.providers.database.set_workflow_status(
+                        await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,
                             status_type="graph_sync_status",
                             status=KGEnrichmentStatus.OUTDATED,
                         )
-                        await service.providers.database.set_workflow_status(
+                        await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,
                             status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                             status=KGEnrichmentStatus.OUTDATED,
@@ -229,7 +223,7 @@ def hatchet_ingestion_factory(
                     # we don't update the document_info when we assign document_to_collection_relational and document_to_collection_vector
                     # hack: get document_info again from DB
                     document_info = (
-                        await self.ingestion_service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                        await self.ingestion_service.providers.database.documents_handler.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                             offset=0,
                             limit=100,
                             filter_user_ids=[document_info.user_id],
@@ -281,7 +275,7 @@ def hatchet_ingestion_factory(
 
             try:
                 documents_overview = (
-                    await self.ingestion_service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                    await self.ingestion_service.providers.database.documents_handler.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                         offset=0,
                         limit=100,
                         filter_document_ids=[document_id],
@@ -342,7 +336,7 @@ def hatchet_ingestion_factory(
                 )
 
             documents_overview = (
-                await self.ingestion_service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                await self.ingestion_service.providers.database.documents_handler.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                     offset=0,
                     limit=100,
                     filter_document_ids=document_ids,
@@ -394,7 +388,6 @@ def hatchet_ingestion_factory(
                         else None
                     ),
                     "size_in_bytes": file_size_in_bytes,
-                    "is_update": True,
                 }
 
                 # Spawn ingest_file workflow as a child workflow
@@ -487,9 +480,7 @@ def hatchet_ingestion_factory(
             document_info_dict = context.step_output("embed")["document_info"]
             document_info = DocumentResponse(**document_info_dict)
 
-            await self.ingestion_service.finalize_ingestion(
-                document_info, is_update=False
-            )
+            await self.ingestion_service.finalize_ingestion(document_info)
 
             await self.ingestion_service.update_document_status(
                 document_info, status=IngestionStatus.SUCCESS
@@ -505,20 +496,20 @@ def hatchet_ingestion_factory(
                     collection_id = generate_default_user_collection_id(
                         document_info.owner_id
                     )
-                    await service.providers.database.assign_document_to_collection_relational(
+                    await service.providers.database.collections_handler.assign_document_to_collection_relational(
                         document_id=document_info.id,
                         collection_id=collection_id,
                     )
-                    await service.providers.database.assign_document_to_collection_vector(
+                    await service.providers.database.chunks_handler.assign_document_chunks_to_collection(
                         document_id=document_info.id,
                         collection_id=collection_id,
                     )
-                    await service.providers.database.set_workflow_status(
+                    await service.providers.database.documents_handler.set_workflow_status(
                         id=collection_id,
                         status_type="graph_sync_status",
                         status=KGEnrichmentStatus.OUTDATED,
                     )
-                    await service.providers.database.set_workflow_status(
+                    await service.providers.database.documents_handler.set_workflow_status(
                         id=collection_id,
                         status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                         status=KGEnrichmentStatus.OUTDATED,
@@ -529,13 +520,13 @@ def hatchet_ingestion_factory(
                         try:
                             name = document_info.title or "N/A"
                             description = ""
-                            await service.providers.database.create_collection(
+                            await service.providers.database.collections_handler.create_collection(
                                 owner_id=document_info.owner_id,
                                 name=name,
                                 description=description,
                                 collection_id=collection_id,
                             )
-                            await self.providers.database.graph_handler.create(
+                            await self.providers.database.graphs_handler.create(
                                 collection_id=collection_id,
                                 name=name,
                                 description=description,
@@ -547,23 +538,23 @@ def hatchet_ingestion_factory(
                                 f"Warning, could not create collection with error: {str(e)}"
                             )
 
-                        await service.providers.database.assign_document_to_collection_relational(
+                        await service.providers.database.collections_handler.assign_document_to_collection_relational(
                             document_id=document_info.id,
                             collection_id=collection_id,
                         )
 
-                        await service.providers.database.assign_document_to_collection_vector(
+                        await service.providers.database.chunks_handler.assign_document_chunks_to_collection(
                             document_id=document_info.id,
                             collection_id=collection_id,
                         )
 
-                        await service.providers.database.set_workflow_status(
+                        await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,
                             status_type="graph_sync_status",
                             status=KGEnrichmentStatus.OUTDATED,
                         )
 
-                        await service.providers.database.set_workflow_status(
+                        await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,
                             status_type="graph_cluster_status",
                             status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
@@ -591,7 +582,7 @@ def hatchet_ingestion_factory(
 
             try:
                 documents_overview = (
-                    await self.ingestion_service.providers.database.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                    await self.ingestion_service.providers.database.documents_handler.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                         offset=0,
                         limit=100,
                         filter_document_ids=[document_id],
@@ -688,7 +679,7 @@ def hatchet_ingestion_factory(
                 )
             )
 
-            await self.ingestion_service.providers.database.create_index(
+            await self.ingestion_service.providers.database.chunks_handler.create_index(
                 **parsed_data
             )
 
@@ -710,7 +701,7 @@ def hatchet_ingestion_factory(
                 )
             )
 
-            await self.ingestion_service.providers.database.delete_index(
+            await self.ingestion_service.providers.database.chunks_handler.delete_index(
                 **parsed_data
             )
 

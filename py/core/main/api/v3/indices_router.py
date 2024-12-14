@@ -336,8 +336,10 @@ class IndicesRouter(BaseRouterV3):
             based on table name, index method, or other attributes.
             """
             # TODO: Implement index listing logic
-            indices = await self.providers.database.list_indices(
-                offset=offset, limit=limit  # , filters=filters
+            indices = (
+                await self.providers.database.chunks_handler.list_indices(
+                    offset=offset, limit=limit  # , filters=filters
+                )
             )
             return {"indices": indices["indices"]}, indices["page_info"]  # type: ignore
 
@@ -429,10 +431,15 @@ class IndicesRouter(BaseRouterV3):
                 * Recommended optimizations
             """
             # TODO: Implement get index logic
-            indices = await self.providers.database.list_indices(
-                filters={"index_name": index_name, "table_name": table_name},
-                limit=1,
-                offset=0,
+            indices = (
+                await self.providers.database.chunks_handler.list_indices(
+                    filters={
+                        "index_name": index_name,
+                        "table_name": table_name,
+                    },
+                    limit=1,
+                    offset=0,
+                )
             )
             if len(indices["indices"]) != 1:
                 raise R2RException(

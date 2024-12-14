@@ -1,34 +1,80 @@
 name: 'Setup Python for R2R Full'
 description: 'Sets up Python and installs R2R dependencies for full installation'
+
 inputs:
   os:
     description: 'Operating system'
     required: true
+  python-version:
+    description: 'Python version to use'
+    required: false
+    default: '3.12'
+  poetry-version:
+    description: 'Poetry version to install'
+    required: false
+    default: '1.7.1'
+  r2r-version:
+    description: 'R2R CLI & SDK version to install'
+    required: false
+    default: 'latest'
+
 runs:
   using: "composite"
   steps:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12'
-
+        python-version: ${{ inputs.python-version }}
+        cache: 'pip'
+    
     - name: Install R2R CLI & Python SDK
       shell: bash
       run: |
-        pip install r2r
-
-    - name: Install Poetry and dependencies on Ubuntu and macOS
-      if: inputs.os == 'ubuntu-latest' || inputs.os == 'macos-latest'
+        if [ "${{ inputs.r2r-version }}" = "latest" ]; then
+          pip install r2r
+        else
+          pip install r2r==${{ inputs.r2r-version }}
+        fi
+    
+    - name: Install Poetry
       shell: bash
       run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-        cd py && poetry install -E core -E ingestion-bundle
-
-    - name: Install Poetry and dependencies on Windows
-      if: inputs.os == 'windows-latest'
-      shell: cmd
+        curl -sSL https://install.python-poetry.org | python3 - --version ${{ inputs.poetry-version }}
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+    
+    - name: Set Poetry config
+      shell: bash
       run: |
-        python -c "import urllib.request; print(urllib.request.urlopen('https://install.python-poetry.org').read().decode())" > install-poetry.py
-        python install-poetry.py
-        echo %USERPROFILE%\AppData\Roaming\Python\Scripts >> %GITHUB_PATH%
-        cd py && poetry install -E core -E ingestion-bundle
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
+    
+    - name: Cache Poetry dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pypoetry
+          py/.venv
+        key: ${{ runner.os }}-poetry-${{ hashFiles('py/poetry.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-poetry-
+    
+    - name: Verify pip cache directory
+      shell: bash
+      run: |
+        mkdir -p ~/.cache/pip
+    
+    - name: Install dependencies
+      shell: bash
+      working-directory: py
+      run: |
+        if [ ! -f "poetry.lock" ]; then
+          echo "No poetry.lock found, creating one..."
+          poetry lock
+        fi
+        poetry install -E core -E ingestion-bundle --no-interaction
+    
+    - name: Verify installation
+      shell: bash
+      run: |
+        python -c "import r2r; print(f'R2R version: {r2r.__version__}')"
+        poetry --version

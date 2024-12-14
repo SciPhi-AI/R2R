@@ -159,7 +159,6 @@ class RetrievalSDK:
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
         conversation_id: Optional[str] = None,
-        branch_id: Optional[str] = None,
     ) -> list[Message] | AsyncGenerator[Message, None]:
         """
         Performs a single turn in a conversation with a RAG agent.
@@ -186,7 +185,6 @@ class RetrievalSDK:
             "task_prompt_override": task_prompt_override,
             "include_title_if_available": include_title_if_available,
             "conversation_id": conversation_id,
-            "branch_id": branch_id,
         }
         if search_mode:
             data["search_mode"] = search_mode

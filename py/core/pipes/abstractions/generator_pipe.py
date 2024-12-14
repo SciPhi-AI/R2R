@@ -5,7 +5,6 @@ from uuid import UUID
 from core.base import AsyncState, CompletionProvider, DatabaseProvider
 from core.base.abstractions import GenerationConfig
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 
 
 class GeneratorPipe(AsyncPipe):
@@ -19,13 +18,11 @@ class GeneratorPipe(AsyncPipe):
         llm_provider: CompletionProvider,
         database_provider: DatabaseProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: SqlitePersistentLoggingProvider,
         *args,
         **kwargs,
     ):
         super().__init__(
             config,
-            logging_provider,
             *args,
             **kwargs,
         )

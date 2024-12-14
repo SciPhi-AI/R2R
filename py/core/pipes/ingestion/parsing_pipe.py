@@ -6,7 +6,6 @@ from core.base import AsyncState, DatabaseProvider, Document, DocumentChunk
 from core.base.abstractions import R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers.ingestion import IngestionProvider
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.utils import generate_extraction_id
 
 logger = logging.getLogger()
@@ -21,13 +20,11 @@ class ParsingPipe(AsyncPipe):
         database_provider: DatabaseProvider,
         ingestion_provider: IngestionProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: SqlitePersistentLoggingProvider,
         *args,
         **kwargs,
     ):
         super().__init__(
             config,
-            logging_provider,
             *args,
             **kwargs,
         )
@@ -52,7 +49,7 @@ class ParsingPipe(AsyncPipe):
                 raise ValueError(
                     f"Provider '{override_provider}' does not match ingestion provider '{self.ingestion_provider.config.provider}'."
                 )
-            if result := await self.database_provider.retrieve_file(
+            if result := await self.database_provider.files_handler.retrieve_file(
                 document.id
             ):
                 file_name, file_wrapper, file_size = result

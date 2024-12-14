@@ -7,15 +7,10 @@ import time
 from typing import Any, AsyncGenerator
 from uuid import UUID
 
-from core.base import (
-    AsyncState,
-    CompletionProvider,
-    EmbeddingProvider,
-)
-from core.base.abstractions import Entity
+from core.base import AsyncState, CompletionProvider, EmbeddingProvider
 from core.base.pipes.base_pipe import AsyncPipe
-from core.providers.database import PostgresDBProvider
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
+
+from ...database.postgres import PostgresDatabaseProvider
 
 logger = logging.getLogger()
 
@@ -30,16 +25,14 @@ class KGEntityDescriptionPipe(AsyncPipe):
 
     def __init__(
         self,
-        database_provider: PostgresDBProvider,
+        database_provider: PostgresDatabaseProvider,
         llm_provider: CompletionProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        logging_provider: SqlitePersistentLoggingProvider,
         *args,
         **kwargs,
     ):
         super().__init__(
-            logging_provider=logging_provider,
             config=config,
         )
         self.database_provider = database_provider
@@ -78,7 +71,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
             max_description_input_length,
             document_id: UUID,
         ):
-            response = await self.database_provider.document_handler.get_documents_overview(  # type: ignore
+            response = await self.database_provider.documents_handler.get_documents_overview(  # type: ignore
                 offset=0,
                 limit=1,
                 filter_document_ids=[document_id],
@@ -107,7 +100,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                 out_entity.description = (
                     (
                         await self.llm_provider.aget_completion(
-                            messages=await self.database_provider.prompt_handler.get_message_payload(
+                            messages=await self.database_provider.prompts_handler.get_message_payload(
                                 task_prompt_name=self.database_provider.config.graph_creation_settings.graph_entity_description_prompt,
                                 task_inputs={
                                     "document_summary": document_summary,
@@ -141,7 +134,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
                 )[0]
 
                 # upsert the entity and its embedding
-                await self.database_provider.graph_handler.add_entities(
+                await self.database_provider.graphs_handler.add_entities(
                     [out_entity],
                     table_name="documents_entities",
                 )
@@ -157,8 +150,10 @@ class KGEntityDescriptionPipe(AsyncPipe):
             f"KGEntityDescriptionPipe: Getting entity map for document {document_id}",
         )
 
-        entity_map = await self.database_provider.graph_handler.get_entity_map(
-            offset, limit, document_id
+        entity_map = (
+            await self.database_provider.graphs_handler.get_entity_map(
+                offset, limit, document_id
+            )
         )
         total_entities = len(entity_map)
 

@@ -1,0 +1,279 @@
+import uuid
+
+import pytest
+
+from r2r import R2RClient, R2RException
+
+
+@pytest.fixture(scope="session")
+def config():
+    class TestConfig:
+        base_url = "http://localhost:7272"
+        superuser_email = "admin@example.com"
+        superuser_password = "change_me_immediately"
+
+    return TestConfig()
+
+
+@pytest.fixture(scope="session")
+def client(config):
+    """Create a client instance and log in as a superuser."""
+    client = R2RClient(config.base_url)
+    client.users.login(config.superuser_email, config.superuser_password)
+    return client
+
+
+@pytest.fixture
+def test_document(client):
+    """Create and yield a test document, then clean up."""
+    doc_resp = client.documents.create(
+        raw_text="Test doc for collections", run_with_orchestration=False
+    )
+    doc_id = doc_resp["results"]["document_id"]
+    yield doc_id
+    # Cleanup: Try deleting the document if it still exists
+    try:
+        client.documents.delete(id=doc_id)
+    except R2RException:
+        pass
+
+
+@pytest.fixture
+def test_document_2(client):
+    """Create and yield a test document, then clean up."""
+    doc_resp = client.documents.create(
+        raw_text="Another test doc for collections",
+        run_with_orchestration=False,
+    )
+    doc_id = doc_resp["results"]["document_id"]
+    yield doc_id
+    # Cleanup: Try deleting the document if it still exists
+    try:
+        client.documents.delete(id=doc_id)
+    except R2RException:
+        pass
+
+
+@pytest.fixture
+def test_collection(client, test_document):
+    """Create and yield a test collection, then clean up."""
+    resp = client.collections.create(
+        name="Test Collection", description="A sample collection"
+    )
+    test_collection_id = resp["results"]["id"]
+    client.collections.add_document(test_collection_id, test_document)
+    yield test_collection_id
+    # Cleanup: Try deleting the collection if it still exists
+    try:
+        client.collections.delete(test_collection_id)
+    except R2RException:
+        pass
+
+
+def test_create_collection(client):
+    resp = client.collections.create(
+        name="Test Collection Creation", description="Desc"
+    )
+    coll_id = resp["results"]["id"]
+    assert coll_id is not None, "No collection_id returned"
+
+    # Cleanup
+    client.collections.delete(coll_id)
+
+
+def test_list_collections(client, test_collection):
+    listed = client.collections.list(limit=10, offset=0)
+    results = listed["results"]
+    assert len(results) >= 1, "Expected at least one collection, none found"
+
+
+def test_retrieve_collection(client, test_collection):
+    # Retrieve the collection just created
+    retrieved = client.collections.retrieve(test_collection)["results"]
+    assert retrieved["id"] == test_collection, "Retrieved wrong collection ID"
+
+
+def test_update_collection(client, test_collection):
+    updated_name = "Updated Test Collection"
+    updated_desc = "Updated description"
+    updated = client.collections.update(
+        test_collection, name=updated_name, description=updated_desc
+    )["results"]
+    assert updated["name"] == updated_name, "Collection name not updated"
+    assert (
+        updated["description"] == updated_desc
+    ), "Collection description not updated"
+
+
+def test_add_document_to_collection(client, test_collection, test_document_2):
+    # Add the test document to the test collection
+    client.collections.add_document(test_collection, test_document_2)
+    # Verify by listing documents
+    docs_in_collection = client.collections.list_documents(test_collection)[
+        "results"
+    ]
+    found = any(doc["id"] == test_document_2 for doc in docs_in_collection)
+    assert found, "Added document not found in collection"
+
+
+def test_list_documents_in_collection(client, test_collection, test_document):
+    # Document should be in the collection already from previous test
+    docs_in_collection = client.collections.list_documents(test_collection)[
+        "results"
+    ]
+    print("docs_in_collection = ", docs_in_collection)
+    print("test_document = ", test_document)
+    found = any(doc["id"] == test_document for doc in docs_in_collection)
+    assert found, "Expected document not found in collection"
+
+
+def test_remove_document_from_collection(
+    client, test_collection, test_document
+):
+    # Remove the document from the collection
+    client.collections.remove_document(test_collection, test_document)
+    docs_in_collection = client.collections.list_documents(test_collection)[
+        "results"
+    ]
+    found = any(doc["id"] == test_document for doc in docs_in_collection)
+    assert not found, "Document still present in collection after removal"
+
+
+def test_remove_non_member_user_from_collection(client):
+    # Create a user and a collection
+    user_email = f"user_{uuid.uuid4()}@test.com"
+    password = "pwd123"
+    client.users.register(user_email, password)
+    client.users.login(user_email, password)
+
+    # Create a collection by the same user
+    collection_resp = client.collections.create(name="User Owned Collection")[
+        "results"
+    ]
+    collection_id = collection_resp["id"]
+    client.users.logout()
+
+    # Create another user who will not be added to the collection
+    another_user_email = f"user2_{uuid.uuid4()}@test.com"
+    client.users.register(another_user_email, password)
+    client.users.login(another_user_email, password)
+    another_user_id = client.users.me()["results"]["id"]
+    client.users.logout()
+
+    # Re-login as collection owner
+    client.users.login(user_email, password)
+
+    # Attempt to remove the other user (who was never added)
+    with pytest.raises(R2RException) as exc_info:
+        client.collections.remove_user(collection_id, another_user_id)
+
+    assert exc_info.value.status_code in [
+        400,
+        404,
+    ], "Wrong error code for removing non-member user"
+
+    # Cleanup
+    client.collections.delete(collection_id)
+
+
+def test_delete_collection(client):
+    # Create a collection and delete it
+    coll = client.collections.create(name="Delete Me")["results"]
+    coll_id = coll["id"]
+    client.collections.delete(coll_id)
+
+    # Verify retrieval fails
+    with pytest.raises(R2RException) as exc_info:
+        client.collections.retrieve(coll_id)
+    assert (
+        exc_info.value.status_code == 404
+    ), "Wrong error code retrieving deleted collection"
+
+
+def test_add_user_to_non_existent_collection(client):
+    # Create a regular user
+    user_email = f"test_user_{uuid.uuid4()}@test.com"
+    user_password = "test_password"
+    client.users.register(user_email, user_password)
+    client.users.login(user_email, user_password)
+    user_id = client.users.me()["results"]["id"]
+    client.users.logout()
+
+    # Re-login as superuser to try adding user to a non-existent collection
+    # (Assumes superuser credentials are already in the client fixture)
+    fake_collection_id = str(uuid.uuid4())  # Non-existent collection ID
+    with pytest.raises(R2RException) as exc_info:
+        result = client.collections.add_user(fake_collection_id, user_id)
+        print("result = ", result)
+    assert (
+        exc_info.value.status_code == 404
+    ), "Wrong error code for non-existent collection"
+
+
+# def test_remove_non_member_user_from_collection_duplicate(client):
+#     # Similar to the previous non-member removal test but just to ensure coverage.
+#     owner_email = f"owner_{uuid.uuid4()}@test.com"
+#     owner_password = "password123"
+#     client.users.register(owner_email, owner_password)
+#     client.users.login(owner_email, owner_password)
+
+#     # Create a collection by this owner
+#     coll = client.collections.create(name="Another Non-member Test")["results"]
+#     collection_id = coll["id"]
+
+#     # Create another user who will NOT be added
+#     other_user_email = f"other_{uuid.uuid4()}@test.com"
+#     other_password = "password456"
+#     client.users.register(other_user_email, other_password)
+#     client.users.login(other_user_email, other_password)
+#     other_user_id = client.users.me()["results"]["id"]
+#     client.users.logout()
+
+#     # Re-login as collection owner
+#     client.users.login(owner_email, owner_password)
+
+#     # Attempt to remove non-member
+#     with pytest.raises(R2RException) as exc_info:
+#         client.collections.remove_user(collection_id, other_user_id)
+#     assert exc_info.value.status_code in [400, 404], "Wrong error code for removing non-member user"
+
+#     # Cleanup
+#     client.collections.delete(collection_id)
+
+
+def test_non_owner_delete_collection(client):
+    # Create owner user
+    owner_email = f"owner_{uuid.uuid4()}@test.com"
+    owner_password = "pwd123"
+    client.users.register(owner_email, owner_password)
+    client.users.login(owner_email, owner_password)
+    coll = client.collections.create(name="Owner Collection")["results"]
+    coll_id = coll["id"]
+
+    # Create another user and get their ID
+    non_owner_email = f"nonowner_{uuid.uuid4()}@test.com"
+    non_owner_password = "pwd1234"
+    client.users.logout()
+    client.users.register(non_owner_email, non_owner_password)
+    client.users.login(non_owner_email, non_owner_password)
+    non_owner_id = client.users.me()["results"]["id"]
+    client.users.logout()
+
+    # Owner adds non-owner to collection
+    client.users.login(owner_email, owner_password)
+    client.collections.add_user(coll_id, non_owner_id)
+    client.users.logout()
+
+    # Non-owner tries to delete collection
+    client.users.login(non_owner_email, non_owner_password)
+    with pytest.raises(R2RException) as exc_info:
+        result = client.collections.delete(coll_id)
+        print("result = ", result)
+    assert (
+        exc_info.value.status_code == 403
+    ), "Wrong error code for non-owner deletion attempt"
+
+    # Cleanup
+    client.users.logout()
+    client.users.login(owner_email, owner_password)
+    client.collections.delete(coll_id)

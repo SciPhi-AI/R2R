@@ -22,7 +22,6 @@ from core.base import (
 )
 from core.base.api.models import CombinedSearchResponse, RAGResponse, User
 from core.base.logger.base import RunType
-from core.providers.logger.r2r_logger import SqlitePersistentLoggingProvider
 from core.telemetry.telemetry_decorator import telemetry_event
 from shared.api.models.management.responses import MessageResponse
 
@@ -42,7 +41,6 @@ class RetrievalService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: SqlitePersistentLoggingProvider,
     ):
         super().__init__(
             config,
@@ -51,7 +49,6 @@ class RetrievalService(Service):
             pipelines,
             agents,
             run_manager,
-            logging_connection,
         )
 
     @telemetry_event("Search")
@@ -104,12 +101,6 @@ class RetrievalService(Service):
             t1 = time.time()
             latency = f"{t1 - t0:.2f}"
 
-            await self.logging_connection.log(
-                run_id=run_id,
-                key="search_latency",
-                value=latency,
-            )
-
             return results.as_dict()
 
     @telemetry_event("SearchDocuments")
@@ -119,10 +110,12 @@ class RetrievalService(Service):
         settings: SearchSettings,
         query_embedding: Optional[list[float]] = None,
     ) -> list[DocumentResponse]:
-        return await self.providers.database.search_documents(
-            query_text=query,
-            settings=settings,
-            query_embedding=query_embedding,
+        return (
+            await self.providers.database.documents_handler.search_documents(
+                query_text=query,
+                settings=settings,
+                query_embedding=query_embedding,
+            )
         )
 
     @telemetry_event("Completion")
@@ -249,7 +242,6 @@ class RetrievalService(Service):
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
         conversation_id: Optional[UUID] = None,
-        branch_id: Optional[UUID] = None,
         message: Optional[Message] = None,
         messages: Optional[list[Message]] = None,
     ):
@@ -315,11 +307,10 @@ class RetrievalService(Service):
 
                 if conversation_id:  # Fetch the existing conversation
                     try:
-                        conversation = (
-                            await self.logging_connection.get_conversation(
-                                conversation_id=conversation_id,
-                                branch_id=branch_id,
-                            )
+                        conversation = await self.providers.database.conversations_handler.get_conversations_overview(
+                            offset=0,
+                            limit=1,
+                            conversation_ids=[conversation_id],
                         )
                     except Exception as e:
                         logger.error(f"Error fetching conversation: {str(e)}")
@@ -339,7 +330,7 @@ class RetrievalService(Service):
                         messages = messages_from_conversation + messages
                 else:  # Create new conversation
                     conversation_response = (
-                        await self.logging_connection.create_conversation()
+                        await self.providers.database.conversations_handler.create_conversation()
                     )
                     conversation_id = conversation_response.id
 
@@ -356,7 +347,7 @@ class RetrievalService(Service):
 
                 # Save the new message to the conversation
                 parent_id = ids[-1] if ids else None
-                message_response = await self.logging_connection.add_message(
+                message_response = await self.providers.database.conversations_handler.add_message(
                     conversation_id=conversation_id,
                     content=current_message,
                     parent_id=parent_id,
@@ -407,7 +398,7 @@ class RetrievalService(Service):
                         role="assistant", content=str(results[-1])
                     )
 
-                await self.logging_connection.add_message(
+                await self.providers.database.conversations_handler.add_message(
                     conversation_id=conversation_id,
                     content=assistant_message,
                     parent_id=message_id,
@@ -504,7 +495,6 @@ class RetrievalServiceAdapter:
         include_title_if_available: bool,
         user: User,
         conversation_id: Optional[str] = None,
-        branch_id: Optional[str] = None,
     ) -> dict:
         return {
             "message": message.to_dict(),
@@ -514,7 +504,6 @@ class RetrievalServiceAdapter:
             "include_title_if_available": include_title_if_available,
             "user": user.to_dict(),
             "conversation_id": conversation_id,
-            "branch_id": branch_id,
         }
 
     @staticmethod
@@ -531,5 +520,4 @@ class RetrievalServiceAdapter:
             "include_title_if_available": data["include_title_if_available"],
             "user": RetrievalServiceAdapter._parse_user_data(data["user"]),
             "conversation_id": data.get("conversation_id"),
-            "branch_id": data.get("branch_id"),
         }

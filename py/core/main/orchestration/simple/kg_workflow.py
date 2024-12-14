@@ -107,7 +107,7 @@ def simple_kg_factory(service: KgService):
     async def enrich_graph(input_data):
 
         input_data = get_input_data_dict(input_data)
-        workflow_status = await service.providers.database.get_workflow_status(
+        workflow_status = await service.providers.database.documents_handler.get_workflow_status(
             id=input_data.get("collection_id", None),
             status_type="graph_cluster_status",
         )
@@ -150,7 +150,7 @@ def simple_kg_factory(service: KgService):
                     input_data=input_data_copy,
                 )
 
-            await service.providers.database.set_workflow_status(
+            await service.providers.database.documents_handler.set_workflow_status(
                 id=input_data.get("collection_id", None),
                 status_type="graph_cluster_status",
                 status=KGEnrichmentStatus.SUCCESS,
@@ -158,7 +158,7 @@ def simple_kg_factory(service: KgService):
 
         except Exception as e:
 
-            await service.providers.database.set_workflow_status(
+            await service.providers.database.documents_handler.set_workflow_status(
                 id=input_data.get("collection_id", None),
                 status_type="graph_cluster_status",
                 status=KGEnrichmentStatus.FAILED,

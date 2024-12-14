@@ -51,7 +51,7 @@ class ImageParser(AsyncParser[str | bytes]):
             Chunks of image description text
         """
         if not self.vision_prompt_text:
-            self.vision_prompt_text = await self.database_provider.get_cached_prompt(  # type: ignore
+            self.vision_prompt_text = await self.database_provider.prompts_handler.get_cached_prompt(  # type: ignore
                 prompt_name=self.config.vision_img_prompt_name
             )
         try:

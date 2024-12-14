@@ -76,16 +76,6 @@ export interface MessageResponse {
   message: any;
   metadata: Record<string, any>;
 }
-
-export interface BranchResponse {
-  branch_id: string;
-  branch_point_id?: string;
-  content?: string;
-  created_at: string;
-  user_id?: string;
-  name?: string;
-}
-
 // Document types
 export interface DocumentResponse {
   id: string;
@@ -344,8 +334,6 @@ export type WrappedMessageResponse = ResultsWrapper<MessageResponse>;
 export type WrappedMessagesResponse = PaginatedResultsWrapper<
   MessageResponse[]
 >;
-export type WrappedBranchResponse = ResultsWrapper<BranchResponse>;
-export type WrappedBranchesResponse = PaginatedResultsWrapper<BranchResponse[]>;
 
 // Document Responses
 export type WrappedDocumentResponse = ResultsWrapper<DocumentResponse>;

@@ -2,19 +2,11 @@ from .auth import AuthConfig, AuthProvider
 from .base import AppConfig, Provider, ProviderConfig
 from .crypto import CryptoConfig, CryptoProvider
 from .database import (
-    ChunkHandler,
-    CollectionsHandler,
     DatabaseConfig,
     DatabaseConnectionManager,
     DatabaseProvider,
-    DocumentHandler,
-    FileHandler,
-    GraphHandler,
-    LoggingHandler,
+    Handler,
     PostgresConfigurationSettings,
-    PromptHandler,
-    TokenHandler,
-    UserHandler,
 )
 from .email import EmailConfig, EmailProvider
 from .embedding import EmbeddingConfig, EmbeddingProvider
@@ -48,18 +40,10 @@ __all__ = [
     "EmailProvider",
     # Database providers
     "DatabaseConnectionManager",
-    "DocumentHandler",
-    "CollectionsHandler",
-    "TokenHandler",
-    "UserHandler",
-    "LoggingHandler",
-    "ChunkHandler",
-    "GraphHandler",
-    "PromptHandler",
-    "FileHandler",
     "DatabaseConfig",
     "PostgresConfigurationSettings",
     "DatabaseProvider",
+    "Handler",
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",

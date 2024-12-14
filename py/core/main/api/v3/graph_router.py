@@ -383,21 +383,13 @@ class GraphRouter(BaseRouterV3):
                     server_graph_enrichment_settings, graph_enrichment_settings
                 )
 
-            # If the run type is estimate, return an estimate of the enrichment cost
-            # if run_type is KGRunType.ESTIMATE:
-            #     return await self.services["kg"].get_enrichment_estimate(
-            #         collection_id=id,
-            #         graph_enrichment_settings=server_graph_enrichment_settings,
-            #     )
+            workflow_input = {
+                "collection_id": str(collection_id),
+                "graph_enrichment_settings": server_graph_enrichment_settings.model_dump_json(),
+                "user": auth_user.json(),
+            }
 
-            # Otherwise, run the enrichment workflow
-            # else:
             if run_with_orchestration:
-                workflow_input = {
-                    "collection_id": str(collection_id),
-                    "graph_enrichment_settings": server_graph_enrichment_settings.model_dump_json(),
-                    "user": auth_user.json(),
-                }
 
                 return await self.orchestration_provider.run_workflow(  # type: ignore
                     "build-communities", {"request": workflow_input}, {}
@@ -823,7 +815,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            result = await self.providers.database.graph_handler.entities.get(
+            result = await self.providers.database.graphs_handler.entities.get(
                 parent_id=collection_id,
                 store_type="graphs",
                 offset=0,
@@ -1106,7 +1098,7 @@ class GraphRouter(BaseRouterV3):
                 )
 
             results = (
-                await self.providers.database.graph_handler.relationships.get(
+                await self.providers.database.graphs_handler.relationships.get(
                     parent_id=collection_id,
                     store_type="graphs",
                     offset=0,
@@ -1517,7 +1509,7 @@ class GraphRouter(BaseRouterV3):
 
             results = await self.services[
                 "kg"
-            ].providers.database.graph_handler.communities.get(
+            ].providers.database.graphs_handler.communities.get(
                 parent_id=collection_id,
                 community_ids=[community_id],
                 store_type="graphs",
@@ -1827,7 +1819,7 @@ class GraphRouter(BaseRouterV3):
                         403,
                     )
                 entities = (
-                    await self.providers.database.graph_handler.entities.get(
+                    await self.providers.database.graphs_handler.entities.get(
                         parent_id=document.id,
                         store_type="documents",
                         offset=0,
@@ -1835,7 +1827,7 @@ class GraphRouter(BaseRouterV3):
                     )
                 )
                 has_document = (
-                    await self.providers.database.graph_handler.has_document(
+                    await self.providers.database.graphs_handler.has_document(
                         collection_id, document.id
                     )
                 )
@@ -1856,7 +1848,7 @@ class GraphRouter(BaseRouterV3):
                         )
 
                 success = (
-                    await self.providers.database.graph_handler.add_documents(
+                    await self.providers.database.graphs_handler.add_documents(
                         id=collection_id,
                         document_ids=[document.id],
                     )
@@ -1867,7 +1859,7 @@ class GraphRouter(BaseRouterV3):
                 )
 
             if success:
-                await self.providers.database.set_workflow_status(
+                await self.providers.database.documents_handler.set_workflow_status(
                     id=collection_id,
                     status_type="graph_sync_status",
                     status=KGEnrichmentStatus.SUCCESS,

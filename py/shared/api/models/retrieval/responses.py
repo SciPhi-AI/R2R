@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 from shared.abstractions import ChunkSearchResult, GraphSearchResult, Message
 from shared.abstractions.llm import LLMChatCompletion
-from shared.api.models.base import ResultsWrapper
+from shared.api.models.base import R2RResults
 
 
 class CombinedSearchResponse(BaseModel):
@@ -124,10 +124,10 @@ class DocumentSearchResult(BaseModel):
     )
 
 
-WrappedCompletionResponse = ResultsWrapper[LLMChatCompletion]
+WrappedCompletionResponse = R2RResults[LLMChatCompletion]
 # Create wrapped versions of the responses
-WrappedVectorSearchResponse = ResultsWrapper[list[ChunkSearchResult]]
-WrappedSearchResponse = ResultsWrapper[CombinedSearchResponse]
-WrappedDocumentSearchResponse = ResultsWrapper[list[DocumentSearchResult]]
-WrappedRAGResponse = ResultsWrapper[RAGResponse]
-WrappedAgentResponse = ResultsWrapper[AgentResponse]
+WrappedVectorSearchResponse = R2RResults[list[ChunkSearchResult]]
+WrappedSearchResponse = R2RResults[CombinedSearchResponse]
+WrappedDocumentSearchResponse = R2RResults[list[DocumentSearchResult]]
+WrappedRAGResponse = R2RResults[RAGResponse]
+WrappedAgentResponse = R2RResults[AgentResponse]

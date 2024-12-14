@@ -450,11 +450,10 @@ class DocumentsRouter(BaseRouterV3):
                 "ingestion_config": effective_ingestion_config.model_dump(),
                 "user": auth_user.model_dump_json(),
                 "size_in_bytes": content_length,
-                "is_update": False,
             }
 
             file_name = file_data["filename"]
-            await self.providers.database.store_file(
+            await self.providers.database.files_handler.store_file(
                 document_id,
                 file_name,
                 file_content,
@@ -1411,7 +1410,7 @@ class DocumentsRouter(BaseRouterV3):
 
             # Get all entities for this document from the document_entity table
             entities, count = (
-                await self.providers.database.graph_handler.entities.get(
+                await self.providers.database.graphs_handler.entities.get(
                     parent_id=id,
                     store_type="documents",
                     offset=offset,
@@ -1549,7 +1548,7 @@ class DocumentsRouter(BaseRouterV3):
 
             # Get relationships for this document
             relationships, count = (
-                await self.providers.database.graph_handler.relationships.get(
+                await self.providers.database.graphs_handler.relationships.get(
                     parent_id=id,
                     store_type="documents",
                     entity_names=entity_names,

@@ -5,14 +5,14 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from shared.abstractions.graph import Community, Entity, Relationship
-from shared.api.models.base import PaginatedResultsWrapper, ResultsWrapper
+from shared.api.models.base import PaginatedR2RResult, R2RResults
 
-WrappedEntityResponse = ResultsWrapper[Entity]
-WrappedEntitiesResponse = PaginatedResultsWrapper[list[Entity]]
-WrappedRelationshipResponse = ResultsWrapper[Relationship]
-WrappedRelationshipsResponse = PaginatedResultsWrapper[list[Relationship]]
-WrappedCommunityResponse = ResultsWrapper[Community]
-WrappedCommunitiesResponse = PaginatedResultsWrapper[list[Community]]
+WrappedEntityResponse = R2RResults[Entity]
+WrappedEntitiesResponse = PaginatedR2RResult[list[Entity]]
+WrappedRelationshipResponse = R2RResults[Relationship]
+WrappedRelationshipsResponse = PaginatedR2RResult[list[Relationship]]
+WrappedCommunityResponse = R2RResults[Community]
+WrappedCommunitiesResponse = PaginatedR2RResult[list[Community]]
 
 
 class GraphResponse(BaseModel):
@@ -27,5 +27,5 @@ class GraphResponse(BaseModel):
 
 
 # Graph Responses
-WrappedGraphResponse = ResultsWrapper[GraphResponse]
-WrappedGraphsResponse = PaginatedResultsWrapper[list[GraphResponse]]
+WrappedGraphResponse = R2RResults[GraphResponse]
+WrappedGraphsResponse = PaginatedR2RResult[list[GraphResponse]]

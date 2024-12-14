@@ -61,7 +61,7 @@ class SearchRAGPipe(GeneratorPipe):
             context += context_piece
             search_iteration += 1
         messages = (
-            await self.database_provider.prompt_handler.get_message_payload(
+            await self.database_provider.prompts_handler.get_message_payload(
                 system_prompt_name=self.config.system_prompt,
                 task_prompt_name=self.config.task_prompt,
                 task_inputs={"query": sel_query, "context": context},
@@ -77,11 +77,6 @@ class SearchRAGPipe(GeneratorPipe):
             content = response.choices[0].message.content
             if not content:
                 raise ValueError("Response content is empty")
-            await self.enqueue_log(
-                run_id=run_id,
-                key="llm_response",
-                value=content,
-            )
 
     async def _collect_context(
         self,

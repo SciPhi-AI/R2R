@@ -61,7 +61,7 @@ class QueryTransformPipe(GeneratorPipe):
                 f"Transforming query: {query} into {num_query_xf_outputs} outputs with {self.config.task_prompt}."
             )
 
-            query_transform_request = await self.database_provider.prompt_handler.get_message_payload(
+            query_transform_request = await self.database_provider.prompts_handler.get_message_payload(
                 system_prompt_name=self.config.system_prompt,
                 task_prompt_name=self.config.task_prompt,
                 task_inputs={

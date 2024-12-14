@@ -2,7 +2,6 @@ import { feature } from "../../feature";
 import { r2rClient } from "../../r2rClient";
 import {
   WrappedBooleanResponse,
-  WrappedBranchesResponse,
   WrappedConversationMessagesResponse,
   WrappedConversationResponse,
   WrappedConversationsResponse,
@@ -133,31 +132,6 @@ export class ConversationsClient {
       `conversations/${options.id}/messages/${options.messageID}`,
       {
         data,
-      },
-    );
-  }
-
-  /**
-   * List all branches in a conversation.
-   * @param id The ID of the conversation to list branches for
-   * @returns
-   */
-  @feature("conversations.listBranches")
-  async listBranches(options: {
-    id: string;
-    offset?: number;
-    limit?: number;
-  }): Promise<WrappedBranchesResponse> {
-    const params: Record<string, any> = {
-      offset: options?.offset ?? 0,
-      limit: options?.limit ?? 100,
-    };
-
-    return this.client.makeRequest(
-      "GET",
-      `conversations/${options.id}/branches`,
-      {
-        params,
       },
     );
   }

@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from fastapi import Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -9,10 +9,14 @@ from ..abstractions import R2RException, Token, TokenData
 from ..api.models import User
 from .base import Provider, ProviderConfig
 from .crypto import CryptoProvider
-from .database import DatabaseProvider
+
+# from .database import DatabaseProvider
 from .email import EmailProvider
 
 logger = logging.getLogger()
+
+if TYPE_CHECKING:
+    from core.database import PostgresDatabaseProvider
 
 
 class AuthConfig(ProviderConfig):
@@ -36,13 +40,13 @@ class AuthProvider(Provider, ABC):
     security = HTTPBearer(auto_error=False)
     crypto_provider: CryptoProvider
     email_provider: EmailProvider
-    database_provider: DatabaseProvider
+    database_provider: "PostgresDatabaseProvider"
 
     def __init__(
         self,
         config: AuthConfig,
         crypto_provider: CryptoProvider,
-        database_provider: DatabaseProvider,
+        database_provider: "PostgresDatabaseProvider",
         email_provider: EmailProvider,
     ):
         if not isinstance(config, AuthConfig):
@@ -57,9 +61,14 @@ class AuthProvider(Provider, ABC):
         self.email_provider = email_provider
         super().__init__(config)
         self.config: AuthConfig = config  # for type hinting
+        self.database_provider: "PostgresDatabaseProvider" = (
+            database_provider  # for type hinting
+        )
 
     async def _get_default_admin_user(self) -> User:
-        return await self.database_provider.get_user_by_email(self.admin_email)
+        return await self.database_provider.users_handler.get_user_by_email(
+            self.admin_email
+        )
 
     @abstractmethod
     def create_access_token(self, data: dict) -> str:
@@ -118,7 +127,7 @@ class AuthProvider(Provider, ABC):
         except Exception as e:
             raise R2RException(
                 message=f"Error '{e}' occurred during authentication.",
-                status_code=401,
+                status_code=404,
             )
 
     @abstractmethod
