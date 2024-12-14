@@ -21,7 +21,7 @@ on:
 
 jobs:
   integration-test:
-    runs-on: amd1
+    runs-on: ubuntu-latest
     timeout-minutes: 20
 
     env:
