@@ -111,6 +111,7 @@ class BaseRouterV3:
         self.orchestration_provider = orchestration_provider
         self.router = APIRouter()
         self.openapi_extras = self._load_openapi_extras()
+        self.set_rate_limiting()
         self._setup_routes()
         self._register_workflows()
 
@@ -199,7 +200,7 @@ class BaseRouterV3:
 
             request.state.user_id = user_id
             request.state.route = route
-
+            print('in rate limit dependency....')
             # Yield to run the route
             try:
                 yield
