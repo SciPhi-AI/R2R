@@ -9,8 +9,8 @@ from uuid import UUID
 import numpy as np
 
 from core.base import (
-    Handler,
     ChunkSearchResult,
+    Handler,
     IndexArgsHNSW,
     IndexArgsIVFFlat,
     IndexMeasure,
@@ -940,12 +940,23 @@ class PostgresChunksHandler(Handler):
                         parameters.append(json.dumps(clause))
                         return f"({json_col}->'{key}')::float >= (${len(parameters)}::jsonb)::float"
                     elif op == "$in":
+                        # Ensure clause is a list
                         if not isinstance(clause, list):
                             raise FilterError(
                                 "argument to $in filter must be a list"
                             )
-                        parameters.append(json.dumps(clause))
-                        return f"{json_col}->'{key}' = ANY(SELECT jsonb_array_elements(${len(parameters)}::jsonb))"
+                        # Append the Python list as a parameter; many drivers can convert Python lists to arrays
+                        parameters.append(clause)
+                        # Cast the parameter to a text array type
+                        return f"(metadata->>'{key}')::text = ANY(${len(parameters)}::text[])"
+
+                    # elif op == "$in":
+                    #     if not isinstance(clause, list):
+                    #         raise FilterError(
+                    #             "argument to $in filter must be a list"
+                    #         )
+                    #     parameters.append(json.dumps(clause))
+                    #     return f"{json_col}->'{key}' = ANY(SELECT jsonb_array_elements(${len(parameters)}::jsonb))"
                     elif op == "$contains":
                         if isinstance(clause, (int, float, str)):
                             clause = [clause]

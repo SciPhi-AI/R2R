@@ -28,7 +28,6 @@ from core.base.abstractions import (
 )
 from core.base.api.models import GraphResponse
 from core.base.providers.database import Handler
-
 from core.base.utils import (
     _decorate_vector_type,
     _get_str_estimation_output,
@@ -2522,11 +2521,22 @@ class PostgresGraphsHandler(Handler):
                         parameters.append(clause)
                         return f"(metadata->>'{field}')::float >= ${len(parameters)}::float"
                     elif op == "$in":
-                        # For $in, we assume an array of values and check if the field is in that set.
-                        # Note: This is simplistic, adjust as needed.
+                        # Ensure clause is a list
+                        if not isinstance(clause, list):
+                            raise Exception(
+                                "argument to $in filter must be a list"
+                            )
+                        # Append the Python list as a parameter; many drivers can convert Python lists to arrays
                         parameters.append(clause)
-                        # convert field to text and check membership
-                        return f"(metadata->>'{field}') = ANY(SELECT jsonb_array_elements_text(${len(parameters)}::jsonb))"
+                        # Cast the parameter to a text array type
+                        return f"(metadata->>'{key}')::text = ANY(${len(parameters)}::text[])"
+
+                    # elif op == "$in":
+                    #     # For $in, we assume an array of values and check if the field is in that set.
+                    #     # Note: This is simplistic, adjust as needed.
+                    #     parameters.append(clause)
+                    #     # convert field to text and check membership
+                    #     return f"(metadata->>'{field}') = ANY(SELECT jsonb_array_elements_text(${len(parameters)}::jsonb))"
                     elif op == "$contains":
                         # $contains for metadata likely means metadata @> clause in JSON.
                         # If clause is dict or list, we use json containment.
