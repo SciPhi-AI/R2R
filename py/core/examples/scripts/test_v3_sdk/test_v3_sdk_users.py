@@ -26,7 +26,7 @@ client = R2RClient("http://localhost:7276", prefix="/v3")
 
 # Test 1: Register user
 print("\n=== Test 1: Register User ===")
-register_result = client.users.register(
+register_result = client.users.create(
     email=user_email, password="secure_password123"
 )
 print("Registered user:", register_result)

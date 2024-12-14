@@ -19,11 +19,6 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     expect(response.results).toBeDefined();
   });
 
-  test("Get system logs", async () => {
-    const response = await client.system.logs({});
-    expect(response.results).toBeDefined();
-  });
-
   test("Get the settings of the system", async () => {
     const response = await client.system.settings();
     expect(response.results).toBeDefined();

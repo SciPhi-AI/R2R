@@ -13,16 +13,19 @@ describe("r2rClient V3 System Integration Tests User", () => {
   });
 
   test("Register a new user", async () => {
-    const response = await client.users.register({
+    const response = await client.users.create({
       email: "system_integration_test_user@example.com",
       password: "change_me_immediately",
+      name: "Test User",
+      bio: "This is the bio of the test user.",
     });
 
     userId = response.results.id;
     name = response.results.name;
     expect(response.results).toBeDefined();
     expect(response.results.is_superuser).toBe(false);
-    expect(response.results.name).toBe(null);
+    expect(response.results.name).toBe("Test User");
+    expect(response.results.bio).toBe("This is the bio of the test user.");
   });
 
   test("Login as a user", async () => {
@@ -36,10 +39,6 @@ describe("r2rClient V3 System Integration Tests User", () => {
   test("Get the health of the system", async () => {
     const response = await client.system.health();
     expect(response.results).toBeDefined();
-  });
-
-  test("Only a superuser can call the `system/logs` endpoint.", async () => {
-    await expect(client.system.logs({})).rejects.toThrow(/Status 403/);
   });
 
   test("Only a superuser can call the `system/settings` endpoint.", async () => {

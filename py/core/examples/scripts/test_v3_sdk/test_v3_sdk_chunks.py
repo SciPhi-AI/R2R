@@ -28,7 +28,7 @@ client = R2RClient("http://localhost:7276", prefix="/v3")
 
 # First create and authenticate a user if not already done
 try:
-    new_user = client.users.register(
+    new_user = client.users.create(
         email=user_email, password="new_secure_password123"
     )
     print("New user created:", new_user)

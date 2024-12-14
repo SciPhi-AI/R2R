@@ -50,21 +50,13 @@ export class ConversationsClient {
   /**
    * Get detailed information about a specific conversation.
    * @param id The ID of the conversation to retrieve
-   * @param branchID The ID of the branch to retrieve
    * @returns
    */
   @feature("conversations.retrieve")
   async retrieve(options: {
     id: string;
-    branchID?: string;
   }): Promise<WrappedConversationMessagesResponse> {
-    const params: Record<string, any> = {
-      branchID: options.branchID,
-    };
-
-    return this.client.makeRequest("GET", `conversations/${options.id}`, {
-      params,
-    });
+    return this.client.makeRequest("GET", `conversations/${options.id}`);
   }
 
   /**

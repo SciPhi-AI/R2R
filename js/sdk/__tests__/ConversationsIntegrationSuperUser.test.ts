@@ -47,13 +47,6 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   //   expect(response.results).toBeDefined();
   // });
 
-  test("List branches in a conversation", async () => {
-    const response = await client.conversations.listBranches({
-      id: conversationId,
-    });
-    expect(response.results).toBeDefined();
-  });
-
   test("Delete a conversation", async () => {
     const response = await client.conversations.delete({ id: conversationId });
     expect(response.results).toBeDefined();

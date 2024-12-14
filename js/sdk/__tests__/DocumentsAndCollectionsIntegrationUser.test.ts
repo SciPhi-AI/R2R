@@ -32,7 +32,7 @@ describe("r2rClient V3 System Integration Tests User", () => {
   });
 
   test("Register user 1", async () => {
-    const response = await client.users.register({
+    const response = await client.users.create({
       email: "user_1@example.com",
       password: "change_me_immediately",
     });
@@ -52,7 +52,7 @@ describe("r2rClient V3 System Integration Tests User", () => {
   });
 
   test("Register user 2", async () => {
-    const response = await client.users.register({
+    const response = await client.users.create({
       email: "user_2@example.com",
       password: "change_me_immediately",
     });
@@ -158,6 +158,36 @@ describe("r2rClient V3 System Integration Tests User", () => {
 
     expect(response.results).toBeDefined();
     expect(Array.isArray(response.results)).toBe(true);
+  });
+
+  test("List document chunks as user 1", async () => {
+    const response = await user1Client.documents.listChunks({
+      id: user1DocumentId,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(Array.isArray(response.results)).toBe(true);
+  });
+
+  test("List document chunks as user 2", async () => {
+    const response = await user2Client.documents.listChunks({
+      id: user2DocumentId,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(Array.isArray(response.results)).toBe(true);
+  });
+
+  test("User 2 should not be able to list user 1's document chunks", async () => {
+    await expect(
+      user2Client.documents.listChunks({ id: user1DocumentId }),
+    ).rejects.toThrow(/Status 403/);
+  });
+
+  test("User 1 should not be able to list user 2's document chunks", async () => {
+    await expect(
+      user1Client.documents.listChunks({ id: user2DocumentId }),
+    ).rejects.toThrow(/Status 403/);
   });
 
   test("Delete document as user 1", async () => {

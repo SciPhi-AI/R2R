@@ -13,10 +13,43 @@ export class UsersClient {
   constructor(private client: r2rClient) {}
 
   /**
+   * Create a new user.
+   * @param email User's email address
+   * @param password User's password
+   * @param name The name for the new user
+   * @param bio The bio for the new user
+   * @param profilePicture The profile picture for the new user
+   * @returns WrappedUserResponse
+   */
+  @feature("users.create")
+  async create(options: {
+    email: string;
+    password: string;
+    name?: string;
+    bio?: string;
+    profilePicture?: string;
+  }): Promise<WrappedUserResponse> {
+    const data = {
+      ...(options.email && { email: options.email }),
+      ...(options.password && { password: options.password }),
+      ...(options.name && { name: options.name }),
+      ...(options.bio && { bio: options.bio }),
+      ...(options.profilePicture && {
+        profile_picture: options.profilePicture,
+      }),
+    };
+
+    return this.client.makeRequest("POST", "users", {
+      data: data,
+    });
+  }
+
+  /**
    * Register a new user.
    * @param email User's email address
    * @param password User's password
-   * @returns
+   * @returns WrappedUserResponse
+   * @deprecated Use `client.users.create` instead.
    */
   @feature("users.register")
   async register(options: {

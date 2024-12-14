@@ -2062,7 +2062,7 @@ class PostgresGraphsHandler(Handler):
 
         # don't delete if status is PROCESSING.
         QUERY = f"""
-            SELECT graph_cluster_status FROM {self._get_table_name("collections")} WHERE collection_id = $1
+            SELECT graph_cluster_status FROM {self._get_table_name("collections")} WHERE id = $1
         """
         status = (
             await self.connection_manager.fetch_query(QUERY, [collection_id])
@@ -2103,19 +2103,20 @@ class PostgresGraphsHandler(Handler):
                 QUERY, [KGExtractionStatus.PENDING, collection_id]
             )
 
-        for query in DELETE_QUERIES:
-            if "community" in query or "graphs_entities" in query:
-                await self.connection_manager.execute_query(
-                    query, [collection_id]
-                )
-            else:
-                await self.connection_manager.execute_query(
-                    query, [document_ids]
-                )
+        if document_ids:
+            for query in DELETE_QUERIES:
+                if "community" in query or "graphs_entities" in query:
+                    await self.connection_manager.execute_query(
+                        query, [collection_id]
+                    )
+                else:
+                    await self.connection_manager.execute_query(
+                        query, [document_ids]
+                    )
 
         # set status to PENDING for this collection.
         QUERY = f"""
-            UPDATE {self._get_table_name("collections")} SET graph_cluster_status = $1 WHERE collection_id = $2
+            UPDATE {self._get_table_name("collections")} SET graph_cluster_status = $1 WHERE id = $2
         """
         await self.connection_manager.execute_query(
             QUERY, [KGExtractionStatus.PENDING, collection_id]

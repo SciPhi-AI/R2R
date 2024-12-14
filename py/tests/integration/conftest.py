@@ -40,6 +40,7 @@ async def superuser_client(
     yield client
     await client.users.logout()
 
+
 import uuid
 
 import pytest
@@ -69,7 +70,9 @@ def client(config):
 def test_collection(client):
     """Create a test collection with sample documents."""
     collection_name = f"Test Collection {uuid.uuid4()}"
-    collection_id = client.collections.create(name=collection_name)["results"]["id"]
+    collection_id = client.collections.create(name=collection_name)["results"][
+        "id"
+    ]
 
     docs = [
         {
@@ -108,10 +111,11 @@ def test_collection(client):
 
     doc_ids = []
     for doc in docs:
-        result = client.documents.create(raw_text=doc["text"], metadata=doc["metadata"])["results"]
+        result = client.documents.create(
+            raw_text=doc["text"], metadata=doc["metadata"]
+        )["results"]
         doc_id = result["document_id"]
         doc_ids.append(doc_id)
         client.collections.add_document(collection_id, doc_id)
 
     return {"collection_id": collection_id, "document_ids": doc_ids}
-

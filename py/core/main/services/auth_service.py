@@ -185,6 +185,10 @@ class AuthService(Service):
             collection_id
         )
 
+        await self.providers.database.graphs_handler.delete_graph_for_collection(
+            collection_id=collection_id,
+        )
+
         if delete_vector_data:
             await self.providers.database.chunks_handler.delete_user_vector(
                 user_id
