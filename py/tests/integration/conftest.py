@@ -65,7 +65,7 @@ def client(config):
     return client
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def test_collection(client):
     """Create a test collection with sample documents."""
     collection_name = f"Test Collection {uuid.uuid4()}"
