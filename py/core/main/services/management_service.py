@@ -541,7 +541,6 @@ class ManagementService(Service):
         x = await self.providers.database.users_handler.remove_user_from_collection(
             user_id, collection_id
         )
-        print("x = ", x)
         return x
 
     @telemetry_event("GetUsersInCollection")
