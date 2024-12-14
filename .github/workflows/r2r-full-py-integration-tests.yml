@@ -1,29 +1,13 @@
 name: R2R Full Python Integration Test (ubuntu)
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'py/**'
-      - '.github/workflows/**'
-      - 'tests/**'
-  pull_request:
-    branches:
-      - dev
-      - dev-minor
-      - main
-    paths:
-      - 'py/**'
-      - '.github/workflows/**'
-      - 'tests/**'
   workflow_dispatch:
 
 jobs:
   integration-test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    
+
     env:
       TELEMETRY_ENABLED: 'false'
       R2R_PROJECT_NAME: r2r_default
@@ -39,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Set up Python and install dependencies
         uses: ./.github/actions/setup-python-full
         with:
@@ -47,20 +31,20 @@ jobs:
           python-version: '3.12'
           poetry-version: '1.7.1'
           r2r-version: 'latest'
-      
+
       - name: Setup and start Docker
         uses: ./.github/actions/setup-docker
         id: docker-setup
-      
+
       - name: Login Docker
         uses: ./.github/actions/login-docker
         with:
           docker_username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
           docker_password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
-      
+
       - name: Start R2R Full server
         uses: ./.github/actions/start-r2r-full
-      
+
       - name: Wait for server to be ready
         run: |
           timeout=300  # 5 minutes timeout
@@ -73,7 +57,7 @@ jobs:
             sleep 5
             timeout=$((timeout - 5))
           done
-      
+
       - name: Run R2R Full Python Integration Test
         run: |
           cd py && poetry run pytest tests/ \
@@ -82,7 +66,7 @@ jobs:
             --log-cli-level=INFO \
             --junit-xml=test-results/junit.xml \
             --html=test-results/report.html
-      
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v3
@@ -91,7 +75,7 @@ jobs:
           path: |
             test-results/
             pytest-logs/
-      
+
       - name: Check for test failures
         if: failure()
         run: |

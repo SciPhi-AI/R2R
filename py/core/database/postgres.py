@@ -2,30 +2,29 @@
 import logging
 import os
 import warnings
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
+from ..base.abstractions import VectorQuantizationType
 from ..base.providers import (
     DatabaseConfig,
     DatabaseProvider,
     PostgresConfigurationSettings,
 )
-from ..base.abstractions import VectorQuantizationType
-from .base import PostgresConnectionManager
+from .base import PostgresConnectionManager, SemaphoreConnectionPool
+from .chunks import PostgresChunksHandler
 from .collections import PostgresCollectionsHandler
+from .conversations import PostgresConversationsHandler
 from .documents import PostgresDocumentsHandler
 from .files import PostgresFilesHandler
 from .graphs import (
+    PostgresCommunitiesHandler,
+    PostgresEntitiesHandler,
     PostgresGraphsHandler,
     PostgresRelationshipsHandler,
-    PostgresEntitiesHandler,
-    PostgresCommunitiesHandler,
 )
 from .prompts_handler import PostgresPromptsHandler
 from .tokens import PostgresTokensHandler
 from .users import PostgresUserHandler
-from .chunks import PostgresChunksHandler
-from .conversations import PostgresConversationsHandler
-from .base import SemaphoreConnectionPool
 
 if TYPE_CHECKING:
     from ..providers.crypto import BCryptProvider
@@ -74,7 +73,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
     graphs_handler: PostgresGraphsHandler
     prompts_handler: PostgresPromptsHandler
     files_handler: PostgresFilesHandler
-    conversation_handler: PostgresConversationsHandler
+    conversations_handler: PostgresConversationsHandler
 
     def __init__(
         self,
@@ -161,7 +160,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
             self.dimension,
             self.quantization_type,
         )
-        self.conversation_handler = PostgresConversationsHandler(
+        self.conversations_handler = PostgresConversationsHandler(
             self.project_name, self.connection_manager
         )
         self.entities_handler = PostgresEntitiesHandler(
@@ -229,7 +228,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
         await self.communities_handler.create_tables()
         await self.entities_handler.create_tables()
         await self.relationships_handler.create_tables()
-        await self.conversation_handler.create_tables()
+        await self.conversations_handler.create_tables()
 
     def _get_postgres_configuration_settings(
         self, config: DatabaseConfig

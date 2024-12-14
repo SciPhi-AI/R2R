@@ -637,7 +637,7 @@ class ManagementService(Service):
     ) -> dict:
         try:
             return await self.providers.database.prompts_handler.get_prompt(  # type: ignore
-                prompt_name=prompt_name,
+                name=prompt_name,
                 inputs=inputs,
                 prompt_override=prompt_override,
             )
@@ -677,14 +677,14 @@ class ManagementService(Service):
         conversation_id: str,
         auth_user=None,
     ) -> Tuple[str, list[Message], list[dict]]:
-        return await self.providers.database.conversation_handler.get_conversation(  # type: ignore
+        return await self.providers.database.conversations_handler.get_conversation(  # type: ignore
             conversation_id
         )
 
     async def verify_conversation_access(
         self, conversation_id: str, user_id: UUID
     ) -> bool:
-        return await self.providers.database.conversation_handler.verify_conversation_access(
+        return await self.providers.database.conversations_handler.verify_conversation_access(
             conversation_id, user_id
         )
 
@@ -692,7 +692,7 @@ class ManagementService(Service):
     async def create_conversation(
         self, user_id: Optional[UUID] = None, auth_user=None
     ) -> dict:
-        return await self.providers.database.conversation_handler.create_conversation(  # type: ignore
+        return await self.providers.database.conversations_handler.create_conversation(  # type: ignore
             user_id=user_id
         )
 
@@ -705,7 +705,7 @@ class ManagementService(Service):
         user_ids: Optional[UUID | list[UUID]] = None,
         auth_user=None,
     ) -> dict[str, list[dict] | int]:
-        return await self.providers.database.conversation_handler.get_conversations_overview(
+        return await self.providers.database.conversations_handler.get_conversations_overview(
             offset=offset,
             limit=limit,
             user_ids=user_ids,
@@ -721,7 +721,7 @@ class ManagementService(Service):
         metadata: Optional[dict] = None,
         auth_user=None,
     ) -> str:
-        return await self.providers.database.conversation_handler.add_message(
+        return await self.providers.database.conversations_handler.add_message(
             conversation_id, content, parent_id, metadata
         )
 
@@ -733,20 +733,22 @@ class ManagementService(Service):
         additional_metadata: dict,
         auth_user=None,
     ) -> Tuple[str, str]:
-        return await self.providers.database.conversation_handler.edit_message(
-            message_id, new_content, additional_metadata
+        return (
+            await self.providers.database.conversations_handler.edit_message(
+                message_id, new_content, additional_metadata
+            )
         )
 
     @telemetry_event("updateMessageMetadata")
     async def update_message_metadata(
         self, message_id: str, metadata: dict, auth_user=None
     ):
-        await self.providers.database.conversation_handler.update_message_metadata(
+        await self.providers.database.conversations_handler.update_message_metadata(
             message_id, metadata
         )
 
     @telemetry_event("DeleteConversation")
     async def delete_conversation(self, conversation_id: str, auth_user=None):
-        await self.providers.database.conversation_handler.delete_conversation(
+        await self.providers.database.conversations_handler.delete_conversation(
             conversation_id
         )

@@ -307,10 +307,8 @@ class RetrievalService(Service):
 
                 if conversation_id:  # Fetch the existing conversation
                     try:
-                        conversation = (
-                            await self.logging_connection.get_conversation(
-                                conversation_id=conversation_id
-                            )
+                        conversation = await self.providers.database.conversations_handler.get_conversations_overview(
+                            conversation_id=conversation_id
                         )
                     except Exception as e:
                         logger.error(f"Error fetching conversation: {str(e)}")
@@ -330,7 +328,7 @@ class RetrievalService(Service):
                         messages = messages_from_conversation + messages
                 else:  # Create new conversation
                     conversation_response = (
-                        await self.logging_connection.create_conversation()
+                        await self.providers.database.conversations_handler.create_conversation()
                     )
                     conversation_id = conversation_response.id
 
@@ -347,7 +345,7 @@ class RetrievalService(Service):
 
                 # Save the new message to the conversation
                 parent_id = ids[-1] if ids else None
-                message_response = await self.logging_connection.add_message(
+                message_response = await self.providers.database.conversations_handler.add_message(
                     conversation_id=conversation_id,
                     content=current_message,
                     parent_id=parent_id,
@@ -398,7 +396,7 @@ class RetrievalService(Service):
                         role="assistant", content=str(results[-1])
                     )
 
-                await self.logging_connection.add_message(
+                await self.providers.database.conversations_handler.add_message(
                     conversation_id=conversation_id,
                     content=assistant_message,
                     parent_id=message_id,
