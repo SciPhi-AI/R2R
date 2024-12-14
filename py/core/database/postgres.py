@@ -22,6 +22,7 @@ from .graphs import (
     PostgresGraphsHandler,
     PostgresRelationshipsHandler,
 )
+from .limits import PostgresLimitsHandler
 from .prompts_handler import PostgresPromptsHandler
 from .tokens import PostgresTokensHandler
 from .users import PostgresUserHandler
@@ -74,6 +75,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
     prompts_handler: PostgresPromptsHandler
     files_handler: PostgresFilesHandler
     conversations_handler: PostgresConversationsHandler
+    limits_handler: PostgresLimitsHandler
 
     def __init__(
         self,
@@ -198,6 +200,13 @@ class PostgresDatabaseProvider(DatabaseProvider):
             self.project_name, self.connection_manager
         )
 
+        self.limits_handler = PostgresLimitsHandler(
+            project_name=self.project_name,
+            connection_manager=self.connection_manager,
+            # TODO - this should be set in the config
+            route_limits={},
+        )
+
     async def initialize(self):
         logger.info("Initializing `PostgresDatabaseProvider`.")
         self.pool = SemaphoreConnectionPool(
@@ -229,6 +238,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
         await self.entities_handler.create_tables()
         await self.relationships_handler.create_tables()
         await self.conversations_handler.create_tables()
+        await self.limits_handler.create_tables()
 
     def _get_postgres_configuration_settings(
         self, config: DatabaseConfig

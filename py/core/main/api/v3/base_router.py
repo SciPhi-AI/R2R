@@ -79,12 +79,12 @@ class BaseRouterV3:
     def build_router(cls, engine):
         return cls(engine).router
 
-    @abstractmethod
-    def _setup_routes(self):
-        pass
-
     def _register_workflows(self):
         pass
 
     def _load_openapi_extras(self):
         return {}
+
+    @abstractmethod
+    def _setup_routes(self):
+        pass

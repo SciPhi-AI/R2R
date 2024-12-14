@@ -48,7 +48,7 @@ jobs:
       - name: Wait for server to be ready
         run: |
           timeout=300  # 5 minutes timeout
-          while ! curl -s http://localhost:8000/health > /dev/null; do
+          while ! curl -s http://localhost:7272/health > /dev/null; do
             if [ $timeout -le 0 ]; then
               echo "Server failed to start within timeout"
               exit 1
