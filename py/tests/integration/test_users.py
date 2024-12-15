@@ -34,11 +34,11 @@ def superuser_login(client, config):
 
 
 def register_and_return_user_id(client, email: str, password: str) -> str:
-    print('email = ', email)
-    print('making request.....')
+    print("email = ", email)
+    print("making request.....")
 
     user_resp = client.users.create(email, password)["results"]
-    print('user_resp = ', user_resp)
+    print("user_resp = ", user_resp)
     user_id = user_resp["id"]
     # If verification is mandatory, you'd have a step here to verify the user.
     # Otherwise, assume the user can login immediately.

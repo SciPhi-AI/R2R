@@ -134,6 +134,21 @@ class PostgresConfigurationSettings(BaseModel):
     work_mem: Optional[int] = 4096
 
 
+class LimitSettings(BaseModel):
+    global_per_min: Optional[int] = None
+    route_per_min: Optional[int] = None
+    monthly_limit: Optional[int] = None
+
+    def merge_with_defaults(
+        self, defaults: "LimitSettings"
+    ) -> "LimitSettings":
+        return LimitSettings(
+            global_per_min=self.global_per_min or defaults.global_per_min,
+            route_per_min=self.route_per_min or defaults.route_per_min,
+            monthly_limit=self.monthly_limit or defaults.monthly_limit,
+        )
+
+
 class DatabaseConfig(ProviderConfig):
     """A base database configuration class"""
 
@@ -163,6 +178,13 @@ class DatabaseConfig(ProviderConfig):
     )
     graph_search_settings: GraphSearchSettings = GraphSearchSettings()
 
+    # Rate limits
+    limits: LimitSettings = LimitSettings(
+        global_per_min=60, route_per_min=20, monthly_limit=10000
+    )
+    route_limits: dict[str, LimitSettings] = {}
+    user_limits: dict[UUID, dict[str, LimitSettings]] = {}
+
     def __post_init__(self):
         self.validate_config()
         # Capture additional fields
@@ -176,6 +198,33 @@ class DatabaseConfig(ProviderConfig):
     @property
     def supported_providers(self) -> list[str]:
         return ["postgres"]
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "DatabaseConfig":
+        instance = super().from_dict(
+            data
+        )  # or some logic to create the base instance
+
+        limits_data = data.get("limits", {})
+        default_limits = LimitSettings(
+            global_per_min=limits_data.get("global_per_min", 60),
+            route_per_min=limits_data.get("route_per_min", 20),
+            monthly_limit=limits_data.get("monthly_limit", 10000),
+        )
+
+        instance.limits = default_limits
+
+        route_limits_data = limits_data.get("routes", {})
+        for route_str, route_cfg in route_limits_data.items():
+            instance.route_limits[route_str] = LimitSettings(**route_cfg)
+
+        # user_limits parsing if needed:
+        # user_limits_data = limits_data.get("users", {})
+        # for user_str, user_cfg in user_limits_data.items():
+        #     user_id = UUID(user_str)
+        #     instance.user_limits[user_id] = LimitSettings(**user_cfg)
+
+        return instance
 
 
 class DatabaseProvider(Provider):

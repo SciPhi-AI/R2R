@@ -9,9 +9,9 @@ import asyncpg
 from fastapi import HTTPException
 
 from core.base import (
-    Handler,
     DocumentResponse,
     DocumentType,
+    Handler,
     IngestionStatus,
     KGEnrichmentStatus,
     KGExtractionStatus,

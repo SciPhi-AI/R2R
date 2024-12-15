@@ -203,8 +203,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
         self.limits_handler = PostgresLimitsHandler(
             project_name=self.project_name,
             connection_manager=self.connection_manager,
-            # TODO - this should be set in the config
-            route_limits={},
+            config=self.config,
         )
 
     async def initialize(self):

@@ -107,12 +107,12 @@ class UsersRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedUserResponse:
             """Register a new user with the given email and password."""
-            print('email = ', email)
-            print('making request.....')
+            print("email = ", email)
+            print("making request.....")
             registration_response = await self.services["auth"].register(
                 email, password
             )
-            print('registration_response = ', registration_response)
+            print("registration_response = ", registration_response)
 
             if name or bio or profile_picture:
                 return await self.services["auth"].update_user(
