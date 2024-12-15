@@ -71,13 +71,13 @@ batch_size = 256
 
   [database.limits]
     # Default fallback limits if no route or user-level overrides are found
-    global_per_min = 60
+    global_per_min = 300
     monthly_limit = 10000
 
   [database.route_limits]
     # Set the `v3/retrieval/search` route to have a maximum of 5 requests per minute
-    "/v3/retrieval/search" = { route_per_min = 30 }
-    "/v3/retrieval/rag" = { route_per_min = 3 }
+    "/v3/retrieval/search" = { route_per_min = 120 }
+    "/v3/retrieval/rag" = { route_per_min = 30 }
 
 [embedding]
 provider = "litellm"
