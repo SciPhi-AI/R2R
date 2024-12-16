@@ -258,9 +258,11 @@ class RetrievalRouterV3(BaseRouterV3):
             """
             if query == "":
                 raise R2RException("Query cannot be empty", 400)
+            print("search_settings = ", search_settings)
             effective_settings = self._prepare_search_settings(
                 auth_user, search_mode, search_settings
             )
+            print("effective_settings = ", effective_settings)
             results = await self.services.retrieval.search(
                 query=query,
                 search_settings=effective_settings,

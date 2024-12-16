@@ -217,6 +217,10 @@ def test_search_documents(client, test_document):
 
 
 def test_list_document_chunks(client):
+    temp_user = f"{uuid.uuid4()}@me.com"
+    client.users.register(temp_user, "password")
+    client.users.login(temp_user, "password")
+
     resp = client.documents.create(
         chunks=["C1", "C2", "C3"], run_with_orchestration=False
     )["results"]
@@ -225,6 +229,7 @@ def test_list_document_chunks(client):
     results = chunks_resp["results"]
     assert len(results) == 3, "Expected 3 chunks"
     client.documents.delete(id=doc_id)
+    client.logout()
 
 
 def test_search_documents_extended(client):

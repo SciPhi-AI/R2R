@@ -361,6 +361,7 @@ class PostgresChunksHandler(Handler):
             LIMIT ${len(params) + 3}
             """
 
+            print("query = ", query)
             params.extend(
                 [
                     extended_limit,  # First stage limit

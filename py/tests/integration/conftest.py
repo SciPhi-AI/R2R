@@ -18,12 +18,12 @@ class TestConfig:
         self.test_timeout = 30  # seconds
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture  # (scope="session")
 def config() -> TestConfig:
     return TestConfig()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture  # scope="session")
 async def client(config) -> AsyncGenerator[R2RClient, None]:
     """Create a shared client instance for the test session."""
     client = R2RClient(config.base_url)
@@ -31,7 +31,7 @@ async def client(config) -> AsyncGenerator[R2RClient, None]:
     # Session cleanup if needed
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture  # (scope="session")
 async def aclient(config) -> AsyncGenerator[R2RClient, None]:
     """Create a shared client instance for the test session."""
     client = R2RAsyncClient(config.base_url)
