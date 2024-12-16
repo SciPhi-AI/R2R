@@ -184,12 +184,12 @@ class ConversationsRouter(BaseRouterV3):
                 UUID(conversation_id) for conversation_id in ids
             ]
 
-            conversations_response = await self.services[
-                "management"
-            ].conversations_overview(
-                conversation_ids=conversation_uuids,
-                offset=offset,
-                limit=limit,
+            conversations_response = (
+                await self.services.management.conversations_overview(
+                    conversation_ids=conversation_uuids,
+                    offset=offset,
+                    limit=limit,
+                )
             )
             return conversations_response["results"], {  # type: ignore
                 "total_entries": conversations_response["total_entries"]

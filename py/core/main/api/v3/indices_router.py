@@ -213,7 +213,7 @@ class IndicesRouter(BaseRouterV3):
                 f"Creating vector index for {config.table_name} with method {config.index_method}, measure {config.index_measure}, concurrently {config.concurrently}"
             )
 
-            result = await self.orchestration_provider.run_workflow(
+            result = await self.providers.orchestration.run_workflow(
                 "create-vector-index",
                 {
                     "request": {
@@ -597,7 +597,7 @@ class IndicesRouter(BaseRouterV3):
                 f"Deleting vector index {index_name} from table {table_name}"
             )
 
-            return await self.orchestration_provider.run_workflow(
+            return await self.providers.orchestration.run_workflow(
                 "delete-vector-index",
                 {
                     "request": {

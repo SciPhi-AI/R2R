@@ -704,9 +704,11 @@ class UsersRouter(BaseRouterV3):
 
             user_uuids = [UUID(user_id) for user_id in ids]
 
-            users_overview_response = await self.services[
-                "management"
-            ].users_overview(user_ids=user_uuids, offset=offset, limit=limit)
+            users_overview_response = (
+                await self.services.management.users_overview(
+                    user_ids=user_uuids, offset=offset, limit=limit
+                )
+            )
             return users_overview_response["results"], {  # type: ignore
                 "total_entries": users_overview_response["total_entries"]
             }
@@ -851,12 +853,12 @@ class UsersRouter(BaseRouterV3):
                     403,
                 )
 
-            users_overview_response = await self.services[
-                "management"
-            ].users_overview(
-                offset=0,
-                limit=1,
-                user_ids=[id],
+            users_overview_response = (
+                await self.services.management.users_overview(
+                    offset=0,
+                    limit=1,
+                    user_ids=[id],
+                )
             )
 
             return users_overview_response["results"][0]
@@ -1024,12 +1026,12 @@ class UsersRouter(BaseRouterV3):
                     "The currently authenticated user does not have access to the specified collection.",
                     403,
                 )
-            user_collection_response = await self.services[
-                "management"
-            ].collections_overview(
-                offset=offset,
-                limit=limit,
-                user_ids=[id],
+            user_collection_response = (
+                await self.services.management.collections_overview(
+                    offset=offset,
+                    limit=limit,
+                    user_ids=[id],
+                )
             )
             return user_collection_response["results"], {  # type: ignore
                 "total_entries": user_collection_response["total_entries"]

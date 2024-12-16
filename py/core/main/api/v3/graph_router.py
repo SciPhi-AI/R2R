@@ -1500,14 +1500,14 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            results = await self.services[
-                "kg"
-            ].providers.database.graphs_handler.communities.get(
-                parent_id=collection_id,
-                community_ids=[community_id],
-                store_type="graphs",
-                offset=0,
-                limit=1,
+            results = (
+                await self.providers.database.graphs_handler.communities.get(
+                    parent_id=collection_id,
+                    community_ids=[community_id],
+                    store_type="graphs",
+                    offset=0,
+                    limit=1,
+                )
             )
             if len(results) == 0 or len(results[0]) == 0:
                 raise R2RException("Community not found", 404)

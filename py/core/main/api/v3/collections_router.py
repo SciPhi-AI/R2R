@@ -266,13 +266,13 @@ class CollectionsRouter(BaseRouterV3):
 
             collection_uuids = [UUID(collection_id) for collection_id in ids]
 
-            collections_overview_response = await self.services[
-                "management"
-            ].collections_overview(
-                user_ids=requesting_user_id,
-                collection_ids=collection_uuids,
-                offset=offset,
-                limit=limit,
+            collections_overview_response = (
+                await self.services.management.collections_overview(
+                    user_ids=requesting_user_id,
+                    collection_ids=collection_uuids,
+                    offset=offset,
+                    limit=limit,
+                )
             )
 
             return (  # type: ignore
@@ -355,13 +355,13 @@ class CollectionsRouter(BaseRouterV3):
                 auth_user, id, CollectionAction.VIEW, self.services
             )
 
-            collections_overview_response = await self.services[
-                "management"
-            ].collections_overview(
-                user_ids=None,
-                collection_ids=[id],
-                offset=0,
-                limit=1,
+            collections_overview_response = (
+                await self.services.management.collections_overview(
+                    user_ids=None,
+                    collection_ids=[id],
+                    offset=0,
+                    limit=1,
+                )
             )
             overview = collections_overview_response["results"]
 
@@ -610,9 +610,11 @@ class CollectionsRouter(BaseRouterV3):
                 auth_user, id, CollectionAction.ADD_DOCUMENT, self.services
             )
 
-            return await self.services[
-                "management"
-            ].assign_document_to_collection(document_id, id)
+            return (
+                await self.services.management.assign_document_to_collection(
+                    document_id, id
+                )
+            )
 
         @self.router.get(
             "/collections/{id}/documents",
@@ -700,9 +702,11 @@ class CollectionsRouter(BaseRouterV3):
                 auth_user, id, CollectionAction.VIEW, self.services
             )
 
-            documents_in_collection_response = await self.services[
-                "management"
-            ].documents_in_collection(id, offset, limit)
+            documents_in_collection_response = (
+                await self.services.management.documents_in_collection(
+                    id, offset, limit
+                )
+            )
 
             return documents_in_collection_response["results"], {  # type: ignore
                 "total_entries": documents_in_collection_response[
@@ -875,12 +879,12 @@ class CollectionsRouter(BaseRouterV3):
                 auth_user, id, CollectionAction.VIEW, self.services
             )
 
-            users_in_collection_response = await self.services[
-                "management"
-            ].get_users_in_collection(
-                collection_id=id,
-                offset=offset,
-                limit=min(max(limit, 1), 1000),
+            users_in_collection_response = (
+                await self.services.management.get_users_in_collection(
+                    collection_id=id,
+                    offset=offset,
+                    limit=min(max(limit, 1), 1000),
+                )
             )
 
             return users_in_collection_response["results"], {  # type: ignore
@@ -1036,10 +1040,11 @@ class CollectionsRouter(BaseRouterV3):
                 auth_user, id, CollectionAction.MANAGE_USERS, self.services
             )
 
-            result = await self.services[
-                "management"
-            ].remove_user_from_collection(user_id, id)
-            print("result = ", result)
+            result = (
+                await self.services.management.remove_user_from_collection(
+                    user_id, id
+                )
+            )
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
@@ -1113,22 +1118,6 @@ class CollectionsRouter(BaseRouterV3):
                     server_settings=server_graph_creation_settings,
                     settings_dict=settings,  # type: ignore
                 )
-
-            # If the run type is estimate, return an estimate of the creation cost
-            # if run_type is KGRunType.ESTIMATE:
-            #     return {  # type: ignore
-            #         "message": "Estimate retrieved successfully",
-            #         "task_id": None,
-            #         "id": id,
-            #         "estimate": await self.services[
-            #             "kg"
-            #         ].get_creation_estimate(
-            #             document_id=id,
-            #             graph_creation_settings=server_graph_creation_settings,
-            #         ),
-            #     }
-            # else:
-            # Otherwise, create the graph
             if run_with_orchestration:
                 workflow_input = {
                     "collection_id": str(id),

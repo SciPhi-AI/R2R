@@ -580,14 +580,14 @@ class DocumentsRouter(BaseRouterV3):
             )
 
             document_uuids = [UUID(document_id) for document_id in ids]
-            documents_overview_response = await self.services[
-                "management"
-            ].documents_overview(
-                user_ids=requesting_user_id,
-                collection_ids=filter_collection_ids,
-                document_ids=document_uuids,
-                offset=offset,
-                limit=limit,
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=requesting_user_id,
+                    collection_ids=filter_collection_ids,
+                    document_ids=document_uuids,
+                    offset=offset,
+                    limit=limit,
+                )
             )
             if not include_summary_embeddings:
                 for document in documents_overview_response["results"]:
@@ -684,9 +684,7 @@ class DocumentsRouter(BaseRouterV3):
                 None if auth_user.is_superuser else auth_user.collection_ids
             )
 
-            documents_overview_response = await self.services[
-                "management"
-            ].documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+            documents_overview_response = await self.services.management.documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                 user_ids=request_user_ids,
                 collection_ids=filter_collection_ids,
                 document_ids=[id],
@@ -791,9 +789,11 @@ class DocumentsRouter(BaseRouterV3):
             Results are returned in chunk sequence order, representing their position in
             the original document.
             """
-            list_document_chunks = await self.services[
-                "management"
-            ].list_document_chunks(id, offset, limit, include_vectors)
+            list_document_chunks = (
+                await self.services.management.list_document_chunks(
+                    id, offset, limit, include_vectors
+                )
+            )
 
             if not list_document_chunks["results"]:
                 raise R2RException(
@@ -803,12 +803,12 @@ class DocumentsRouter(BaseRouterV3):
             is_owner = str(
                 list_document_chunks["results"][0].get("owner_id")
             ) == str(auth_user.id)
-            document_collections = await self.services[
-                "management"
-            ].collections_overview(
-                offset=0,
-                limit=-1,
-                document_ids=[id],
+            document_collections = (
+                await self.services.management.collections_overview(
+                    offset=0,
+                    limit=-1,
+                    document_ids=[id],
+                )
             )
 
             user_has_access = (
@@ -901,14 +901,14 @@ class DocumentsRouter(BaseRouterV3):
                 )
 
             # Retrieve the document's information
-            documents_overview_response = await self.services[
-                "management"
-            ].documents_overview(
-                user_ids=None,
-                collection_ids=None,
-                document_ids=[document_uuid],
-                offset=0,
-                limit=1,
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=None,
+                    collection_ids=None,
+                    document_ids=[document_uuid],
+                    offset=0,
+                    limit=1,
+                )
             )
 
             if not documents_overview_response["results"]:
@@ -919,12 +919,12 @@ class DocumentsRouter(BaseRouterV3):
             is_owner = str(document.owner_id) == str(auth_user.id)
 
             if not auth_user.is_superuser and not is_owner:
-                document_collections = await self.services[
-                    "management"
-                ].collections_overview(
-                    offset=0,
-                    limit=-1,
-                    document_ids=[document_uuid],
+                document_collections = (
+                    await self.services.management.collections_overview(
+                        offset=0,
+                        limit=-1,
+                        document_ids=[document_uuid],
+                    )
                 )
 
                 document_collection_ids = {
@@ -1190,12 +1190,12 @@ class DocumentsRouter(BaseRouterV3):
                     403,
                 )
 
-            collections_response = await self.services[
-                "management"
-            ].collections_overview(
-                offset=offset,
-                limit=limit,
-                document_ids=[UUID(id)],  # Convert string ID to UUID
+            collections_response = (
+                await self.services.management.collections_overview(
+                    offset=offset,
+                    limit=limit,
+                    document_ids=[UUID(id)],  # Convert string ID to UUID
+                )
             )
 
             return collections_response["results"], {  # type: ignore
@@ -1286,9 +1286,7 @@ class DocumentsRouter(BaseRouterV3):
                     "message": "Estimate retrieved successfully",
                     "task_id": None,
                     "id": id,
-                    "estimate": await self.services[
-                        "kg"
-                    ].get_creation_estimate(
+                    "estimate": await self.services.kg.get_creation_estimate(
                         document_id=id,
                         graph_creation_settings=server_graph_creation_settings,
                     ),
@@ -1380,18 +1378,20 @@ class DocumentsRouter(BaseRouterV3):
                 )
 
             # First check if the document exists and user has access
-            documents_overview_response = await self.services[
-                "management"
-            ].documents_overview(
-                user_ids=None if auth_user.is_superuser else [auth_user.id],
-                collection_ids=(
-                    None
-                    if auth_user.is_superuser
-                    else auth_user.collection_ids
-                ),
-                document_ids=[id],
-                offset=0,
-                limit=1,
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=(
+                        None if auth_user.is_superuser else [auth_user.id]
+                    ),
+                    collection_ids=(
+                        None
+                        if auth_user.is_superuser
+                        else auth_user.collection_ids
+                    ),
+                    document_ids=[id],
+                    offset=0,
+                    limit=1,
+                )
             )
 
             if not documents_overview_response["results"]:
@@ -1518,18 +1518,20 @@ class DocumentsRouter(BaseRouterV3):
                 )
 
             # First check if the document exists and user has access
-            documents_overview_response = await self.services[
-                "management"
-            ].documents_overview(
-                user_ids=None if auth_user.is_superuser else [auth_user.id],
-                collection_ids=(
-                    None
-                    if auth_user.is_superuser
-                    else auth_user.collection_ids
-                ),
-                document_ids=[id],
-                offset=0,
-                limit=1,
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=(
+                        None if auth_user.is_superuser else [auth_user.id]
+                    ),
+                    collection_ids=(
+                        None
+                        if auth_user.is_superuser
+                        else auth_user.collection_ids
+                    ),
+                    document_ids=[id],
+                    offset=0,
+                    limit=1,
+                )
             )
 
             if not documents_overview_response["results"]:

@@ -33,9 +33,7 @@ class BaseRouterV3:
             ) as run_id:
                 auth_user = kwargs.get("auth_user")
                 if auth_user:
-                    await self.services[
-                        "ingestion"
-                    ].run_manager.log_run_info(  # TODO - this is a bit of a hack
+                    await self.services.ingestion.run_manager.log_run_info(  # TODO - this is a bit of a hack
                         user=auth_user,
                     )
 

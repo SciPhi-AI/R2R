@@ -177,9 +177,9 @@ class PromptsRouter(BaseRouterV3):
                     "Only a superuser can list prompts.",
                     403,
                 )
-            get_prompts_response = await self.services[
-                "management"
-            ].get_all_prompts()
+            get_prompts_response = (
+                await self.services.management.get_all_prompts()
+            )
 
             return (  # type: ignore
                 get_prompts_response["results"],
