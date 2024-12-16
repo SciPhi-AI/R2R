@@ -26,7 +26,7 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
         cache: 'pip'
-    
+
     - name: Install R2R CLI & Python SDK
       shell: bash
       run: |
@@ -35,19 +35,19 @@ runs:
         else
           pip install r2r==${{ inputs.r2r-version }}
         fi
-    
+
     - name: Install Poetry
       shell: bash
       run: |
         curl -sSL https://install.python-poetry.org | python3 - --version ${{ inputs.poetry-version }}
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-    
+
     - name: Set Poetry config
       shell: bash
       run: |
         poetry config virtualenvs.create true
         poetry config virtualenvs.in-project true
-    
+
     - name: Cache Poetry dependencies
       uses: actions/cache@v3
       with:
@@ -57,12 +57,12 @@ runs:
         key: ${{ runner.os }}-poetry-${{ hashFiles('py/poetry.lock') }}
         restore-keys: |
           ${{ runner.os }}-poetry-
-    
+
     - name: Verify pip cache directory
       shell: bash
       run: |
         mkdir -p ~/.cache/pip
-    
+
     - name: Install dependencies
       shell: bash
       working-directory: py
@@ -72,7 +72,7 @@ runs:
           poetry lock
         fi
         poetry install -E core -E ingestion-bundle --no-interaction
-    
+
     - name: Verify installation
       shell: bash
       run: |

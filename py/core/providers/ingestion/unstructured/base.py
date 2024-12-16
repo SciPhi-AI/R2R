@@ -89,6 +89,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
         DocumentType.MP3: [parsers.AudioParser],
         DocumentType.JSON: [parsers.JSONParser],  # type: ignore
         DocumentType.HTML: [parsers.HTMLParser],  # type: ignore
+        DocumentType.XLS: [parsers.XLSParser],  # type: ignore
         DocumentType.XLSX: [parsers.XLSXParser],  # type: ignore
     }
 
