@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import psutil
-from fastapi import Depends, Query
+from fastapi import Body, Depends, Query
 
 from core.base import R2RException
 from core.base.api.models import (
@@ -304,3 +304,38 @@ class SystemRouter(BaseRouterV3):
                 offset=offset,
                 limit=limit,
             )
+
+        @self.router.put("/system/config", openapi_extra={
+            "summary": "Update system configuration.",
+            "description": "Allows superusers to provide a partial configuration that is deeply merged into the current runtime config."
+        })
+        @self.base_endpoint
+        async def update_config(
+            updates: dict[str, Any] = Body(...),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedGenericMessageResponse:
+            if not auth_user.is_superuser:
+                raise R2RException("Only superusers can update config.", 403)
+
+            # Convert current config to dictionary
+            current_config_dict = self._config_to_dict()
+
+            # Deep merge updates into current_config_dict
+            merged_config = self._deep_merge_dicts(current_config_dict, updates)
+
+            # Try to re-initialize R2RConfig to validate the merged configuration
+            try:
+                new_config = R2RConfig(merged_config)
+            except ValidationError as ve:
+                raise R2RException(
+                    f"Invalid config updates: {ve.errors()}", 400
+                )
+            except ValueError as ve:
+                # Handle missing sections or required keys, etc.
+                raise R2RException(str(ve), 400)
+
+            # If validation passes, update the global config reference
+            self.providers.config = new_config
+
+            return {"message": "Configuration updated successfully"}  # type: ignore
+

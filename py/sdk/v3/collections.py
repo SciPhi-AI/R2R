@@ -135,7 +135,7 @@ class CollectionsSDK:
         result = await self.client._make_request(
             "DELETE", f"collections/{str(id)}", version="v3"
         )
-        return result.get("results", True)
+        return result
 
     async def list_documents(
         self,
@@ -207,7 +207,7 @@ class CollectionsSDK:
             f"collections/{str(id)}/documents/{str(document_id)}",
             version="v3",
         )
-        return result.get("results", True)
+        return result
 
     async def list_users(
         self,
@@ -274,7 +274,7 @@ class CollectionsSDK:
             f"collections/{str(id)}/users/{str(user_id)}",
             version="v3",
         )
-        return result.get("results", True)
+        return result
 
     async def extract(
         self,
