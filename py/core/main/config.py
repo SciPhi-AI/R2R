@@ -114,7 +114,10 @@ class R2RConfig:
         self.completion = CompletionConfig.create(**self.completion, app=self.app)  # type: ignore
         self.crypto = CryptoConfig.create(**self.crypto, app=self.app)  # type: ignore
         self.email = EmailConfig.create(**self.email, app=self.app)  # type: ignore
+        print("self.database raw = ", self.database)
         self.database = DatabaseConfig.create(**self.database, app=self.app)  # type: ignore
+
+        print("self.database = ", self.database)
         self.embedding = EmbeddingConfig.create(**self.embedding, app=self.app)  # type: ignore
         self.ingestion = IngestionConfig.create(**self.ingestion, app=self.app)  # type: ignore
         self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore

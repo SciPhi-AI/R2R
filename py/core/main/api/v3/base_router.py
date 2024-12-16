@@ -200,12 +200,10 @@ class BaseRouterV3:
 
             request.state.user_id = user_id
             request.state.route = route
-            print("in rate limit dependency....")
             # Yield to run the route
             try:
                 yield
             finally:
-                print("finally....")
                 # After the route completes successfully, log the request
                 await self.providers.database.limits_handler.log_request(
                     user_id, route
