@@ -1,7 +1,7 @@
 # tests/integration/test_chunks.py
 import asyncio
 import uuid
-from typing import AsyncGenerator, List, Optional, Tuple
+from typing import AsyncGenerator, Optional, Tuple
 
 import pytest
 
@@ -15,8 +15,8 @@ class AsyncR2RTestClient:
         self.client = R2RAsyncClient(base_url)
 
     async def create_document(
-        self, chunks: List[str], run_with_orchestration: bool = False
-    ) -> Tuple[str, List[dict]]:
+        self, chunks: list[str], run_with_orchestration: bool = False
+    ) -> Tuple[str, list[dict]]:
         response = await self.client.documents.create(
             chunks=chunks, run_with_orchestration=run_with_orchestration
         )
@@ -25,7 +25,7 @@ class AsyncR2RTestClient:
     async def delete_document(self, doc_id: str) -> None:
         await self.client.documents.delete(id=doc_id)
 
-    async def list_chunks(self, doc_id: str) -> List[dict]:
+    async def list_chunks(self, doc_id: str) -> list[dict]:
         response = await self.client.documents.list_chunks(id=doc_id)
         return response["results"]
 
@@ -45,7 +45,7 @@ class AsyncR2RTestClient:
         response = await self.client.chunks.delete(id=chunk_id)
         return response["results"]
 
-    async def search_chunks(self, query: str, limit: int = 5) -> List[dict]:
+    async def search_chunks(self, query: str, limit: int = 5) -> list[dict]:
         response = await self.client.chunks.search(
             query=query, search_settings={"limit": limit}
         )
@@ -71,7 +71,7 @@ async def test_client() -> AsyncGenerator[AsyncR2RTestClient, None]:
 @pytest.fixture
 async def test_document(
     test_client: AsyncR2RTestClient,
-) -> AsyncGenerator[Tuple[str, List[dict]], None]:
+) -> AsyncGenerator[Tuple[str, list[dict]], None]:
     """Create a test document with chunks."""
     doc_id, _ = await test_client.create_document(
         ["Test chunk 1", "Test chunk 2"]

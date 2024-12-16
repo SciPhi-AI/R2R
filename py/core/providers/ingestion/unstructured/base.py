@@ -6,7 +6,7 @@ import os
 import time
 from copy import copy
 from io import BytesIO
-from typing import Any, AsyncGenerator, Optional, Union
+from typing import Any, AsyncGenerator, Optional
 
 import httpx
 from unstructured_client import UnstructuredClient
@@ -81,16 +81,19 @@ class UnstructuredIngestionConfig(IngestionConfig):
 
 class UnstructuredIngestionProvider(IngestionProvider):
     R2R_FALLBACK_PARSERS = {
-        DocumentType.GIF: [parsers.ImageParser],
-        DocumentType.JPEG: [parsers.ImageParser],
-        DocumentType.JPG: [parsers.ImageParser],
-        DocumentType.PNG: [parsers.ImageParser],
-        DocumentType.SVG: [parsers.ImageParser],
-        DocumentType.MP3: [parsers.AudioParser],
+        DocumentType.GIF: [parsers.ImageParser],  # type: ignore
+        DocumentType.JPEG: [parsers.ImageParser],  # type: ignore
+        DocumentType.JPG: [parsers.ImageParser],  # type: ignore
+        DocumentType.PNG: [parsers.ImageParser],  # type: ignore
+        DocumentType.SVG: [parsers.ImageParser],  # type: ignore
+        DocumentType.HEIC: [parsers.ImageParser],  # type: ignore
+        DocumentType.MP3: [parsers.AudioParser],  # type: ignore
         DocumentType.JSON: [parsers.JSONParser],  # type: ignore
         DocumentType.HTML: [parsers.HTMLParser],  # type: ignore
         DocumentType.XLS: [parsers.XLSParser],  # type: ignore
         DocumentType.XLSX: [parsers.XLSXParser],  # type: ignore
+        DocumentType.DOC: [parsers.DOCParser],  # type: ignore
+        DocumentType.PPT: [parsers.PPTParser],  # type: ignore
     }
 
     EXTRA_PARSERS = {
@@ -104,6 +107,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
 
     IMAGE_TYPES = {
         DocumentType.GIF,
+        DocumentType.HEIC,
         DocumentType.JPG,
         DocumentType.JPEG,
         DocumentType.PNG,
@@ -114,16 +118,14 @@ class UnstructuredIngestionProvider(IngestionProvider):
         self,
         config: UnstructuredIngestionConfig,
         database_provider: PostgresDatabaseProvider,
-        llm_provider: Union[
-            LiteLLMCompletionProvider, OpenAICompletionProvider
-        ],
+        llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
     ):
         super().__init__(config, database_provider, llm_provider)
         self.config: UnstructuredIngestionConfig = config
         self.database_provider: PostgresDatabaseProvider = database_provider
-        self.llm_provider: Union[
-            LiteLLMCompletionProvider, OpenAICompletionProvider
-        ] = llm_provider
+        self.llm_provider: (
+            LiteLLMCompletionProvider | OpenAICompletionProvider
+        ) = llm_provider
 
         if config.provider == "unstructured_api":
             try:
@@ -323,9 +325,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
                 metadata.update(element.metadata)
             else:
                 element_dict = (
-                    element.to_dict()
-                    if not isinstance(element, dict)
-                    else element
+                    element if isinstance(element, dict) else element.to_dict()
                 )
                 text = element_dict.get("text", "")
                 if text == "":
@@ -335,9 +335,8 @@ class UnstructuredIngestionProvider(IngestionProvider):
                 for key, value in element_dict.items():
                     if key == "metadata":
                         for k, v in value.items():
-                            if k not in metadata:
-                                if k != "orig_elements":
-                                    metadata[f"unstructured_{k}"] = v
+                            if k not in metadata and k != "orig_elements":
+                                metadata[f"unstructured_{k}"] = v
 
             # indicate that the document was chunked using unstructured
             # nullifies the need for chunking in the pipeline

@@ -1,10 +1,11 @@
+# type: ignore
 from .audio_parser import AudioParser
 from .bmp_parser import BMPParser
 from .doc_parser import DOCParser
 from .docx_parser import DOCXParser
 from .img_parser import ImageParser
 from .odt_parser import ODTParser
-from .pdf_parser import (  # type: ignore
+from .pdf_parser import (
     BasicPDFParser,
     PDFParserUnstructured,
     VLMPDFParser,
