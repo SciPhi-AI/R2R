@@ -8,26 +8,17 @@ from fastapi import WebSocket
 from fastapi.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from core.base.logger.base import RunType
-from core.providers import (
-    HatchetOrchestrationProvider,
-    SimpleOrchestrationProvider,
-)
-
+from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
 
 
 class LogsRouter(BaseRouterV3):
     def __init__(
         self,
-        providers,
-        services,
-        orchestration_provider: (
-            HatchetOrchestrationProvider | SimpleOrchestrationProvider
-        ),
-        run_type: RunType = RunType.UNSPECIFIED,
+        providers: R2RProviders,
+        services: R2RServices,
     ):
-        super().__init__(providers, services, orchestration_provider, run_type)
+        super().__init__(providers, services)
         CURRENT_DIR = Path(__file__).resolve().parent
         TEMPLATES_DIR = CURRENT_DIR.parent / "templates"
         self.templates = Jinja2Templates(directory=str(TEMPLATES_DIR))

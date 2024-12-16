@@ -7,7 +7,6 @@ from ..base.abstractions import (
     GraphSearchSettings,
     SearchSettings,
 )
-from ..base.logger.base import RunType
 from ..base.logger.run_manager import RunManager, manage_run
 from ..base.pipeline.base_pipeline import AsyncPipeline
 from ..base.pipes.base_pipe import AsyncPipe, AsyncState
@@ -44,7 +43,7 @@ class RAGPipeline(AsyncPipeline):
         self.state = state or AsyncState()
         # TODO - This feels anti-pattern.
         run_manager = run_manager or self.run_manager or RunManager()
-        async with manage_run(run_manager, RunType.RETRIEVAL):
+        async with manage_run(run_manager):
             if not self._search_pipeline:
                 raise ValueError(
                     "`_search_pipeline` must be set before running the RAG pipeline"

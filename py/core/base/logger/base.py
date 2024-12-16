@@ -16,17 +16,5 @@ logger = logging.getLogger()
 
 class RunInfoLog(BaseModel):
     run_id: UUID
-    run_type: str
     timestamp: datetime
     user_id: UUID
-
-
-class RunType(str, Enum):
-    """Enumeration of the different types of runs."""
-
-    RETRIEVAL = "RETRIEVAL"
-    MANAGEMENT = "MANAGEMENT"
-    INGESTION = "INGESTION"
-    AUTH = "AUTH"
-    UNSPECIFIED = "UNSPECIFIED"
-    KG = "KG"

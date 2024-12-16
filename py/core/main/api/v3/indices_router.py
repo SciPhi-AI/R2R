@@ -8,18 +8,15 @@ from typing import Optional
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import IndexConfig, R2RException, RunType
+from core.base import IndexConfig, R2RException
 from core.base.abstractions import VectorTableName
 from core.base.api.models import (
     GenericMessageResponse,
     WrappedGenericMessageResponse,
     WrappedListVectorIndicesResponse,
 )
-from core.providers import (
-    HatchetOrchestrationProvider,
-    SimpleOrchestrationProvider,
-)
 
+from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -29,14 +26,10 @@ class IndicesRouter(BaseRouterV3):
 
     def __init__(
         self,
-        providers,
-        services,
-        orchestration_provider: (
-            HatchetOrchestrationProvider | SimpleOrchestrationProvider
-        ),
-        run_type: RunType = RunType.INGESTION,
+        providers: R2RProviders,
+        services: R2RServices,
     ):
-        super().__init__(providers, services, orchestration_provider, run_type)
+        super().__init__(providers, services)
 
     def _setup_routes(self):
 
@@ -220,7 +213,7 @@ class IndicesRouter(BaseRouterV3):
                 f"Creating vector index for {config.table_name} with method {config.index_method}, measure {config.index_measure}, concurrently {config.concurrently}"
             )
 
-            result = await self.orchestration_provider.run_workflow(
+            result = await self.providers.orchestration.run_workflow(
                 "create-vector-index",
                 {
                     "request": {
@@ -604,7 +597,7 @@ class IndicesRouter(BaseRouterV3):
                 f"Deleting vector index {index_name} from table {table_name}"
             )
 
-            return await self.orchestration_provider.run_workflow(
+            return await self.providers.orchestration.run_workflow(
                 "delete-vector-index",
                 {
                     "request": {

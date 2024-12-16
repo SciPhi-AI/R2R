@@ -104,8 +104,6 @@ __all__ = [
     "TokenResponse",
     "User",
     ## LOGGING
-    # Basic types
-    "RunType",
     # Run Manager
     "RunManager",
     "manage_run",

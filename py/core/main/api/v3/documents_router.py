@@ -15,7 +15,6 @@ from core.base import (
     IngestionConfig,
     IngestionMode,
     R2RException,
-    RunType,
     SearchMode,
     SearchSettings,
     UnprocessedChunk,
@@ -37,12 +36,9 @@ from core.base.api.models import (
     WrappedIngestionResponse,
     WrappedRelationshipsResponse,
 )
-from core.providers import (
-    HatchetOrchestrationProvider,
-    SimpleOrchestrationProvider,
-)
 from core.utils import update_settings_from_dict
 
+from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -80,14 +76,10 @@ def merge_ingestion_config(
 class DocumentsRouter(BaseRouterV3):
     def __init__(
         self,
-        providers,
-        services,
-        orchestration_provider: (
-            HatchetOrchestrationProvider | SimpleOrchestrationProvider
-        ),
-        run_type: RunType = RunType.INGESTION,
+        providers: R2RProviders,
+        services: R2RServices,
     ):
-        super().__init__(providers, services, orchestration_provider, run_type)
+        super().__init__(providers, services)
         self._register_workflows()
 
     def _prepare_search_settings(
@@ -122,48 +114,48 @@ class DocumentsRouter(BaseRouterV3):
 
     # TODO - Remove this legacy method
     def _register_workflows(self):
-        self.orchestration_provider.register_workflows(
+        self.providers.orchestration.register_workflows(
             Workflow.INGESTION,
-            self.services["ingestion"],
+            self.services.ingestion,
             {
                 "ingest-files": (
                     "Ingest files task queued successfully."
-                    if self.orchestration_provider.config.provider != "simple"
+                    if self.providers.orchestration.config.provider != "simple"
                     else "Document created and ingested successfully."
                 ),
                 "ingest-chunks": (
                     "Ingest chunks task queued successfully."
-                    if self.orchestration_provider.config.provider != "simple"
+                    if self.providers.orchestration.config.provider != "simple"
                     else "Document created and ingested successfully."
                 ),
                 "update-files": (
                     "Update file task queued successfully."
-                    if self.orchestration_provider.config.provider != "simple"
+                    if self.providers.orchestration.config.provider != "simple"
                     else "Update task queued successfully."
                 ),
                 "update-chunk": (
                     "Update chunk task queued successfully."
-                    if self.orchestration_provider.config.provider != "simple"
+                    if self.providers.orchestration.config.provider != "simple"
                     else "Chunk update completed successfully."
                 ),
                 "update-document-metadata": (
                     "Update document metadata task queued successfully."
-                    if self.orchestration_provider.config.provider != "simple"
+                    if self.providers.orchestration.config.provider != "simple"
                     else "Document metadata update completed successfully."
                 ),
                 "create-vector-index": (
                     "Vector index creation task queued successfully."
-                    if self.orchestration_provider.config.provider != "simple"
+                    if self.providers.orchestration.config.provider != "simple"
                     else "Vector index creation task completed successfully."
                 ),
                 "delete-vector-index": (
                     "Vector index deletion task queued successfully."
-                    if self.orchestration_provider.config.provider != "simple"
+                    if self.providers.orchestration.config.provider != "simple"
                     else "Vector index deletion task completed successfully."
                 ),
                 "select-vector-index": (
                     "Vector index selection task queued successfully."
-                    if self.orchestration_provider.config.provider != "simple"
+                    if self.providers.orchestration.config.provider != "simple"
                     else "Vector index selection task completed successfully."
                 ),
             },
@@ -378,7 +370,7 @@ class DocumentsRouter(BaseRouterV3):
                 if run_with_orchestration:
                     # Run ingestion with orchestration
                     raw_message = (
-                        await self.orchestration_provider.run_workflow(
+                        await self.providers.orchestration.run_workflow(
                             "ingest-chunks",
                             {"request": workflow_input},
                             options={
@@ -400,7 +392,7 @@ class DocumentsRouter(BaseRouterV3):
                     )
 
                     simple_ingestor = simple_ingestion_factory(
-                        self.services["ingestion"]
+                        self.services.ingestion
                     )
                     await simple_ingestor["ingest-chunks"](workflow_input)
 
@@ -461,7 +453,7 @@ class DocumentsRouter(BaseRouterV3):
             )
 
             if run_with_orchestration:
-                raw_message: dict[str, str | None] = await self.orchestration_provider.run_workflow(  # type: ignore
+                raw_message: dict[str, str | None] = await self.providers.orchestration.run_workflow(  # type: ignore
                     "ingest-files",
                     {"request": workflow_input},
                     options={
@@ -480,7 +472,7 @@ class DocumentsRouter(BaseRouterV3):
                 from core.main.orchestration import simple_ingestion_factory
 
                 simple_ingestor = simple_ingestion_factory(
-                    self.services["ingestion"]
+                    self.services.ingestion
                 )
                 await simple_ingestor["ingest-files"](workflow_input)
                 return {  # type: ignore
@@ -588,14 +580,14 @@ class DocumentsRouter(BaseRouterV3):
             )
 
             document_uuids = [UUID(document_id) for document_id in ids]
-            documents_overview_response = await self.services[
-                "management"
-            ].documents_overview(
-                user_ids=requesting_user_id,
-                collection_ids=filter_collection_ids,
-                document_ids=document_uuids,
-                offset=offset,
-                limit=limit,
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=requesting_user_id,
+                    collection_ids=filter_collection_ids,
+                    document_ids=document_uuids,
+                    offset=offset,
+                    limit=limit,
+                )
             )
             if not include_summary_embeddings:
                 for document in documents_overview_response["results"]:
@@ -692,9 +684,7 @@ class DocumentsRouter(BaseRouterV3):
                 None if auth_user.is_superuser else auth_user.collection_ids
             )
 
-            documents_overview_response = await self.services[
-                "management"
-            ].documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+            documents_overview_response = await self.services.management.documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                 user_ids=request_user_ids,
                 collection_ids=filter_collection_ids,
                 document_ids=[id],
@@ -799,9 +789,11 @@ class DocumentsRouter(BaseRouterV3):
             Results are returned in chunk sequence order, representing their position in
             the original document.
             """
-            list_document_chunks = await self.services[
-                "management"
-            ].list_document_chunks(id, offset, limit, include_vectors)
+            list_document_chunks = (
+                await self.services.management.list_document_chunks(
+                    id, offset, limit, include_vectors
+                )
+            )
 
             if not list_document_chunks["results"]:
                 raise R2RException(
@@ -811,12 +803,12 @@ class DocumentsRouter(BaseRouterV3):
             is_owner = str(
                 list_document_chunks["results"][0].get("owner_id")
             ) == str(auth_user.id)
-            document_collections = await self.services[
-                "management"
-            ].collections_overview(
-                offset=0,
-                limit=-1,
-                document_ids=[id],
+            document_collections = (
+                await self.services.management.collections_overview(
+                    offset=0,
+                    limit=-1,
+                    document_ids=[id],
+                )
             )
 
             user_has_access = (
@@ -909,14 +901,14 @@ class DocumentsRouter(BaseRouterV3):
                 )
 
             # Retrieve the document's information
-            documents_overview_response = await self.services[
-                "management"
-            ].documents_overview(
-                user_ids=None,
-                collection_ids=None,
-                document_ids=[document_uuid],
-                offset=0,
-                limit=1,
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=None,
+                    collection_ids=None,
+                    document_ids=[document_uuid],
+                    offset=0,
+                    limit=1,
+                )
             )
 
             if not documents_overview_response["results"]:
@@ -927,12 +919,12 @@ class DocumentsRouter(BaseRouterV3):
             is_owner = str(document.owner_id) == str(auth_user.id)
 
             if not auth_user.is_superuser and not is_owner:
-                document_collections = await self.services[
-                    "management"
-                ].collections_overview(
-                    offset=0,
-                    limit=-1,
-                    document_ids=[document_uuid],
+                document_collections = (
+                    await self.services.management.collections_overview(
+                        offset=0,
+                        limit=-1,
+                        document_ids=[document_uuid],
+                    )
                 )
 
                 document_collection_ids = {
@@ -952,7 +944,7 @@ class DocumentsRouter(BaseRouterV3):
                         "Not authorized to access this document.", 403
                     )
 
-            file_tuple = await self.services["management"].download_file(
+            file_tuple = await self.services.management.download_file(
                 document_uuid
             )
             if not file_tuple:
@@ -1025,7 +1017,7 @@ class DocumentsRouter(BaseRouterV3):
             filters_dict = {
                 "$and": [{"owner_id": {"$eq": str(auth_user.id)}}, filters]
             }
-            await self.services["management"].delete(filters=filters_dict)
+            await self.services.management.delete(filters=filters_dict)
 
             return GenericBooleanResponse(success=True)  # type: ignore
 
@@ -1103,7 +1095,7 @@ class DocumentsRouter(BaseRouterV3):
                     {"document_id": {"$eq": str(id)}},
                 ]
             }
-            await self.services["management"].delete(filters=filters)
+            await self.services.management.delete(filters=filters)
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.get(
@@ -1198,12 +1190,12 @@ class DocumentsRouter(BaseRouterV3):
                     403,
                 )
 
-            collections_response = await self.services[
-                "management"
-            ].collections_overview(
-                offset=offset,
-                limit=limit,
-                document_ids=[UUID(id)],  # Convert string ID to UUID
+            collections_response = (
+                await self.services.management.collections_overview(
+                    offset=offset,
+                    limit=limit,
+                    document_ids=[UUID(id)],  # Convert string ID to UUID
+                )
             )
 
             return collections_response["results"], {  # type: ignore
@@ -1294,9 +1286,7 @@ class DocumentsRouter(BaseRouterV3):
                     "message": "Estimate retrieved successfully",
                     "task_id": None,
                     "id": id,
-                    "estimate": await self.services[
-                        "kg"
-                    ].get_creation_estimate(
+                    "estimate": await self.services.kg.get_creation_estimate(
                         document_id=id,
                         graph_creation_settings=server_graph_creation_settings,
                     ),
@@ -1309,14 +1299,14 @@ class DocumentsRouter(BaseRouterV3):
                     "user": auth_user.json(),
                 }
 
-                return await self.orchestration_provider.run_workflow(
+                return await self.providers.orchestration.run_workflow(
                     "extract-triples", {"request": workflow_input}, {}
                 )
             else:
                 from core.main.orchestration import simple_kg_factory
 
                 logger.info("Running extract-triples without orchestration.")
-                simple_kg = simple_kg_factory(self.services["kg"])
+                simple_kg = simple_kg_factory(self.services.kg)
                 await simple_kg["extract-triples"](workflow_input)
                 return {  # type: ignore
                     "message": "Graph created successfully.",
@@ -1388,18 +1378,20 @@ class DocumentsRouter(BaseRouterV3):
                 )
 
             # First check if the document exists and user has access
-            documents_overview_response = await self.services[
-                "management"
-            ].documents_overview(
-                user_ids=None if auth_user.is_superuser else [auth_user.id],
-                collection_ids=(
-                    None
-                    if auth_user.is_superuser
-                    else auth_user.collection_ids
-                ),
-                document_ids=[id],
-                offset=0,
-                limit=1,
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=(
+                        None if auth_user.is_superuser else [auth_user.id]
+                    ),
+                    collection_ids=(
+                        None
+                        if auth_user.is_superuser
+                        else auth_user.collection_ids
+                    ),
+                    document_ids=[id],
+                    offset=0,
+                    limit=1,
+                )
             )
 
             if not documents_overview_response["results"]:
@@ -1526,18 +1518,20 @@ class DocumentsRouter(BaseRouterV3):
                 )
 
             # First check if the document exists and user has access
-            documents_overview_response = await self.services[
-                "management"
-            ].documents_overview(
-                user_ids=None if auth_user.is_superuser else [auth_user.id],
-                collection_ids=(
-                    None
-                    if auth_user.is_superuser
-                    else auth_user.collection_ids
-                ),
-                document_ids=[id],
-                offset=0,
-                limit=1,
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=(
+                        None if auth_user.is_superuser else [auth_user.id]
+                    ),
+                    collection_ids=(
+                        None
+                        if auth_user.is_superuser
+                        else auth_user.collection_ids
+                    ),
+                    document_ids=[id],
+                    offset=0,
+                    limit=1,
+                )
             )
 
             if not documents_overview_response["results"]:
@@ -1601,7 +1595,7 @@ class DocumentsRouter(BaseRouterV3):
             query_embedding = (
                 await self.providers.embedding.async_get_embedding(query)
             )
-            results = await self.services["retrieval"].search_documents(
+            results = await self.services.retrieval.search_documents(
                 query=query,
                 query_embedding=query_embedding,
                 settings=effective_settings,

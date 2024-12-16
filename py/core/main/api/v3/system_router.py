@@ -5,7 +5,7 @@ from typing import Optional
 import psutil
 from fastapi import Depends, Query
 
-from core.base import R2RException, RunType
+from core.base import R2RException
 from core.base.api.models import (
     GenericMessageResponse,
     WrappedGenericMessageResponse,
@@ -13,25 +13,18 @@ from core.base.api.models import (
     WrappedServerStatsResponse,
     WrappedSettingsResponse,
 )
-from core.providers import (
-    HatchetOrchestrationProvider,
-    SimpleOrchestrationProvider,
-)
 
+from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
 
 
 class SystemRouter(BaseRouterV3):
     def __init__(
         self,
-        providers,
-        services,
-        orchestration_provider: (
-            HatchetOrchestrationProvider | SimpleOrchestrationProvider
-        ),
-        run_type: RunType = RunType.MANAGEMENT,
+        providers: R2RProviders,
+        services: R2RServices,
     ):
-        super().__init__(providers, services, orchestration_provider, run_type)
+        super().__init__(providers, services)
         self.start_time = datetime.now(timezone.utc)
 
     def _setup_routes(self):
@@ -156,7 +149,7 @@ class SystemRouter(BaseRouterV3):
                     "Only a superuser can call the `system/settings` endpoint.",
                     403,
                 )
-            return await self.services["management"].app_settings()
+            return await self.services.management.app_settings()
 
         @self.router.get(
             "/system/status",
@@ -306,7 +299,7 @@ class SystemRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services["management"].logs(
+            return await self.services.management.logs(
                 run_type_filter=run_type_filter,
                 offset=offset,
                 limit=limit,

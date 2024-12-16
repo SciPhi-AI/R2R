@@ -21,12 +21,8 @@ from core.base.api.models import (
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
-from core.base.logger.base import RunType
-from core.providers import (
-    HatchetOrchestrationProvider,
-    SimpleOrchestrationProvider,
-)
 
+from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
 
 
@@ -49,14 +45,10 @@ def merge_search_settings(
 class RetrievalRouterV3(BaseRouterV3):
     def __init__(
         self,
-        providers,
-        services,
-        orchestration_provider: (
-            HatchetOrchestrationProvider | SimpleOrchestrationProvider
-        ),
-        run_type: RunType = RunType.RETRIEVAL,
+        providers: R2RProviders,
+        services: R2RServices,
     ):
-        super().__init__(providers, services, orchestration_provider, run_type)
+        super().__init__(providers, services)
 
     def _register_workflows(self):
         pass
@@ -269,7 +261,7 @@ class RetrievalRouterV3(BaseRouterV3):
             effective_settings = self._prepare_search_settings(
                 auth_user, search_mode, search_settings
             )
-            results = await self.services["retrieval"].search(
+            results = await self.services.retrieval.search(
                 query=query,
                 search_settings=effective_settings,
             )
@@ -438,7 +430,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 auth_user, search_mode, search_settings
             )
 
-            response = await self.services["retrieval"].rag(
+            response = await self.services.retrieval.rag(
                 query=query,
                 search_settings=effective_settings,
                 rag_generation_config=rag_generation_config,
@@ -661,7 +653,7 @@ class RetrievalRouterV3(BaseRouterV3):
             )
 
             try:
-                response = await self.services["retrieval"].agent(
+                response = await self.services.retrieval.agent(
                     message=message,
                     messages=messages,
                     search_settings=effective_settings,
@@ -823,7 +815,7 @@ class RetrievalRouterV3(BaseRouterV3):
             system message at the start. Each message should have a 'role' and 'content'.
             """
 
-            return await self.services["retrieval"].completion(
+            return await self.services.retrieval.completion(
                 messages=messages,
                 generation_config=generation_config,
             )
@@ -898,6 +890,6 @@ class RetrievalRouterV3(BaseRouterV3):
             The model parameter specifies the model to use for generating embeddings.
             """
 
-            return await self.services["retrieval"].embedding(
+            return await self.services.retrieval.embedding(
                 text=text,
             )

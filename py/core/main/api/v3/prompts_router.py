@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import R2RException, RunType
+from core.base import R2RException
 from core.base.api.models import (
     GenericBooleanResponse,
     GenericMessageResponse,
@@ -12,25 +12,18 @@ from core.base.api.models import (
     WrappedPromptResponse,
     WrappedPromptsResponse,
 )
-from core.providers import (
-    HatchetOrchestrationProvider,
-    SimpleOrchestrationProvider,
-)
 
+from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
 
 
 class PromptsRouter(BaseRouterV3):
     def __init__(
         self,
-        providers,
-        services,
-        orchestration_provider: (
-            HatchetOrchestrationProvider | SimpleOrchestrationProvider
-        ),
-        run_type: RunType = RunType.MANAGEMENT,
+        providers: R2RProviders,
+        services: R2RServices,
     ):
-        super().__init__(providers, services, orchestration_provider, run_type)
+        super().__init__(providers, services)
 
     def _setup_routes(self):
         @self.router.post(
@@ -111,7 +104,7 @@ class PromptsRouter(BaseRouterV3):
                     "Only a superuser can create prompts.",
                     403,
                 )
-            result = await self.services["management"].add_prompt(
+            result = await self.services.management.add_prompt(
                 name, template, input_types
             )
             return GenericMessageResponse(message=result)  # type: ignore
@@ -184,9 +177,9 @@ class PromptsRouter(BaseRouterV3):
                     "Only a superuser can list prompts.",
                     403,
                 )
-            get_prompts_response = await self.services[
-                "management"
-            ].get_all_prompts()
+            get_prompts_response = (
+                await self.services.management.get_all_prompts()
+            )
 
             return (  # type: ignore
                 get_prompts_response["results"],
@@ -279,7 +272,7 @@ class PromptsRouter(BaseRouterV3):
                     "Only a superuser can retrieve prompts.",
                     403,
                 )
-            result = await self.services["management"].get_prompt(
+            result = await self.services.management.get_prompt(
                 name, inputs, prompt_override
             )
             return result  # type: ignore
@@ -362,7 +355,7 @@ class PromptsRouter(BaseRouterV3):
                     "Only a superuser can update prompts.",
                     403,
                 )
-            result = await self.services["management"].update_prompt(
+            result = await self.services.management.update_prompt(
                 name, template, input_types
             )
             return GenericMessageResponse(message=result)  # type: ignore
@@ -438,5 +431,5 @@ class PromptsRouter(BaseRouterV3):
                     "Only a superuser can delete prompts.",
                     403,
                 )
-            await self.services["management"].delete_prompt(name)
+            await self.services.management.delete_prompt(name)
             return GenericBooleanResponse(success=True)  # type: ignore

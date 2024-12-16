@@ -8,15 +8,15 @@ from fastapi.responses import StreamingResponse
 
 from core.base import R2RException, manage_run
 
+from ...abstractions import R2RProviders, R2RServices
+
 logger = logging.getLogger()
 
 
 class BaseRouterV3:
-    def __init__(self, providers, services, orchestration_provider, run_type):
+    def __init__(self, providers: R2RProviders, services: R2RServices):
         self.providers = providers
         self.services = services
-        self.run_type = run_type
-        self.orchestration_provider = orchestration_provider
         self.router = APIRouter()
         self.openapi_extras = self._load_openapi_extras()
         self._setup_routes()
@@ -29,14 +29,11 @@ class BaseRouterV3:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             async with manage_run(
-                self.services["ingestion"].run_manager, func.__name__
+                self.services.ingestion.run_manager, func.__name__
             ) as run_id:
                 auth_user = kwargs.get("auth_user")
                 if auth_user:
-                    await self.services[
-                        "ingestion"
-                    ].run_manager.log_run_info(  # TODO - this is a bit of a hack
-                        run_type=self.run_type,
+                    await self.services.ingestion.run_manager.log_run_info(  # TODO - this is a bit of a hack
                         user=auth_user,
                     )
 
@@ -93,22 +90,22 @@ class BaseRouterV3:
 import functools
 import logging
 from abc import abstractmethod
-from typing import Callable
+from typing import Callable, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
 from core.base import R2RException, manage_run
 
+from ...abstractions import R2RProviders, R2RServices
+
 logger = logging.getLogger()
 
 
 class BaseRouterV3:
-    def __init__(self, providers, services, orchestration_provider, run_type):
+    def __init__(self, providers: R2RProviders, services: R2RServices):
         self.providers = providers
         self.services = services
-        self.run_type = run_type
-        self.orchestration_provider = orchestration_provider
         self.router = APIRouter()
         self.openapi_extras = self._load_openapi_extras()
         self.set_rate_limiting()
@@ -122,12 +119,11 @@ class BaseRouterV3:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             async with manage_run(
-                self.services["ingestion"].run_manager, func.__name__
+                self.services.ingestion.run_manager, func.__name__
             ) as run_id:
                 auth_user = kwargs.get("auth_user")
                 if auth_user:
-                    await self.services["ingestion"].run_manager.log_run_info(
-                        run_type=self.run_type,
+                    await self.services.ingestion.run_manager.log_run_info(
                         user=auth_user,
                     )
 
