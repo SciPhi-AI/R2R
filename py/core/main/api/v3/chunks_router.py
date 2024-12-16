@@ -12,7 +12,6 @@ from core.base import (
     ChunkSearchSettings,
     GraphSearchSettings,
     R2RException,
-    RunType,
     SearchSettings,
     UnprocessedChunk,
     UpdateChunk,
@@ -31,6 +30,7 @@ from core.providers import (
 )
 from core.utils import generate_id
 
+from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -41,14 +41,10 @@ MAX_CHUNKS_PER_REQUEST = 1024 * 100
 class ChunksRouter(BaseRouterV3):
     def __init__(
         self,
-        providers,
-        services,
-        orchestration_provider: (
-            HatchetOrchestrationProvider | SimpleOrchestrationProvider
-        ),
-        run_type: RunType = RunType.INGESTION,
+        providers: R2RProviders,
+        services: R2RServices,
     ):
-        super().__init__(providers, services, orchestration_provider, run_type)
+        super().__init__(providers, services)
 
     def _setup_routes(self):
         @self.router.post(
@@ -99,7 +95,7 @@ class ChunksRouter(BaseRouterV3):
 
             search_settings.graph_settings = GraphSearchSettings(enabled=False)
 
-            results = await self.services["retrieval"].search(
+            results = await self.services.retrieval.search(
                 query=query,
                 search_settings=search_settings,
             )
@@ -155,12 +151,12 @@ class ChunksRouter(BaseRouterV3):
             Returns the chunk's content, metadata, and associated document/collection information.
             Users can only retrieve chunks they own or have access to through collections.
             """
-            chunk = await self.services["ingestion"].get_chunk(id)
+            chunk = await self.services.ingestion.get_chunk(id)
             if not chunk:
                 raise R2RException("Chunk not found", 404)
 
             # # Check access rights
-            # document = await self.services["management"].get_document(chunk.document_id)
+            # document = await self.services.management.get_document(chunk.document_id)
             # TODO - Add collection ID check
             if not auth_user.is_superuser and str(auth_user.id) != str(
                 chunk["owner_id"]
@@ -236,7 +232,7 @@ class ChunksRouter(BaseRouterV3):
             Users can only update chunks they own unless they are superusers.
             """
             # Get the existing chunk to get its chunk_id
-            existing_chunk = await self.services["ingestion"].get_chunk(
+            existing_chunk = await self.services.ingestion.get_chunk(
                 chunk_update.id
             )
             if existing_chunk is None:
@@ -256,9 +252,7 @@ class ChunksRouter(BaseRouterV3):
 
             # TODO - CLEAN THIS UP
 
-            simple_ingestor = simple_ingestion_factory(
-                self.services["ingestion"]
-            )
+            simple_ingestor = simple_ingestion_factory(self.services.ingestion)
             await simple_ingestor["update-chunk"](workflow_input)
 
             return ChunkResponse(  # type: ignore
@@ -323,7 +317,7 @@ class ChunksRouter(BaseRouterV3):
             own unless they are superusers.
             """
             # Get the existing chunk to get its chunk_id
-            existing_chunk = await self.services["ingestion"].get_chunk(id)
+            existing_chunk = await self.services.ingestion.get_chunk(id)
 
             if existing_chunk is None:
                 raise R2RException(
@@ -336,7 +330,7 @@ class ChunksRouter(BaseRouterV3):
                     {"chunk_id": {"$eq": str(id)}},
                 ]
             }
-            await self.services["management"].delete(filters=filters)
+            await self.services.management.delete(filters=filters)
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.get(
@@ -426,7 +420,7 @@ class ChunksRouter(BaseRouterV3):
                 metadata_filter = json.loads(metadata_filter)
 
             # Get chunks using the vector handler's list_chunks method
-            results = await self.services["ingestion"].list_chunks(
+            results = await self.services.ingestion.list_chunks(
                 filters=filters,
                 include_vectors=include_vectors,
                 offset=offset,

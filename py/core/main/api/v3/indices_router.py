@@ -8,18 +8,15 @@ from typing import Optional
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import IndexConfig, R2RException, RunType
+from core.base import IndexConfig, R2RException
 from core.base.abstractions import VectorTableName
 from core.base.api.models import (
     GenericMessageResponse,
     WrappedGenericMessageResponse,
     WrappedListVectorIndicesResponse,
 )
-from core.providers import (
-    HatchetOrchestrationProvider,
-    SimpleOrchestrationProvider,
-)
 
+from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -29,14 +26,10 @@ class IndicesRouter(BaseRouterV3):
 
     def __init__(
         self,
-        providers,
-        services,
-        orchestration_provider: (
-            HatchetOrchestrationProvider | SimpleOrchestrationProvider
-        ),
-        run_type: RunType = RunType.INGESTION,
+        providers: R2RProviders,
+        services: R2RServices,
     ):
-        super().__init__(providers, services, orchestration_provider, run_type)
+        super().__init__(providers, services)
 
     def _setup_routes(self):
 

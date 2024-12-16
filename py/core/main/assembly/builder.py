@@ -1,6 +1,5 @@
 import logging
-from dataclasses import dataclass
-from typing import Any, Optional, Type
+from typing import Any, Type
 
 from core.agent import R2RRAGAgent
 from core.base import (
@@ -13,6 +12,12 @@ from core.base import (
     OrchestrationProvider,
     RunManager,
 )
+from core.main.abstractions import R2RServices
+from core.main.services.auth_service import AuthService
+from core.main.services.ingestion_service import IngestionService
+from core.main.services.kg_service import KgService
+from core.main.services.management_service import ManagementService
+from core.main.services.retrieval_service import RetrievalService
 from core.pipelines import KGEnrichmentPipeline, RAGPipeline, SearchPipeline
 
 from ..abstractions import R2RProviders
@@ -29,11 +34,6 @@ from ..api.v3.system_router import SystemRouter
 from ..api.v3.users_router import UsersRouter
 from ..app import R2RApp
 from ..config import R2RConfig
-from ..services.auth_service import AuthService
-from ..services.ingestion_service import IngestionService
-from ..services.kg_service import KgService
-from ..services.management_service import ManagementService
-from ..services.retrieval_service import RetrievalService
 from .factory import (
     R2RAgentFactory,
     R2RPipeFactory,
@@ -44,15 +44,6 @@ from .factory import (
 logger = logging.getLogger()
 
 
-@dataclass
-class Services:
-    auth: Optional["AuthService"] = None
-    ingestion: Optional["IngestionService"] = None
-    management: Optional["ManagementService"] = None
-    retrieval: Optional["RetrievalService"] = None
-    kg: Optional["KgService"] = None
-
-
 class R2RBuilder:
     def __init__(self, config: R2RConfig):
         self.config = config
@@ -60,7 +51,7 @@ class R2RBuilder:
     def _create_pipes(
         self,
         pipe_factory: type[R2RPipeFactory],
-        providers: Any,
+        providers: R2RProviders,
         *args,
         **kwargs,
     ) -> Any:
@@ -80,17 +71,22 @@ class R2RBuilder:
             self.config, providers, pipes
         ).create_pipelines(*args, **kwargs)
 
-    def _create_services(
-        self, service_params: dict[str, Any]
-    ) -> dict[str, Any]:
-        services = {}
-        for service_type, override in vars(Services()).items():
+    def _create_services(self, service_params: dict[str, Any]) -> R2RServices:
+        service_instances = {}
+        for service_type, override in vars(R2RServices()).items():
             logger.info(f"Creating {service_type} service")
             service_class = globals()[f"{service_type.capitalize()}Service"]
-            services[service_type] = override or service_class(
+            service_instances[service_type] = override or service_class(
                 **service_params
             )
-        return services
+
+        return R2RServices(
+            auth=service_instances["auth"],
+            ingestion=service_instances["ingestion"],
+            management=service_instances["management"],
+            retrieval=service_instances["retrieval"],
+            kg=service_instances["kg"],
+        )
 
     async def _create_providers(
         self, provider_factory: Type[R2RProviderFactory], *args, **kwargs
@@ -133,68 +129,55 @@ class R2RBuilder:
 
         services = self._create_services(service_params)
 
-        orchestration_provider = providers.orchestration
-
         routers = {
             "chunks_router": ChunksRouter(
                 providers=providers,
                 services=services,
-                orchestration_provider=orchestration_provider,
             ).get_router(),
             "collections_router": CollectionsRouter(
                 providers=providers,
                 services=services,
-                orchestration_provider=orchestration_provider,
             ).get_router(),
             "conversations_router": ConversationsRouter(
                 providers=providers,
                 services=services,
-                orchestration_provider=orchestration_provider,
             ).get_router(),
             "documents_router": DocumentsRouter(
                 providers=providers,
                 services=services,
-                orchestration_provider=orchestration_provider,
             ).get_router(),
             "graph_router": GraphRouter(
                 providers=providers,
                 services=services,
-                orchestration_provider=orchestration_provider,
             ).get_router(),
             "indices_router": IndicesRouter(
                 providers=providers,
                 services=services,
-                orchestration_provider=orchestration_provider,
             ).get_router(),
             "logs_router": LogsRouter(
                 providers=providers,
                 services=services,
-                orchestration_provider=orchestration_provider,
             ).get_router(),
             "prompts_router": PromptsRouter(
                 providers=providers,
                 services=services,
-                orchestration_provider=orchestration_provider,
             ).get_router(),
             "retrieval_router_v3": RetrievalRouterV3(
                 providers=providers,
                 services=services,
-                orchestration_provider=orchestration_provider,
             ).get_router(),
             "system_router": SystemRouter(
                 providers=providers,
                 services=services,
-                orchestration_provider=orchestration_provider,
             ).get_router(),
             "users_router": UsersRouter(
                 providers=providers,
                 services=services,
-                orchestration_provider=orchestration_provider,
             ).get_router(),
         }
 
         return R2RApp(
             config=self.config,
-            orchestration_provider=orchestration_provider,
+            orchestration_provider=providers.orchestration,
             **routers,
         )

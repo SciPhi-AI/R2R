@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Optional
+
 from pydantic import BaseModel
 
 from core.agent import R2RRAGAgent, R2RStreamingRAGAgent
@@ -20,6 +23,13 @@ from core.providers import (
     SupabaseAuthProvider,
     UnstructuredIngestionProvider,
 )
+
+if TYPE_CHECKING:
+    from core.main.services.auth_service import AuthService
+    from core.main.services.ingestion_service import IngestionService
+    from core.main.services.kg_service import KgService
+    from core.main.services.management_service import ManagementService
+    from core.main.services.retrieval_service import RetrievalService
 
 
 class R2RProviders(BaseModel):
@@ -78,3 +88,12 @@ class R2RAgents(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+
+@dataclass
+class R2RServices:
+    auth: Optional["AuthService"] = None
+    ingestion: Optional["IngestionService"] = None
+    management: Optional["ManagementService"] = None
+    retrieval: Optional["RetrievalService"] = None
+    kg: Optional["KgService"] = None

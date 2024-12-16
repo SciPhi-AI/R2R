@@ -7,7 +7,6 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from core.base.logger.base import RunType
 from core.base.logger.run_manager import RunManager, manage_run
 
 logger = logging.getLogger()
@@ -108,7 +107,7 @@ class AsyncPipe(Generic[T]):
         state = state or AsyncState()
 
         async def wrapped_run() -> AsyncGenerator[Any, None]:
-            async with manage_run(run_manager, RunType.UNSPECIFIED) as run_id:  # type: ignore
+            async with manage_run(run_manager) as run_id:  # type: ignore
                 async for result in self._run_logic(  # type: ignore
                     input, state, run_id, *args, **kwargs  # type: ignore
                 ):

@@ -1,9 +1,8 @@
-from .base import RunInfoLog, RunType
+from .base import RunInfoLog
 from .run_manager import RunManager, manage_run
 
 __all__ = [
     # Basic types
-    "RunType",
     "RunInfoLog",
     # Run Manager
     "RunManager",

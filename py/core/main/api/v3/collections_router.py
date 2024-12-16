@@ -6,7 +6,7 @@ from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import KGCreationSettings, KGRunType, R2RException, RunType
+from core.base import KGCreationSettings, KGRunType, R2RException
 from core.base.api.models import (
     GenericBooleanResponse,
     WrappedBooleanResponse,
@@ -16,12 +16,9 @@ from core.base.api.models import (
     WrappedGenericMessageResponse,
     WrappedUsersResponse,
 )
-from core.providers import (
-    HatchetOrchestrationProvider,
-    SimpleOrchestrationProvider,
-)
 from core.utils import update_settings_from_dict
 
+from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -59,7 +56,7 @@ async def authorize_collection_action(
 
     # Fetch collection details: owner_id and members
     results = (
-        await services["management"].collections_overview(
+        await services.management.collections_overview(
             0, 1, collection_ids=[collection_id]
         )
     )["results"]
@@ -88,16 +85,8 @@ async def authorize_collection_action(
 
 
 class CollectionsRouter(BaseRouterV3):
-    def __init__(
-        self,
-        providers,
-        services,
-        orchestration_provider: (
-            HatchetOrchestrationProvider | SimpleOrchestrationProvider
-        ),
-        run_type: RunType = RunType.MANAGEMENT,
-    ):
-        super().__init__(providers, services, orchestration_provider, run_type)
+    def __init__(self, providers: R2RProviders, services: R2RServices):
+        super().__init__(providers, services)
 
     def _setup_routes(self):
         @self.router.post(
@@ -176,13 +165,13 @@ class CollectionsRouter(BaseRouterV3):
             This endpoint allows authenticated users to create a new collection with a specified name
             and optional description. The user creating the collection is automatically added as a member.
             """
-            collection = await self.services["management"].create_collection(
+            collection = await self.services.management.create_collection(
                 owner_id=auth_user.id,
                 name=name,
                 description=description,
             )
             # Add the creating user to the collection
-            await self.services["management"].add_user_to_collection(
+            await self.services.management.add_user_to_collection(
                 auth_user.id, collection.id
             )
             return collection
@@ -473,7 +462,7 @@ class CollectionsRouter(BaseRouterV3):
                     400,
                 )
 
-            return await self.services["management"].update_collection(  # type: ignore
+            return await self.services.management.update_collection(  # type: ignore
                 id,
                 name=name,
                 description=description,
@@ -553,7 +542,7 @@ class CollectionsRouter(BaseRouterV3):
                 auth_user, id, CollectionAction.DELETE, self.services
             )
 
-            await self.services["management"].delete_collection(id)
+            await self.services.management.delete_collection(id)
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
@@ -793,7 +782,7 @@ class CollectionsRouter(BaseRouterV3):
             await authorize_collection_action(
                 auth_user, id, CollectionAction.REMOVE_DOCUMENT, self.services
             )
-            await self.services["management"].remove_document_from_collection(
+            await self.services.management.remove_document_from_collection(
                 document_id, id
             )
             return GenericBooleanResponse(success=True)  # type: ignore
@@ -970,7 +959,7 @@ class CollectionsRouter(BaseRouterV3):
                 auth_user, id, CollectionAction.MANAGE_USERS, self.services
             )
 
-            result = await self.services["management"].add_user_to_collection(
+            result = await self.services.management.add_user_to_collection(
                 user_id, id
             )
             return GenericBooleanResponse(success=result)  # type: ignore
@@ -1147,14 +1136,14 @@ class CollectionsRouter(BaseRouterV3):
                     "user": auth_user.json(),
                 }
 
-                return await self.orchestration_provider.run_workflow(  # type: ignore
+                return await self.providers.orchestration.run_workflow(  # type: ignore
                     "extract-triples", {"request": workflow_input}, {}
                 )
             else:
                 from core.main.orchestration import simple_kg_factory
 
                 logger.info("Running extract-triples without orchestration.")
-                simple_kg = simple_kg_factory(self.services["kg"])
+                simple_kg = simple_kg_factory(self.services.kg)
                 await simple_kg["extract-triples"](workflow_input)  # type: ignore
                 return {  # type: ignore
                     "message": "Graph created successfully.",

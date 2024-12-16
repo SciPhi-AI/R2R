@@ -39,38 +39,6 @@ async def health(ctx):
 
 
 @system.command()
-@click.option("--run-type-filter", help="Filter for log types")
-@click.option(
-    "--offset", default=None, help="Pagination offset. Default is None."
-)
-@click.option(
-    "--limit", default=None, help="Pagination limit. Defaults to 100."
-)
-@pass_context
-async def logs(ctx, run_type_filter, offset, limit):
-    """Retrieve logs with optional type filter."""
-    client: R2RAsyncClient = ctx.obj
-    with timer():
-        response = await client.system.logs(
-            run_type_filter=run_type_filter,
-            offset=offset,
-            limit=limit,
-        )
-
-    for log in response["results"]:
-        click.echo(f"Run ID: {log['run_id']}")
-        click.echo(f"Run Type: {log['run_type']}")
-        click.echo(f"Timestamp: {log['timestamp']}")
-        click.echo(f"User ID: {log['user_id']}")
-        click.echo("Entries:")
-        for entry in log["entries"]:
-            click.echo(f"  - {entry['key']}: {entry['value'][:100]}")
-        click.echo("---")
-
-    click.echo(f"Total runs: {len(response['results'])}")
-
-
-@system.command()
 @pass_context
 async def settings(ctx):
     """Retrieve application settings."""

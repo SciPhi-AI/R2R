@@ -21,7 +21,6 @@ from core.base import (
     to_async_generator,
 )
 from core.base.api.models import CombinedSearchResponse, RAGResponse, User
-from core.base.logger.base import RunType
 from core.telemetry.telemetry_decorator import telemetry_event
 from shared.api.models.management.responses import MessageResponse
 
@@ -59,7 +58,7 @@ class RetrievalService(Service):
         *args,
         **kwargs,
     ) -> CombinedSearchResponse:
-        async with manage_run(self.run_manager, RunType.RETRIEVAL) as run_id:
+        async with manage_run(self.run_manager) as run_id:
             t0 = time.time()
 
             if (
@@ -149,7 +148,7 @@ class RetrievalService(Service):
         *args,
         **kwargs,
     ) -> RAGResponse:
-        async with manage_run(self.run_manager, RunType.RETRIEVAL) as run_id:
+        async with manage_run(self.run_manager) as run_id:
             try:
                 # TODO - Remove these transforms once we have a better way to handle this
                 for (
@@ -245,7 +244,7 @@ class RetrievalService(Service):
         message: Optional[Message] = None,
         messages: Optional[list[Message]] = None,
     ):
-        async with manage_run(self.run_manager, RunType.RETRIEVAL) as run_id:
+        async with manage_run(self.run_manager) as run_id:
             try:
                 if message and messages:
                     raise R2RException(
