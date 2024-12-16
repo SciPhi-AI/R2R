@@ -131,6 +131,7 @@ __all__ = [
     "EmailConfig",
     "EmailProvider",
     # Database providers
+    "LimitSettings",
     "DatabaseConfig",
     "DatabaseProvider",
     # Embedding provider

@@ -154,6 +154,7 @@ class GraphRouter(BaseRouterV3):
     def _setup_routes(self):
         @self.router.get(
             "/graphs",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="List graphs",
             openapi_extra={
                 "x-codeSamples": [
@@ -236,6 +237,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{collection_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Retrieve graph details",
             openapi_extra={
                 "x-codeSamples": [
@@ -310,6 +312,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.post(
             "/graphs/{collection_id}/communities/build",
+            dependencies=[Depends(self.rate_limit_dependency)],
         )
         @self.base_endpoint
         async def build_communities(
@@ -400,6 +403,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.post(
             "/graphs/{collection_id}/reset",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Reset a graph back to the initial state.",
             openapi_extra={
                 "x-codeSamples": [
@@ -479,6 +483,7 @@ class GraphRouter(BaseRouterV3):
         # update graph
         @self.router.post(
             "/graphs/{collection_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Update graph",
             openapi_extra={
                 "x-codeSamples": [
@@ -565,6 +570,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{collection_id}/entities",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -641,7 +647,10 @@ class GraphRouter(BaseRouterV3):
                 "total_entries": count,
             }
 
-        @self.router.post("/graphs/{collection_id}/entities")
+        @self.router.post(
+            "/graphs/{collection_id}/entities",
+            dependencies=[Depends(self.rate_limit_dependency)],
+        )
         @self.base_endpoint
         async def create_entity(
             collection_id: UUID = Path(
@@ -681,7 +690,10 @@ class GraphRouter(BaseRouterV3):
                 metadata=metadata,
             )
 
-        @self.router.post("/graphs/{collection_id}/relationships")
+        @self.router.post(
+            "/graphs/{collection_id}/relationships",
+            dependencies=[Depends(self.rate_limit_dependency)],
+        )
         @self.base_endpoint
         async def create_relationship(
             collection_id: UUID = Path(
@@ -746,6 +758,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{collection_id}/entities/{entity_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -819,7 +832,10 @@ class GraphRouter(BaseRouterV3):
                 raise R2RException("Entity not found", 404)
             return result[0][0]
 
-        @self.router.post("/graphs/{collection_id}/entities/{entity_id}")
+        @self.router.post(
+            "/graphs/{collection_id}/entities/{entity_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
+        )
         @self.base_endpoint
         async def update_entity(
             collection_id: UUID = Path(
@@ -868,6 +884,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.delete(
             "/graphs/{collection_id}/entities/{entity_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Remove an entity",
             openapi_extra={
                 "x-codeSamples": [
@@ -946,6 +963,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{collection_id}/relationships",
+            dependencies=[Depends(self.rate_limit_dependency)],
             description="Lists all relationships in the graph with pagination support.",
             openapi_extra={
                 "x-codeSamples": [
@@ -1027,6 +1045,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{collection_id}/relationships/{relationship_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             description="Retrieves a specific relationship by its ID.",
             openapi_extra={
                 "x-codeSamples": [
@@ -1104,7 +1123,8 @@ class GraphRouter(BaseRouterV3):
             return results[0][0]
 
         @self.router.post(
-            "/graphs/{collection_id}/relationships/{relationship_id}"
+            "/graphs/{collection_id}/relationships/{relationship_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
         )
         @self.base_endpoint
         async def update_relationship(
@@ -1172,6 +1192,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.delete(
             "/graphs/{collection_id}/relationships/{relationship_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             description="Removes a relationship from the graph.",
             openapi_extra={
                 "x-codeSamples": [
@@ -1249,6 +1270,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.post(
             "/graphs/{collection_id}/communities",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Create a new community",
             openapi_extra={
                 "x-codeSamples": [
@@ -1357,6 +1379,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{collection_id}/communities",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="List communities",
             openapi_extra={
                 "x-codeSamples": [
@@ -1438,6 +1461,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{collection_id}/communities/{community_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Retrieve a community",
             openapi_extra={
                 "x-codeSamples": [
@@ -1515,6 +1539,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.delete(
             "/graphs/{collection_id}/communities/{community_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Delete a community",
             openapi_extra={
                 "x-codeSamples": [
@@ -1594,6 +1619,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.post(
             "/graphs/{collection_id}/communities/{community_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Update community",
             openapi_extra={
                 "x-codeSamples": [
@@ -1688,6 +1714,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.post(
             "/graphs/{collection_id}/pull",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Pull latest entities to the graph",
             openapi_extra={
                 "x-codeSamples": [

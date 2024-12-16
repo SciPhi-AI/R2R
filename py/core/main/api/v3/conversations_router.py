@@ -37,6 +37,7 @@ class ConversationsRouter(BaseRouterV3):
         @self.router.post(
             "/conversations",
             summary="Create a new conversation",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -102,6 +103,7 @@ class ConversationsRouter(BaseRouterV3):
         @self.router.get(
             "/conversations",
             summary="List conversations",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -198,6 +200,7 @@ class ConversationsRouter(BaseRouterV3):
         @self.router.get(
             "/conversations/{id}",
             summary="Get conversation details",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -273,6 +276,7 @@ class ConversationsRouter(BaseRouterV3):
         @self.router.delete(
             "/conversations/{id}",
             summary="Delete conversation",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -345,6 +349,7 @@ class ConversationsRouter(BaseRouterV3):
         @self.router.post(
             "/conversations/{id}/messages",
             summary="Add message to conversation",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -440,6 +445,7 @@ class ConversationsRouter(BaseRouterV3):
         @self.router.post(
             "/conversations/{id}/messages/{message_id}",
             summary="Update message in conversation",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {

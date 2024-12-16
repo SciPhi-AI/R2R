@@ -36,6 +36,7 @@ class IndicesRouter(BaseRouterV3):
         ## TODO - Allow developer to pass the index id with the request
         @self.router.post(
             "/indices",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Create Vector Index",
             openapi_extra={
                 "x-codeSamples": [
@@ -235,6 +236,7 @@ class IndicesRouter(BaseRouterV3):
 
         @self.router.get(
             "/indices",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="List Vector Indices",
             openapi_extra={
                 "x-codeSamples": [
@@ -338,6 +340,7 @@ class IndicesRouter(BaseRouterV3):
 
         @self.router.get(
             "/indices/{table_name}/{index_name}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Get Vector Index Details",
             openapi_extra={
                 "x-codeSamples": [
@@ -501,6 +504,7 @@ class IndicesRouter(BaseRouterV3):
 
         @self.router.delete(
             "/indices/{table_name}/{index_name}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Delete Vector Index",
             openapi_extra={
                 "x-codeSamples": [

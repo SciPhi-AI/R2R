@@ -92,6 +92,7 @@ class CollectionsRouter(BaseRouterV3):
         @self.router.post(
             "/collections",
             summary="Create a new collection",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -179,6 +180,7 @@ class CollectionsRouter(BaseRouterV3):
         @self.router.get(
             "/collections",
             summary="List collections",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -287,6 +289,7 @@ class CollectionsRouter(BaseRouterV3):
         @self.router.get(
             "/collections/{id}",
             summary="Get collection details",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -375,6 +378,7 @@ class CollectionsRouter(BaseRouterV3):
         @self.router.post(
             "/collections/{id}",
             summary="Update collection",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -472,6 +476,7 @@ class CollectionsRouter(BaseRouterV3):
         @self.router.delete(
             "/collections/{id}",
             summary="Delete collection",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -548,6 +553,7 @@ class CollectionsRouter(BaseRouterV3):
         @self.router.post(
             "/collections/{id}/documents/{document_id}",
             summary="Add document to collection",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -619,6 +625,7 @@ class CollectionsRouter(BaseRouterV3):
         @self.router.get(
             "/collections/{id}/documents",
             summary="List documents in collection",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -717,6 +724,7 @@ class CollectionsRouter(BaseRouterV3):
         @self.router.delete(
             "/collections/{id}/documents/{document_id}",
             summary="Remove document from collection",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -794,6 +802,7 @@ class CollectionsRouter(BaseRouterV3):
         @self.router.get(
             "/collections/{id}/users",
             summary="List users in collection",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -894,6 +903,7 @@ class CollectionsRouter(BaseRouterV3):
         @self.router.post(
             "/collections/{id}/users/{user_id}",
             summary="Add user to collection",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -971,6 +981,7 @@ class CollectionsRouter(BaseRouterV3):
         @self.router.delete(
             "/collections/{id}/users/{user_id}",
             summary="Remove user from collection",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -1050,6 +1061,7 @@ class CollectionsRouter(BaseRouterV3):
         @self.router.post(
             "/collections/{id}/extract",
             summary="Extract entities and relationships",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {

@@ -50,6 +50,7 @@ class ChunksRouter(BaseRouterV3):
         @self.router.post(
             "/chunks/search",
             summary="Search Chunks",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -104,6 +105,7 @@ class ChunksRouter(BaseRouterV3):
         @self.router.get(
             "/chunks/{id}",
             summary="Retrieve Chunk",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -176,6 +178,7 @@ class ChunksRouter(BaseRouterV3):
         @self.router.post(
             "/chunks/{id}",
             summary="Update Chunk",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -268,6 +271,7 @@ class ChunksRouter(BaseRouterV3):
         @self.router.delete(
             "/chunks/{id}",
             summary="Delete Chunk",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -335,6 +339,7 @@ class ChunksRouter(BaseRouterV3):
 
         @self.router.get(
             "/chunks",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="List Chunks",
             openapi_extra={
                 "x-codeSamples": [

@@ -5,7 +5,7 @@ from typing import AsyncGenerator, Generator
 
 import pytest
 
-from r2r import R2RClient
+from r2r import R2RAsyncClient, R2RClient
 
 
 class TestConfig:
@@ -27,6 +27,14 @@ def config() -> TestConfig:
 async def client(config) -> AsyncGenerator[R2RClient, None]:
     """Create a shared client instance for the test session."""
     client = R2RClient(config.base_url)
+    yield client
+    # Session cleanup if needed
+
+
+@pytest.fixture(scope="session")
+async def aclient(config) -> AsyncGenerator[R2RClient, None]:
+    """Create a shared client instance for the test session."""
+    client = R2RAsyncClient(config.base_url)
     yield client
     # Session cleanup if needed
 
