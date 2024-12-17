@@ -276,7 +276,6 @@ def test_list_documents_with_pagination(mutable_client):
     mutable_client.users.register(temp_user, "password")
     mutable_client.users.login(temp_user, "password")
 
-
     doc_ids = []
     for i in range(3):
         resp = mutable_client.documents.create(

@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
@@ -10,6 +11,8 @@ from core.utils import generate_default_user_collection_id
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
 from ..config import R2RConfig
 from .base import Service
+
+logger = logging.getLogger()
 
 
 class AuthService(Service):
@@ -190,8 +193,9 @@ class AuthService(Service):
                 collection_id=collection_id,
             )
         except Exception as e:
-            # print(f"Error deleting graph for collection {collection_id}: {e}")
-            pass
+            logger.warning(
+                f"Error deleting graph for collection {collection_id}: {e}"
+            )
 
         if delete_vector_data:
             await self.providers.database.chunks_handler.delete_user_vector(
