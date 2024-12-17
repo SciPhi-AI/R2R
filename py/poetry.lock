@@ -1287,6 +1287,20 @@ files = [
 test = ["pytest (>=6)"]
 
 [[package]]
+name = "execnet"
+version = "2.1.1"
+description = "execnet: rapid multi-Python deployment"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "execnet-2.1.1-py3-none-any.whl", hash = "sha256:26dee51f1b80cebd6d0ca8e74dd8745419761d3bef34163928cbebbdc4749fdc"},
+    {file = "execnet-2.1.1.tar.gz", hash = "sha256:5189b52c6121c24feae288166ab41b32549c7e2348652736540b9e6e7d4e72e3"},
+]
+
+[package.extras]
+testing = ["hatch", "pre-commit", "pytest", "tox"]
+
+[[package]]
 name = "extract-msg"
 version = "0.52.0"
 description = "Extracts emails and attachments saved in Microsoft Outlook's .msg files"
@@ -6296,4 +6310,4 @@ ingestion-bundle = ["aiofiles", "aioshutil", "beautifulsoup4", "bs4", "docutils"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "a2d9caa0d7789f2934506baafafac3579662eabb449adccafc4b45079cbb2d64"
+content-hash = "6648c5b73173c8159c1f35d97d6567eb0a01e2fa45284383db0758540ed7ac7f"
