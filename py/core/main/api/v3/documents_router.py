@@ -339,10 +339,6 @@ class DocumentsRouter(BaseRouterV3):
                     message="Only one of `file`, `raw_text`, or `chunks` may be provided.",
                 )
             # Check if the user is a superuser
-            try:
-                print(f"Got metadata: {metadata}")
-            except:
-                pass
             metadata = metadata or {}
 
             if chunks:

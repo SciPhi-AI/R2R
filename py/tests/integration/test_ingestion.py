@@ -215,9 +215,11 @@ def test_hires_ingestion(client: R2RClient, file_type: str, file_path: str):
                 wait_for_completion=True,
             )
             assert result is not None
-        except R2RException as e:
+        except Exception as e:  # Changed from R2RException to Exception
             if "PDF processing requires Poppler to be installed" in str(e):
-                pytest.skip("Skipping PDF test due to missing Poppler dependency")
+                pytest.skip(
+                    "Skipping PDF test due to missing Poppler dependency"
+                )
             raise
     else:
         result = file_ingestion(
