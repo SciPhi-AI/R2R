@@ -341,7 +341,6 @@ class PostgresConversationsHandler(Handler):
             msg_query, [conversation_id]
         )
 
-        print("results = ", results)
         return [
             MessageResponse(
                 id=str(row["id"]),
