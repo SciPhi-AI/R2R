@@ -96,12 +96,15 @@ class UsersSDK:
             dict: Deletion result
         """
         data = {"password": password}
-        return await self.client._make_request(
+        response = await self.client._make_request(
             "DELETE",
             f"users/{str(id)}",
             json=data,
             version="v3",
         )
+        self.client.access_token = None
+        self.client._refresh_token = None
+        return response
 
     async def verify_email(
         self, email: str, verification_code: str
@@ -178,23 +181,29 @@ class UsersSDK:
 
     async def logout(self) -> WrappedGenericMessageResponse:
         """Log out the current user."""
-        response = await self.client._make_request(
-            "POST",
-            "users/logout",
-            version="v3",
-        )
+        if self.client.access_token:
+            response = await self.client._make_request(
+                "POST",
+                "users/logout",
+                version="v3",
+            )
+            self.client.access_token = None
+            self.client._refresh_token = None
+
+            return response
+
         self.client.access_token = None
         self.client._refresh_token = None
-        return response
 
     async def refresh_token(self) -> WrappedTokenResponse:
         """Refresh the access token using the refresh token."""
-        response = await self.client._make_request(
-            "POST",
-            "users/refresh-token",
-            json=self.client._refresh_token,
-            version="v3",
-        )
+        if self.client._refresh_token:
+            response = await self.client._make_request(
+                "POST",
+                "users/refresh-token",
+                json=self.client._refresh_token,
+                version="v3",
+            )
         self.client.access_token = response["results"]["access_token"]["token"]
         self.client._refresh_token = response["results"]["refresh_token"][
             "token"

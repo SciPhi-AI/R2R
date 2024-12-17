@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 
 import aiofiles
-from fastapi import WebSocket
+from fastapi import Depends, WebSocket
 from fastapi.requests import Request
 from fastapi.templating import Jinja2Templates
 
@@ -64,7 +64,10 @@ class LogsRouter(BaseRouterV3):
             return f"Error accessing log file: {str(e)}"
 
     def _setup_routes(self):
-        @self.router.websocket("/logs/stream")
+        @self.router.websocket(
+            "/logs/stream",
+            dependencies=[Depends(self.rate_limit_dependency)],
+        )
         async def stream_logs(websocket: WebSocket):
             await websocket.accept()
             try:
@@ -85,7 +88,10 @@ class LogsRouter(BaseRouterV3):
                 with contextlib.suppress(Exception):
                     await websocket.close()
 
-        @self.router.get("/logs/viewer")
+        @self.router.get(
+            "/logs/viewer",
+            dependencies=[Depends(self.rate_limit_dependency)],
+        )
         async def get_log_viewer(request: Request):
             return self.templates.TemplateResponse(
                 "log_viewer.html", {"request": request}

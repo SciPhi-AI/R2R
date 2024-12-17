@@ -183,7 +183,7 @@ class DatabaseConfig(ProviderConfig):
         global_per_min=60, route_per_min=20, monthly_limit=10000
     )
     route_limits: dict[str, LimitSettings] = {}
-    user_limits: dict[UUID, dict[str, LimitSettings]] = {}
+    user_limits: dict[UUID, LimitSettings] = {}
 
     def __post_init__(self):
         self.validate_config()

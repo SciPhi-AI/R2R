@@ -32,6 +32,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users",
+            dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedUserResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -122,6 +123,7 @@ class UsersRouter(BaseRouterV3):
         # TODO: deprecated, remove in next release
         @self.router.post(
             "/users/register",
+            dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedUserResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -190,6 +192,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users/verify-email",
+            dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedGenericMessageResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -253,6 +256,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users/login",
+            dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedTokenResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -365,6 +369,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users/refresh-token",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -422,6 +427,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users/change-password",
+            dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedGenericMessageResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -489,6 +495,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users/request-password-reset",
+            dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedGenericMessageResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -546,6 +553,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users/reset-password",
+            dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedGenericMessageResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -609,6 +617,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.get(
             "/users",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="List Users",
             openapi_extra={
                 "x-codeSamples": [
@@ -715,6 +724,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.get(
             "/users/me",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Get the Current User",
             openapi_extra={
                 "x-codeSamples": [
@@ -779,6 +789,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.get(
             "/users/{id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Get User Details",
             openapi_extra={
                 "x-codeSamples": [
@@ -865,6 +876,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.delete(
             "/users/{id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Delete User",
             openapi_extra={
                 "x-codeSamples": [
@@ -938,6 +950,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.get(
             "/users/{id}/collections",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Get User Collections",
             openapi_extra={
                 "x-codeSamples": [
@@ -1039,6 +1052,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users/{id}/collections/{collection_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Add User to Collection",
             response_model=WrappedBooleanResponse,
             openapi_extra={
@@ -1123,6 +1137,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.delete(
             "/users/{id}/collections/{collection_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Remove User from Collection",
             openapi_extra={
                 "x-codeSamples": [
@@ -1210,6 +1225,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users/{id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Update User",
             openapi_extra={
                 "x-codeSamples": [

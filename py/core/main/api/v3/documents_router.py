@@ -187,6 +187,7 @@ class DocumentsRouter(BaseRouterV3):
     def _setup_routes(self):
         @self.router.post(
             "/documents",
+            dependencies=[Depends(self.rate_limit_dependency)],
             status_code=202,
             summary="Create a new document",
             openapi_extra={
@@ -483,6 +484,7 @@ class DocumentsRouter(BaseRouterV3):
 
         @self.router.get(
             "/documents",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="List documents",
             openapi_extra={
                 "x-codeSamples": [
@@ -604,6 +606,7 @@ class DocumentsRouter(BaseRouterV3):
 
         @self.router.get(
             "/documents/{id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Retrieve a document",
             openapi_extra={
                 "x-codeSamples": [
@@ -699,6 +702,7 @@ class DocumentsRouter(BaseRouterV3):
 
         @self.router.get(
             "/documents/{id}/chunks",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="List document chunks",
             openapi_extra={
                 "x-codeSamples": [
@@ -831,6 +835,7 @@ class DocumentsRouter(BaseRouterV3):
 
         @self.router.get(
             "/documents/{id}/download",
+            dependencies=[Depends(self.rate_limit_dependency)],
             response_class=StreamingResponse,
             summary="Download document content",
             openapi_extra={
@@ -975,6 +980,7 @@ class DocumentsRouter(BaseRouterV3):
 
         @self.router.delete(
             "/documents/by-filter",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Delete documents by filter",
             openapi_extra={
                 "x-codeSamples": [
@@ -1023,6 +1029,7 @@ class DocumentsRouter(BaseRouterV3):
 
         @self.router.delete(
             "/documents/{id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Delete a document",
             openapi_extra={
                 "x-codeSamples": [
@@ -1100,6 +1107,7 @@ class DocumentsRouter(BaseRouterV3):
 
         @self.router.get(
             "/documents/{id}/collections",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="List document collections",
             openapi_extra={
                 "x-codeSamples": [
@@ -1204,6 +1212,7 @@ class DocumentsRouter(BaseRouterV3):
 
         @self.router.post(
             "/documents/{id}/extract",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Extract entities and relationships",
             openapi_extra={
                 "x-codeSamples": [
@@ -1315,6 +1324,7 @@ class DocumentsRouter(BaseRouterV3):
 
         @self.router.get(
             "/documents/{id}/entities",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Lists the entities from the document",
             openapi_extra={
                 "x-codeSamples": [
@@ -1412,6 +1422,7 @@ class DocumentsRouter(BaseRouterV3):
 
         @self.router.get(
             "/documents/{id}/relationships",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="List document relationships",
             openapi_extra={
                 "x-codeSamples": [
@@ -1553,6 +1564,7 @@ class DocumentsRouter(BaseRouterV3):
 
         @self.router.post(
             "/documents/search",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Search document summaries",
         )
         @self.base_endpoint

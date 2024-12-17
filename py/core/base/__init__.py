@@ -104,6 +104,7 @@ __all__ = [
     "EmailConfig",
     "EmailProvider",
     # Database providers
+    "LimitSettings",
     "DatabaseConfig",
     "DatabaseProvider",
     "Handler",

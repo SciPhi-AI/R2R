@@ -5,7 +5,7 @@ from typing import AsyncGenerator, Generator
 
 import pytest
 
-from r2r import R2RClient
+from r2r import R2RAsyncClient, R2RClient
 
 
 class TestConfig:
@@ -18,7 +18,7 @@ class TestConfig:
         self.test_timeout = 30  # seconds
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture  # (scope="session")
 def config() -> TestConfig:
     return TestConfig()
 
@@ -27,6 +27,22 @@ def config() -> TestConfig:
 async def client(config) -> AsyncGenerator[R2RClient, None]:
     """Create a shared client instance for the test session."""
     client = R2RClient(config.base_url)
+    yield client
+    # Session cleanup if needed
+
+
+@pytest.fixture  # scope="session")
+def mutable_client(config) -> R2RClient:
+    """Create a shared client instance for the test session."""
+    client = R2RClient(config.base_url)
+    return client  # a client for logging in and what-not
+    # Session cleanup if needed
+
+
+@pytest.fixture  # (scope="session")
+async def aclient(config) -> AsyncGenerator[R2RClient, None]:
+    """Create a shared client instance for the test session."""
+    client = R2RAsyncClient(config.base_url)
     yield client
     # Session cleanup if needed
 
@@ -67,7 +83,26 @@ def client(config):
 
 
 @pytest.fixture(scope="session")
-def test_collection(client):
+def test_document(client):
+    """Create and yield a test document, then clean up."""
+
+    random_suffix = str(uuid.uuid4())
+    doc_resp = client.documents.create(
+        raw_text=f"{random_suffix} Test doc for collections",
+        run_with_orchestration=False,
+    )
+
+    doc_id = doc_resp["results"]["document_id"]
+    yield doc_id
+    # Cleanup: Try deleting the document if it still exists
+    try:
+        client.documents.delete(id=doc_id)
+    except R2RException:
+        pass
+
+
+@pytest.fixture(scope="session")
+def test_collection(client, test_document):
     """Create a test collection with sample documents."""
     collection_name = f"Test Collection {uuid.uuid4()}"
     collection_id = client.collections.create(name=collection_name)["results"][
@@ -117,5 +152,5 @@ def test_collection(client):
         doc_id = result["document_id"]
         doc_ids.append(doc_id)
         client.collections.add_document(collection_id, doc_id)
-
+    client.collections.add_document(collection_id, test_document)
     return {"collection_id": collection_id, "document_ids": doc_ids}

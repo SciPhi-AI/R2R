@@ -313,7 +313,16 @@ def test_complex_filters_and_fulltext(client, test_collection):
     # collection_id, doc_ids = _setup_collection_with_documents(client)
 
     # rating > 5
-    filters = {"rating": {"$gt": 5}}
+    me = client.users.me()
+    print("me = ", me)
+    # include  owner id and collection ids to make robust against other database interactions from other users
+    filters = {
+        "rating": {"$gt": 5},
+        "owner_id": {"$eq": client.users.me()["results"]["id"]},
+        "collection_ids": {
+            "$overlap": [str(test_collection["collection_id"])]
+        },
+    }
     resp = client.retrieval.search(
         query="a",
         search_mode=SearchMode.custom,
@@ -326,7 +335,14 @@ def test_complex_filters_and_fulltext(client, test_collection):
     ), f"Expected 2 docs with rating > 5, got {len(results)}"
 
     # category in [ancient, modern]
-    filters = {"metadata.category": {"$in": ["ancient", "modern"]}}
+    filters = {
+        "metadata.category": {"$in": ["ancient", "modern"]},
+        "owner_id": {"$eq": client.users.me()["results"]["id"]},
+        "collection_ids": {
+            "$overlap": [str(test_collection["collection_id"])]
+        },
+    }
+
     resp = client.retrieval.search(
         query="b",
         search_mode=SearchMode.custom,
@@ -340,7 +356,11 @@ def test_complex_filters_and_fulltext(client, test_collection):
         "$and": [
             {"metadata.rating": {"$gt": 5}},
             {"metadata.category": {"$eq": "modern"}},
-        ]
+        ],
+        "owner_id": {"$eq": client.users.me()["results"]["id"]},
+        "collection_ids": {
+            "$overlap": [str(test_collection["collection_id"])]
+        },
     }
     resp = client.retrieval.search(
         query="d",
@@ -359,6 +379,12 @@ def test_complex_filters_and_fulltext(client, test_collection):
         search_settings={
             "use_fulltext_search": True,
             "use_semantic_search": False,
+            "filters": {
+                "owner_id": {"$eq": client.users.me()["results"]["id"]},
+                "collection_ids": {
+                    "$overlap": [str(test_collection["collection_id"])]
+                },
+            },
         },
     )["results"]
     results = resp["chunk_search_results"]
@@ -381,7 +407,11 @@ def test_complex_nested_filters(client, test_collection):
                 ]
             },
             {"metadata.tags": {"$contains": ["philosophy"]}},
-        ]
+        ],
+        "owner_id": {"$eq": client.users.me()["results"]["id"]},
+        "collection_ids": {
+            "$overlap": [str(test_collection["collection_id"])]
+        },
     }
 
     resp = client.retrieval.search(
@@ -416,8 +446,9 @@ def test_filters_no_match(client):
 
 
 def test_pagination_extremes(client):
-    base_resp = client.retrieval.search(query="Aristotle", search_mode="basic")
-    total_entries = base_resp.get("page_info", {}).get("total_entries", 0)
+    # base_resp = client.retrieval.search(query="Aristotle", search_mode="basic")
+    chunk_list = client.chunks.list()
+    total_entries = chunk_list["total_entries"]
 
     offset = total_entries + 100
     resp = client.retrieval.search(
@@ -426,6 +457,7 @@ def test_pagination_extremes(client):
         search_settings={"limit": 10, "offset": offset},
     )["results"]
     results = resp["chunk_search_results"]
+    print("results = ", results)
     assert (
         len(results) == 0
     ), f"Expected no results at large offset, got {len(results)}"

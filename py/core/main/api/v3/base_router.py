@@ -188,9 +188,10 @@ class BaseRouterV3:
             route = request.scope["path"]
             # Check the limits before proceeding
             try:
-                await self.providers.database.limits_handler.check_limits(
-                    user_id, route
-                )
+                if not auth_user.is_superuser:
+                    await self.providers.database.limits_handler.check_limits(
+                        user_id, route
+                    )
             except ValueError as e:
                 raise HTTPException(status_code=429, detail=str(e))
 
