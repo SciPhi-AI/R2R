@@ -7,6 +7,7 @@ from core.base.abstractions import R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers.ingestion import IngestionProvider
 from core.utils import generate_extraction_id
+from shared.abstractions import PDFParsingError, PopperNotFoundError
 
 logger = logging.getLogger()
 
@@ -64,6 +65,12 @@ class ParsingPipe(AsyncPipe):
                 extraction.id = id
                 extraction.metadata["version"] = version
                 yield extraction
+        except (PopperNotFoundError, PDFParsingError) as e:
+            raise R2RDocumentProcessingError(
+                error_message=e.message,
+                document_id=document.id,
+                status_code=e.status_code,
+            )
         except Exception as e:
             raise R2RDocumentProcessingError(
                 document_id=document.id,

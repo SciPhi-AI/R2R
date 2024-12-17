@@ -1,0 +1,61 @@
+From: sender@example.com
+To: recipient@example.com
+Subject: Meeting Summary - Q4 Planning
+Date: Mon, 16 Dec 2024 10:30:00 -0500
+Content-Type: multipart/mixed; boundary="boundary123"
+
+--boundary123
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hi Team,
+
+Here's a summary of our Q4 planning meeting:
+
+Key Points:
+1. Revenue targets increased by 15%
+2. New product launch scheduled for November
+3. Marketing budget approved for expansion
+
+Action Items:
+- Sarah: Prepare detailed product roadmap
+- Mike: Contact vendors for pricing
+- Jennifer: Update financial projections
+
+Please review and let me know if you have any questions.
+
+Best regards,
+Alex
+
+--boundary123
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<html>
+<body>
+<p>Hi Team,</p>
+
+<p>Here's a summary of our Q4 planning meeting:</p>
+
+<h3>Key Points:</h3>
+<ul>
+<li>Revenue targets increased by 15%</li>
+<li>New product launch scheduled for November</li>
+<li>Marketing budget approved for expansion</li>
+</ul>
+
+<h3>Action Items:</h3>
+<ul>
+<li><strong>Sarah:</strong> Prepare detailed product roadmap</li>
+<li><strong>Mike:</strong> Contact vendors for pricing</li>
+<li><strong>Jennifer:</strong> Update financial projections</li>
+</ul>
+
+<p>Please review and let me know if you have any questions.</p>
+
+<p>Best regards,<br>
+Alex</p>
+</body>
+</html>
+
+--boundary123--

@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Optional
+from typing import Optional
 from uuid import UUID
 
 from core.base import Handler

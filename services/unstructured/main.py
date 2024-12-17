@@ -45,7 +45,7 @@ async def health_endpoint():
 @app.post("/partition", response_model=PartitionResponseModel)
 async def partition_endpoint(request: PartitionRequestModel):
     try:
-        logger.info(f"Partitioning request received")
+        logger.info(f"Partitioning request received: {request}")
         loop = asyncio.get_event_loop()
         elements = await loop.run_in_executor(
             executor,
@@ -54,7 +54,7 @@ async def partition_endpoint(request: PartitionRequestModel):
             request.filename,
             request.ingestion_config,
         )
-        logger.info(f"Partitioning completed")
+        logger.info("Partitioning completed")
         return PartitionResponseModel(elements=elements)
     except Exception as e:
         logger.error(f"Error partitioning file: {str(e)}")

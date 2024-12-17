@@ -1,11 +1,9 @@
 import asyncio
 import random
 import statistics
-import string
 import time
 from dataclasses import dataclass
 from glob import glob
-from typing import Dict, List
 
 from r2r import R2RAsyncClient
 
@@ -49,8 +47,8 @@ class Metrics:
 class LoadTester:
     def __init__(self, base_url: str):
         self.base_url = base_url
-        self.metrics: List[Metrics] = []
-        self.users: List[Dict] = []
+        self.metrics: list[Metrics] = []
+        self.users: list[dict] = []
         self.running = True
         print("making an async client...")
         self.client = R2RAsyncClient(base_url)
@@ -126,7 +124,7 @@ class LoadTester:
 
         print(f"Setup complete! Successfully set up {len(self.users)} users")
 
-    async def run_user_queries(self, user: Dict):
+    async def run_user_queries(self, user: dict):
         """Run queries for a single user, with timeouts and error handling."""
         while self.running:
             # Login before query

@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from uuid import UUID, uuid4
 
 from core.base import Handler, Message, R2RException
@@ -85,9 +85,9 @@ class PostgresConversationsHandler(Handler):
         self,
         offset: int,
         limit: int,
-        user_ids: Optional[UUID | List[UUID]] = None,
-        conversation_ids: Optional[List[UUID]] = None,
-    ) -> Dict[str, Any]:
+        user_ids: Optional[UUID | list[UUID]] = None,
+        conversation_ids: Optional[list[UUID]] = None,
+    ) -> dict[str, Any]:
         # Construct conditions
         conditions = []
         params = []
@@ -231,7 +231,7 @@ class PostgresConversationsHandler(Handler):
         message_id: UUID,
         new_content: str,
         additional_metadata: dict = {},
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         # Get the original message
         query = f"""
             SELECT conversation_id, parent_id, content, metadata
@@ -316,7 +316,7 @@ class PostgresConversationsHandler(Handler):
 
     async def get_conversation(
         self, conversation_id: UUID
-    ) -> List[MessageResponse]:
+    ) -> list[MessageResponse]:
         # Check conversation
         conv_query = f"SELECT extract(epoch from created_at) AS created_at_epoch FROM {self._get_table_name('conversations')} WHERE id = $1"
         conv_row = await self.connection_manager.fetchrow_query(

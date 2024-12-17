@@ -12,6 +12,8 @@ from typing import AsyncGenerator
 
 import aiofiles
 from pdf2image import convert_from_path
+from pdf2image.exceptions import PDFInfoNotInstalledError
+from shared.abstractions import PDFParsingError, PopperNotFoundError
 
 from core.base.abstractions import GenerationConfig
 from core.base.parsers.base_parser import AsyncParser
@@ -70,11 +72,14 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             "paths_only": True,
         }
         try:
-            image_paths = await asyncio.to_thread(convert_from_path, **options)
-            return image_paths
+            return await asyncio.to_thread(convert_from_path, **options)
+        except PDFInfoNotInstalledError:
+            raise PopperNotFoundError()
         except Exception as err:
-            logger.error(f"Error converting PDF to images: {err}")
-            raise
+            logger.error(
+                f"Error converting PDF to images: {err} type: {type(err)}"
+            )
+            raise PDFParsingError(f"Failed to process PDF: {str(err)}", err)
 
     async def process_page(
         self, image_path: str, page_num: int

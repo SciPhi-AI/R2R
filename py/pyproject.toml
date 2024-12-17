@@ -36,7 +36,7 @@ python-dotenv = "^1.0.1"
 requests = "^2.31.0"
 toml = "^0.10.2"
 types-requests = "^2.31.0"
-unstructured-client = "^0.25.5"
+unstructured-client = "0.25.5"
 psycopg-binary = "^3.2.3"
 aiosmtplib = "^3.0.2"
 types-aiofiles = "^24.1.0.20240626"
@@ -77,14 +77,22 @@ aiofiles = { version = "^24.1.0", optional = true }
 aioshutil = { version = "^1.5", optional = true }
 beautifulsoup4 = { version = "^4.12.3", optional = true }
 bs4 = { version = "^0.0.2", optional = true }
-numpy = { version = ">=1.22.4,<1.29.0", optional = true }
+epub = { version = "^0.5.2", optional = true }
+extract-msg = { version = "^0.52.0", optional = true }
 markdown = { version = "^3.6", optional = true }
+numpy = { version = ">=1.22.4,<1.29.0", optional = true }
+olefile = { version = "^0.47", optional = true }
 openpyxl = { version = "^3.1.2", optional = true }
+orgparse = { version = "^0.4.20231004", optional = true }
 pdf2image = { version = "^1.17.0", optional = true }
+pillow-heif = { version = "^0.21.0", optional = true }
 pypdf = { version = "^4.2.0", optional = true }
 pypdf2 = { version = "^3.0.1", optional = true }
 python-pptx = { version = "^1.0.1", optional = true }
 python-docx = { version = "^1.1.0", optional = true }
+docutils = { version = "^0.21.2", optional = true }
+striprtf = { version = "^0.0.28", optional = true }
+xlrd = { version = "^2.0.1", optional = true }
 
 [tool.poetry.extras]
 core = [
@@ -122,14 +130,22 @@ ingestion-bundle = [
     "aioshutil",
     "beautifulsoup4",
     "bs4",
-    "numpy",
+    "docutils",
+    "epub",
+    "extract-msg",
     "markdown",
+    "numpy",
+    "olefile",
     "openpyxl",
+    "orgparse",
     "pdf2image",
+    "pillow-heif",
     "pypdf",
     "pypdf2",
     "python-pptx",
     "python-docx",
+    "striprtf",
+    "xlrd",
 ]
 
 [tool.poetry.group.dev.dependencies]

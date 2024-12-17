@@ -12,7 +12,12 @@ from .document import (
     UnprocessedChunk,
 )
 from .embedding import EmbeddingPurpose, default_embedding_prefixes
-from .exception import R2RDocumentProcessingError, R2RException
+from .exception import (
+    R2RDocumentProcessingError,
+    R2RException,
+    PDFParsingError,
+    PopperNotFoundError,
+)
 from .graph import Community, Entity, KGExtraction, Relationship
 from .kg import (
     GraphBuildSettings,
@@ -86,6 +91,8 @@ __all__ = [
     # Exception abstractions
     "R2RDocumentProcessingError",
     "R2RException",
+    "PDFParsingError",
+    "PopperNotFoundError",
     # Graph abstractions
     "Entity",
     "Community",
