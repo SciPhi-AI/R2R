@@ -6,31 +6,11 @@ from r2r import R2RClient, R2RException
 
 
 @pytest.fixture(scope="session")
-def client(config):
-    """Create a client instance and log in as a superuser."""
+def test_document_2(config):
+    """Create and yield a test document, then clean up."""
     client = R2RClient(config.base_url)
     client.users.login(config.superuser_email, config.superuser_password)
-    return client
 
-
-@pytest.fixture
-def test_document(client):
-    """Create and yield a test document, then clean up."""
-    doc_resp = client.documents.create(
-        raw_text="Test doc for collections", run_with_orchestration=False
-    )
-    doc_id = doc_resp["results"]["document_id"]
-    yield doc_id
-    # Cleanup: Try deleting the document if it still exists
-    try:
-        client.documents.delete(id=doc_id)
-    except R2RException:
-        pass
-
-
-@pytest.fixture
-def test_document_2(client):
-    """Create and yield a test document, then clean up."""
     doc_resp = client.documents.create(
         raw_text="Another test doc for collections",
         run_with_orchestration=False,
@@ -40,22 +20,6 @@ def test_document_2(client):
     # Cleanup: Try deleting the document if it still exists
     try:
         client.documents.delete(id=doc_id)
-    except R2RException:
-        pass
-
-
-@pytest.fixture
-def test_collection(client, test_document):
-    """Create and yield a test collection, then clean up."""
-    resp = client.collections.create(
-        name="Test Collection", description="A sample collection"
-    )
-    test_collection_id = resp["results"]["id"]
-    client.collections.add_document(test_collection_id, test_document)
-    yield test_collection_id
-    # Cleanup: Try deleting the collection if it still exists
-    try:
-        client.collections.delete(test_collection_id)
     except R2RException:
         pass
 
@@ -79,15 +43,22 @@ def test_list_collections(client, test_collection):
 
 def test_retrieve_collection(client, test_collection):
     # Retrieve the collection just created
-    retrieved = client.collections.retrieve(test_collection)["results"]
-    assert retrieved["id"] == test_collection, "Retrieved wrong collection ID"
+    print("test_collection = ", test_collection)
+    retrieved = client.collections.retrieve(test_collection["collection_id"])[
+        "results"
+    ]
+    assert (
+        retrieved["id"] == test_collection["collection_id"]
+    ), "Retrieved wrong collection ID"
 
 
 def test_update_collection(client, test_collection):
     updated_name = "Updated Test Collection"
     updated_desc = "Updated description"
     updated = client.collections.update(
-        test_collection, name=updated_name, description=updated_desc
+        test_collection["collection_id"],
+        name=updated_name,
+        description=updated_desc,
     )["results"]
     assert updated["name"] == updated_name, "Collection name not updated"
     assert (
@@ -97,20 +68,22 @@ def test_update_collection(client, test_collection):
 
 def test_add_document_to_collection(client, test_collection, test_document_2):
     # Add the test document to the test collection
-    client.collections.add_document(test_collection, test_document_2)
+    client.collections.add_document(
+        test_collection["collection_id"], test_document_2
+    )
     # Verify by listing documents
-    docs_in_collection = client.collections.list_documents(test_collection)[
-        "results"
-    ]
+    docs_in_collection = client.collections.list_documents(
+        test_collection["collection_id"]
+    )["results"]
     found = any(doc["id"] == test_document_2 for doc in docs_in_collection)
     assert found, "Added document not found in collection"
 
 
 def test_list_documents_in_collection(client, test_collection, test_document):
     # Document should be in the collection already from previous test
-    docs_in_collection = client.collections.list_documents(test_collection)[
-        "results"
-    ]
+    docs_in_collection = client.collections.list_documents(
+        test_collection["collection_id"]
+    )["results"]
     print("docs_in_collection = ", docs_in_collection)
     print("test_document = ", test_document)
     found = any(doc["id"] == test_document for doc in docs_in_collection)
@@ -121,10 +94,12 @@ def test_remove_document_from_collection(
     client, test_collection, test_document
 ):
     # Remove the document from the collection
-    client.collections.remove_document(test_collection, test_document)
-    docs_in_collection = client.collections.list_documents(test_collection)[
-        "results"
-    ]
+    client.collections.remove_document(
+        test_collection["collection_id"], test_document
+    )
+    docs_in_collection = client.collections.list_documents(
+        test_collection["collection_id"]
+    )["results"]
     found = any(doc["id"] == test_document for doc in docs_in_collection)
     assert not found, "Document still present in collection after removal"
 

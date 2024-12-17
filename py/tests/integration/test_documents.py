@@ -6,39 +6,6 @@ import pytest
 from r2r import R2RClient, R2RException
 
 
-@pytest.fixture(scope="session")
-def config():
-    class TestConfig:
-        base_url = "http://localhost:7272"
-        superuser_email = "admin@example.com"
-        superuser_password = "change_me_immediately"
-
-    return TestConfig()
-
-
-@pytest.fixture(scope="session")
-def client(config):
-    """Create a client instance and log in as a superuser."""
-    client = R2RClient(config.base_url)
-    client.users.login(config.superuser_email, config.superuser_password)
-    return client
-
-
-@pytest.fixture
-def test_document(client):
-    """Create and yield a test document, then clean up."""
-    resp = client.documents.create(
-        raw_text="Temporary doc", run_with_orchestration=False
-    )
-    document_id = resp["results"]["document_id"]
-    yield document_id
-    # Cleanup
-    try:
-        client.documents.delete(id=document_id)
-    except R2RException:
-        pass
-
-
 def test_create_document_with_file(client):
     resp = client.documents.create(
         file_path="core/examples/data/aristotle.txt",
@@ -229,7 +196,7 @@ def test_list_document_chunks(client):
     results = chunks_resp["results"]
     assert len(results) == 3, "Expected 3 chunks"
     client.documents.delete(id=doc_id)
-    client.logout()
+    client.users.logout()
 
 
 def test_search_documents_extended(client):

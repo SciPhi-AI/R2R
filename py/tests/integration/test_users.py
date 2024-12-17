@@ -47,6 +47,7 @@ def test_register_user(client):
     user_resp = client.users.create(random_email, password)
     user = user_resp["results"]
     assert "id" in user, "No user ID returned after registration."
+    client.users.logout()
 
 
 # COMMENTED OUT SINCE AUTH IS NOT REQUIRED BY DEFAULT IN R2R.TOML
@@ -104,6 +105,7 @@ def test_change_password(client):
 
     # New password should work
     client.users.login(random_email, new_password)
+    client.users.logout()
 
 
 @pytest.mark.skip(
@@ -132,16 +134,20 @@ def test_request_and_reset_password(client):
 
     # Verify login with new password
     client.users.login(random_email, new_password)
+    client.users.logout()
 
 
 def test_users_list(client, superuser_login):
     users_list = client.users.list()["results"]
     assert isinstance(users_list, list), "Listing users failed."
 
+    client.users.logout()
+
 
 def test_get_current_user(client, superuser_login):
     me = client.users.me()["results"]
     assert "id" in me, "Failed to get current user."
+    client.users.logout()
 
 
 def test_get_user_by_id(client, superuser_login):
@@ -151,6 +157,7 @@ def test_get_user_by_id(client, superuser_login):
 
     user = client.users.retrieve(user_id)["results"]
     assert user["id"] == user_id, "Retrieved user does not match requested ID."
+    client.users.logout()
 
 
 def test_update_user(client, superuser_login):
@@ -161,6 +168,7 @@ def test_update_user(client, superuser_login):
     updated_name = "Updated Name"
     update_resp = client.users.update(user_id, name=updated_name)["results"]
     assert update_resp["name"] == updated_name, "User update failed."
+    client.users.logout()
 
 
 def test_user_collections(client, superuser_login, config):
@@ -171,6 +179,7 @@ def test_user_collections(client, superuser_login, config):
 
     collections = client.users.list_collections(user_id)["results"]
     assert isinstance(collections, list), "Listing user collections failed."
+    client.users.logout()
 
 
 def test_add_remove_user_from_collection(client, superuser_login, config):
@@ -200,6 +209,7 @@ def test_add_remove_user_from_collection(client, superuser_login, config):
     assert not any(
         col["id"] == config.known_collection_id for col in collections_after
     ), "User still in collection after removal."
+    client.users.logout()
 
 
 def test_delete_user(client):
@@ -208,8 +218,9 @@ def test_delete_user(client):
 
     random_email = f"{uuid.uuid4()}@example.com"
     password = "somepassword"
-    user_id = register_and_return_user_id(client, random_email, password)
+    client.users.create(random_email, password)
     client.users.login(random_email, password)
+    user_id = client.users.me()["results"]["id"]
 
     del_resp = client.users.delete(user_id, password)["results"]
     assert del_resp["success"], "User deletion failed."
@@ -291,6 +302,7 @@ def test_superuser_downgrade_permissions(client, superuser_login, config):
     assert (
         exc_info.value.status_code == 403
     ), "Downgraded user still has superuser privileges."
+    client.users.logout()
 
 
 def test_non_owner_delete_collection(client):
@@ -329,6 +341,7 @@ def test_non_owner_delete_collection(client):
     client.users.logout()
     client.users.login(owner_email, owner_password)
     client.collections.delete(coll_id)
+    client.users.logout()
 
 
 def test_update_user_with_invalid_email(client, superuser_login):
@@ -345,6 +358,8 @@ def test_update_user_with_invalid_email(client, superuser_login):
         400,
         422,
     ], "Expected validation error for invalid email."
+
+    client.users.logout()
 
 
 def test_update_user_email_already_exists(client, superuser_login):
@@ -366,13 +381,16 @@ def test_update_user_email_already_exists(client, superuser_login):
         422,
         500,
     ], "Expected error updating email to an existing user's email."
+    client.users.logout()
 
 
 def test_delete_user_with_incorrect_password(client):
     email = f"{uuid.uuid4()}@example.com"
     password = "correct_password"
-    user_id = register_and_return_user_id(client, email, password)
+    # user_id = register_and_return_user_id(client, email, password)
+    client.users.create(email, password)
     client.users.login(email, password)
+    user_id = client.users.me()["results"]["id"]
 
     # Attempt deletion with incorrect password
     with pytest.raises(R2RException) as exc_info:
@@ -388,7 +406,7 @@ def test_delete_user_with_incorrect_password(client):
 def test_login_with_incorrect_password(client):
     email = f"{uuid.uuid4()}@example.com"
     password = "password123"
-    register_and_return_user_id(client, email, password)
+    client.users.create(email, password)
 
     # Try incorrect password
     with pytest.raises(R2RException) as exc_info:
@@ -396,13 +414,19 @@ def test_login_with_incorrect_password(client):
     assert (
         exc_info.value.status_code == 401
     ), "Expected 401 when logging in with incorrect password."
+    client.users.logout()
 
 
 def test_refresh_token(client):
     # Assume that refresh token endpoint checks token validity
     # Try using a bogus refresh token
+    email = f"{uuid.uuid4()}@example.com"
+    password = "password123"
+    client.users.create(email, password)
+    client.users.login(email, password)
     client.users.refresh_token()  # refresh_token="invalid_token")
     # assert exc_info.value.status_code in [400, 401], "Expected error using invalid refresh token."
+    client.users.logout()
 
 
 @pytest.mark.skip(reason="Email verification logic not implemented.")
@@ -418,6 +442,8 @@ def test_verification_with_invalid_code(client):
         400,
         422,
     ], "Expected error verifying with invalid code."
+
+    client.users.logout()
 
 
 @pytest.mark.skip(
@@ -437,3 +463,4 @@ def test_password_reset_with_invalid_token(client):
         400,
         422,
     ], "Expected error resetting password with invalid token."
+    client.users.logout()

@@ -5,24 +5,6 @@ import pytest
 from r2r import R2RClient, R2RException
 
 
-@pytest.fixture(scope="session")
-def config():
-    class TestConfig:
-        base_url = "http://localhost:7272"
-        superuser_email = "admin@example.com"
-        superuser_password = "change_me_immediately"
-
-    return TestConfig()
-
-
-@pytest.fixture(scope="session")
-def client(config):
-    """Create a client instance and log in as a superuser."""
-    client = R2RClient(config.base_url)
-    client.users.login(config.superuser_email, config.superuser_password)
-    return client
-
-
 @pytest.fixture
 def test_conversation(client):
     """Create and yield a test conversation, then clean up."""
