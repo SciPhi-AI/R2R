@@ -1,43 +1,33 @@
 """
-Tests ingestion of all documents supported by R2R, including:
+Tests document ingestion functionality in R2R across all supported file types and modes.
 
-- .bmp
-- .csv
-- .doc
-- .docx
-- .eml
-- .epub
-- .heic
-- .html
-- .jpeg
-- .jpg
-- .json
-- .md
-- .msg
-- .odt
-- .org
-- .p7s
-- .pdf
-- .png
-- .ppt
-- .pptx
-- .rst
-- .rtf
-- .tiff
-- .txt
-- .tsv
-- .xls
-- .xlsx
+Supported file types include:
+- Documents: .doc, .docx, .odt, .pdf, .rtf, .txt
+- Presentations: .ppt, .pptx
+- Spreadsheets: .csv, .tsv, .xls, .xlsx
+- Markup: .html, .md, .org, .rst
+- Images: .bmp, .heic, .jpeg, .jpg, .png, .tiff
+- Email: .eml, .msg, .p7s
+- Other: .epub, .json
+
+Tests verify:
+- Basic ingestion for each file type
+- Hi-res ingestion for complex documents
+- Custom ingestion configurations
+- Raw text ingestion
+- Pre-processed chunk ingestion
+- Metadata handling
 """
 
 import time
+from uuid import UUID
 
 import pytest
 
 from r2r import R2RClient, R2RException
 
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 import time
 
 
@@ -47,10 +37,12 @@ def file_ingestion(
     ingestion_mode: Optional[str] = None,
     expected_status: str = "success",
     expected_chunk_count: Optional[int] = None,
+    ingestion_config: Optional[dict] = None,
+    metadata: Optional[dict] = None,
     cleanup: bool = True,
     wait_for_completion: bool = True,
     timeout: int = 600,
-):
+) -> UUID:
     """
     Test ingestion of a file with the given parameters.
 
@@ -71,14 +63,19 @@ def file_ingestion(
         AssertionError: If any checks fail
         TimeoutError: If ingestion doesn't complete within timeout period
     """
+    doc_id = None
     try:
         # Verify file exists
         assert Path(file_path).exists(), f"Test file not found: {file_path}"
 
         # Start ingestion
-        ingest_args = {"file_path": file_path}
+        ingest_args: dict[str, Any] = {"file_path": file_path}
         if ingestion_mode:
             ingest_args["ingestion_mode"] = ingestion_mode
+        if ingestion_config:
+            ingest_args["ingestion_config"] = ingestion_config
+        if metadata:
+            ingest_args["metadata"] = metadata
 
         ingestion_response = client.documents.create(**ingest_args)
 
@@ -194,5 +191,138 @@ def test_file_type_ingestion(
 
         assert result is not None
 
+    except Exception as e:
+        raise
+
+
+@pytest.mark.parametrize(
+    "file_type,file_path",
+    [
+        ("pdf", "core/examples/supported_file_types/pdf.pdf"),
+        ("docx", "core/examples/supported_file_types/docx.docx"),
+        ("pptx", "core/examples/supported_file_types/pptx.pptx"),
+    ],
+)
+def test_hires_ingestion(client: R2RClient, file_type: str, file_path: str):
+    """Test hi-res ingestion with complex documents containing mixed content."""
+    if file_type == "pdf":
+        try:
+            result = file_ingestion(
+                client=client,
+                file_path=file_path,
+                ingestion_mode="hi-res",
+                cleanup=True,
+                wait_for_completion=True,
+            )
+            assert result is not None
+        except R2RException as e:
+            if "PDF processing requires Poppler to be installed" in str(e):
+                pytest.skip("Skipping PDF test due to missing Poppler dependency")
+            raise
+    else:
+        result = file_ingestion(
+            client=client,
+            file_path=file_path,
+            ingestion_mode="hi-res",
+            cleanup=True,
+            wait_for_completion=True,
+        )
+        assert result is not None
+
+
+def test_custom_ingestion_config(client: R2RClient):
+    """Test ingestion with custom configuration parameters."""
+    custom_config = {
+        "provider": "r2r",
+        "strategy": "auto",
+        "chunking_strategy": "by_title",
+        "new_after_n_chars": 256,
+        "max_characters": 512,
+        "combine_under_n_chars": 64,
+        "overlap": 100,
+    }
+
+    try:
+        result = file_ingestion(
+            client=client,
+            file_path="core/examples/supported_file_types/pdf.pdf",
+            ingestion_mode="custom",
+            ingestion_config=custom_config,
+            cleanup=True,
+            wait_for_completion=True,
+        )
+        assert result is not None
+    except Exception as e:
+        raise
+
+
+def test_raw_text_ingestion(client: R2RClient):
+    """Test ingestion of raw text content."""
+    text_content = "This is a test document.\nIt has multiple lines.\nTesting raw text ingestion."
+
+    response = client.documents.create(
+        raw_text=text_content, ingestion_mode="fast"
+    )
+
+    assert response is not None
+    assert "results" in response
+    assert "document_id" in response["results"]
+
+    doc_id = response["results"]["document_id"]
+
+    start_time = time.time()
+    while True:
+        try:
+            retrieval_response = client.documents.retrieve(id=doc_id)
+            if retrieval_response["results"]["ingestion_status"] == "success":
+                break
+        except R2RException as e:
+            if time.time() - start_time > 600:
+                raise TimeoutError("Ingestion didn't complete within timeout")
+            time.sleep(2)
+
+    client.documents.delete(id=doc_id)
+
+
+def test_chunks_ingestion(client: R2RClient):
+    """Test ingestion of pre-processed chunks."""
+    chunks = ["This is chunk 1", "This is chunk 2", "This is chunk 3"]
+
+    response = client.documents.create(chunks=chunks, ingestion_mode="fast")
+
+    assert response is not None
+    assert "results" in response
+    assert "document_id" in response["results"]
+
+    client.documents.delete(id=response["results"]["document_id"])
+
+
+def test_metadata_handling(client: R2RClient):
+    """Test ingestion with metadata."""
+    metadata = {
+        "title": "Test Document",
+        "author": "Test Author",
+        "custom_field": "custom_value",
+    }
+
+    try:
+        doc_id = file_ingestion(
+            client=client,
+            file_path="core/examples/supported_file_types/pdf.pdf",
+            ingestion_mode="fast",
+            metadata=metadata,
+            cleanup=False,
+            wait_for_completion=True,
+        )
+
+        # Update metadata with server assigned version
+        metadata["version"] = "v0"
+
+        # Verify metadata
+        doc = client.documents.retrieve(id=doc_id)
+        assert doc["results"]["metadata"] == metadata
+
+        # Cleanup
+        client.documents.delete(id=doc_id)
     except Exception as e:
         raise

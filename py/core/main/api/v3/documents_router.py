@@ -339,6 +339,10 @@ class DocumentsRouter(BaseRouterV3):
                     message="Only one of `file`, `raw_text`, or `chunks` may be provided.",
                 )
             # Check if the user is a superuser
+            try:
+                print(f"Got metadata: {metadata}")
+            except:
+                pass
             metadata = metadata or {}
 
             if chunks:
@@ -351,13 +355,15 @@ class DocumentsRouter(BaseRouterV3):
                         400,
                     )
                 document_id = generate_document_id(
-                    str(json.dumps(chunks)), auth_user.id
+                    json.dumps(chunks), auth_user.id
                 )
 
                 # FIXME: Metadata doesn't seem to be getting passed through
                 raw_chunks_for_doc = [
                     UnprocessedChunk(
-                        text=chunk, metadata=metadata, id=generate_id()
+                        text=chunk,
+                        metadata=metadata,
+                        id=generate_id(),
                     )
                     for chunk in chunks
                 ]
@@ -366,11 +372,14 @@ class DocumentsRouter(BaseRouterV3):
                 workflow_input = {
                     "document_id": str(document_id),
                     "chunks": [
-                        chunk.model_dump() for chunk in raw_chunks_for_doc
+                        chunk.model_dump(mode="json")
+                        for chunk in raw_chunks_for_doc
                     ],
                     "metadata": metadata,  # Base metadata for the document
                     "user": auth_user.model_dump_json(),
-                    "ingestion_config": effective_ingestion_config.model_dump(),
+                    "ingestion_config": effective_ingestion_config.model_dump(
+                        mode="json"
+                    ),
                 }
 
                 # TODO - Modify create_chunks so that we can add chunks to existing document
@@ -447,7 +456,9 @@ class DocumentsRouter(BaseRouterV3):
                     else None
                 ),
                 "metadata": metadata,
-                "ingestion_config": effective_ingestion_config.model_dump(),
+                "ingestion_config": effective_ingestion_config.model_dump(
+                    mode="json"
+                ),
                 "user": auth_user.model_dump_json(),
                 "size_in_bytes": content_length,
             }
@@ -939,9 +950,9 @@ class DocumentsRouter(BaseRouterV3):
                     str(ele.id) for ele in document_collections["results"]
                 }
 
-                user_collection_ids = set(
+                user_collection_ids = {
                     str(cid) for cid in auth_user.collection_ids
-                )
+                }
 
                 has_collection_access = user_collection_ids.intersection(
                     document_collection_ids

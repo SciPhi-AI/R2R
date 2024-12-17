@@ -1,20 +1,17 @@
 import json
 import logging
 import textwrap
-from copy import copy
-from typing import Any, Optional
+from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
 from core.base import (
     ChunkResponse,
-    ChunkSearchSettings,
     GraphSearchSettings,
     R2RException,
     RunType,
     SearchSettings,
-    UnprocessedChunk,
     UpdateChunk,
     select_search_filters,
 )
@@ -29,7 +26,6 @@ from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
-from core.utils import generate_id
 
 from .base_router import BaseRouterV3
 

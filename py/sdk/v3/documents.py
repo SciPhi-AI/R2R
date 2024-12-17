@@ -1,6 +1,6 @@
 import json
 from io import BytesIO
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from shared.api.models.base import WrappedBooleanResponse
@@ -334,7 +334,7 @@ class DocumentsSDK:
         Returns:
             dict: List of relationships and pagination info
         """
-        params = {
+        params: dict[str, Any] = {
             "offset": offset,
             "limit": limit,
         }
