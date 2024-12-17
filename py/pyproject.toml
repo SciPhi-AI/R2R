@@ -161,6 +161,7 @@ pytest-mock = "^3.14.0"
 pytest-cov = "^5.0.0"
 pytest-html = "^4.1.1"
 types-toml = "^0.10.8"
+pytest-xdist = "^3.6.1"
 
 [tool.black]
 line-length = 79

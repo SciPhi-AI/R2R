@@ -77,8 +77,6 @@ __all__ = [
     "TokenResponse",
     "User",
     ## LOGGING
-    # Basic types
-    "RunType",
     # Run Manager
     "RunManager",
     "manage_run",
@@ -106,6 +104,7 @@ __all__ = [
     "EmailConfig",
     "EmailProvider",
     # Database providers
+    "LimitSettings",
     "DatabaseConfig",
     "DatabaseProvider",
     "Handler",

@@ -19,7 +19,6 @@ from core.base import (
     RunManager,
     User,
 )
-from core.base.logger.base import RunType
 from core.base.utils import validate_uuid
 from core.telemetry.telemetry_decorator import telemetry_event
 

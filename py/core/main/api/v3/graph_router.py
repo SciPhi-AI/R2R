@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import KGEnrichmentStatus, R2RException, RunType, Workflow
+from core.base import KGEnrichmentStatus, R2RException, Workflow
 from core.base.abstractions import KGRunType
 from core.base.api.models import (
     GenericBooleanResponse,
@@ -19,15 +19,12 @@ from core.base.api.models import (
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,
 )
-from core.providers import (
-    HatchetOrchestrationProvider,
-    SimpleOrchestrationProvider,
-)
 from core.utils import (
     generate_default_user_collection_id,
     update_settings_from_dict,
 )
 
+from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -36,20 +33,16 @@ logger = logging.getLogger()
 class GraphRouter(BaseRouterV3):
     def __init__(
         self,
-        providers,
-        services,
-        orchestration_provider: (
-            HatchetOrchestrationProvider | SimpleOrchestrationProvider
-        ),
-        run_type: RunType = RunType.KG,
+        providers: R2RProviders,
+        services: R2RServices,
     ):
-        super().__init__(providers, services, orchestration_provider, run_type)
+        super().__init__(providers, services)
         self._register_workflows()
 
     def _register_workflows(self):
 
         workflow_messages = {}
-        if self.orchestration_provider.config.provider == "hatchet":
+        if self.providers.orchestration.config.provider == "hatchet":
             workflow_messages["extract-triples"] = (
                 "Graph creation task queued successfully."
             )
@@ -70,9 +63,9 @@ class GraphRouter(BaseRouterV3):
                 "KG Entity Deduplication completed successfully."
             )
 
-        self.orchestration_provider.register_workflows(
+        self.providers.orchestration.register_workflows(
             Workflow.KG,
-            self.services["kg"],
+            self.services.kg,
             workflow_messages,
         )
 
@@ -126,7 +119,7 @@ class GraphRouter(BaseRouterV3):
 
         # Return cost estimate if requested
         if run_type == KGRunType.ESTIMATE:
-            return await self.services["kg"].get_deduplication_estimate(
+            return await self.services.kg.get_deduplication_estimate(
                 collection_id, server_settings
             )
 
@@ -137,13 +130,13 @@ class GraphRouter(BaseRouterV3):
         }
 
         if run_with_orchestration:
-            return await self.orchestration_provider.run_workflow(  # type: ignore
+            return await self.providers.orchestration.run_workflow(  # type: ignore
                 "entity-deduplication", {"request": workflow_input}, {}
             )
         else:
             from core.main.orchestration import simple_kg_factory
 
-            simple_kg = simple_kg_factory(self.services["kg"])
+            simple_kg = simple_kg_factory(self.services.kg)
             await simple_kg["entity-deduplication"](workflow_input)
             return {  # type: ignore
                 "message": "Entity deduplication completed successfully.",
@@ -161,6 +154,7 @@ class GraphRouter(BaseRouterV3):
     def _setup_routes(self):
         @self.router.get(
             "/graphs",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="List graphs",
             openapi_extra={
                 "x-codeSamples": [
@@ -229,7 +223,7 @@ class GraphRouter(BaseRouterV3):
 
             graph_uuids = [UUID(graph_id) for graph_id in collection_ids]
 
-            list_graphs_response = await self.services["kg"].list_graphs(
+            list_graphs_response = await self.services.kg.list_graphs(
                 # user_ids=requesting_user_id,
                 graph_ids=graph_uuids,
                 offset=offset,
@@ -243,6 +237,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{collection_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Retrieve graph details",
             openapi_extra={
                 "x-codeSamples": [
@@ -307,7 +302,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            list_graphs_response = await self.services["kg"].list_graphs(
+            list_graphs_response = await self.services.kg.list_graphs(
                 # user_ids=None,
                 graph_ids=[collection_id],
                 offset=0,
@@ -317,6 +312,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.post(
             "/graphs/{collection_id}/communities/build",
+            dependencies=[Depends(self.rate_limit_dependency)],
         )
         @self.base_endpoint
         async def build_communities(
@@ -391,14 +387,14 @@ class GraphRouter(BaseRouterV3):
 
             if run_with_orchestration:
 
-                return await self.orchestration_provider.run_workflow(  # type: ignore
+                return await self.providers.orchestration.run_workflow(  # type: ignore
                     "build-communities", {"request": workflow_input}, {}
                 )
             else:
                 from core.main.orchestration import simple_kg_factory
 
                 logger.info("Running build-communities without orchestration.")
-                simple_kg = simple_kg_factory(self.services["kg"])
+                simple_kg = simple_kg_factory(self.services.kg)
                 await simple_kg["build-communities"](workflow_input)
                 return {
                     "message": "Graph communities created successfully.",
@@ -407,6 +403,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.post(
             "/graphs/{collection_id}/reset",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Reset a graph back to the initial state.",
             openapi_extra={
                 "x-codeSamples": [
@@ -479,13 +476,14 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            await self.services["kg"].reset_graph_v3(id=collection_id)
+            await self.services.kg.reset_graph_v3(id=collection_id)
             # await _pull(collection_id, auth_user)
             return GenericBooleanResponse(success=True)  # type: ignore
 
         # update graph
         @self.router.post(
             "/graphs/{collection_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Update graph",
             openapi_extra={
                 "x-codeSamples": [
@@ -564,7 +562,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services["kg"].update_graph(  # type: ignore
+            return await self.services.kg.update_graph(  # type: ignore
                 collection_id,
                 name=name,
                 description=description,
@@ -572,6 +570,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{collection_id}/entities",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -638,7 +637,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            entities, count = await self.services["kg"].get_entities(
+            entities, count = await self.services.kg.get_entities(
                 parent_id=collection_id,
                 offset=offset,
                 limit=limit,
@@ -648,7 +647,10 @@ class GraphRouter(BaseRouterV3):
                 "total_entries": count,
             }
 
-        @self.router.post("/graphs/{collection_id}/entities")
+        @self.router.post(
+            "/graphs/{collection_id}/entities",
+            dependencies=[Depends(self.rate_limit_dependency)],
+        )
         @self.base_endpoint
         async def create_entity(
             collection_id: UUID = Path(
@@ -680,7 +682,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services["kg"].create_entity(
+            return await self.services.kg.create_entity(
                 name=name,
                 description=description,
                 parent_id=collection_id,
@@ -688,7 +690,10 @@ class GraphRouter(BaseRouterV3):
                 metadata=metadata,
             )
 
-        @self.router.post("/graphs/{collection_id}/relationships")
+        @self.router.post(
+            "/graphs/{collection_id}/relationships",
+            dependencies=[Depends(self.rate_limit_dependency)],
+        )
         @self.base_endpoint
         async def create_relationship(
             collection_id: UUID = Path(
@@ -739,7 +744,7 @@ class GraphRouter(BaseRouterV3):
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
-            return await self.services["kg"].create_relationship(
+            return await self.services.kg.create_relationship(
                 subject=subject,
                 subject_id=subject_id,
                 predicate=predicate,
@@ -753,6 +758,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{collection_id}/entities/{entity_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -826,7 +832,10 @@ class GraphRouter(BaseRouterV3):
                 raise R2RException("Entity not found", 404)
             return result[0][0]
 
-        @self.router.post("/graphs/{collection_id}/entities/{entity_id}")
+        @self.router.post(
+            "/graphs/{collection_id}/entities/{entity_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
+        )
         @self.base_endpoint
         async def update_entity(
             collection_id: UUID = Path(
@@ -865,7 +874,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services["kg"].update_entity(
+            return await self.services.kg.update_entity(
                 entity_id=entity_id,
                 name=name,
                 category=category,
@@ -875,6 +884,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.delete(
             "/graphs/{collection_id}/entities/{entity_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Remove an entity",
             openapi_extra={
                 "x-codeSamples": [
@@ -944,7 +954,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            await self.services["kg"].delete_entity(
+            await self.services.kg.delete_entity(
                 parent_id=collection_id,
                 entity_id=entity_id,
             )
@@ -953,6 +963,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{collection_id}/relationships",
+            dependencies=[Depends(self.rate_limit_dependency)],
             description="Lists all relationships in the graph with pagination support.",
             openapi_extra={
                 "x-codeSamples": [
@@ -1022,7 +1033,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            relationships, count = await self.services["kg"].get_relationships(
+            relationships, count = await self.services.kg.get_relationships(
                 parent_id=collection_id,
                 offset=offset,
                 limit=limit,
@@ -1034,6 +1045,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{collection_id}/relationships/{relationship_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             description="Retrieves a specific relationship by its ID.",
             openapi_extra={
                 "x-codeSamples": [
@@ -1111,7 +1123,8 @@ class GraphRouter(BaseRouterV3):
             return results[0][0]
 
         @self.router.post(
-            "/graphs/{collection_id}/relationships/{relationship_id}"
+            "/graphs/{collection_id}/relationships/{relationship_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
         )
         @self.base_endpoint
         async def update_relationship(
@@ -1165,7 +1178,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services["kg"].update_relationship(
+            return await self.services.kg.update_relationship(
                 relationship_id=relationship_id,
                 subject=subject,
                 subject_id=subject_id,
@@ -1179,6 +1192,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.delete(
             "/graphs/{collection_id}/relationships/{relationship_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             description="Removes a relationship from the graph.",
             openapi_extra={
                 "x-codeSamples": [
@@ -1247,7 +1261,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            await self.services["kg"].delete_relationship(
+            await self.services.kg.delete_relationship(
                 parent_id=collection_id,
                 relationship_id=relationship_id,
             )
@@ -1256,6 +1270,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.post(
             "/graphs/{collection_id}/communities",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Create a new community",
             openapi_extra={
                 "x-codeSamples": [
@@ -1353,7 +1368,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services["kg"].create_community(
+            return await self.services.kg.create_community(
                 parent_id=collection_id,
                 name=name,
                 summary=summary,
@@ -1364,6 +1379,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{collection_id}/communities",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="List communities",
             openapi_extra={
                 "x-codeSamples": [
@@ -1433,7 +1449,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            communities, count = await self.services["kg"].get_communities(
+            communities, count = await self.services.kg.get_communities(
                 parent_id=collection_id,
                 offset=offset,
                 limit=limit,
@@ -1445,6 +1461,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.get(
             "/graphs/{collection_id}/communities/{community_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Retrieve a community",
             openapi_extra={
                 "x-codeSamples": [
@@ -1507,14 +1524,14 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            results = await self.services[
-                "kg"
-            ].providers.database.graphs_handler.communities.get(
-                parent_id=collection_id,
-                community_ids=[community_id],
-                store_type="graphs",
-                offset=0,
-                limit=1,
+            results = (
+                await self.providers.database.graphs_handler.communities.get(
+                    parent_id=collection_id,
+                    community_ids=[community_id],
+                    store_type="graphs",
+                    offset=0,
+                    limit=1,
+                )
             )
             if len(results) == 0 or len(results[0]) == 0:
                 raise R2RException("Community not found", 404)
@@ -1522,6 +1539,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.delete(
             "/graphs/{collection_id}/communities/{community_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Delete a community",
             openapi_extra={
                 "x-codeSamples": [
@@ -1593,7 +1611,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            await self.services["kg"].delete_community(
+            await self.services.kg.delete_community(
                 parent_id=collection_id,
                 community_id=community_id,
             )
@@ -1601,6 +1619,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.post(
             "/graphs/{collection_id}/communities/{community_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Update community",
             openapi_extra={
                 "x-codeSamples": [
@@ -1684,7 +1703,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services["kg"].update_community(
+            return await self.services.kg.update_community(
                 community_id=community_id,
                 name=name,
                 summary=summary,
@@ -1695,6 +1714,7 @@ class GraphRouter(BaseRouterV3):
 
         @self.router.post(
             "/graphs/{collection_id}/pull",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Pull latest entities to the graph",
             openapi_extra={
                 "x-codeSamples": [
@@ -1781,7 +1801,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            list_graphs_response = await self.services["kg"].list_graphs(
+            list_graphs_response = await self.services.kg.list_graphs(
                 # user_ids=None,
                 graph_ids=[collection_id],
                 offset=0,

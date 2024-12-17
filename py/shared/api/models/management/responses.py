@@ -27,7 +27,6 @@ class LogEntry(BaseModel):
 
 class LogResponse(BaseModel):
     run_id: UUID
-    run_type: str
     entries: list[LogEntry]
     timestamp: Optional[datetime]
     user_id: Optional[UUID]

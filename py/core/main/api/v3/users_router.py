@@ -18,21 +18,21 @@ from core.base.api.models import (
     WrappedUsersResponse,
 )
 
+from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 class UsersRouter(BaseRouterV3):
-    def __init__(
-        self, providers, services, orchestration_provider=None, run_type=None
-    ):
-        super().__init__(providers, services, orchestration_provider, run_type)
+    def __init__(self, providers: R2RProviders, services: R2RServices):
+        super().__init__(providers, services)
 
     def _setup_routes(self):
 
         @self.router.post(
             "/users",
+            dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedUserResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -107,15 +107,11 @@ class UsersRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedUserResponse:
             """Register a new user with the given email and password."""
-            print("email = ", email)
-            print("making request.....")
-            registration_response = await self.services["auth"].register(
+            registration_response = await self.services.auth.register(
                 email, password
             )
-            print("registration_response = ", registration_response)
-
             if name or bio or profile_picture:
-                return await self.services["auth"].update_user(
+                return await self.services.auth.update_user(
                     user_id=registration_response.id,
                     name=name,
                     bio=bio,
@@ -127,6 +123,7 @@ class UsersRouter(BaseRouterV3):
         # TODO: deprecated, remove in next release
         @self.router.post(
             "/users/register",
+            dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedUserResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -191,10 +188,11 @@ class UsersRouter(BaseRouterV3):
             password: str = Body(..., description="User's password"),
         ):
             """Register a new user with the given email and password."""
-            return await self.services["auth"].register(email, password)
+            return await self.services.auth.register(email, password)
 
         @self.router.post(
             "/users/verify-email",
+            dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedGenericMessageResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -251,13 +249,14 @@ class UsersRouter(BaseRouterV3):
             ),
         ) -> WrappedGenericMessageResponse:
             """Verify a user's email address."""
-            result = await self.services["auth"].verify_email(
+            result = await self.services.auth.verify_email(
                 email, verification_code
             )
             return GenericMessageResponse(message=result["message"])  # type: ignore
 
         @self.router.post(
             "/users/login",
+            dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedTokenResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -310,7 +309,7 @@ class UsersRouter(BaseRouterV3):
         @self.base_endpoint
         async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             """Authenticate a user and provide access tokens."""
-            return await self.services["auth"].login(
+            return await self.services.auth.login(
                 form_data.username, form_data.password
             )
 
@@ -365,11 +364,12 @@ class UsersRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedGenericMessageResponse:
             """Log out the current user."""
-            result = await self.services["auth"].logout(token)
+            result = await self.services.auth.logout(token)
             return GenericMessageResponse(message=result["message"])  # type: ignore
 
         @self.router.post(
             "/users/refresh-token",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -420,13 +420,14 @@ class UsersRouter(BaseRouterV3):
             refresh_token: str = Body(..., description="Refresh token")
         ) -> WrappedTokenResponse:
             """Refresh the access token using a refresh token."""
-            result = await self.services["auth"].refresh_access_token(
+            result = await self.services.auth.refresh_access_token(
                 refresh_token=refresh_token
             )
             return result
 
         @self.router.post(
             "/users/change-password",
+            dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedGenericMessageResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -487,13 +488,14 @@ class UsersRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> GenericMessageResponse:
             """Change the authenticated user's password."""
-            result = await self.services["auth"].change_password(
+            result = await self.services.auth.change_password(
                 auth_user, current_password, new_password
             )
             return GenericMessageResponse(message=result["message"])  # type: ignore
 
         @self.router.post(
             "/users/request-password-reset",
+            dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedGenericMessageResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -546,11 +548,12 @@ class UsersRouter(BaseRouterV3):
             email: EmailStr = Body(..., description="User's email address")
         ) -> WrappedGenericMessageResponse:
             """Request a password reset for a user."""
-            result = await self.services["auth"].request_password_reset(email)
+            result = await self.services.auth.request_password_reset(email)
             return GenericMessageResponse(message=result["message"])  # type: ignore
 
         @self.router.post(
             "/users/reset-password",
+            dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedGenericMessageResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -607,13 +610,14 @@ class UsersRouter(BaseRouterV3):
             new_password: str = Body(..., description="New password"),
         ) -> WrappedGenericMessageResponse:
             """Reset a user's password using a reset token."""
-            result = await self.services["auth"].confirm_password_reset(
+            result = await self.services.auth.confirm_password_reset(
                 reset_token, new_password
             )
             return GenericMessageResponse(message=result["message"])  # type: ignore
 
         @self.router.get(
             "/users",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="List Users",
             openapi_extra={
                 "x-codeSamples": [
@@ -709,15 +713,18 @@ class UsersRouter(BaseRouterV3):
 
             user_uuids = [UUID(user_id) for user_id in ids]
 
-            users_overview_response = await self.services[
-                "management"
-            ].users_overview(user_ids=user_uuids, offset=offset, limit=limit)
+            users_overview_response = (
+                await self.services.management.users_overview(
+                    user_ids=user_uuids, offset=offset, limit=limit
+                )
+            )
             return users_overview_response["results"], {  # type: ignore
                 "total_entries": users_overview_response["total_entries"]
             }
 
         @self.router.get(
             "/users/me",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Get the Current User",
             openapi_extra={
                 "x-codeSamples": [
@@ -782,6 +789,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.get(
             "/users/{id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Get User Details",
             openapi_extra={
                 "x-codeSamples": [
@@ -856,18 +864,19 @@ class UsersRouter(BaseRouterV3):
                     403,
                 )
 
-            users_overview_response = await self.services[
-                "management"
-            ].users_overview(
-                offset=0,
-                limit=1,
-                user_ids=[id],
+            users_overview_response = (
+                await self.services.management.users_overview(
+                    offset=0,
+                    limit=1,
+                    user_ids=[id],
+                )
             )
 
             return users_overview_response["results"][0]
 
         @self.router.delete(
             "/users/{id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Delete User",
             openapi_extra={
                 "x-codeSamples": [
@@ -931,7 +940,7 @@ class UsersRouter(BaseRouterV3):
                     403,
                 )
 
-            await self.services["auth"].delete_user(
+            await self.services.auth.delete_user(
                 user_id=id,
                 password=password,
                 delete_vector_data=delete_vector_data,
@@ -941,6 +950,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.get(
             "/users/{id}/collections",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Get User Collections",
             openapi_extra={
                 "x-codeSamples": [
@@ -1029,12 +1039,12 @@ class UsersRouter(BaseRouterV3):
                     "The currently authenticated user does not have access to the specified collection.",
                     403,
                 )
-            user_collection_response = await self.services[
-                "management"
-            ].collections_overview(
-                offset=offset,
-                limit=limit,
-                user_ids=[id],
+            user_collection_response = (
+                await self.services.management.collections_overview(
+                    offset=offset,
+                    limit=limit,
+                    user_ids=[id],
+                )
             )
             return user_collection_response["results"], {  # type: ignore
                 "total_entries": user_collection_response["total_entries"]
@@ -1042,6 +1052,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users/{id}/collections/{collection_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Add User to Collection",
             response_model=WrappedBooleanResponse,
             openapi_extra={
@@ -1119,13 +1130,14 @@ class UsersRouter(BaseRouterV3):
                 )
 
             # TODO - Do we need a check on user access to the collection?
-            await self.services["management"].add_user_to_collection(  # type: ignore
+            await self.services.management.add_user_to_collection(  # type: ignore
                 id, collection_id
             )
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.delete(
             "/users/{id}/collections/{collection_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Remove User from Collection",
             openapi_extra={
                 "x-codeSamples": [
@@ -1206,13 +1218,14 @@ class UsersRouter(BaseRouterV3):
                 )
 
             # TODO - Do we need a check on user access to the collection?
-            await self.services["management"].remove_user_from_collection(  # type: ignore
+            await self.services.management.remove_user_from_collection(  # type: ignore
                 id, collection_id
             )
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
             "/users/{id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
             summary="Update User",
             openapi_extra={
                 "x-codeSamples": [
@@ -1303,7 +1316,7 @@ class UsersRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services["auth"].update_user(
+            return await self.services.auth.update_user(
                 user_id=id,
                 email=email,
                 is_superuser=is_superuser,

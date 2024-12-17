@@ -6,6 +6,7 @@ from .database import (
     DatabaseConnectionManager,
     DatabaseProvider,
     Handler,
+    LimitSettings,
     PostgresConfigurationSettings,
 )
 from .email import EmailConfig, EmailProvider
@@ -41,6 +42,7 @@ __all__ = [
     # Database providers
     "DatabaseConnectionManager",
     "DatabaseConfig",
+    "LimitSettings",
     "PostgresConfigurationSettings",
     "DatabaseProvider",
     "Handler",

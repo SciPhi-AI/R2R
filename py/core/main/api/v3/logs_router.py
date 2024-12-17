@@ -4,30 +4,21 @@ import logging
 from pathlib import Path
 
 import aiofiles
-from fastapi import WebSocket
+from fastapi import Depends, WebSocket
 from fastapi.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from core.base.logger.base import RunType
-from core.providers import (
-    HatchetOrchestrationProvider,
-    SimpleOrchestrationProvider,
-)
-
+from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
 
 
 class LogsRouter(BaseRouterV3):
     def __init__(
         self,
-        providers,
-        services,
-        orchestration_provider: (
-            HatchetOrchestrationProvider | SimpleOrchestrationProvider
-        ),
-        run_type: RunType = RunType.UNSPECIFIED,
+        providers: R2RProviders,
+        services: R2RServices,
     ):
-        super().__init__(providers, services, orchestration_provider, run_type)
+        super().__init__(providers, services)
         CURRENT_DIR = Path(__file__).resolve().parent
         TEMPLATES_DIR = CURRENT_DIR.parent / "templates"
         self.templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
@@ -73,7 +64,10 @@ class LogsRouter(BaseRouterV3):
             return f"Error accessing log file: {str(e)}"
 
     def _setup_routes(self):
-        @self.router.websocket("/logs/stream")
+        @self.router.websocket(
+            "/logs/stream",
+            dependencies=[Depends(self.rate_limit_dependency)],
+        )
         async def stream_logs(websocket: WebSocket):
             await websocket.accept()
             try:
@@ -94,7 +88,10 @@ class LogsRouter(BaseRouterV3):
                 with contextlib.suppress(Exception):
                     await websocket.close()
 
-        @self.router.get("/logs/viewer")
+        @self.router.get(
+            "/logs/viewer",
+            dependencies=[Depends(self.rate_limit_dependency)],
+        )
         async def get_log_viewer(request: Request):
             return self.templates.TemplateResponse(
                 "log_viewer.html", {"request": request}

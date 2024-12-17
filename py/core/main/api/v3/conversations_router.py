@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import Message, R2RException, RunType
+from core.base import Message, R2RException
 from core.base.api.models import (
     GenericBooleanResponse,
     WrappedBooleanResponse,
@@ -19,6 +19,7 @@ from core.providers import (
     SimpleOrchestrationProvider,
 )
 
+from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -27,19 +28,16 @@ logger = logging.getLogger()
 class ConversationsRouter(BaseRouterV3):
     def __init__(
         self,
-        providers,
-        services,
-        orchestration_provider: (
-            HatchetOrchestrationProvider | SimpleOrchestrationProvider
-        ),
-        run_type: RunType = RunType.MANAGEMENT,
+        providers: R2RProviders,
+        services: R2RServices,
     ):
-        super().__init__(providers, services, orchestration_provider, run_type)
+        super().__init__(providers, services)
 
     def _setup_routes(self):
         @self.router.post(
             "/conversations",
             summary="Create a new conversation",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -100,11 +98,12 @@ class ConversationsRouter(BaseRouterV3):
 
             This endpoint initializes a new conversation for the authenticated user.
             """
-            return await self.services["management"].create_conversation()
+            return await self.services.management.create_conversation()
 
         @self.router.get(
             "/conversations",
             summary="List conversations",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -187,12 +186,12 @@ class ConversationsRouter(BaseRouterV3):
                 UUID(conversation_id) for conversation_id in ids
             ]
 
-            conversations_response = await self.services[
-                "management"
-            ].conversations_overview(
-                conversation_ids=conversation_uuids,
-                offset=offset,
-                limit=limit,
+            conversations_response = (
+                await self.services.management.conversations_overview(
+                    conversation_ids=conversation_uuids,
+                    offset=offset,
+                    limit=limit,
+                )
             )
             return conversations_response["results"], {  # type: ignore
                 "total_entries": conversations_response["total_entries"]
@@ -201,6 +200,7 @@ class ConversationsRouter(BaseRouterV3):
         @self.router.get(
             "/conversations/{id}",
             summary="Get conversation details",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -268,7 +268,7 @@ class ConversationsRouter(BaseRouterV3):
 
             This endpoint retrieves detailed information about a single conversation identified by its UUID.
             """
-            conversation = await self.services["management"].get_conversation(
+            conversation = await self.services.management.get_conversation(
                 str(id)
             )
             return conversation
@@ -276,6 +276,7 @@ class ConversationsRouter(BaseRouterV3):
         @self.router.delete(
             "/conversations/{id}",
             summary="Delete conversation",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -342,12 +343,13 @@ class ConversationsRouter(BaseRouterV3):
 
             This endpoint deletes a conversation identified by its UUID.
             """
-            await self.services["management"].delete_conversation(str(id))
+            await self.services.management.delete_conversation(str(id))
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
             "/conversations/{id}/messages",
             summary="Add message to conversation",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -433,7 +435,7 @@ class ConversationsRouter(BaseRouterV3):
             if role not in ["user", "assistant", "system"]:
                 raise R2RException("Invalid role", status_code=400)
             message = Message(role=role, content=content)
-            return await self.services["management"].add_message(
+            return await self.services.management.add_message(
                 str(id),
                 message,
                 parent_id,
@@ -443,6 +445,7 @@ class ConversationsRouter(BaseRouterV3):
         @self.router.post(
             "/conversations/{id}/messages/{message_id}",
             summary="Update message in conversation",
+            dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -517,7 +520,7 @@ class ConversationsRouter(BaseRouterV3):
 
             This endpoint updates the content of an existing message in a conversation.
             """
-            messge_response = await self.services["management"].edit_message(
+            messge_response = await self.services.management.edit_message(
                 message_id, content, metadata
             )
             return messge_response

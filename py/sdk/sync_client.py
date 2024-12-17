@@ -87,6 +87,7 @@ class R2RClient(R2RAsyncClient):
             self.prompts,
             self.retrieval,
             self.users,
+            self.system,
         ]
 
         for sdk_obj in sdk_objects:

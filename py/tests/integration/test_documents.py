@@ -6,39 +6,6 @@ import pytest
 from r2r import R2RClient, R2RException
 
 
-@pytest.fixture(scope="session")
-def config():
-    class TestConfig:
-        base_url = "http://localhost:7272"
-        superuser_email = "admin@example.com"
-        superuser_password = "change_me_immediately"
-
-    return TestConfig()
-
-
-@pytest.fixture(scope="session")
-def client(config):
-    """Create a client instance and log in as a superuser."""
-    client = R2RClient(config.base_url)
-    client.users.login(config.superuser_email, config.superuser_password)
-    return client
-
-
-@pytest.fixture
-def test_document(client):
-    """Create and yield a test document, then clean up."""
-    resp = client.documents.create(
-        raw_text="Temporary doc", run_with_orchestration=False
-    )
-    document_id = resp["results"]["document_id"]
-    yield document_id
-    # Cleanup
-    try:
-        client.documents.delete(id=document_id)
-    except R2RException:
-        pass
-
-
 def test_create_document_with_file(client):
     resp = client.documents.create(
         file_path="core/examples/data/aristotle.txt",
@@ -172,6 +139,7 @@ def test_list_document_collections(client, test_document):
 #     reason="Requires actual entity extraction logic implemented and superuser access"
 # )
 def test_extract_document(client, test_document):
+    time.sleep(10)
     run_resp = client.documents.extract(
         id=test_document, run_type="run", run_with_orchestration=False
     )["results"]
@@ -216,15 +184,20 @@ def test_search_documents(client, test_document):
     ), "Search results not a list"
 
 
-def test_list_document_chunks(client):
-    resp = client.documents.create(
+def test_list_document_chunks(mutable_client):
+    temp_user = f"{uuid.uuid4()}@me.com"
+    mutable_client.users.register(temp_user, "password")
+    mutable_client.users.login(temp_user, "password")
+
+    resp = mutable_client.documents.create(
         chunks=["C1", "C2", "C3"], run_with_orchestration=False
     )["results"]
     doc_id = resp["document_id"]
-    chunks_resp = client.documents.list_chunks(id=doc_id)
+    chunks_resp = mutable_client.documents.list_chunks(id=doc_id)
     results = chunks_resp["results"]
     assert len(results) == 3, "Expected 3 chunks"
-    client.documents.delete(id=doc_id)
+    mutable_client.documents.delete(id=doc_id)
+    mutable_client.users.logout()
 
 
 def test_search_documents_extended(client):
@@ -298,21 +271,26 @@ def test_access_document_not_owned(client):
     client.documents.delete(id=doc_id)
 
 
-def test_list_documents_with_pagination(client):
+def test_list_documents_with_pagination(mutable_client):
+    temp_user = f"{uuid.uuid4()}@me.com"
+    mutable_client.users.register(temp_user, "password")
+    mutable_client.users.login(temp_user, "password")
+
+
     doc_ids = []
-    for i in range(5):
-        resp = client.documents.create(
+    for i in range(3):
+        resp = mutable_client.documents.create(
             raw_text=f"Doc {i}", run_with_orchestration=False
         )["results"]
         doc_ids.append(resp["document_id"])
 
-    listed = client.documents.list(limit=2, offset=0)
+    listed = mutable_client.documents.list(limit=2, offset=0)
     results = listed["results"]
     assert len(results) == 2, "Expected 2 results for paginated listing"
 
     # Cleanup
     for d in doc_ids:
-        client.documents.delete(id=d)
+        mutable_client.documents.delete(id=d)
 
 
 def test_ingest_invalid_chunks(client):
