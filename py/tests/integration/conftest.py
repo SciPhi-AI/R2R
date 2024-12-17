@@ -23,11 +23,19 @@ def config() -> TestConfig:
     return TestConfig()
 
 
-@pytest.fixture  # scope="session")
+@pytest.fixture(scope="session")
 async def client(config) -> AsyncGenerator[R2RClient, None]:
     """Create a shared client instance for the test session."""
     client = R2RClient(config.base_url)
     yield client
+    # Session cleanup if needed
+
+
+@pytest.fixture  # scope="session")
+def mutable_client(config) -> R2RClient:
+    """Create a shared client instance for the test session."""
+    client = R2RClient(config.base_url)
+    return client  # a client for logging in and what-not
     # Session cleanup if needed
 
 
@@ -75,10 +83,8 @@ def client(config):
 
 
 @pytest.fixture(scope="session")
-def test_document(config):
+def test_document(client):
     """Create and yield a test document, then clean up."""
-    client = R2RClient(config.base_url)
-    client.users.login(config.superuser_email, config.superuser_password)
 
     random_suffix = str(uuid.uuid4())
     doc_resp = client.documents.create(

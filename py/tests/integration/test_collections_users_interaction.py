@@ -4,31 +4,32 @@ import pytest
 
 from r2r import R2RClient, R2RException
 
-
-@pytest.fixture  # (scope="session")
-def superuser_client(config):
-    """A client logged in as a superuser."""
-    client = R2RClient(config.base_url)
-    client.users.login(config.superuser_email, config.superuser_password)
-    yield client
+# @pytest.fixture  # (scope="session")
+# def client(config):
+#     """A client logged in as a superuser."""
+#     client = R2RClient(config.base_url)
+#     client.users.login(config.superuser_email, config.superuser_password)
+#     yield client
 
 
 @pytest.fixture
-def normal_user_client(config):
+def normal_user_client(mutable_client):
     """Create a normal user and log in with that user."""
-    client = R2RClient(config.base_url)
+    # client = R2RClient(config.base_url)
 
     email = f"normal_{uuid.uuid4()}@test.com"
     password = "normal_password"
-    user_resp = client.users.create(email, password)
-    client.users.login(email, password)
+    user_resp = mutable_client.users.create(email, password)
+    mutable_client.users.login(email, password)
 
-    yield client
+    yield mutable_client
 
     # Cleanup: Try deleting the normal user if exists
     try:
-        client.users.login(email, password)
-        client.users.delete(client.users.me()["results"]["id"], password)
+        mutable_client.users.login(email, password)
+        mutable_client.users.delete(
+            mutable_client.users.me()["results"]["id"], password
+        )
     except R2RException:
         pass
 
@@ -69,9 +70,9 @@ def user_owned_collection(normal_user_client):
 
 
 @pytest.fixture
-def superuser_owned_collection(superuser_client):
+def superuser_owned_collection(client):
     """Create a collection owned by the superuser."""
-    resp = superuser_client.collections.create(
+    resp = client.collections.create(
         name="Superuser Owned Collection",
         description="A collection owned by superuser",
     )
@@ -79,7 +80,7 @@ def superuser_owned_collection(superuser_client):
     yield coll_id
     # Cleanup
     try:
-        superuser_client.collections.delete(coll_id)
+        client.collections.delete(coll_id)
     except R2RException:
         pass
 
@@ -109,7 +110,7 @@ def test_collection_owner_can_view_collection(
 
 
 def test_collection_member_can_view_collection(
-    superuser_client, normal_user_client, user_owned_collection
+    client, normal_user_client, user_owned_collection
 ):
     """A user added to a collection should be able to view it."""
     # Create another user and add them to the user's collection
@@ -235,20 +236,16 @@ def test_owner_can_remove_member_from_collection(
     ), "Removed user still has access after removal."
 
 
-def test_superuser_can_access_any_collection(
-    superuser_client, user_owned_collection
-):
+def test_superuser_can_access_any_collection(client, user_owned_collection):
     """A superuser should be able to view and edit any collection."""
     # Superuser can view
-    coll = superuser_client.collections.retrieve(user_owned_collection)[
-        "results"
-    ]
+    coll = client.collections.retrieve(user_owned_collection)["results"]
     assert (
         coll["id"] == user_owned_collection
     ), "Superuser cannot view a user collection."
 
     # Superuser can also update
-    updated = superuser_client.collections.update(
+    updated = client.collections.update(
         user_owned_collection, name="Superuser Edit"
     )["results"]
     assert (
@@ -273,7 +270,7 @@ def test_unauthenticated_cannot_access_collections(
 
 
 def test_user_cannot_add_document_to_collection_they_cannot_edit(
-    superuser_client, normal_user_client
+    client, normal_user_client
 ):
     """A normal user who is just a member (not owner) of a collection should not be able to add documents."""
     # Create a collection as normal user (owner)
@@ -285,7 +282,7 @@ def test_user_cannot_add_document_to_collection_they_cannot_edit(
     # Create a second user and add them as member
     second_email = f"second_{uuid.uuid4()}@test.com"
     second_password = "pwd"
-    superuser_client.users.logout()
+    client.users.logout()
     second_client = R2RClient(normal_user_client.base_url)
     second_client.users.create(second_email, second_password)
     second_client.users.login(second_email, second_password)
@@ -391,13 +388,13 @@ def test_normal_user_cannot_view_other_users_if_not_superuser(
 
 
 def test_normal_user_cannot_update_other_users_details(
-    normal_user_client, superuser_client
+    normal_user_client, client
 ):
     """A normal user tries to update another normal user's details."""
     # Create another normal user
     email = f"other_normal_{uuid.uuid4()}@test.com"
     password = "pwd123"
-    superuser_client.users.logout()
+    client.users.logout()
     another_client = R2RClient(normal_user_client.base_url)
     another_client.users.create(email, password)
     another_client.users.login(email, password)

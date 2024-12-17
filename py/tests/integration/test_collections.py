@@ -6,11 +6,8 @@ from r2r import R2RClient, R2RException
 
 
 @pytest.fixture(scope="session")
-def test_document_2(config):
+def test_document_2(client):
     """Create and yield a test document, then clean up."""
-    client = R2RClient(config.base_url)
-    client.users.login(config.superuser_email, config.superuser_password)
-
     doc_resp = client.documents.create(
         raw_text="Another test doc for collections",
         run_with_orchestration=False,
@@ -104,33 +101,33 @@ def test_remove_document_from_collection(
     assert not found, "Document still present in collection after removal"
 
 
-def test_remove_non_member_user_from_collection(client):
+def test_remove_non_member_user_from_collection(mutable_client):
     # Create a user and a collection
     user_email = f"user_{uuid.uuid4()}@test.com"
     password = "pwd123"
-    client.users.create(user_email, password)
-    client.users.login(user_email, password)
+    mutable_client.users.create(user_email, password)
+    mutable_client.users.login(user_email, password)
 
     # Create a collection by the same user
-    collection_resp = client.collections.create(name="User Owned Collection")[
-        "results"
-    ]
+    collection_resp = mutable_client.collections.create(
+        name="User Owned Collection"
+    )["results"]
     collection_id = collection_resp["id"]
-    client.users.logout()
+    mutable_client.users.logout()
 
     # Create another user who will not be added to the collection
     another_user_email = f"user2_{uuid.uuid4()}@test.com"
-    client.users.create(another_user_email, password)
-    client.users.login(another_user_email, password)
-    another_user_id = client.users.me()["results"]["id"]
-    client.users.logout()
+    mutable_client.users.create(another_user_email, password)
+    mutable_client.users.login(another_user_email, password)
+    another_user_id = mutable_client.users.me()["results"]["id"]
+    mutable_client.users.logout()
 
     # Re-login as collection owner
-    client.users.login(user_email, password)
+    mutable_client.users.login(user_email, password)
 
     # Attempt to remove the other user (who was never added)
     with pytest.raises(R2RException) as exc_info:
-        client.collections.remove_user(collection_id, another_user_id)
+        mutable_client.collections.remove_user(collection_id, another_user_id)
 
     assert exc_info.value.status_code in [
         400,
@@ -138,7 +135,7 @@ def test_remove_non_member_user_from_collection(client):
     ], "Wrong error code for removing non-member user"
 
     # Cleanup
-    client.collections.delete(collection_id)
+    mutable_client.collections.delete(collection_id)
 
 
 def test_delete_collection(client):
@@ -155,20 +152,22 @@ def test_delete_collection(client):
     ), "Wrong error code retrieving deleted collection"
 
 
-def test_add_user_to_non_existent_collection(client):
+def test_add_user_to_non_existent_collection(mutable_client):
     # Create a regular user
     user_email = f"test_user_{uuid.uuid4()}@test.com"
     user_password = "test_password"
-    client.users.create(user_email, user_password)
-    client.users.login(user_email, user_password)
-    user_id = client.users.me()["results"]["id"]
-    client.users.logout()
+    mutable_client.users.create(user_email, user_password)
+    mutable_client.users.login(user_email, user_password)
+    user_id = mutable_client.users.me()["results"]["id"]
+    mutable_client.users.logout()
 
     # Re-login as superuser to try adding user to a non-existent collection
     # (Assumes superuser credentials are already in the client fixture)
     fake_collection_id = str(uuid.uuid4())  # Non-existent collection ID
     with pytest.raises(R2RException) as exc_info:
-        result = client.collections.add_user(fake_collection_id, user_id)
+        result = mutable_client.collections.add_user(
+            fake_collection_id, user_id
+        )
         print("result = ", result)
     assert (
         exc_info.value.status_code == 404
