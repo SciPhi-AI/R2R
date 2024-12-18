@@ -58,7 +58,7 @@ async def retrieve(ctx: click.Context, name, inputs, prompt_override):
 @click.argument("name", required=True, type=str)
 @pass_context
 async def delete(ctx: click.Context, name):
-    """Delete an index by name."""
+    """Delete a prompt by name."""
     client: R2RAsyncClient = ctx.obj
 
     try:
