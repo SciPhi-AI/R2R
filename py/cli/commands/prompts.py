@@ -15,14 +15,14 @@ def prompts():
 
 @prompts.command()
 @pass_context
-async def list(ctx):
+async def list(ctx: click.Context):
     """Get an overview of prompts."""
     client: R2RAsyncClient = ctx.obj
 
     with timer():
         response = await client.prompts.list()
 
-    for prompt in response["results"]:
+    for prompt in response["results"]:  # type: ignore
         click.echo(json.dumps(prompt, indent=2))
 
 
@@ -31,7 +31,7 @@ async def list(ctx):
 @click.option("--inputs", default=None, type=str)
 @click.option("--prompt-override", default=None, type=str)
 @pass_context
-async def retrieve(ctx, name, inputs, prompt_override):
+async def retrieve(ctx: click.Context, name, inputs, prompt_override):
     """Retrieve an prompts by name."""
     client: R2RAsyncClient = ctx.obj
 
@@ -48,7 +48,7 @@ async def retrieve(ctx, name, inputs, prompt_override):
 @prompts.command()
 @click.argument("name", required=True, type=str)
 @pass_context
-async def delete(ctx, name):
+async def delete(ctx: click.Context, name):
     """Delete an index by name."""
     client: R2RAsyncClient = ctx.obj
 

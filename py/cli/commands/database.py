@@ -104,11 +104,10 @@ async def upgrade(schema, revision):
 @click.option("--revision", help="Downgrade to a specific revision")
 async def downgrade(schema, revision):
     """Downgrade database schema to the previous revision or a specific revision."""
-    if not revision:
-        if not click.confirm(
-            "No revision specified. This will downgrade the database by one revision. Continue?"
-        ):
-            return
+    if not revision and not click.confirm(
+        "No revision specified. This will downgrade the database by one revision. Continue?"
+    ):
+        return
 
     try:
         db_url = get_database_url_from_env(log=False)

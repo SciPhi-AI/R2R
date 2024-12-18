@@ -17,7 +17,7 @@ def collections():
 @click.argument("name", required=True, type=str)
 @click.option("--description", type=str)
 @pass_context
-async def create(ctx, name, description):
+async def create(ctx: click.Context, name, description):
     """Create a collection."""
     client: R2RAsyncClient = ctx.obj
 
@@ -43,7 +43,7 @@ async def create(ctx, name, description):
     help="The maximum number of nodes to return. Defaults to 100.",
 )
 @pass_context
-async def list(ctx, ids, offset, limit):
+async def list(ctx: click.Context, ids, offset, limit):
     """Get an overview of collections."""
     client: R2RAsyncClient = ctx.obj
     ids = list(ids) if ids else None
@@ -55,14 +55,14 @@ async def list(ctx, ids, offset, limit):
             limit=limit,
         )
 
-    for user in response["results"]:
+    for user in response["results"]:  # type: ignore
         click.echo(json.dumps(user, indent=2))
 
 
 @collections.command()
 @click.argument("id", required=True, type=str)
 @pass_context
-async def retrieve(ctx, id):
+async def retrieve(ctx: click.Context, id):
     """Retrieve a collection by ID."""
     client: R2RAsyncClient = ctx.obj
 
@@ -75,7 +75,7 @@ async def retrieve(ctx, id):
 @collections.command()
 @click.argument("id", required=True, type=str)
 @pass_context
-async def delete(ctx, id):
+async def delete(ctx: click.Context, id):
     """Delete a collection by ID."""
     client: R2RAsyncClient = ctx.obj
 
@@ -98,7 +98,7 @@ async def delete(ctx, id):
     help="The maximum number of nodes to return. Defaults to 100.",
 )
 @pass_context
-async def list_documents(ctx, id, offset, limit):
+async def list_documents(ctx: click.Context, id, offset, limit):
     """Get an overview of collections."""
     client: R2RAsyncClient = ctx.obj
 
@@ -109,7 +109,7 @@ async def list_documents(ctx, id, offset, limit):
             limit=limit,
         )
 
-    for user in response["results"]:
+    for user in response["results"]:  # type: ignore
         click.echo(json.dumps(user, indent=2))
 
 
@@ -126,7 +126,7 @@ async def list_documents(ctx, id, offset, limit):
     help="The maximum number of nodes to return. Defaults to 100.",
 )
 @pass_context
-async def list_users(ctx, id, offset, limit):
+async def list_users(ctx: click.Context, id, offset, limit):
     """Get an overview of collections."""
     client: R2RAsyncClient = ctx.obj
 
@@ -137,5 +137,5 @@ async def list_users(ctx, id, offset, limit):
             limit=limit,
         )
 
-    for user in response["results"]:
+    for user in response["results"]:  # type: ignore
         click.echo(json.dumps(user, indent=2))

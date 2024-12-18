@@ -52,7 +52,7 @@ def retrieval():
     help="Use search over document chunks?",
 )
 @pass_context
-async def search(ctx, query, **kwargs):
+async def search(ctx: click.Context, query, **kwargs):
     """Perform a search query."""
     client: R2RAsyncClient = ctx.obj
     search_settings = {
@@ -88,17 +88,17 @@ async def search(ctx, query, **kwargs):
         if isinstance(results, dict) and "results" in results:
             results = results["results"]
 
-        if "chunk_search_results" in results:
+        if "chunk_search_results" in results:  # type: ignore
             click.echo("Vector search results:")
-            for result in results["chunk_search_results"]:
+            for result in results["chunk_search_results"]:  # type: ignore
                 click.echo(json.dumps(result, indent=2))
 
         if (
-            "graph_search_results" in results
-            and results["graph_search_results"]
+            "graph_search_results" in results  # type: ignore
+            and results["graph_search_results"]  # type: ignore
         ):
             click.echo("KG search results:")
-            for result in results["graph_search_results"]:
+            for result in results["graph_search_results"]:  # type: ignore
                 click.echo(json.dumps(result, indent=2))
 
 
@@ -142,7 +142,7 @@ async def search(ctx, query, **kwargs):
 @click.option("--stream", is_flag=True, help="Stream the RAG response")
 @click.option("--rag-model", default=None, help="Model for RAG")
 @pass_context
-async def rag(ctx, query, **kwargs):
+async def rag(ctx: click.Context, query, **kwargs):
     """Perform a RAG query."""
     client: R2RAsyncClient = ctx.obj
     rag_generation_config = {
@@ -182,8 +182,8 @@ async def rag(ctx, query, **kwargs):
         )
 
         if rag_generation_config.get("stream"):
-            async for chunk in response:
+            async for chunk in response:  # type: ignore
                 click.echo(chunk, nl=False)
             click.echo()
         else:
-            click.echo(json.dumps(response["results"]["completion"], indent=2))
+            click.echo(json.dumps(response["results"]["completion"], indent=2))  # type: ignore

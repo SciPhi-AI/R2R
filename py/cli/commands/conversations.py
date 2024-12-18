@@ -15,7 +15,7 @@ def conversations():
 
 @conversations.command()
 @pass_context
-async def create(ctx):
+async def create(ctx: click.Context):
     """Create a conversation."""
     client: R2RAsyncClient = ctx.obj
 
@@ -38,7 +38,7 @@ async def create(ctx):
     help="The maximum number of nodes to return. Defaults to 100.",
 )
 @pass_context
-async def list(ctx, ids, offset, limit):
+async def list(ctx: click.Context, ids, offset, limit):
     """Get an overview of conversations."""
     client: R2RAsyncClient = ctx.obj
     ids = list(ids) if ids else None
@@ -50,14 +50,14 @@ async def list(ctx, ids, offset, limit):
             limit=limit,
         )
 
-    for user in response["results"]:
+    for user in response["results"]:  # type: ignore
         click.echo(json.dumps(user, indent=2))
 
 
 @conversations.command()
 @click.argument("id", required=True, type=str)
 @pass_context
-async def retrieve(ctx, id):
+async def retrieve(ctx: click.Context, id):
     """Retrieve a collection by ID."""
     client: R2RAsyncClient = ctx.obj
 
@@ -70,7 +70,7 @@ async def retrieve(ctx, id):
 @conversations.command()
 @click.argument("id", required=True, type=str)
 @pass_context
-async def delete(ctx, id):
+async def delete(ctx: click.Context, id):
     """Delete a collection by ID."""
     client: R2RAsyncClient = ctx.obj
 
@@ -78,22 +78,6 @@ async def delete(ctx, id):
         response = await client.conversations.delete(id=id)
 
     click.echo(json.dumps(response, indent=2))
-
-
-@conversations.command()
-@click.argument("id", required=True, type=str)
-@pass_context
-async def list_branches(ctx, id):
-    """List all branches in a conversation."""
-    client: R2RAsyncClient = ctx.obj
-
-    with timer():
-        response = await client.conversations.list_branches(
-            id=id,
-        )
-
-    for user in response["results"]:
-        click.echo(json.dumps(user, indent=2))
 
 
 @conversations.command()
@@ -109,7 +93,7 @@ async def list_branches(ctx, id):
     help="The maximum number of nodes to return. Defaults to 100.",
 )
 @pass_context
-async def list_users(ctx, id, offset, limit):
+async def list_users(ctx: click.Context, id, offset, limit):
     """Get an overview of collections."""
     client: R2RAsyncClient = ctx.obj
 
@@ -120,5 +104,5 @@ async def list_users(ctx, id, offset, limit):
             limit=limit,
         )
 
-    for user in response["results"]:
+    for user in response["results"]:  # type: ignore
         click.echo(json.dumps(user, indent=2))

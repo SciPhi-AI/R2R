@@ -2,7 +2,10 @@ import json
 import os
 import tempfile
 import uuid
+from typing import Any, Sequence, Optional
+from builtins import list as _list
 from urllib.parse import urlparse
+from uuid import UUID
 
 import asyncclick as click
 import requests
@@ -31,15 +34,23 @@ def documents():
     "--run-without-orchestration", is_flag=True, help="Run with orchestration"
 )
 @pass_context
-async def create(ctx, file_paths, ids, metadatas, run_without_orchestration):
+async def create(
+    ctx: click.Context,
+    file_paths: tuple[str, ...],
+    ids: Optional[tuple[str, ...]] = None,  # Make optional with default None
+    metadatas: Optional[
+        Sequence[dict[str, Any]]
+    ] = None,  # Use Sequence for more flexibility
+    run_without_orchestration: bool = False,  # Add default value
+):
     """Ingest files into R2R."""
     client: R2RAsyncClient = ctx.obj
     run_with_orchestration = not run_without_orchestration
-    responses = []
+    responses: _list[dict[str, Any]] = []
 
     for idx, file_path in enumerate(file_paths):
         with timer():
-            current_id = [ids[idx]] if ids and idx < len(ids) else None
+            current_id = ids[idx] if ids and idx < len(ids) else None
             current_metadata = (
                 metadatas[idx] if metadatas and idx < len(metadatas) else None
             )
@@ -53,7 +64,7 @@ async def create(ctx, file_paths, ids, metadatas, run_without_orchestration):
                 id=current_id,
                 run_with_orchestration=run_with_orchestration,
             )
-            responses.append(response)
+            responses.append(response)  # type: ignore
             click.echo(json.dumps(response, indent=2))
             click.echo("-" * 40)
 
@@ -61,40 +72,9 @@ async def create(ctx, file_paths, ids, metadatas, run_without_orchestration):
 
 
 @documents.command()
-@click.argument("file_path", required=True, type=click.Path(exists=True))
-@click.option("--id", required=True, help="Existing document ID to update")
-@click.option(
-    "--metadata", type=JSON, help="Metadatas for ingestion as a JSON string"
-)
-@click.option(
-    "--run-without-orchestration", is_flag=True, help="Run with orchestration"
-)
-@pass_context
-async def update(ctx, file_path, id, metadata, run_without_orchestration):
-    """Update an existing file in R2R."""
-    client: R2RAsyncClient = ctx.obj
-    run_with_orchestration = not run_without_orchestration
-    responses = []
-
-    with timer():
-        click.echo(f"Updating file {id}: {file_path}")
-        response = await client.documents.update(
-            file_path=file_path,
-            metadata=metadata,
-            id=id,
-            run_with_orchestration=run_with_orchestration,
-        )
-        responses.append(response)
-        click.echo(json.dumps(response, indent=2))
-        click.echo("-" * 40)
-
-    click.echo(f"Updated file {id} file successfully.")
-
-
-@documents.command()
 @click.argument("id", required=True, type=str)
 @pass_context
-async def retrieve(ctx, id):
+async def retrieve(ctx: click.Context, id: UUID):
     """Retrieve a document by ID."""
     client: R2RAsyncClient = ctx.obj
 
@@ -107,7 +87,7 @@ async def retrieve(ctx, id):
 @documents.command()
 @click.argument("id", required=True, type=str)
 @pass_context
-async def delete(ctx, id):
+async def delete(ctx: click.Context, id):
     """Delete a document by ID."""
     client: R2RAsyncClient = ctx.obj
 
@@ -130,7 +110,7 @@ async def delete(ctx, id):
     help="The maximum number of nodes to return. Defaults to 100.",
 )
 @pass_context
-async def list_chunks(ctx, id, offset, limit):
+async def list_chunks(ctx: click.Context, id, offset, limit):
     """List collections for a specific document."""
     client: R2RAsyncClient = ctx.obj
 
@@ -157,7 +137,7 @@ async def list_chunks(ctx, id, offset, limit):
     help="The maximum number of nodes to return. Defaults to 100.",
 )
 @pass_context
-async def list_collections(ctx, id, offset, limit):
+async def list_collections(ctx: click.Context, id, offset, limit):
     """List collections for a specific document."""
     client: R2RAsyncClient = ctx.obj
 
@@ -228,7 +208,9 @@ async def ingest_files_from_urls(client, urls):
     help="Run without orchestration",
 )
 @pass_context
-async def extract(ctx, id, run_type, settings, run_without_orchestration):
+async def extract(
+    ctx: click.Context, id, run_type, settings, run_without_orchestration
+):
     """Extract entities and relationships from a document."""
     client: R2RAsyncClient = ctx.obj
     run_with_orchestration = not run_without_orchestration
@@ -262,7 +244,9 @@ async def extract(ctx, id, run_type, settings, run_without_orchestration):
     help="Include embeddings in response",
 )
 @pass_context
-async def list_entities(ctx, id, offset, limit, include_embeddings):
+async def list_entities(
+    ctx: click.Context, id, offset, limit, include_embeddings
+):
     """List entities extracted from a document."""
     client: R2RAsyncClient = ctx.obj
 
@@ -301,7 +285,7 @@ async def list_entities(ctx, id, offset, limit, include_embeddings):
 )
 @pass_context
 async def list_relationships(
-    ctx, id, offset, limit, entity_names, relationship_types
+    ctx: click.Context, id, offset, limit, entity_names, relationship_types
 ):
     """List relationships extracted from a document."""
     client: R2RAsyncClient = ctx.obj
@@ -328,9 +312,11 @@ async def list_relationships(
     "--v3", is_flag=True, help="use aristotle_v3.txt (a larger file)"
 )
 @pass_context
-async def create_sample(ctx, v2=True, v3=False):
+async def create_sample(
+    ctx: click.Context, v2: bool = True, v3: bool = False
+) -> None:
     """Ingest the first sample file into R2R."""
-    sample_file_url = f"https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle.txt"
+    sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle.txt"
     client: R2RAsyncClient = ctx.obj
 
     with timer():
@@ -342,7 +328,7 @@ async def create_sample(ctx, v2=True, v3=False):
 
 @documents.command()
 @pass_context
-async def create_samples(ctx):
+async def create_samples(ctx: click.Context) -> None:
     """Ingest multiple sample files into R2R."""
     client: R2RAsyncClient = ctx.obj
     urls = [
@@ -377,7 +363,12 @@ async def create_samples(ctx):
     help="The maximum number of nodes to return. Defaults to 100.",
 )
 @pass_context
-async def list(ctx, ids, offset, limit):
+async def list(
+    ctx: click.Context,
+    ids: Optional[tuple[str, ...]] = None,
+    offset: int = 0,
+    limit: int = 100,
+) -> None:
     """Get an overview of documents."""
     client: R2RAsyncClient = ctx.obj
     ids = list(ids) if ids else None
@@ -389,5 +380,5 @@ async def list(ctx, ids, offset, limit):
             limit=limit,
         )
 
-    for document in response["results"]:
+    for document in response["results"]:  # type: ignore
         click.echo(document)

@@ -29,7 +29,7 @@ def graphs():
     help="The maximum number of graphs to return. Defaults to 100.",
 )
 @pass_context
-async def list(ctx, collection_ids, offset, limit):
+async def list(ctx: click.Context, collection_ids, offset, limit):
     """List available graphs."""
     client: R2RAsyncClient = ctx.obj
     collection_ids = list(collection_ids) if collection_ids else None
@@ -47,7 +47,7 @@ async def list(ctx, collection_ids, offset, limit):
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
 @pass_context
-async def retrieve(ctx, collection_id):
+async def retrieve(ctx: click.Context, collection_id):
     """Retrieve a specific graph by collection ID."""
     client: R2RAsyncClient = ctx.obj
 
@@ -60,7 +60,7 @@ async def retrieve(ctx, collection_id):
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
 @pass_context
-async def reset(ctx, collection_id):
+async def reset(ctx: click.Context, collection_id):
     """Reset a graph, removing all its data."""
     client: R2RAsyncClient = ctx.obj
 
@@ -75,7 +75,7 @@ async def reset(ctx, collection_id):
 @click.option("--name", help="New name for the graph")
 @click.option("--description", help="New description for the graph")
 @pass_context
-async def update(ctx, collection_id, name, description):
+async def update(ctx: click.Context, collection_id, name, description):
     """Update graph information."""
     client: R2RAsyncClient = ctx.obj
 
@@ -102,7 +102,7 @@ async def update(ctx, collection_id, name, description):
     help="The maximum number of entities to return. Defaults to 100.",
 )
 @pass_context
-async def list_entities(ctx, collection_id, offset, limit):
+async def list_entities(ctx: click.Context, collection_id, offset, limit):
     """List entities in a graph."""
     client: R2RAsyncClient = ctx.obj
 
@@ -120,7 +120,7 @@ async def list_entities(ctx, collection_id, offset, limit):
 @click.argument("collection_id", required=True, type=str)
 @click.argument("entity_id", required=True, type=str)
 @pass_context
-async def get_entity(ctx, collection_id, entity_id):
+async def get_entity(ctx: click.Context, collection_id, entity_id):
     """Get entity information from a graph."""
     client: R2RAsyncClient = ctx.obj
 
@@ -137,7 +137,7 @@ async def get_entity(ctx, collection_id, entity_id):
 @click.argument("collection_id", required=True, type=str)
 @click.argument("entity_id", required=True, type=str)
 @pass_context
-async def remove_entity(ctx, collection_id, entity_id):
+async def remove_entity(ctx: click.Context, collection_id, entity_id):
     """Remove an entity from a graph."""
     client: R2RAsyncClient = ctx.obj
 
@@ -163,7 +163,7 @@ async def remove_entity(ctx, collection_id, entity_id):
     help="The maximum number of relationships to return. Defaults to 100.",
 )
 @pass_context
-async def list_relationships(ctx, collection_id, offset, limit):
+async def list_relationships(ctx: click.Context, collection_id, offset, limit):
     """List relationships in a graph."""
     client: R2RAsyncClient = ctx.obj
 
@@ -181,7 +181,7 @@ async def list_relationships(ctx, collection_id, offset, limit):
 @click.argument("collection_id", required=True, type=str)
 @click.argument("relationship_id", required=True, type=str)
 @pass_context
-async def get_relationship(ctx, collection_id, relationship_id):
+async def get_relationship(ctx: click.Context, collection_id, relationship_id):
     """Get relationship information from a graph."""
     client: R2RAsyncClient = ctx.obj
 
@@ -198,7 +198,9 @@ async def get_relationship(ctx, collection_id, relationship_id):
 @click.argument("collection_id", required=True, type=str)
 @click.argument("relationship_id", required=True, type=str)
 @pass_context
-async def remove_relationship(ctx, collection_id, relationship_id):
+async def remove_relationship(
+    ctx: click.Context, collection_id, relationship_id
+):
     """Remove a relationship from a graph."""
     client: R2RAsyncClient = ctx.obj
 
@@ -224,7 +226,11 @@ async def remove_relationship(ctx, collection_id, relationship_id):
 )
 @pass_context
 async def build(
-    ctx, collection_id, settings, run_type, run_without_orchestration
+    ctx: click.Context,
+    collection_id,
+    settings,
+    run_type,
+    run_without_orchestration,
 ):
     """Build a graph with specified settings."""
     client: R2RAsyncClient = ctx.obj
@@ -254,7 +260,7 @@ async def build(
     help="The maximum number of communities to return. Defaults to 100.",
 )
 @pass_context
-async def list_communities(ctx, collection_id, offset, limit):
+async def list_communities(ctx: click.Context, collection_id, offset, limit):
     """List communities in a graph."""
     client: R2RAsyncClient = ctx.obj
 
@@ -272,7 +278,7 @@ async def list_communities(ctx, collection_id, offset, limit):
 @click.argument("collection_id", required=True, type=str)
 @click.argument("community_id", required=True, type=str)
 @pass_context
-async def get_community(ctx, collection_id, community_id):
+async def get_community(ctx: click.Context, collection_id, community_id):
     """Get community information from a graph."""
     client: R2RAsyncClient = ctx.obj
 
@@ -305,7 +311,7 @@ async def get_community(ctx, collection_id, community_id):
 )
 @pass_context
 async def update_community(
-    ctx,
+    ctx: click.Context,
     collection_id,
     community_id,
     name,
@@ -339,7 +345,7 @@ async def update_community(
 @click.argument("collection_id", required=True, type=str)
 @click.argument("community_id", required=True, type=str)
 @pass_context
-async def delete_community(ctx, collection_id, community_id):
+async def delete_community(ctx: click.Context, collection_id, community_id):
     """Delete a community from a graph."""
     client: R2RAsyncClient = ctx.obj
 
@@ -355,7 +361,7 @@ async def delete_community(ctx, collection_id, community_id):
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
 @pass_context
-async def pull(ctx, collection_id):
+async def pull(ctx: click.Context, collection_id):
     """Pull documents into a graph."""
     client: R2RAsyncClient = ctx.obj
 
@@ -369,7 +375,7 @@ async def pull(ctx, collection_id):
 @click.argument("collection_id", required=True, type=str)
 @click.argument("document_id", required=True, type=str)
 @pass_context
-async def remove_document(ctx, collection_id, document_id):
+async def remove_document(ctx: click.Context, collection_id, document_id):
     """Remove a document from a graph."""
     client: R2RAsyncClient = ctx.obj
 
