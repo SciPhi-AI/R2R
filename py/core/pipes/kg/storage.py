@@ -10,7 +10,7 @@ from core.database import PostgresDatabaseProvider
 logger = logging.getLogger()
 
 
-class KGStoragePipe(AsyncPipe):
+class GraphStoragePipe(AsyncPipe):
     # TODO - Apply correct type hints to storage messages
     class Input(AsyncPipe.Input):
         message: AsyncGenerator[list[Any], None]
@@ -27,7 +27,7 @@ class KGStoragePipe(AsyncPipe):
         Initializes the async knowledge graph storage pipe with necessary components and configurations.
         """
         logger.info(
-            f"Initializing an `KGStoragePipe` to store knowledge graph extractions in a graph database."
+            f"Initializing an `GraphStoragePipe` to store knowledge graph extractions in a graph database."
         )
 
         super().__init__(

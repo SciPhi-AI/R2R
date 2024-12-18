@@ -21,7 +21,7 @@ from ...database.postgres import PostgresDatabaseProvider
 logger = logging.getLogger()
 
 
-class KGCommunitySummaryPipe(AsyncPipe):
+class GraphCommunitySummaryPipe(AsyncPipe):
     """
     Clusters entities and relationships into communities within the knowledge graph using hierarchical Leiden algorithm.
     """
@@ -40,7 +40,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
         """
         super().__init__(
             config=config
-            or AsyncPipe.PipeConfig(name="kg_community_summary_pipe"),
+            or AsyncPipe.PipeConfig(name="graph_community_summary_pipe"),
         )
         self.database_provider = database_provider
         self.llm_provider = llm_provider
@@ -210,7 +210,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
             except Exception as e:
                 if attempt == 2:
                     logger.error(
-                        f"KGCommunitySummaryPipe: Error generating community summary for community {community_id}: {e}"
+                        f"GraphCommunitySummaryPipe: Error generating community summary for community {community_id}: {e}"
                     )
                     return {
                         "community_id": community_id,
@@ -265,7 +265,7 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         # check which community summaries exist and don't run them again
         logger.info(
-            f"KGCommunitySummaryPipe: Checking if community summaries exist for communities {offset} to {offset + limit}"
+            f"GraphCommunitySummaryPipe: Checking if community summaries exist for communities {offset} to {offset + limit}"
         )
 
         all_entities, _ = (
@@ -335,12 +335,12 @@ class KGCommunitySummaryPipe(AsyncPipe):
             completed_community_summary_jobs += 1
             if completed_community_summary_jobs % 50 == 0:
                 logger.info(
-                    f"KGCommunitySummaryPipe: {completed_community_summary_jobs}/{total_jobs} community summaries completed, elapsed time: {time.time() - start_time:.2f} seconds"
+                    f"GraphCommunitySummaryPipe: {completed_community_summary_jobs}/{total_jobs} community summaries completed, elapsed time: {time.time() - start_time:.2f} seconds"
                 )
 
             if "error" in summary:
                 logger.error(
-                    f"KGCommunitySummaryPipe: Error generating community summary for community {summary['community_id']}: {summary['error']}"
+                    f"GraphCommunitySummaryPipe: Error generating community summary for community {summary['community_id']}: {summary['error']}"
                 )
                 total_errors += 1
                 continue
@@ -349,5 +349,5 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
         if total_errors > 0:
             raise ValueError(
-                f"KGCommunitySummaryPipe: Failed to generate community summaries for {total_errors} out of {total_jobs} communities. Please rerun the job if there are too many failures."
+                f"GraphCommunitySummaryPipe: Failed to generate community summaries for {total_errors} out of {total_jobs} communities. Please rerun the job if there are too many failures."
             )

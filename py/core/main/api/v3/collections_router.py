@@ -1144,7 +1144,7 @@ class CollectionsRouter(BaseRouterV3):
                 from core.main.orchestration import simple_kg_factory
 
                 logger.info("Running extract-triples without orchestration.")
-                simple_kg = simple_kg_factory(self.services.kg)
+                simple_kg = simple_kg_factory(self.services.graph)
                 await simple_kg["extract-triples"](workflow_input)  # type: ignore
                 return {  # type: ignore
                     "message": "Graph created successfully.",

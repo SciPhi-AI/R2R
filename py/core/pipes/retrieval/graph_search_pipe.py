@@ -24,7 +24,7 @@ from ..abstractions.generator_pipe import GeneratorPipe
 logger = logging.getLogger()
 
 
-class KGSearchSearchPipe(GeneratorPipe):
+class GraphSearchSearchPipe(GeneratorPipe):
     """
     Embeds and stores documents using a specified embedding model and database.
     """

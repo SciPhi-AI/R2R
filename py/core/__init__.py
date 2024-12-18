@@ -173,7 +173,7 @@ __all__ = [
     "IngestionService",
     "ManagementService",
     "RetrievalService",
-    "KgService",
+    "GraphService",
     ## PARSERS
     # Media parsers
     "AudioParser",
@@ -213,14 +213,14 @@ __all__ = [
     ## PIPES
     "SearchPipe",
     "EmbeddingPipe",
-    "KGExtractionPipe",
+    "GraphExtractionPipe",
     "ParsingPipe",
     "QueryTransformPipe",
-    "SearchRAGPipe",
-    "StreamingSearchRAGPipe",
+    "RAGPipe",
+    "StreamingRAGPipe",
     "VectorSearchPipe",
     "VectorStoragePipe",
-    "KGStoragePipe",
+    "GraphStoragePipe",
     "MultiSearchPipe",
     ## PROVIDERS
     # Auth

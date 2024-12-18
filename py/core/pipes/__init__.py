@@ -3,39 +3,39 @@ from .abstractions.search_pipe import SearchPipe
 from .ingestion.embedding_pipe import EmbeddingPipe
 from .ingestion.parsing_pipe import ParsingPipe
 from .ingestion.vector_storage_pipe import VectorStoragePipe
-from .kg.clustering import KGClusteringPipe
-from .kg.community_summary import KGCommunitySummaryPipe
-from .kg.deduplication import KGEntityDeduplicationPipe
-from .kg.deduplication_summary import KGEntityDeduplicationSummaryPipe
-from .kg.description import KGEntityDescriptionPipe
-from .kg.extraction import KGExtractionPipe
-from .kg.storage import KGStoragePipe
+from .kg.clustering import GraphClusteringPipe
+from .kg.community_summary import GraphCommunitySummaryPipe
+from .kg.deduplication import GraphDeduplicationPipe
+from .kg.deduplication_summary import GraphDeduplicationSummaryPipe
+from .kg.description import GraphDescriptionPipe
+from .kg.extraction import GraphExtractionPipe
+from .kg.storage import GraphStoragePipe
 from .retrieval.chunk_search_pipe import VectorSearchPipe
-from .retrieval.kg_search_pipe import KGSearchSearchPipe
+from .retrieval.graph_search_pipe import GraphSearchSearchPipe
 from .retrieval.multi_search import MultiSearchPipe
 from .retrieval.query_transform_pipe import QueryTransformPipe
 from .retrieval.routing_search_pipe import RoutingSearchPipe
-from .retrieval.search_rag_pipe import SearchRAGPipe
-from .retrieval.streaming_rag_pipe import StreamingSearchRAGPipe
+from .retrieval.search_rag_pipe import RAGPipe
+from .retrieval.streaming_rag_pipe import StreamingRAGPipe
 
 __all__ = [
     "SearchPipe",
     "GeneratorPipe",
     "EmbeddingPipe",
-    "KGExtractionPipe",
-    "KGSearchSearchPipe",
-    "KGEntityDescriptionPipe",
+    "GraphExtractionPipe",
+    "GraphSearchSearchPipe",
+    "GraphDescriptionPipe",
     "ParsingPipe",
     "QueryTransformPipe",
-    "SearchRAGPipe",
-    "StreamingSearchRAGPipe",
+    "RAGPipe",
+    "StreamingRAGPipe",
     "VectorSearchPipe",
     "VectorStoragePipe",
-    "KGStoragePipe",
-    "KGClusteringPipe",
+    "GraphStoragePipe",
+    "GraphClusteringPipe",
     "MultiSearchPipe",
-    "KGCommunitySummaryPipe",
+    "GraphCommunitySummaryPipe",
     "RoutingSearchPipe",
-    "KGEntityDeduplicationPipe",
-    "KGEntityDeduplicationSummaryPipe",
+    "GraphDeduplicationPipe",
+    "GraphDeduplicationSummaryPipe",
 ]
