@@ -497,7 +497,7 @@ class GraphsSDK:
         Returns:
             dict: Created entity information
         """
-        data = {
+        data: dict[str, Any] = {
             "name": name,
             "description": description,
         }
@@ -542,7 +542,7 @@ class GraphsSDK:
         Returns:
             dict: Created relationship information
         """
-        data = {
+        data: dict[str, Any] = {
             "subject": subject,
             "subject_id": str(subject_id),
             "predicate": predicate,
@@ -585,7 +585,7 @@ class GraphsSDK:
         Returns:
             dict: Created community information
         """
-        data = {
+        data: dict[str, Any] = {
             "name": name,
             "summary": summary,
         }

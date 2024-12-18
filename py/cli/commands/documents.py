@@ -13,7 +13,7 @@ from asyncclick import pass_context
 
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
-from r2r import R2RAsyncClient
+from r2r import R2RAsyncClient, R2RException
 
 
 @click.group()
@@ -37,11 +37,9 @@ def documents():
 async def create(
     ctx: click.Context,
     file_paths: tuple[str, ...],
-    ids: Optional[tuple[str, ...]] = None,  # Make optional with default None
-    metadatas: Optional[
-        Sequence[dict[str, Any]]
-    ] = None,  # Use Sequence for more flexibility
-    run_without_orchestration: bool = False,  # Add default value
+    ids: Optional[tuple[str, ...]] = None,
+    metadatas: Optional[Sequence[dict[str, Any]]] = None,
+    run_without_orchestration: bool = False,
 ):
     """Ingest files into R2R."""
     client: R2RAsyncClient = ctx.obj
@@ -58,15 +56,20 @@ async def create(
             click.echo(
                 f"Processing file {idx + 1}/{len(file_paths)}: {file_path}"
             )
-            response = await client.documents.create(
-                file_path=file_path,
-                metadata=current_metadata,
-                id=current_id,
-                run_with_orchestration=run_with_orchestration,
-            )
-            responses.append(response)  # type: ignore
-            click.echo(json.dumps(response, indent=2))
-            click.echo("-" * 40)
+            try:
+                response = await client.documents.create(
+                    file_path=file_path,
+                    metadata=current_metadata,
+                    id=current_id,
+                    run_with_orchestration=run_with_orchestration,
+                )
+                responses.append(response)  # type: ignore
+                click.echo(json.dumps(response, indent=2))
+                click.echo("-" * 40)
+            except R2RException as e:
+                click.echo(str(e), err=True)
+            except Exception as e:
+                click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
     click.echo(f"\nProcessed {len(responses)} files successfully.")
 
@@ -78,10 +81,14 @@ async def retrieve(ctx: click.Context, id: UUID):
     """Retrieve a document by ID."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.documents.retrieve(id=id)
-
-    click.echo(json.dumps(response, indent=2))
+    try:
+        with timer():
+            response = await client.documents.retrieve(id=id)
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @documents.command()
@@ -91,10 +98,14 @@ async def delete(ctx: click.Context, id):
     """Delete a document by ID."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.documents.delete(id=id)
-
-    click.echo(json.dumps(response, indent=2))
+    try:
+        with timer():
+            response = await client.documents.delete(id=id)
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @documents.command()
@@ -114,14 +125,18 @@ async def list_chunks(ctx: click.Context, id, offset, limit):
     """List collections for a specific document."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.documents.list_chunks(
-            id=id,
-            offset=offset,
-            limit=limit,
-        )
-
-    click.echo(json.dumps(response, indent=2))
+    try:
+        with timer():
+            response = await client.documents.list_chunks(
+                id=id,
+                offset=offset,
+                limit=limit,
+            )
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @documents.command()
@@ -141,14 +156,18 @@ async def list_collections(ctx: click.Context, id, offset, limit):
     """List collections for a specific document."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.documents.list_collections(
-            id=id,
-            offset=offset,
-            limit=limit,
-        )
-
-    click.echo(json.dumps(response, indent=2))
+    try:
+        with timer():
+            response = await client.documents.list_collections(
+                id=id,
+                offset=offset,
+                limit=limit,
+            )
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 # TODO
@@ -250,15 +269,19 @@ async def list_entities(
     """List entities extracted from a document."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.documents.list_entities(
-            id=id,
-            offset=offset,
-            limit=limit,
-            include_embeddings=include_embeddings,
-        )
-
-    click.echo(json.dumps(response, indent=2))
+    try:
+        with timer():
+            response = await client.documents.list_entities(
+                id=id,
+                offset=offset,
+                limit=limit,
+                include_embeddings=include_embeddings,
+            )
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @documents.command()
@@ -290,47 +313,47 @@ async def list_relationships(
     """List relationships extracted from a document."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.documents.list_relationships(
-            id=id,
-            offset=offset,
-            limit=limit,
-            entity_names=list(entity_names) if entity_names else None,
-            relationship_types=(
-                list(relationship_types) if relationship_types else None
-            ),
-        )
-
-    click.echo(json.dumps(response, indent=2))
+    try:
+        with timer():
+            response = await client.documents.list_relationships(
+                id=id,
+                offset=offset,
+                limit=limit,
+                entity_names=list(entity_names) if entity_names else None,
+                relationship_types=(
+                    list(relationship_types) if relationship_types else None
+                ),
+            )
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @documents.command()
-@click.option(
-    "--v2", is_flag=True, help="use aristotle_v2.txt (a smaller file)"
-)
-@click.option(
-    "--v3", is_flag=True, help="use aristotle_v3.txt (a larger file)"
-)
 @pass_context
-async def create_sample(
-    ctx: click.Context, v2: bool = True, v3: bool = False
-) -> None:
+async def create_sample(ctx: click.Context) -> None:
     """Ingest the first sample file into R2R."""
     sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle.txt"
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await ingest_files_from_urls(client, [sample_file_url])
-    click.echo(
-        f"Sample file ingestion completed. Ingest files response:\n\n{response}"
-    )
+    try:
+        with timer():
+            response = await ingest_files_from_urls(client, [sample_file_url])
+        click.echo(
+            f"Sample file ingestion completed. Ingest files response:\n\n{response}"
+        )
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @documents.command()
 @pass_context
 async def create_samples(ctx: click.Context) -> None:
     """Ingest multiple sample files into R2R."""
-    client: R2RAsyncClient = ctx.obj
     urls = [
         "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_3.html",
         "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_4.html",
@@ -342,12 +365,16 @@ async def create_samples(ctx: click.Context) -> None:
         "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_2.html",
         "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle.txt",
     ]
-    with timer():
-        response = await ingest_files_from_urls(client, urls)
+    client: R2RAsyncClient = ctx.obj
 
-    click.echo(
-        f"Sample files ingestion completed. Ingest files response:\n\n{response}"
-    )
+    try:
+        with timer():
+            response = await ingest_files_from_urls(client, urls)
+        click.echo(
+            f"Sample files ingestion completed. Ingest files response:\n\n{response}"
+        )
+    except R2RException as e:
+        click.echo(str(e), err=True)
 
 
 @documents.command()
@@ -370,15 +397,20 @@ async def list(
     limit: int = 100,
 ) -> None:
     """Get an overview of documents."""
-    client: R2RAsyncClient = ctx.obj
     ids = list(ids) if ids else None
+    client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.documents.list(
-            ids=ids,
-            offset=offset,
-            limit=limit,
-        )
+    try:
+        with timer():
+            response = await client.documents.list(
+                ids=ids,
+                offset=offset,
+                limit=limit,
+            )
 
-    for document in response["results"]:  # type: ignore
-        click.echo(document)
+        for document in response["results"]:  # type: ignore
+            click.echo(document)
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
