@@ -1254,14 +1254,6 @@ class PostgresChunksHandler(Handler):
                 - total_entries: Total number of chunks matching the filters
                 - page_info: Pagination information
         """
-        # Validate sort parameters
-        valid_sort_columns = {
-            "created_at": "metadata->>'created_at'",
-            "updated_at": "metadata->>'updated_at'",
-            "chunk_order": "metadata->>'chunk_order'",
-            "text": "text",
-        }
-
         # Build the select clause
         vector_select = ", vec" if include_vectors else ""
         select_clause = f"""
@@ -1276,24 +1268,20 @@ class PostgresChunksHandler(Handler):
             where_clause = self._build_filters(filters, params)
             where_clause = f"WHERE {where_clause}"
 
-        # Construct the final query
+        # Add pagination parameters
+        params.extend([limit, offset])
+
+        # Construct the final query using proper parameter numbering
         query = f"""
         SELECT {select_clause}
         FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
         {where_clause}
-        LIMIT $%s
-        OFFSET $%s
+        LIMIT ${len(params) - 1}
+        OFFSET ${len(params)}
         """
 
-        # Add pagination parameters
-        params.extend([limit, offset])
-        param_indices = list(range(1, len(params) + 1))
-        formatted_query = query % tuple(param_indices)
-
         # Execute the query
-        results = await self.connection_manager.fetch_query(
-            formatted_query, params
-        )
+        results = await self.connection_manager.fetch_query(query, params)
 
         # Process results
         chunks = []

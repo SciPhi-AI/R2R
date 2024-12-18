@@ -116,6 +116,7 @@ class ChunksSDK:
         metadata_filter: Optional[dict] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
+        filters: Optional[dict] = None,
     ) -> WrappedChunksResponse:
         """
         List chunks with pagination support.
@@ -136,6 +137,8 @@ class ChunksSDK:
             "limit": limit,
             "include_vectors": include_vectors,
         }
+        if filters:
+            params["filters"] = json.dumps(filters)
 
         if metadata_filter:
             params["metadata_filter"] = json.dumps(metadata_filter)

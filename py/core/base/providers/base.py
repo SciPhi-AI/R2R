@@ -8,6 +8,9 @@ from ..abstractions import R2RSerializable
 
 class AppConfig(R2RSerializable):
     project_name: Optional[str] = None
+    default_max_documents_per_user: Optional[int] = 100
+    default_max_chunks_per_user: Optional[int] = 100_000
+    default_max_collections_per_user: Optional[int] = 10
 
     @classmethod
     def create(cls, *args, **kwargs):
