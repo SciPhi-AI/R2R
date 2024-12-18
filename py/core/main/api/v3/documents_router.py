@@ -341,8 +341,34 @@ class DocumentsRouter(BaseRouterV3):
                         limit=1,
                     )
                 )["page_info"]["total_entries"]
-                print("user_document_count = ", user_document_count)
-                print("user_chunk_count = ", user_chunk_count)
+                user_max_chunks = (
+                    await self.services.management.get_user_max_chunks(
+                        auth_user.id
+                    )
+                )
+                if user_chunk_count >= user_max_chunks:
+                    raise R2RException(
+                        status_code=403,
+                        message=f"User has reached the maximum number of chunks allowed ({user_max_chunks}).",
+                    )
+
+                user_collections_count = (
+                    await self.services.management.collections_overview(
+                        user_ids=[auth_user.id],
+                        offset=0,
+                        limit=1,
+                    )
+                )["total_entries"]
+                user_max_collections = (
+                    await self.services.management.get_user_max_collections(
+                        auth_user.id
+                    )
+                )
+                if user_collections_count >= user_max_collections:
+                    raise R2RException(
+                        status_code=403,
+                        message=f"User has reached the maximum number of collections allowed ({user_max_collections}).",
+                    )
 
             effective_ingestion_config = self._prepare_ingestion_config(
                 ingestion_mode=ingestion_mode,

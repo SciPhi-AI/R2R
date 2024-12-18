@@ -756,4 +756,7 @@ class ManagementService(Service):
         return self.config.app.default_max_documents_per_user
 
     async def get_user_max_chunks(self, user_id: UUID) -> int:
-        return self.config.app.default_max_documents_per_user
+        return self.config.app.default_max_chunks_per_user
+
+    async def get_user_max_collections(self, user_id: UUID) -> int:
+        return self.config.app.default_max_collections_per_user
