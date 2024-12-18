@@ -10,11 +10,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-      
+
     - name: Run rate limit test
       run: |
-        chmod +x ./py/tests/rate-limit-test.sh
-        ./py/tests/rate-limit-test.sh
+        chmod +x ./py/tests/rateLimit.bash
+        ./py/tests/rateLimit.bash

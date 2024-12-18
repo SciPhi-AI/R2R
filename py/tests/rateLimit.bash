@@ -30,7 +30,7 @@ echo "Target: At least $REQUIRED_429_COUNT rate limits (HTTP 429)"
 for ((i=1; i<=TOTAL_REQUESTS; i++)); do
     RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
     count_total=$((count_total + 1))
-    
+
     # Color coding for different responses
     if [ "$RESPONSE" = "429" ]; then
         count_429=$((count_429 + 1))
@@ -40,7 +40,7 @@ for ((i=1; i<=TOTAL_REQUESTS; i++)); do
     else
         echo -e "\033[31mRequest $i: HTTP $RESPONSE (Error)\033[0m"
     fi
-    
+
     sleep $SLEEP_INTERVAL
 done
 
