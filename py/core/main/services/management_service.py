@@ -751,3 +751,9 @@ class ManagementService(Service):
         await self.providers.database.conversations_handler.delete_conversation(
             conversation_id
         )
+
+    async def get_user_max_documents(self, user_id: UUID) -> int:
+        return self.config.app.default_max_documents_per_user
+
+    async def get_user_max_chunks(self, user_id: UUID) -> int:
+        return self.config.app.default_max_documents_per_user

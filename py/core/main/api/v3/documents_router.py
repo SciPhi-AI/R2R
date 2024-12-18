@@ -313,6 +313,37 @@ class DocumentsRouter(BaseRouterV3):
             The ingestion process runs asynchronously and its progress can be tracked using the returned
             task_id.
             """
+            if not auth_user.is_superuser:
+                user_document_count = (
+                    await self.services.management.documents_overview(
+                        user_ids=[auth_user.id],
+                        offset=0,
+                        limit=1,
+                    )
+                )["total_entries"]
+                user_max_documents = (
+                    await self.services.management.get_user_max_documents(
+                        auth_user.id
+                    )
+                )
+
+                if user_document_count >= user_max_documents:
+                    raise R2RException(
+                        status_code=403,
+                        message=f"User has reached the maximum number of documents allowed ({user_max_documents}).",
+                    )
+
+                # Get chunks using the vector handler's list_chunks method
+                user_chunk_count = (
+                    await self.services.ingestion.list_chunks(
+                        filters={"owner_id": {"$eq": str(auth_user.id)}},
+                        offset=0,
+                        limit=1,
+                    )
+                )["page_info"]["total_entries"]
+                print("user_document_count = ", user_document_count)
+                print("user_chunk_count = ", user_chunk_count)
+
             effective_ingestion_config = self._prepare_ingestion_config(
                 ingestion_mode=ingestion_mode,
                 ingestion_config=ingestion_config,

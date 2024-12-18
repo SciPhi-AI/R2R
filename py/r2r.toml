@@ -1,6 +1,7 @@
 [app]
 # app settings are global available like `r2r_config.agent.app`
 # project_name = "r2r_default" # optional, can also set with `R2R_PROJECT_NAME` env var
+default_max_documents_per_user = 100
 
 [agent]
 system_instruction_name = "rag_agent"
