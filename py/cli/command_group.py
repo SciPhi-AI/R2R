@@ -5,10 +5,17 @@ from rich import box
 from rich.table import Table
 from asyncclick import pass_context
 from asyncclick.exceptions import Exit
+import types
+from typing import Any, Never
 
 from sdk import R2RAsyncClient
 
 console = Console()
+
+
+def silent_exit(ctx, code=0):
+    if code != 0:
+        raise Exit(code)
 
 
 def deprecated_command(new_name):
@@ -46,7 +53,6 @@ def custom_help_formatter(commands):
         ],
         "Knowledge Graph": [
             ("graphs", "Graph creation and management commands"),
-            ("indices", "Index management commands"),
             ("prompts", "Prompt template management"),
         ],
         "Interaction": [
@@ -56,6 +62,7 @@ def custom_help_formatter(commands):
         "System": [
             ("configure", "Configuration management commands"),
             ("users", "User management commands"),
+            ("indices", "Index management commands"),
             ("system", "System administration commands"),
         ],
         "Database": [
@@ -101,18 +108,21 @@ class CustomGroup(click.Group):
         )
 
 
+class CustomContext(click.Context):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.exit_func = types.MethodType(silent_exit, self)
+
+    def exit(self, code: int = 0) -> Never:
+        self.exit_func(code)
+        raise SystemExit(code)
+
+
 @click.group(cls=CustomGroup)
 @click.option(
     "--base-url", default="http://localhost:7272", help="Base URL for the API"
 )
 @pass_context
-async def cli(ctx, base_url):
+async def cli(ctx: click.Context, base_url: str) -> None:
     """R2R CLI for all core operations."""
     ctx.obj = R2RAsyncClient(base_url=base_url)
-
-    # Override the default exit behavior
-    def silent_exit(self, code=0):
-        if code != 0:
-            raise Exit(code)
-
-    ctx.exit = silent_exit.__get__(ctx)
