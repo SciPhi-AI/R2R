@@ -6,7 +6,7 @@ from builtins import list as _list
 from uuid import UUID
 
 from cli.utils.timer import timer
-from r2r import R2RAsyncClient
+from r2r import R2RAsyncClient, R2RException
 
 
 @click.group()
@@ -23,13 +23,17 @@ async def create(ctx: click.Context, email: str, password: str):
     """Create a new user."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.users.create(
-            email=email,
-            password=password,
-        )
-
-    click.echo(json.dumps(response, indent=2))
+    try:
+        with timer():
+            response = await client.users.create(
+                email=email,
+                password=password,
+            )
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @users.command()
@@ -54,20 +58,25 @@ async def list(
     limit: int,
 ):
     """Get an overview of users."""
-    client: R2RAsyncClient = ctx.obj
     uuids: _list[str | UUID] | None = (
         [UUID(id_) for id_ in ids] if ids else None
     )
 
-    with timer():
-        response = await client.users.list(
-            ids=uuids,
-            offset=offset,
-            limit=limit,
-        )
+    client: R2RAsyncClient = ctx.obj
+    try:
+        with timer():
+            response = await client.users.list(
+                ids=uuids,
+                offset=offset,
+                limit=limit,
+            )
 
-    for user in response["results"]:  # type: ignore
-        click.echo(json.dumps(user, indent=2))
+        for user in response["results"]:  # type: ignore
+            click.echo(json.dumps(user, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @users.command()
@@ -77,10 +86,14 @@ async def retrieve(ctx: click.Context, id):
     """Retrieve a user by ID."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.users.retrieve(id=id)
-
-    click.echo(json.dumps(response, indent=2))
+    try:
+        with timer():
+            response = await client.users.retrieve(id=id)
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @users.command()
@@ -89,10 +102,15 @@ async def me(ctx: click.Context):
     """Retrieve the current user."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.users.me()
+    try:
+        with timer():
+            response = await client.users.me()
 
-    click.echo(json.dumps(response, indent=2))
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @users.command()
@@ -112,15 +130,20 @@ async def list_collections(ctx: click.Context, id, offset, limit):
     """List collections for a specific user."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.users.list_collections(
-            id=id,
-            offset=offset,
-            limit=limit,
-        )
+    try:
+        with timer():
+            response = await client.users.list_collections(
+                id=id,
+                offset=offset,
+                limit=limit,
+            )
 
-    for collection in response["results"]:  # type: ignore
-        click.echo(json.dumps(collection, indent=2))
+        for collection in response["results"]:  # type: ignore
+            click.echo(json.dumps(collection, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @users.command()
@@ -131,13 +154,17 @@ async def add_to_collection(ctx: click.Context, id, collection_id):
     """Retrieve a user by ID."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.users.add_to_collection(
-            id=id,
-            collection_id=collection_id,
-        )
-
-    click.echo(json.dumps(response, indent=2))
+    try:
+        with timer():
+            response = await client.users.add_to_collection(
+                id=id,
+                collection_id=collection_id,
+            )
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @users.command()
@@ -148,10 +175,14 @@ async def remove_from_collection(ctx: click.Context, id, collection_id):
     """Retrieve a user by ID."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.users.remove_from_collection(
-            id=id,
-            collection_id=collection_id,
-        )
-
-    click.echo(json.dumps(response, indent=2))
+    try:
+        with timer():
+            response = await client.users.remove_from_collection(
+                id=id,
+                collection_id=collection_id,
+            )
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)

@@ -15,6 +15,12 @@ from cli.utils.param_types import JSON
 from cli.utils.timer import timer
 from r2r import R2RAsyncClient, R2RException
 
+from rich.console import Console
+from rich.box import ROUNDED
+from rich.table import Table
+
+console = Console()
+
 
 @click.group()
 def documents():
@@ -75,20 +81,145 @@ async def create(
 
 
 @documents.command()
+@click.option("--ids", multiple=True, help="Document IDs to fetch")
+@click.option(
+    "--offset",
+    default=0,
+    help="The offset to start from. Defaults to 0.",
+)
+@click.option(
+    "--limit",
+    default=100,
+    help="The maximum number of nodes to return. Defaults to 100.",
+)
+@pass_context
+async def list(
+    ctx: click.Context,
+    ids: Optional[tuple[str, ...]] = None,
+    offset: int = 0,
+    limit: int = 100,
+) -> None:
+    """Get an overview of documents."""
+    ids = list(ids) if ids else None
+    client: R2RAsyncClient = ctx.obj
+
+    try:
+        with timer():
+            response = await client.documents.list(
+                ids=ids,
+                offset=offset,
+                limit=limit,
+            )
+
+        table = Table(
+            title="[bold blue]Documents[/bold blue]",
+            show_header=True,
+            header_style="bold white on blue",
+            border_style="blue",
+            box=ROUNDED,
+            pad_edge=False,
+            collapse_padding=True,
+            show_lines=True,
+        )
+
+        # Add columns based on your document structure
+        table.add_column("ID", style="bright_yellow", no_wrap=True)
+        table.add_column("Type", style="bright_magenta")
+        table.add_column("Title", style="bright_green")
+        table.add_column("Ingestion Status", style="bright_cyan")
+        table.add_column("Extraction Status", style="bright_cyan")
+        table.add_column("Summary", style="bright_white")
+        table.add_column("Created At", style="bright_white")
+
+        for document in response["results"]:  # type: ignore
+            table.add_row(
+                document.get("id", ""),
+                document.get("document_type", ""),
+                document.get("title", ""),
+                document.get("ingestion_status", ""),
+                document.get("extraction_status", ""),
+                document.get("summary", ""),
+                document.get("created_at", "")[:19],
+            )
+
+        console = Console()
+        console.print("\n")
+        console.print(table)
+        console.print(
+            f"\n[dim]Showing {len(response['results'])} documents (offset: {offset}, limit: {limit})[/dim]"  # type: ignore
+        )
+
+    except R2RException as e:
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
+    except Exception as e:
+        console.print(f"[bold red]Unexpected error:[/bold red] {str(e)}")
+
+
+@documents.command()
 @click.argument("id", required=True, type=str)
 @pass_context
 async def retrieve(ctx: click.Context, id: UUID):
     """Retrieve a document by ID."""
     client: R2RAsyncClient = ctx.obj
+    console = Console()
 
     try:
         with timer():
             response = await client.documents.retrieve(id=id)
-        click.echo(json.dumps(response, indent=2))
+
+        # Get the actual document data from the results
+        document = response["results"]  # type: ignore
+
+        metadata_table = Table(
+            show_header=True,
+            header_style="bold white on blue",
+            border_style="blue",
+            box=ROUNDED,
+            title="[bold blue]Document Details[/bold blue]",
+            show_lines=True,
+        )
+
+        metadata_table.add_column("Field", style="bright_yellow")
+        metadata_table.add_column("Value", style="bright_white")
+
+        # Add core document information
+        core_fields = [
+            ("ID", document.get("id", "")),
+            ("Type", document.get("document_type", "")),
+            ("Title", document.get("title", "")),
+            ("Created At", document.get("created_at", "")[:19]),
+            ("Updated At", document.get("updated_at", "")[:19]),
+            ("Ingestion Status", document.get("ingestion_status", "")),
+            ("Extraction Status", document.get("extraction_status", "")),
+            ("Size", f"{document.get('size_in_bytes', 0):,} bytes"),
+        ]
+
+        for field, value in core_fields:
+            metadata_table.add_row(field, str(value))
+
+        # Add metadata section if it exists
+        if "metadata" in document:
+            metadata_table.add_row(
+                "[bold]Metadata[/bold]", "", style="bright_blue"
+            )
+            for key, value in document["metadata"].items():
+                metadata_table.add_row(f"  {key}", str(value))
+
+        # Add summary if it exists
+        if "summary" in document:
+            metadata_table.add_row(
+                "[bold]Summary[/bold]",
+                document["summary"],
+            )
+
+        console.print("\n")
+        console.print(metadata_table)
+        console.print("\n")
+
     except R2RException as e:
-        click.echo(str(e), err=True)
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
     except Exception as e:
-        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
+        console.print(f"[bold red]Unexpected error:[/bold red] {str(e)}")
 
 
 @documents.command()
@@ -122,8 +253,9 @@ async def delete(ctx: click.Context, id):
 )
 @pass_context
 async def list_chunks(ctx: click.Context, id, offset, limit):
-    """List collections for a specific document."""
+    """List chunks for a specific document."""
     client: R2RAsyncClient = ctx.obj
+    console = Console()
 
     try:
         with timer():
@@ -132,11 +264,41 @@ async def list_chunks(ctx: click.Context, id, offset, limit):
                 offset=offset,
                 limit=limit,
             )
-        click.echo(json.dumps(response, indent=2))
+
+        table = Table(
+            title="[bold blue]Document Chunks[/bold blue]",
+            show_header=True,
+            header_style="bold white on blue",
+            border_style="blue",
+            box=ROUNDED,
+            pad_edge=False,
+            collapse_padding=True,
+            show_lines=True,
+        )
+
+        table.add_column("ID", style="bright_yellow", no_wrap=True)
+        table.add_column("Text", style="bright_white")
+
+        for chunk in response["results"]:  # type: ignore
+            table.add_row(
+                chunk.get("id", ""),
+                (
+                    chunk.get("text", "")[:200] + "..."
+                    if len(chunk.get("text", "")) > 200
+                    else chunk.get("text", "")
+                ),
+            )
+
+        console.print("\n")
+        console.print(table)
+        console.print(
+            f"\n[dim]Showing {len(response['results'])} chunks (offset: {offset}, limit: {limit})[/dim]"  # type: ignore
+        )
+
     except R2RException as e:
-        click.echo(str(e), err=True)
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
     except Exception as e:
-        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
+        console.print(f"[bold red]Unexpected error:[/bold red] {str(e)}")
 
 
 @documents.command()
@@ -155,6 +317,7 @@ async def list_chunks(ctx: click.Context, id, offset, limit):
 async def list_collections(ctx: click.Context, id, offset, limit):
     """List collections for a specific document."""
     client: R2RAsyncClient = ctx.obj
+    console = Console()
 
     try:
         with timer():
@@ -163,11 +326,41 @@ async def list_collections(ctx: click.Context, id, offset, limit):
                 offset=offset,
                 limit=limit,
             )
-        click.echo(json.dumps(response, indent=2))
+
+        table = Table(
+            title="[bold blue]Document Collections[/bold blue]",
+            show_header=True,
+            header_style="bold white on blue",
+            border_style="blue",
+            box=ROUNDED,
+            pad_edge=False,
+            collapse_padding=True,
+            show_lines=True,
+        )
+
+        table.add_column("ID", style="bright_yellow", no_wrap=True)
+        table.add_column("Name", style="bright_green")
+        table.add_column("Description", style="bright_white")
+        table.add_column("Created At", style="bright_white")
+
+        for collection in response["results"]:  # type: ignore
+            table.add_row(
+                collection.get("id", ""),
+                collection.get("name", ""),
+                collection.get("description", ""),
+                collection.get("created_at", "")[:19],
+            )
+
+        console.print("\n")
+        console.print(table)
+        console.print(
+            f"\n[dim]Showing {len(response['results'])} collections (offset: {offset}, limit: {limit})[/dim]"  # type: ignore
+        )
+
     except R2RException as e:
-        click.echo(str(e), err=True)
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
     except Exception as e:
-        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
+        console.print(f"[bold red]Unexpected error:[/bold red] {str(e)}")
 
 
 # TODO
@@ -375,42 +568,3 @@ async def create_samples(ctx: click.Context) -> None:
         )
     except R2RException as e:
         click.echo(str(e), err=True)
-
-
-@documents.command()
-@click.option("--ids", multiple=True, help="Document IDs to fetch")
-@click.option(
-    "--offset",
-    default=0,
-    help="The offset to start from. Defaults to 0.",
-)
-@click.option(
-    "--limit",
-    default=100,
-    help="The maximum number of nodes to return. Defaults to 100.",
-)
-@pass_context
-async def list(
-    ctx: click.Context,
-    ids: Optional[tuple[str, ...]] = None,
-    offset: int = 0,
-    limit: int = 100,
-) -> None:
-    """Get an overview of documents."""
-    ids = list(ids) if ids else None
-    client: R2RAsyncClient = ctx.obj
-
-    try:
-        with timer():
-            response = await client.documents.list(
-                ids=ids,
-                offset=offset,
-                limit=limit,
-            )
-
-        for document in response["results"]:  # type: ignore
-            click.echo(document)
-    except R2RException as e:
-        click.echo(str(e), err=True)
-    except Exception as e:
-        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
