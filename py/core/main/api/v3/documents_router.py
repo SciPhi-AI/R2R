@@ -655,9 +655,6 @@ class DocumentsRouter(BaseRouterV3):
                     limit=limit,
                 )
             )
-            print(
-                "documents_overview_response = ", documents_overview_response
-            )
             if not include_summary_embeddings:
                 for document in documents_overview_response["results"]:
                     document.summary_embedding = None

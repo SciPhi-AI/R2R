@@ -126,7 +126,6 @@ class ManagementService(Service):
 
         # 3. First, find out which chunks match these filters *before* deleting, so we know which docs are affected.
         #    You can do a list operation on chunks to see which chunk IDs and doc IDs would be hit.
-        print("transformed_filters = ", transformed_filters)
         interim_results = (
             await self.providers.database.chunks_handler.list_chunks(
                 filters=transformed_filters,
@@ -135,7 +134,6 @@ class ManagementService(Service):
                 include_vectors=False,
             )
         )
-        print("interim_results = ", interim_results)
         results = interim_results["results"]
         while interim_results["page_info"]["total_entries"] == 1_000:
             # If we hit the limit, we need to paginate to get all results
@@ -184,7 +182,6 @@ class ManagementService(Service):
             if remaining["total_entries"] == 0:
                 docs_to_delete.append(doc_id)
 
-        print("docs_to_delete = ", docs_to_delete)
         # 7. Delete documents that no longer have associated chunks.
         #    Also update graphs if needed (entities/relationships).
         for doc_id in docs_to_delete:

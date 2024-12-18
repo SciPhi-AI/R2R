@@ -184,10 +184,75 @@ class SQLFilterBuilder:
         op = cond.operator
         val = cond.value
 
+        # Handle special logic for collection_id
+        if key == "collection_id":
+            return self._build_collection_id_condition(op, val)
+
         if field_is_metadata:
             return self._build_metadata_condition(key, op, val)
         else:
             return self._build_column_condition(key, op, val)
+
+    def _build_collection_id_condition(self, op: str, val: Any) -> str:
+        param_idx = len(self.params) + 1
+
+        # Handle operations
+        if op == "$eq":
+            # Expect a single UUID, ensure val is a string
+            if not isinstance(val, str):
+                raise FilterError(
+                    "$eq for collection_id expects a single UUID string"
+                )
+            self.params.append(val)
+            # Check if val is in the collection_ids array
+            return f"${param_idx}::uuid = ANY(collection_ids)"
+
+        elif op == "$ne":
+            # Not equal means val is not in collection_ids
+            if not isinstance(val, str):
+                raise FilterError(
+                    "$ne for collection_id expects a single UUID string"
+                )
+            self.params.append(val)
+            return f"NOT (${param_idx}::uuid = ANY(collection_ids))"
+
+        elif op == "$in":
+            # Expect a list of UUIDs, any of which may match
+            if not isinstance(val, list):
+                raise FilterError(
+                    "$in for collection_id expects a list of UUID strings"
+                )
+            self.params.append(val)
+            # Use overlap to check if any of the given IDs are in collection_ids
+            return f"collection_ids && ${param_idx}::uuid[]"
+
+        elif op == "$nin":
+            # None of the given UUIDs should be in collection_ids
+            if not isinstance(val, list):
+                raise FilterError(
+                    "$nin for collection_id expects a list of UUID strings"
+                )
+            self.params.append(val)
+            # Negate overlap condition
+            return f"NOT (collection_ids && ${param_idx}::uuid[])"
+
+        elif op == "$contains":
+            # If someone tries "$contains" with a single collection_id, we can check if collection_ids fully contain it
+            # Usually $contains might mean we want to see if collection_ids contain a certain element.
+            # That's basically $eq logic. For a single value:
+            if isinstance(val, str):
+                self.params.append([val])  # Array of one element
+                return f"collection_ids @> ${param_idx}::uuid[]"
+            elif isinstance(val, list):
+                self.params.append(val)
+                return f"collection_ids @> ${param_idx}::uuid[]"
+            else:
+                raise FilterError(
+                    "$contains for collection_id expects a UUID or list of UUIDs"
+                )
+
+        else:
+            raise FilterError(f"Unsupported operator {op} for collection_id")
 
     def _build_column_condition(self, col: str, op: str, val: Any) -> str:
         param_idx = len(self.params) + 1
