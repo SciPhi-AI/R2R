@@ -66,7 +66,7 @@ class LogsRouter(BaseRouterV3):
     def _setup_routes(self):
         @self.router.websocket(
             "/logs/stream",
-            dependencies=[Depends(self.rate_limit_dependency)],
+            dependencies=[Depends(self.websocket_rate_limit_dependency)],
         )
         async def stream_logs(websocket: WebSocket):
             await websocket.accept()
