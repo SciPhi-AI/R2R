@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel
 
@@ -18,8 +18,8 @@ from core.pipes import (
     GraphStoragePipe,
     ParsingPipe,
     RAGPipe,
+    SearchPipe,
     StreamingRAGPipe,
-    VectorSearchPipe,
     VectorStoragePipe,
 )
 from core.providers import (
@@ -82,7 +82,7 @@ class R2RPipes(BaseModel):
     rag_pipe: RAGPipe
     streaming_rag_pipe: StreamingRAGPipe
     vector_storage_pipe: VectorStoragePipe
-    vector_search_pipe: VectorSearchPipe
+    vector_search_pipe: Any  # TODO - Fix
 
     class Config:
         arbitrary_types_allowed = True

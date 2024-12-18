@@ -179,6 +179,7 @@ class ManagementService(Service):
                 for result in vector_delete_results.values()
                 if result.get("document_id")
             )
+        print("document_ids_to_purge = ", document_ids_to_purge)
 
         # TODO: This might be appropriate to move elsewhere and revisit filter logic in other methods
         def extract_filters(filters: dict[str, Any]) -> dict[str, list[str]]:
