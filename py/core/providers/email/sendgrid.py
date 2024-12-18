@@ -22,15 +22,35 @@ class SendGridEmailProvider(EmailProvider):
         self.from_email = config.from_email or os.getenv("R2R_FROM_EMAIL")
         if not self.from_email or not isinstance(self.from_email, str):
             raise ValueError("A valid from email is required.")
+
         self.frontend_url = config.frontend_url or os.getenv(
             "R2R_FRONTEND_URL"
         )
         if not self.frontend_url or not isinstance(self.frontend_url, str):
             raise ValueError("A valid frontend URL is required.")
-        self.verify_email_template_id = config.verify_email_template_id
-        self.reset_password_template_id = config.reset_password_template_id
+
+        self.verify_email_template_id = (
+            config.verify_email_template_id
+            or os.getenv("SENDGRID_EMAIL_TEMPLATE_ID")
+        )
+        self.reset_password_template_id = (
+            config.reset_password_template_id
+            or os.getenv("SENDGRID_RESET_TEMPLATE_ID")
+        )
         self.client = SendGridAPIClient(api_key=self.api_key)
         self.sender_name = config.sender_name
+
+        # Logo and documentation URLs
+        self.docs_base_url = f"{self.frontend_url}/documentation"
+
+    def _get_base_template_data(self, to_email: str) -> dict:
+        """Get base template data used across all email templates"""
+        return {
+            "user_email": to_email,
+            "docs_url": self.docs_base_url,
+            "quickstart_url": f"{self.docs_base_url}/quickstart",
+            "frontend_url": self.frontend_url,
+        }
 
     async def send_email(
         self,
@@ -51,22 +71,21 @@ class SendGridEmailProvider(EmailProvider):
             if template_id:
                 logger.info(f"Using dynamic template with ID: {template_id}")
                 message.template_id = template_id
-                message.dynamic_template_data = dynamic_template_data or {}
+                base_data = self._get_base_template_data(to_email)
+                message.dynamic_template_data = {
+                    **base_data,
+                    **(dynamic_template_data or {}),
+                }
             else:
                 if not subject:
                     raise ValueError(
                         "Subject is required when not using a template"
                     )
                 message.subject = subject
-
-                # Add plain text content
                 message.add_content(Content("text/plain", body or ""))
-
-                # Add HTML content if provided
                 if html_body:
                     message.add_content(Content("text/html", html_body))
 
-            # Send email
             import asyncio
 
             response = await asyncio.to_thread(self.client.send, message)
@@ -75,8 +94,7 @@ class SendGridEmailProvider(EmailProvider):
                 raise RuntimeError(
                     f"Failed to send email: {response.status_code}"
                 )
-
-            if response.status_code == 202:
+            elif response.status_code == 202:
                 logger.info("Message sent successfully!")
             else:
                 error_msg = f"Failed to send email. Status code: {response.status_code}, Body: {response.body}"
@@ -96,45 +114,49 @@ class SendGridEmailProvider(EmailProvider):
     ) -> None:
         try:
             if self.verify_email_template_id:
-                # Use dynamic template
-                dynamic_data = {
-                    "url": f"{self.frontend_url}/verify-email?token={verification_code}&email={to_email}",
+                verification_data = {
+                    "verification_link": f"{self.frontend_url}/verify-email?verification_code={verification_code}&email={to_email}",
+                    "verification_code": verification_code,  # Include code separately for flexible template usage
                 }
 
-                if dynamic_template_data:
-                    dynamic_data |= dynamic_template_data
+                # Merge with any additional template data
+                template_data = {
+                    **(dynamic_template_data or {}),
+                    **verification_data,
+                }
 
                 await self.send_email(
                     to_email=to_email,
                     template_id=self.verify_email_template_id,
-                    dynamic_template_data=dynamic_data,
+                    dynamic_template_data=template_data,
                 )
             else:
-                # Fallback to default content
-                subject = "Please verify your email address"
-                body = f"""
-                Please verify your email address by entering the following code:
-
-                Verification code: {verification_code}
-
-                If you did not request this verification, please ignore this email.
-                """
+                # Fallback to basic email if no template ID is configured
+                subject = "Verify Your R2R Account"
                 html_body = f"""
-                <p>Please verify your email address by entering the following code:</p>
-                <p style="font-size: 24px; font-weight: bold; margin: 20px 0;">
-                    Verification code: {verification_code}
-                </p>
-                <p>If you did not request this verification, please ignore this email.</p>
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h1>Welcome to R2R!</h1>
+                    <p>Please verify your email address to get started with R2R - the most advanced AI retrieval system.</p>
+                    <p>Click the link below to verify your email:</p>
+                    <p><a href="{self.frontend_url}/verify-email?token={verification_code}&email={to_email}"
+                          style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                        Verify Email
+                    </a></p>
+                    <p>Or enter this verification code: <strong>{verification_code}</strong></p>
+                    <p>If you didn't create an account with R2R, please ignore this email.</p>
+                </div>
                 """
 
                 await self.send_email(
                     to_email=to_email,
                     subject=subject,
-                    body=body,
                     html_body=html_body,
+                    body=f"Welcome to R2R! Please verify your email using this code: {verification_code}",
                 )
         except Exception as e:
-            error_msg = f"Failed to send email to {to_email}: {str(e)}"
+            error_msg = (
+                f"Failed to send verification email to {to_email}: {str(e)}"
+            )
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
 
@@ -146,44 +168,244 @@ class SendGridEmailProvider(EmailProvider):
     ) -> None:
         try:
             if self.reset_password_template_id:
-                # Use dynamic template
-                dynamic_data = {
-                    "url": f"{self.frontend_url}/reset-password?token={reset_token}",
+                reset_data = {
+                    "reset_link": f"{self.frontend_url}/reset-password?token={reset_token}",
+                    "reset_token": reset_token,
                 }
 
-                if dynamic_template_data:
-                    dynamic_data |= dynamic_template_data
+                template_data = {**(dynamic_template_data or {}), **reset_data}
 
                 await self.send_email(
                     to_email=to_email,
                     template_id=self.reset_password_template_id,
-                    dynamic_template_data=dynamic_data,
+                    dynamic_template_data=template_data,
                 )
             else:
-                # Fallback to default content
-                subject = "Password Reset Request"
-                body = f"""
-                You have requested to reset your password.
-
-                Reset token: {reset_token}
-
-                If you did not request a password reset, please ignore this email.
-                """
+                subject = "Reset Your R2R Password"
                 html_body = f"""
-                <p>You have requested to reset your password.</p>
-                <p style="font-size: 24px; font-weight: bold; margin: 20px 0;">
-                    Reset token: {reset_token}
-                </p>
-                <p>If you did not request a password reset, please ignore this email.</p>
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h1>Password Reset Request</h1>
+                    <p>You've requested to reset your R2R password.</p>
+                    <p>Click the link below to reset your password:</p>
+                    <p><a href="{self.frontend_url}/reset-password?token={reset_token}"
+                          style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                        Reset Password
+                    </a></p>
+                    <p>Or use this reset token: <strong>{reset_token}</strong></p>
+                    <p>If you didn't request a password reset, please ignore this email.</p>
+                </div>
                 """
 
                 await self.send_email(
                     to_email=to_email,
                     subject=subject,
-                    body=body,
                     html_body=html_body,
+                    body=f"Reset your R2R password using this token: {reset_token}",
                 )
         except Exception as e:
-            error_msg = f"Failed to send email to {to_email}: {str(e)}"
+            error_msg = (
+                f"Failed to send password reset email to {to_email}: {str(e)}"
+            )
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
+
+
+# import logging
+# import os
+# from typing import Optional
+
+# from sendgrid import SendGridAPIClient
+# from sendgrid.helpers.mail import Content, From, Mail
+
+# from core.base import EmailConfig, EmailProvider
+
+# logger = logging.getLogger(__name__)
+
+
+# class SendGridEmailProvider(EmailProvider):
+#     """Email provider implementation using SendGrid API"""
+
+#     def __init__(self, config: EmailConfig):
+#         super().__init__(config)
+#         self.api_key = config.sendgrid_api_key or os.getenv("SENDGRID_API_KEY")
+#         if not self.api_key or not isinstance(self.api_key, str):
+#             raise ValueError("A valid SendGrid API key is required.")
+
+#         self.from_email = config.from_email or os.getenv("R2R_FROM_EMAIL")
+#         if not self.from_email or not isinstance(self.from_email, str):
+#             raise ValueError("A valid from email is required.")
+#         self.frontend_url = config.frontend_url or os.getenv(
+#             "R2R_FRONTEND_URL"
+#         )
+#         if not self.frontend_url or not isinstance(self.frontend_url, str):
+#             raise ValueError("A valid frontend URL is required.")
+#         self.verify_email_template_id = config.verify_email_template_id or os.getenv("SENDGRID_EMAIL_TEMPLATE_ID")
+#         self.reset_password_template_id = config.reset_password_template_id
+#         self.client = SendGridAPIClient(api_key=self.api_key)
+#         self.sender_name = config.sender_name
+
+#     async def send_email(
+#         self,
+#         to_email: str,
+#         subject: Optional[str] = None,
+#         body: Optional[str] = None,
+#         html_body: Optional[str] = None,
+#         template_id: Optional[str] = None,
+#         dynamic_template_data: Optional[dict] = None,
+#     ) -> None:
+#         try:
+#             logger.info("Preparing SendGrid message...")
+#             dynamic_template_data = {
+#                 "user_email": to_email,
+#                 "verification_link": f"{self.frontend_url}/verify-email?token={"xxxxxxx"}&email={to_email}",
+#                 "r2r_logo_url": "your_logo_url",
+#                 "docs_url": f"{self.frontend_url}/documentation",
+#                 "quickstart_url": f"{self.frontend_url}/documentation/quickstart"
+#             }
+
+#             message = Mail(
+#                 from_email=From(self.from_email, self.sender_name),
+#                 to_emails=to_email,
+#                     dynamic_template_data=dynamic_template_data
+
+#             )
+
+#             if template_id:
+#                 logger.info(f"Using dynamic template with ID: {template_id}")
+#                 message.template_id = template_id
+#                 message.dynamic_template_data = dynamic_template_data or {}
+#             else:
+#                 if not subject:
+#                     raise ValueError(
+#                         "Subject is required when not using a template"
+#                     )
+#                 message.subject = subject
+
+#                 # Add plain text content
+#                 message.add_content(Content("text/plain", body or ""))
+
+#                 # Add HTML content if provided
+#                 if html_body:
+#                     message.add_content(Content("text/html", html_body))
+
+#             # Send email
+#             import asyncio
+
+#             response = await asyncio.to_thread(self.client.send, message)
+
+#             if response.status_code >= 400:
+#                 raise RuntimeError(
+#                     f"Failed to send email: {response.status_code}"
+#                 )
+
+#             if response.status_code == 202:
+#                 logger.info("Message sent successfully!")
+#             else:
+#                 error_msg = f"Failed to send email. Status code: {response.status_code}, Body: {response.body}"
+#                 logger.error(error_msg)
+#                 raise RuntimeError(error_msg)
+
+#         except Exception as e:
+#             error_msg = f"Failed to send email to {to_email}: {str(e)}"
+#             logger.error(error_msg)
+#             raise RuntimeError(error_msg) from e
+
+#     async def send_verification_email(
+#         self,
+#         to_email: str,
+#         verification_code: str,
+#         dynamic_template_data: Optional[dict] = None,
+#     ) -> None:
+#         try:
+#             if self.verify_email_template_id:
+#                 # Use dynamic template
+#                 dynamic_data = {
+#                     "url": f"{self.frontend_url}/verify-email?token={verification_code}&email={to_email}",
+#                 }
+
+#                 if dynamic_template_data:
+#                     dynamic_data |= dynamic_template_data
+
+#                 await self.send_email(
+#                     to_email=to_email,
+#                     template_id=self.verify_email_template_id,
+#                     dynamic_template_data=dynamic_data,
+#                 )
+#             else:
+#                 # Fallback to default content
+#                 subject = "Please verify your email address"
+#                 body = f"""
+#                 Please verify your email address by entering the following code:
+
+#                 Verification code: {verification_code}
+
+#                 If you did not request this verification, please ignore this email.
+#                 """
+#                 html_body = f"""
+#                 <p>Please verify your email address by entering the following code:</p>
+#                 <p style="font-size: 24px; font-weight: bold; margin: 20px 0;">
+#                     Verification code: {verification_code}
+#                 </p>
+#                 <p>If you did not request this verification, please ignore this email.</p>
+#                 """
+
+#                 await self.send_email(
+#                     to_email=to_email,
+#                     subject=subject,
+#                     body=body,
+#                     html_body=html_body,
+#                 )
+#         except Exception as e:
+#             error_msg = f"Failed to send email to {to_email}: {str(e)}"
+#             logger.error(error_msg)
+#             raise RuntimeError(error_msg) from e
+
+#     async def send_password_reset_email(
+#         self,
+#         to_email: str,
+#         reset_token: str,
+#         dynamic_template_data: Optional[dict] = None,
+#     ) -> None:
+#         try:
+#             if self.reset_password_template_id:
+#                 # Use dynamic template
+#                 dynamic_data = {
+#                     "url": f"{self.frontend_url}/reset-password?token={reset_token}",
+#                 }
+
+#                 if dynamic_template_data:
+#                     dynamic_data |= dynamic_template_data
+
+#                 await self.send_email(
+#                     to_email=to_email,
+#                     template_id=self.reset_password_template_id,
+#                     dynamic_template_data=dynamic_data,
+#                 )
+#             else:
+#                 # Fallback to default content
+#                 subject = "Password Reset Request"
+#                 body = f"""
+#                 You have requested to reset your password.
+
+#                 Reset token: {reset_token}
+
+#                 If you did not request a password reset, please ignore this email.
+#                 """
+#                 html_body = f"""
+#                 <p>You have requested to reset your password.</p>
+#                 <p style="font-size: 24px; font-weight: bold; margin: 20px 0;">
+#                     Reset token: {reset_token}
+#                 </p>
+#                 <p>If you did not request a password reset, please ignore this email.</p>
+#                 """
+
+#                 await self.send_email(
+#                     to_email=to_email,
+#                     subject=subject,
+#                     body=body,
+#                     html_body=html_body,
+#                 )
+#         except Exception as e:
+#             error_msg = f"Failed to send email to {to_email}: {str(e)}"
+#             logger.error(error_msg)
+#             raise RuntimeError(error_msg) from e

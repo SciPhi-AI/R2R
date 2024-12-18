@@ -32,7 +32,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users",
-            dependencies=[Depends(self.rate_limit_dependency)],
+            # dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedUserResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -104,7 +104,7 @@ class UsersRouter(BaseRouterV3):
             profile_picture: str | None = Body(
                 None, description="Updated user profile picture"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            # auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedUserResponse:
             """Register a new user with the given email and password."""
             registration_response = await self.services.auth.register(
@@ -123,7 +123,7 @@ class UsersRouter(BaseRouterV3):
         # TODO: deprecated, remove in next release
         @self.router.post(
             "/users/register",
-            dependencies=[Depends(self.rate_limit_dependency)],
+            # dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedUserResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -192,7 +192,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users/verify-email",
-            dependencies=[Depends(self.rate_limit_dependency)],
+            # dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedGenericMessageResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -249,6 +249,17 @@ class UsersRouter(BaseRouterV3):
             ),
         ) -> WrappedGenericMessageResponse:
             """Verify a user's email address."""
+            user = (
+                await self.providers.database.users_handler.get_user_by_email(
+                    email
+                )
+            )
+            if user and user.is_verified:
+                raise R2RException(
+                    status_code=400,
+                    message="This email is already verified. Please log in.",
+                )
+
             result = await self.services.auth.verify_email(
                 email, verification_code
             )
@@ -256,7 +267,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users/login",
-            dependencies=[Depends(self.rate_limit_dependency)],
+            # dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedTokenResponse,
             openapi_extra={
                 "x-codeSamples": [

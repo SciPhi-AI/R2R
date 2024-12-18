@@ -1385,14 +1385,14 @@ class DocumentsRouter(BaseRouterV3):
 
             Results are returned in the order they were extracted from the document.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
-                    403,
-                )
+            # if (
+            #     not auth_user.is_superuser
+            #     and id not in auth_user.collection_ids
+            # ):
+            #     raise R2RException(
+            #         "The currently authenticated user does not have access to the specified collection.",
+            #         403,
+            #     )
 
             # First check if the document exists and user has access
             documents_overview_response = (
@@ -1526,14 +1526,14 @@ class DocumentsRouter(BaseRouterV3):
 
             Results are returned in the order they were extracted from the document.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
-                    403,
-                )
+            # if (
+            #     not auth_user.is_superuser
+            #     and id not in auth_user.collection_ids
+            # ):
+            #     raise R2RException(
+            #         "The currently authenticated user does not have access to the specified collection.",
+            #         403,
+            #     )
 
             # First check if the document exists and user has access
             documents_overview_response = (
