@@ -1,7 +1,7 @@
 # type: ignore
+import re
 from io import BytesIO
 from typing import AsyncGenerator
-import re
 
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (

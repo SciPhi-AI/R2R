@@ -21,8 +21,8 @@ class ODTParser(AsyncParser[str | bytes]):
         self.config = config
 
         try:
-            import zipfile
             import xml.etree.ElementTree as ET
+            import zipfile
 
             self.zipfile = zipfile
             self.ET = ET

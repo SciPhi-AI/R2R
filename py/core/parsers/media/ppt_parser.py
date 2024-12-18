@@ -1,7 +1,7 @@
 # type: ignore
-from typing import AsyncGenerator
 import struct
 from io import BytesIO
+from typing import AsyncGenerator
 
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (

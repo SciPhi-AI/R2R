@@ -20,15 +20,13 @@ Tests verify:
 """
 
 import time
+from pathlib import Path
+from typing import Any, Optional
 from uuid import UUID
 
 import pytest
 
 from r2r import R2RClient, R2RException
-
-from pathlib import Path
-from typing import Any, Optional
-import time
 
 
 def file_ingestion(

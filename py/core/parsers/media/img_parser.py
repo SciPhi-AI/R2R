@@ -1,8 +1,8 @@
 # type: ignore
 import base64
 import logging
-from typing import AsyncGenerator
 from io import BytesIO
+from typing import AsyncGenerator
 
 from core.base.abstractions import GenerationConfig
 from core.base.parsers.base_parser import AsyncParser
@@ -28,9 +28,9 @@ class ImageParser(AsyncParser[str | bytes]):
         self.vision_prompt_text = None
 
         try:
+            import pillow_heif  # for HEIC support
             from litellm import supports_vision
             from PIL import Image
-            import pillow_heif  # for HEIC support
 
             self.supports_vision = supports_vision
             self.Image = Image

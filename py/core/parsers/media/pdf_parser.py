@@ -13,7 +13,6 @@ from typing import AsyncGenerator
 import aiofiles
 from pdf2image import convert_from_path
 from pdf2image.exceptions import PDFInfoNotInstalledError
-from shared.abstractions import PDFParsingError, PopperNotFoundError
 
 from core.base.abstractions import GenerationConfig
 from core.base.parsers.base_parser import AsyncParser
@@ -22,6 +21,7 @@ from core.base.providers import (
     DatabaseProvider,
     IngestionConfig,
 )
+from shared.abstractions import PDFParsingError, PopperNotFoundError
 
 logger = logging.getLogger()
 

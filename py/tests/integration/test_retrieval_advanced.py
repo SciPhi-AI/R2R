@@ -1,5 +1,6 @@
 import pytest
-from r2r import Message, SearchMode, R2RException
+
+from r2r import Message, R2RException, SearchMode
 
 
 # Semantic Search Tests

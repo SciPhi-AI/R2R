@@ -1,10 +1,10 @@
 # type: ignore
-import logging
-from core.base.abstractions import GenerationConfig
-from typing import AsyncGenerator
-from io import BytesIO
 import base64
+import logging
+from io import BytesIO
+from typing import AsyncGenerator
 
+from core.base.abstractions import GenerationConfig
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
