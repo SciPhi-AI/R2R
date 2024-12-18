@@ -655,6 +655,9 @@ class DocumentsRouter(BaseRouterV3):
                     limit=limit,
                 )
             )
+            print(
+                "documents_overview_response = ", documents_overview_response
+            )
             if not include_summary_embeddings:
                 for document in documents_overview_response["results"]:
                     document.summary_embedding = None
@@ -1087,7 +1090,9 @@ class DocumentsRouter(BaseRouterV3):
             filters_dict = {
                 "$and": [{"owner_id": {"$eq": str(auth_user.id)}}, filters]
             }
-            await self.services.management.delete(filters=filters_dict)
+            await self.services.management.delete_documents_and_chunks_by_filter(
+                filters=filters_dict
+            )
 
             return GenericBooleanResponse(success=True)  # type: ignore
 
@@ -1166,7 +1171,9 @@ class DocumentsRouter(BaseRouterV3):
                     {"document_id": {"$eq": str(id)}},
                 ]
             }
-            await self.services.management.delete(filters=filters)
+            await self.services.management.delete_documents_and_chunks_by_filter(
+                filters=filters
+            )
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.get(

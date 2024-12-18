@@ -1,5 +1,5 @@
 import json
-from typing import Any, Tuple, Union, Optional
+from typing import Any, Optional, Tuple, Union
 from uuid import UUID
 
 COLUMN_VARS = [
@@ -231,44 +231,79 @@ class SQLFilterBuilder:
         param_idx = len(self.params) + 1
         json_col = self.json_column
 
-        if "metadata." in key:
-            key = key.split("metadata.")[-1]
+        # Strip "metadata." prefix if present
+        if key.startswith("metadata."):
+            key = key[len("metadata.") :]
+
+        # Split on '.' to handle nested keys
+        parts = key.split(".")
+
+        # Depending on the operator, decide whether we need text extraction (->>) for the last key
+        # For JSON equality ($eq, $ne, $contains), we can stay JSON-based: use `->` for all segments.
+        # For numeric comparisons ($lt, $gt, etc.), we need to extract text with `->>` at the last step to cast to float.
+        # For $in (list checks), we probably need `->>` on the last segment to compare text.
+
+        # Default: keep JSON structure all the way
+        use_text_extraction = False
+        if op in ("$lt", "$lte", "$gt", "$gte", "$in"):
+            use_text_extraction = True
+
+        # Build the JSON path expression
+        # For all but the last part, use ->'part'
+        # For the last part, use ->'part' or ->>'part' depending on use_text_extraction
+        if len(parts) == 1:
+            # Single part key
+            if use_text_extraction:
+                path_expr = f"{json_col}->>'{parts[0]}'"
+            else:
+                path_expr = f"{json_col}->'{parts[0]}'"
+        else:
+            # Multiple segments
+            inner_parts = parts[:-1]
+            last_part = parts[-1]
+            # Build chain for the inner parts
+            path_expr = json_col
+            for p in inner_parts:
+                path_expr += f"->'{p}'"
+            # Last part
+            if use_text_extraction:
+                path_expr += f"->>'{last_part}'"
+            else:
+                path_expr += f"->'{last_part}'"
+
+        # Now apply the operator logic as before, but use path_expr in place of {json_col}->'{key}'
         if op == "$eq":
             self.params.append(json.dumps(val))
-            return f"{json_col}->'{key}' = ${param_idx}::jsonb"
+            return f"{path_expr} = ${param_idx}::jsonb"
         elif op == "$ne":
             self.params.append(json.dumps(val))
-            return f"{json_col}->'{key}' != ${param_idx}::jsonb"
+            return f"{path_expr} != ${param_idx}::jsonb"
         elif op == "$lt":
             self.params.append(json.dumps(val))
-            return (
-                f"({json_col}->'{key}')::float < (${param_idx}::jsonb)::float"
-            )
+            # path_expr already ends in ->>'last_part', so we can cast directly:
+            return f"({path_expr})::float < (${param_idx}::jsonb)::float"
         elif op == "$lte":
             self.params.append(json.dumps(val))
-            return (
-                f"({json_col}->'{key}')::float <= (${param_idx}::jsonb)::float"
-            )
+            return f"({path_expr})::float <= (${param_idx}::jsonb)::float"
         elif op == "$gt":
             self.params.append(json.dumps(val))
-            return (
-                f"({json_col}->'{key}')::float > (${param_idx}::jsonb)::float"
-            )
+            return f"({path_expr})::float > (${param_idx}::jsonb)::float"
         elif op == "$gte":
             self.params.append(json.dumps(val))
-            return (
-                f"({json_col}->'{key}')::float >= (${param_idx}::jsonb)::float"
-            )
+            return f"({path_expr})::float >= (${param_idx}::jsonb)::float"
         elif op == "$in":
+            # For $in, we expect a list and compare as text
             if not isinstance(val, list):
                 raise FilterError("argument to $in filter must be a list")
             self.params.append(val)
-            return f"(metadata->>'{key}')::text = ANY(${param_idx}::text[])"
+            # path_expr should end with ->>'last_part' for text extraction
+            return f"({path_expr})::text = ANY(${param_idx}::text[])"
         elif op == "$contains":
+            # $contains is JSON containment, no text extraction needed
             if isinstance(val, (int, float, str)):
                 val = [val]
             self.params.append(json.dumps(val))
-            return f"{json_col}->'{key}' @> ${param_idx}::jsonb"
+            return f"{path_expr} @> ${param_idx}::jsonb"
         else:
             raise FilterError(f"Unsupported operator for metadata field {op}")
 

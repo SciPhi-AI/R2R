@@ -373,9 +373,10 @@ from r2r import R2RException
 def test_delete_by_workflow_metadata(client):
     """Test deletion by workflow state metadata."""
     # Create test documents with workflow metadata
+    random_suffix = uuid.uuid4()
     docs = [
         client.documents.create(
-            raw_text="Draft document 1",
+            raw_text="Draft document 1" + str(random_suffix),
             metadata={
                 "workflow": {
                     "state": "draft",
@@ -386,7 +387,7 @@ def test_delete_by_workflow_metadata(client):
             run_with_orchestration=False,
         )["results"]["document_id"],
         client.documents.create(
-            raw_text="Draft document 2",
+            raw_text="Draft document 2" + str(random_suffix),
             metadata={
                 "workflow": {
                     "state": "draft",
@@ -397,7 +398,7 @@ def test_delete_by_workflow_metadata(client):
             run_with_orchestration=False,
         )["results"]["document_id"],
         client.documents.create(
-            raw_text="Published document",
+            raw_text="Published document" + str(random_suffix),
             metadata={
                 "workflow": {
                     "state": "published",
@@ -408,13 +409,14 @@ def test_delete_by_workflow_metadata(client):
             run_with_orchestration=False,
         )["results"]["document_id"],
     ]
+    print("available documents = ", client.documents.list())
 
     try:
         # Delete drafts with no reviews
         filters = {
             "$and": [
-                {"workflow.state": {"$eq": "draft"}},
-                {"workflow.review_count": {"$eq": 0}},
+                {"metadata.workflow.state": {"$eq": "draft"}},
+                {"metadata.workflow.review_count": {"$eq": 0}},
             ]
         }
 

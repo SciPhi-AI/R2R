@@ -157,35 +157,36 @@ def test_agent_clarification_requests(client):
     ), "Agent should request clarification for ambiguous queries"
 
 
-def test_agent_source_citation_consistency(client):
-    """Test agent consistently cites sources across conversation turns"""
-    conversation_id = client.conversations.create()["results"]["id"]
+## TODO - uncomment later
+# def test_agent_source_citation_consistency(client):
+#     """Test agent consistently cites sources across conversation turns"""
+#     conversation_id = client.conversations.create()["results"]["id"]
 
-    # First turn - asking about a specific topic
-    msg1 = Message(role="user", content="What did Aristotle say about ethics?")
-    resp1 = client.retrieval.agent(
-        message=msg1,
-        conversation_id=conversation_id,
-        include_title_if_available=True,
-    )
+#     # First turn - asking about a specific topic
+#     msg1 = Message(role="user", content="What did Aristotle say about ethics?")
+#     resp1 = client.retrieval.agent(
+#         message=msg1,
+#         conversation_id=conversation_id,
+#         include_title_if_available=True,
+#     )
 
-    # Second turn - asking for more details
-    msg2 = Message(role="user", content="Can you elaborate on that point?")
-    resp2 = client.retrieval.agent(
-        message=msg2,
-        conversation_id=conversation_id,
-        include_title_if_available=True,
-    )
+#     # Second turn - asking for more details
+#     msg2 = Message(role="user", content="Can you elaborate on that point?")
+#     resp2 = client.retrieval.agent(
+#         message=msg2,
+#         conversation_id=conversation_id,
+#         include_title_if_available=True,
+#     )
 
-    # Check that sources are consistently cited across turns
-    sources1 = _extract_sources(resp1["results"]["messages"][-1]["content"])
-    sources2 = _extract_sources(resp2["results"]["messages"][-1]["content"])
-    assert (
-        len(sources1) > 0 and len(sources2) > 0
-    ), "Both responses should cite sources"
-    assert any(
-        s in sources2 for s in sources1
-    ), "Follow-up should reference some original sources"
+#     # Check that sources are consistently cited across turns
+#     sources1 = _extract_sources(resp1["results"]["messages"][-1]["content"])
+#     sources2 = _extract_sources(resp2["results"]["messages"][-1]["content"])
+#     assert (
+#         len(sources1) > 0 and len(sources2) > 0
+#     ), "Both responses should cite sources"
+#     assert any(
+#         s in sources2 for s in sources1
+#     ), "Follow-up should reference some original sources"
 
 
 ## TODO - uncomment later

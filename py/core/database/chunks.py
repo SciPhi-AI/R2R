@@ -1122,6 +1122,7 @@ class PostgresChunksHandler(Handler):
         LIMIT ${len(params) + 1}
         OFFSET ${len(params) + 2}
         """
+        print("query", query)
 
         params.extend([limit, offset])
 
