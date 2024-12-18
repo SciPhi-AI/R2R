@@ -1,22 +1,22 @@
 """
 Tests for the graphs commands in the CLI.
-    x list
-    x retrieve
-    x reset
-    x update
-    x list-entities
-    x get-entity
+    - list
+    - retrieve
+    - reset
+    - update
+    - list-entities
+    - get-entity
     x remove-entity
-    x list-relationships
-    x get-relationship
+    - list-relationships
+    - get-relationship
     x remove-relationship
-    x build
-    x list-communities
-    x get-community
+    - build
+    - list-communities
+    - get-community
     x update-community
     x delete-community
-    x pull
-    x remove-document
+    - pull
+    - remove-document
 """
 
 import json
@@ -65,7 +65,9 @@ def extract_json_block(output: str) -> dict:
     raise ValueError("No complete JSON object found in output")
 
 
-async def create_test_collection(runner: CliRunner, client: R2RAsyncClient) -> str:
+async def create_test_collection(
+    runner: CliRunner, client: R2RAsyncClient
+) -> str:
     """Helper function to create a test collection and return its ID."""
     collection_name = f"test-collection-{uuid.uuid4()}"
     create_result = await async_invoke(
@@ -124,7 +126,7 @@ async def test_graph_entity_operations():
     runner = CliRunner(mix_stderr=False)
 
     collection_id = await create_test_collection(runner, client)
-    
+
     try:
         # List entities (empty initially)
         list_entities_result = await async_invoke(
