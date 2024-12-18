@@ -4,9 +4,9 @@ Tests for the user commands in the CLI.
     - list
     - retrieve
     - me
-    x list_collections
-    x add_to_collection
-    - remove_from_collection
+    x list-collections
+    x add-to-collection
+    x remove-from-collection
 """
 
 import json

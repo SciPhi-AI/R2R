@@ -59,8 +59,7 @@ async def list(ctx: click.Context, ids, offset, limit):
                 offset=offset,
                 limit=limit,
             )
-        for user in response["results"]:  # type: ignore
-            click.echo(json.dumps(user, indent=2))
+        click.echo(json.dumps(response, indent=2))
     except R2RException as e:
         click.echo(str(e), err=True)
     except Exception as e:

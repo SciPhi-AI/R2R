@@ -1,5 +1,6 @@
 from typing import Any, Tuple, Type, cast
 from types import TracebackType
+import asyncio
 import asyncclick as click
 from click.testing import CliRunner, Result
 from click import Abort
@@ -18,9 +19,15 @@ async def async_invoke(
     with runner.isolation() as out_err:
         stdout, stderr = out_err
         try:
-            return_value = await cmd.main(
-                args=args, standalone_mode=False, **kwargs
+            # Get current event loop instead of creating new one
+            loop = asyncio.get_event_loop()
+
+            # Run the command using create_task
+            task = loop.create_task(
+                cmd.main(args=args, standalone_mode=False, **kwargs)
             )
+            return_value = await task
+
         except Abort as e:
             exit_code = 1
             exception = cast(BaseException, e)
@@ -34,7 +41,6 @@ async def async_invoke(
                 exc_info = (BaseException, exception, e.__traceback__)
             return_value = None
 
-        # Always ensure we have bytes objects, not None
         stdout_bytes = stdout.getvalue() or b""
         stderr_bytes = stderr.getvalue() if stderr else b""
 

@@ -1,5 +1,4 @@
 from cli.command_group import cli
-import asyncclick as click
 from cli.commands import (
     collections,
     conversations,

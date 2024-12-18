@@ -4,17 +4,18 @@ Tests for the document commands in the CLI.
     - retrieve
     - list
     - delete
-    - list_chunks
-    - list_collections
-    x ingest_files_from_url
+    - list-chunks
+    - list-collections
+    x ingest-files-from-url
     x extract
-    x list_entities
-    x list_relationships
-    x create_sample
-    x create_samples
+    x list-entities
+    x list-relationships
+    x create-sample
+    x create-samples
 """
 
 import json
+import contextlib
 import os
 import pytest
 import tempfile
@@ -192,10 +193,8 @@ async def test_create_multiple_documents(temp_text_file, temp_json_file):
     for block in blocks:
         block = block.strip()
         if '"results"' in block and "{" in block and "}" in block:
-            try:
+            with contextlib.suppress(ValueError):
                 json_objects.append(extract_json_block(block))
-            except ValueError:
-                pass
 
     assert (
         len(json_objects) == 2

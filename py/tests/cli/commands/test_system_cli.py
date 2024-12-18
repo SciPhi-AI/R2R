@@ -4,9 +4,9 @@ Tests for the system commands in the CLI.
     - settings
     - status
     x serve
-    x image exists
-    x docker down
-    x generate report
+    x image-exists
+    x docker-down
+    x generate-report
     x update
     - version
 
