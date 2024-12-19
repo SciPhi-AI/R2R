@@ -5,7 +5,7 @@ from asyncclick import pass_context
 
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
-from r2r import R2RAsyncClient
+from r2r import R2RAsyncClient, R2RException
 
 
 @click.group()
@@ -52,9 +52,8 @@ def retrieval():
     help="Use search over document chunks?",
 )
 @pass_context
-async def search(ctx, query, **kwargs):
+async def search(ctx: click.Context, query, **kwargs):
     """Perform a search query."""
-    client: R2RAsyncClient = ctx.obj
     search_settings = {
         k: v
         for k, v in kwargs.items()
@@ -78,28 +77,35 @@ async def search(ctx, query, **kwargs):
     if chunk_search_enabled != None:
         search_settings["chunk_settings"] = {"enabled": chunk_search_enabled}
 
-    with timer():
-        results = await client.retrieval.search(
-            query,
-            "custom",
-            search_settings,
-        )
+    client: R2RAsyncClient = ctx.obj
 
-        if isinstance(results, dict) and "results" in results:
-            results = results["results"]
+    try:
+        with timer():
+            results = await client.retrieval.search(
+                query,
+                "custom",
+                search_settings,
+            )
 
-        if "chunk_search_results" in results:
-            click.echo("Vector search results:")
-            for result in results["chunk_search_results"]:
-                click.echo(json.dumps(result, indent=2))
+            if isinstance(results, dict) and "results" in results:
+                results = results["results"]
 
-        if (
-            "graph_search_results" in results
-            and results["graph_search_results"]
-        ):
-            click.echo("KG search results:")
-            for result in results["graph_search_results"]:
-                click.echo(json.dumps(result, indent=2))
+            if "chunk_search_results" in results:  # type: ignore
+                click.echo("Vector search results:")
+                for result in results["chunk_search_results"]:  # type: ignore
+                    click.echo(json.dumps(result, indent=2))
+
+            if (
+                "graph_search_results" in results  # type: ignore
+                and results["graph_search_results"]  # type: ignore
+            ):
+                click.echo("KG search results:")
+                for result in results["graph_search_results"]:  # type: ignore
+                    click.echo(json.dumps(result, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @retrieval.command()
@@ -142,9 +148,8 @@ async def search(ctx, query, **kwargs):
 @click.option("--stream", is_flag=True, help="Stream the RAG response")
 @click.option("--rag-model", default=None, help="Model for RAG")
 @pass_context
-async def rag(ctx, query, **kwargs):
+async def rag(ctx: click.Context, query, **kwargs):
     """Perform a RAG query."""
-    client: R2RAsyncClient = ctx.obj
     rag_generation_config = {
         "stream": kwargs.get("stream", False),
     }
@@ -174,16 +179,23 @@ async def rag(ctx, query, **kwargs):
     if chunk_search_enabled != None:
         search_settings["chunk_settings"] = {"enabled": chunk_search_enabled}
 
-    with timer():
-        response = await client.retrieval.rag(
-            query=query,
-            rag_generation_config=rag_generation_config,
-            search_settings={**search_settings},
-        )
+    client: R2RAsyncClient = ctx.obj
 
-        if rag_generation_config.get("stream"):
-            async for chunk in response:
-                click.echo(chunk, nl=False)
-            click.echo()
-        else:
-            click.echo(json.dumps(response["results"]["completion"], indent=2))
+    try:
+        with timer():
+            response = await client.retrieval.rag(
+                query=query,
+                rag_generation_config=rag_generation_config,
+                search_settings={**search_settings},
+            )
+
+            if rag_generation_config.get("stream"):
+                async for chunk in response:  # type: ignore
+                    click.echo(chunk, nl=False)
+                click.echo()
+            else:
+                click.echo(json.dumps(response["results"]["completion"], indent=2))  # type: ignore
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
