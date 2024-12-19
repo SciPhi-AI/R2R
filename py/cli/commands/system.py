@@ -18,7 +18,7 @@ from cli.utils.docker_utils import (
     wait_for_container_health,
 )
 from cli.utils.timer import timer
-from r2r import R2RAsyncClient
+from r2r import R2RAsyncClient, R2RException
 
 
 @click.group()
@@ -29,35 +29,53 @@ def system():
 
 @cli.command()
 @pass_context
-async def health(ctx):
+async def health(ctx: click.Context):
     """Check the health of the server."""
     client: R2RAsyncClient = ctx.obj
-    with timer():
-        response = await client.system.health()
-
-    click.echo(json.dumps(response, indent=2))
+    try:
+        with timer():
+            response = await client.system.health()
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+        raise
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
+        raise
 
 
 @system.command()
 @pass_context
-async def settings(ctx):
+async def settings(ctx: click.Context):
     """Retrieve application settings."""
     client: R2RAsyncClient = ctx.obj
-    with timer():
-        response = await client.system.settings()
-
-    click.echo(json.dumps(response, indent=2))
+    try:
+        with timer():
+            response = await client.system.settings()
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+        raise
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
+        raise
 
 
 @system.command()
 @pass_context
-async def status(ctx):
+async def status(ctx: click.Context):
     """Get statistics about the server, including the start time, uptime, CPU usage, and memory usage."""
     client: R2RAsyncClient = ctx.obj
-    with timer():
-        response = await client.system.status()
-
-    click.echo(json.dumps(response, indent=2))
+    try:
+        with timer():
+            response = await client.system.status()
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+        raise
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
+        raise
 
 
 @cli.command()
@@ -400,4 +418,9 @@ def version():
     """Reports the SDK version."""
     from importlib.metadata import version
 
-    click.echo(json.dumps(version("r2r"), indent=2))
+    try:
+        r2r_version = version("r2r")
+        click.echo(json.dumps(r2r_version, indent=2))
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
+        raise
