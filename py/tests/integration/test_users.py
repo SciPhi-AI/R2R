@@ -464,3 +464,136 @@ def test_password_reset_with_invalid_token(client):
         422,
     ], "Expected error resetting password with invalid token."
     client.users.logout()
+
+
+@pytest.fixture
+def user_with_api_key(client):
+    """Fixture that creates a user and returns their ID and API key details"""
+    random_email = f"{uuid.uuid4()}@example.com"
+    password = "api_key_test_password"
+    user_resp = client.users.create(random_email, password)["results"]
+    user_id = user_resp["id"]
+
+    # Login to create an API key
+    client.users.login(random_email, password)
+    api_key_resp = client.users.create_api_key(user_id)["results"]
+    api_key = api_key_resp["api_key"]
+    key_id = api_key_resp["key_id"]
+
+    yield user_id, api_key, key_id
+
+    # Cleanup
+    try:
+        client.users.delete_api_key(user_id, key_id)
+    except:
+        pass
+    client.users.logout()
+
+
+def test_api_key_lifecycle(client):
+    """Test the complete lifecycle of API keys including creation, listing, and deletion"""
+    # Create user and login
+    email = f"{uuid.uuid4()}@example.com"
+    password = "api_key_test_password"
+    user_resp = client.users.create(email, password)["results"]
+    user_id = user_resp["id"]
+    client.users.login(email, password)
+
+    # Create API key
+    api_key_resp = client.users.create_api_key(user_id)["results"]
+    assert "api_key" in api_key_resp, "API key not returned"
+    assert "key_id" in api_key_resp, "Key ID not returned"
+    assert "public_key" in api_key_resp, "Public key not returned"
+
+    key_id = api_key_resp["key_id"]
+
+    # List API keys
+    list_resp = client.users.list_api_keys(user_id)["results"]
+    assert len(list_resp) > 0, "No API keys found after creation"
+    assert (
+        list_resp[0]["key_id"] == key_id
+    ), "Listed key ID doesn't match created key"
+    assert "updated_at" in list_resp[0], "Updated timestamp missing"
+    assert "public_key" in list_resp[0], "Public key missing in list"
+
+    # Delete API key using key_id
+    delete_resp = client.users.delete_api_key(user_id, key_id)["results"]
+    assert delete_resp["success"], "Failed to delete API key"
+
+    # Verify deletion
+    list_resp_after = client.users.list_api_keys(user_id)["results"]
+    assert not any(
+        k["key_id"] == key_id for k in list_resp_after
+    ), "API key still exists after deletion"
+
+    client.users.logout()
+
+
+def test_api_key_authentication(client, user_with_api_key):
+    """Test using an API key for authentication"""
+    user_id, api_key, _ = user_with_api_key
+
+    # Create new client with API key
+    api_client = R2RClient(client.base_url)
+    api_client.set_api_key(api_key)
+
+    # Test API key authentication
+    me_resp = api_client.users.me()["results"]
+    assert me_resp["id"] == user_id, "API key authentication failed"
+
+
+def test_api_key_permissions(client, user_with_api_key):
+    """Test API key permission restrictions"""
+    user_id, api_key, _ = user_with_api_key
+
+    # Create new client with API key
+    api_client = R2RClient(client.base_url)
+    api_client.set_api_key(api_key)
+
+    # Should not be able to list all users (superuser only)
+    with pytest.raises(R2RException) as exc_info:
+        api_client.users.list()
+    assert (
+        exc_info.value.status_code == 403
+    ), "Non-superuser API key shouldn't list users"
+
+
+def test_invalid_api_key(client):
+    """Test behavior with invalid API key"""
+    api_client = R2RClient(client.base_url)
+    api_client.set_api_key("invalid.api.key")
+
+    with pytest.raises(R2RException) as exc_info:
+        api_client.users.me()
+    assert (
+        exc_info.value.status_code == 401
+    ), "Expected 401 for invalid API key"
+
+
+def test_multiple_api_keys(client):
+    """Test creating and managing multiple API keys for a single user"""
+    email = f"{uuid.uuid4()}@example.com"
+    password = "multi_key_test_password"
+    user_resp = client.users.create(email, password)["results"]
+    user_id = user_resp["id"]
+    client.users.login(email, password)
+
+    # Create multiple API keys
+    key_ids = []
+    for i in range(3):
+        key_resp = client.users.create_api_key(user_id)["results"]
+        key_ids.append(key_resp["key_id"])
+
+    # List and verify all keys exist
+    list_resp = client.users.list_api_keys(user_id)["results"]
+    assert len(list_resp) >= 3, "Not all API keys were created"
+
+    # Delete keys one by one and verify counts
+    for key_id in key_ids:
+        client.users.delete_api_key(user_id, key_id)
+        current_keys = client.users.list_api_keys(user_id)["results"]
+        assert not any(
+            k["key_id"] == key_id for k in current_keys
+        ), f"Key {key_id} still exists after deletion"
+
+    client.users.logout()
