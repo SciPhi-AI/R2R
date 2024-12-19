@@ -31,6 +31,8 @@ from shared.api.models.management.responses import (
     ServerStats,
     SettingsResponse,
     WrappedAnalyticsResponse,
+    WrappedAPIKeyResponse,
+    WrappedAPIKeysResponse,
     WrappedChunkResponse,
     WrappedChunksResponse,
     WrappedCollectionResponse,
@@ -105,6 +107,8 @@ __all__ = [
     "WrappedConversationsResponse",
     # User Responses
     "WrappedUserResponse",
+    "WrappedAPIKeyResponse",
+    "WrappedAPIKeysResponse",
     "WrappedUsersResponse",
     # Base Responses
     "PaginatedR2RResult",

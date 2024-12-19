@@ -10,6 +10,8 @@ from core.base import R2RException
 from core.base.api.models import (
     GenericBooleanResponse,
     GenericMessageResponse,
+    WrappedAPIKeyResponse,
+    WrappedAPIKeysResponse,
     WrappedBooleanResponse,
     WrappedCollectionsResponse,
     WrappedGenericMessageResponse,
@@ -107,6 +109,22 @@ class UsersRouter(BaseRouterV3):
             # auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedUserResponse:
             """Register a new user with the given email and password."""
+
+            def validate_password(password: str) -> bool:
+                if len(password) < 10:
+                    return False
+                if not any(c.isupper() for c in password):
+                    return False
+                if not any(c.islower() for c in password):
+                    return False
+                if not any(c.isdigit() for c in password):
+                    return False
+                if not any(c in "!@#$%^&*" for c in password):
+                    return False
+                return True
+
+            validate_password(password)
+
             registration_response = await self.services.auth.register(
                 email, password
             )
@@ -1335,3 +1353,182 @@ class UsersRouter(BaseRouterV3):
                 bio=bio,
                 profile_picture=profile_picture,
             )
+
+        @self.router.post(
+            "/users/{id}/api-keys",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            summary="Create User API Key",
+            response_model=WrappedAPIKeyResponse,
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
+
+                            result = client.users.create_api_key(
+                                id="550e8400-e29b-41d4-a716-446655440000",
+                            )
+                            # result["api_key"] contains the newly created API key
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/api-keys" \\
+                                -H "Authorization: Bearer YOUR_API_TOKEN"
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def create_user_api_key(
+            id: UUID = Path(
+                ..., description="ID of the user for whom to create an API key"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedAPIKeyResponse:
+            """
+            Create a new API key for the specified user.
+            Only superusers or the user themselves may create an API key.
+            """
+            if auth_user.id != id and not auth_user.is_superuser:
+                raise R2RException(
+                    "Only the user themselves or a superuser can create API keys for this user.",
+                    403,
+                )
+
+            api_key = await self.services.auth.create_user_api_key(id)
+            print("api_key = ", api_key)
+            return api_key  # {"results":  api_key}
+
+        @self.router.get(
+            "/users/{id}/api-keys",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            summary="List User API Keys",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
+
+                            keys = client.users.list_api_keys(
+                                id="550e8400-e29b-41d4-a716-446655440000"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/api-keys" \\
+                                -H "Authorization: Bearer YOUR_API_TOKEN"
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def list_user_api_keys(
+            id: UUID = Path(
+                ..., description="ID of the user whose API keys to list"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedAPIKeysResponse:
+            """
+            List all API keys for the specified user.
+            Only superusers or the user themselves may list the API keys.
+            """
+            if auth_user.id != id and not auth_user.is_superuser:
+                raise R2RException(
+                    "Only the user themselves or a superuser can list API keys for this user.",
+                    403,
+                )
+
+            keys = (
+                await self.providers.database.users_handler.get_user_api_keys(
+                    id
+                )
+            )
+            return keys, {
+                "total_entries": len(keys)
+            }  # Return directly as tuple for WrappedAPIKeysResponse
+
+        @self.router.delete(
+            "/users/{id}/api-keys/{key_id}",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            summary="Delete User API Key",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+                            from uuid import UUID
+
+                            client = R2RClient("http://localhost:7272")
+                            # client.login(...)
+
+                            response = client.users.delete_api_key(
+                                id="550e8400-e29b-41d4-a716-446655440000",
+                                key_id="d9c562d4-3aef-43e8-8f08-0cf7cd5e0a25"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X DELETE "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/api-keys/d9c562d4-3aef-43e8-8f08-0cf7cd5e0a25" \\
+                                -H "Authorization: Bearer YOUR_API_TOKEN"
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def delete_user_api_key(
+            id: UUID = Path(..., description="ID of the user"),
+            key_id: UUID = Path(
+                ..., description="ID of the API key to delete"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper),
+        ) -> WrappedBooleanResponse:
+            """
+            Delete a specific API key for the specified user.
+            Only superusers or the user themselves may delete the API key.
+            """
+            if auth_user.id != id and not auth_user.is_superuser:
+                raise R2RException(
+                    "Only the user themselves or a superuser can delete this API key.",
+                    403,
+                )
+
+            success = (
+                await self.providers.database.users_handler.delete_api_key(
+                    id, key_id
+                )
+            )
+            if not success:
+                raise R2RException(
+                    "API key not found or could not be deleted", 400
+                )
+            return {"success": True}

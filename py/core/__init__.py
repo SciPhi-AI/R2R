@@ -227,8 +227,10 @@ __all__ = [
     "SupabaseAuthProvider",
     "R2RAuthProvider",
     # Crypto
-    "BCryptProvider",
-    "BCryptConfig",
+    "BCryptCryptoProvider",
+    "BcryptCryptoConfig",
+    "NaClCryptoConfig",
+    "NaClCryptoProvider",
     # Database
     "PostgresDatabaseProvider",
     # Embeddings

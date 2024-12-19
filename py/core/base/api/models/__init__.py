@@ -43,6 +43,8 @@ from shared.api.models.management.responses import (  # Document Responses; Prom
     SettingsResponse,
     User,
     WrappedAnalyticsResponse,
+    WrappedAPIKeyResponse,
+    WrappedAPIKeysResponse,
     WrappedChunkResponse,
     WrappedChunksResponse,
     WrappedCollectionResponse,
@@ -138,6 +140,7 @@ __all__ = [
     "User",
     "WrappedUserResponse",
     "WrappedUsersResponse",
+    "WrappedAPIKeyResponse",
     # Base Responses
     "PaginatedR2RResult",
     "R2RResults",
