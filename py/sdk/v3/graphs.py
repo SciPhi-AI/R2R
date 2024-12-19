@@ -2,7 +2,7 @@ from typing import Any, Optional
 from uuid import UUID
 
 from shared.api.models.base import WrappedBooleanResponse
-from shared.api.models.kg.responses import (
+from shared.api.models.graph.responses import (
     WrappedCommunitiesResponse,
     WrappedCommunityResponse,
     WrappedEntitiesResponse,

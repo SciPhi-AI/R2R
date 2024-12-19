@@ -18,7 +18,7 @@ from core.providers import (  # PostgresDatabaseProvider,
 logger = logging.getLogger()
 
 
-class KGEntityDeduplicationSummaryPipe(AsyncPipe[Any]):
+class GraphDeduplicationSummaryPipe(AsyncPipe[Any]):
 
     class Input(AsyncPipe.Input):
         message: dict

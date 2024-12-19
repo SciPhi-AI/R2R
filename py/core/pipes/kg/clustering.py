@@ -15,7 +15,7 @@ from core.database import PostgresDatabaseProvider
 logger = logging.getLogger()
 
 
-class KGClusteringPipe(AsyncPipe):
+class GraphClusteringPipe(AsyncPipe):
     """
     Clusters entities and relationships into communities within the knowledge graph using hierarchical Leiden algorithm.
     """

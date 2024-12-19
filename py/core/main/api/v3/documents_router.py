@@ -1087,7 +1087,9 @@ class DocumentsRouter(BaseRouterV3):
             filters_dict = {
                 "$and": [{"owner_id": {"$eq": str(auth_user.id)}}, filters]
             }
-            await self.services.management.delete(filters=filters_dict)
+            await self.services.management.delete_documents_and_chunks_by_filter(
+                filters=filters_dict
+            )
 
             return GenericBooleanResponse(success=True)  # type: ignore
 
@@ -1166,7 +1168,9 @@ class DocumentsRouter(BaseRouterV3):
                     {"document_id": {"$eq": str(id)}},
                 ]
             }
-            await self.services.management.delete(filters=filters)
+            await self.services.management.delete_documents_and_chunks_by_filter(
+                filters=filters
+            )
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.get(
@@ -1359,7 +1363,7 @@ class DocumentsRouter(BaseRouterV3):
                     "message": "Estimate retrieved successfully",
                     "task_id": None,
                     "id": id,
-                    "estimate": await self.services.kg.get_creation_estimate(
+                    "estimate": await self.services.graph.get_creation_estimate(
                         document_id=id,
                         graph_creation_settings=server_graph_creation_settings,
                     ),
@@ -1379,7 +1383,7 @@ class DocumentsRouter(BaseRouterV3):
                 from core.main.orchestration import simple_kg_factory
 
                 logger.info("Running extract-triples without orchestration.")
-                simple_kg = simple_kg_factory(self.services.kg)
+                simple_kg = simple_kg_factory(self.services.graph)
                 await simple_kg["extract-triples"](workflow_input)
                 return {  # type: ignore
                     "message": "Graph created successfully.",

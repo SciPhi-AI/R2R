@@ -11,7 +11,7 @@ from core import GenerationConfig
 from core.base import OrchestrationProvider, R2RException
 from core.base.abstractions import KGEnrichmentStatus, KGExtractionStatus
 
-from ...services import KgService
+from ...services import GraphService
 
 logger = logging.getLogger()
 from typing import TYPE_CHECKING
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 def hatchet_kg_factory(
-    orchestration_provider: OrchestrationProvider, service: KgService
+    orchestration_provider: OrchestrationProvider, service: GraphService
 ) -> dict[str, "Hatchet.Workflow"]:
 
     def convert_to_dict(input_data):
@@ -124,7 +124,7 @@ def hatchet_kg_factory(
 
     @orchestration_provider.workflow(name="kg-extract", timeout="360m")
     class KGExtractDescribeEmbedWorkflow:
-        def __init__(self, kg_service: KgService):
+        def __init__(self, kg_service: GraphService):
             self.kg_service = kg_service
 
         @orchestration_provider.concurrency(  # type: ignore
@@ -273,7 +273,7 @@ def hatchet_kg_factory(
             except Exception as e:
                 pass
 
-        def __init__(self, kg_service: KgService):
+        def __init__(self, kg_service: GraphService):
             self.kg_service = kg_service
 
         @orchestration_provider.step(retries=1)
@@ -392,7 +392,7 @@ def hatchet_kg_factory(
         name="entity-deduplication", timeout="360m"
     )
     class EntityDeduplicationWorkflow:
-        def __init__(self, kg_service: KgService):
+        def __init__(self, kg_service: GraphService):
             self.kg_service = kg_service
 
         @orchestration_provider.step(retries=0, timeout="360m")
@@ -460,7 +460,7 @@ def hatchet_kg_factory(
         name="kg-entity-deduplication-summary", timeout="360m"
     )
     class EntityDeduplicationSummaryWorkflow:
-        def __init__(self, kg_service: KgService):
+        def __init__(self, kg_service: GraphService):
             self.kg_service = kg_service
 
         @orchestration_provider.step(retries=0, timeout="360m")
@@ -490,7 +490,7 @@ def hatchet_kg_factory(
 
     @orchestration_provider.workflow(name="build-communities", timeout="360m")
     class EnrichGraphWorkflow:
-        def __init__(self, kg_service: KgService):
+        def __init__(self, kg_service: GraphService):
             self.kg_service = kg_service
 
         @orchestration_provider.step(retries=1, parents=[], timeout="360m")
@@ -642,7 +642,7 @@ def hatchet_kg_factory(
         name="kg-community-summary", timeout="360m"
     )
     class KGCommunitySummaryWorkflow:
-        def __init__(self, kg_service: KgService):
+        def __init__(self, kg_service: GraphService):
             self.kg_service = kg_service
 
         @orchestration_provider.concurrency(  # type: ignore

@@ -17,7 +17,7 @@ from ..abstractions.generator_pipe import GeneratorPipe
 logger = logging.getLogger()
 
 
-class StreamingSearchRAGPipe(GeneratorPipe):
+class StreamingRAGPipe(GeneratorPipe):
     CHUNK_SEARCH_STREAM_MARKER = (
         "search"  # TODO - change this to vector_search in next major release
     )
@@ -72,7 +72,7 @@ class StreamingSearchRAGPipe(GeneratorPipe):
         for chunk in self.llm_provider.get_completion_stream(
             messages=messages, generation_config=rag_generation_config
         ):
-            chunk_txt = StreamingSearchRAGPipe._process_chunk(chunk)
+            chunk_txt = StreamingRAGPipe._process_chunk(chunk)
             response += chunk_txt
             yield chunk_txt
 

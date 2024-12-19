@@ -14,8 +14,8 @@ from core.base import (
 )
 from core.main.abstractions import R2RServices
 from core.main.services.auth_service import AuthService
+from core.main.services.graph_service import GraphService
 from core.main.services.ingestion_service import IngestionService
-from core.main.services.kg_service import KgService
 from core.main.services.management_service import ManagementService
 from core.main.services.retrieval_service import RetrievalService
 from core.pipelines import KGEnrichmentPipeline, RAGPipeline, SearchPipeline
@@ -85,7 +85,7 @@ class R2RBuilder:
             ingestion=service_instances["ingestion"],
             management=service_instances["management"],
             retrieval=service_instances["retrieval"],
-            kg=service_instances["kg"],
+            graph=service_instances["graph"],
         )
 
     async def _create_providers(

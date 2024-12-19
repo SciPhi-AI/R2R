@@ -30,5 +30,5 @@ __all__ = [
     "IngestionService",
     "ManagementService",
     "RetrievalService",
-    "KgService",
+    "GraphService",
 ]

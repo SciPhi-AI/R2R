@@ -10,15 +10,7 @@ from shared.api.models.base import (
     WrappedBooleanResponse,
     WrappedGenericMessageResponse,
 )
-from shared.api.models.ingestion.responses import (
-    IngestionResponse,
-    UpdateResponse,
-    WrappedIngestionResponse,
-    WrappedListVectorIndicesResponse,
-    WrappedMetadataUpdateResponse,
-    WrappedUpdateResponse,
-)
-from shared.api.models.kg.responses import (  # TODO: Need to review anything above this
+from shared.api.models.graph.responses import (  # TODO: Need to review anything above this
     Community,
     Entity,
     GraphResponse,
@@ -31,6 +23,14 @@ from shared.api.models.kg.responses import (  # TODO: Need to review anything ab
     WrappedGraphsResponse,
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,
+)
+from shared.api.models.ingestion.responses import (
+    IngestionResponse,
+    UpdateResponse,
+    WrappedIngestionResponse,
+    WrappedListVectorIndicesResponse,
+    WrappedMetadataUpdateResponse,
+    WrappedUpdateResponse,
 )
 from shared.api.models.management.responses import (  # Document Responses; Prompt Responses; Chunk Responses; Conversation Responses; User Responses; TODO: anything below this hasn't been reviewed
     AnalyticsResponse,

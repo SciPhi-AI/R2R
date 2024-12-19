@@ -364,18 +364,18 @@ class R2RPipeFactory:
         self,
         parsing_pipe_override: Optional[AsyncPipe] = None,
         embedding_pipe_override: Optional[AsyncPipe] = None,
-        kg_relationships_extraction_pipe_override: Optional[AsyncPipe] = None,
-        kg_storage_pipe_override: Optional[AsyncPipe] = None,
-        kg_search_pipe_override: Optional[AsyncPipe] = None,
+        graph_extraction_pipe_override: Optional[AsyncPipe] = None,
+        graph_storage_pipe_override: Optional[AsyncPipe] = None,
+        graph_search_pipe_override: Optional[AsyncPipe] = None,
         vector_storage_pipe_override: Optional[AsyncPipe] = None,
         vector_search_pipe_override: Optional[AsyncPipe] = None,
         rag_pipe_override: Optional[AsyncPipe] = None,
         streaming_rag_pipe_override: Optional[AsyncPipe] = None,
-        kg_entity_description_pipe: Optional[AsyncPipe] = None,
-        kg_clustering_pipe: Optional[AsyncPipe] = None,
-        kg_entity_deduplication_pipe: Optional[AsyncPipe] = None,
-        kg_entity_deduplication_summary_pipe: Optional[AsyncPipe] = None,
-        kg_community_summary_pipe: Optional[AsyncPipe] = None,
+        graph_description_pipe: Optional[AsyncPipe] = None,
+        graph_clustering_pipe: Optional[AsyncPipe] = None,
+        graph_deduplication_pipe: Optional[AsyncPipe] = None,
+        graph_deduplication_summary_pipe: Optional[AsyncPipe] = None,
+        graph_community_summary_pipe: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
     ) -> R2RPipes:
@@ -388,32 +388,30 @@ class R2RPipeFactory:
             ),
             embedding_pipe=embedding_pipe_override
             or self.create_embedding_pipe(*args, **kwargs),
-            kg_relationships_extraction_pipe=kg_relationships_extraction_pipe_override
-            or self.create_kg_relationships_extraction_pipe(*args, **kwargs),
-            kg_storage_pipe=kg_storage_pipe_override
-            or self.create_kg_storage_pipe(*args, **kwargs),
+            graph_extraction_pipe=graph_extraction_pipe_override
+            or self.create_graph_extraction_pipe(*args, **kwargs),
+            graph_storage_pipe=graph_storage_pipe_override
+            or self.create_graph_storage_pipe(*args, **kwargs),
             vector_storage_pipe=vector_storage_pipe_override
             or self.create_vector_storage_pipe(*args, **kwargs),
             vector_search_pipe=vector_search_pipe_override
             or self.create_vector_search_pipe(*args, **kwargs),
-            kg_search_pipe=kg_search_pipe_override
-            or self.create_kg_search_pipe(*args, **kwargs),
+            graph_search_pipe=graph_search_pipe_override
+            or self.create_graph_search_pipe(*args, **kwargs),
             rag_pipe=rag_pipe_override
             or self.create_rag_pipe(*args, **kwargs),
             streaming_rag_pipe=streaming_rag_pipe_override
             or self.create_rag_pipe(True, *args, **kwargs),
-            kg_entity_description_pipe=kg_entity_description_pipe
-            or self.create_kg_entity_description_pipe(*args, **kwargs),
-            kg_clustering_pipe=kg_clustering_pipe
-            or self.create_kg_clustering_pipe(*args, **kwargs),
-            kg_entity_deduplication_pipe=kg_entity_deduplication_pipe
-            or self.create_kg_entity_deduplication_pipe(*args, **kwargs),
-            kg_entity_deduplication_summary_pipe=kg_entity_deduplication_summary_pipe
-            or self.create_kg_entity_deduplication_summary_pipe(
-                *args, **kwargs
-            ),
-            kg_community_summary_pipe=kg_community_summary_pipe
-            or self.create_kg_community_summary_pipe(*args, **kwargs),
+            graph_description_pipe=graph_description_pipe
+            or self.create_graph_description_pipe(*args, **kwargs),
+            graph_clustering_pipe=graph_clustering_pipe
+            or self.create_graph_clustering_pipe(*args, **kwargs),
+            graph_deduplication_pipe=graph_deduplication_pipe
+            or self.create_graph_deduplication_pipe(*args, **kwargs),
+            graph_deduplication_summary_pipe=graph_deduplication_summary_pipe
+            or self.create_graph_deduplication_summary_pipe(*args, **kwargs),
+            graph_community_summary_pipe=graph_community_summary_pipe
+            or self.create_graph_community_summary_pipe(*args, **kwargs),
         )
 
     def create_parsing_pipe(self, *args, **kwargs) -> Any:
@@ -525,29 +523,27 @@ class R2RPipeFactory:
             config=AsyncPipe.PipeConfig(name="routing_search_pipe"),
         )
 
-    def create_kg_relationships_extraction_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import KGExtractionPipe
+    def create_graph_extraction_pipe(self, *args, **kwargs) -> Any:
+        from core.pipes import GraphExtractionPipe
 
-        return KGExtractionPipe(
+        return GraphExtractionPipe(
             llm_provider=self.providers.llm,
             database_provider=self.providers.database,
-            config=AsyncPipe.PipeConfig(
-                name="kg_relationships_extraction_pipe"
-            ),
+            config=AsyncPipe.PipeConfig(name="graph_extraction_pipe"),
         )
 
-    def create_kg_storage_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import KGStoragePipe
+    def create_graph_storage_pipe(self, *args, **kwargs) -> Any:
+        from core.pipes import GraphStoragePipe
 
-        return KGStoragePipe(
+        return GraphStoragePipe(
             database_provider=self.providers.database,
-            config=AsyncPipe.PipeConfig(name="kg_storage_pipe"),
+            config=AsyncPipe.PipeConfig(name="graph_storage_pipe"),
         )
 
-    def create_kg_search_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import KGSearchSearchPipe
+    def create_graph_search_pipe(self, *args, **kwargs) -> Any:
+        from core.pipes import GraphSearchSearchPipe
 
-        return KGSearchSearchPipe(
+        return GraphSearchSearchPipe(
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
@@ -558,9 +554,9 @@ class R2RPipeFactory:
 
     def create_rag_pipe(self, stream: bool = False, *args, **kwargs) -> Any:
         if stream:
-            from core.pipes import StreamingSearchRAGPipe
+            from core.pipes import StreamingRAGPipe
 
-            return StreamingSearchRAGPipe(
+            return StreamingRAGPipe(
                 llm_provider=self.providers.llm,
                 database_provider=self.providers.database,
                 config=GeneratorPipe.PipeConfig(
@@ -568,9 +564,9 @@ class R2RPipeFactory:
                 ),
             )
         else:
-            from core.pipes import SearchRAGPipe
+            from core.pipes import RAGPipe
 
-            return SearchRAGPipe(
+            return RAGPipe(
                 llm_provider=self.providers.llm,
                 database_provider=self.providers.database,
                 config=GeneratorPipe.PipeConfig(
@@ -578,67 +574,65 @@ class R2RPipeFactory:
                 ),
             )
 
-    def create_kg_entity_description_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import KGEntityDescriptionPipe
+    def create_graph_description_pipe(self, *args, **kwargs) -> Any:
+        from core.pipes import GraphDescriptionPipe
 
-        return KGEntityDescriptionPipe(
+        return GraphDescriptionPipe(
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
-            config=AsyncPipe.PipeConfig(name="kg_entity_description_pipe"),
+            config=AsyncPipe.PipeConfig(name="graph_description_pipe"),
         )
 
-    def create_kg_clustering_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import KGClusteringPipe
+    def create_graph_clustering_pipe(self, *args, **kwargs) -> Any:
+        from core.pipes import GraphClusteringPipe
 
-        return KGClusteringPipe(
+        return GraphClusteringPipe(
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
-            config=AsyncPipe.PipeConfig(name="kg_clustering_pipe"),
+            config=AsyncPipe.PipeConfig(name="graph_clustering_pipe"),
         )
 
     def create_kg_deduplication_summary_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import KGEntityDeduplicationSummaryPipe
+        from core.pipes import GraphDeduplicationSummaryPipe
 
-        return KGEntityDeduplicationSummaryPipe(
+        return GraphDeduplicationSummaryPipe(
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
             config=AsyncPipe.PipeConfig(name="kg_deduplication_summary_pipe"),
         )
 
-    def create_kg_community_summary_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import KGCommunitySummaryPipe
+    def create_graph_community_summary_pipe(self, *args, **kwargs) -> Any:
+        from core.pipes import GraphCommunitySummaryPipe
 
-        return KGCommunitySummaryPipe(
+        return GraphCommunitySummaryPipe(
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
-            config=AsyncPipe.PipeConfig(name="kg_community_summary_pipe"),
+            config=AsyncPipe.PipeConfig(name="graph_community_summary_pipe"),
         )
 
-    def create_kg_entity_deduplication_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import KGEntityDeduplicationPipe
+    def create_graph_deduplication_pipe(self, *args, **kwargs) -> Any:
+        from core.pipes import GraphDeduplicationPipe
 
-        return KGEntityDeduplicationPipe(
+        return GraphDeduplicationPipe(
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
-            config=AsyncPipe.PipeConfig(name="kg_entity_deduplication_pipe"),
+            config=AsyncPipe.PipeConfig(name="graph_deduplication_pipe"),
         )
 
-    def create_kg_entity_deduplication_summary_pipe(
-        self, *args, **kwargs
-    ) -> Any:
-        from core.pipes import KGEntityDeduplicationSummaryPipe
+    def create_graph_deduplication_summary_pipe(self, *args, **kwargs) -> Any:
+        from core.pipes import GraphDeduplicationSummaryPipe
 
-        return KGEntityDeduplicationSummaryPipe(
+        return GraphDeduplicationSummaryPipe(
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
             config=AsyncPipe.PipeConfig(
-                name="kg_entity_deduplication_summary_pipe"
+                name="graph_deduplication_summary_pipe"
             ),
         )
 
@@ -664,7 +658,7 @@ class R2RPipelineFactory:
                 self.pipes.vector_search_pipe, vector_search_pipe=True
             )
             search_pipeline.add_pipe(
-                self.pipes.kg_search_pipe, kg_search_pipe=True
+                self.pipes.graph_search_pipe, graph_search_pipe=True
             )
 
         return search_pipeline

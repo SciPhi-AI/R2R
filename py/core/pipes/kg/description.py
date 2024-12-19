@@ -15,7 +15,7 @@ from ...database.postgres import PostgresDatabaseProvider
 logger = logging.getLogger()
 
 
-class KGEntityDescriptionPipe(AsyncPipe):
+class GraphDescriptionPipe(AsyncPipe):
     """
     The pipe takes input a list of nodes and extracts description from them.
     """
@@ -147,7 +147,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
         logger = input.message["logger"]
 
         logger.info(
-            f"KGEntityDescriptionPipe: Getting entity map for document {document_id}",
+            f"GraphDescriptionPipe: Getting entity map for document {document_id}",
         )
 
         entity_map = (
@@ -158,7 +158,7 @@ class KGEntityDescriptionPipe(AsyncPipe):
         total_entities = len(entity_map)
 
         logger.info(
-            f"KGEntityDescriptionPipe: Got entity map for document {document_id}, total entities: {total_entities}, time from start: {time.time() - start_time:.2f} seconds",
+            f"GraphDescriptionPipe: Got entity map for document {document_id}, total entities: {total_entities}, time from start: {time.time() - start_time:.2f} seconds",
         )
 
         workflows = []
@@ -182,11 +182,11 @@ class KGEntityDescriptionPipe(AsyncPipe):
         for result in asyncio.as_completed(workflows):
             if completed_entities % 100 == 0:
                 logger.info(
-                    f"KGEntityDescriptionPipe: Completed {completed_entities+1} of {total_entities} entities for document {document_id}",
+                    f"GraphDescriptionPipe: Completed {completed_entities+1} of {total_entities} entities for document {document_id}",
                 )
             yield await result
             completed_entities += 1
 
         logger.info(
-            f"KGEntityDescriptionPipe: Processed {total_entities} entities for document {document_id}, time from start: {time.time() - start_time:.2f} seconds",
+            f"GraphDescriptionPipe: Processed {total_entities} entities for document {document_id}, time from start: {time.time() - start_time:.2f} seconds",
         )
