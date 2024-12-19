@@ -303,19 +303,19 @@ class SQLFilterBuilder:
         # Split on '.' to handle nested keys
         parts = key.split(".")
 
-        # Depending on the operator, decide whether we need text extraction (->>) for the last key
-        # For JSON equality ($eq, $ne, $contains), we can stay JSON-based: use `->` for all segments.
-        # For numeric comparisons ($lt, $gt, etc.), we need to extract text with `->>` at the last step to cast to float.
-        # For $in (list checks), we probably need `->>` on the last segment to compare text.
-
-        # Default: keep JSON structure all the way
-        use_text_extraction = False
-        if op in ("$lt", "$lte", "$gt", "$gte", "$in"):
-            use_text_extraction = True
+        # Use text extraction for scalar values, but not for arrays
+        use_text_extraction = op in (
+            "$lt",
+            "$lte",
+            "$gt",
+            "$gte",
+            "$eq",
+            "$ne",
+        )
+        if op == "$in" or op == "$contains" or isinstance(val, (list, dict)):
+            use_text_extraction = False
 
         # Build the JSON path expression
-        # For all but the last part, use ->'part'
-        # For the last part, use ->'part' or ->>'part' depending on use_text_extraction
         if len(parts) == 1:
             # Single part key
             if use_text_extraction:
@@ -336,41 +336,148 @@ class SQLFilterBuilder:
             else:
                 path_expr += f"->'{last_part}'"
 
-        # Now apply the operator logic as before, but use path_expr in place of {json_col}->'{key}'
+        # Convert numeric values to strings for text comparison
+        def prepare_value(v):
+            if isinstance(v, (int, float)):
+                return str(v)
+            return v
+
+        # Now apply the operator logic
         if op == "$eq":
-            self.params.append(json.dumps(val))
-            return f"{path_expr} = ${param_idx}::jsonb"
+            if use_text_extraction:
+                self.params.append(prepare_value(val))
+                return f"{path_expr} = ${param_idx}"
+            else:
+                self.params.append(json.dumps(val))
+                return f"{path_expr} = ${param_idx}::jsonb"
         elif op == "$ne":
-            self.params.append(json.dumps(val))
-            return f"{path_expr} != ${param_idx}::jsonb"
+            if use_text_extraction:
+                self.params.append(prepare_value(val))
+                return f"{path_expr} != ${param_idx}"
+            else:
+                self.params.append(json.dumps(val))
+                return f"{path_expr} != ${param_idx}::jsonb"
         elif op == "$lt":
-            self.params.append(json.dumps(val))
-            # path_expr already ends in ->>'last_part', so we can cast directly:
-            return f"({path_expr})::float < (${param_idx}::jsonb)::float"
+            self.params.append(prepare_value(val))
+            return f"({path_expr})::numeric < ${param_idx}::numeric"
         elif op == "$lte":
-            self.params.append(json.dumps(val))
-            return f"({path_expr})::float <= (${param_idx}::jsonb)::float"
+            self.params.append(prepare_value(val))
+            return f"({path_expr})::numeric <= ${param_idx}::numeric"
         elif op == "$gt":
-            self.params.append(json.dumps(val))
-            return f"({path_expr})::float > (${param_idx}::jsonb)::float"
+            self.params.append(prepare_value(val))
+            return f"({path_expr})::numeric > ${param_idx}::numeric"
         elif op == "$gte":
-            self.params.append(json.dumps(val))
-            return f"({path_expr})::float >= (${param_idx}::jsonb)::float"
+            self.params.append(prepare_value(val))
+            return f"({path_expr})::numeric >= ${param_idx}::numeric"
         elif op == "$in":
-            # For $in, we expect a list and compare as text
             if not isinstance(val, list):
                 raise FilterError("argument to $in filter must be a list")
-            self.params.append(val)
-            # path_expr should end with ->>'last_part' for text extraction
-            return f"({path_expr})::text = ANY(${param_idx}::text[])"
+            # For array fields, use containment check with any of the values
+            if len(val) == 1:
+                self.params.append(json.dumps([val[0]]))
+                return f"{path_expr} @> ${param_idx}::jsonb"
+            else:
+                # If multiple values, use OR with multiple containment checks
+                conditions = []
+                for i, v in enumerate(val):
+                    self.params.append(json.dumps([v]))
+                    conditions.append(
+                        f"{path_expr} @> ${param_idx + i}::jsonb"
+                    )
+                return f"({' OR '.join(conditions)})"
         elif op == "$contains":
-            # $contains is JSON containment, no text extraction needed
-            if isinstance(val, (int, float, str)):
+            if isinstance(val, (str, int, float, bool)):
                 val = [val]
             self.params.append(json.dumps(val))
             return f"{path_expr} @> ${param_idx}::jsonb"
         else:
             raise FilterError(f"Unsupported operator for metadata field {op}")
+
+    # def _build_metadata_condition(self, key: str, op: str, val: Any) -> str:
+    #     param_idx = len(self.params) + 1
+    #     json_col = self.json_column
+
+    #     # Strip "metadata." prefix if present
+    #     if key.startswith("metadata."):
+    #         key = key[len("metadata.") :]
+
+    #     # Split on '.' to handle nested keys
+    #     parts = key.split(".")
+
+    #     # Use text extraction for scalar values, but not for arrays
+    #     use_text_extraction = op in ("$lt", "$lte", "$gt", "$gte", "$eq", "$ne")
+    #     if op == "$in" or op == "$contains" or isinstance(val, (list, dict)):
+    #         use_text_extraction = False
+
+    #     # Build the JSON path expression
+    #     if len(parts) == 1:
+    #         # Single part key
+    #         if use_text_extraction:
+    #             path_expr = f"{json_col}->>'{parts[0]}'"
+    #         else:
+    #             path_expr = f"{json_col}->'{parts[0]}'"
+    #     else:
+    #         # Multiple segments
+    #         inner_parts = parts[:-1]
+    #         last_part = parts[-1]
+    #         # Build chain for the inner parts
+    #         path_expr = json_col
+    #         for p in inner_parts:
+    #             path_expr += f"->'{p}'"
+    #         # Last part
+    #         if use_text_extraction:
+    #             path_expr += f"->>'{last_part}'"
+    #         else:
+    #             path_expr += f"->'{last_part}'"
+
+    #     # Now apply the operator logic
+    #     if op == "$eq":
+    #         if use_text_extraction:
+    #             self.params.append(val)
+    #             return f"{path_expr} = ${param_idx}"
+    #         else:
+    #             self.params.append(json.dumps(val))
+    #             return f"{path_expr} = ${param_idx}::jsonb"
+    #     elif op == "$ne":
+    #         if use_text_extraction:
+    #             self.params.append(val)
+    #             return f"{path_expr} != ${param_idx}"
+    #         else:
+    #             self.params.append(json.dumps(val))
+    #             return f"{path_expr} != ${param_idx}::jsonb"
+    #     elif op == "$lt":
+    #         self.params.append(str(val) if isinstance(val, (int, float)) else val)
+    #         return f"({path_expr})::float < ${param_idx}::float"
+    #     elif op == "$lte":
+    #         self.params.append(str(val) if isinstance(val, (int, float)) else val)
+    #         return f"({path_expr})::float <= ${param_idx}::float"
+    #     elif op == "$gt":
+    #         self.params.append(str(val) if isinstance(val, (int, float)) else val)
+    #         return f"({path_expr})::float > ${param_idx}::float"
+    #     elif op == "$gte":
+    #         self.params.append(str(val) if isinstance(val, (int, float)) else val)
+    #         return f"({path_expr})::float >= ${param_idx}::float"
+    #     elif op == "$in":
+    #         if not isinstance(val, list):
+    #             raise FilterError("argument to $in filter must be a list")
+    #         # For array fields, use containment check with any of the values
+    #         if len(val) == 1:
+    #             self.params.append(json.dumps([val[0]]))
+    #             return f"{path_expr} @> ${param_idx}::jsonb"
+    #         else:
+    #             # If multiple values, use OR with multiple containment checks
+    #             conditions = []
+    #             for i, v in enumerate(val):
+    #                 self.params.append(json.dumps([v]))
+    #                 conditions.append(f"{path_expr} @> ${param_idx + i}::jsonb")
+    #             return f"({' OR '.join(conditions)})"
+    #     elif op == "$contains":
+    #         if isinstance(val, (str, int, float, bool)):
+    #             val = [val]
+    #         self.params.append(json.dumps(val))
+    #         return f"{path_expr} @> ${param_idx}::jsonb"
+    #     else:
+    #         raise FilterError(f"Unsupported operator for metadata field {op}")
 
     def _map_op(self, op: str) -> str:
         mapping = {

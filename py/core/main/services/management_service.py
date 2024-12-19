@@ -134,6 +134,12 @@ class ManagementService(Service):
                 include_vectors=False,
             )
         )
+
+        if interim_results["page_info"]["total_entries"] == 0:
+            raise R2RException(
+                status_code=404, message="No entries found for deletion."
+            )
+
         results = interim_results["results"]
         while interim_results["page_info"]["total_entries"] == 1_000:
             # If we hit the limit, we need to paginate to get all results

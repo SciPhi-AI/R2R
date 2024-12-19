@@ -34,8 +34,10 @@ def test_create_document_with_raw_text(client):
 
 
 def test_create_document_with_chunks(client):
+    suffix = str(uuid.uuid4())[:8]
     resp = client.documents.create(
-        chunks=["Chunk one", "Chunk two"], run_with_orchestration=False
+        chunks=["Chunk one" + suffix, "Chunk two" + suffix],
+        run_with_orchestration=False,
     )["results"]
     doc_id = resp["document_id"]
     assert doc_id, "No document_id returned after chunk ingestion"
@@ -499,26 +501,27 @@ def test_delete_by_classification_metadata(client):
 
 def test_delete_by_version_metadata(client):
     """Test deletion by version and status metadata with array conditions."""
+    suffix = uuid.uuid4()
     docs = [
         client.documents.create(
-            raw_text="Old version document",
+            raw_text="Old version document" + str(suffix),
             metadata={
                 "version_info": {
                     "number": "1.0.0",
                     "status": "deprecated",
                     "tags": ["legacy", "unsupported"],
-                }
+                },
             },
             run_with_orchestration=False,
         )["results"]["document_id"],
         client.documents.create(
-            raw_text="Current version document",
+            raw_text="Current version document" + str(suffix),
             metadata={
                 "version_info": {
                     "number": "2.0.0",
                     "status": "current",
                     "tags": ["stable", "supported"],
-                }
+                },
             },
             run_with_orchestration=False,
         )["results"]["document_id"],
@@ -528,8 +531,9 @@ def test_delete_by_version_metadata(client):
         # Delete deprecated documents with legacy tag
         filters = {
             "$and": [
-                {"version_info.status": {"$eq": "deprecated"}},
-                {"version_info.tags": {"$in": ["legacy"]}},
+                {"metadata.version_info.status": {"$eq": "deprecated"}},
+                # TODO - WHy is `$in` not working for deletion?
+                {"metadata.version_info.tags": {"$in": ["legacy"]}},
             ]
         }
 
