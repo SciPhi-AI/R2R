@@ -296,6 +296,10 @@ def test_complex_filters_and_fulltext(client, test_collection):
         search_settings={"use_semantic_search": True, "filters": filters},
     )["results"]
     results = resp["chunk_search_results"]
+    print("Filters being applied:", filters)
+    print("Current user ID:", client.users.me()["results"]["id"])
+    print("Test collection ID:", test_collection["collection_id"])
+    print("All available documents:", client.documents.list()["results"])
     assert len(results) == 4, f"Expected all 4 docs, got {len(results)}"
 
     # rating > 5 AND category=modern
