@@ -10,26 +10,46 @@ from core.base.utils import deep_update
 @pytest.fixture
 def base_config():
     """Load the base r2r.toml config"""
-    with open("r2r.toml") as f:
-        return toml.load(f)
-
-
-@pytest.fixture
-def base_config():
-    """Load the base r2r.toml config"""
     config_path = Path(__file__).parent.parent.parent / "r2r.toml"
     with open(config_path) as f:
         return toml.load(f)
 
 
 @pytest.fixture
-def full_config():
-    """Load the full.toml config"""
-    config_path = (
-        Path(__file__).parent.parent.parent / "core" / "configs" / "full.toml"
-    )
-    with open(config_path) as f:
-        return toml.load(f)
+def config_dir():
+    """Get the path to the configs directory"""
+    return Path(__file__).parent.parent.parent / "core" / "configs"
+
+
+@pytest.fixture
+def all_config_files(config_dir):
+    """Get list of all TOML files in the configs directory"""
+    return list(config_dir.glob("*.toml"))
+
+
+@pytest.fixture
+def all_configs(all_config_files):
+    """Load all config files"""
+    configs = {}
+    for config_file in all_config_files:
+        with open(config_file) as f:
+            configs[config_file.name] = toml.load(f)
+    return configs
+
+
+@pytest.fixture
+def full_config(all_configs):
+    """Get the full.toml config"""
+    return all_configs["full.toml"]
+
+
+@pytest.fixture
+def all_merged_configs(base_config, all_configs):
+    """Create merged configurations for all config files"""
+    merged = {}
+    for config_name, config_data in all_configs.items():
+        merged[config_name] = deep_update(deepcopy(base_config), config_data)
+    return merged
 
 
 @pytest.fixture
@@ -58,7 +78,6 @@ def test_full_config_override(base_config, full_config):
 
     # Test overridden values
     assert config.database.graph_creation_settings.clustering_mode == "remote"
-    # Test that non-overridden nested values are preserved
     assert (
         config.database.graph_creation_settings.generation_config.model
         == "openai/gpt-4o-mini"
@@ -71,7 +90,6 @@ def test_nested_config_preservation(merged_config):
     """Test that nested configurations are properly preserved during merging"""
     config = R2RConfig(merged_config)
 
-    # Test specific nested values that should be preserved
     assert (
         config.database.graph_creation_settings.generation_config.model
         == "openai/gpt-4o-mini"
@@ -111,9 +129,15 @@ def test_config_type_consistency(merged_config):
     assert isinstance(config.ingestion.chunking_strategy, str)
 
 
-@pytest.mark.parametrize("config_file", ["r2r.toml", "full.toml"])
+def get_config_files():
+    """Helper function to get list of config files"""
+    config_dir = Path(__file__).parent.parent.parent / "core" / "configs"
+    return ["r2r.toml"] + [f.name for f in config_dir.glob("*.toml")]
+
+
+@pytest.mark.parametrize("config_file", get_config_files())
 def test_config_required_keys(config_file):
-    """Test that all required keys are present in both config files"""
+    """Test that all required keys are present in all config files"""
     if config_file == "r2r.toml":
         file_path = Path(__file__).parent.parent.parent / "r2r.toml"
     else:
@@ -169,3 +193,37 @@ def test_serialization_roundtrip(merged_config):
         roundtrip_config.orchestration.provider
         == config.orchestration.provider
     )
+
+
+def test_all_merged_configs(base_config, all_merged_configs):
+    """Test that all configs properly merge with base config"""
+    for config_name, merged_data in all_merged_configs.items():
+        config = R2RConfig(merged_data)
+
+        # Test that the config loads without errors
+        assert config is not None
+
+        # Verify that base values are preserved unless explicitly overridden
+        if not hasattr(
+            config.database.graph_creation_settings, "clustering_mode"
+        ):
+            assert (
+                config.database.graph_creation_settings.clustering_mode
+                == "local"
+            )
+
+        # Verify that generation_config model is preserved unless explicitly overridden
+        if "generation_config" not in merged_data.get("database", {}).get(
+            "graph_creation_settings", {}
+        ):
+            assert (
+                config.database.graph_creation_settings.generation_config.model
+                == "openai/gpt-4o-mini"
+            )
+
+
+def test_all_config_overrides(base_config, all_configs):
+    """Test that all config files can be loaded independently"""
+    for config_name, config_data in all_configs.items():
+        config = R2RConfig(config_data)
+        assert config is not None

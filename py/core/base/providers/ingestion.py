@@ -1,9 +1,9 @@
 import logging
 from abc import ABC
 from enum import Enum
-from typing import TYPE_CHECKING, ClassVar
+from typing import Any, TYPE_CHECKING, ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from core.base.abstractions import ChunkEnrichmentSettings
 
@@ -52,7 +52,7 @@ class IngestionConfig(ProviderConfig):
             "chunk_enrichment_settings"
         ]
     )
-    extra_parsers: dict[str, str] = Field(
+    extra_parsers: dict[str, Any] = Field(
         default_factory=lambda: IngestionConfig._defaults["extra_parsers"]
     )
     audio_transcription_model: str = Field(
