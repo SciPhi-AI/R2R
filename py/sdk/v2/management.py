@@ -711,9 +711,8 @@ class ManagementMixins:
         Returns:
             dict: The conversation data.
         """
-        query_params = f"?branch_id={branch_id}" if branch_id else ""
         return await self._make_request(  # type: ignore
-            "GET", f"get_conversation/{str(conversation_id)}{query_params}"
+            "GET", f"get_conversation/{str(conversation_id)}"
         )
 
     @deprecated("Use client.conversations.create() instead")
