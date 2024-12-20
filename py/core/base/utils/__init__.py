@@ -17,6 +17,7 @@ from shared.utils import (
     run_pipeline,
     to_async_generator,
     validate_uuid,
+    deep_update,
 )
 
 __all__ = [
@@ -36,6 +37,7 @@ __all__ = [
     "TextSplitter",
     "llm_cost_per_million_tokens",
     "validate_uuid",
+    "deep_update",
     "_decorate_vector_type",
     "_get_str_estimation_output",
 ]
