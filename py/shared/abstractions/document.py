@@ -311,6 +311,7 @@ class ChunkEnrichmentSettings(R2RSerializable):
 class IngestionConfig(R2RSerializable):
     provider: str = "r2r"
     excluded_parsers: list[str] = ["mp4"]
+    chunking_strategy: str = "recursive"
     chunk_enrichment_settings: ChunkEnrichmentSettings = (
         ChunkEnrichmentSettings()
     )

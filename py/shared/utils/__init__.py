@@ -15,6 +15,7 @@ from .base_utils import (
     run_pipeline,
     to_async_generator,
     validate_uuid,
+    deep_update,
 )
 from .splitter.text import RecursiveCharacterTextSplitter, TextSplitter
 
@@ -35,6 +36,7 @@ __all__ = [
     "to_async_generator",
     "llm_cost_per_million_tokens",
     "validate_uuid",
+    "deep_update",
     # Text splitter
     "RecursiveCharacterTextSplitter",
     "TextSplitter",

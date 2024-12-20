@@ -21,6 +21,7 @@ class IngestionConfig(ProviderConfig):
         "app": AppConfig(),
         "provider": "r2r",
         "excluded_parsers": ["mp4"],
+        "chunking_strategy": "recursive",
         "chunk_enrichment_settings": ChunkEnrichmentSettings(),
         "extra_parsers": {},
         "audio_transcription_model": "openai/whisper-1",
@@ -42,6 +43,9 @@ class IngestionConfig(ProviderConfig):
     )
     excluded_parsers: list[str] = Field(
         default_factory=lambda: IngestionConfig._defaults["excluded_parsers"]
+    )
+    chunking_strategy: str = Field(
+        default_factory=lambda: IngestionConfig._defaults["chunking_strategy"]
     )
     chunk_enrichment_settings: ChunkEnrichmentSettings = Field(
         default_factory=lambda: IngestionConfig._defaults[
@@ -157,6 +161,7 @@ class IngestionConfig(ProviderConfig):
         json_schema_extra = {
             "provider": "r2r",
             "excluded_parsers": ["mp4"],
+            "chunking_strategy": "recursive",
             "chunk_enrichment_settings": ChunkEnrichmentSettings().dict(),
             "extra_parsers": {},
             "audio_transcription_model": "openai/whisper-1",

@@ -12,6 +12,7 @@ from shared.utils.base_utils import (
     to_async_generator,
     update_settings_from_dict,
     validate_uuid,
+    deep_update,
 )
 from shared.utils.splitter.text import (
     RecursiveCharacterTextSplitter,
@@ -32,6 +33,7 @@ __all__ = [
     "generate_default_user_collection_id",
     "validate_uuid",
     "update_settings_from_dict",
+    "deep_update",
     # Text splitter
     "RecursiveCharacterTextSplitter",
     "TextSplitter",

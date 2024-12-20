@@ -17,6 +17,7 @@ from ..base.providers.embedding import EmbeddingConfig
 from ..base.providers.ingestion import IngestionConfig
 from ..base.providers.llm import CompletionConfig
 from ..base.providers.orchestration import OrchestrationConfig
+from ..base.utils import deep_update
 
 logger = logging.getLogger()
 
@@ -77,19 +78,13 @@ class R2RConfig:
         default_config = self.load_default_config()
 
         # Override the default configuration with the passed configuration
-        for key in config_data:
-            if key in default_config:
-                default_config[key].update(config_data[key])
-            else:
-                default_config[key] = config_data[key]
+        default_config = deep_update(default_config, config_data)
 
         # Validate and set the configuration
         for section, keys in R2RConfig.REQUIRED_KEYS.items():
             # Check the keys when provider is set
             # TODO - remove after deprecation
-            if (
-                section == "kg" or section == "file"
-            ) and section not in default_config:
+            if section in ["kg", "file"] and section not in default_config:
                 continue
             if "provider" in default_config[section] and (
                 default_config[section]["provider"] is not None
@@ -151,10 +146,13 @@ class R2RConfig:
         return cls(config_data)
 
     def to_toml(self):
-        config_data = {
-            section: self._serialize_config(getattr(self, section))
-            for section in R2RConfig.REQUIRED_KEYS.keys()
-        }
+        config_data = {}
+        for section in R2RConfig.REQUIRED_KEYS.keys():
+            section_data = self._serialize_config(getattr(self, section))
+            if isinstance(section_data, dict):
+                # Remove app from nested configs before serializing
+                section_data.pop("app", None)
+            config_data[section] = section_data
         return toml.dumps(config_data)
 
     @classmethod
@@ -164,21 +162,23 @@ class R2RConfig:
 
     @staticmethod
     def _serialize_config(config_section: Any) -> dict:
+        """Serialize config section while excluding internal state"""
         if isinstance(config_section, dict):
             return {
                 R2RConfig._serialize_key(k): R2RConfig._serialize_config(v)
                 for k, v in config_section.items()
+                if k != "app"  # Exclude app from serialization
             }
         elif isinstance(config_section, (list, tuple)):
-            return [  # type: ignore
+            return [
                 R2RConfig._serialize_config(item) for item in config_section
             ]
         elif isinstance(config_section, Enum):
             return config_section.value
         elif isinstance(config_section, BaseModel):
-            return R2RConfig._serialize_config(
-                config_section.model_dump(exclude_none=True)
-            )
+            data = config_section.model_dump(exclude_none=True)
+            data.pop("app", None)  # Remove app from the serialized data
+            return R2RConfig._serialize_config(data)
         else:
             return config_section
 
