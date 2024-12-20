@@ -137,16 +137,17 @@ class ConversationsSDK:
         self,
         id: str | UUID,
         message_id: str,
-        content: str,
+        content: Optional[str] = None,
         metadata: Optional[dict] = None,
     ) -> dict:
         """
         Update an existing message in a conversation.
 
         Args:
-            id (Union[str, UUID]): The ID of the conversation containing the message
+            id (str | UUID): The ID of the conversation containing the message
             message_id (str): The ID of the message to update
             content (str): The new content of the message
+            metadata (dict): Additional metadata to attach to the message
 
         Returns:
             dict: Result of the operation, including the new message ID and branch ID
@@ -154,7 +155,6 @@ class ConversationsSDK:
         data = {"content": content}
         if metadata:
             data["metadata"] = metadata
-        # data = {"content": content}
         return await self.client._make_request(
             "POST",
             f"conversations/{str(id)}/messages/{message_id}",

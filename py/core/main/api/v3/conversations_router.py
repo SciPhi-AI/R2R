@@ -14,10 +14,6 @@ from core.base.api.models import (
     WrappedConversationsResponse,
     WrappedMessageResponse,
 )
-from core.providers import (
-    HatchetOrchestrationProvider,
-    SimpleOrchestrationProvider,
-)
 
 from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
@@ -504,11 +500,11 @@ class ConversationsRouter(BaseRouterV3):
             id: UUID = Path(
                 ..., description="The unique identifier of the conversation"
             ),
-            message_id: str = Path(
+            message_id: UUID = Path(
                 ..., description="The ID of the message to update"
             ),
-            content: str = Body(
-                ..., description="The new content for the message"
+            content: Optional[str] = Body(
+                None, description="The new content for the message"
             ),
             metadata: Optional[dict[str, str]] = Body(
                 None, description="Additional metadata for the message"
@@ -520,7 +516,8 @@ class ConversationsRouter(BaseRouterV3):
 
             This endpoint updates the content of an existing message in a conversation.
             """
-            messge_response = await self.services.management.edit_message(
-                message_id, content, metadata
+            return await self.services.management.edit_message(
+                message_id=message_id,
+                new_content=content,
+                additional_metadata=metadata,
             )
-            return messge_response

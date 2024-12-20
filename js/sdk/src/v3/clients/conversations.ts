@@ -107,16 +107,19 @@ export class ConversationsClient {
    * @param id The ID of the conversation containing the message
    * @param messageID The ID of the message to update
    * @param content The new content of the message
+   * @param metadata Additional metadata to attach to the message
    * @returns
    */
   @feature("conversations.updateMessage")
   async updateMessage(options: {
     id: string;
     messageID: string;
-    content: string;
+    content?: string;
+    metadata?: Record<string, any>;
   }): Promise<any> {
     const data: Record<string, any> = {
-      content: options.content,
+      ...(options.content && { content: options.content }),
+      ...(options.metadata && { metadata: options.metadata }),
     };
 
     return this.client.makeRequest(
