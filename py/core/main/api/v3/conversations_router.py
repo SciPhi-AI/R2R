@@ -279,7 +279,7 @@ class ConversationsRouter(BaseRouterV3):
 
         @self.router.post(
             "/conversations/{id}",
-            summary="Delete conversation",
+            summary="Update conversation",
             dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
