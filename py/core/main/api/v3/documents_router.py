@@ -1162,12 +1162,13 @@ class DocumentsRouter(BaseRouterV3):
 
             NOTE - Deletions do not yet impact the knowledge graph or other derived data. This feature is planned for a future release.
             """
-            filters = {
-                "$and": [
-                    {"owner_id": {"$eq": str(auth_user.id)}},
-                    {"document_id": {"$eq": str(id)}},
-                ]
-            }
+
+            filters = {"document_id": {"$eq": str(id)}}
+            if not auth_user.is_superuser:
+                filters = {
+                    "$and": [{"owner_id": {"$eq": str(auth_user.id)}}, filters]
+                }
+
             await self.services.management.delete_documents_and_chunks_by_filter(
                 filters=filters
             )

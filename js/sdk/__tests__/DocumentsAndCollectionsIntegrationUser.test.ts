@@ -17,6 +17,8 @@ describe("r2rClient V3 System Integration Tests User", () => {
   let user2Id: string;
   let user1DocumentId: string;
   let user2DocumentId: string;
+  let user1Document2Id: string;
+  let user2Document2Id: string;
   let user1CollectionId: string;
   let user2CollectionId: string;
 
@@ -146,6 +148,30 @@ describe("r2rClient V3 System Integration Tests User", () => {
     expect(response.results.id).toBe(user2DocumentId);
   });
 
+  test("Create document as user 1 from raw text", async () => {
+    const response = await user1Client.documents.create({
+      raw_text: "Hello, world!",
+      metadata: { title: "hello.txt" },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    expect(response.results.document_id).toBeDefined();
+    user1Document2Id = response.results.document_id;
+  }, 15000);
+
+  test("Create document as user 2 from raw text", async () => {
+    const response = await user2Client.documents.create({
+      raw_text: "Hello, world!",
+      metadata: { title: "hello.txt" },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    expect(response.results.document_id).toBeDefined();
+    user2Document2Id = response.results.document_id;
+  }, 15000);
+
   test("List documents with no parameters as user 1", async () => {
     const response = await user1Client.documents.list();
 
@@ -188,6 +214,26 @@ describe("r2rClient V3 System Integration Tests User", () => {
     await expect(
       user1Client.documents.listChunks({ id: user2DocumentId }),
     ).rejects.toThrow(/Status 403/);
+  });
+
+  test("User 1 should not be able to delete user 2's document", async () => {
+    await expect(
+      user1Client.documents.delete({ id: user2Document2Id }),
+    ).rejects.toThrow(/Status 404/);
+  });
+
+  test("User 2 should not be able to delete user 1's document", async () => {
+    await expect(
+      user2Client.documents.delete({ id: user1Document2Id }),
+    ).rejects.toThrow(/Status 404/);
+  });
+
+  test("A superuser should be able to delete any document", async () => {
+    const response = await client.documents.delete({ id: user1Document2Id });
+    expect(response.results).toBeDefined();
+
+    const response2 = await client.documents.delete({ id: user2Document2Id });
+    expect(response2.results).toBeDefined();
   });
 
   test("Delete document as user 1", async () => {
