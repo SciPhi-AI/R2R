@@ -21,10 +21,34 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     expect(response.results).toBeDefined();
   });
 
+  test("Create a conversation with a name", async () => {
+    const response = await client.conversations.create({
+      name: "Test Conversation",
+    });
+    conversationId = response.results.id;
+    expect(response.results).toBeDefined();
+    expect(response.results.name).toBe("Test Conversation");
+  });
+
+  test("Update a conversation name", async () => {
+    const response = await client.conversations.update({
+      id: conversationId,
+      name: "Updated Name",
+    });
+    expect(response.results).toBeDefined();
+    expect(response.results.name).toBe("Updated Name");
+  });
+
+  test("Delete a conversation", async () => {
+    const response = await client.conversations.delete({ id: conversationId });
+    expect(response.results).toBeDefined();
+  });
+
   test("Create a conversation", async () => {
     const response = await client.conversations.create();
     conversationId = response.results.id;
     expect(response.results).toBeDefined();
+    expect(response.results.name).toBeNull();
   });
 
   test("Add a message to a conversation", async () => {

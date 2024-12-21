@@ -16,6 +16,7 @@ from core.base import (
     R2RException,
     RunManager,
     User,
+    ConversationResponse,
 )
 from core.telemetry.telemetry_decorator import telemetry_event
 
@@ -804,26 +805,30 @@ class ManagementService(Service):
     @telemetry_event("GetConversation")
     async def get_conversation(
         self,
-        conversation_id: str,
+        conversation_id: UUID,
         auth_user=None,
     ) -> Tuple[str, list[Message], list[dict]]:
         return await self.providers.database.conversations_handler.get_conversation(  # type: ignore
-            conversation_id
+            conversation_id=conversation_id
         )
 
     async def verify_conversation_access(
-        self, conversation_id: str, user_id: UUID
+        self, conversation_id: UUID, user_id: UUID
     ) -> bool:
         return await self.providers.database.conversations_handler.verify_conversation_access(
-            conversation_id, user_id
+            conversation_id=conversation_id,
+            user_id=user_id,
         )
 
     @telemetry_event("CreateConversation")
     async def create_conversation(
-        self, user_id: Optional[UUID] = None, auth_user=None
-    ) -> dict:
-        return await self.providers.database.conversations_handler.create_conversation(  # type: ignore
-            user_id=user_id
+        self,
+        user_id: Optional[UUID] = None,
+        name: Optional[str] = None,
+    ) -> ConversationResponse:
+        return await self.providers.database.conversations_handler.create_conversation(
+            user_id=user_id,
+            name=name,
         )
 
     @telemetry_event("ConversationsOverview")
@@ -845,14 +850,17 @@ class ManagementService(Service):
     @telemetry_event("AddMessage")
     async def add_message(
         self,
-        conversation_id: str,
+        conversation_id: UUID,
         content: Message,
-        parent_id: Optional[str] = None,
+        parent_id: Optional[UUID] = None,
         metadata: Optional[dict] = None,
         auth_user=None,
     ) -> str:
         return await self.providers.database.conversations_handler.add_message(
-            conversation_id, content, parent_id, metadata
+            conversation_id=conversation_id,
+            content=content,
+            parent_id=parent_id,
+            metadata=metadata,
         )
 
     @telemetry_event("EditMessage")
@@ -871,10 +879,18 @@ class ManagementService(Service):
             )
         )
 
+    @telemetry_event("UpdateConversation")
+    async def update_conversation(
+        self, conversation_id: UUID, name: str
+    ) -> ConversationResponse:
+        return await self.providers.database.conversations_handler.update_conversation(
+            conversation_id=conversation_id, name=name
+        )
+
     @telemetry_event("DeleteConversation")
-    async def delete_conversation(self, conversation_id: str, auth_user=None):
+    async def delete_conversation(self, conversation_id: UUID) -> None:
         await self.providers.database.conversations_handler.delete_conversation(
-            conversation_id
+            conversation_id=conversation_id
         )
 
     async def get_user_max_documents(self, user_id: UUID) -> int:

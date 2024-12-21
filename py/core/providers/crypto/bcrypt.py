@@ -2,7 +2,7 @@ import base64
 import os
 from abc import ABC
 from datetime import datetime, timezone
-from typing import Dict, Optional, Tuple
+from typing import Optional, Tuple
 
 import bcrypt
 import jwt
@@ -127,7 +127,7 @@ class BCryptCryptoProvider(CryptoProvider, ABC):
         stored_hash = base64.b64decode(hashed_key.encode("utf-8"))
         return bcrypt.checkpw(raw_api_key.encode("utf-8"), stored_hash)
 
-    def generate_secure_token(self, data: Dict, expiry: datetime) -> str:
+    def generate_secure_token(self, data: dict, expiry: datetime) -> str:
         now = datetime.now(timezone.utc)
         to_encode = {
             **data,
@@ -139,7 +139,7 @@ class BCryptCryptoProvider(CryptoProvider, ABC):
         }
         return jwt.encode(to_encode, self.secret_key, algorithm="HS256")
 
-    def verify_secure_token(self, token: str) -> Optional[Dict]:
+    def verify_secure_token(self, token: str) -> Optional[dict]:
         try:
             payload = jwt.decode(token, self.secret_key, algorithms=["HS256"])
             exp = payload.get("exp")
