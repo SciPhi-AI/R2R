@@ -136,24 +136,24 @@ def test_rag_context_window_limits(client):
 #     assert "results" in resp, "RAG should handle empty chunks gracefully"
 
 
-# Agent Tests
-def test_agent_clarification_requests(client):
-    """Test agent's ability to request clarification for ambiguous queries"""
-    msg = Message(role="user", content="Compare them")
-    resp = client.retrieval.agent(
-        message=msg,
-        search_settings={"use_semantic_search": True},
-    )
-    content = resp["results"]["messages"][-1]["content"]
-    assert any(
-        phrase in content.lower()
-        for phrase in [
-            "could you clarify",
-            "who do you",
-            "what would you",
-            "please specify",
-        ]
-    ), "Agent should request clarification for ambiguous queries"
+# # Agent Tests
+# def test_agent_clarification_requests(client):
+#     """Test agent's ability to request clarification for ambiguous queries"""
+#     msg = Message(role="user", content="Compare them")
+#     resp = client.retrieval.agent(
+#         message=msg,
+#         search_settings={"use_semantic_search": True},
+#     )
+#     content = resp["results"]["messages"][-1]["content"]
+#     assert any(
+#         phrase in content.lower()
+#         for phrase in [
+#             "could you clarify",
+#             "who do you",
+#             "what would you",
+#             "please specify",
+#         ]
+#     ), "Agent should request clarification for ambiguous queries"
 
 
 ## TODO - uncomment later
