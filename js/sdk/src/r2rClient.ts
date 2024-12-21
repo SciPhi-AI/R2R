@@ -1442,14 +1442,9 @@ export class r2rClient extends BaseClient {
    * @returns A promise that resolves to the response from the server.
    */
   @feature("getConversation")
-  async getConversation(
-    conversationId: string,
-  ): Promise<Record<string, any>> {
+  async getConversation(conversationId: string): Promise<Record<string, any>> {
     this._ensureAuthenticated();
-    return this._makeRequest(
-      "GET",
-      `get_conversation/${conversationId}`,
-    );
+    return this._makeRequest("GET", `get_conversation/${conversationId}`);
   }
 
   /**
@@ -1994,7 +1989,7 @@ export class r2rClient extends BaseClient {
       rag_generation_config,
       task_prompt_override,
       include_title_if_available,
-      conversation_id
+      conversation_id,
     };
 
     Object.keys(json_data).forEach(
