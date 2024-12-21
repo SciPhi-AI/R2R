@@ -213,7 +213,7 @@ describe("r2rClient V3 System Integration Tests User", () => {
   test("User 1 should not be able to list user 2's document chunks", async () => {
     await expect(
       user1Client.documents.listChunks({ id: user2DocumentId }),
-    ).rejects.toThrow(/Status 404/);
+    ).rejects.toThrow(/Status 403/);
   });
 
   test("User 1 should not be able to delete user 2's document", async () => {
@@ -225,7 +225,7 @@ describe("r2rClient V3 System Integration Tests User", () => {
   test("User 2 should not be able to delete user 1's document", async () => {
     await expect(
       user2Client.documents.delete({ id: user1Document2Id }),
-    ).rejects.toThrow(/Status 403/);
+    ).rejects.toThrow(/Status 404/);
   });
 
   test("A superuser should be able to delete any document", async () => {
