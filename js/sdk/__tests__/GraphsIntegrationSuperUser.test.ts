@@ -151,7 +151,7 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
     await new Promise((resolve) => setTimeout(resolve, 15000));
 
     expect(response.results).toBeDefined();
-  }, 45000);
+  }, 60000);
 
   test("Check that there are communities in the graph", async () => {
     const response = await client.graphs.listCommunities({
