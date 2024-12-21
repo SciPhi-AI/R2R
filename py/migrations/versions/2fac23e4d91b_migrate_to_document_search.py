@@ -150,7 +150,6 @@ async def async_generate_all_summaries():
                     ),
                 }
             ]
-            print("Making completion")
             summary = await client.completion(
                 messages=messages, generation_config={"model": base_model}
             )

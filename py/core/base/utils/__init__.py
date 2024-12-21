@@ -4,6 +4,7 @@ from shared.utils import (
     _decorate_vector_type,
     _get_str_estimation_output,
     decrement_version,
+    deep_update,
     format_search_results_for_llm,
     format_search_results_for_stream,
     generate_default_prompt_id,
@@ -17,7 +18,6 @@ from shared.utils import (
     run_pipeline,
     to_async_generator,
     validate_uuid,
-    deep_update,
 )
 
 __all__ = [

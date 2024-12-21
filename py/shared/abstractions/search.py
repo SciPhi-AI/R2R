@@ -24,7 +24,7 @@ class ChunkSearchResult(R2RSerializable):
     metadata: dict[str, Any]
 
     def __str__(self) -> str:
-        return f"ChunkSearchResult(id={self.id}, document_id={self.document_id}, score={self.score})"
+        return f"ChunkSearchResult(id={self.id}, document_id={self.document_id}, score={self.score}, text={self.text}, metadata={self.metadata})"
 
     def __repr__(self) -> str:
         return self.__str__()

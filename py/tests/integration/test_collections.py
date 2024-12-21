@@ -40,7 +40,6 @@ def test_list_collections(client, test_collection):
 
 def test_retrieve_collection(client, test_collection):
     # Retrieve the collection just created
-    print("test_collection = ", test_collection)
     retrieved = client.collections.retrieve(test_collection["collection_id"])[
         "results"
     ]
@@ -81,8 +80,6 @@ def test_list_documents_in_collection(client, test_collection, test_document):
     docs_in_collection = client.collections.list_documents(
         test_collection["collection_id"]
     )["results"]
-    print("docs_in_collection = ", docs_in_collection)
-    print("test_document = ", test_document)
     found = any(doc["id"] == test_document for doc in docs_in_collection)
     assert found, "Expected document not found in collection"
 
@@ -168,7 +165,6 @@ def test_add_user_to_non_existent_collection(mutable_client):
         result = mutable_client.collections.add_user(
             fake_collection_id, user_id
         )
-        print("result = ", result)
     assert (
         exc_info.value.status_code == 404
     ), "Wrong error code for non-existent collection"

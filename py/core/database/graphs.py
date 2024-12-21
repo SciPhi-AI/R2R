@@ -961,31 +961,16 @@ class PostgresCommunitiesHandler(Handler):
     async def delete(
         self,
         parent_id: UUID,
-        community_id: UUID,
+        # community_id: UUID,
     ) -> None:
         table_name = "graphs_communities"
 
         query = f"""
             DELETE FROM {self._get_table_name(table_name)}
-            WHERE id = $1 AND collection_id = $2
+            WHERE collection_id = $1
         """
 
-        params = [community_id, parent_id]
-
-        try:
-            results = await self.connection_manager.execute_query(
-                query, params
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"An error occurred while deleting the community: {e}",
-            )
-
-        params = [
-            community_id,
-            parent_id,
-        ]
+        params = [parent_id]
 
         try:
             results = await self.connection_manager.execute_query(
@@ -1176,44 +1161,15 @@ class PostgresGraphsHandler(Handler):
         """
         Completely reset a graph and all associated data.
         """
-        try:
-            entity_delete_query = f"""
-                DELETE FROM {self._get_table_name("graphs_entities")}
-                WHERE parent_id = $1
-            """
-            await self.connection_manager.execute_query(
-                entity_delete_query, [parent_id]
-            )
 
-            # Delete all graph relationships
-            relationship_delete_query = f"""
-                DELETE FROM {self._get_table_name("graphs_relationships")}
-                WHERE parent_id = $1
-            """
-            await self.connection_manager.execute_query(
-                relationship_delete_query, [parent_id]
-            )
-
-            # Delete all graph relationships
-            community_delete_query = f"""
-                DELETE FROM {self._get_table_name("graphs_communities")}
-                WHERE collection_id = $1
-            """
-            await self.connection_manager.execute_query(
-                community_delete_query, [parent_id]
-            )
-
-            # Delete all graph communities and community info
-            query = f"""
-                DELETE FROM {self._get_table_name("graphs_communities")}
-                WHERE collection_id = $1
-            """
-
-            await self.connection_manager.execute_query(query, [parent_id])
-
-        except Exception as e:
-            logger.error(f"Error deleting graph {parent_id}: {str(e)}")
-            raise R2RException(f"Failed to delete graph: {str(e)}", 500)
+        await self.entities.delete(
+            parent_id=parent_id, store_type=StoreType.GRAPHS
+        )
+        await self.relationships.delete(
+            parent_id=parent_id, store_type=StoreType.GRAPHS
+        )
+        await self.communities.delete(parent_id=parent_id)
+        return
 
     async def list_graphs(
         self,
@@ -1889,29 +1845,6 @@ class PostgresGraphsHandler(Handler):
             conflict_columns=conflict_columns,
         )
 
-    async def delete_node_via_document_id(
-        self, document_id: UUID, collection_id: UUID
-    ) -> None:
-        # don't delete if status is PROCESSING.
-        QUERY = f"""
-            SELECT graph_cluster_status FROM {self._get_table_name("collections")} WHERE id = $1
-        """
-        status = (
-            await self.connection_manager.fetch_query(QUERY, [collection_id])
-        )[0]["graph_cluster_status"]
-        if status == KGExtractionStatus.PROCESSING.value:
-            return
-
-        # Execute separate DELETE queries
-        delete_queries = [
-            f"""DELETE FROM {self._get_table_name("documents_relationships")} WHERE parent_id = $1""",
-            f"""DELETE FROM {self._get_table_name("documents_entities")} WHERE parent_id = $1""",
-        ]
-
-        for query in delete_queries:
-            await self.connection_manager.execute_query(query, [document_id])
-        return None
-
     async def get_all_relationships(
         self,
         collection_id: UUID | None,
@@ -2056,64 +1989,17 @@ class PostgresGraphsHandler(Handler):
             QUERY, [tuple(non_null_attrs.values())]
         )
 
-    async def delete_graph_for_collection(
-        self, collection_id: UUID, cascade: bool = False
-    ) -> None:
+    # async def delete(self, collection_id: UUID, cascade: bool = False) -> None:
+    async def delete(self, collection_id: UUID) -> None:
 
-        # don't delete if status is PROCESSING.
-        QUERY = f"""
-            SELECT graph_cluster_status FROM {self._get_table_name("collections")} WHERE id = $1
-        """
-        status = (
-            await self.connection_manager.fetch_query(QUERY, [collection_id])
-        )[0]["graph_cluster_status"]
-        if status == KGExtractionStatus.PROCESSING.value:
-            return
+        graphs = await self.get(graph_id=collection_id, offset=0, limit=-1)
 
-        # remove all relationships for these documents.
-        DELETE_QUERIES = [
-            f"DELETE FROM {self._get_table_name('graphs_communities')} WHERE collection_id = $1;",
-        ]
-
-        # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
-        document_ids_response = (
-            await self.collections_handler.documents_in_collection(
-                offset=0,
-                limit=100,
-                collection_id=collection_id,
+        if len(graphs["results"]) == 0:
+            raise R2RException(
+                message=f"Graph not found for collection {collection_id}",
+                status_code=404,
             )
-        )
-
-        # This type ignore is due to insufficient typing of the documents_in_collection method
-        document_ids = [doc.id for doc in document_ids_response["results"]]  # type: ignore
-
-        # TODO: make these queries more efficient. Pass the document_ids as params.
-        if cascade:
-            DELETE_QUERIES += [
-                f"DELETE FROM {self._get_table_name('graphs_relationships')} WHERE document_id = ANY($1::uuid[]);",
-                f"DELETE FROM {self._get_table_name('graphs_entities')} WHERE document_id = ANY($1::uuid[]);",
-                f"DELETE FROM {self._get_table_name('graphs_entities')} WHERE collection_id = $1;",
-            ]
-
-            # setting the kg_creation_status to PENDING for this collection.
-            QUERY = f"""
-                UPDATE {self._get_table_name("documents")} SET extraction_status = $1 WHERE $2::uuid = ANY(collection_ids)
-            """
-            await self.connection_manager.execute_query(
-                QUERY, [KGExtractionStatus.PENDING, collection_id]
-            )
-
-        if document_ids:
-            for query in DELETE_QUERIES:
-                if "community" in query or "graphs_entities" in query:
-                    await self.connection_manager.execute_query(
-                        query, [collection_id]
-                    )
-                else:
-                    await self.connection_manager.execute_query(
-                        query, [document_ids]
-                    )
-
+        await self.reset(collection_id)
         # set status to PENDING for this collection.
         QUERY = f"""
             UPDATE {self._get_table_name("collections")} SET graph_cluster_status = $1 WHERE id = $2
@@ -2121,6 +2007,37 @@ class PostgresGraphsHandler(Handler):
         await self.connection_manager.execute_query(
             QUERY, [KGExtractionStatus.PENDING, collection_id]
         )
+        # Delete the graph
+        QUERY = f"""
+            DELETE FROM {self._get_table_name("graphs")} WHERE collection_id = $1
+        """
+
+        # if cascade:
+        #     documents = []
+        #     document_response = (
+        #         await self.collections_handler.documents_in_collection(
+        #             offset=0,
+        #             limit=100,
+        #             collection_id=collection_id,
+        #         )
+        #     )["results"]
+        #     documents.extend(document_response)
+        #     document_ids = [doc.id for doc in documents]
+        #     for document_id in document_ids:
+        #         self.entities.delete(
+        #             parent_id=document_id, store_type=StoreType.DOCUMENTS
+        #         )
+        #         self.relationships.delete(
+        #             parent_id=document_id, store_type=StoreType.DOCUMENTS
+        #         )
+
+        #     # setting the extraction status to PENDING for the documents in this collection.
+        #     QUERY = f"""
+        #         UPDATE {self._get_table_name("documents")} SET extraction_status = $1 WHERE $2::uuid = ANY(collection_ids)
+        #     """
+        #     await self.connection_manager.execute_query(
+        #         QUERY, [KGExtractionStatus.PENDING, collection_id]
+        #     )
 
     async def perform_graph_clustering(
         self,

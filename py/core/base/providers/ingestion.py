@@ -1,7 +1,7 @@
 import logging
 from abc import ABC
 from enum import Enum
-from typing import Any, TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic import Field
 

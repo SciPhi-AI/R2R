@@ -50,11 +50,6 @@ class AuthService(Service):
         user_id = await self.providers.database.users_handler.get_user_id_by_verification_code(
             verification_code
         )
-        if not user_id:
-            raise R2RException(
-                status_code=400, message="Invalid or expired verification code"
-            )
-
         user = await self.providers.database.users_handler.get_user_by_id(
             user_id
         )
@@ -189,7 +184,7 @@ class AuthService(Service):
         )
 
         try:
-            await self.providers.database.graphs_handler.delete_graph_for_collection(
+            await self.providers.database.graphs_handler.delete(
                 collection_id=collection_id,
             )
         except Exception as e:
@@ -272,3 +267,40 @@ class AuthService(Service):
             dict: Contains verification_code and message
         """
         return await self.providers.auth.send_reset_email(email)
+
+    async def create_user_api_key(self, user_id: UUID) -> dict:
+        """
+        Generate a new API key for the user.
+
+        Args:
+            user_id (UUID): The ID of the user
+
+        Returns:
+            dict: Contains the API key and message
+        """
+        return await self.providers.auth.create_user_api_key(user_id)
+
+    async def delete_user_api_key(self, user_id: UUID, key_id: str) -> dict:
+        """
+        Delete the API key for the user.
+
+        Args:
+            user_id (UUID): The ID of the user
+            key_id (str): The ID of the API key
+
+        Returns:
+            dict: Contains the message
+        """
+        return await self.providers.auth.delete_user_api_key(user_id, key_id)
+
+    async def list_user_api_keys(self, user_id: UUID) -> dict:
+        """
+        List all API keys for the user.
+
+        Args:
+            user_id (UUID): The ID of the user
+
+        Returns:
+            dict: Contains the list of API keys
+        """
+        return await self.providers.auth.list_user_api_keys(user_id)

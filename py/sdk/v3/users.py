@@ -127,6 +127,19 @@ class UsersSDK:
             version="v3",
         )
 
+    # async def set_api_key(self, api_key: str) -> None:
+    #     """
+    #     Set the API key for the client.
+
+    #     Args:
+    #         api_key (str): API key to set
+    #     """
+    #     if self.client.access_token:
+    #         raise ValueError(
+    #             "Cannot set an API key after logging in, please log out first"
+    #         )
+    #     self.client.set_api_key(api_key)
+
     async def login(self, email: str, password: str) -> dict[str, Token]:
         """
         Log in a user.
@@ -138,6 +151,10 @@ class UsersSDK:
         Returns:
             dict[str, Token]: Access and refresh tokens
         """
+        if self.client.api_key:
+            raise ValueError(
+                "Cannot log in after setting an API key, please unset your R2R_API_KEY variable or call client.set_api_key(None)"
+            )
         data = {"username": email, "password": password}
         response = await self.client._make_request(
             "POST",
@@ -175,7 +192,7 @@ class UsersSDK:
                 ),
             }
         except Exception:
-            self.access_token = None
+            self.client.access_token = None
             self.client._refresh_token = None
             raise ValueError("Invalid token provided")
 
@@ -445,5 +462,64 @@ class UsersSDK:
         return await self.client._make_request(
             "DELETE",
             f"users/{str(id)}/collections/{str(collection_id)}",
+            version="v3",
+        )
+
+    async def create_api_key(
+        self,
+        id: str | UUID,
+    ) -> dict:
+        """
+        Create a new API key for the specified user.
+
+        Args:
+            id (str | UUID): User ID to create API key for
+
+        Returns:
+            dict: { "message": "API key created successfully", "api_key": "key_id.raw_api_key" }
+        """
+        return await self.client._make_request(
+            "POST",
+            f"users/{str(id)}/api-keys",
+            version="v3",
+        )
+
+    async def list_api_keys(
+        self,
+        id: str | UUID,
+    ) -> dict:
+        """
+        List all API keys for the specified user.
+
+        Args:
+            id (str | UUID): User ID to list API keys for
+
+        Returns:
+            dict: { "results": [ { "id": ..., "public_key": ..., "name": ..., "created_at": ..., "updated_at": ... } ], "total_entries": ... }
+        """
+        return await self.client._make_request(
+            "GET",
+            f"users/{str(id)}/api-keys",
+            version="v3",
+        )
+
+    async def delete_api_key(
+        self,
+        id: str | UUID,
+        key_id: str | UUID,
+    ) -> WrappedGenericMessageResponse:
+        """
+        Delete a specific API key for the specified user.
+
+        Args:
+            id (str | UUID): User ID
+            key_id (str | UUID): API key ID to delete
+
+        Returns:
+            dict: { "message": "API key deleted successfully" }
+        """
+        return await self.client._make_request(
+            "DELETE",
+            f"users/{str(id)}/api-keys/{str(key_id)}",
             version="v3",
         )

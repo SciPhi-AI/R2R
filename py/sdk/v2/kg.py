@@ -236,7 +236,7 @@ class KGMixins:
             "POST", "deduplicate_entities", json=data
         )
 
-    async def delete_graph_for_collection(
+    async def delete(
         self, collection_id: Union[UUID, str], cascade: bool = False
     ) -> dict:
         """
@@ -254,4 +254,4 @@ class KGMixins:
             "cascade": cascade,
         }
 
-        return await self._make_request("DELETE", "delete_graph_for_collection", json=data)  # type: ignore
+        return await self._make_request("DELETE", "delete", json=data)  # type: ignore

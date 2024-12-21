@@ -497,9 +497,9 @@ class ManagementService(Service):
         await self.providers.database.chunks_handler.remove_document_from_collection_vector(
             document_id, collection_id
         )
-        await self.providers.database.graphs_handler.delete_node_via_document_id(
-            document_id, collection_id
-        )
+        # await self.providers.database.graphs_handler.delete_node_via_document_id(
+        #     document_id, collection_id
+        # )
         return None
 
     def _process_relationships(
@@ -606,7 +606,6 @@ class ManagementService(Service):
             name=name,
             description=description,
         )
-
         return result
 
     @telemetry_event("UpdateCollection")

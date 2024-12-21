@@ -1,5 +1,6 @@
 from shared.utils.base_utils import (
     decrement_version,
+    deep_update,
     format_search_results_for_llm,
     format_search_results_for_stream,
     generate_default_user_collection_id,
@@ -12,7 +13,6 @@ from shared.utils.base_utils import (
     to_async_generator,
     update_settings_from_dict,
     validate_uuid,
-    deep_update,
 )
 from shared.utils.splitter.text import (
     RecursiveCharacterTextSplitter,

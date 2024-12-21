@@ -27,12 +27,12 @@ logger = logging.getLogger()
 from core.database import PostgresDatabaseProvider
 from core.providers import (  # PostgresDatabaseProvider,
     AsyncSMTPEmailProvider,
-    BCryptConfig,
-    BCryptProvider,
     ConsoleMockEmailProvider,
     HatchetOrchestrationProvider,
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
+    NaClCryptoConfig,
+    NaClCryptoProvider,
     OllamaEmbeddingProvider,
     OpenAICompletionProvider,
     OpenAIEmbeddingProvider,
@@ -53,7 +53,7 @@ class R2RProviderFactory:
     @staticmethod
     async def create_auth_provider(
         auth_config: AuthConfig,
-        crypto_provider: BCryptProvider,
+        crypto_provider: NaClCryptoProvider,
         database_provider: PostgresDatabaseProvider,
         email_provider: Union[
             AsyncSMTPEmailProvider,
@@ -82,9 +82,9 @@ class R2RProviderFactory:
     @staticmethod
     def create_crypto_provider(
         crypto_config: CryptoConfig, *args, **kwargs
-    ) -> BCryptProvider:
+    ) -> NaClCryptoProvider:
         if crypto_config.provider == "bcrypt":
-            return BCryptProvider(BCryptConfig(**crypto_config.dict()))
+            return NaClCryptoProvider(NaClCryptoConfig(**crypto_config.dict()))
         else:
             raise ValueError(
                 f"Crypto provider {crypto_config.provider} not supported."
@@ -152,7 +152,7 @@ class R2RProviderFactory:
     async def create_database_provider(
         self,
         db_config: DatabaseConfig,
-        crypto_provider: BCryptProvider,
+        crypto_provider: NaClCryptoProvider,
         *args,
         **kwargs,
     ) -> PostgresDatabaseProvider:
@@ -262,7 +262,7 @@ class R2RProviderFactory:
         auth_provider_override: Optional[
             Union[R2RAuthProvider, SupabaseAuthProvider]
         ] = None,
-        crypto_provider_override: Optional[BCryptProvider] = None,
+        crypto_provider_override: Optional[NaClCryptoProvider] = None,
         database_provider_override: Optional[PostgresDatabaseProvider] = None,
         email_provider_override: Optional[
             Union[

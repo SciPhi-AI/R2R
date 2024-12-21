@@ -305,6 +305,32 @@ class PostgresConversationsHandler(Handler):
             "metadata": new_metadata,
         }
 
+    async def update_message_metadata(
+        self, message_id: UUID, metadata: dict
+    ) -> None:
+        # Fetch current metadata
+        query = f"""
+            SELECT metadata FROM {self._get_table_name("messages")}
+            WHERE id = $1
+        """
+        row = await self.connection_manager.fetchrow_query(query, [message_id])
+        if not row:
+            raise R2RException(
+                status_code=404, message=f"Message {message_id} not found."
+            )
+
+        current_metadata = json.loads(row["metadata"]) or {}
+        updated_metadata = {**current_metadata, **metadata}
+
+        update_query = f"""
+            UPDATE {self._get_table_name("messages")}
+            SET metadata = $1::jsonb
+            WHERE id = $2
+        """
+        await self.connection_manager.execute_query(
+            update_query, [json.dumps(updated_metadata), message_id]
+        )
+
     async def get_conversation(
         self, conversation_id: UUID
     ) -> list[MessageResponse]:

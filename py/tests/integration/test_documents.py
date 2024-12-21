@@ -411,7 +411,6 @@ def test_delete_by_workflow_metadata(client):
             run_with_orchestration=False,
         )["results"]["document_id"],
     ]
-    print("available documents = ", client.documents.list())
 
     try:
         # Delete drafts with no reviews

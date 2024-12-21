@@ -1,10 +1,11 @@
+from copy import deepcopy
+from pathlib import Path
+
 import pytest
 import toml
-from pathlib import Path
-from copy import deepcopy
 
-from core.main.config import R2RConfig
 from core.base.utils import deep_update
+from core.main.config import R2RConfig
 
 
 @pytest.fixture

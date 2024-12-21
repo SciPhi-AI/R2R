@@ -1,5 +1,10 @@
 from .auth import R2RAuthProvider, SupabaseAuthProvider
-from .crypto import BCryptConfig, BCryptProvider
+from .crypto import (
+    BcryptCryptoConfig,
+    BCryptCryptoProvider,
+    NaClCryptoConfig,
+    NaClCryptoProvider,
+)
 from .email import (
     AsyncSMTPEmailProvider,
     ConsoleMockEmailProvider,
@@ -32,8 +37,10 @@ __all__ = [
     "UnstructuredIngestionProvider",
     "UnstructuredIngestionConfig",
     # Crypto
-    "BCryptProvider",
-    "BCryptConfig",
+    "BCryptCryptoProvider",
+    "BcryptCryptoConfig",
+    "NaClCryptoConfig",
+    "NaClCryptoProvider",
     # Embeddings
     "LiteLLMEmbeddingProvider",
     "OllamaEmbeddingProvider",

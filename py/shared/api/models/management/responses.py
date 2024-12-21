@@ -99,6 +99,20 @@ class MessageResponse(BaseModel):
     metadata: dict[str, Any] = {}
 
 
+class ApiKey(BaseModel):
+    public_key: str
+    api_key: str
+    key_id: str
+    name: Optional[str] = None
+
+
+class ApiKeyNoPriv(BaseModel):
+    public_key: str
+    key_id: str
+    name: Optional[str] = None
+    updated_at: datetime
+
+
 # Chunk Responses
 WrappedChunkResponse = R2RResults[ChunkResponse]
 WrappedChunksResponse = PaginatedR2RResult[list[ChunkResponse]]
@@ -130,6 +144,8 @@ WrappedServerStatsResponse = R2RResults[ServerStats]
 # User Responses
 WrappedUserResponse = R2RResults[User]
 WrappedUsersResponse = PaginatedR2RResult[list[User]]
+WrappedAPIKeyResponse = R2RResults[ApiKey]
+WrappedAPIKeysResponse = PaginatedR2RResult[list[ApiKeyNoPriv]]
 
 # TODO: anything below this hasn't been reviewed
 WrappedLogsResponse = R2RResults[list[LogResponse]]
