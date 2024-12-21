@@ -1,5 +1,6 @@
 from shared.utils.base_utils import (
     decrement_version,
+    deep_update,
     format_search_results_for_llm,
     format_search_results_for_stream,
     generate_default_user_collection_id,
@@ -32,6 +33,7 @@ __all__ = [
     "generate_default_user_collection_id",
     "validate_uuid",
     "update_settings_from_dict",
+    "deep_update",
     # Text splitter
     "RecursiveCharacterTextSplitter",
     "TextSplitter",

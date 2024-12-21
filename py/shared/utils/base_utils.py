@@ -3,7 +3,14 @@ import json
 import logging
 from copy import deepcopy
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Iterable, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Iterable,
+    Optional,
+    TypeVar,
+)
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.search import (
@@ -299,3 +306,27 @@ def _get_str_estimation_output(x: tuple[Any, Any]) -> str:
         return " - ".join(map(str, x))
     else:
         return " - ".join(f"{round(a, 2)}" for a in x)
+
+
+KeyType = TypeVar("KeyType")
+
+
+def deep_update(
+    mapping: dict[KeyType, Any], *updating_mappings: dict[KeyType, Any]
+) -> dict[KeyType, Any]:
+    """
+    Taken from Pydantic v1:
+    https://github.com/pydantic/pydantic/blob/fd2991fe6a73819b48c906e3c3274e8e47d0f761/pydantic/utils.py#L200
+    """
+    updated_mapping = mapping.copy()
+    for updating_mapping in updating_mappings:
+        for k, v in updating_mapping.items():
+            if (
+                k in updated_mapping
+                and isinstance(updated_mapping[k], dict)
+                and isinstance(v, dict)
+            ):
+                updated_mapping[k] = deep_update(updated_mapping[k], v)
+            else:
+                updated_mapping[k] = v
+    return updated_mapping

@@ -4,6 +4,7 @@ from shared.utils import (
     _decorate_vector_type,
     _get_str_estimation_output,
     decrement_version,
+    deep_update,
     format_search_results_for_llm,
     format_search_results_for_stream,
     generate_default_prompt_id,
@@ -36,6 +37,7 @@ __all__ = [
     "TextSplitter",
     "llm_cost_per_million_tokens",
     "validate_uuid",
+    "deep_update",
     "_decorate_vector_type",
     "_get_str_estimation_output",
 ]

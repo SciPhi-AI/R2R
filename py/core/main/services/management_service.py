@@ -1,12 +1,10 @@
 import logging
 import os
 from collections import defaultdict
-from copy import copy
 from typing import Any, BinaryIO, Optional, Tuple
 from uuid import UUID
 
 import toml
-from fastapi.responses import StreamingResponse
 
 from core.base import (
     CollectionResponse,
@@ -19,7 +17,6 @@ from core.base import (
     RunManager,
     User,
 )
-from core.base.utils import validate_uuid
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -861,23 +858,17 @@ class ManagementService(Service):
     @telemetry_event("EditMessage")
     async def edit_message(
         self,
-        message_id: str,
-        new_content: str,
-        additional_metadata: dict,
+        message_id: UUID,
+        new_content: Optional[str] = None,
+        additional_metadata: Optional[dict] = None,
         auth_user=None,
-    ) -> Tuple[str, str]:
+    ) -> dict[str, Any]:
         return (
             await self.providers.database.conversations_handler.edit_message(
-                message_id, new_content, additional_metadata
+                message_id=message_id,
+                new_content=new_content,
+                additional_metadata=additional_metadata or {},
             )
-        )
-
-    @telemetry_event("updateMessageMetadata")
-    async def update_message_metadata(
-        self, message_id: str, metadata: dict, auth_user=None
-    ):
-        await self.providers.database.conversations_handler.update_message_metadata(
-            message_id, metadata
         )
 
     @telemetry_event("DeleteConversation")

@@ -229,12 +229,12 @@ class PostgresConversationsHandler(Handler):
     async def edit_message(
         self,
         message_id: UUID,
-        new_content: str,
-        additional_metadata: dict = {},
+        new_content: str | None = None,
+        additional_metadata: dict = None,
     ) -> dict[str, Any]:
         # Get the original message
         query = f"""
-            SELECT conversation_id, parent_id, content, metadata
+            SELECT conversation_id, parent_id, content, metadata, created_at
             FROM {self._get_table_name("messages")}
             WHERE id = $1
         """
@@ -247,33 +247,46 @@ class PostgresConversationsHandler(Handler):
         old_content = json.loads(row["content"])
         old_metadata = json.loads(row["metadata"])
 
-        # Update the content
-        old_message = Message(**old_content)
-        edited_message = Message(
-            role=old_message.role,
-            content=new_content,
-            name=old_message.name,
-            function_call=old_message.function_call,
-            tool_calls=old_message.tool_calls,
-        )
+        if new_content is not None:
+            old_message = Message(**old_content)
+            edited_message = Message(
+                role=old_message.role,
+                content=new_content,
+                name=old_message.name,
+                function_call=old_message.function_call,
+                tool_calls=old_message.tool_calls,
+            )
+            content_to_save = edited_message.model_dump()
+        else:
+            content_to_save = old_content
 
-        # Merge metadata and mark edited
-        new_metadata = {**old_metadata, **additional_metadata, "edited": True}
+        additional_metadata = additional_metadata or {}
 
-        # Instead of branching, we'll simply replace the message content and metadata:
-        # NOTE: If you prefer versioning or forking behavior, you'd add a new message.
-        # For simplicity, we just edit the existing message.
+        new_metadata = {
+            **old_metadata,
+            **additional_metadata,
+            "edited": (
+                True
+                if new_content is not None
+                else old_metadata.get("edited", False)
+            ),
+        }
+
+        # Update message without changing the timestamp
         update_query = f"""
             UPDATE {self._get_table_name("messages")}
-            SET content = $1::jsonb, metadata = $2::jsonb, created_at = NOW()
-            WHERE id = $3
+            SET content = $1::jsonb,
+                metadata = $2::jsonb,
+                created_at = $3
+            WHERE id = $4
             RETURNING id
         """
         updated = await self.connection_manager.fetchrow_query(
             update_query,
             [
-                json.dumps(edited_message.model_dump()),
+                json.dumps(content_to_save),
                 json.dumps(new_metadata),
+                row["created_at"],
                 message_id,
             ],
         )
@@ -284,7 +297,11 @@ class PostgresConversationsHandler(Handler):
 
         return {
             "id": str(message_id),
-            "message": edited_message,
+            "message": (
+                Message(**content_to_save)
+                if isinstance(content_to_save, dict)
+                else content_to_save
+            ),
             "metadata": new_metadata,
         }
 

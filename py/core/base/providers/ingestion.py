@@ -1,9 +1,9 @@
 import logging
 from abc import ABC
 from enum import Enum
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from core.base.abstractions import ChunkEnrichmentSettings
 
@@ -21,6 +21,7 @@ class IngestionConfig(ProviderConfig):
         "app": AppConfig(),
         "provider": "r2r",
         "excluded_parsers": ["mp4"],
+        "chunking_strategy": "recursive",
         "chunk_enrichment_settings": ChunkEnrichmentSettings(),
         "extra_parsers": {},
         "audio_transcription_model": "openai/whisper-1",
@@ -43,12 +44,15 @@ class IngestionConfig(ProviderConfig):
     excluded_parsers: list[str] = Field(
         default_factory=lambda: IngestionConfig._defaults["excluded_parsers"]
     )
+    chunking_strategy: str = Field(
+        default_factory=lambda: IngestionConfig._defaults["chunking_strategy"]
+    )
     chunk_enrichment_settings: ChunkEnrichmentSettings = Field(
         default_factory=lambda: IngestionConfig._defaults[
             "chunk_enrichment_settings"
         ]
     )
-    extra_parsers: dict[str, str] = Field(
+    extra_parsers: dict[str, Any] = Field(
         default_factory=lambda: IngestionConfig._defaults["extra_parsers"]
     )
     audio_transcription_model: str = Field(
@@ -157,6 +161,7 @@ class IngestionConfig(ProviderConfig):
         json_schema_extra = {
             "provider": "r2r",
             "excluded_parsers": ["mp4"],
+            "chunking_strategy": "recursive",
             "chunk_enrichment_settings": ChunkEnrichmentSettings().dict(),
             "extra_parsers": {},
             "audio_transcription_model": "openai/whisper-1",
