@@ -820,10 +820,13 @@ class ManagementService(Service):
 
     @telemetry_event("CreateConversation")
     async def create_conversation(
-        self, user_id: Optional[UUID] = None, auth_user=None
+        self,
+        user_id: Optional[UUID] = None,
+        name: Optional[str] = None,
     ) -> dict:
-        return await self.providers.database.conversations_handler.create_conversation(  # type: ignore
-            user_id=user_id
+        return await self.providers.database.conversations_handler.create_conversation(
+            user_id=user_id,
+            name=name,
         )
 
     @telemetry_event("ConversationsOverview")

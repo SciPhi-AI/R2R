@@ -65,7 +65,6 @@ class R2RAsyncClient(
     async def _make_request(
         self, method: str, endpoint: str, version: str = "v2", **kwargs
     ):
-        print("in async client......")
         url = self._get_full_url(endpoint, version)
         request_args = self._prepare_request_args(endpoint, **kwargs)
 
@@ -135,9 +134,7 @@ class R2RAsyncClient(
     def set_api_key(self, api_key: str) -> None:
         if self.access_token:
             raise ValueError("Cannot have both access token and api key.")
-        print("calling set api key, api_key = ", api_key)
         self.api_key = api_key
 
     def unset_api_key(self) -> None:
-        print("calling unset api key")
         self.api_key = None

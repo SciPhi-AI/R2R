@@ -87,6 +87,9 @@ class ConversationsRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_conversation(
+            name: Optional[str] = Body(
+                None, description="The name of the conversation", embed=True
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper),
         ) -> WrappedConversationResponse:
             """
@@ -94,7 +97,12 @@ class ConversationsRouter(BaseRouterV3):
 
             This endpoint initializes a new conversation for the authenticated user.
             """
-            return await self.services.management.create_conversation()
+            user_id = auth_user.id
+
+            return await self.services.management.create_conversation(
+                user_id=user_id,
+                name=name,
+            )
 
         @self.router.get(
             "/conversations",

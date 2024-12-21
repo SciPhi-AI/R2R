@@ -14,16 +14,22 @@ class ConversationsSDK:
     def __init__(self, client):
         self.client = client
 
-    async def create(self) -> WrappedConversationResponse:
+    async def create(
+        self,
+        name: Optional[str] = None,
+    ) -> WrappedConversationResponse:
         """
         Create a new conversation.
 
         Returns:
             dict: Created conversation information
         """
+        data = {"name": name} if name else None
+
         return await self.client._make_request(
             "POST",
             "conversations",
+            data=data,
             version="v3",
         )
 

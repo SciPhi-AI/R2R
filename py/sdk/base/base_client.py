@@ -46,8 +46,6 @@ class BaseClient:
         self.api_key: Optional[str] = None
 
     def _get_auth_header(self) -> dict[str, str]:
-        print("self.access_token = ", self.access_token)
-        print("self.api_key = ", self.api_key)
         if self.access_token and self.api_key:
             raise R2RException(
                 status_code=400,
