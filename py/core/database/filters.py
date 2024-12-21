@@ -423,8 +423,6 @@ def apply_filters(
     builder = SQLFilterBuilder(params=params, mode=mode)
     filter_clause, new_params = builder.build(expr)
 
-    print("filter_clause = ", filter_clause)
-
     if mode == "where_clause":
         return filter_clause, new_params  # Already includes WHERE
     elif mode == "condition_only":

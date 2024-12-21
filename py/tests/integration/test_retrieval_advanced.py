@@ -144,7 +144,6 @@ def test_agent_clarification_requests(client):
         message=msg,
         search_settings={"use_semantic_search": True},
     )
-    print("resp = ", resp)
     content = resp["results"]["messages"][-1]["content"]
     assert any(
         phrase in content.lower()

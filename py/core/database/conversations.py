@@ -302,7 +302,7 @@ class PostgresConversationsHandler(Handler):
                 status_code=404, message=f"Message {message_id} not found."
             )
 
-        current_metadata = row["metadata"] or {}
+        current_metadata = json.loads(row["metadata"]) or {}
         updated_metadata = {**current_metadata, **metadata}
 
         update_query = f"""
@@ -311,7 +311,7 @@ class PostgresConversationsHandler(Handler):
             WHERE id = $2
         """
         await self.connection_manager.execute_query(
-            update_query, [updated_metadata, message_id]
+            update_query, [json.dumps(updated_metadata), message_id]
         )
 
     async def get_conversation(

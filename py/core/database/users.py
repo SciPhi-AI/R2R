@@ -760,8 +760,6 @@ class PostgresUserHandler(Handler):
             WHERE id = $1 AND user_id = $2
             RETURNING id, public_key, name
         """
-        print("user_id = ", user_id)
-        print("key_id = ", key_id)
         result = await self.connection_manager.fetchrow_query(
             query, [key_id, user_id]
         )

@@ -127,18 +127,18 @@ class UsersSDK:
             version="v3",
         )
 
-    async def set_api_key(self, api_key: str) -> None:
-        """
-        Set the API key for the client.
+    # async def set_api_key(self, api_key: str) -> None:
+    #     """
+    #     Set the API key for the client.
 
-        Args:
-            api_key (str): API key to set
-        """
-        if self.client.access_token:
-            raise ValueError(
-                "Cannot set an API key after logging in, please log out first"
-            )
-        self.client.api_key = api_key
+    #     Args:
+    #         api_key (str): API key to set
+    #     """
+    #     if self.client.access_token:
+    #         raise ValueError(
+    #             "Cannot set an API key after logging in, please log out first"
+    #         )
+    #     self.client.set_api_key(api_key)
 
     async def login(self, email: str, password: str) -> dict[str, Token]:
         """

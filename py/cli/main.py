@@ -48,7 +48,6 @@ def main():
         pass
     except Exception as e:
         # Handle other exceptions if needed
-        print("CLI error: An error occurred")
         raise e
     finally:
         # Ensure all events are flushed before exiting

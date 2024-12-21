@@ -226,8 +226,10 @@ def test_delete_user(client):
     assert del_resp["success"], "User deletion failed."
 
     with pytest.raises(R2RException) as exc_info:
-        result = client.users.retrieve(user_id)
-        print("result = ", result)
+        # result = client.users.retrieve(user_id)
+        client.users.login(random_email, password)
+
+        # print("result = ", result)
     assert (
         exc_info.value.status_code == 404
     ), "User still exists after deletion."

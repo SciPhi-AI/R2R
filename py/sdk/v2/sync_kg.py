@@ -236,7 +236,7 @@ class SyncKGMixins:
             "POST", "deduplicate_entities", json=data
         )
 
-    def delete_graph_for_collection(
+    def delete(
         self, collection_id: Union[UUID, str], cascade: bool = False
     ) -> dict:
         """
@@ -254,4 +254,4 @@ class SyncKGMixins:
             "cascade": cascade,
         }
 
-        return self._make_request("DELETE", "delete_graph_for_collection", json=data)  # type: ignore
+        return self._make_request("DELETE", "delete", json=data)  # type: ignore

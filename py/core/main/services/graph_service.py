@@ -632,32 +632,18 @@ class GraphService(Service):
         cascade: bool,
         **kwargs,
     ):
-        return await self.delete_graph_for_collection(
-            collection_id=collection_id, cascade=cascade
-        )
+        return await self.delete(collection_id=collection_id, cascade=cascade)
 
-    @telemetry_event("delete_graph_for_collection")
-    async def delete_graph_for_collection(
+    @telemetry_event("delete")
+    async def delete(
         self,
         collection_id: UUID,
         cascade: bool,
         **kwargs,
     ):
-        return await self.providers.database.graphs_handler.delete_graph_for_collection(
+        return await self.providers.database.graphs_handler.delete(
             collection_id=collection_id,
             cascade=cascade,
-        )
-
-    @telemetry_event("delete_node_via_document_id")
-    async def delete_node_via_document_id(
-        self,
-        document_id: UUID,
-        collection_id: UUID,
-        **kwargs,
-    ):
-        return await self.providers.database.graphs_handler.delete_node_via_document_id(
-            document_id=document_id,
-            collection_id=collection_id,
         )
 
     @telemetry_event("get_creation_estimate")

@@ -261,7 +261,6 @@ def test_complex_filters_and_fulltext(client, test_collection):
 
     # rating > 5
     me = client.users.me()
-    print("me = ", me)
     # include  owner id and collection ids to make robust against other database interactions from other users
     filters = {
         "rating": {"$gt": 5},
@@ -276,7 +275,6 @@ def test_complex_filters_and_fulltext(client, test_collection):
         search_settings={"use_semantic_search": True, "filters": filters},
     )["results"]
     results = resp["chunk_search_results"]
-    print("results = ", results)
     assert (
         len(results) == 2
     ), f"Expected 2 docs with rating > 5, got {len(results)}"
@@ -296,10 +294,6 @@ def test_complex_filters_and_fulltext(client, test_collection):
         search_settings={"use_semantic_search": True, "filters": filters},
     )["results"]
     results = resp["chunk_search_results"]
-    print("Filters being applied:", filters)
-    print("Current user ID:", client.users.me()["results"]["id"])
-    print("Test collection ID:", test_collection["collection_id"])
-    print("All available documents:", client.documents.list()["results"])
     assert len(results) == 4, f"Expected all 4 docs, got {len(results)}"
 
     # rating > 5 AND category=modern
@@ -375,7 +369,6 @@ def test_complex_nested_filters(client, test_collection):
         search_settings={"filters": filters},
     )["results"]
     results = resp["chunk_search_results"]
-    print("results = ", results)
     assert len(results) == 2, f"Expected 2 docs, got {len(results)}"
 
 
@@ -411,7 +404,6 @@ def test_pagination_extremes(client):
         search_settings={"limit": 10, "offset": offset},
     )["results"]
     results = resp["chunk_search_results"]
-    print("results = ", results)
     assert (
         len(results) == 0
     ), f"Expected no results at large offset, got {len(results)}"

@@ -1407,8 +1407,7 @@ class UsersRouter(BaseRouterV3):
                 )
 
             api_key = await self.services.auth.create_user_api_key(id)
-            print("api_key = ", api_key)
-            return api_key  # {"results":  api_key}
+            return api_key
 
         @self.router.get(
             "/users/{id}/api-keys",

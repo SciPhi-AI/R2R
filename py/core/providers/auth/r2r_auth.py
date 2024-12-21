@@ -198,11 +198,12 @@ class R2RAuthProvider(AuthProvider):
                 owner_id=new_user.id,
             )
         )
-        await self.database_provider.graphs_handler.create(
+        graph_result = await self.database_provider.graphs_handler.create(
             collection_id=default_collection.id,
             name=default_collection.name,
             description=default_collection.description,
         )
+
         await self.database_provider.users_handler.add_user_to_collection(
             new_user.id, default_collection.id
         )

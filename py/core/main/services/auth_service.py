@@ -184,7 +184,7 @@ class AuthService(Service):
         )
 
         try:
-            await self.providers.database.graphs_handler.delete_graph_for_collection(
+            await self.providers.database.graphs_handler.delete(
                 collection_id=collection_id,
             )
         except Exception as e:

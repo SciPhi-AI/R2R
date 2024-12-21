@@ -46,6 +46,8 @@ class BaseClient:
         self.api_key: Optional[str] = None
 
     def _get_auth_header(self) -> dict[str, str]:
+        print("self.access_token = ", self.access_token)
+        print("self.api_key = ", self.api_key)
         if self.access_token and self.api_key:
             raise R2RException(
                 status_code=400,
@@ -71,7 +73,7 @@ class BaseClient:
     def _prepare_request_args(self, endpoint: str, **kwargs) -> dict:
 
         headers = kwargs.pop("headers", {})
-        if self.access_token and endpoint not in [
+        if (self.access_token or self.api_key) and endpoint not in [
             "register",
             "login",
             "verify_email",
