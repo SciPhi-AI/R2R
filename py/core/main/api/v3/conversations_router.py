@@ -327,8 +327,10 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X PUT "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000" \\
-                                -H "Authorization: B
+                            curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000" \
+                                -H "Authorization: Bearer YOUR_API_KEY" \
+                                -H "Content-Type: application/json" \
+                                -d '{"name": "new_name"}'
                             """
                         ),
                     },
