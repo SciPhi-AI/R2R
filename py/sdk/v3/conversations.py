@@ -83,6 +83,32 @@ class ConversationsSDK:
             version="v3",
         )
 
+    async def update(
+        self,
+        id: str | UUID,
+        name: str,
+    ) -> WrappedConversationResponse:
+        """
+        Update an existing conversation.
+
+        Args:
+            id (Union[str, UUID]): The ID of the conversation to update
+            name (str): The new name of the conversation
+
+        Returns:
+            dict: The updated conversation
+        """
+        data: dict[str, Any] = {
+            "name": name,
+        }
+
+        return await self.client._make_request(
+            "POST",
+            f"conversations/{str(id)}",
+            json=data,
+            version="v3",
+        )
+
     async def delete(
         self,
         id: str | UUID,

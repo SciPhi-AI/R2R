@@ -69,6 +69,26 @@ export class ConversationsClient {
   }
 
   /**
+   * Update an existing conversation.
+   * @param id The ID of the conversation to update
+   * @param name The new name of the conversation
+   * @returns The updated conversation
+   */
+  @feature("conversations.update")
+  async update(options: {
+    id: string;
+    name: string;
+  }): Promise<WrappedConversationResponse> {
+    const data: Record<string, any> = {
+      name: options.name,
+    };
+
+    return this.client.makeRequest("POST", `conversations/${options.id}`, {
+      data,
+    });
+  }
+
+  /**
    * Delete a conversation.
    * @param id The ID of the conversation to delete
    * @returns Whether the conversation was successfully deleted

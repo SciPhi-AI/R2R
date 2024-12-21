@@ -60,9 +60,9 @@ class PostgresConversationsHandler(Handler):
             )
 
             return ConversationResponse(
-                id=str(result["id"]),
+                id=result["id"],
                 created_at=result["created_at_epoch"],
-                user_id=str(user_id) if user_id else None,
+                user_id=user_id or None,
                 name=name or None,
             )
         except Exception as e:
@@ -92,7 +92,7 @@ class PostgresConversationsHandler(Handler):
     ) -> dict[str, Any]:
         # Construct conditions
         conditions = []
-        params = []
+        params: list = []
         param_index = 1
 
         if user_ids is not None:
@@ -226,13 +226,13 @@ class PostgresConversationsHandler(Handler):
                 status_code=500, message="Failed to insert message."
             )
 
-        return MessageResponse(id=str(message_id), message=content)
+        return MessageResponse(id=message_id, message=content)
 
     async def edit_message(
         self,
         message_id: UUID,
         new_content: str | None = None,
-        additional_metadata: dict = None,
+        additional_metadata: dict | None = None,
     ) -> dict[str, Any]:
         # Get the original message
         query = f"""
@@ -348,8 +348,6 @@ class PostgresConversationsHandler(Handler):
             )
 
         # Retrieve messages in chronological order
-        # We'll recursively gather messages based on parent_id = NULL as root.
-        # Since no branching, we simply order by created_at.
         msg_query = f"""
             SELECT id, content, metadata
             FROM {self._get_table_name("messages")}
@@ -362,14 +360,49 @@ class PostgresConversationsHandler(Handler):
 
         return [
             MessageResponse(
-                id=str(row["id"]),
+                id=row["id"],
                 message=Message(**json.loads(row["content"])),
                 metadata=json.loads(row["metadata"]),
             )
             for row in results
         ]
 
-    async def delete_conversation(self, conversation_id: UUID):
+    async def update_conversation(
+        self, conversation_id: UUID, name: str
+    ) -> ConversationResponse:
+        try:
+            # Check if conversation exists
+            conv_query = f"SELECT 1 FROM {self._get_table_name('conversations')} WHERE id = $1"
+            conv_row = await self.connection_manager.fetchrow_query(
+                conv_query, [conversation_id]
+            )
+            if not conv_row:
+                raise R2RException(
+                    status_code=404,
+                    message=f"Conversation {conversation_id} not found.",
+                )
+
+            update_query = f"""
+            UPDATE {self._get_table_name('conversations')}
+            SET name = $1 WHERE id = $2
+            RETURNING user_id, extract(epoch from created_at) as created_at_epoch
+            """
+            updated_row = await self.connection_manager.fetchrow_query(
+                update_query, [name, conversation_id]
+            )
+            return ConversationResponse(
+                id=conversation_id,
+                created_at=updated_row["created_at_epoch"],
+                user_id=updated_row["user_id"] or None,
+                name=name,
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to update conversation: {str(e)}",
+            ) from e
+
+    async def delete_conversation(self, conversation_id: UUID) -> None:
         # Check if conversation exists
         conv_query = f"SELECT 1 FROM {self._get_table_name('conversations')} WHERE id = $1"
         conv_row = await self.connection_manager.fetchrow_query(
