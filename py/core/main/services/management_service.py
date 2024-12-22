@@ -8,6 +8,7 @@ import toml
 
 from core.base import (
     CollectionResponse,
+    ConversationResponse,
     DocumentResponse,
     GenerationConfig,
     KGEnrichmentStatus,
@@ -16,7 +17,6 @@ from core.base import (
     R2RException,
     RunManager,
     User,
-    ConversationResponse,
 )
 from core.telemetry.telemetry_decorator import telemetry_event
 

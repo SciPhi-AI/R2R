@@ -1,11 +1,12 @@
 import asyncio
+import contextlib
 import datetime
 import json
 import logging
 import os
 import time
 from enum import Enum
-from typing import Any, AsyncGenerator, Optional, Tuple, Union
+from typing import Any, AsyncGenerator, Optional, Tuple
 from uuid import UUID
 
 import asyncpg
@@ -19,7 +20,6 @@ from core.base.abstractions import (
     Graph,
     KGCreationSettings,
     KGEnrichmentSettings,
-    KGEnrichmentStatus,
     KGEntityDeduplicationSettings,
     KGExtractionStatus,
     R2RException,
@@ -128,10 +128,8 @@ class PostgresEntitiesHandler(Handler):
         table_name = self._get_entity_table_for_store(store_type)
 
         if isinstance(metadata, str):
-            try:
+            with contextlib.suppress(json.JSONDecodeError):
                 metadata = json.loads(metadata)
-            except json.JSONDecodeError:
-                pass
 
         if isinstance(description_embedding, list):
             description_embedding = str(description_embedding)
@@ -238,12 +236,10 @@ class PostgresEntitiesHandler(Handler):
 
             # Process metadata if it exists and is a string
             if isinstance(entity_dict["metadata"], str):
-                try:
+                with contextlib.suppress(json.JSONDecodeError):
                     entity_dict["metadata"] = json.loads(
                         entity_dict["metadata"]
                     )
-                except json.JSONDecodeError:
-                    pass
 
             entities.append(Entity(**entity_dict))
 
@@ -266,10 +262,8 @@ class PostgresEntitiesHandler(Handler):
         param_index = 1
 
         if isinstance(metadata, str):
-            try:
+            with contextlib.suppress(json.JSONDecodeError):
                 metadata = json.loads(metadata)
-            except json.JSONDecodeError:
-                pass
 
         if name is not None:
             update_fields.append(f"name = ${param_index}")
@@ -327,7 +321,7 @@ class PostgresEntitiesHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while updating the entity: {e}",
-            )
+            ) from e
 
     async def delete(
         self,
@@ -478,10 +472,8 @@ class PostgresRelationshipsHandler(Handler):
         table_name = self._get_relationship_table_for_store(store_type)
 
         if isinstance(metadata, str):
-            try:
+            with contextlib.suppress(json.JSONDecodeError):
                 metadata = json.loads(metadata)
-            except json.JSONDecodeError:
-                pass
 
         if isinstance(description_embedding, list):
             description_embedding = str(description_embedding)
@@ -621,12 +613,10 @@ class PostgresRelationshipsHandler(Handler):
             if include_metadata and isinstance(
                 relationship_dict["metadata"], str
             ):
-                try:
+                with contextlib.suppress(json.JSONDecodeError):
                     relationship_dict["metadata"] = json.loads(
                         relationship_dict["metadata"]
                     )
-                except json.JSONDecodeError:
-                    pass
             elif not include_metadata:
                 relationship_dict.pop("metadata", None)
             relationships.append(Relationship(**relationship_dict))
@@ -654,10 +644,8 @@ class PostgresRelationshipsHandler(Handler):
         param_index = 1
 
         if isinstance(metadata, str):
-            try:
+            with contextlib.suppress(json.JSONDecodeError):
                 metadata = json.loads(metadata)
-            except json.JSONDecodeError:
-                pass
 
         if subject is not None:
             update_fields.append(f"subject = ${param_index}")
@@ -735,7 +723,7 @@ class PostgresRelationshipsHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while updating the relationship: {e}",
-            )
+            ) from e
 
     async def delete(
         self,
@@ -832,7 +820,6 @@ class PostgresCommunitiesHandler(Handler):
         rating_explanation: Optional[str],
         description_embedding: Optional[list[float] | str] = None,
     ) -> Community:
-        # Do we ever want to get communities from document store?
         table_name = "graphs_communities"
 
         if isinstance(description_embedding, list):
@@ -876,7 +863,7 @@ class PostgresCommunitiesHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while creating the community: {e}",
-            )
+            ) from e
 
     async def update(
         self,
@@ -956,30 +943,51 @@ class PostgresCommunitiesHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while updating the community: {e}",
-            )
+            ) from e
 
     async def delete(
         self,
         parent_id: UUID,
-        # community_id: UUID,
+        community_id: UUID = None,
     ) -> None:
         table_name = "graphs_communities"
 
+        params = [community_id, parent_id]
+
+        # Delete the community
+        query = f"""
+            DELETE FROM {self._get_table_name(table_name)}
+            WHERE id = $1 AND collection_id = $2
+        """
+
+        try:
+            await self.connection_manager.execute_query(query, params)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while deleting the community: {e}",
+            )
+
+    async def delete_all_communities(
+        self,
+        parent_id: UUID,
+    ) -> None:
+        table_name = "graphs_communities"
+
+        params = [parent_id]
+
+        # Delete all communities for the parent_id
         query = f"""
             DELETE FROM {self._get_table_name(table_name)}
             WHERE collection_id = $1
         """
 
-        params = [parent_id]
-
         try:
-            results = await self.connection_manager.execute_query(
-                query, params
-            )
+            await self.connection_manager.execute_query(query, params)
         except Exception as e:
             raise HTTPException(
                 status_code=500,
-                detail=f"An error occurred while deleting the community: {e}",
+                detail=f"An error occurred while deleting communities: {e}",
             )
 
     async def get(
@@ -1168,7 +1176,7 @@ class PostgresGraphsHandler(Handler):
         await self.relationships.delete(
             parent_id=parent_id, store_type=StoreType.GRAPHS
         )
-        await self.communities.delete(parent_id=parent_id)
+        await self.communities.delete_all_communities(parent_id=parent_id)
         return
 
     async def list_graphs(
@@ -1245,7 +1253,7 @@ class PostgresGraphsHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while fetching graphs: {e}",
-            )
+            ) from e
 
     async def get(
         self, offset: int, limit: int, graph_id: Optional[UUID] = None
@@ -1401,7 +1409,7 @@ class PostgresGraphsHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while updating the graph: {e}",
-            )
+            ) from e
 
     async def get_creation_estimate(
         self,
@@ -1632,7 +1640,9 @@ class PostgresGraphsHandler(Handler):
             )
         except Exception as e:
             logger.error(f"Error in get_deduplication_estimate: {str(e)}")
-            raise HTTPException(500, "Error fetching deduplication estimate.")
+            raise HTTPException(
+                500, "Error fetching deduplication estimate."
+            ) from e
 
     async def get_entities(
         self,
@@ -1710,12 +1720,10 @@ class PostgresGraphsHandler(Handler):
         for row in rows:
             entity_dict = dict(row)
             if isinstance(entity_dict["metadata"], str):
-                try:
+                with contextlib.suppress(json.JSONDecodeError):
                     entity_dict["metadata"] = json.loads(
                         entity_dict["metadata"]
                     )
-                except json.JSONDecodeError:
-                    pass
 
             entities.append(Entity(**entity_dict))
 
@@ -1796,12 +1804,10 @@ class PostgresGraphsHandler(Handler):
         for row in rows:
             relationship_dict = dict(row)
             if isinstance(relationship_dict["metadata"], str):
-                try:
+                with contextlib.suppress(json.JSONDecodeError):
                     relationship_dict["metadata"] = json.loads(
                         relationship_dict["metadata"]
                     )
-                except json.JSONDecodeError:
-                    pass
 
             relationships.append(Relationship(**relationship_dict))
 
@@ -2343,7 +2349,7 @@ class PostgresGraphsHandler(Handler):
         property_names_str = ", ".join(property_names)
 
         # Build the WHERE clause from filters
-        params: list[Union[str, int, bytes]] = [
+        params: list[str | int | bytes] = [
             json.dumps(query_embedding),
             limit,
         ]
@@ -2499,23 +2505,6 @@ class PostgresGraphsHandler(Handler):
             return " AND ".join(filter_conditions)
 
         return parse_filter(filter_dict)
-
-    # async def _create_graph_and_cluster(
-    #     self, relationships: list[Relationship], leiden_params: dict[str, Any]
-    # ) -> Any:
-
-    #     G = self.nx.Graph()
-    #     for relationship in relationships:
-    #         G.add_edge(
-    #             relationship.subject,
-    #             relationship.object,
-    #             weight=relationship.weight,
-    #             id=relationship.id,
-    #         )
-
-    #     logger.info(f"Graph has {len(G.nodes)} nodes and {len(G.edges)} edges")
-
-    #     return await self._compute_leiden_communities(G, leiden_params)
 
     async def _compute_leiden_communities(
         self,
