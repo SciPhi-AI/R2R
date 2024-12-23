@@ -3,8 +3,6 @@ from __future__ import annotations  # for Python 3.10+
 from typing import Optional
 from uuid import UUID
 
-from typing_extensions import deprecated
-
 from shared.api.models.auth.responses import WrappedTokenResponse
 from shared.api.models.base import (
     WrappedBooleanResponse,
@@ -211,9 +209,6 @@ class UsersSDK:
 
         self.client.access_token = None
         self.client._refresh_token = None
-        return WrappedGenericMessageResponse(
-            message="User is already logged out"
-        )
 
     async def refresh_token(self) -> WrappedTokenResponse:
         """Refresh the access token using the refresh token."""
