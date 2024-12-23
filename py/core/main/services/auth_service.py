@@ -280,7 +280,7 @@ class AuthService(Service):
         """
         return await self.providers.auth.create_user_api_key(user_id)
 
-    async def delete_user_api_key(self, user_id: UUID, key_id: str) -> dict:
+    async def delete_user_api_key(self, user_id: UUID, key_id: UUID) -> dict:
         """
         Delete the API key for the user.
 
@@ -291,7 +291,9 @@ class AuthService(Service):
         Returns:
             dict: Contains the message
         """
-        return await self.providers.auth.delete_user_api_key(user_id, key_id)
+        return await self.providers.auth.delete_user_api_key(
+            user_id=user_id, key_id=key_id
+        )
 
     async def list_user_api_keys(self, user_id: UUID) -> dict:
         """

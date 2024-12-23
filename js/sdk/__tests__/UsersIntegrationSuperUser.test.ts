@@ -20,9 +20,21 @@ describe("r2rClient V3 Users Integration Tests", () => {
 
     userId = response.results.id;
     name = response.results.name;
+
     expect(response.results).toBeDefined();
+    expect(response.results.id).toBeDefined();
+    expect(response.results.email).toBe("new_user@example.com");
+    expect(response.results.is_active).toBeDefined();
     expect(response.results.is_superuser).toBe(false);
+    expect(response.results.created_at).toBeDefined();
+    expect(response.results.updated_at).toBeDefined();
+    // expect(response.results.is_verified).toBe(false);
+    expect(response.results.collection_ids).toBeDefined();
+    // expect(response.results.hashed_password).toBeUndefined();
+    // expect(response.results.verification_code_expiry).toBeUndefined();
     expect(response.results.name).toBe(null);
+    expect(response.results.bio).toBe(null);
+    expect(response.results.profile_picture).toBe(null);
   });
 
   test("Login as a user", async () => {
@@ -77,13 +89,42 @@ describe("r2rClient V3 Users Integration Tests", () => {
     const response = await client.users.update({
       id: userId,
       name: "New Name",
+      bio: "New Bio",
     });
+
     expect(response.results).toBeDefined();
+    expect(response.results.id).toBeDefined();
+    expect(response.results.email).toBe("new_user@example.com");
+    expect(response.results.is_active).toBeDefined();
+    expect(response.results.is_superuser).toBe(false);
+    expect(response.results.created_at).toBeDefined();
+    expect(response.results.updated_at).toBeDefined();
+    // expect(response.results.is_verified).toBe(false);
+    expect(response.results.collection_ids).toBeDefined();
+    // expect(response.results.hashed_password).toBeUndefined();
+    // expect(response.results.verification_code_expiry).toBeUndefined();
+    expect(response.results.name).toBe("New Name");
+    expect(response.results.bio).toBe("New Bio");
+    expect(response.results.profile_picture).toBe(null);
   });
 
   test("Retrieve a user after update", async () => {
     const response = await client.users.retrieve({ id: userId });
+
     expect(response.results).toBeDefined();
+    expect(response.results.id).toBeDefined();
+    expect(response.results.email).toBe("new_user@example.com");
+    expect(response.results.is_active).toBeDefined();
+    expect(response.results.is_superuser).toBe(false);
+    expect(response.results.created_at).toBeDefined();
+    expect(response.results.updated_at).toBeDefined();
+    // expect(response.results.is_verified).toBe(false);
+    expect(response.results.collection_ids).toBeDefined();
+    // expect(response.results.hashed_password).toBeUndefined();
+    // expect(response.results.verification_code_expiry).toBeUndefined();
+    expect(response.results.name).toBe("New Name");
+    expect(response.results.bio).toBe("New Bio");
+    expect(response.results.profile_picture).toBe(null);
   });
 
   test("List user's collections", async () => {

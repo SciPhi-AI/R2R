@@ -26,20 +26,6 @@ class PostgresUserHandler(Handler):
         super().__init__(project_name, connection_manager)
         self.crypto_provider = crypto_provider
 
-
-class PostgresUserHandler(Handler):
-    TABLE_NAME = "users"
-    API_KEYS_TABLE_NAME = "users_api_keys"
-
-    def __init__(
-        self,
-        project_name: str,
-        connection_manager: PostgresConnectionManager,
-        crypto_provider: CryptoProvider,
-    ):
-        super().__init__(project_name, connection_manager)
-        self.crypto_provider = crypto_provider
-
     async def create_tables(self):
         user_table_query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresUserHandler.TABLE_NAME)} (
@@ -584,9 +570,12 @@ class PostgresUserHandler(Handler):
                     u.is_superuser,
                     u.is_active,
                     u.is_verified,
+                    u.name,
+                    u.bio,
+                    u.profile_picture,
+                    u.collection_ids,
                     u.created_at,
                     u.updated_at,
-                    u.collection_ids,
                     COUNT(d.id) AS num_files,
                     COALESCE(SUM(d.size_in_bytes), 0) AS total_size_in_bytes,
                     ud.doc_ids as document_ids
@@ -623,6 +612,8 @@ class PostgresUserHandler(Handler):
                 is_superuser=row["is_superuser"],
                 is_active=row["is_active"],
                 is_verified=row["is_verified"],
+                name=row["name"],
+                bio=row["bio"],
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
                 collection_ids=row["collection_ids"] or [],
@@ -631,7 +622,7 @@ class PostgresUserHandler(Handler):
                 document_ids=(
                     []
                     if row["document_ids"] is None
-                    else [doc_id for doc_id in row["document_ids"]]
+                    else list(row["document_ids"])
                 ),
             )
             for row in results

@@ -1,8 +1,8 @@
 import logging
 import os
-import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+from uuid import UUID
 
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
@@ -64,7 +64,7 @@ class R2RAuthProvider(AuthProvider):
                 is_superuser=True,
             )
             await self.database_provider.users_handler.mark_user_as_superuser(
-                user.id
+                id=user.id
             )
         except R2RException:
             logger.info("Default admin user already exists.")
@@ -76,7 +76,8 @@ class R2RAuthProvider(AuthProvider):
         # Add token_type and pass data/expiry to crypto_provider
         data_with_type = {**data, "token_type": "access"}
         return self.crypto_provider.generate_secure_token(
-            data_with_type, expire
+            data=data_with_type,
+            expiry=expire,
         )
 
     def create_refresh_token(self, data: dict) -> str:
@@ -85,20 +86,21 @@ class R2RAuthProvider(AuthProvider):
         )
         data_with_type = {**data, "token_type": "refresh"}
         return self.crypto_provider.generate_secure_token(
-            data_with_type, expire
+            data=data_with_type,
+            expiry=expire,
         )
 
     async def decode_token(self, token: str) -> TokenData:
         # First, check if the token is blacklisted
         if await self.database_provider.token_handler.is_token_blacklisted(
-            token
+            token=token
         ):
             raise R2RException(
                 status_code=401, message="Token has been invalidated"
             )
 
         # Verify token using crypto_provider
-        payload = self.crypto_provider.verify_secure_token(token)
+        payload = self.crypto_provider.verify_secure_token(token=token)
         if payload is None:
             raise R2RException(
                 status_code=401, message="Invalid or expired token"
@@ -130,19 +132,19 @@ class R2RAuthProvider(AuthProvider):
 
         key_record = (
             await self.database_provider.users_handler.get_api_key_record(
-                key_id
+                key_id=key_id
             )
         )
         if not key_record:
             raise R2RException(status_code=401, message="Invalid API key")
 
         if not self.crypto_provider.verify_api_key(
-            raw_key, key_record["hashed_key"]
+            raw_api_key=raw_key, hashed_key=key_record["hashed_key"]
         ):
             raise R2RException(status_code=401, message="Invalid API key")
 
         user = await self.database_provider.users_handler.get_user_by_id(
-            key_record["user_id"]
+            id=key_record["user_id"]
         )
         if not user.is_active:
             raise R2RException(
@@ -157,14 +159,14 @@ class R2RAuthProvider(AuthProvider):
         """
         # Try JWT auth
         try:
-            token_data = await self.decode_token(token)
+            token_data = await self.decode_token(token=token)
             if not token_data.email:
                 raise R2RException(
                     status_code=401, message="Could not validate credentials"
                 )
             user = (
                 await self.database_provider.users_handler.get_user_by_email(
-                    token_data.email
+                    email=token_data.email
                 )
             )
             if user is None:
@@ -176,9 +178,8 @@ class R2RAuthProvider(AuthProvider):
         except R2RException:
             # If JWT fails, try API key auth
             # OAuth2PasswordBearer provides token as "Bearer xxx", strip it if needed
-            if token.startswith("Bearer "):
-                token = token[7:]
-            return await self.authenticate_api_key(token)
+            token = token.removeprefix("Bearer ")
+            return await self.authenticate_api_key(api_key=token)
 
     def get_current_active_user(
         self, current_user: User = Depends(user)
@@ -191,7 +192,7 @@ class R2RAuthProvider(AuthProvider):
         self, email: str, password: str, is_superuser: bool = False
     ) -> User:
         new_user = await self.database_provider.users_handler.create_user(
-            email, password, is_superuser
+            email=email, password=password, is_superuser=is_superuser
         )
         default_collection: CollectionResponse = (
             await self.database_provider.collections_handler.create_collection(
@@ -214,7 +215,9 @@ class R2RAuthProvider(AuthProvider):
             )
             expiry = datetime.now(timezone.utc) + timedelta(hours=24)
             await self.database_provider.users_handler.store_verification_code(
-                new_user.id, verification_code, expiry
+                id=new_user.id,
+                verification_code=verification_code,
+                expiry=expiry,
             )
             new_user.verification_code_expiry = expiry
 
@@ -230,10 +233,12 @@ class R2RAuthProvider(AuthProvider):
         else:
             expiry = datetime.now(timezone.utc) + timedelta(hours=366 * 10)
             await self.database_provider.users_handler.store_verification_code(
-                new_user.id, str(-1), expiry
+                id=new_user.id,
+                verification_code=str(-1),
+                expiry=expiry,
             )
             await self.database_provider.users_handler.mark_user_as_verified(
-                new_user.id
+                id=new_user.id
             )
 
         return new_user
@@ -242,20 +247,20 @@ class R2RAuthProvider(AuthProvider):
         self, email: str, verification_code: str
     ) -> dict[str, str]:
         user_id = await self.database_provider.users_handler.get_user_id_by_verification_code(
-            verification_code
+            verification_code=verification_code
         )
         await self.database_provider.users_handler.mark_user_as_verified(
-            user_id
+            id=user_id
         )
         await self.database_provider.users_handler.remove_verification_code(
-            verification_code
+            verification_code=verification_code
         )
         return {"message": "Email verified successfully"}
 
     async def login(self, email: str, password: str) -> dict[str, Token]:
         logger.debug(f"Attempting login for email: {email}")
         user = await self.database_provider.users_handler.get_user_by_email(
-            email
+            email=email
         )
 
         logger.debug(f"User found: {user}")
@@ -271,7 +276,8 @@ class R2RAuthProvider(AuthProvider):
 
         try:
             password_verified = self.crypto_provider.verify_password(
-                password, user.hashed_password
+                plain_password=password,
+                hashed_password=user.hashed_password,
             )
         except Exception as e:
             logger.error(f"Error during password verification: {str(e)}")
@@ -308,7 +314,7 @@ class R2RAuthProvider(AuthProvider):
 
         # Invalidate the old refresh token and create a new one
         await self.database_provider.token_handler.blacklist_token(
-            refresh_token
+            token=refresh_token
         )
 
         new_access_token = self.create_access_token(
@@ -337,17 +343,19 @@ class R2RAuthProvider(AuthProvider):
             )
 
         if not self.crypto_provider.verify_password(
-            current_password, user.hashed_password
+            plain_password=current_password,
+            hashed_password=user.hashed_password,
         ):
             raise R2RException(
                 status_code=400, message="Incorrect current password"
             )
 
         hashed_new_password = self.crypto_provider.get_password_hash(
-            new_password
+            password=new_password
         )
         await self.database_provider.users_handler.update_user_password(
-            user.id, hashed_new_password
+            id=user.id,
+            new_hashed_password=hashed_new_password,
         )
         return {"message": "Password changed successfully"}
 
@@ -356,14 +364,16 @@ class R2RAuthProvider(AuthProvider):
 
             user = (
                 await self.database_provider.users_handler.get_user_by_email(
-                    email
+                    email=email
                 )
             )
 
             reset_token = self.crypto_provider.generate_verification_code()
             expiry = datetime.now(timezone.utc) + timedelta(hours=1)
             await self.database_provider.users_handler.store_reset_token(
-                user.id, reset_token, expiry
+                id=user.id,
+                reset_token=reset_token,
+                expiry=expiry,
             )
 
             first_name = (
@@ -389,7 +399,7 @@ class R2RAuthProvider(AuthProvider):
         self, reset_token: str, new_password: str
     ) -> dict[str, str]:
         user_id = await self.database_provider.users_handler.get_user_id_by_reset_token(
-            reset_token
+            reset_token=reset_token
         )
         if not user_id:
             raise R2RException(
@@ -397,16 +407,19 @@ class R2RAuthProvider(AuthProvider):
             )
 
         hashed_new_password = self.crypto_provider.get_password_hash(
-            new_password
+            password=new_password
         )
         await self.database_provider.users_handler.update_user_password(
-            user_id, hashed_new_password
+            id=user_id,
+            new_hashed_password=hashed_new_password,
         )
-        await self.database_provider.users_handler.remove_reset_token(user_id)
+        await self.database_provider.users_handler.remove_reset_token(
+            id=user_id
+        )
         return {"message": "Password reset successfully"}
 
     async def logout(self, token: str) -> dict[str, str]:
-        await self.database_provider.token_handler.blacklist_token(token)
+        await self.database_provider.token_handler.blacklist_token(token=token)
         return {"message": "Logged out successfully"}
 
     async def clean_expired_blacklisted_tokens(self):
@@ -414,7 +427,7 @@ class R2RAuthProvider(AuthProvider):
 
     async def send_reset_email(self, email: str) -> dict:
         user = await self.database_provider.users_handler.get_user_by_email(
-            email
+            email=email
         )
         if not user:
             raise R2RException(status_code=404, message="User not found")
@@ -422,7 +435,9 @@ class R2RAuthProvider(AuthProvider):
         verification_code = self.crypto_provider.generate_verification_code()
         expiry = datetime.now(timezone.utc) + timedelta(hours=24)
         await self.database_provider.users_handler.store_verification_code(
-            user.id, verification_code, expiry
+            id=user.id,
+            verification_code=verification_code,
+            expiry=expiry,
         )
 
         first_name = (
@@ -439,7 +454,7 @@ class R2RAuthProvider(AuthProvider):
         }
 
     async def create_user_api_key(
-        self, user_id: uuid.UUID, name: Optional[str] = None
+        self, user_id: UUID, name: Optional[str] = None
     ) -> dict[str, str]:
         key_id, raw_api_key = self.crypto_provider.generate_api_key()
         hashed_key = self.crypto_provider.hash_api_key(raw_api_key)
@@ -460,21 +475,22 @@ class R2RAuthProvider(AuthProvider):
             "name": name or "",
         }
 
-    async def list_user_api_keys(self, user_id: uuid.UUID) -> list[dict]:
+    async def list_user_api_keys(self, user_id: UUID) -> list[dict]:
         return await self.database_provider.users_handler.get_user_api_keys(
-            user_id
+            user_id=user_id
         )
 
-    async def delete_user_api_key(
-        self, user_id: uuid.UUID, key_id: uuid.UUID
-    ) -> bool:
+    async def delete_user_api_key(self, user_id: UUID, key_id: UUID) -> bool:
         return await self.database_provider.users_handler.delete_api_key(
-            user_id, key_id
+            user_id=user_id,
+            key_id=key_id,
         )
 
     async def rename_api_key(
-        self, user_id: uuid.UUID, key_id: uuid.UUID, new_name: str
+        self, user_id: UUID, key_id: UUID, new_name: str
     ) -> bool:
         return await self.database_provider.users_handler.update_api_key_name(
-            user_id, key_id, new_name
+            user_id=user_id,
+            key_id=key_id,
+            name=new_name,
         )
