@@ -184,7 +184,7 @@ class ConversationsSDK:
         Returns:
             dict: Result of the operation, including the new message ID and branch ID
         """
-        data = {"content": content}
+        data: dict[str, Any] = {"content": content}
         if metadata:
             data["metadata"] = metadata
         return await self.client._make_request(

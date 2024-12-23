@@ -208,213 +208,6 @@ class ManagementService(Service):
             "deleted_document_ids": [str(d) for d in docs_to_delete],
         }
 
-    # @telemetry_event("Delete")
-    # async def delete(
-    #     self,
-    #     filters: dict[str, Any],
-    #     *args,
-    #     **kwargs,
-    # ):
-    #     """
-    #     Takes a list of filters like
-    #     "{key: {operator: value}, key: {operator: value}, ...}"
-    #     and deletes entries matching the given filters from both vector and relational databases.
-
-    #     NOTE: This method is not atomic and may result in orphaned entries in the documents overview table.
-    #     NOTE: This method assumes that filters delete entire contents of any touched documents.
-    #     """
-    #     ### TODO - FIX THIS, ENSURE THAT DOCUMENTS OVERVIEW IS CLEARED
-
-    #     def validate_filters(filters: dict[str, Any]) -> None:
-    #         ALLOWED_FILTERS = {
-    #             "id",
-    #             "collection_ids",
-    #             "chunk_id",
-    #             # TODO - Modify these checks such that they can be used PROPERLY for nested filters
-    #             "$and",
-    #             "$or",
-    #         }
-
-    #         if not filters:
-    #             raise R2RException(
-    #                 status_code=422, message="No filters provided"
-    #             )
-
-    #         for field in filters:
-    #             if field not in ALLOWED_FILTERS:
-    #                 raise R2RException(
-    #                     status_code=422,
-    #                     message=f"Invalid filter field: {field}",
-    #                 )
-
-    #         for field in ["document_id", "owner_id", "chunk_id"]:
-    #             if field in filters:
-    #                 op = next(iter(filters[field].keys()))
-    #                 try:
-    #                     validate_uuid(filters[field][op])
-    #                 except ValueError:
-    #                     raise R2RException(
-    #                         status_code=422,
-    #                         message=f"Invalid UUID: {filters[field][op]}",
-    #                     )
-
-    #         if "collection_ids" in filters:
-    #             op = next(iter(filters["collection_ids"].keys()))
-    #             for id_str in filters["collection_ids"][op]:
-    #                 try:
-    #                     validate_uuid(id_str)
-    #                 except ValueError:
-    #                     raise R2RException(
-    #                         status_code=422, message=f"Invalid UUID: {id_str}"
-    #                     )
-
-    #     validate_filters(filters)
-
-    #     logger.info(f"Deleting entries with filters: {filters}")
-
-    #     try:
-
-    #         def transform_chunk_id_to_id(
-    #             filters: dict[str, Any]
-    #         ) -> dict[str, Any]:
-    #             if isinstance(filters, dict):
-    #                 transformed = {}
-    #                 for key, value in filters.items():
-    #                     if key == "chunk_id":
-    #                         transformed["id"] = value
-    #                     elif key in ["$and", "$or"]:
-    #                         transformed[key] = [
-    #                             transform_chunk_id_to_id(item)
-    #                             for item in value
-    #                         ]
-    #                     else:
-    #                         transformed[key] = transform_chunk_id_to_id(value)
-    #                 return transformed
-    #             return filters
-
-    #         filters_xf = transform_chunk_id_to_id(copy(filters))
-
-    #         await self.providers.database.chunks_handler.delete(filters)
-
-    #         vector_delete_results = (
-    #             await self.providers.database.chunks_handler.delete(filters_xf)
-    #         )
-    #     except Exception as e:
-    #         logger.error(f"Error deleting from vector database: {e}")
-    #         vector_delete_results = {}
-
-    #     document_ids_to_purge: set[UUID] = set()
-    #     if vector_delete_results:
-    #         document_ids_to_purge.update(
-    #             UUID(result.get("document_id"))
-    #             for result in vector_delete_results.values()
-    #             if result.get("document_id")
-    #         )
-
-    #     # TODO: This might be appropriate to move elsewhere and revisit filter logic in other methods
-    #     def extract_filters(filters: dict[str, Any]) -> dict[str, list[str]]:
-    #         relational_filters: dict = {}
-
-    #         def process_filter(filter_dict: dict[str, Any]):
-    #             if "document_id" in filter_dict:
-    #                 relational_filters.setdefault(
-    #                     "filter_document_ids", []
-    #                 ).append(filter_dict["document_id"]["$eq"])
-    #             if "owner_id" in filter_dict:
-    #                 relational_filters.setdefault(
-    #                     "filter_user_ids", []
-    #                 ).append(filter_dict["owner_id"]["$eq"])
-    #             if "collection_ids" in filter_dict:
-    #                 relational_filters.setdefault(
-    #                     "filter_collection_ids", []
-    #                 ).extend(filter_dict["collection_ids"]["$in"])
-
-    #         # Handle nested conditions
-    #         if "$and" in filters:
-    #             for condition in filters["$and"]:
-    #                 process_filter(condition)
-    #         elif "$or" in filters:
-    #             for condition in filters["$or"]:
-    #                 process_filter(condition)
-    #         else:
-    #             process_filter(filters)
-
-    #         return relational_filters
-
-    #     relational_filters = extract_filters(filters)
-    #     if relational_filters:
-    #         try:
-    #             documents_overview = (
-    #                 await self.providers.database.documents_handler.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
-    #                     offset=0,
-    #                     limit=1000,
-    #                     **relational_filters,  # type: ignore
-    #                 )
-    #             )["results"]
-    #         except Exception as e:
-    #             logger.error(
-    #                 f"Error fetching documents from relational database: {e}"
-    #             )
-    #             documents_overview = []
-
-    #         if documents_overview:
-    #             document_ids_to_purge.update(
-    #                 doc.id for doc in documents_overview
-    #             )
-
-    #         if not document_ids_to_purge:
-    #             raise R2RException(
-    #                 status_code=404, message="No entries found for deletion."
-    #             )
-
-    #         for document_id in document_ids_to_purge:
-    #             remaining_chunks = await self.providers.database.chunks_handler.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
-    #                 document_id=document_id,
-    #                 offset=0,
-    #                 limit=1000,
-    #             )
-    #             if remaining_chunks["total_entries"] == 0:
-    #                 try:
-    #                     await self.providers.database.chunks_handler.delete(
-    #                         {"document_id": {"$eq": document_id}}
-    #                     )
-    #                     logger.info(
-    #                         f"Deleted document ID {document_id} from documents_overview."
-    #                     )
-    #                 except Exception as e:
-    #                     logger.error(
-    #                         f"Error deleting document ID {document_id} from documents_overview: {e}"
-    #                     )
-    #             await self.providers.database.graphs_handler.entities.delete(
-    #                 parent_id=document_id,
-    #                 store_type="documents",  # type: ignore
-    #             )
-    #             await self.providers.database.graphs_handler.relationships.delete(
-    #                 parent_id=document_id,
-    #                 store_type="documents",  # type: ignore
-    #             )
-    #             await self.providers.database.documents_handler.delete(
-    #                 document_id=document_id
-    #             )
-
-    #             collections = await self.providers.database.collections_handler.get_collections_overview(
-    #                 offset=0, limit=1000, filter_document_ids=[document_id]
-    #             )
-    #             # TODO - Loop over all collections
-    #             for collection in collections["results"]:
-    #                 await self.providers.database.documents_handler.set_workflow_status(
-    #                     id=collection.id,
-    #                     status_type="graph_sync_status",
-    #                     status=KGEnrichmentStatus.OUTDATED,
-    #                 )
-    #                 await self.providers.database.documents_handler.set_workflow_status(
-    #                     id=collection.id,
-    #                     status_type="graph_cluster_status",
-    #                     status=KGEnrichmentStatus.OUTDATED,
-    #                 )
-
-    #     return None
-
     @telemetry_event("DownloadFile")
     async def download_file(
         self, document_id: UUID
@@ -433,8 +226,6 @@ class ManagementService(Service):
         user_ids: Optional[list[UUID]] = None,
         collection_ids: Optional[list[UUID]] = None,
         document_ids: Optional[list[UUID]] = None,
-        *args: Any,
-        **kwargs: Any,
     ):
         return await self.providers.database.documents_handler.get_documents_overview(
             offset=offset,
@@ -451,8 +242,6 @@ class ManagementService(Service):
         offset: int,
         limit: int,
         include_vectors: bool = False,
-        *args,
-        **kwargs,
     ):
         return (
             await self.providers.database.chunks_handler.list_document_chunks(
@@ -804,18 +593,11 @@ class ManagementService(Service):
     async def get_conversation(
         self,
         conversation_id: UUID,
-        auth_user=None,
+        user_ids: Optional[list[UUID]] = None,
     ) -> Tuple[str, list[Message], list[dict]]:
-        return await self.providers.database.conversations_handler.get_conversation(  # type: ignore
-            conversation_id=conversation_id
-        )
-
-    async def verify_conversation_access(
-        self, conversation_id: UUID, user_id: UUID
-    ) -> bool:
-        return await self.providers.database.conversations_handler.verify_conversation_access(
+        return await self.providers.database.conversations_handler.get_conversation(
             conversation_id=conversation_id,
-            user_id=user_id,
+            filter_user_ids=user_ids,
         )
 
     @telemetry_event("CreateConversation")
@@ -835,13 +617,12 @@ class ManagementService(Service):
         offset: int,
         limit: int,
         conversation_ids: Optional[list[UUID]] = None,
-        user_ids: Optional[UUID | list[UUID]] = None,
-        auth_user=None,
+        user_ids: Optional[list[UUID]] = None,
     ) -> dict[str, list[dict] | int]:
         return await self.providers.database.conversations_handler.get_conversations_overview(
             offset=offset,
             limit=limit,
-            user_ids=user_ids,
+            filter_user_ids=user_ids,
             conversation_ids=conversation_ids,
         )
 
@@ -852,7 +633,6 @@ class ManagementService(Service):
         content: Message,
         parent_id: Optional[UUID] = None,
         metadata: Optional[dict] = None,
-        auth_user=None,
     ) -> str:
         return await self.providers.database.conversations_handler.add_message(
             conversation_id=conversation_id,
@@ -867,7 +647,6 @@ class ManagementService(Service):
         message_id: UUID,
         new_content: Optional[str] = None,
         additional_metadata: Optional[dict] = None,
-        auth_user=None,
     ) -> dict[str, Any]:
         return (
             await self.providers.database.conversations_handler.edit_message(
@@ -886,9 +665,14 @@ class ManagementService(Service):
         )
 
     @telemetry_event("DeleteConversation")
-    async def delete_conversation(self, conversation_id: UUID) -> None:
+    async def delete_conversation(
+        self,
+        conversation_id: UUID,
+        user_ids: Optional[list[UUID]] = None,
+    ) -> None:
         await self.providers.database.conversations_handler.delete_conversation(
-            conversation_id=conversation_id
+            conversation_id=conversation_id,
+            filter_user_ids=user_ids,
         )
 
     async def get_user_max_documents(self, user_id: UUID) -> int:
