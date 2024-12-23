@@ -10,7 +10,7 @@ from ..utils import generate_default_user_collection_id
 
 
 class Collection(BaseModel):
-    id: UUID = Field(default=None)
+    id: UUID
     name: str
     description: Optional[str] = None
     created_at: datetime = Field(

@@ -211,6 +211,9 @@ class UsersSDK:
 
         self.client.access_token = None
         self.client._refresh_token = None
+        return WrappedGenericMessageResponse(
+            message="User is already logged out"
+        )
 
     async def refresh_token(self) -> WrappedTokenResponse:
         """Refresh the access token using the refresh token."""

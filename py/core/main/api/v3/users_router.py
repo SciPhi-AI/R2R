@@ -1407,7 +1407,7 @@ class UsersRouter(BaseRouterV3):
                 )
 
             api_key = await self.services.auth.create_user_api_key(id)
-            return api_key
+            return api_key  # type: ignore
 
         @self.router.get(
             "/users/{id}/api-keys",
@@ -1464,9 +1464,7 @@ class UsersRouter(BaseRouterV3):
                     id
                 )
             )
-            return keys, {
-                "total_entries": len(keys)
-            }  # Return directly as tuple for WrappedAPIKeysResponse
+            return keys, {"total_entries": len(keys)}  # type: ignore
 
         @self.router.delete(
             "/users/{id}/api-keys/{key_id}",
@@ -1530,4 +1528,4 @@ class UsersRouter(BaseRouterV3):
                 raise R2RException(
                     "API key not found or could not be deleted", 400
                 )
-            return {"success": True}
+            return {"success": True}  # type: ignore

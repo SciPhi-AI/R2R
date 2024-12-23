@@ -66,8 +66,6 @@ class ManagementService(Service):
         offset: int,
         limit: int,
         user_ids: Optional[list[UUID]] = None,
-        *args,
-        **kwargs,
     ):
         return await self.providers.database.users_handler.get_users_overview(
             offset=offset,
