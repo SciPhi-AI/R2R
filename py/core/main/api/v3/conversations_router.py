@@ -186,15 +186,20 @@ class ConversationsRouter(BaseRouterV3):
 
             This endpoint returns a paginated list of conversations for the authenticated user.
             """
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
             conversation_uuids = [
                 UUID(conversation_id) for conversation_id in ids
             ]
 
             conversations_response = (
                 await self.services.management.conversations_overview(
-                    conversation_ids=conversation_uuids,
                     offset=offset,
                     limit=limit,
+                    conversation_ids=conversation_uuids,
+                    user_ids=requesting_user_id,
                 )
             )
             return conversations_response["results"], {  # type: ignore
@@ -272,8 +277,13 @@ class ConversationsRouter(BaseRouterV3):
 
             This endpoint retrieves detailed information about a single conversation identified by its UUID.
             """
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
             conversation = await self.services.management.get_conversation(
-                conversation_id=id
+                conversation_id=id,
+                user_ids=requesting_user_id,
             )
             return conversation
 
@@ -430,8 +440,13 @@ class ConversationsRouter(BaseRouterV3):
 
             This endpoint deletes a conversation identified by its UUID.
             """
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
             await self.services.management.delete_conversation(
-                conversation_id=id
+                conversation_id=id,
+                user_ids=requesting_user_id,
             )
             return GenericBooleanResponse(success=True)  # type: ignore
 

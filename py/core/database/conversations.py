@@ -72,82 +72,64 @@ class PostgresConversationsHandler(Handler):
                 detail=f"Failed to create conversation: {str(e)}",
             ) from e
 
-    async def verify_conversation_access(
-        self, conversation_id: UUID, user_id: UUID
-    ) -> bool:
-        query = f"""
-            SELECT 1 FROM {self._get_table_name("conversations")}
-            WHERE id = $1 AND (user_id IS NULL OR user_id = $2)
-        """
-        row = await self.connection_manager.fetchrow_query(
-            query, [conversation_id, user_id]
-        )
-        return row is not None
-
     async def get_conversations_overview(
         self,
         offset: int,
         limit: int,
-        user_ids: Optional[UUID | list[UUID]] = None,
+        filter_user_ids: Optional[list[UUID]] = None,
         conversation_ids: Optional[list[UUID]] = None,
     ) -> dict[str, Any]:
-        # Construct conditions
         conditions = []
         params: list = []
         param_index = 1
 
-        if user_ids is not None:
-            if isinstance(user_ids, UUID):
-                conditions.append(f"user_id = ${param_index}")
-                params.append(user_ids)
-                param_index += 1
-            else:
-                # user_ids is a list of UUIDs
-                placeholders = ", ".join(
-                    f"${i+param_index}" for i in range(len(user_ids))
+        if filter_user_ids:
+            conditions.append(
+                f"""
+                c.user_id IN (
+                    SELECT id
+                    FROM {self.project_name}.users
+                    WHERE id = ANY(${param_index})
                 )
-                conditions.append(
-                    f"user_id = ANY(ARRAY[{placeholders}]::uuid[])"
-                )
-                params.extend(user_ids)
-                param_index += len(user_ids)
+            """
+            )
+            params.append(filter_user_ids)
+            param_index += 1
 
         if conversation_ids:
-            placeholders = ", ".join(
-                f"${i+param_index}" for i in range(len(conversation_ids))
-            )
-            conditions.append(f"id = ANY(ARRAY[{placeholders}]::uuid[])")
-            params.extend(conversation_ids)
-            param_index += len(conversation_ids)
+            conditions.append(f"c.id = ANY(${param_index})")
+            params.append(conversation_ids)
+            param_index += 1
 
         where_clause = (
             "WHERE " + " AND ".join(conditions) if conditions else ""
         )
 
-        limit_clause = ""
-        if limit != -1:
-            limit_clause = f"LIMIT ${param_index}"
-            params.append(limit)
-            param_index += 1
-
-        offset_clause = f"OFFSET ${param_index}"
-        params.append(offset)
-
         query = f"""
             WITH conversation_overview AS (
-                SELECT id, extract(epoch from created_at) as created_at_epoch, user_id, name
-                FROM {self._get_table_name("conversations")}
+                SELECT c.id,
+                    extract(epoch from c.created_at) as created_at_epoch,
+                    c.user_id,
+                    c.name
+                FROM {self._get_table_name("conversations")} c
                 {where_clause}
             ),
             counted_overview AS (
                 SELECT *,
-                       COUNT(*) OVER() AS total_entries
+                    COUNT(*) OVER() AS total_entries
                 FROM conversation_overview
             )
             SELECT * FROM counted_overview
             ORDER BY created_at_epoch DESC
-            {limit_clause} {offset_clause}
+            OFFSET ${param_index}
         """
+        params.append(offset)
+        param_index += 1
+
+        if limit != -1:
+            query += f" LIMIT ${param_index}"
+            params.append(limit)
+
         results = await self.connection_manager.fetch_query(query, params)
 
         if not results:
@@ -244,7 +226,8 @@ class PostgresConversationsHandler(Handler):
         row = await self.connection_manager.fetchrow_query(query, [message_id])
         if not row:
             raise R2RException(
-                status_code=404, message=f"Message {message_id} not found."
+                status_code=404,
+                message=f"Message {message_id} not found.",
             )
 
         old_content = json.loads(row["content"])
@@ -335,13 +318,33 @@ class PostgresConversationsHandler(Handler):
         )
 
     async def get_conversation(
-        self, conversation_id: UUID
+        self,
+        conversation_id: UUID,
+        filter_user_ids: Optional[list[UUID]] = None,
     ) -> list[MessageResponse]:
-        # Check conversation
-        conv_query = f"SELECT extract(epoch from created_at) AS created_at_epoch FROM {self._get_table_name('conversations')} WHERE id = $1"
-        conv_row = await self.connection_manager.fetchrow_query(
-            conv_query, [conversation_id]
-        )
+        conditions = ["c.id = $1"]
+        params: list = [conversation_id]
+
+        if filter_user_ids:
+            param_index = 2
+            conditions.append(
+                f"""
+                c.user_id IN (
+                    SELECT id
+                    FROM {self.project_name}.users
+                    WHERE id = ANY(${param_index})
+                )
+            """
+            )
+            params.append(filter_user_ids)
+
+        query = f"""
+            SELECT c.id, extract(epoch from c.created_at) AS created_at_epoch
+            FROM {self._get_table_name('conversations')} c
+            WHERE {' AND '.join(conditions)}
+        """
+
+        conv_row = await self.connection_manager.fetchrow_query(query, params)
         if not conv_row:
             raise R2RException(
                 status_code=404,
@@ -403,11 +406,34 @@ class PostgresConversationsHandler(Handler):
                 detail=f"Failed to update conversation: {str(e)}",
             ) from e
 
-    async def delete_conversation(self, conversation_id: UUID) -> None:
-        # Check if conversation exists
-        conv_query = f"SELECT 1 FROM {self._get_table_name('conversations')} WHERE id = $1"
+    async def delete_conversation(
+        self,
+        conversation_id: UUID,
+        filter_user_ids: Optional[list[UUID]] = None,
+    ) -> None:
+        conditions = ["c.id = $1"]
+        params: list = [conversation_id]
+
+        if filter_user_ids:
+            param_index = 2
+            conditions.append(
+                f"""
+                c.user_id IN (
+                    SELECT id
+                    FROM {self.project_name}.users
+                    WHERE id = ANY(${param_index})
+                )
+            """
+            )
+            params.append(filter_user_ids)
+
+        conv_query = f"""
+            SELECT 1
+            FROM {self._get_table_name('conversations')} c
+            WHERE {' AND '.join(conditions)}
+        """
         conv_row = await self.connection_manager.fetchrow_query(
-            conv_query, [conversation_id]
+            conv_query, params
         )
         if not conv_row:
             raise R2RException(
