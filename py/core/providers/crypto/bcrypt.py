@@ -13,6 +13,8 @@ import nacl.utils
 
 from core.base import CryptoConfig, CryptoProvider
 
+DEFAULT_BCRYPT_SECRET_KEY = "wNFbczH3QhUVcPALwtWZCPi0lrDlGV3P1DPRVEQCPbM"  # Replace or load from env or secrets manager
+
 
 class BcryptCryptoConfig(CryptoConfig):
     provider: str = "bcrypt"
@@ -29,11 +31,20 @@ class BcryptCryptoConfig(CryptoConfig):
         super().validate_config()
         if self.provider not in self.supported_providers:
             raise ValueError(f"Unsupported crypto provider: {self.provider}")
-        if not self.secret_key:
-            # In production, fail here if no secret key is provided.
-            raise ValueError(
-                "No secret key provided for BcryptCryptoProvider."
-            )
+        if self.bcrypt_rounds < 4 or self.bcrypt_rounds > 31:
+            raise ValueError("bcrypt_rounds must be between 4 and 31")
+
+    def verify_password(
+        self, plain_password: str, hashed_password: str
+    ) -> bool:
+        try:
+            # First try to decode as base64 (new format)
+            stored_hash = base64.b64decode(hashed_password.encode("utf-8"))
+        except:
+            # If that fails, treat as raw bcrypt hash (old format)
+            stored_hash = hashed_password.encode("utf-8")
+
+        return bcrypt.checkpw(plain_password.encode("utf-8"), stored_hash)
 
 
 class BCryptCryptoProvider(CryptoProvider, ABC):
@@ -47,7 +58,11 @@ class BCryptCryptoProvider(CryptoProvider, ABC):
 
         # Load the secret key for JWT
         # No fallback defaults: fail if not provided
-        self.secret_key = self.config.secret_key
+        self.secret_key = (
+            config.secret_key
+            or os.getenv("R2R_SECRET_KEY")
+            or DEFAULT_BCRYPT_SECRET_KEY
+        )
         if not self.secret_key:
             raise ValueError(
                 "No secret key provided for BcryptCryptoProvider."
@@ -64,7 +79,13 @@ class BCryptCryptoProvider(CryptoProvider, ABC):
     def verify_password(
         self, plain_password: str, hashed_password: str
     ) -> bool:
-        stored_hash = base64.b64decode(hashed_password.encode("utf-8"))
+        try:
+            # First try to decode as base64 (new format)
+            stored_hash = base64.b64decode(hashed_password.encode("utf-8"))
+        except:
+            # If that fails, treat as raw bcrypt hash (old format)
+            stored_hash = hashed_password.encode("utf-8")
+
         return bcrypt.checkpw(plain_password.encode("utf-8"), stored_hash)
 
     def generate_verification_code(self, length: int = 32) -> str:

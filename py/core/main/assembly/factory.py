@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from core.agent import R2RRAGAgent, R2RStreamingRAGAgent
 from core.base import (
@@ -25,8 +25,10 @@ from ..config import R2RConfig
 
 logger = logging.getLogger()
 from core.database import PostgresDatabaseProvider
-from core.providers import (  # PostgresDatabaseProvider,
+from core.providers import (
     AsyncSMTPEmailProvider,
+    BcryptCryptoConfig,
+    BCryptCryptoProvider,
     ConsoleMockEmailProvider,
     HatchetOrchestrationProvider,
     LiteLLMCompletionProvider,
@@ -53,16 +55,16 @@ class R2RProviderFactory:
     @staticmethod
     async def create_auth_provider(
         auth_config: AuthConfig,
-        crypto_provider: NaClCryptoProvider,
+        crypto_provider: BCryptCryptoProvider | NaClCryptoProvider,
         database_provider: PostgresDatabaseProvider,
-        email_provider: Union[
-            AsyncSMTPEmailProvider,
-            ConsoleMockEmailProvider,
-            SendGridEmailProvider,
-        ],
+        email_provider: (
+            AsyncSMTPEmailProvider
+            | ConsoleMockEmailProvider
+            | SendGridEmailProvider
+        ),
         *args,
         **kwargs,
-    ) -> Union[R2RAuthProvider, SupabaseAuthProvider]:
+    ) -> R2RAuthProvider | SupabaseAuthProvider:
         if auth_config.provider == "r2r":
 
             r2r_auth = R2RAuthProvider(
@@ -82,9 +84,15 @@ class R2RProviderFactory:
     @staticmethod
     def create_crypto_provider(
         crypto_config: CryptoConfig, *args, **kwargs
-    ) -> NaClCryptoProvider:
+    ) -> BCryptCryptoProvider | NaClCryptoProvider:
         if crypto_config.provider == "bcrypt":
-            return NaClCryptoProvider(NaClCryptoConfig(**crypto_config.dict()))
+            return BCryptCryptoProvider(
+                BcryptCryptoConfig(**crypto_config.model_dump())
+            )
+        if crypto_config.provider == "nacl":
+            return NaClCryptoProvider(
+                NaClCryptoConfig(**crypto_config.model_dump())
+            )
         else:
             raise ValueError(
                 f"Crypto provider {crypto_config.provider} not supported."
@@ -94,12 +102,10 @@ class R2RProviderFactory:
     def create_ingestion_provider(
         ingestion_config: IngestionConfig,
         database_provider: PostgresDatabaseProvider,
-        llm_provider: Union[
-            LiteLLMCompletionProvider, OpenAICompletionProvider
-        ],
+        llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
         *args,
         **kwargs,
-    ) -> Union[R2RIngestionProvider, UnstructuredIngestionProvider]:
+    ) -> R2RIngestionProvider | UnstructuredIngestionProvider:
 
         config_dict = (
             ingestion_config.model_dump()
@@ -135,7 +141,7 @@ class R2RProviderFactory:
     @staticmethod
     def create_orchestration_provider(
         config: OrchestrationConfig, *args, **kwargs
-    ) -> Union[HatchetOrchestrationProvider, SimpleOrchestrationProvider]:
+    ) -> HatchetOrchestrationProvider | SimpleOrchestrationProvider:
         if config.provider == "hatchet":
             orchestration_provider = HatchetOrchestrationProvider(config)
             orchestration_provider.get_worker("r2r-worker")
@@ -152,7 +158,7 @@ class R2RProviderFactory:
     async def create_database_provider(
         self,
         db_config: DatabaseConfig,
-        crypto_provider: NaClCryptoProvider,
+        crypto_provider: BCryptCryptoProvider | NaClCryptoProvider,
         *args,
         **kwargs,
     ) -> PostgresDatabaseProvider:
@@ -184,11 +190,11 @@ class R2RProviderFactory:
     @staticmethod
     def create_embedding_provider(
         embedding: EmbeddingConfig, *args, **kwargs
-    ) -> Union[
-        LiteLLMEmbeddingProvider,
-        OllamaEmbeddingProvider,
-        OpenAIEmbeddingProvider,
-    ]:
+    ) -> (
+        LiteLLMEmbeddingProvider
+        | OllamaEmbeddingProvider
+        | OpenAIEmbeddingProvider
+    ):
         embedding_provider: Optional[EmbeddingProvider] = None
 
         if embedding.provider == "openai":
@@ -220,7 +226,7 @@ class R2RProviderFactory:
     @staticmethod
     def create_llm_provider(
         llm_config: CompletionConfig, *args, **kwargs
-    ) -> Union[LiteLLMCompletionProvider, OpenAICompletionProvider]:
+    ) -> LiteLLMCompletionProvider | OpenAICompletionProvider:
         llm_provider: Optional[CompletionProvider] = None
         if llm_config.provider == "openai":
             llm_provider = OpenAICompletionProvider(llm_config)
@@ -237,13 +243,15 @@ class R2RProviderFactory:
     @staticmethod
     async def create_email_provider(
         email_config: Optional[EmailConfig] = None, *args, **kwargs
-    ) -> Union[
-        AsyncSMTPEmailProvider, ConsoleMockEmailProvider, SendGridEmailProvider
-    ]:
+    ) -> (
+        AsyncSMTPEmailProvider
+        | ConsoleMockEmailProvider
+        | SendGridEmailProvider
+    ):
         """Creates an email provider based on configuration."""
         if not email_config:
             raise ValueError(
-                f"No email configuration provided for email provider, please add `[email]` to your `r2r.toml`."
+                "No email configuration provided for email provider, please add `[email]` to your `r2r.toml`."
             )
 
         if email_config.provider == "smtp":
@@ -260,29 +268,27 @@ class R2RProviderFactory:
     async def create_providers(
         self,
         auth_provider_override: Optional[
-            Union[R2RAuthProvider, SupabaseAuthProvider]
+            R2RAuthProvider | SupabaseAuthProvider
         ] = None,
-        crypto_provider_override: Optional[NaClCryptoProvider] = None,
+        crypto_provider_override: Optional[
+            BCryptCryptoProvider | NaClCryptoProvider
+        ] = None,
         database_provider_override: Optional[PostgresDatabaseProvider] = None,
         email_provider_override: Optional[
-            Union[
-                AsyncSMTPEmailProvider,
-                ConsoleMockEmailProvider,
-                SendGridEmailProvider,
-            ]
+            AsyncSMTPEmailProvider
+            | ConsoleMockEmailProvider
+            | SendGridEmailProvider
         ] = None,
         embedding_provider_override: Optional[
-            Union[
-                LiteLLMEmbeddingProvider,
-                OpenAIEmbeddingProvider,
-                OllamaEmbeddingProvider,
-            ]
+            LiteLLMEmbeddingProvider
+            | OpenAIEmbeddingProvider
+            | OllamaEmbeddingProvider
         ] = None,
         ingestion_provider_override: Optional[
-            Union[R2RIngestionProvider, UnstructuredIngestionProvider]
+            R2RIngestionProvider | UnstructuredIngestionProvider
         ] = None,
         llm_provider_override: Optional[
-            Union[OpenAICompletionProvider, LiteLLMCompletionProvider]
+            OpenAICompletionProvider | LiteLLMCompletionProvider
         ] = None,
         orchestration_provider_override: Optional[Any] = None,
         *args,
