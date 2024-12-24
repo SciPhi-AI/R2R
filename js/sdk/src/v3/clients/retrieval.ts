@@ -7,6 +7,7 @@ import {
   WrappedSearchResponse,
   GenerationConfig,
 } from "../../types";
+import { ensureSnakeCase } from "../../utils";
 
 export class RetrievalClient {
   constructor(private client: r2rClient) {}
@@ -34,7 +35,7 @@ export class RetrievalClient {
     const data = {
       query: options.query,
       ...(options.searchSettings && {
-        search_settings: options.searchSettings,
+        search_settings: ensureSnakeCase(options.searchSettings),
       }),
       ...(options.searchMode && {
         search_mode: options.searchMode,
@@ -76,10 +77,10 @@ export class RetrievalClient {
         search_mode: options.searchMode,
       }),
       ...(options.searchSettings && {
-        search_settings: options.searchSettings,
+        search_settings: ensureSnakeCase(options.searchSettings),
       }),
       ...(options.ragGenerationConfig && {
-        rag_generation_config: options.ragGenerationConfig,
+        rag_generation_config: ensureSnakeCase(options.ragGenerationConfig),
       }),
       ...(options.taskPromptOverride && {
         task_prompt_override: options.taskPromptOverride,
@@ -174,10 +175,10 @@ export class RetrievalClient {
         search_mode: options.searchMode,
       }),
       ...(options.searchSettings && {
-        search_settings: options.searchSettings,
+        search_settings: ensureSnakeCase(options.searchSettings),
       }),
       ...(options.ragGenerationConfig && {
-        rag_generation_config: options.ragGenerationConfig,
+        rag_generation_config: ensureSnakeCase(options.ragGenerationConfig),
       }),
       ...(options.taskPromptOverride && {
         task_prompt_override: options.taskPromptOverride,

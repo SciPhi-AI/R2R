@@ -24,17 +24,17 @@ describe("r2rClient V3 Users Integration Tests", () => {
     expect(response.results).toBeDefined();
     expect(response.results.id).toBeDefined();
     expect(response.results.email).toBe("new_user@example.com");
-    expect(response.results.is_active).toBeDefined();
-    expect(response.results.is_superuser).toBe(false);
-    expect(response.results.created_at).toBeDefined();
-    expect(response.results.updated_at).toBeDefined();
+    expect(response.results.isActive).toBeDefined();
+    expect(response.results.isSuperuser).toBe(false);
+    expect(response.results.createdAt).toBeDefined();
+    expect(response.results.updatedAt).toBeDefined();
     // expect(response.results.is_verified).toBe(false);
-    expect(response.results.collection_ids).toBeDefined();
+    expect(response.results.collectionIds).toBeDefined();
     // expect(response.results.hashed_password).toBeUndefined();
     // expect(response.results.verification_code_expiry).toBeUndefined();
     expect(response.results.name).toBe(null);
     expect(response.results.bio).toBe(null);
-    expect(response.results.profile_picture).toBe(null);
+    expect(response.results.profilePicture).toBe(null);
   });
 
   test("Login as a user", async () => {
@@ -95,17 +95,17 @@ describe("r2rClient V3 Users Integration Tests", () => {
     expect(response.results).toBeDefined();
     expect(response.results.id).toBeDefined();
     expect(response.results.email).toBe("new_user@example.com");
-    expect(response.results.is_active).toBeDefined();
-    expect(response.results.is_superuser).toBe(false);
-    expect(response.results.created_at).toBeDefined();
-    expect(response.results.updated_at).toBeDefined();
+    expect(response.results.isActive).toBeDefined();
+    expect(response.results.isSuperuser).toBe(false);
+    expect(response.results.createdAt).toBeDefined();
+    expect(response.results.updatedAt).toBeDefined();
     // expect(response.results.is_verified).toBe(false);
-    expect(response.results.collection_ids).toBeDefined();
+    expect(response.results.collectionIds).toBeDefined();
     // expect(response.results.hashed_password).toBeUndefined();
     // expect(response.results.verification_code_expiry).toBeUndefined();
     expect(response.results.name).toBe("New Name");
     expect(response.results.bio).toBe("New Bio");
-    expect(response.results.profile_picture).toBe(null);
+    expect(response.results.profilePicture).toBe(null);
   });
 
   test("Retrieve a user after update", async () => {
@@ -114,17 +114,17 @@ describe("r2rClient V3 Users Integration Tests", () => {
     expect(response.results).toBeDefined();
     expect(response.results.id).toBeDefined();
     expect(response.results.email).toBe("new_user@example.com");
-    expect(response.results.is_active).toBeDefined();
-    expect(response.results.is_superuser).toBe(false);
-    expect(response.results.created_at).toBeDefined();
-    expect(response.results.updated_at).toBeDefined();
+    expect(response.results.isActive).toBeDefined();
+    expect(response.results.isSuperuser).toBe(false);
+    expect(response.results.createdAt).toBeDefined();
+    expect(response.results.updatedAt).toBeDefined();
     // expect(response.results.is_verified).toBe(false);
-    expect(response.results.collection_ids).toBeDefined();
+    expect(response.results.collectionIds).toBeDefined();
     // expect(response.results.hashed_password).toBeUndefined();
     // expect(response.results.verification_code_expiry).toBeUndefined();
     expect(response.results.name).toBe("New Name");
     expect(response.results.bio).toBe("New Bio");
-    expect(response.results.profile_picture).toBe(null);
+    expect(response.results.profilePicture).toBe(null);
   });
 
   test("List user's collections", async () => {

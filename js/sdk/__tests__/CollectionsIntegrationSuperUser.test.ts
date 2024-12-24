@@ -63,8 +63,8 @@ describe("r2rClient V3 Collections Integration Tests", () => {
       metadata: { title: "zametov.txt" },
     });
 
-    expect(ingestResponse.results.document_id).toBeDefined();
-    documentId = ingestResponse.results.document_id;
+    expect(ingestResponse.results.documentId).toBeDefined();
+    documentId = ingestResponse.results.documentId;
 
     const response = await client.collections.addDocument({
       id: collectionId,

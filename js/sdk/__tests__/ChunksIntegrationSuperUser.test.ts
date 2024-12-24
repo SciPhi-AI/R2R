@@ -5,7 +5,7 @@ const baseUrl = "http://localhost:7272";
 
 describe("r2rClient V3 Collections Integration Tests", () => {
   let client: r2rClient;
-  let document_id: string;
+  let documentId: string;
   let chunkId: string;
 
   beforeAll(async () => {
@@ -22,18 +22,18 @@ describe("r2rClient V3 Collections Integration Tests", () => {
       runWithOrchestration: false,
     });
 
-    document_id = response.results.document_id;
+    documentId = response.results.documentId;
 
     expect(response.results).toEqual({
-      document_id: expect.any(String),
+      documentId: expect.any(String),
       message: "Document created and ingested successfully.",
-      task_id: null,
+      taskId: null,
     });
   });
 
   test("Retrieve document's chunks", async () => {
     const response = await client.documents.listChunks({
-      id: document_id,
+      id: documentId,
     });
 
     chunkId = response.results[0]?.id;
@@ -41,9 +41,9 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     expect(chunkId).toBeDefined();
     expect(response.results[0]).toMatchObject({
       id: expect.any(String),
-      document_id: expect.any(String),
+      documentId: expect.any(String),
       text: expect.any(String),
-      collection_ids: expect.any(Array),
+      collectionIds: expect.any(Array),
       metadata: expect.any(Object),
     });
   });
@@ -55,9 +55,9 @@ describe("r2rClient V3 Collections Integration Tests", () => {
 
     expect(response.results).toMatchObject({
       id: expect.any(String),
-      document_id: expect.any(String),
+      documentId: expect.any(String),
       text: expect.any(String),
-      collection_ids: expect.any(Array),
+      collectionIds: expect.any(Array),
       metadata: expect.any(Object),
     });
   });
@@ -70,9 +70,9 @@ describe("r2rClient V3 Collections Integration Tests", () => {
 
     expect(response.results).toMatchObject({
       id: expect.any(String),
-      document_id: expect.any(String),
+      documentId: expect.any(String),
       text: "Hello, world! How are you?",
-      collection_ids: expect.any(Array),
+      collectionIds: expect.any(Array),
       metadata: expect.any(Object),
     });
   });

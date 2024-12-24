@@ -41,7 +41,7 @@ describe("r2rClient V3 System Integration Tests User", () => {
 
     user1Id = response.results.id;
     expect(response.results).toBeDefined();
-    expect(response.results.is_superuser).toBe(false);
+    expect(response.results.isSuperuser).toBe(false);
     expect(response.results.name).toBe(null);
   });
 
@@ -61,7 +61,7 @@ describe("r2rClient V3 System Integration Tests User", () => {
 
     user2Id = response.results.id;
     expect(response.results).toBeDefined();
-    expect(response.results.is_superuser).toBe(false);
+    expect(response.results.isSuperuser).toBe(false);
     expect(response.results.name).toBe(null);
   });
 
@@ -93,7 +93,7 @@ describe("r2rClient V3 System Integration Tests User", () => {
 
     expect(response.results).toBeDefined();
     expect(response.results.length).toBe(1);
-    expect(response.total_entries).toBe(1);
+    expect(response.totalEntries).toBe(1);
     user1CollectionId = response.results[0].id;
   });
 
@@ -102,7 +102,7 @@ describe("r2rClient V3 System Integration Tests User", () => {
 
     expect(response.results).toBeDefined();
     expect(response.results.length).toBe(1);
-    expect(response.total_entries).toBe(1);
+    expect(response.totalEntries).toBe(1);
     user2CollectionId = response.results[0].id;
   });
 
@@ -114,8 +114,8 @@ describe("r2rClient V3 System Integration Tests User", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    expect(response.results.document_id).toBeDefined();
-    user1DocumentId = response.results.document_id;
+    expect(response.results.documentId).toBeDefined();
+    user1DocumentId = response.results.documentId;
   }, 15000);
 
   test("Create document as user 2 with file path", async () => {
@@ -126,8 +126,8 @@ describe("r2rClient V3 System Integration Tests User", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    expect(response.results.document_id).toBeDefined();
-    user2DocumentId = response.results.document_id;
+    expect(response.results.documentId).toBeDefined();
+    user2DocumentId = response.results.documentId;
   }, 15000);
 
   test("Retrieve document as user 1", async () => {
@@ -156,8 +156,8 @@ describe("r2rClient V3 System Integration Tests User", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    expect(response.results.document_id).toBeDefined();
-    user1Document2Id = response.results.document_id;
+    expect(response.results.documentId).toBeDefined();
+    user1Document2Id = response.results.documentId;
   }, 15000);
 
   test("Create document as user 2 from raw text", async () => {
@@ -168,8 +168,8 @@ describe("r2rClient V3 System Integration Tests User", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    expect(response.results.document_id).toBeDefined();
-    user2Document2Id = response.results.document_id;
+    expect(response.results.documentId).toBeDefined();
+    user2Document2Id = response.results.documentId;
   }, 15000);
 
   test("List documents with no parameters as user 1", async () => {
