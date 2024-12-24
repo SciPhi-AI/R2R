@@ -55,7 +55,7 @@ class R2RProviderFactory:
     @staticmethod
     async def create_auth_provider(
         auth_config: AuthConfig,
-        crypto_provider: NaClCryptoProvider,
+        crypto_provider: BCryptCryptoProvider | NaClCryptoProvider,
         database_provider: PostgresDatabaseProvider,
         email_provider: (
             AsyncSMTPEmailProvider
@@ -158,7 +158,7 @@ class R2RProviderFactory:
     async def create_database_provider(
         self,
         db_config: DatabaseConfig,
-        crypto_provider: NaClCryptoProvider,
+        crypto_provider: BCryptCryptoProvider | NaClCryptoProvider,
         *args,
         **kwargs,
     ) -> PostgresDatabaseProvider:
@@ -270,7 +270,9 @@ class R2RProviderFactory:
         auth_provider_override: Optional[
             R2RAuthProvider | SupabaseAuthProvider
         ] = None,
-        crypto_provider_override: Optional[NaClCryptoProvider] = None,
+        crypto_provider_override: Optional[
+            BCryptCryptoProvider | NaClCryptoProvider
+        ] = None,
         database_provider_override: Optional[PostgresDatabaseProvider] = None,
         email_provider_override: Optional[
             AsyncSMTPEmailProvider
