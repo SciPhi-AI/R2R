@@ -2,7 +2,7 @@ import asyncio
 import copy
 import json
 import logging
-from typing import Any, Optional
+from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
 import asyncpg
@@ -300,9 +300,7 @@ class PostgresDocumentsHandler(Handler):
             return IngestionStatus
         elif status_type == "extraction_status":
             return KGExtractionStatus
-        elif status_type == "graph_cluster_status":
-            return KGEnrichmentStatus
-        elif status_type == "graph_sync_status":
+        elif status_type in {"graph_cluster_status", "graph_sync_status"}:
             return KGEnrichmentStatus
         else:
             raise R2RException(
@@ -793,3 +791,91 @@ class PostgresDocumentsHandler(Handler):
             )
         else:
             return await self.full_text_document_search(query_text, settings)
+
+    async def export_to_csv(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> AsyncGenerator[str, None]:
+        """
+        Creates a generator that yields CSV data from PostgreSQL row by row.
+
+        Uses manual streaming with cursor-based fetching to ensure proper
+        connection handling and memory efficiency.
+        """
+        if not columns:
+            columns = [
+                "id",
+                "collection_ids",
+                "owner_id",
+                "type",
+                "metadata",
+                "title",
+                "summary",
+                "version",
+                "size_in_bytes",
+                "ingestion_status",
+                "extraction_status",
+                "created_at",
+                "updated_at",
+            ]
+
+        select_stmt = f"""
+            SELECT
+                id::text,
+                collection_ids::text,
+                owner_id::text,
+                type::text,
+                metadata::text as metadata,
+                title,
+                summary,
+                version,
+                size_in_bytes,
+                ingestion_status,
+                extraction_status,
+                to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') as created_at,
+                to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') as updated_at
+            FROM {self._get_table_name(self.TABLE_NAME)}
+        """
+
+        params = []
+        if filters:
+            filter_condition, params = apply_filters(
+                filters, [], mode="condition_only"
+            )
+            if filter_condition:
+                select_stmt = f"{select_stmt} WHERE {filter_condition}"
+
+        select_stmt = f"{select_stmt} ORDER BY created_at DESC"
+
+        try:
+            async with self.connection_manager.pool.get_connection() as conn:
+                async with conn.transaction():
+                    cursor = await conn.cursor(select_stmt, *params)
+
+                    if include_header:
+                        yield ",".join(columns) + "\n"
+
+                    chunk_size = 1000
+                    while True:
+                        rows = await cursor.fetch(chunk_size)
+                        if not rows:
+                            break
+
+                        for row in rows:
+                            yield ",".join(
+                                (
+                                    f'"{str(val).replace('"', '""')}"'
+                                    if val is not None
+                                    else '""'
+                                )
+                                for val in row
+                            ) + "\n"
+
+        except Exception as e:
+            logger.error(f"Error in CSV export: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to export data: {str(e)}",
+            )

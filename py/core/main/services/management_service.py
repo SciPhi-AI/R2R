@@ -1,7 +1,7 @@
 import logging
 import os
 from collections import defaultdict
-from typing import Any, BinaryIO, Optional, Tuple
+from typing import Any, AsyncGenerator, BinaryIO, Optional, Tuple
 from uuid import UUID
 
 import toml
@@ -217,6 +217,19 @@ class ManagementService(Service):
         ):
             return result
         return None
+
+    @telemetry_event("ExportDocuments")
+    async def export_documents(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> AsyncGenerator[str, None]:
+        return await self.providers.database.documents_handler.export_to_csv(
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
 
     @telemetry_event("DocumentsOverview")
     async def documents_overview(

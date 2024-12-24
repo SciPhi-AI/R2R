@@ -613,10 +613,9 @@ class PostgresChunksHandler(Handler):
         SET collection_ids = array_append(collection_ids, $1)
         WHERE document_id = $2 AND NOT ($1 = ANY(collection_ids));
         """
-        result = await self.connection_manager.execute_query(
+        return await self.connection_manager.execute_query(
             query, (str(collection_id), str(document_id))
         )
-        return result
 
     async def remove_document_from_collection_vector(
         self, document_id: UUID, collection_id: UUID
@@ -884,7 +883,7 @@ class PostgresChunksHandler(Handler):
 
         where_clause = " AND ".join(where_clauses) if where_clauses else ""
         if where_clause:
-            where_clause = "AND " + where_clause
+            where_clause = f"AND {where_clause}"
 
         query = f"""
         WITH index_info AS (
@@ -1225,7 +1224,7 @@ class PostgresChunksHandler(Handler):
                     ) as body_rank
                 FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
                 WHERE $1 != ''
-                {f"AND to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)" if settings.search_over_body else ""}
+                {"AND to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)" if settings.search_over_body else ""}
                 GROUP BY document_id
             ),
             -- Combined scores with document metadata

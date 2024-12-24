@@ -61,9 +61,7 @@ class PostgresLimitsHandler(Handler):
             logger.debug("Counting all requests")
 
         result = await self.connection_manager.fetchrow_query(query, params)
-        count = result["count"] if result else 0
-
-        return count
+        return result["count"] if result else 0
 
     async def _count_monthly_requests(self, user_id: UUID) -> int:
         now = datetime.now(timezone.utc)
@@ -71,10 +69,9 @@ class PostgresLimitsHandler(Handler):
             day=1, hour=0, minute=0, second=0, microsecond=0
         )
 
-        count = await self._count_requests(
+        return await self._count_requests(
             user_id, route=None, since=start_of_month
         )
-        return count
 
     def _determine_limits_for(
         self, user_id: UUID, route: str
@@ -83,8 +80,7 @@ class PostgresLimitsHandler(Handler):
         limits = self.config.limits
 
         # Route-specific limits - directly override if present
-        route_limits = self.config.route_limits.get(route)
-        if route_limits:
+        if route_limits := self.config.route_limits.get(route):
             # Only override non-None values from route_limits
             if route_limits.global_per_min is not None:
                 limits.global_per_min = route_limits.global_per_min
@@ -94,8 +90,7 @@ class PostgresLimitsHandler(Handler):
                 limits.monthly_limit = route_limits.monthly_limit
 
         # User-specific limits - directly override if present
-        user_limits = self.config.user_limits.get(user_id)
-        if user_limits:
+        if user_limits := self.config.user_limits.get(user_id):
             # Only override non-None values from user_limits
             if user_limits.global_per_min is not None:
                 limits.global_per_min = user_limits.global_per_min
@@ -108,8 +103,7 @@ class PostgresLimitsHandler(Handler):
 
     async def check_limits(self, user_id: UUID, route: str):
         # Determine final applicable limits
-        limits = self._determine_limits_for(user_id, route)
-        if not limits:
+        if limits := self._determine_limits_for(user_id, route):
             limits = self.config.default_limits
 
         global_per_min = limits.global_per_min

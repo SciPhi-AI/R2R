@@ -1683,6 +1683,47 @@ class DocumentsRouter(BaseRouterV3):
             )
             return results
 
+        @self.router.post(
+            "/documents/export",
+            response_class=StreamingResponse,
+            summary="Export documents to CSV",
+        )
+        @self.base_endpoint
+        async def export_documents(
+            columns: Optional[list[str]] = Body(
+                None, description="Specific columns to export"
+            ),
+            filters: Optional[dict] = Body(
+                None, description="Filters to apply to the export"
+            ),
+            include_header: bool = Body(
+                True, description="Whether to include column headers"
+            ),
+            # auth_user=Depends(self.providers.auth.auth_wrapper),
+        ):
+            """
+            Export documents as a downloadable CSV file.
+
+            This endpoint streams the CSV data directly from the database to the client,
+            making it memory-efficient and suitable for large exports.
+            """
+            try:
+                return StreamingResponse(
+                    self.services.management.export_documents(
+                        columns=columns,
+                        filters=filters,
+                        include_header=include_header,
+                    ),
+                    media_type="text/csv",
+                    headers={
+                        "Content-Disposition": "attachment; filename=documents_export.csv"
+                    },
+                    background=None,
+                )
+
+            except Exception as e:
+                raise R2RException(f"Export failed: {str(e)}", status_code=500)
+
     @staticmethod
     async def _process_file(file):
         import base64
