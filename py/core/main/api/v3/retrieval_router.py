@@ -142,12 +142,12 @@ class RetrievalRouterV3(BaseRouterV3):
                                     query: "Who is Aristotle?",
                                     search_settings: {
                                         filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                        use_semantic_search: true,
-                                        chunk_settings: {
+                                        useSemanticSearch: true,
+                                        chunkSettings: {
                                             limit: 20, # separate limit for chunk vs. graph
                                             enabled: true
                                         },
-                                        graph_settings: {
+                                        graphSettings: {
                                             enabled: true,
                                         }
                                     }
@@ -316,19 +316,19 @@ class RetrievalRouterV3(BaseRouterV3):
                                     query: "Who is Aristotle?",
                                     search_settings: {
                                         filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                        use_semantic_search: true,
-                                        chunk_settings: {
+                                        useSemanticSearch: true,
+                                        chunkSettings: {
                                             limit: 20, # separate limit for chunk vs. graph
                                             enabled: true
                                         },
-                                        graph_settings: {
+                                        graphSettings: {
                                             enabled: true,
                                         },
                                     },
-                                    rag_generation_config: {
+                                    ragGenerationConfig: {
                                         stream: false,
                                         temperature: 0.7,
-                                        max_tokens: 150
+                                        maxTokens: 150
                                     }
                                 });
                             }
@@ -508,21 +508,21 @@ class RetrievalRouterV3(BaseRouterV3):
                                         role: "user",
                                         content: "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
                                     },
-                                    search_settings: {
+                                    searchSettings: {
                                         filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                        use_semantic_search: true,
-                                        chunk_settings: {
+                                        useSemanticSearch: true,
+                                        chunkSettings: {
                                             limit: 20, # separate limit for chunk vs. graph
                                             enabled: true
                                         },
-                                        graph_settings: {
+                                        graphSettings: {
                                             enabled: true,
                                         },
                                     },
-                                    rag_generation_config: {
+                                    ragGenerationConfig: {
                                         stream: false,
                                         temperature: 0.7,
-                                        max_tokens: 150
+                                        maxTokens: 150
                                     },
                                     includeTitleIfAvailable: true,
                                     conversationId: "550e8400-e29b-41d4-a716-446655440000"
