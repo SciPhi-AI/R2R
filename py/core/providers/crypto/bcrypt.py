@@ -82,11 +82,29 @@ class BCryptCryptoProvider(CryptoProvider, ABC):
         try:
             # First try to decode as base64 (new format)
             stored_hash = base64.b64decode(hashed_password.encode("utf-8"))
+            if not stored_hash.startswith(b"$2b$"):  # Valid bcrypt hash prefix
+                stored_hash = hashed_password.encode("utf-8")
         except:
-            # If that fails, treat as raw bcrypt hash (old format)
+            # Otherwise raw bcrypt hash (old format)
             stored_hash = hashed_password.encode("utf-8")
 
-        return bcrypt.checkpw(plain_password.encode("utf-8"), stored_hash)
+        try:
+            return bcrypt.checkpw(plain_password.encode("utf-8"), stored_hash)
+        except ValueError as e:
+            if "Invalid salt" in str(e):
+                # If it's an invalid salt, the hash format is wrong - try the other format
+                try:
+                    stored_hash = (
+                        hashed_password
+                        if isinstance(hashed_password, bytes)
+                        else hashed_password.encode("utf-8")
+                    )
+                    return bcrypt.checkpw(
+                        plain_password.encode("utf-8"), stored_hash
+                    )
+                except ValueError:
+                    return False
+            raise
 
     def generate_verification_code(self, length: int = 32) -> str:
         random_bytes = nacl.utils.random(length)
