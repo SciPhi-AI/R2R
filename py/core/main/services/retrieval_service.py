@@ -9,13 +9,10 @@ from fastapi import HTTPException
 from core import R2RStreamingRAGAgent
 from core.base import (
     DocumentResponse,
-    EmbeddingPurpose,
     GenerationConfig,
-    GraphSearchSettings,
     Message,
     R2RException,
     RunManager,
-    SearchMode,
     SearchSettings,
     manage_run,
     to_async_generator,
@@ -306,17 +303,15 @@ class RetrievalService(Service):
 
                 if conversation_id:  # Fetch the existing conversation
                     try:
-                        conversation = await self.providers.database.conversations_handler.get_conversations_overview(
-                            offset=0,
-                            limit=1,
-                            conversation_ids=[conversation_id],
+                        conversation_messages = await self.providers.database.conversations_handler.get_conversation(
+                            conversation_id=conversation_id,
                         )
                     except Exception as e:
                         logger.error(f"Error fetching conversation: {str(e)}")
 
-                    if conversation is not None:
+                    if conversation_messages is not None:
                         messages_from_conversation: list[Message] = []
-                        for message_response in conversation:
+                        for message_response in conversation_messages:
                             if isinstance(message_response, MessageResponse):
                                 messages_from_conversation.append(
                                     message_response.message
