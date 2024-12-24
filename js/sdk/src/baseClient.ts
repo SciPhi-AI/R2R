@@ -5,6 +5,7 @@ import axios, {
   AxiosRequestConfig,
 } from "axios";
 import FormData from "form-data";
+import { ensureCamelCase } from "./utils";
 
 let fs: any;
 if (typeof window === "undefined") {
@@ -19,7 +20,7 @@ function handleRequestError(response: AxiosResponse): void {
   }
 
   let message: string;
-  const errorContent = response.data;
+  const errorContent = ensureCamelCase(response.data);
 
   if (typeof errorContent === "object" && errorContent !== null) {
     message =
@@ -139,7 +140,12 @@ export abstract class BaseClient {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          `HTTP error! status: ${response.status}: ${
+            ensureCamelCase(errorData).message || "Unknown error"
+          }`,
+        );
       }
 
       return response.body as unknown as T;
@@ -147,9 +153,11 @@ export abstract class BaseClient {
 
     try {
       const response = await this.axiosInstance.request(config);
-      return options.returnFullResponse
-        ? (response as any as T)
-        : response.data;
+      const responseData = options.returnFullResponse
+        ? { ...response, data: ensureCamelCase(response.data) }
+        : ensureCamelCase(response.data);
+
+      return responseData as T;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         handleRequestError(error.response);

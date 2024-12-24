@@ -32,7 +32,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
 
     user1Id = response.results.id;
     expect(response.results).toBeDefined();
-    expect(response.results.is_superuser).toBe(false);
+    expect(response.results.isSuperuser).toBe(false);
     expect(response.results.name).toBe(null);
   });
 
@@ -52,7 +52,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
 
     user2Id = response.results.id;
     expect(response.results).toBeDefined();
-    expect(response.results.is_superuser).toBe(false);
+    expect(response.results.isSuperuser).toBe(false);
     expect(response.results.name).toBe(null);
   });
 
@@ -84,7 +84,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
 
     expect(response.results).toBeDefined();
     expect(response.results).toEqual([]);
-    expect(response.total_entries).toBe(0);
+    expect(response.totalEntries).toBe(0);
   });
 
   test("List all conversations as user 1", async () => {
@@ -92,7 +92,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
 
     expect(response.results).toBeDefined();
     expect(response.results).toEqual([]);
-    expect(response.total_entries).toBe(0);
+    expect(response.totalEntries).toBe(0);
   });
 
   test("List all conversations as user 2", async () => {
@@ -100,7 +100,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
 
     expect(response.results).toBeDefined();
     expect(response.results).toEqual([]);
-    expect(response.total_entries).toBe(0);
+    expect(response.totalEntries).toBe(0);
   });
 
   test("Create a conversation with a name", async () => {
