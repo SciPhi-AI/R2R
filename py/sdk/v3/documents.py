@@ -3,6 +3,8 @@ from io import BytesIO
 from typing import Any, Optional
 from uuid import UUID
 
+import aiofiles
+
 from shared.api.models.base import WrappedBooleanResponse
 from shared.api.models.ingestion.responses import WrappedIngestionResponse
 from shared.api.models.management.responses import (
@@ -136,7 +138,6 @@ class DocumentsSDK:
             version="v3",
         )
 
-    # you could do something like:
     async def download(
         self,
         id: str | UUID,
@@ -145,11 +146,51 @@ class DocumentsSDK:
             "GET",
             f"documents/{str(id)}/download",
             version="v3",
-            # No json parsing here, if possible
         )
         if not isinstance(response, BytesIO):
             raise ValueError("Expected BytesIO response")
         return response
+
+    async def export(
+        self,
+        output_path: str,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> None:
+        """
+        Export documents to a CSV file, streaming the results directly from the server.
+
+        This method efficiently handles large exports by streaming the data chunk by chunk,
+        writing directly to the specified output file. The export includes human-readable
+        columns by default and supports filtering to get specific document subsets.
+
+        Args:
+            output_path (str): Local path where the CSV file should be saved
+            columns (Optional[list[str]]): Specific columns to export. If None, exports
+                human-readable columns (id, title, type, etc.)
+            filters (Optional[dict]): Optional filters to apply when selecting documents
+            include_header (bool): Whether to include column headers in the CSV
+        """
+        # Prepare the request data
+        data = {"include_header": include_header}
+        if columns:
+            data["columns"] = columns
+        if filters:
+            data["filters"] = filters
+
+        async with aiofiles.open(output_path, "wb") as f:
+
+            async def write_stream(chunk: bytes):
+                await f.write(chunk)
+
+            await self.client._make_streaming_request(
+                "POST",
+                "documents/export",
+                json=data,
+                version="v3",
+                stream_callback=write_stream,
+            )
 
     async def delete(
         self,
@@ -349,28 +390,6 @@ class DocumentsSDK:
             params=params,
             version="v3",
         )
-
-    # async def extract(
-    #     self,
-    #     id: str | UUID,
-    #     run_type: Optional[str] = None,
-    #     run_with_orchestration: Optional[bool] = True,
-    # ):
-    #     data = {}
-
-    #     if run_type:
-    #         data["run_type"] = run_type
-    #     if run_with_orchestration is not None:
-    #         data["run_with_orchestration"] = str(run_with_orchestration)
-
-    #     return await self.client._make_request(
-    #         "POST",
-    #         f"documents/{str(id)}/extract",
-    #         params=data,
-    #         version="v3",
-    #     )
-
-    # Be sure to put at bottom of the page...
 
     async def list(
         self,

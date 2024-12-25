@@ -201,6 +201,71 @@ export class DocumentsClient {
   }
 
   /**
+   * Export documents as a CSV file. This method supports filtering the exported data
+   * and customizing which columns are included in the output.
+   *
+   * The data is streamed directly from the server to minimize memory usage and
+   * handle large exports efficiently.
+   *
+   * @param options Configuration options for the export
+   * @param options.columns Optional list of specific columns to include in the export
+   * @param options.filters Optional filters to limit which documents are exported
+   * @param options.includeHeader Whether to include column headers in the CSV (default: true)
+   * @returns A Blob containing the CSV data
+   */
+  @feature("documents.export")
+  async export(options?: {
+    columns?: string[];
+    filters?: Record<string, any>;
+    includeHeader?: boolean;
+  }): Promise<Blob> {
+    const data: Record<string, any> = {
+      include_header: options?.includeHeader ?? true,
+    };
+
+    if (options?.columns) {
+      data.columns = options.columns;
+    }
+
+    if (options?.filters) {
+      data.filters = options.filters;
+    }
+
+    return this.client.makeRequest("POST", "documents/export", {
+      data,
+      responseType: "blob",
+      headers: {
+        Accept: "text/csv",
+      },
+    });
+  }
+
+  /**
+   * Export documents as a CSV file and save it to the user's device.
+   * @param filename
+   * @param options
+   */
+  @feature("documents.exportToFile")
+  async exportToFile(options: {
+    filename: string;
+    columns?: string[];
+    filters?: Record<string, any>;
+    includeHeader?: boolean;
+  }): Promise<void> {
+    const blob = await this.export(options);
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = options.filename;
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+  /**
    * Delete a specific document.
    * @param id ID of document to delete
    * @returns

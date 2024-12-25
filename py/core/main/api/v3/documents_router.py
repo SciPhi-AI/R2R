@@ -1700,29 +1700,26 @@ class DocumentsRouter(BaseRouterV3):
                 True, description="Whether to include column headers"
             ),
             # auth_user=Depends(self.providers.auth.auth_wrapper),
-        ):
+        ) -> StreamingResponse:
             """
             Export documents as a downloadable CSV file.
 
             This endpoint streams the CSV data directly from the database to the client,
             making it memory-efficient and suitable for large exports.
             """
-            try:
-                return StreamingResponse(
-                    self.services.management.export_documents(
-                        columns=columns,
-                        filters=filters,
-                        include_header=include_header,
-                    ),
-                    media_type="text/csv",
-                    headers={
-                        "Content-Disposition": "attachment; filename=documents_export.csv"
-                    },
-                    background=None,
-                )
-
-            except Exception as e:
-                raise R2RException(f"Export failed: {str(e)}", status_code=500)
+            # FIXME: Auth is broken within the crypto provider
+            return StreamingResponse(
+                self.services.management.export_documents(
+                    columns=columns,
+                    filters=filters,
+                    include_header=include_header,
+                ),
+                media_type="text/csv",
+                headers={
+                    "Content-Disposition": "attachment; filename=documents_export.csv"
+                },
+                background=None,
+            )
 
     @staticmethod
     async def _process_file(file):
