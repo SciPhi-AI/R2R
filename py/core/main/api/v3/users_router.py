@@ -106,7 +106,7 @@ class UsersRouter(BaseRouterV3):
             profile_picture: str | None = Body(
                 None, description="Updated user profile picture"
             ),
-            # auth_user=Depends(self.providers.auth.auth_wrapper),
+            # auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUserResponse:
             """Register a new user with the given email and password."""
 
@@ -391,7 +391,7 @@ class UsersRouter(BaseRouterV3):
         @self.base_endpoint
         async def logout(
             token: str = Depends(oauth2_scheme),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
             """Log out the current user."""
             result = await self.services.auth.logout(token)
@@ -515,7 +515,7 @@ class UsersRouter(BaseRouterV3):
         async def change_password(
             current_password: str = Body(..., description="Current password"),
             new_password: str = Body(..., description="New password"),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> GenericMessageResponse:
             """Change the authenticated user's password."""
             result = await self.services.auth.change_password(
@@ -715,7 +715,7 @@ class UsersRouter(BaseRouterV3):
             #     email: Optional[str] = Query(None, example="john@example.com"),
             #     is_active: Optional[bool] = Query(None, example=True),
             #     is_superuser: Optional[bool] = Query(None, example=False),
-            #     auth_user=Depends(self.providers.auth.auth_wrapper),
+            #     auth_user=Depends(self.providers.auth.auth_wrapper()),
             ids: list[str] = Query(
                 [], description="List of user IDs to filter by"
             ),
@@ -730,7 +730,7 @@ class UsersRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUsersResponse:
             """
             List all users with pagination and filtering options.
@@ -812,7 +812,7 @@ class UsersRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def get_current_user(
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUserResponse:
             """
             Get detailed information about the currently authenticated user.
@@ -884,7 +884,7 @@ class UsersRouter(BaseRouterV3):
             id: UUID = Path(
                 ..., example="550e8400-e29b-41d4-a716-446655440000"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUserResponse:
             """
             Get detailed information about a specific user.
@@ -960,7 +960,7 @@ class UsersRouter(BaseRouterV3):
                 False,
                 description="Whether to delete the user's vector data",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Delete a specific user.
@@ -1060,7 +1060,7 @@ class UsersRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionsResponse:
             """
             Get all collections associated with a specific user.
@@ -1153,7 +1153,7 @@ class UsersRouter(BaseRouterV3):
             collection_id: UUID = Path(
                 ..., example="750e8400-e29b-41d4-a716-446655440000"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             if auth_user.id != id and not auth_user.is_superuser:
                 raise R2RException(
@@ -1237,7 +1237,7 @@ class UsersRouter(BaseRouterV3):
             collection_id: UUID = Path(
                 ..., example="750e8400-e29b-41d4-a716-446655440000"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Remove a user from a collection.
@@ -1329,7 +1329,7 @@ class UsersRouter(BaseRouterV3):
             profile_picture: str | None = Body(
                 None, description="Updated profile picture URL"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUserResponse:
             """
             Update user information.
@@ -1397,7 +1397,7 @@ class UsersRouter(BaseRouterV3):
             id: UUID = Path(
                 ..., description="ID of the user for whom to create an API key"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAPIKeyResponse:
             """
             Create a new API key for the specified user.
@@ -1450,7 +1450,7 @@ class UsersRouter(BaseRouterV3):
             id: UUID = Path(
                 ..., description="ID of the user whose API keys to list"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAPIKeysResponse:
             """
             List all API keys for the specified user.
@@ -1510,7 +1510,7 @@ class UsersRouter(BaseRouterV3):
             key_id: UUID = Path(
                 ..., description="ID of the API key to delete"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Delete a specific API key for the specified user.

@@ -158,7 +158,7 @@ class CollectionsRouter(BaseRouterV3):
             description: Optional[str] = Body(
                 None, description="An optional description of the collection"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionResponse:
             """
             Create a new collection and automatically add the creating user to it.
@@ -252,7 +252,7 @@ class CollectionsRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionsResponse:
             """
             Returns a paginated list of collections the authenticated user has access to.
@@ -346,7 +346,7 @@ class CollectionsRouter(BaseRouterV3):
             id: UUID = Path(
                 ..., description="The unique identifier of the collection"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionResponse:
             """
             Get details of a specific collection.
@@ -448,7 +448,7 @@ class CollectionsRouter(BaseRouterV3):
                 False,
                 description="Whether to generate a new synthetic description for the collection",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionResponse:
             """
             Update an existing collection's configuration.
@@ -534,7 +534,7 @@ class CollectionsRouter(BaseRouterV3):
                 ...,
                 description="The unique identifier of the collection to delete",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Delete an existing collection.
@@ -607,7 +607,7 @@ class CollectionsRouter(BaseRouterV3):
         async def add_document_to_collection(
             id: UUID = Path(...),
             document_id: UUID = Path(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
             """
             Add a document to a collection.
@@ -697,7 +697,7 @@ class CollectionsRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedDocumentsResponse:
             """
             Get all documents in a collection with pagination and sorting options.
@@ -783,7 +783,7 @@ class CollectionsRouter(BaseRouterV3):
                 ...,
                 description="The unique identifier of the document to remove",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Remove a document from a collection.
@@ -876,7 +876,7 @@ class CollectionsRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUsersResponse:
             """
             Get all users in a collection with pagination and sorting options.
@@ -961,7 +961,7 @@ class CollectionsRouter(BaseRouterV3):
             user_id: UUID = Path(
                 ..., description="The unique identifier of the user to add"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Add a user to a collection.
@@ -1039,7 +1039,7 @@ class CollectionsRouter(BaseRouterV3):
             user_id: UUID = Path(
                 ..., description="The unique identifier of the user to remove"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Remove a user from a collection.
@@ -1100,7 +1100,7 @@ class CollectionsRouter(BaseRouterV3):
                 default=True,
                 description="Whether to run the entities and relationships extraction process with orchestration.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
             """
             Extracts entities and relationships from a document.

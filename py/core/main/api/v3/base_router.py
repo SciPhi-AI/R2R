@@ -182,7 +182,7 @@ class BaseRouterV3:
 
         async def rate_limit_dependency(
             request: Request,
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
             user_id = auth_user.id
             route = request.scope["path"]
