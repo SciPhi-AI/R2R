@@ -93,7 +93,7 @@ class PromptsRouter(BaseRouterV3):
                 default={},
                 description="A dictionary mapping input names to their types",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
             """
             Create a new prompt with the given configuration.
@@ -167,7 +167,7 @@ class PromptsRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def get_prompts(
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedPromptsResponse:
             """
             List all available prompts.
@@ -262,7 +262,7 @@ class PromptsRouter(BaseRouterV3):
             prompt_override: Optional[str] = Query(
                 None, description="Prompt override"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedPromptResponse:
             """
             Get a specific prompt by name, optionally with inputs and override.
@@ -347,7 +347,7 @@ class PromptsRouter(BaseRouterV3):
                 default={},
                 description="A dictionary mapping input names to their types",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
             """
             Update an existing prompt's template and/or input types.
@@ -424,7 +424,7 @@ class PromptsRouter(BaseRouterV3):
         @self.base_endpoint
         async def delete_prompt(
             name: str = Path(..., description="Prompt name"),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Delete a prompt by name.

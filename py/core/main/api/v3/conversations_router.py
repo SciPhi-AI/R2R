@@ -90,7 +90,7 @@ class ConversationsRouter(BaseRouterV3):
             name: Optional[str] = Body(
                 None, description="The name of the conversation", embed=True
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedConversationResponse:
             """
             Create a new conversation.
@@ -179,7 +179,7 @@ class ConversationsRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedConversationsResponse:
             """
             List conversations with pagination and sorting options.
@@ -270,7 +270,7 @@ class ConversationsRouter(BaseRouterV3):
             id: UUID = Path(
                 ..., description="The unique identifier of the conversation"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedConversationMessagesResponse:
             """
             Get details of a specific conversation.
@@ -358,7 +358,7 @@ class ConversationsRouter(BaseRouterV3):
                 description="The updated name for the conversation",
                 embed=True,
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedConversationResponse:
             """
             Update an existing conversation.
@@ -433,7 +433,7 @@ class ConversationsRouter(BaseRouterV3):
                 ...,
                 description="The unique identifier of the conversation to delete",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Delete an existing conversation.
@@ -527,7 +527,7 @@ class ConversationsRouter(BaseRouterV3):
             metadata: Optional[dict[str, str]] = Body(
                 None, description="Additional metadata for the message"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedMessageResponse:
             """
             Add a new message to a conversation.
@@ -617,7 +617,7 @@ class ConversationsRouter(BaseRouterV3):
             metadata: Optional[dict[str, str]] = Body(
                 None, description="Additional metadata for the message"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedMessageResponse:
             """
             Update an existing message in a conversation.
