@@ -110,6 +110,7 @@ class UsersRouter(BaseRouterV3):
         ) -> WrappedUserResponse:
             """Register a new user with the given email and password."""
 
+            # TODO: Do we really want this validation? The default password for the superuser would not pass...
             def validate_password(password: str) -> bool:
                 if len(password) < 10:
                     return False
@@ -524,7 +525,9 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users/request-password-reset",
-            dependencies=[Depends(self.rate_limit_dependency)],
+            dependencies=[
+                Depends(self.providers.auth.auth_wrapper(public=True))
+            ],
             response_model=WrappedGenericMessageResponse,
             openapi_extra={
                 "x-codeSamples": [
@@ -574,7 +577,7 @@ class UsersRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def request_password_reset(
-            email: EmailStr = Body(..., description="User's email address")
+            email: EmailStr = Body(..., description="User's email address"),
         ) -> WrappedGenericMessageResponse:
             """Request a password reset for a user."""
             result = await self.services.auth.request_password_reset(email)
