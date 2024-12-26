@@ -297,7 +297,7 @@ class DocumentsRouter(BaseRouterV3):
                 True,
                 description="Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedIngestionResponse:
             """
             Creates a new Document object from an input file, text content, or chunks. The chosen `ingestion_mode` determines
@@ -628,7 +628,7 @@ class DocumentsRouter(BaseRouterV3):
                 False,
                 description="Specifies whether or not to include embeddings of each document summary.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedDocumentsResponse:
             """
             Returns a paginated list of documents the authenticated user has access to.
@@ -733,7 +733,7 @@ class DocumentsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document to retrieve.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedDocumentResponse:
             """
             Retrieves detailed information about a specific document by its ID.
@@ -844,7 +844,7 @@ class DocumentsRouter(BaseRouterV3):
                 False,
                 description="Whether to include vector embeddings in the response.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedChunksResponse:
             """
             Retrieves the text chunks that were generated from a document during ingestion.
@@ -952,7 +952,7 @@ class DocumentsRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_document_file(
             id: str = Path(..., description="Document ID"),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> StreamingResponse:
             """
             Downloads the original file content of a document.
@@ -1078,7 +1078,7 @@ class DocumentsRouter(BaseRouterV3):
             filters: Json[dict] = Body(
                 ..., description="JSON-encoded filters"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Delete documents based on provided filters. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`. Deletion requests are limited to a user's own documents.
@@ -1155,7 +1155,7 @@ class DocumentsRouter(BaseRouterV3):
         @self.base_endpoint
         async def delete_document_by_id(
             id: UUID = Path(..., description="Document ID"),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Delete a specific document. All chunks corresponding to the document are deleted, and all other references to the document are removed.
@@ -1247,7 +1247,7 @@ class DocumentsRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionsResponse:
             """
             Retrieves all collections that contain the specified document. This endpoint is restricted
@@ -1321,7 +1321,7 @@ class DocumentsRouter(BaseRouterV3):
                 default=True,
                 description="Whether to run the entities and relationships extraction process with orchestration.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
             """
             Extracts entities and relationships from a document.
@@ -1436,7 +1436,7 @@ class DocumentsRouter(BaseRouterV3):
                 False,
                 description="Whether to include vector embeddings in the response.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedEntitiesResponse:
             """
             Retrieves the entities that were extracted from a document. These represent
@@ -1577,7 +1577,7 @@ class DocumentsRouter(BaseRouterV3):
                 None,
                 description="Filter relationships by specific relationship types.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRelationshipsResponse:
             """
             Retrieves the relationships between entities that were extracted from a document. These represent
@@ -1658,7 +1658,7 @@ class DocumentsRouter(BaseRouterV3):
                 default_factory=SearchSettings,
                 description="Settings for document search",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):  # -> WrappedDocumentSearchResponse:  # type: ignore
             """
             Perform a search query on the automatically generated document summaries in the system.

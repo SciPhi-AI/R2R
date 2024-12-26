@@ -207,7 +207,7 @@ class GraphRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGraphsResponse:
             """
             Returns a paginated list of graphs the authenticated user has access to.
@@ -287,7 +287,7 @@ class GraphRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_graph(
             collection_id: UUID = Path(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGraphResponse:
             """
             Retrieves detailed information about a specific graph by ID.
@@ -328,7 +328,7 @@ class GraphRouter(BaseRouterV3):
                 description="Settings for the graph enrichment process.",
             ),
             run_with_orchestration: Optional[bool] = Body(True),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
             """
             Creates communities in the graph by analyzing entity relationships and similarities.
@@ -453,7 +453,7 @@ class GraphRouter(BaseRouterV3):
         @self.base_endpoint
         async def reset(
             collection_id: UUID = Path(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Deletes a graph and all its associated data.
@@ -540,7 +540,7 @@ class GraphRouter(BaseRouterV3):
             description: Optional[str] = Body(
                 None, description="An optional description of the graph"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
             """
             Update an existing graphs's configuration.
@@ -624,7 +624,7 @@ class GraphRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedEntitiesResponse:
             """Lists all entities in the graph with pagination support."""
             if (
@@ -669,7 +669,7 @@ class GraphRouter(BaseRouterV3):
             metadata: Optional[dict] = Body(
                 None, description="The metadata of the entity to create."
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedEntityResponse:
             """Creates a new entity in the graph."""
             if (
@@ -727,7 +727,7 @@ class GraphRouter(BaseRouterV3):
             metadata: Optional[dict] = Body(
                 None, description="The metadata of the relationship to create."
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRelationshipResponse:
             """Creates a new relationship in the graph."""
             if not auth_user.is_superuser:
@@ -808,7 +808,7 @@ class GraphRouter(BaseRouterV3):
             entity_id: UUID = Path(
                 ..., description="The ID of the entity to retrieve."
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedEntityResponse:
             """Retrieves a specific entity by its ID."""
             if (
@@ -857,7 +857,7 @@ class GraphRouter(BaseRouterV3):
             metadata: Optional[dict] = Body(
                 None, description="The updated metadata of the entity."
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedEntityResponse:
             """Updates an existing entity in the graph."""
             if not auth_user.is_superuser:
@@ -936,7 +936,7 @@ class GraphRouter(BaseRouterV3):
                 ...,
                 description="The ID of the entity to remove from the graph.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """Removes an entity from the graph."""
             if not auth_user.is_superuser:
@@ -1018,7 +1018,7 @@ class GraphRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRelationshipsResponse:
             """
             Lists all relationships in the graph with pagination support.
@@ -1096,7 +1096,7 @@ class GraphRouter(BaseRouterV3):
             relationship_id: UUID = Path(
                 ..., description="The ID of the relationship to retrieve."
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRelationshipResponse:
             """Retrieves a specific relationship by its ID."""
             if (
@@ -1160,7 +1160,7 @@ class GraphRouter(BaseRouterV3):
             metadata: Optional[dict] = Body(
                 None, description="The updated metadata of the relationship."
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRelationshipResponse:
             """Updates an existing relationship in the graph."""
             if not auth_user.is_superuser:
@@ -1244,7 +1244,7 @@ class GraphRouter(BaseRouterV3):
                 ...,
                 description="The ID of the relationship to remove from the graph.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """Removes a relationship from the graph."""
             if not auth_user.is_superuser:
@@ -1337,7 +1337,7 @@ class GraphRouter(BaseRouterV3):
             rating_explanation: Optional[str] = Body(
                 default="", description="Explanation for the rating"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCommunityResponse:
             """
             Creates a new community in the graph.
@@ -1434,7 +1434,7 @@ class GraphRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCommunitiesResponse:
             """
             Lists all communities in the graph with pagination support.
@@ -1509,7 +1509,7 @@ class GraphRouter(BaseRouterV3):
                 ...,
                 description="The ID of the community to get.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCommunityResponse:
             """
             Retrieves a specific community by its ID.
@@ -1591,7 +1591,7 @@ class GraphRouter(BaseRouterV3):
                 ...,
                 description="The ID of the community to delete.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
             if (
                 not auth_user.is_superuser
@@ -1680,7 +1680,7 @@ class GraphRouter(BaseRouterV3):
             findings: Optional[list[str]] = Body(None),
             rating: Optional[float] = Body(default=None, ge=1, le=10),
             rating_explanation: Optional[str] = Body(None),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCommunityResponse:
             """
             Updates an existing community in the graph.
@@ -1765,7 +1765,7 @@ class GraphRouter(BaseRouterV3):
             # document_ids: list[UUID] = Body(
             #     ..., description="List of document IDs to add to the graph."
             # ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Adds documents to a graph by copying their entities and relationships.

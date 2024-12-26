@@ -172,7 +172,7 @@ class IndicesRouter(BaseRouterV3):
                 True,
                 description="Whether to run index creation as an orchestrated task (recommended for large indices)",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
             """
             Create a new vector similarity search index in over the target table. Allowed tables include 'vectors', 'entity', 'document_collections'.
@@ -315,7 +315,7 @@ class IndicesRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedListVectorIndicesResponse:
             """
             List existing vector similarity search indices with pagination support.
@@ -407,7 +407,7 @@ class IndicesRouter(BaseRouterV3):
             index_name: str = Path(
                 ..., description="The name of the index to delete"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> dict:  #  -> WrappedGetIndexResponse:
             """
             Get detailed information about a specific vector index.
@@ -494,7 +494,7 @@ class IndicesRouter(BaseRouterV3):
         #             id: UUID = Path(...),
         #             config: IndexConfig = Body(...),
         #             run_with_orchestration: Optional[bool] = Body(True),
-        #             auth_user=Depends(self.providers.auth.auth_wrapper),
+        #             auth_user=Depends(self.providers.auth.auth_wrapper()),
         #         ):  # -> WrappedUpdateIndexResponse:
         #             """
         #             Update an existing index's configuration.
@@ -581,7 +581,7 @@ class IndicesRouter(BaseRouterV3):
             #     description="Whether to delete the index concurrently (recommended for large indices)",
             # ),
             # run_with_orchestration: Optional[bool] = Body(True),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
             """
             Delete an existing vector similarity search index.

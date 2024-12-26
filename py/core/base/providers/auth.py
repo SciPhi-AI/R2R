@@ -116,49 +116,71 @@ class AuthProvider(Provider, ABC):
     ) -> dict[str, Token]:
         pass
 
-    async def auth_wrapper(
+    def auth_wrapper(
         self,
-        auth: Optional[HTTPAuthorizationCredentials] = Security(security),
-        api_key: Optional[str] = Security(api_key_header),
-    ) -> User:
-        # If authentication is not required and no credentials are provided, return the default admin user
-        if (
-            not self.config.require_authentication
-            and auth is None
-            and api_key is None
-        ):
-            return await self._get_default_admin_user()
-        if not auth and not api_key:
-            raise R2RException(
-                message="No credentials provided",
-                status_code=401,
-            )
-        if auth and api_key:
-            raise R2RException(
-                message="Cannot have both Bearer token and API key",
-                status_code=400,
-            )
-        # 1. Try JWT if `auth` is present (Bearer token)
-        if auth is not None:
-            credentials = auth.credentials
-            try:
-                token_data = await self.decode_token(credentials)
-                user = await self.database_provider.users_handler.get_user_by_email(
-                    token_data.email
+        public: bool = False,
+    ):
+        async def _auth_wrapper(
+            auth: Optional[HTTPAuthorizationCredentials] = Security(
+                self.security
+            ),
+            api_key: Optional[str] = Security(api_key_header),
+        ) -> User:
+            # If authentication is not required and no credentials are provided, return the default admin user
+            if (
+                ((not self.config.require_authentication) or public)
+                and auth is None
+                and api_key is None
+            ):
+                return await self._get_default_admin_user()
+            if not auth and not api_key:
+                raise R2RException(
+                    message="No credentials provided",
+                    status_code=401,
                 )
-                if user is not None:
-                    return user
-            except R2RException:
-                # JWT decoding failed for logical reasons (invalid token)
-                pass
-            except Exception as e:
-                # JWT decoding failed unexpectedly, log and continue
-                logger.debug(f"JWT verification failed: {e}")
+            if auth and api_key:
+                raise R2RException(
+                    message="Cannot have both Bearer token and API key",
+                    status_code=400,
+                )
+            # 1. Try JWT if `auth` is present (Bearer token)
+            if auth is not None:
+                credentials = auth.credentials
+                try:
+                    token_data = await self.decode_token(credentials)
+                    user = await self.database_provider.users_handler.get_user_by_email(
+                        token_data.email
+                    )
+                    if user is not None:
+                        return user
+                except R2RException:
+                    # JWT decoding failed for logical reasons (invalid token)
+                    pass
+                except Exception as e:
+                    # JWT decoding failed unexpectedly, log and continue
+                    logger.debug(f"JWT verification failed: {e}")
 
-            # 2. If JWT failed, try API key from Bearer token
-            # Expected format: key_id.raw_api_key
-            if "." in credentials:
-                key_id, raw_api_key = credentials.split(".", 1)
+                # 2. If JWT failed, try API key from Bearer token
+                # Expected format: key_id.raw_api_key
+                if "." in credentials:
+                    key_id, raw_api_key = credentials.split(".", 1)
+                    api_key_record = await self.database_provider.users_handler.get_api_key_record(
+                        key_id
+                    )
+                    if api_key_record is not None:
+                        hashed_key = api_key_record["hashed_key"]
+                        if self.crypto_provider.verify_api_key(
+                            raw_api_key, hashed_key
+                        ):
+                            user = await self.database_provider.users_handler.get_user_by_id(
+                                api_key_record["user_id"]
+                            )
+                            if user is not None and user.is_active:
+                                return user
+
+            # 3. If no Bearer token worked, try the X-API-Key header
+            if api_key is not None and "." in api_key:
+                key_id, raw_api_key = api_key.split(".", 1)
                 api_key_record = await self.database_provider.users_handler.get_api_key_record(
                     key_id
                 )
@@ -173,30 +195,13 @@ class AuthProvider(Provider, ABC):
                         if user is not None and user.is_active:
                             return user
 
-        # 3. If no Bearer token worked, try the X-API-Key header
-        if api_key is not None and "." in api_key:
-            key_id, raw_api_key = api_key.split(".", 1)
-            api_key_record = (
-                await self.database_provider.users_handler.get_api_key_record(
-                    key_id
-                )
+            # If we reach here, both JWT and API key auth failed
+            raise R2RException(
+                message="Invalid token or API key",
+                status_code=401,
             )
-            if api_key_record is not None:
-                hashed_key = api_key_record["hashed_key"]
-                if self.crypto_provider.verify_api_key(
-                    raw_api_key, hashed_key
-                ):
-                    user = await self.database_provider.users_handler.get_user_by_id(
-                        api_key_record["user_id"]
-                    )
-                    if user is not None and user.is_active:
-                        return user
 
-        # If we reach here, both JWT and API key auth failed
-        raise R2RException(
-            message="Invalid token or API key",
-            status_code=401,
-        )
+        return _auth_wrapper
 
     @abstractmethod
     async def change_password(

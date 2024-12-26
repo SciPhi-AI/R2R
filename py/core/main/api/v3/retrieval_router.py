@@ -219,7 +219,7 @@ class RetrievalRouterV3(BaseRouterV3):
                     "Common overrides include `filters` to narrow results and `limit` to control how many results are returned."
                 ),
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedSearchResponse:
             """
             Perform a search query against vector and/or graph-based databases.
@@ -412,7 +412,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 default=False,
                 description="Include document titles in responses when available",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRAGResponse:
             """
             Execute a RAG (Retrieval-Augmented Generation) query.
@@ -612,7 +612,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 default=None,
                 description="ID of the conversation",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAgentResponse:
             """
             Engage with an intelligent RAG-powered conversational agent for complex information retrieval and analysis.
@@ -800,7 +800,7 @@ class RetrievalRouterV3(BaseRouterV3):
                     "stream": False,
                 },
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
             response_model=WrappedCompletionResponse,
         ):
             """
@@ -879,7 +879,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 ...,
                 description="Text to generate embeddings for",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
             """
             Generate embeddings for the provided text using the specified model.
