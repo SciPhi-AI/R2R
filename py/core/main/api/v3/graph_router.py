@@ -582,7 +582,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            response = client.graphs.get_entities(collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7")
+                            response = client.graphs.list_entities(collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7")
                             """
                         ),
                     },
@@ -595,7 +595,7 @@ class GraphRouter(BaseRouterV3):
                             const client = new r2rClient("http://localhost:7272");
 
                             function main() {
-                                const response = await client.graphs.get_entities({
+                                const response = await client.graphs.listEntities({
                                     collection_id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 });
                             }

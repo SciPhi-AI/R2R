@@ -72,21 +72,14 @@ class R2RBuilder:
         ).create_pipelines(*args, **kwargs)
 
     def _create_services(self, service_params: dict[str, Any]) -> R2RServices:
+        services = ["auth", "ingestion", "management", "retrieval", "graph"]
         service_instances = {}
-        for service_type, override in vars(R2RServices()).items():
-            logger.info(f"Creating {service_type} service")
-            service_class = globals()[f"{service_type.capitalize()}Service"]
-            service_instances[service_type] = override or service_class(
-                **service_params
-            )
 
-        return R2RServices(
-            auth=service_instances["auth"],
-            ingestion=service_instances["ingestion"],
-            management=service_instances["management"],
-            retrieval=service_instances["retrieval"],
-            graph=service_instances["graph"],
-        )
+        for service_type in services:
+            service_class = globals()[f"{service_type.capitalize()}Service"]
+            service_instances[service_type] = service_class(**service_params)
+
+        return R2RServices(**service_instances)
 
     async def _create_providers(
         self, provider_factory: Type[R2RProviderFactory], *args, **kwargs
