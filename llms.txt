@@ -10435,3 +10435,994 @@ This comprehensive documentation provides an in-depth overview of the **R2R API*
 - **System Tools:** Monitor and maintain the health and performance of your R2R system with dedicated system endpoints.
 
 For further assistance, refer to the [R2R Docs](https://r2r-docs.sciphi.ai) or contact our support team.
+
+---
+
+# **R2R Deployment Guidelines**
+
+Welcome to the **R2R Deployment Guidelines**. This comprehensive guide will walk you through deploying the R2R (Retrieval to Riches) application using Docker and Docker Compose. The deployment includes setting up essential services such as PostgreSQL, RabbitMQ, Hatchet, Unstructured, Graph Clustering, R2R itself, R2R Dashboard, and Nginx. By following these guidelines, you will ensure a smooth and efficient deployment of R2R with all necessary configurations.
+
+---
+
+## **Table of Contents**
+1. [Prerequisites](#prerequisites)
+2. [Deployment Overview](#deployment-overview)
+3. [Setting Up Environment Variables](#setting-up-environment-variables)
+4. [Dockerfile and Dockerfile.unstructured Overview](#dockerfile-and-dockerfileunstructured-overview)
+5. [Docker Compose Configuration](#docker-compose-configuration)
+   - [Networks and Volumes](#networks-and-volumes)
+   - [Services Breakdown](#services-breakdown)
+6. [Building and Running the Deployment](#building-and-running-the-deployment)
+   - [Step 1: Clone the Repository](#step-1-clone-the-repository)
+   - [Step 2: Configure Environment Variables](#step-2-configure-environment-variables)
+   - [Step 3: Build Docker Images](#step-3-build-docker-images)
+   - [Step 4: Deploy Services with Docker Compose](#step-4-deploy-services-with-docker-compose)
+7. [Initial Setup Steps](#initial-setup-steps)
+   - [Creating the Hatchet API Token](#creating-the-hatchet-api-token)
+8. [Accessing R2R and Hatchet Dashboard](#accessing-r2r-and-hatchet-dashboard)
+9. [Configuring Nginx as a Reverse Proxy](#configuring-nginx-as-a-reverse-proxy)
+10. [Configuring R2R](#configuring-r2r)
+11. [Maintenance and Scaling](#maintenance-and-scaling)
+12. [Security Considerations](#security-considerations)
+13. [Troubleshooting](#troubleshooting)
+14. [Conclusion](#conclusion)
+
+---
+
+## **Prerequisites**
+
+Before proceeding with the deployment, ensure you have the following prerequisites:
+
+- **Operating System**: Linux, macOS, or Windows with WSL 2 (for Windows users).
+- **Docker**: Installed on your system. [Install Docker](https://docs.docker.com/get-docker/).
+- **Docker Compose**: Installed and up-to-date. [Install Docker Compose](https://docs.docker.com/compose/install/).
+- **Git**: To clone the repository. [Install Git](https://git-scm.com/downloads).
+- **Sufficient Resources**: Ensure your system has adequate CPU, memory, and disk space to handle the services.
+
+---
+
+## **Deployment Overview**
+
+The deployment consists of the following key components:
+
+1. **PostgreSQL with pgvector**: Database for storing relational and vector data.
+2. **Hatchet Services**: Includes Hatchet Postgres, RabbitMQ, Migration, Setup Config, Engine, and Dashboard.
+3. **Unstructured Service**: Handles document processing and parsing.
+4. **Graph Clustering Service**: Manages community detection within knowledge graphs.
+5. **R2R Application**: The core application providing Retrieval-Augmented Generation (RAG) functionalities.
+6. **R2R Dashboard**: User interface for managing R2R.
+7. **Nginx**: Acts as a reverse proxy to route traffic to R2R and other services.
+
+The deployment is managed using Docker Compose, orchestrating the interaction between these services.
+
+---
+
+## **Setting Up Environment Variables**
+
+Environment variables are crucial for configuring services. You can set them directly in your shell or use a `.env` file for Docker Compose.
+
+### **Creating a `.env` File**
+
+Create a `.env` file in the root directory of your project with the following content:
+
+```dotenv
+# General R2R Settings
+R2R_PORT=7272
+R2R_HOST=0.0.0.0
+R2R_CONFIG_NAME=
+R2R_CONFIG_PATH=/app/config
+R2R_PROJECT_NAME=r2r_default
+
+# PostgreSQL Settings
+R2R_POSTGRES_USER=postgres
+R2R_POSTGRES_PASSWORD=postgres
+R2R_POSTGRES_HOST=postgres
+R2R_POSTGRES_PORT=5432
+R2R_POSTGRES_DBNAME=postgres
+R2R_POSTGRES_PROJECT_NAME=r2r_default
+R2R_POSTGRES_MAX_CONNECTIONS=1024
+R2R_POSTGRES_STATEMENT_CACHE_SIZE=100
+
+# Hatchet Settings
+HATCHET_POSTGRES_USER=hatchet_user
+HATCHET_POSTGRES_PASSWORD=hatchet_password
+HATCHET_POSTGRES_DBNAME=hatchet
+HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH=134217728
+HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH=134217728
+
+# RabbitMQ Settings
+R2R_RABBITMQ_PORT=5673
+R2R_RABBITMQ_MGMT_PORT=15673
+
+# Graph Clustering Settings
+R2R_GRAPH_CLUSTERING_PORT=7276
+
+# R2R Dashboard Settings
+R2R_DASHBOARD_PORT=7273
+
+# Nginx Settings
+R2R_NGINX_PORT=7280
+
+# API Keys and External Services
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_API_BASE=https://api.openai.com
+ANTHROPIC_API_KEY=your_anthropic_api_key
+AZURE_API_KEY=your_azure_api_key
+AZURE_API_BASE=https://api.azure.com
+AZURE_API_VERSION=2023-03-15-preview
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/google/credentials.json
+VERTEX_PROJECT=your_vertex_project
+VERTEX_LOCATION=your_vertex_location
+AWS_ACCESS_KEY_ID=your_aws_access_key_id
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+AWS_REGION_NAME=your_aws_region
+GROQ_API_KEY=your_groq_api_key
+COHERE_API_KEY=your_cohere_api_key
+ANYSCALE_API_KEY=your_anyscale_api_key
+OLLAMA_API_BASE=http://host.docker.internal:11434
+HUGGINGFACE_API_BASE=http://host.docker.internal:8080
+HUGGINGFACE_API_KEY=your_huggingface_api_key
+UNSTRUCTURED_API_KEY=your_unstructured_api_key
+UNSTRUCTURED_API_URL=https://api.unstructured.io/general/v0/general
+UNSTRUCTURED_SERVICE_URL=http://unstructured:7275
+UNSTRUCTURED_NUM_WORKERS=10
+CLUSTERING_SERVICE_URL=http://graph_clustering:7276
+```
+
+> **Note**: Replace placeholder values (e.g., `your_openai_api_key`) with your actual credentials and configurations. Ensure sensitive information like API keys and passwords are securely stored and managed.
+
+---
+
+## **Dockerfile and Dockerfile.unstructured Overview**
+
+### **Dockerfile**
+
+The `Dockerfile` is used to build the R2R application image.
+
+- **Base Image**: `python:3.12-slim`
+- **System Dependencies**: GCC, G++, Musl-dev, Curl, Libffi-dev, Gfortran, Libopenblas-dev, Poppler-utils, Rust (via Rustup)
+- **Python Dependencies**: Installed via Poetry with extras `core ingestion-bundle`
+- **Final Image**: Copies site-packages and binaries from the builder stage, sets environment variables, exposes the configured port, and runs the application using Uvicorn.
+
+### **Dockerfile.unstructured**
+
+The `Dockerfile.unstructured` builds the Unstructured service image.
+
+- **Base Image**: `python:3.12-slim`
+- **System Dependencies**: GCC, G++, Musl-dev, Curl, Libffi-dev, Gfortran, Libopenblas-dev, Tesseract-OCR, Libleptonica-dev, Poppler-utils, Libmagic1, Pandoc, LibreOffice, OpenCV dependencies
+- **Python Dependencies**: Installed Unstructured with `unstructured[all-docs]`, Gunicorn, Uvicorn, FastAPI, HTTPX
+- **Final Steps**: Copies `main.py`, exposes port `7275`, and runs the application using Uvicorn with 8 workers.
+
+---
+
+## **Docker Compose Configuration**
+
+Docker Compose orchestrates the deployment of all services. There are three main Docker Compose files provided:
+
+1. **compose.yaml**: Basic setup with PostgreSQL and R2R.
+2. **compose.full.yaml**: Extends `compose.yaml` by adding Hatchet, RabbitMQ, and related services.
+3. **compose.full_with_replicas.yaml**: Further extends `compose.full.yaml` with additional replicas and services.
+
+For a comprehensive deployment, we'll focus on using `compose.full_with_replicas.yaml`.
+
+### **Networks and Volumes**
+
+#### **Networks**
+
+- **r2r-network**: A bridge network facilitating communication between all services.
+
+#### **Volumes**
+
+- **hatchet_certs**: Stores Hatchet SSL certificates.
+- **hatchet_config**: Configuration files for Hatchet.
+- **hatchet_api_key**: Stores the Hatchet API key.
+- **postgres_data**: Persistent storage for PostgreSQL data.
+- **hatchet_rabbitmq_data**: Persistent storage for RabbitMQ data.
+- **hatchet_rabbitmq_conf**: Configuration files for RabbitMQ.
+- **hatchet_postgres_data**: Persistent storage for Hatchet PostgreSQL data.
+
+> **Note**: Volumes ensure data persistence across container restarts and deployments.
+
+### **Services Breakdown**
+
+Below is a detailed overview of each service included in `compose.full_with_replicas.yaml`.
+
+1. **PostgreSQL (`postgres`)**
+
+   - **Image**: `pgvector/pgvector:pg16`
+   - **Purpose**: Primary database with vector support for R2R.
+   - **Environment Variables**:
+     - `POSTGRES_USER`: Database username.
+     - `POSTGRES_PASSWORD`: Database password.
+     - `POSTGRES_HOST`: Hostname for the database service.
+     - `POSTGRES_PORT`: Port number.
+     - `POSTGRES_MAX_CONNECTIONS`: Maximum allowed connections.
+   - **Volumes**: `postgres_data` for persistent storage.
+   - **Ports**: Maps `${R2R_POSTGRES_PORT:-5432}` on the host to `5432` in the container.
+   - **Healthcheck**: Ensures PostgreSQL is ready before other services depend on it.
+   - **Restart Policy**: `on-failure`
+
+2. **Hatchet PostgreSQL (`hatchet-postgres`)**
+
+   - **Image**: `postgres:latest`
+   - **Purpose**: Dedicated PostgreSQL instance for Hatchet.
+   - **Environment Variables**:
+     - `POSTGRES_DB`: Database name (default `hatchet`).
+     - `POSTGRES_USER`: Database username (default `hatchet_user`).
+     - `POSTGRES_PASSWORD`: Database password (default `hatchet_password`).
+   - **Volumes**: `hatchet_postgres_data` for persistent storage.
+   - **Healthcheck**: Ensures Hatchet PostgreSQL is ready.
+
+3. **RabbitMQ (`hatchet-rabbitmq`)**
+
+   - **Image**: `rabbitmq:3-management`
+   - **Purpose**: Message broker for Hatchet orchestration.
+   - **Environment Variables**:
+     - `RABBITMQ_DEFAULT_USER`: Default RabbitMQ user (`user`).
+     - `RABBITMQ_DEFAULT_PASS`: Default RabbitMQ password (`password`).
+   - **Ports**:
+     - `${R2R_RABBITMQ_PORT:-5673}` on the host to `5672` in the container.
+     - `${R2R_RABBITMQ_MGMT_PORT:-15673}` on the host to `15672` in the container.
+   - **Volumes**:
+     - `hatchet_rabbitmq_data`: Persistent storage for RabbitMQ data.
+     - `hatchet_rabbitmq_conf`: Configuration files for RabbitMQ.
+   - **Healthcheck**: Ensures RabbitMQ is operational.
+
+4. **Hatchet Create DB (`hatchet-create-db`)**
+
+   - **Image**: `postgres:latest`
+   - **Purpose**: Initializes the Hatchet database if it doesn't exist.
+   - **Command**: Waits for PostgreSQL to be ready and creates the database if absent.
+   - **Environment Variables**:
+     - `DATABASE_URL`: Connection string for Hatchet PostgreSQL.
+   - **Depends On**: `hatchet-postgres`
+   - **Networks**: `r2r-network`
+
+5. **Hatchet Migration (`hatchet-migration`)**
+
+   - **Image**: `ghcr.io/hatchet-dev/hatchet/hatchet-migrate:latest`
+   - **Purpose**: Applies database migrations for Hatchet.
+   - **Environment Variables**:
+     - `DATABASE_URL`: Connection string for Hatchet PostgreSQL.
+   - **Depends On**: `hatchet-create-db`
+   - **Networks**: `r2r-network`
+
+6. **Hatchet Setup Config (`hatchet-setup-config`)**
+
+   - **Image**: `ghcr.io/hatchet-dev/hatchet/hatchet-admin:latest`
+   - **Purpose**: Configures Hatchet with initial settings.
+   - **Command**: Runs Hatchet admin quickstart with specific options.
+   - **Environment Variables**:
+     - `DATABASE_URL`: Connection string for Hatchet PostgreSQL.
+     - `HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH`: GRPC settings.
+     - Other Hatchet-specific configurations.
+   - **Volumes**:
+     - `hatchet_certs`: SSL certificates.
+     - `hatchet_config`: Configuration files.
+   - **Depends On**:
+     - `hatchet-migration`
+     - `hatchet-rabbitmq`
+   - **Networks**: `r2r-network`
+
+7. **Hatchet Engine (`hatchet-engine`)**
+
+   - **Image**: `ghcr.io/hatchet-dev/hatchet/hatchet-engine:latest`
+   - **Purpose**: Core engine for Hatchet operations.
+   - **Command**: Runs Hatchet engine with specified configuration.
+   - **Environment Variables**:
+     - `DATABASE_URL`: Connection string for Hatchet PostgreSQL.
+     - GRPC settings.
+   - **Ports**: Maps `${R2R_HATCHET_ENGINE_PORT:-7077}` on the host to `7077` in the container.
+   - **Volumes**:
+     - `hatchet_certs`: SSL certificates.
+     - `hatchet_config`: Configuration files.
+   - **Healthcheck**: Ensures the Hatchet engine is live.
+   - **Depends On**: `hatchet-setup-config`
+   - **Restart Policy**: `on-failure`
+
+8. **Hatchet Dashboard (`hatchet-dashboard`)**
+
+   - **Image**: `ghcr.io/hatchet-dev/hatchet/hatchet-dashboard:latest`
+   - **Purpose**: Web interface for managing Hatchet.
+   - **Command**: Runs Hatchet dashboard with specified configuration.
+   - **Environment Variables**:
+     - `DATABASE_URL`: Connection string for Hatchet PostgreSQL.
+   - **Ports**: Maps `${R2R_HATCHET_DASHBOARD_PORT:-7274}` on the host to `80` in the container.
+   - **Volumes**:
+     - `hatchet_certs`: SSL certificates.
+     - `hatchet_config`: Configuration files.
+   - **Depends On**: `hatchet-setup-config`
+   - **Networks**: `r2r-network`
+
+9. **Setup Token (`setup-token`)**
+
+   - **Image**: `ghcr.io/hatchet-dev/hatchet/hatchet-admin:latest`
+   - **Purpose**: Generates and stores the Hatchet API token.
+   - **Command**: Executes a shell script to create and validate the API token.
+   - **Volumes**:
+     - `hatchet_certs`: SSL certificates.
+     - `hatchet_config`: Configuration files.
+     - `hatchet_api_key`: Stores the generated API key.
+   - **Depends On**: `hatchet-setup-config`
+   - **Networks**: `r2r-network`
+
+10. **Unstructured (`unstructured`)**
+
+    - **Image**: `${UNSTRUCTURED_IMAGE:-ragtoriches/unst-prod}`
+    - **Purpose**: Handles document parsing and processing.
+    - **Healthcheck**: Ensures the Unstructured service is operational.
+    - **Networks**: `r2r-network`
+
+11. **Graph Clustering (`graph_clustering`)**
+
+    - **Image**: `${GRAPH_CLUSTERING_IMAGE:-ragtoriches/cluster-prod}`
+    - **Purpose**: Manages community detection within knowledge graphs.
+    - **Ports**: Maps `${R2R_GRAPH_CLUSTERING_PORT:-7276}` on the host to `7276` in the container.
+    - **Healthcheck**: Ensures the Graph Clustering service is operational.
+    - **Networks**: `r2r-network`
+
+12. **R2R (`r2r`)**
+
+    - **Image**: `${R2R_IMAGE:-ragtoriches/prod:latest}`
+    - **Build Context**: Current directory (`.`)
+    - **Environment Variables**:
+      - General R2R settings (`R2R_PORT`, `R2R_HOST`, etc.).
+      - PostgreSQL connection details.
+      - API keys for external services (OpenAI, Anthropic, Azure, etc.).
+      - Hatchet and Graph Clustering settings.
+    - **Command**: Sets the Hatchet API token and starts the R2R application using Uvicorn.
+    - **Healthcheck**: Ensures the R2R application is operational.
+    - **Restart Policy**: `on-failure`
+    - **Volumes**:
+      - `${R2R_CONFIG_PATH:-/}`: Configuration directory.
+      - `hatchet_api_key`: Read-only access to the Hatchet API key.
+    - **Extra Hosts**: Adds `host.docker.internal` to facilitate communication with host services.
+    - **Depends On**:
+      - `setup-token`
+      - `unstructured`
+    - **Networks**: `r2r-network`
+
+13. **R2R Dashboard (`r2r-dashboard`)**
+
+    - **Image**: `emrgntcmplxty/r2r-dashboard:latest`
+    - **Environment Variables**:
+      - `NEXT_PUBLIC_R2R_DEPLOYMENT_URL`: URL to the R2R API.
+      - `NEXT_PUBLIC_HATCHET_DASHBOARD_URL`: URL to the Hatchet Dashboard.
+    - **Ports**: Maps `${R2R_DASHBOARD_PORT:-7273}` on the host to `3000` in the container.
+    - **Networks**: `r2r-network`
+
+14. **Nginx (`nginx`)**
+
+    - **Image**: `nginx:latest`
+    - **Purpose**: Acts as a reverse proxy to route traffic to R2R and other services.
+    - **Ports**: Maps `${R2R_NGINX_PORT:-7280}` on the host to `80` in the container.
+    - **Volumes**: Mounts `nginx.conf` from the host to the container.
+    - **Depends On**: `r2r`
+    - **Deploy Resources**:
+      - Limits CPU to `0.5`
+      - Limits memory to `512M`
+    - **Healthcheck**: Ensures Nginx is operational.
+    - **Networks**: `r2r-network`
+
+> **Note**: Ensure that `nginx.conf` is properly configured to proxy requests to the appropriate services.
+
+---
+
+## **Building and Running the Deployment**
+
+### **Step 1: Clone the Repository**
+
+First, clone the R2R repository containing all necessary deployment files.
+
+```bash
+git clone https://github.com/SciPhi-AI/r2r.git
+cd r2r
+```
+
+> **Note**: Replace the repository URL with the actual URL if different.
+
+### **Step 2: Configure Environment Variables**
+
+Ensure that all necessary environment variables are set. You can use the `.env` file method described earlier.
+
+```bash
+cp .env.example .env
+# Edit the .env file with your specific configurations
+nano .env
+```
+
+> **Tip**: Use a text editor of your choice (e.g., `vim`, `nano`) to edit the `.env` file.
+
+### **Step 3: Build Docker Images**
+
+Build the Docker images using the provided `Dockerfile` and `Dockerfile.unstructured`.
+
+```bash
+# Build the R2R application image
+docker build -t r2r-app -f Dockerfile .
+
+# Build the Unstructured service image
+docker build -t unstructured-service -f Dockerfile.unstructured .
+```
+
+> **Note**: Ensure Docker is running before executing these commands. The build process may take several minutes.
+
+### **Step 4: Deploy Services with Docker Compose**
+
+Use Docker Compose to deploy all services as defined in `compose.full_with_replicas.yaml`.
+
+```bash
+docker-compose -f compose.full_with_replicas.yaml up -d
+```
+
+> **Flags Explained**:
+> - `-f compose.full_with_replicas.yaml`: Specifies the Docker Compose file to use.
+> - `up`: Builds, (re)creates, starts, and attaches to containers for a service.
+> - `-d`: Runs containers in the background (detached mode).
+
+> **Monitoring Deployment**:
+> You can monitor the status of your services using:
+> ```bash
+> docker-compose -f compose.full_with_replicas.yaml ps
+> ```
+
+---
+
+## **Initial Setup Steps**
+
+After deploying the services, perform the following initial setup steps to configure Hatchet and R2R.
+
+### **Creating the Hatchet API Token**
+
+The `setup-token` service is responsible for generating the Hatchet API token, which R2R uses to communicate with Hatchet.
+
+1. **Ensure `setup-token` Service is Running**
+
+   The `setup-token` service should have already been started by Docker Compose. Verify its status:
+
+   ```bash
+   docker-compose -f compose.full_with_replicas.yaml ps
+   ```
+
+2. **Verify Token Generation**
+
+   The token is stored in the `hatchet_api_key` volume. To retrieve the token:
+
+   ```bash
+   docker exec -it <r2r_container_name> cat /hatchet_api_key/api_key.txt
+   ```
+
+   Replace `<r2r_container_name>` with the actual container name, which can be found using:
+
+   ```bash
+   docker-compose -f compose.full_with_replicas.yaml ps
+   ```
+
+3. **Set Hatchet API Token Environment Variable**
+
+   Ensure that the `HATCHET_CLIENT_TOKEN` environment variable is correctly set in the `r2r` service. This is handled automatically by the `r2r` service command, which reads the token from the `hatchet_api_key` volume.
+
+---
+
+## **Accessing R2R and Hatchet Dashboard**
+
+### **R2R API**
+
+- **URL**: `http://<your-server-ip>:7272`
+- **Health Check Endpoint**: `http://<your-server-ip>:7272/v3/health`
+
+### **Hatchet Dashboard**
+
+- **URL**: `http://<your-server-ip>:7274`
+
+### **R2R Dashboard**
+
+- **URL**: `http://<your-server-ip>:7273`
+
+### **Nginx Reverse Proxy**
+
+- **URL**: `http://<your-server-ip>:7280`
+
+> **Note**: Replace `<your-server-ip>` with your server's actual IP address or domain name. Ensure that the specified ports are open and accessible.
+
+---
+
+## **Configuring Nginx as a Reverse Proxy**
+
+Nginx serves as a reverse proxy, directing incoming traffic to the appropriate services based on the configuration in `nginx.conf`.
+
+### **Sample `nginx.conf`**
+
+Ensure you have an `nginx.conf` file in your project root with appropriate proxy settings. Here's a basic example:
+
+```nginx
+worker_processes 1;
+
+events { worker_connections 1024; }
+
+http {
+    server {
+        listen 80;
+
+        location /api/ {
+            proxy_pass http://r2r:7272/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /dashboard/ {
+            proxy_pass http://r2r-dashboard:3000/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /hatchet-dashboard/ {
+            proxy_pass http://hatchet-dashboard:80/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location / {
+            proxy_pass http://nginx:80/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+}
+```
+
+> **Customization**: Modify `nginx.conf` according to your routing needs. Ensure that service names in `proxy_pass` match the service names defined in Docker Compose.
+
+### **Reloading Nginx Configuration**
+
+After updating `nginx.conf`, reload Nginx to apply changes:
+
+```bash
+docker-compose -f compose.full_with_replicas.yaml exec nginx nginx -s reload
+```
+
+---
+
+## **Configuring R2R**
+
+R2R's behavior is controlled via the `r2r.toml` file. Ensure this file is correctly configured before starting the services.
+
+### **Sample `r2r.toml`**
+
+Below is a sample `r2r.toml` with essential configurations:
+
+```toml
+[app]
+default_max_documents_per_user = 100
+default_max_chunks_per_user = 100000
+default_max_collections_per_user = 10
+
+[agent]
+system_instruction_name = "rag_agent"
+tool_names = ["local_search"]
+
+  [agent.generation_config]
+  model = "openai/gpt-4o"
+
+[auth]
+provider = "r2r"
+access_token_lifetime_in_minutes = 60
+refresh_token_lifetime_in_days = 7
+require_authentication = false
+require_email_verification = false
+default_admin_email = "admin@example.com"
+default_admin_password = "change_me_immediately"
+
+[completion]
+provider = "litellm"
+concurrent_request_limit = 64
+
+  [completion.generation_config]
+  model = "openai/gpt-4o"
+  temperature = 0.1
+  top_p = 1
+  max_tokens_to_sample = 1024
+  stream = false
+  add_generation_kwargs = { }
+
+[crypto]
+provider = "bcrypt"
+
+[database]
+provider = "postgres"
+default_collection_name = "Default"
+default_collection_description = "Your default collection."
+batch_size = 256
+
+  [database.graph_creation_settings]
+    clustering_mode = "local"
+    graph_entity_description_prompt = "graphrag_entity_description"
+    entity_types = []
+    relation_types = []
+    fragment_merge_count = 1
+    max_knowledge_relationships = 100
+    max_description_input_length = 65536
+    generation_config = { model = "openai/gpt-4o-mini" }
+
+  [database.graph_entity_deduplication_settings]
+    graph_entity_deduplication_type = "by_name"
+    graph_entity_deduplication_prompt = "graphrag_entity_deduplication"
+    max_description_input_length = 65536
+    generation_config = { model = "openai/gpt-4o-mini" }
+
+  [database.graph_enrichment_settings]
+    community_reports_prompt = "graphrag_community_reports"
+    max_summary_input_length = 65536
+    generation_config = { model = "openai/gpt-4o-mini" }
+    leiden_params = {}
+
+  [database.graph_search_settings]
+    generation_config = { model = "openai/gpt-4o-mini" }
+
+  [database.limits]
+    global_per_min = 300
+    monthly_limit = 10000
+
+  [database.route_limits]
+    "/v3/retrieval/search" = { route_per_min = 120 }
+    "/v3/retrieval/rag" = { route_per_min = 30 }
+
+[embedding]
+provider = "litellm"
+base_model = "openai/text-embedding-3-small"
+base_dimension = 512
+batch_size = 128
+add_title_as_prefix = false
+concurrent_request_limit = 256
+quantization_settings = { quantization_type = "FP32" }
+
+[file]
+provider = "postgres"
+
+[ingestion]
+provider = "r2r"
+chunking_strategy = "recursive"
+chunk_size = 1024
+chunk_overlap = 512
+excluded_parsers = ["mp4"]
+document_summary_model = "openai/gpt-4o-mini"
+vision_img_model = "openai/gpt-4o"
+vision_pdf_model = "openai/gpt-4o"
+
+  [ingestion.chunk_enrichment_settings]
+    enable_chunk_enrichment = false
+    strategies = ["semantic", "neighborhood"]
+    forward_chunks = 3
+    backward_chunks = 3
+    semantic_neighbors = 10
+    semantic_similarity_threshold = 0.7
+    generation_config = { model = "openai/gpt-4o-mini" }
+
+  [ingestion.extra_parsers]
+    pdf = "zerox"
+
+[logging]
+provider = "r2r"
+log_table = "logs"
+log_info_table = "log_info"
+
+[orchestration]
+provider = "simple"
+
+[prompt]
+provider = "r2r"
+
+[email]
+provider = "console_mock"
+```
+
+### **Key Configuration Sections**
+
+- **[app]**: Sets default limits for documents, chunks, and collections per user.
+- **[agent]**: Configures the RAG agent, specifying tools and generation models.
+- **[auth]**: Authentication settings, including token lifetimes and default admin credentials.
+- **[completion]**: Settings for text completion, including provider and generation configurations.
+- **[crypto]**: Cryptographic provider.
+- **[database]**: PostgreSQL settings, knowledge graph configurations, and rate limits.
+- **[embedding]**: Embedding provider configurations.
+- **[file]**: File storage provider.
+- **[ingestion]**: Data ingestion settings, including chunking strategies and enrichment configurations.
+- **[logging]**: Logging provider and tables.
+- **[orchestration]**: Orchestration provider settings.
+- **[prompt]**: Prompt management provider.
+- **[email]**: Email provider settings.
+
+> **Customization**: Adjust the `r2r.toml` file according to your specific requirements. Ensure that all paths, models, and service URLs match your deployment environment.
+
+---
+
+## **Maintenance and Scaling**
+
+### **Vector Indices**
+
+**Do You Need Vector Indices?**
+
+Vector indices enhance search capabilities but are not necessary for all deployments, especially in multi-user environments with user-specific filtering.
+
+**When to Implement Vector Indices:**
+
+- Large-scale searches across hundreds of thousands of documents.
+- When query latency becomes a bottleneck.
+- Supporting cross-user search functionalities.
+
+**Vector Index Management:**
+
+R2R supports various indexing methods, with HNSW (Hierarchical Navigable Small World) recommended for most use cases.
+
+**Example: Creating and Deleting a Vector Index**
+
+```python
+from r2r import R2RClient
+
+client = R2RClient()
+
+# Create vector index
+create_response = client.indices.create(
+    {
+        "table_name": "vectors",
+        "index_method": "hnsw",
+        "index_measure": "cosine_distance",
+        "index_arguments": {
+            "m": 16,
+            "ef_construction": 64
+        },
+    }
+)
+
+# List existing indices
+indices = client.indices.list()
+
+# Delete an index
+delete_response = client.indices.delete(
+    index_name="ix_vector_cosine_ops_hnsw__20241021211541",
+    table_name="vectors",
+)
+
+print('delete_response = ', delete_response)
+```
+
+**Important Considerations:**
+
+1. **Pre-warming**: New indices start "cold" and require warming for optimal performance.
+2. **Resource Usage**: Index creation is CPU and memory-intensive. Perform during off-peak hours.
+3. **Performance Tuning**:
+   - **HNSW Parameters**:
+     - `m`: 16-64 (higher = better quality, more memory)
+     - `ef_construction`: 64-100 (higher = better quality, longer build time)
+   - **Distance Measures**:
+     - `cosine_distance`: Best for normalized vectors.
+     - `l2_distance`: Better for absolute distances.
+     - `max_inner_product`: Optimized for dot product similarity.
+
+### **System Updates and Maintenance**
+
+**Version Management**
+
+Check the current R2R version:
+
+```bash
+docker-compose -f compose.full_with_replicas.yaml exec r2r r2r version
+```
+
+**Update Process**
+
+1. **Prepare for Update**
+
+   ```bash
+   docker-compose -f compose.full_with_replicas.yaml exec r2r r2r version
+   docker-compose -f compose.full_with_replicas.yaml exec r2r r2r db current
+   docker-compose -f compose.full_with_replicas.yaml exec r2r r2r generate-report
+   ```
+
+2. **Stop Running Services**
+
+   ```bash
+   docker-compose -f compose.full_with_replicas.yaml down
+   ```
+
+3. **Update R2R**
+
+   ```bash
+   docker-compose -f compose.full_with_replicas.yaml pull
+   docker-compose -f compose.full_with_replicas.yaml up -d --build
+   ```
+
+4. **Update Database**
+
+   ```bash
+   docker-compose -f compose.full_with_replicas.yaml exec r2r r2r db upgrade
+   ```
+
+5. **Restart Services**
+
+   ```bash
+   docker-compose -f compose.full_with_replicas.yaml up -d
+   ```
+
+**Database Migration Management**
+
+Check current migration:
+
+```bash
+docker-compose -f compose.full_with_replicas.yaml exec r2r r2r db current
+```
+
+Apply migrations:
+
+```bash
+docker-compose -f compose.full_with_replicas.yaml exec r2r r2r db upgrade
+```
+
+Rollback if necessary:
+
+```bash
+docker-compose -f compose.full_with_replicas.yaml exec r2r r2r db downgrade --revision <previous-working-version>
+```
+
+### **Managing Multiple Environments**
+
+Use different project names and schemas for development, staging, and production environments.
+
+**Example:**
+
+```bash
+# Development
+export R2R_PROJECT_NAME=r2r_dev
+docker-compose -f compose.full_with_replicas.yaml up -d
+
+# Staging
+export R2R_PROJECT_NAME=r2r_staging
+docker-compose -f compose.full_with_replicas.yaml up -d
+
+# Production
+export R2R_PROJECT_NAME=r2r_prod
+docker-compose -f compose.full_with_replicas.yaml up -d
+```
+
+---
+
+## **Security Considerations**
+
+Ensuring the security of your deployment is paramount. Follow these best practices to secure your R2R deployment.
+
+1. **Secure Environment Variables**
+
+   - Store sensitive information like API keys and passwords securely.
+   - Avoid hardcoding secrets in configuration files. Use environment variables or secret management tools.
+
+2. **Use HTTPS**
+
+   - Configure Nginx to use HTTPS with valid SSL certificates to encrypt data in transit.
+   - Update `nginx.conf` to include SSL configurations.
+
+3. **Restrict Access to Services**
+
+   - Limit access to PostgreSQL and RabbitMQ to only necessary services.
+   - Use firewall rules to restrict external access to sensitive ports.
+
+4. **Strong Passwords**
+
+   - Use strong, unique passwords for all services, especially for PostgreSQL and RabbitMQ.
+   - Regularly update and rotate passwords.
+
+5. **Enable Authentication and Verification**
+
+   - In `r2r.toml`, set `require_authentication = true` and `require_email_verification = true` for production environments.
+   - Update default admin credentials immediately after deployment.
+
+6. **Rate Limiting**
+
+   - Configure rate limits in `r2r.toml` to prevent abuse:
+     ```toml
+     [database.route_limits]
+       "/v3/retrieval/search" = { route_per_min = 120 }
+       "/v3/retrieval/rag" = { route_per_min = 30 }
+     ```
+
+7. **Regular Security Audits**
+
+   - Periodically review logs and monitor for suspicious activities.
+   - Keep all services and dependencies updated with the latest security patches.
+
+8. **Secure Nginx Configuration**
+
+   - Ensure Nginx is properly configured to prevent vulnerabilities like open redirects and XSS attacks.
+   - Implement security headers:
+     ```nginx
+     add_header X-Content-Type-Options nosniff;
+     add_header X-Frame-Options DENY;
+     add_header X-XSS-Protection "1; mode=block";
+     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+     ```
+
+---
+
+## **Troubleshooting**
+
+Deployments can encounter issues. Below are common problems and their solutions.
+
+1. **Service Not Starting**
+
+   - **Check Logs**:
+     ```bash
+     docker-compose -f compose.full_with_replicas.yaml logs <service_name>
+     ```
+   - **Example**:
+     ```bash
+     docker-compose -f compose.full_with_replicas.yaml logs r2r
+     ```
+
+2. **Database Connection Issues**
+
+   - **Verify Environment Variables**: Ensure `R2R_POSTGRES_HOST`, `R2R_POSTGRES_PORT`, `R2R_POSTGRES_USER`, and `R2R_POSTGRES_PASSWORD` are correct.
+   - **Check Service Status**:
+     ```bash
+     docker-compose -f compose.full_with_replicas.yaml ps
+     ```
+
+3. **Healthchecks Failing**
+
+   - **Inspect Health Status**:
+     ```bash
+     docker inspect --format='{{json .State.Health}}' <container_name>
+     ```
+   - **Restart Services**:
+     ```bash
+     docker-compose -f compose.full_with_replicas.yaml restart <service_name>
+     ```
+
+4. **API Not Responding**
+
+   - **Ensure R2R is Running**:
+     ```bash
+     docker-compose -f compose.full_with_replicas.yaml ps
+     ```
+   - **Check Network Connectivity**:
+     ```bash
+     docker-compose -f compose.full_with_replicas.yaml exec r2r ping postgres
+     ```
+
+5. **Token Generation Issues**
+
+   - **Verify `setup-token` Service Logs**:
+     ```bash
+     docker-compose -f compose.full_with_replicas.yaml logs setup-token
+     ```
+   - **Ensure `hatchet_api_key` Volume is Mounted Correctly**
+
+6. **Nginx Proxy Issues**
+
+   - **Check Nginx Configuration**: Ensure `nginx.conf` correctly routes traffic.
+   - **Reload Nginx**:
+     ```bash
+     docker-compose -f compose.full_with_replicas.yaml exec nginx nginx -s reload
+     ```
+
+7. **Unstructured Service Failures**
+
+   - **Check Dependencies**: Ensure all system dependencies are installed.
+   - **Inspect Logs**:
+     ```bash
+     docker-compose -f compose.full_with_replicas.yaml logs unstructured
+     ```
+
+---
+
+## **Conclusion**
+
+Deploying R2R involves orchestrating multiple services to work seamlessly together. By following this guide, you should be able to set up a robust and secure R2R deployment tailored to your needs. Remember to regularly update your services, monitor performance, and enforce security best practices to maintain the integrity and efficiency of your R2R application.
+
+For further assistance, refer to the [R2R Comprehensive Documentation](#) or reach out to the [SciPhi AI Support Team](mailto:support@sciphi.ai).
