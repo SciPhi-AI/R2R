@@ -1696,7 +1696,7 @@ class DocumentsRouter(BaseRouterV3):
             filters: Optional[dict] = Body(
                 None, description="Filters to apply to the export"
             ),
-            include_header: bool = Body(
+            include_header: Optional[bool] = Body(
                 True, description="Whether to include column headers"
             ),
             # auth_user=Depends(self.providers.auth.auth_wrapper),
@@ -1707,6 +1707,7 @@ class DocumentsRouter(BaseRouterV3):
             This endpoint streams the CSV data directly from the database to the client,
             making it memory-efficient and suitable for large exports.
             """
+            print("Exporting documents")
             # FIXME: Auth is broken within the crypto provider
             return StreamingResponse(
                 self.services.management.export_documents(

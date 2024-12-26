@@ -225,11 +225,15 @@ class ManagementService(Service):
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> AsyncGenerator[str, None]:
-        return await self.providers.database.documents_handler.export_to_csv(
+        db_generator = self.providers.database.documents_handler.export_to_csv(
             columns=columns,
             filters=filters,
             include_header=include_header,
         )
+        async for chunk in db_generator:
+            print(chunk)
+            yield chunk
+
 
     @telemetry_event("DocumentsOverview")
     async def documents_overview(

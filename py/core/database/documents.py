@@ -850,15 +850,19 @@ class PostgresDocumentsHandler(Handler):
         select_stmt = f"{select_stmt} ORDER BY created_at DESC"
 
         try:
+            print("About to open connection/transaction")
             async with self.connection_manager.pool.get_connection() as conn:
                 async with conn.transaction():
+                    print("Got in db metod")
                     cursor = await conn.cursor(select_stmt, *params)
 
                     if include_header:
+                        print("Got in header")
                         yield ",".join(columns) + "\n"
 
                     chunk_size = 1000
                     while True:
+                        print("Got in while loop")
                         rows = await cursor.fetch(chunk_size)
                         if not rows:
                             break
