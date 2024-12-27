@@ -104,7 +104,6 @@ class R2RClient(R2RAsyncClient):
     def _make_sync_method(
         self, async_method: Callable[..., Coroutine[Any, Any, T]]
     ) -> Callable[..., T]:
-
         @functools.wraps(async_method)
         def wrapped(*args, **kwargs):
             return self._loop.run_until_complete(async_method(*args, **kwargs))

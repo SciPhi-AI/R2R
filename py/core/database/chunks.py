@@ -423,7 +423,6 @@ class PostgresChunksHandler(Handler):
     async def full_text_search(
         self, query_text: str, search_settings: SearchSettings
     ) -> list[ChunkSearchResult]:
-
         conditions = []
         params: list[str | int | bytes] = [query_text]
 
@@ -506,9 +505,9 @@ class PostgresChunksHandler(Handler):
         semantic_results: list[ChunkSearchResult] = await self.semantic_search(
             query_vector, semantic_settings
         )
-        full_text_results: list[ChunkSearchResult] = (
-            await self.full_text_search(query_text, full_text_settings)
-        )
+        full_text_results: list[
+            ChunkSearchResult
+        ] = await self.full_text_search(query_text, full_text_settings)
 
         semantic_limit = search_settings.limit
         full_text_limit = search_settings.hybrid_settings.full_text_limit
@@ -1049,7 +1048,6 @@ class PostgresChunksHandler(Handler):
         id: UUID,
         similarity_threshold: float = 0.5,
     ) -> list[dict[str, Any]]:
-
         table_name = self._get_table_name(PostgresChunksHandler.TABLE_NAME)
         query = f"""
         WITH target_vector AS (

@@ -20,31 +20,33 @@ Tests for the graphs commands in the CLI.
 """
 
 import json
-import pytest
 import uuid
+
+import pytest
 from click.testing import CliRunner
+
 from cli.commands.collections import create as create_collection
 from cli.commands.graphs import (
-    list,
-    retrieve,
-    reset,
-    update,
-    list_entities,
-    get_entity,
-    remove_entity,
-    list_relationships,
-    get_relationship,
-    remove_relationship,
     build,
-    list_communities,
-    get_community,
-    update_community,
     delete_community,
+    get_community,
+    get_entity,
+    get_relationship,
+    list,
+    list_communities,
+    list_entities,
+    list_relationships,
     pull,
     remove_document,
+    remove_entity,
+    remove_relationship,
+    reset,
+    retrieve,
+    update,
+    update_community,
 )
-from tests.cli.async_invoke import async_invoke
 from r2r import R2RAsyncClient
+from tests.cli.async_invoke import async_invoke
 
 
 def extract_json_block(output: str) -> dict:

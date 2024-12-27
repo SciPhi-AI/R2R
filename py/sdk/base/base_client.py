@@ -69,7 +69,6 @@ class BaseClient:
         return f"{self.base_url}/{version}/{endpoint}"
 
     def _prepare_request_args(self, endpoint: str, **kwargs) -> dict:
-
         headers = kwargs.pop("headers", {})
         if (self.access_token or self.api_key) and endpoint not in [
             "register",

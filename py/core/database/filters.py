@@ -141,9 +141,9 @@ class SQLFilterBuilder:
         else:
             self.top_level_columns = set(top_level_columns)
         self.json_column = json_column
-        self.params: list[Any] = (
-            params  # params are mutated during construction
-        )
+        self.params: list[
+            Any
+        ] = params  # params are mutated during construction
         self.mode = mode
 
     def build(self, expr: FilterExpression) -> Tuple[str, list[Any]]:

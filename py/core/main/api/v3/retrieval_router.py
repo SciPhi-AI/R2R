@@ -82,7 +82,6 @@ class RetrievalRouterV3(BaseRouterV3):
         return effective_settings
 
     def _setup_routes(self):
-
         @self.router.post(
             "/retrieval/search",
             dependencies=[Depends(self.rate_limit_dependency)],

@@ -1,9 +1,9 @@
 import json
+from builtins import list as _list
+from uuid import UUID
 
 import asyncclick as click
 from asyncclick import pass_context
-from builtins import list as _list
-from uuid import UUID
 
 from cli.utils.timer import timer
 from r2r import R2RAsyncClient, R2RException

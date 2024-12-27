@@ -1,16 +1,41 @@
+# from .main import load_config
+import json
+import types
 from functools import wraps
-from rich.console import Console
+from pathlib import Path
+from typing import Any, Never
+
 import asyncclick as click
-from rich import box
-from rich.table import Table
 from asyncclick import pass_context
 from asyncclick.exceptions import Exit
-import types
-from typing import Any, Never
+from rich import box
+from rich.console import Console
+from rich.table import Table
 
 from sdk import R2RAsyncClient
 
 console = Console()
+
+CONFIG_DIR = Path.home() / ".r2r"
+CONFIG_FILE = CONFIG_DIR / "config.json"
+
+
+def load_config() -> dict[str, Any]:
+    """
+    Load the CLI config from ~/.r2r/config.json.
+    Returns an empty dict if the file doesn't exist or is invalid.
+    """
+    if not CONFIG_FILE.is_file():
+        return {}
+    try:
+        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            # Ensure we always have a dict
+            if not isinstance(data, dict):
+                return {}
+            return data
+    except (IOError, json.JSONDecodeError):
+        return {}
 
 
 def silent_exit(ctx, code=0):
@@ -118,6 +143,28 @@ class CustomContext(click.Context):
         raise SystemExit(code)
 
 
+def initialize_client(base_url: str) -> R2RAsyncClient:
+    """Initialize R2R client with API key from config if available."""
+    client = R2RAsyncClient()
+
+    try:
+        config = load_config()
+        if api_key := config.get("api_key"):
+            client.set_api_key(api_key)
+            if not client.api_key:
+                console.print(
+                    "[yellow]Warning: API key not properly set in client[/yellow]"
+                )
+
+    except Exception as e:
+        console.print(
+            "[yellow]Warning: Failed to load API key from config[/yellow]"
+        )
+        console.print_exception()
+
+    return client
+
+
 @click.group(cls=CustomGroup)
 @click.option(
     "--base-url", default="http://localhost:7272", help="Base URL for the API"
@@ -125,4 +172,4 @@ class CustomContext(click.Context):
 @pass_context
 async def cli(ctx: click.Context, base_url: str) -> None:
     """R2R CLI for all core operations."""
-    ctx.obj = R2RAsyncClient(base_url=base_url)
+    ctx.obj = initialize_client(base_url)

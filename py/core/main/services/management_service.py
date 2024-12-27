@@ -455,7 +455,6 @@ class ManagementService(Service):
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
-
         x = await self.providers.database.users_handler.remove_user_from_collection(
             user_id, collection_id
         )

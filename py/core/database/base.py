@@ -107,7 +107,6 @@ class QueryBuilder:
 
 
 class PostgresConnectionManager(DatabaseConnectionManager):
-
     def __init__(self):
         self.pool: Optional[SemaphoreConnectionPool] = None
 

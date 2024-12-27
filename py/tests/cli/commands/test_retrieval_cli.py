@@ -5,16 +5,15 @@ Tests for the retrieval commands in the CLI.
 """
 
 import json
-import pytest
 import tempfile
+
+import pytest
 from click.testing import CliRunner
+
 from cli.commands.documents import create as create_document
-from cli.commands.retrieval import (
-    search,
-    rag,
-)
-from tests.cli.async_invoke import async_invoke
+from cli.commands.retrieval import rag, search
 from r2r import R2RAsyncClient
+from tests.cli.async_invoke import async_invoke
 
 
 def extract_json_block(output: str) -> dict:

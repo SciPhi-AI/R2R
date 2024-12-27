@@ -361,7 +361,6 @@ class R2RAuthProvider(AuthProvider):
 
     async def request_password_reset(self, email: str) -> dict[str, str]:
         try:
-
             user = (
                 await self.database_provider.users_handler.get_user_by_email(
                     email=email

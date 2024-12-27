@@ -6,15 +6,14 @@ Tests for the prompts commands in the CLI.
 """
 
 import json
-import pytest
 import uuid
+
+import pytest
 from click.testing import CliRunner
-from cli.commands.prompts import (
-    list,
-    retrieve,
-)
-from tests.cli.async_invoke import async_invoke
+
+from cli.commands.prompts import list, retrieve
 from r2r import R2RAsyncClient
+from tests.cli.async_invoke import async_invoke
 
 
 def extract_json_block(output: str) -> dict:

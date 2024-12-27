@@ -31,7 +31,6 @@ class UsersRouter(BaseRouterV3):
         super().__init__(providers, services)
 
     def _setup_routes(self):
-
         @self.router.post(
             "/users",
             # dependencies=[Depends(self.rate_limit_dependency)],
@@ -97,15 +96,12 @@ class UsersRouter(BaseRouterV3):
         async def register(
             email: EmailStr = Body(..., description="User's email address"),
             password: str = Body(..., description="User's password"),
-            name: str | None = Body(
-                None, description="The name for the new user"
-            ),
-            bio: str | None = Body(
-                None, description="The bio for the new user"
-            ),
-            profile_picture: str | None = Body(
-                None, description="Updated user profile picture"
-            ),
+            name: str
+            | None = Body(None, description="The name for the new user"),
+            bio: str
+            | None = Body(None, description="The bio for the new user"),
+            profile_picture: str
+            | None = Body(None, description="Updated user profile picture"),
             # auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUserResponse:
             """Register a new user with the given email and password."""
@@ -1318,17 +1314,14 @@ class UsersRouter(BaseRouterV3):
         @self.base_endpoint
         async def update_user(
             id: UUID = Path(..., description="ID of the user to update"),
-            email: EmailStr | None = Body(
-                None, description="Updated email address"
-            ),
-            is_superuser: bool | None = Body(
-                None, description="Updated superuser status"
-            ),
+            email: EmailStr
+            | None = Body(None, description="Updated email address"),
+            is_superuser: bool
+            | None = Body(None, description="Updated superuser status"),
             name: str | None = Body(None, description="Updated user name"),
             bio: str | None = Body(None, description="Updated user bio"),
-            profile_picture: str | None = Body(
-                None, description="Updated profile picture URL"
-            ),
+            profile_picture: str
+            | None = Body(None, description="Updated profile picture URL"),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUserResponse:
             """

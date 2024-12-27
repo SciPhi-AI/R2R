@@ -186,7 +186,6 @@ class R2RIngestionProvider(IngestionProvider):
         parsed_document: str | DocumentChunk,
         ingestion_config_override: dict,
     ) -> AsyncGenerator[Any, None]:
-
         text_spliiter = self.text_splitter
         if ingestion_config_override:
             text_spliiter = self._build_text_splitter(

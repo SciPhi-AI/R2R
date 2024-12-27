@@ -220,7 +220,6 @@ class UnstructuredIngestionProvider(IngestionProvider):
         document: Document,
         ingestion_config_override: dict,
     ) -> AsyncGenerator[DocumentChunk, None]:
-
         ingestion_config = copy(
             {
                 **self.config.to_ingestion_request(),

@@ -262,6 +262,5 @@ class GraphSearchSearchPipe(GeneratorPipe):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[GraphSearchResult, None]:
-
         async for result in self.search(input, state, run_id, search_settings):
             yield result

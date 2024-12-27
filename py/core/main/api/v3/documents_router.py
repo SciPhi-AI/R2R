@@ -1477,14 +1477,15 @@ class DocumentsRouter(BaseRouterV3):
                 raise R2RException("Document not found.", 404)
 
             # Get all entities for this document from the document_entity table
-            entities, count = (
-                await self.providers.database.graphs_handler.entities.get(
-                    parent_id=id,
-                    store_type="documents",
-                    offset=offset,
-                    limit=limit,
-                    include_embeddings=include_embeddings,
-                )
+            (
+                entities,
+                count,
+            ) = await self.providers.database.graphs_handler.entities.get(
+                parent_id=id,
+                store_type="documents",
+                offset=offset,
+                limit=limit,
+                include_embeddings=include_embeddings,
             )
 
             return entities, {"total_entries": count}  # type: ignore
@@ -1618,15 +1619,16 @@ class DocumentsRouter(BaseRouterV3):
                 raise R2RException("Document not found.", 404)
 
             # Get relationships for this document
-            relationships, count = (
-                await self.providers.database.graphs_handler.relationships.get(
-                    parent_id=id,
-                    store_type="documents",
-                    entity_names=entity_names,
-                    relationship_types=relationship_types,
-                    offset=offset,
-                    limit=limit,
-                )
+            (
+                relationships,
+                count,
+            ) = await self.providers.database.graphs_handler.relationships.get(
+                parent_id=id,
+                store_type="documents",
+                entity_names=entity_names,
+                relationship_types=relationship_types,
+                offset=offset,
+                limit=limit,
             )
 
             return relationships, {"total_entries": count}  # type: ignore

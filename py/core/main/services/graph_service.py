@@ -79,7 +79,6 @@ class GraphService(Service):
         **kwargs,
     ):
         try:
-
             logger.info(
                 f"KGService: Processing document {document_id} for KG extraction"
             )
@@ -138,7 +137,6 @@ class GraphService(Service):
         category: Optional[str] = None,
         metadata: Optional[dict] = None,
     ) -> Entity:
-
         description_embedding = str(
             await self.providers.embedding.async_get_embedding(description)
         )
@@ -162,7 +160,6 @@ class GraphService(Service):
         category: Optional[str] = None,
         metadata: Optional[dict] = None,
     ) -> Entity:
-
         description_embedding = None
         if description is not None:
             description_embedding = str(
@@ -272,7 +269,6 @@ class GraphService(Service):
         weight: Optional[float] = None,
         metadata: Optional[dict[str, Any] | str] = None,
     ) -> Relationship:
-
         description_embedding = None
         if description is not None:
             description_embedding = str(
@@ -471,7 +467,6 @@ class GraphService(Service):
         force_kg_creation: bool = False,
         **kwargs,
     ):
-
         document_status_filter = [
             KGExtractionStatus.PENDING,
             KGExtractionStatus.FAILED,
@@ -494,7 +489,6 @@ class GraphService(Service):
         max_description_input_length: int,
         **kwargs,
     ):
-
         start_time = time.time()
 
         logger.info(
@@ -568,7 +562,6 @@ class GraphService(Service):
         leiden_params: dict,
         **kwargs,
     ):
-
         logger.info(
             f"Running ClusteringPipe for collection {collection_id} with settings {leiden_params}"
         )
@@ -670,7 +663,6 @@ class GraphService(Service):
         graph_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings(),
         **kwargs,
     ):
-
         if graph_id is None and collection_id is None:
             raise ValueError(
                 "Either graph_id or collection_id must be provided"
@@ -731,7 +723,6 @@ class GraphService(Service):
         generation_config: GenerationConfig,
         **kwargs,
     ):
-
         logger.info(
             f"Running kg_entity_deduplication_summary for collection {collection_id} with settings {kwargs}"
         )
@@ -1064,7 +1055,6 @@ class GraphService(Service):
                 entities_id_map[entity.name] = result.id
 
             if extraction.relationships:
-
                 for relationship in extraction.relationships:
                     await self.providers.database.graphs_handler.relationships.create(
                         subject=relationship.subject,

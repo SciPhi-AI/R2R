@@ -72,7 +72,6 @@ class R2RApp:
         self._apply_cors()
 
     def _setup_routes(self):
-
         self.app.include_router(self.chunks_router, prefix="/v3")
         self.app.include_router(self.collections_router, prefix="/v3")
         self.app.include_router(self.conversations_router, prefix="/v3")
