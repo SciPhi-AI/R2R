@@ -1,6 +1,6 @@
 # type: ignore
-from typing import AsyncGenerator
 import logging
+from typing import AsyncGenerator
 
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (

@@ -1,7 +1,7 @@
 export interface UnprocessedChunk {
   id: string;
-  document_id?: string;
-  collection_ids: string[];
+  documentId?: string;
+  collectionIds: string[];
   metadata: Record<string, any>;
   text: string;
 }
@@ -12,7 +12,7 @@ export interface ResultsWrapper<T> {
 }
 
 export interface PaginatedResultsWrapper<T> extends ResultsWrapper<T> {
-  total_entries: number;
+  totalEntries: number;
 }
 
 // Generic response types
@@ -27,9 +27,9 @@ export interface GenericMessageResponse {
 // Chunk types
 export interface ChunkResponse {
   id: string;
-  document_id: string;
-  user_id: string;
-  collection_ids: string[];
+  documentId: string;
+  userId: string;
+  collectionIds: string[];
   text: string;
   metadata: Record<string, any>;
   vector?: any;
@@ -38,15 +38,15 @@ export interface ChunkResponse {
 // Collection types
 export interface CollectionResponse {
   id: string;
-  owner_id?: string;
+  ownerId?: string;
   name: string;
   description?: string;
-  graph_cluster_status: string;
-  graph_sync_status: string;
-  created_at: string;
-  updated_at: string;
-  user_count: number;
-  document_count: number;
+  graphClusterStatus: string;
+  graphSyncStatus: string;
+  createdAt: string;
+  updatedAt: string;
+  userCount: number;
+  documentCount: number;
 }
 
 // Community types
@@ -66,8 +66,8 @@ export interface CommunityResponse {
 // Conversation types
 export interface ConversationResponse {
   id: string;
-  created_at: string;
-  user_id?: string;
+  createdAt: string;
+  userId?: string;
   name?: string;
 }
 
@@ -79,20 +79,20 @@ export interface MessageResponse {
 // Document types
 export interface DocumentResponse {
   id: string;
-  collection_ids: string[];
-  owner_id: string;
-  document_type: string;
+  collectionIds: string[];
+  ownerId: string;
+  documentType: string;
   metadata: Record<string, any>;
   title?: string;
   version: string;
-  size_in_bytes?: number;
-  ingestion_status: string;
-  extraction_status: string;
-  created_at: string;
-  updated_at: string;
-  ingestion_attempt_number?: number;
+  sizeInBytes?: number;
+  ingestionStatus: string;
+  extractionStatus: string;
+  createdAt: string;
+  updatedAt: string;
+  ingestionAttemptNumber?: number;
   summary?: string;
-  summary_embedding?: string;
+  summaryEmbedding?: string;
 }
 
 // Entity types
@@ -102,20 +102,20 @@ export interface EntityResponse {
   description?: string;
   category?: string;
   metadata: Record<string, any>;
-  parent_id?: string;
-  chunk_ids?: string[];
-  description_embedding?: string;
+  parentId?: string;
+  chunkIds?: string[];
+  descriptionEmbedding?: string;
 }
 
 // Graph types
 export interface GraphResponse {
   id: string;
-  user_id: string;
+  userId: string;
   name: string;
   description: string;
   status: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Index types
@@ -128,24 +128,24 @@ export enum IndexMeasure {
 // Ingestion types
 export interface IngestionResponse {
   message: string;
-  task_id?: string;
-  document_id: string;
+  taskId?: string;
+  documentId: string;
 }
 
 export interface UpdateResponse {
   message: string;
-  task_id?: string;
-  document_id: string;
+  taskId?: string;
+  documentId: string;
 }
 
 export interface IndexConfig {
   name?: string;
-  table_name?: string;
-  index_method?: string;
-  index_measure?: string;
-  index_arguments?: string;
-  index_name?: string;
-  index_column?: string;
+  tableName?: string;
+  indexMethod?: string;
+  indexMeasure?: string;
+  indexArguments?: string;
+  indexName?: string;
+  indexColumn?: string;
   concurrently?: boolean;
 }
 
@@ -154,9 +154,9 @@ export interface PromptResponse {
   id: string;
   name: string;
   template: string;
-  created_at: string;
-  updated_at: string;
-  input_types: string[];
+  createdAt: string;
+  updatedAt: string;
+  inputTypes: string[];
 }
 
 // Relationship types
@@ -166,71 +166,72 @@ export interface RelationshipResponse {
   predicate: string;
   object: string;
   description?: string;
-  subject_id: string;
-  object_id: string;
+  subjectId: string;
+  objectId: string;
   weight: number;
-  chunk_ids: string[];
-  parent_id: string;
+  chunkIds: string[];
+  parentId: string;
   metadata: Record<string, any>;
 }
 
 // Retrieval types
 export interface ChunkSearchSettings {
-  index_measure?: IndexMeasure;
+  indexMeasure?: IndexMeasure;
   probes?: number;
-  ef_search?: number;
+  efSearch?: number;
   enabled?: boolean;
 }
 
 export interface GenerationConfig {
   model?: string;
   temperature?: number;
-  top_p?: number;
-  max_tokens_to_sample?: number;
+  topP?: number;
+  maxTokensToSample?: number;
   stream?: boolean;
   functions?: Array<Record<string, any>>;
   tools?: Array<Record<string, any>>;
-  add_generation_kwargs?: Record<string, any>;
-  api_base?: string;
-  response_format?: string;
+  addGenerationKwargs?: Record<string, any>;
+  apiBase?: string;
+  responseFormat?: string;
 }
 
 export interface HybridSearchSettings {
-  full_text_weight?: number;
-  semantic_weight?: number;
-  full_text_limit?: number;
-  rrf_k?: number;
+  fullTextWeight?: number;
+  semanticWeight?: number;
+  fullTextLimit?: number;
+  rrfK?: number;
 }
 
 export interface GraphSearchSettings {
-  generation_config?: GenerationConfig;
-  graphrag_map_system?: string;
-  graphrag_reduce_system?: string;
-  max_community_description_length?: number;
-  max_llm_queries_for_global_search?: number;
+  generationConfig?: GenerationConfig;
+  graphragMapSystem?: string;
+  graphragReduceSystem?: string;
+  maxCommunityDescriptionLength?: number;
+  maxLlmQueriesForGlobalSearch?: number;
   limits?: Record<string, any>;
   enabled?: boolean;
 }
 
 export interface SearchSettings {
-  use_hybrid_search?: boolean;
-  use_semantic_search?: boolean;
-  use_full_text_search?: boolean;
+  useHybridSearch?: boolean;
+  useSemanticSearch?: boolean;
+  useFullTextSearch?: boolean;
   filters?: Record<string, any>;
   limit?: number;
   offset?: number;
-  include_metadata?: boolean;
-  include_scores?: boolean;
-  search_strategy?: string;
-  hybrid_settings?: HybridSearchSettings;
-  chunk_settings?: ChunkSearchSettings;
-  graph_settings?: GraphSearchSettings;
+  includeMetadata?: boolean;
+  includeScores?: boolean;
+  searchStrategy?: string;
+  hybridSettings?: HybridSearchSettings;
+  chunkSettings?: ChunkSearchSettings;
+  graphSettings?: GraphSearchSettings;
 }
+
 export interface VectorSearchResult {
-  chunk_id: string;
-  document_id: string;
-  user_id: string;
-  collection_ids: string[];
+  chunkId: string;
+  documentId: string;
+  userId: string;
+  collectionIds: string[];
   score: number;
   text: string;
   metadata?: Record<string, any>;
@@ -244,53 +245,53 @@ export type KGSearchResultType =
 
 export interface GraphSearchResult {
   content: any;
-  result_type?: KGSearchResultType;
-  chunk_ids?: string[];
+  resultType?: KGSearchResultType;
+  chunkIds?: string[];
   metadata: Record<string, any>;
   score?: number;
 }
 
 export interface CombinedSearchResponse {
-  chunk_search_results: VectorSearchResult[];
-  graph_search_results?: GraphSearchResult[];
+  chunkSearchResults: VectorSearchResult[];
+  graphSearchResults?: GraphSearchResult[];
 }
 
 // System types
 
 export interface ServerStats {
-  start_time: string;
-  uptime_seconds: number;
-  cpu_usage: number;
-  memory_usage: number;
+  startTime: string;
+  uptimeSeconds: number;
+  cpuUsage: number;
+  memoryUsage: number;
 }
 
 export interface SettingsResponse {
   config: Record<string, any>;
   prompts: Record<string, any>;
-  r2r_project_name: string;
+  r2rProjectName: string;
 }
 
 // User types
 
 export interface TokenResponse {
-  access_token: string;
-  refresh_token: string;
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface User {
   id: string;
   email: string;
-  is_active: boolean;
-  is_superuser: boolean;
-  created_at: string;
-  updated_at: string;
-  is_verified: boolean;
-  collection_ids: string[];
-  hashed_password?: string;
-  verification_code_expiry?: string;
+  isActive: boolean;
+  isSuperuser: boolean;
+  createdAt: string;
+  updatedAt: string;
+  isVerified: boolean;
+  collectionIds: string[];
+  hashedPassword?: string;
+  verificationCodeExpiry?: string;
   name?: string;
   bio?: string;
-  profile_picture?: string;
+  profilePicture?: string;
 }
 
 // Generic Responses

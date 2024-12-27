@@ -3,7 +3,7 @@ import logging
 from abc import abstractmethod
 from typing import Callable
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from fastapi.responses import StreamingResponse
 
 from core.base import R2RException, manage_run
@@ -182,7 +182,7 @@ class BaseRouterV3:
 
         async def rate_limit_dependency(
             request: Request,
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
             user_id = auth_user.id
             route = request.scope["path"]
@@ -206,4 +206,15 @@ class BaseRouterV3:
                     user_id, route
                 )
 
+        async def websocket_rate_limit_dependency(
+            websocket: WebSocket,
+        ):
+            route = websocket.scope["path"]
+            try:
+                return True
+            except ValueError as e:
+                await websocket.close(code=4429, reason="Rate limit exceeded")
+                return False
+
         self.rate_limit_dependency = rate_limit_dependency
+        self.websocket_rate_limit_dependency = websocket_rate_limit_dependency

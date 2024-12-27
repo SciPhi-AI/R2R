@@ -30,7 +30,7 @@ class SystemRouter(BaseRouterV3):
     def _setup_routes(self):
         @self.router.get(
             "/health",
-            dependencies=[Depends(self.rate_limit_dependency)],
+            # dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -144,7 +144,7 @@ class SystemRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def app_settings(
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedSettingsResponse:
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -210,7 +210,7 @@ class SystemRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def server_stats(
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedServerStatsResponse:
             if not auth_user.is_superuser:
                 raise R2RException(

@@ -142,12 +142,12 @@ class RetrievalRouterV3(BaseRouterV3):
                                     query: "Who is Aristotle?",
                                     search_settings: {
                                         filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                        use_semantic_search: true,
-                                        chunk_settings: {
+                                        useSemanticSearch: true,
+                                        chunkSettings: {
                                             limit: 20, # separate limit for chunk vs. graph
                                             enabled: true
                                         },
-                                        graph_settings: {
+                                        graphSettings: {
                                             enabled: true,
                                         }
                                     }
@@ -219,7 +219,7 @@ class RetrievalRouterV3(BaseRouterV3):
                     "Common overrides include `filters` to narrow results and `limit` to control how many results are returned."
                 ),
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedSearchResponse:
             """
             Perform a search query against vector and/or graph-based databases.
@@ -316,19 +316,19 @@ class RetrievalRouterV3(BaseRouterV3):
                                     query: "Who is Aristotle?",
                                     search_settings: {
                                         filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                        use_semantic_search: true,
-                                        chunk_settings: {
+                                        useSemanticSearch: true,
+                                        chunkSettings: {
                                             limit: 20, # separate limit for chunk vs. graph
                                             enabled: true
                                         },
-                                        graph_settings: {
+                                        graphSettings: {
                                             enabled: true,
                                         },
                                     },
-                                    rag_generation_config: {
+                                    ragGenerationConfig: {
                                         stream: false,
                                         temperature: 0.7,
-                                        max_tokens: 150
+                                        maxTokens: 150
                                     }
                                 });
                             }
@@ -412,7 +412,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 default=False,
                 description="Include document titles in responses when available",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRAGResponse:
             """
             Execute a RAG (Retrieval-Augmented Generation) query.
@@ -508,21 +508,21 @@ class RetrievalRouterV3(BaseRouterV3):
                                         role: "user",
                                         content: "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
                                     },
-                                    search_settings: {
+                                    searchSettings: {
                                         filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                        use_semantic_search: true,
-                                        chunk_settings: {
+                                        useSemanticSearch: true,
+                                        chunkSettings: {
                                             limit: 20, # separate limit for chunk vs. graph
                                             enabled: true
                                         },
-                                        graph_settings: {
+                                        graphSettings: {
                                             enabled: true,
                                         },
                                     },
-                                    rag_generation_config: {
+                                    ragGenerationConfig: {
                                         stream: false,
                                         temperature: 0.7,
-                                        max_tokens: 150
+                                        maxTokens: 150
                                     },
                                     includeTitleIfAvailable: true,
                                     conversationId: "550e8400-e29b-41d4-a716-446655440000"
@@ -612,7 +612,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 default=None,
                 description="ID of the conversation",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAgentResponse:
             """
             Engage with an intelligent RAG-powered conversational agent for complex information retrieval and analysis.
@@ -800,7 +800,7 @@ class RetrievalRouterV3(BaseRouterV3):
                     "stream": False,
                 },
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
             response_model=WrappedCompletionResponse,
         ):
             """
@@ -879,7 +879,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 ...,
                 description="Text to generate embeddings for",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
             """
             Generate embeddings for the provided text using the specified model.

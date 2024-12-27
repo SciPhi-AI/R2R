@@ -46,9 +46,9 @@ async def _collect_results(result_gen: AsyncGenerator) -> list[dict]:
     return results
 
 
-# TODO - Fix naming convention to read `KGService` instead of `KgService`
+# TODO - Fix naming convention to read `KGService` instead of `GraphService`
 # this will require a minor change in how services are registered.
-class KgService(Service):
+class GraphService(Service):
     def __init__(
         self,
         config: R2RConfig,
@@ -90,8 +90,8 @@ class KgService(Service):
                 status=KGExtractionStatus.PROCESSING,
             )
 
-            relationships = await self.pipes.kg_relationships_extraction_pipe.run(
-                input=self.pipes.kg_relationships_extraction_pipe.Input(
+            relationships = await self.pipes.graph_extraction_pipe.run(
+                input=self.pipes.graph_extraction_pipe.Input(
                     message={
                         "document_id": document_id,
                         "generation_config": generation_config,
@@ -110,8 +110,10 @@ class KgService(Service):
                 f"KGService: Finished processing document {document_id} for KG extraction"
             )
 
-            result_gen = await self.pipes.kg_storage_pipe.run(
-                input=self.pipes.kg_storage_pipe.Input(message=relationships),
+            result_gen = await self.pipes.graph_storage_pipe.run(
+                input=self.pipes.graph_storage_pipe.Input(
+                    message=relationships
+                ),
                 state=None,
                 run_manager=self.run_manager,
             )
@@ -525,8 +527,8 @@ class KgService(Service):
                 f"KGService: Running kg_entity_description for batch {i+1}/{num_batches} for document {document_id}"
             )
 
-            node_descriptions = await self.pipes.kg_entity_description_pipe.run(
-                input=self.pipes.kg_entity_description_pipe.Input(
+            node_descriptions = await self.pipes.graph_description_pipe.run(
+                input=self.pipes.graph_description_pipe.Input(
                     message={
                         "offset": i * 256,
                         "limit": 256,
@@ -571,8 +573,8 @@ class KgService(Service):
             f"Running ClusteringPipe for collection {collection_id} with settings {leiden_params}"
         )
 
-        clustering_result = await self.pipes.kg_clustering_pipe.run(
-            input=self.pipes.kg_clustering_pipe.Input(
+        clustering_result = await self.pipes.graph_clustering_pipe.run(
+            input=self.pipes.graph_clustering_pipe.Input(
                 message={
                     "collection_id": collection_id,
                     "generation_config": generation_config,
@@ -597,8 +599,8 @@ class KgService(Service):
         # graph_id: UUID | None,
         **kwargs,
     ):
-        summary_results = await self.pipes.kg_community_summary_pipe.run(
-            input=self.pipes.kg_community_summary_pipe.Input(
+        summary_results = await self.pipes.graph_community_summary_pipe.run(
+            input=self.pipes.graph_community_summary_pipe.Input(
                 message={
                     "offset": offset,
                     "limit": limit,
@@ -630,32 +632,18 @@ class KgService(Service):
         cascade: bool,
         **kwargs,
     ):
-        return await self.delete_graph_for_collection(
-            collection_id=collection_id, cascade=cascade
-        )
+        return await self.delete(collection_id=collection_id, cascade=cascade)
 
-    @telemetry_event("delete_graph_for_collection")
-    async def delete_graph_for_collection(
+    @telemetry_event("delete")
+    async def delete(
         self,
         collection_id: UUID,
         cascade: bool,
         **kwargs,
     ):
-        return await self.providers.database.graphs_handler.delete_graph_for_collection(
+        return await self.providers.database.graphs_handler.delete(
             collection_id=collection_id,
             cascade=cascade,
-        )
-
-    @telemetry_event("delete_node_via_document_id")
-    async def delete_node_via_document_id(
-        self,
-        document_id: UUID,
-        collection_id: UUID,
-        **kwargs,
-    ):
-        return await self.providers.database.graphs_handler.delete_node_via_document_id(
-            document_id=document_id,
-            collection_id=collection_id,
         )
 
     @telemetry_event("get_creation_estimate")
@@ -716,8 +704,8 @@ class KgService(Service):
         generation_config: GenerationConfig,
         **kwargs,
     ):
-        deduplication_results = await self.pipes.kg_entity_deduplication_pipe.run(
-            input=self.pipes.kg_entity_deduplication_pipe.Input(
+        deduplication_results = await self.pipes.graph_deduplication_pipe.run(
+            input=self.pipes.graph_deduplication_pipe.Input(
                 message={
                     "collection_id": collection_id,
                     "graph_id": graph_id,
@@ -747,8 +735,8 @@ class KgService(Service):
         logger.info(
             f"Running kg_entity_deduplication_summary for collection {collection_id} with settings {kwargs}"
         )
-        deduplication_summary_results = await self.pipes.kg_entity_deduplication_summary_pipe.run(
-            input=self.pipes.kg_entity_deduplication_summary_pipe.Input(
+        deduplication_summary_results = await self.pipes.graph_deduplication_summary_pipe.run(
+            input=self.pipes.graph_deduplication_summary_pipe.Input(
                 message={
                     "collection_id": collection_id,
                     "offset": offset,
@@ -780,7 +768,7 @@ class KgService(Service):
         start_time = time.time()
 
         logger.info(
-            f"KGExtractionPipe: Processing document {document_id} for KG extraction",
+            f"GraphExtractionPipe: Processing document {document_id} for KG extraction",
         )
 
         # Then create the extractions from the results
@@ -835,7 +823,7 @@ class KgService(Service):
                 return
 
         logger.info(
-            f"KGExtractionPipe: Obtained {len(chunks)} chunks to process, time from start: {time.time() - start_time:.2f} seconds",
+            f"GraphExtractionPipe: Obtained {len(chunks)} chunks to process, time from start: {time.time() - start_time:.2f} seconds",
         )
 
         # sort the extractions accroding to chunk_order field in metadata in ascending order
@@ -851,7 +839,7 @@ class KgService(Service):
         ]
 
         logger.info(
-            f"KGExtractionPipe: Extracting KG Relationships for document and created {len(grouped_chunks)} tasks, time from start: {time.time() - start_time:.2f} seconds",
+            f"GraphExtractionPipe: Extracting KG Relationships for document and created {len(grouped_chunks)} tasks, time from start: {time.time() - start_time:.2f} seconds",
         )
 
         tasks = [
@@ -873,7 +861,7 @@ class KgService(Service):
         total_tasks = len(tasks)
 
         logger.info(
-            f"KGExtractionPipe: Waiting for {total_tasks} KG extraction tasks to complete",
+            f"GraphExtractionPipe: Waiting for {total_tasks} KG extraction tasks to complete",
         )
 
         for completed_task in asyncio.as_completed(tasks):
@@ -882,7 +870,7 @@ class KgService(Service):
                 completed_tasks += 1
                 if completed_tasks % 100 == 0:
                     logger.info(
-                        f"KGExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks",
+                        f"GraphExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks",
                     )
             except Exception as e:
                 logger.error(f"Error in Extracting KG Relationships: {e}")
@@ -892,7 +880,7 @@ class KgService(Service):
                 )
 
         logger.info(
-            f"KGExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks, time from start: {time.time() - start_time:.2f} seconds",
+            f"GraphExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks, time from start: {time.time() - start_time:.2f} seconds",
         )
 
     async def _extract_kg(
@@ -1044,7 +1032,7 @@ class KgService(Service):
                     )
 
         logger.info(
-            f"KGExtractionPipe: Completed task number {task_id} of {total_tasks} for document {chunks[0].document_id}",
+            f"GraphExtractionPipe: Completed task number {task_id} of {total_tasks} for document {chunks[0].document_id}",
         )
 
         return KGExtraction(

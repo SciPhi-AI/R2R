@@ -13,10 +13,10 @@ from .document import (
 )
 from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import (
-    R2RDocumentProcessingError,
-    R2RException,
     PDFParsingError,
     PopperNotFoundError,
+    R2RDocumentProcessingError,
+    R2RException,
 )
 from .graph import Community, Entity, KGExtraction, Relationship
 from .kg import (

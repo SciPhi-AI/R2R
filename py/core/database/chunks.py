@@ -23,6 +23,7 @@ from core.base import (
 )
 
 from .base import PostgresConnectionManager
+from .filters import apply_filters
 from .vecs.exc import ArgError, FilterError
 
 logger = logging.getLogger()
@@ -82,13 +83,6 @@ class HybridSearchIntermediateResult(TypedDict):
 
 class PostgresChunksHandler(Handler):
     TABLE_NAME = VectorTableName.CHUNKS
-
-    COLUMN_VARS = [
-        "id",
-        "document_id",
-        "owner_id",
-        "collection_ids",
-    ]
 
     def __init__(
         self,
@@ -298,6 +292,7 @@ class PostgresChunksHandler(Handler):
         ]
 
         params: list[str | int | bytes] = []
+
         # For binary vectors (INT1), implement two-stage search
         if self.quantization_type == VectorQuantizationType.INT1:
             # Convert query vector to binary format
@@ -306,6 +301,7 @@ class PostgresChunksHandler(Handler):
             extended_limit = (
                 search_settings.limit * 20
             )  # Get 20x candidates for re-ranking
+
             if (
                 imeasure_obj == IndexMeasure.hamming_distance
                 or imeasure_obj == IndexMeasure.jaccard_distance
@@ -331,10 +327,9 @@ class PostgresChunksHandler(Handler):
             params.append(stage1_param)
 
             if search_settings.filters:
-                where_clause = self._build_filters(
-                    search_settings.filters, params
+                where_clause, params = apply_filters(
+                    search_settings.filters, params, mode="where_clause"
                 )
-                where_clause = f"WHERE {where_clause}"
 
             # First stage: Get candidates using binary search
             query = f"""
@@ -371,7 +366,7 @@ class PostgresChunksHandler(Handler):
             )
 
         else:
-            # Standard float vector handling - unchanged from original
+            # Standard float vector handling
             distance_calc = f"{table_name}.vec {search_settings.chunk_settings.index_measure.pgvector_repr} $1::vector({self.dimension})"
             query_param = str(query_vector)
 
@@ -385,10 +380,12 @@ class PostgresChunksHandler(Handler):
             params.append(query_param)
 
             if search_settings.filters:
-                where_clause = self._build_filters(
-                    search_settings.filters, params
+                where_clause, new_params = apply_filters(
+                    search_settings.filters,
+                    params,
+                    mode="where_clause",  # Get just conditions without WHERE
                 )
-                where_clause = f"WHERE {where_clause}"
+                params = new_params
 
             query = f"""
             SELECT {select_clause}
@@ -427,36 +424,36 @@ class PostgresChunksHandler(Handler):
         self, query_text: str, search_settings: SearchSettings
     ) -> list[ChunkSearchResult]:
 
-        where_clauses = []
+        conditions = []
         params: list[str | int | bytes] = [query_text]
 
-        if search_settings.filters:
-            filters_clause = self._build_filters(
-                search_settings.filters, params
-            )
-            where_clauses.append(filters_clause)
+        conditions.append("fts @@ websearch_to_tsquery('english', $1)")
 
-        if where_clauses:
-            where_clause = (
-                "WHERE "
-                + " AND ".join(where_clauses)
-                + " AND fts @@ websearch_to_tsquery('english', $1)"
+        if search_settings.filters:
+            filter_condition, params = apply_filters(
+                search_settings.filters, params, mode="condition_only"
             )
-        else:
-            where_clause = "WHERE fts @@ websearch_to_tsquery('english', $1)"
+            if filter_condition:
+                conditions.append(filter_condition)
+
+        where_clause = "WHERE " + " AND ".join(conditions)
 
         query = f"""
             SELECT
-                id, document_id, owner_id, collection_ids, text, metadata,
+                id,
+                document_id,
+                owner_id,
+                collection_ids,
+                text,
+                metadata,
                 ts_rank(fts, websearch_to_tsquery('english', $1), 32) as rank
             FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
             {where_clause}
+            ORDER BY rank DESC
+            OFFSET ${len(params)+1}
+            LIMIT ${len(params)+2}
         """
 
-        query += f"""
-            ORDER BY rank DESC
-            OFFSET ${len(params)+1} LIMIT ${len(params)+2}
-        """
         params.extend(
             [
                 search_settings.offset,
@@ -586,7 +583,9 @@ class PostgresChunksHandler(Handler):
         self, filters: dict[str, Any]
     ) -> dict[str, dict[str, str]]:
         params: list[str | int | bytes] = []
-        where_clause = self._build_filters(filters, params)
+        where_clause, params = apply_filters(
+            filters, params, mode="condition_only"
+        )
 
         query = f"""
         DELETE FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
@@ -856,157 +855,6 @@ class PostgresChunksHandler(Handler):
             raise Exception(f"Failed to create index: {e}")
         return None
 
-    def _build_filters(
-        self, filters: dict, parameters: list[str | int | bytes]
-    ) -> str:
-
-        def parse_condition(key: str, value: Any) -> str:  # type: ignore
-            # nonlocal parameters
-            if key in self.COLUMN_VARS:
-                # Handle column-based filters
-                if isinstance(value, dict):
-                    op, clause = next(iter(value.items()))
-                    if op == "$eq":
-                        parameters.append(clause)
-                        return f"{key} = ${len(parameters)}"
-                    elif op == "$ne":
-                        parameters.append(clause)
-                        return f"{key} != ${len(parameters)}"
-                    elif op == "$in":
-                        parameters.append(clause)
-                        return f"{key} = ANY(${len(parameters)})"
-                    elif op == "$nin":
-                        parameters.append(clause)
-                        return f"{key} != ALL(${len(parameters)})"
-                    elif op == "$overlap":
-                        parameters.append(clause)
-                        return f"{key} && ${len(parameters)}"
-                    elif op == "$contains":
-                        parameters.append(clause)
-                        return f"{key} @> ${len(parameters)}"
-                    elif op == "$any":
-                        if key == "collection_ids":
-                            parameters.append(f"%{clause}%")
-                            return f"array_to_string({key}, ',') LIKE ${len(parameters)}"
-                        parameters.append(clause)
-                        return f"${len(parameters)} = ANY({key})"
-                    else:
-                        raise FilterError(
-                            f"Unsupported operator for column {key}: {op}"
-                        )
-                else:
-                    # Handle direct equality
-                    parameters.append(value)
-                    return f"{key} = ${len(parameters)}"
-            else:
-                # Handle JSON-based filters
-                json_col = "metadata"
-                if key.startswith("metadata."):
-                    key = key.split("metadata.")[1]
-                if isinstance(value, dict):
-                    op, clause = next(iter(value.items()))
-                    if op not in (
-                        "$eq",
-                        "$ne",
-                        "$lt",
-                        "$lte",
-                        "$gt",
-                        "$gte",
-                        "$in",
-                        "$contains",
-                    ):
-                        raise FilterError("unknown operator")
-
-                    if op == "$eq":
-                        parameters.append(json.dumps(clause))
-                        return (
-                            f"{json_col}->'{key}' = ${len(parameters)}::jsonb"
-                        )
-                    elif op == "$ne":
-                        parameters.append(json.dumps(clause))
-                        return (
-                            f"{json_col}->'{key}' != ${len(parameters)}::jsonb"
-                        )
-                    elif op == "$lt":
-                        parameters.append(json.dumps(clause))
-                        return f"({json_col}->'{key}')::float < (${len(parameters)}::jsonb)::float"
-                    elif op == "$lte":
-                        parameters.append(json.dumps(clause))
-                        return f"({json_col}->'{key}')::float <= (${len(parameters)}::jsonb)::float"
-                    elif op == "$gt":
-                        parameters.append(json.dumps(clause))
-                        return f"({json_col}->'{key}')::float > (${len(parameters)}::jsonb)::float"
-                    elif op == "$gte":
-                        parameters.append(json.dumps(clause))
-                        return f"({json_col}->'{key}')::float >= (${len(parameters)}::jsonb)::float"
-                    elif op == "$in":
-                        # Ensure clause is a list
-                        if not isinstance(clause, list):
-                            raise FilterError(
-                                "argument to $in filter must be a list"
-                            )
-                        # Append the Python list as a parameter; many drivers can convert Python lists to arrays
-                        parameters.append(clause)
-                        # Cast the parameter to a text array type
-                        return f"(metadata->>'{key}')::text = ANY(${len(parameters)}::text[])"
-
-                    # elif op == "$in":
-                    #     if not isinstance(clause, list):
-                    #         raise FilterError(
-                    #             "argument to $in filter must be a list"
-                    #         )
-                    #     parameters.append(json.dumps(clause))
-                    #     return f"{json_col}->'{key}' = ANY(SELECT jsonb_array_elements(${len(parameters)}::jsonb))"
-                    elif op == "$contains":
-                        if isinstance(clause, (int, float, str)):
-                            clause = [clause]
-                        # Now clause is guaranteed to be a list or array-like structure.
-                        parameters.append(json.dumps(clause))
-                        return (
-                            f"{json_col}->'{key}' @> ${len(parameters)}::jsonb"
-                        )
-
-                        # if not isinstance(clause, (int, str, float, list)):
-                        #     raise FilterError(
-                        #         "argument to $contains filter must be a scalar or array"
-                        #     )
-                        # parameters.append(json.dumps(clause))
-                        # return (
-                        #     f"{json_col}->'{key}' @> ${len(parameters)}::jsonb"
-                        # )
-
-        def parse_filter(filter_dict: dict) -> str:
-            filter_conditions = []
-            for key, value in filter_dict.items():
-                if key == "$and":
-                    and_conditions = [
-                        parse_filter(f) for f in value if f
-                    ]  # Skip empty dictionaries
-                    if and_conditions:
-                        filter_conditions.append(
-                            f"({' AND '.join(and_conditions)})"
-                        )
-                elif key == "$or":
-                    or_conditions = [
-                        parse_filter(f) for f in value if f
-                    ]  # Skip empty dictionaries
-                    if or_conditions:
-                        filter_conditions.append(
-                            f"({' OR '.join(or_conditions)})"
-                        )
-                else:
-                    filter_conditions.append(parse_condition(key, value))
-
-            # Check if there is only a single condition
-            if len(filter_conditions) == 1:
-                return filter_conditions[0]
-            else:
-                return " AND ".join(filter_conditions)
-
-        where_clause = parse_filter(filters)
-
-        return where_clause
-
     async def list_indices(
         self,
         offset: int,
@@ -1254,46 +1102,31 @@ class PostgresChunksHandler(Handler):
                 - total_entries: Total number of chunks matching the filters
                 - page_info: Pagination information
         """
-        # Validate sort parameters
-        valid_sort_columns = {
-            "created_at": "metadata->>'created_at'",
-            "updated_at": "metadata->>'updated_at'",
-            "chunk_order": "metadata->>'chunk_order'",
-            "text": "text",
-        }
-
-        # Build the select clause
         vector_select = ", vec" if include_vectors else ""
         select_clause = f"""
             id, document_id, owner_id, collection_ids,
             text, metadata{vector_select}, COUNT(*) OVER() AS total
         """
 
-        # Build the where clause if filters are provided
-        where_clause = ""
         params: list[str | int | bytes] = []
+        where_clause = ""
         if filters:
-            where_clause = self._build_filters(filters, params)
-            where_clause = f"WHERE {where_clause}"
+            where_clause, params = apply_filters(
+                filters, params, mode="where_clause"
+            )
 
-        # Construct the final query
         query = f"""
         SELECT {select_clause}
         FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
         {where_clause}
-        LIMIT $%s
-        OFFSET $%s
+        LIMIT ${len(params) + 1}
+        OFFSET ${len(params) + 2}
         """
 
-        # Add pagination parameters
         params.extend([limit, offset])
-        param_indices = list(range(1, len(params) + 1))
-        formatted_query = query % tuple(param_indices)
 
         # Execute the query
-        results = await self.connection_manager.fetch_query(
-            formatted_query, params
-        )
+        results = await self.connection_manager.fetch_query(query, params)
 
         # Process results
         chunks = []
@@ -1422,7 +1255,7 @@ class PostgresChunksHandler(Handler):
 
         # Add any additional filters
         if settings.filters:
-            filter_clause = self._build_filters(settings.filters, params)
+            filter_clause, params = apply_filters(settings.filters, params)
             where_clauses.append(filter_clause)
 
         if where_clauses:

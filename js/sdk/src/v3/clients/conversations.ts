@@ -13,11 +13,20 @@ export class ConversationsClient {
 
   /**
    * Create a new conversation.
-   * @returns
+   * @param name The name of the conversation
+   * @returns The created conversation
    */
   @feature("conversations.create")
-  async create(): Promise<WrappedConversationResponse> {
-    return this.client.makeRequest("POST", "conversations");
+  async create(options?: {
+    name?: string;
+  }): Promise<WrappedConversationResponse> {
+    const data: Record<string, any> = {
+      ...(options?.name && { name: options?.name }),
+    };
+
+    return this.client.makeRequest("POST", "conversations", {
+      data,
+    });
   }
 
   /**
@@ -25,7 +34,7 @@ export class ConversationsClient {
    * @param ids List of conversation IDs to retrieve
    * @param offset Specifies the number of objects to skip. Defaults to 0.
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
-   * @returns
+   * @returns A list of conversations
    */
   @feature("conversations.list")
   async list(options?: {
@@ -50,7 +59,7 @@ export class ConversationsClient {
   /**
    * Get detailed information about a specific conversation.
    * @param id The ID of the conversation to retrieve
-   * @returns
+   * @returns The conversation
    */
   @feature("conversations.retrieve")
   async retrieve(options: {
@@ -60,9 +69,29 @@ export class ConversationsClient {
   }
 
   /**
+   * Update an existing conversation.
+   * @param id The ID of the conversation to update
+   * @param name The new name of the conversation
+   * @returns The updated conversation
+   */
+  @feature("conversations.update")
+  async update(options: {
+    id: string;
+    name: string;
+  }): Promise<WrappedConversationResponse> {
+    const data: Record<string, any> = {
+      name: options.name,
+    };
+
+    return this.client.makeRequest("POST", `conversations/${options.id}`, {
+      data,
+    });
+  }
+
+  /**
    * Delete a conversation.
    * @param id The ID of the conversation to delete
-   * @returns
+   * @returns Whether the conversation was successfully deleted
    */
   @feature("conversations.delete")
   async delete(options: { id: string }): Promise<WrappedBooleanResponse> {
@@ -76,7 +105,7 @@ export class ConversationsClient {
    * @param role The role of the message (e.g., "user" or "assistant")
    * @param parentID The ID of the parent message
    * @param metadata Additional metadata to attach to the message
-   * @returns
+   * @returns The created message
    */
   @feature("conversations.addMessage")
   async addMessage(options: {
@@ -107,16 +136,19 @@ export class ConversationsClient {
    * @param id The ID of the conversation containing the message
    * @param messageID The ID of the message to update
    * @param content The new content of the message
-   * @returns
+   * @param metadata Additional metadata to attach to the message
+   * @returns The updated message
    */
   @feature("conversations.updateMessage")
   async updateMessage(options: {
     id: string;
     messageID: string;
-    content: string;
+    content?: string;
+    metadata?: Record<string, any>;
   }): Promise<any> {
     const data: Record<string, any> = {
-      content: options.content,
+      ...(options.content && { content: options.content }),
+      ...(options.metadata && { metadata: options.metadata }),
     };
 
     return this.client.makeRequest(

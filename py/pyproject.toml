@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-version = "3.3.17"
+version = "3.3.18"
 
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
@@ -99,6 +99,7 @@ python-docx = { version = "^1.1.0", optional = true }
 docutils = { version = "^0.21.2", optional = true }
 striprtf = { version = "^0.0.28", optional = true }
 xlrd = { version = "^2.0.1", optional = true }
+pynacl = { version = "^1.5.0", optional = true }
 
 [tool.poetry.extras]
 core = [
@@ -132,6 +133,7 @@ core = [
     "uvicorn",
     "vecs",
     "python-multipart",
+    "pynacl"
 ]
 ingestion-bundle = [
     "aiofiles",

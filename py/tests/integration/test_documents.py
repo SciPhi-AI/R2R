@@ -34,8 +34,10 @@ def test_create_document_with_raw_text(client):
 
 
 def test_create_document_with_chunks(client):
+    suffix = str(uuid.uuid4())[:8]
     resp = client.documents.create(
-        chunks=["Chunk one", "Chunk two"], run_with_orchestration=False
+        chunks=["Chunk one" + suffix, "Chunk two" + suffix],
+        run_with_orchestration=False,
     )["results"]
     doc_id = resp["document_id"]
     assert doc_id, "No document_id returned after chunk ingestion"
@@ -361,3 +363,193 @@ def test_search_documents_no_match(client):
 
     # Cleanup
     client.documents.delete(id=doc_id)
+
+
+from datetime import datetime
+
+import pytest
+
+from r2r import R2RException
+
+
+def test_delete_by_workflow_metadata(client):
+    """Test deletion by workflow state metadata."""
+    # Create test documents with workflow metadata
+    random_suffix = uuid.uuid4()
+    docs = [
+        client.documents.create(
+            raw_text="Draft document 1" + str(random_suffix),
+            metadata={
+                "workflow": {
+                    "state": "draft",
+                    "assignee": "user1",
+                    "review_count": 0,
+                }
+            },
+            run_with_orchestration=False,
+        )["results"]["document_id"],
+        client.documents.create(
+            raw_text="Draft document 2" + str(random_suffix),
+            metadata={
+                "workflow": {
+                    "state": "draft",
+                    "assignee": "user2",
+                    "review_count": 1,
+                }
+            },
+            run_with_orchestration=False,
+        )["results"]["document_id"],
+        client.documents.create(
+            raw_text="Published document" + str(random_suffix),
+            metadata={
+                "workflow": {
+                    "state": "published",
+                    "assignee": "user1",
+                    "review_count": 2,
+                }
+            },
+            run_with_orchestration=False,
+        )["results"]["document_id"],
+    ]
+
+    try:
+        # Delete drafts with no reviews
+        filters = {
+            "$and": [
+                {"metadata.workflow.state": {"$eq": "draft"}},
+                {"metadata.workflow.review_count": {"$eq": 0}},
+            ]
+        }
+
+        response = client.documents.delete_by_filter(filters)["results"]
+        assert response["success"]
+
+        # Verify first draft is deleted
+        with pytest.raises(R2RException) as exc:
+            client.documents.retrieve(id=docs[0])
+        assert exc.value.status_code == 404
+
+        # Verify other documents still exist
+        assert client.documents.retrieve(id=docs[1])
+        assert client.documents.retrieve(id=docs[2])
+
+    finally:
+        # Cleanup remaining documents
+        for doc_id in docs[1:]:
+            try:
+                client.documents.delete(id=doc_id)
+            except R2RException:
+                pass
+
+
+def test_delete_by_classification_metadata(client):
+    """Test deletion by document classification metadata."""
+    # Create test documents with classification metadata
+    docs = [
+        client.documents.create(
+            raw_text="Confidential document",
+            metadata={
+                "classification": {
+                    "level": "confidential",
+                    "department": "HR",
+                    "retention_years": 7,
+                }
+            },
+            run_with_orchestration=False,
+        )["results"]["document_id"],
+        client.documents.create(
+            raw_text="Public document",
+            metadata={
+                "classification": {
+                    "level": "public",
+                    "department": "Marketing",
+                    "retention_years": 1,
+                }
+            },
+            run_with_orchestration=False,
+        )["results"]["document_id"],
+    ]
+
+    try:
+        # Delete HR documents with high retention
+        filters = {
+            "$and": [
+                {"classification.department": {"$eq": "HR"}},
+                {"classification.retention_years": {"$gt": 5}},
+            ]
+        }
+
+        response = client.documents.delete_by_filter(filters)["results"]
+        assert response["success"]
+
+        # Verify confidential HR doc is deleted
+        with pytest.raises(R2RException) as exc:
+            client.documents.retrieve(id=docs[0])
+        assert exc.value.status_code == 404
+
+        # Verify public doc still exists
+        assert client.documents.retrieve(id=docs[1])
+
+    finally:
+        # Cleanup remaining document
+        try:
+            client.documents.delete(id=docs[1])
+        except R2RException:
+            pass
+
+
+def test_delete_by_version_metadata(client):
+    """Test deletion by version and status metadata with array conditions."""
+    suffix = uuid.uuid4()
+    docs = [
+        client.documents.create(
+            raw_text="Old version document" + str(suffix),
+            metadata={
+                "version_info": {
+                    "number": "1.0.0",
+                    "status": "deprecated",
+                    "tags": ["legacy", "unsupported"],
+                },
+            },
+            run_with_orchestration=False,
+        )["results"]["document_id"],
+        client.documents.create(
+            raw_text="Current version document" + str(suffix),
+            metadata={
+                "version_info": {
+                    "number": "2.0.0",
+                    "status": "current",
+                    "tags": ["stable", "supported"],
+                },
+            },
+            run_with_orchestration=False,
+        )["results"]["document_id"],
+    ]
+
+    try:
+        # Delete deprecated documents with legacy tag
+        filters = {
+            "$and": [
+                {"metadata.version_info.status": {"$eq": "deprecated"}},
+                # TODO - WHy is `$in` not working for deletion?
+                {"metadata.version_info.tags": {"$in": ["legacy"]}},
+            ]
+        }
+
+        response = client.documents.delete_by_filter(filters)["results"]
+        assert response["success"]
+
+        # Verify deprecated doc is deleted
+        with pytest.raises(R2RException) as exc:
+            client.documents.retrieve(id=docs[0])
+        assert exc.value.status_code == 404
+
+        # Verify current doc still exists
+        assert client.documents.retrieve(id=docs[1])
+
+    finally:
+        # Cleanup remaining document
+        try:
+            client.documents.delete(id=docs[1])
+        except R2RException:
+            pass

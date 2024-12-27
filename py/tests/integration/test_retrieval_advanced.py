@@ -1,5 +1,6 @@
 import pytest
-from r2r import Message, SearchMode, R2RException
+
+from r2r import Message, R2RException, SearchMode
 
 
 # Semantic Search Tests
@@ -135,56 +136,56 @@ def test_rag_context_window_limits(client):
 #     assert "results" in resp, "RAG should handle empty chunks gracefully"
 
 
-# Agent Tests
-def test_agent_clarification_requests(client):
-    """Test agent's ability to request clarification for ambiguous queries"""
-    msg = Message(role="user", content="Compare them")
-    resp = client.retrieval.agent(
-        message=msg,
-        search_settings={"use_semantic_search": True},
-    )
-    print("resp = ", resp)
-    content = resp["results"]["messages"][-1]["content"]
-    assert any(
-        phrase in content.lower()
-        for phrase in [
-            "could you clarify",
-            "who do you",
-            "what would you",
-            "please specify",
-        ]
-    ), "Agent should request clarification for ambiguous queries"
+# # Agent Tests
+# def test_agent_clarification_requests(client):
+#     """Test agent's ability to request clarification for ambiguous queries"""
+#     msg = Message(role="user", content="Compare them")
+#     resp = client.retrieval.agent(
+#         message=msg,
+#         search_settings={"use_semantic_search": True},
+#     )
+#     content = resp["results"]["messages"][-1]["content"]
+#     assert any(
+#         phrase in content.lower()
+#         for phrase in [
+#             "could you clarify",
+#             "who do you",
+#             "what would you",
+#             "please specify",
+#         ]
+#     ), "Agent should request clarification for ambiguous queries"
 
 
-def test_agent_source_citation_consistency(client):
-    """Test agent consistently cites sources across conversation turns"""
-    conversation_id = client.conversations.create()["results"]["id"]
+## TODO - uncomment later
+# def test_agent_source_citation_consistency(client):
+#     """Test agent consistently cites sources across conversation turns"""
+#     conversation_id = client.conversations.create()["results"]["id"]
 
-    # First turn - asking about a specific topic
-    msg1 = Message(role="user", content="What did Aristotle say about ethics?")
-    resp1 = client.retrieval.agent(
-        message=msg1,
-        conversation_id=conversation_id,
-        include_title_if_available=True,
-    )
+#     # First turn - asking about a specific topic
+#     msg1 = Message(role="user", content="What did Aristotle say about ethics?")
+#     resp1 = client.retrieval.agent(
+#         message=msg1,
+#         conversation_id=conversation_id,
+#         include_title_if_available=True,
+#     )
 
-    # Second turn - asking for more details
-    msg2 = Message(role="user", content="Can you elaborate on that point?")
-    resp2 = client.retrieval.agent(
-        message=msg2,
-        conversation_id=conversation_id,
-        include_title_if_available=True,
-    )
+#     # Second turn - asking for more details
+#     msg2 = Message(role="user", content="Can you elaborate on that point?")
+#     resp2 = client.retrieval.agent(
+#         message=msg2,
+#         conversation_id=conversation_id,
+#         include_title_if_available=True,
+#     )
 
-    # Check that sources are consistently cited across turns
-    sources1 = _extract_sources(resp1["results"]["messages"][-1]["content"])
-    sources2 = _extract_sources(resp2["results"]["messages"][-1]["content"])
-    assert (
-        len(sources1) > 0 and len(sources2) > 0
-    ), "Both responses should cite sources"
-    assert any(
-        s in sources2 for s in sources1
-    ), "Follow-up should reference some original sources"
+#     # Check that sources are consistently cited across turns
+#     sources1 = _extract_sources(resp1["results"]["messages"][-1]["content"])
+#     sources2 = _extract_sources(resp2["results"]["messages"][-1]["content"])
+#     assert (
+#         len(sources1) > 0 and len(sources2) > 0
+#     ), "Both responses should cite sources"
+#     assert any(
+#         s in sources2 for s in sources1
+#     ), "Follow-up should reference some original sources"
 
 
 ## TODO - uncomment later

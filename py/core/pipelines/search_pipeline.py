@@ -25,7 +25,7 @@ class SearchPipeline(AsyncPipeline):
         super().__init__(run_manager)
         self._parsing_pipe: Optional[AsyncPipe] = None
         self._vector_search_pipeline: Optional[AsyncPipeline] = None
-        self._kg_search_pipeline: Optional[AsyncPipeline] = None
+        self._graph_search_pipeline: Optional[AsyncPipeline] = None
 
     async def run(  # type: ignore
         self,
@@ -68,7 +68,7 @@ class SearchPipeline(AsyncPipeline):
                 )
             )
             kg_task = asyncio.create_task(
-                self._kg_search_pipeline.run(
+                self._graph_search_pipeline.run(
                     dequeue_requests(kg_queue),
                     request_state,
                     stream,
@@ -93,22 +93,22 @@ class SearchPipeline(AsyncPipeline):
         self,
         pipe: AsyncPipe,
         add_upstream_outputs: Optional[list[dict[str, str]]] = None,
-        kg_search_pipe: bool = False,
+        graph_search_pipe: bool = False,
         vector_search_pipe: bool = False,
         *args,
         **kwargs,
     ) -> None:
         logger.debug(f"Adding pipe {pipe.config.name} to the SearchPipeline")
 
-        if kg_search_pipe:
-            if not self._kg_search_pipeline:
-                self._kg_search_pipeline = AsyncPipeline()
-            if not self._kg_search_pipeline:
+        if graph_search_pipe:
+            if not self._graph_search_pipeline:
+                self._graph_search_pipeline = AsyncPipeline()
+            if not self._graph_search_pipeline:
                 raise ValueError(
                     "KG search pipeline not found"
                 )  # for type hinting
 
-            self._kg_search_pipeline.add_pipe(
+            self._graph_search_pipeline.add_pipe(
                 pipe, add_upstream_outputs, *args, **kwargs
             )
         elif vector_search_pipe:

@@ -74,7 +74,7 @@ class ChunksRouter(BaseRouterV3):
             search_settings: SearchSettings = Body(
                 default_factory=SearchSettings,
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedVectorSearchResponse:  # type: ignore
             # TODO - Deduplicate this code by sharing the code on the retrieval router
             """
@@ -141,7 +141,7 @@ class ChunksRouter(BaseRouterV3):
         @self.base_endpoint
         async def retrieve_chunk(
             id: UUID = Path(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedChunkResponse:
             """
             Get a specific chunk by its ID.
@@ -222,7 +222,7 @@ class ChunksRouter(BaseRouterV3):
             id: UUID = Path(...),
             chunk_update: UpdateChunk = Body(...),
             # TODO: Run with orchestration?
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedChunkResponse:
             """
             Update an existing chunk's content and/or metadata.
@@ -307,7 +307,7 @@ class ChunksRouter(BaseRouterV3):
         @self.base_endpoint
         async def delete_chunk(
             id: UUID = Path(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Delete a specific chunk by ID.
@@ -330,7 +330,9 @@ class ChunksRouter(BaseRouterV3):
                     {"chunk_id": {"$eq": str(id)}},
                 ]
             }
-            await self.services.management.delete(filters=filters)
+            await self.services.management.delete_documents_and_chunks_by_filter(
+                filters=filters
+            )
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.get(
@@ -398,7 +400,7 @@ class ChunksRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedChunksResponse:
             """
             List chunks with pagination support.

@@ -43,11 +43,20 @@ class BaseClient:
         self.timeout = timeout
         self.access_token: Optional[str] = None
         self._refresh_token: Optional[str] = None
+        self.api_key: Optional[str] = None
 
     def _get_auth_header(self) -> dict[str, str]:
-        if not self.access_token:
+        if self.access_token and self.api_key:
+            raise R2RException(
+                status_code=400,
+                message="Cannot have both access token and api key.",
+            )
+        if self.access_token:
+            return {"Authorization": f"Bearer {self.access_token}"}
+        elif self.api_key:
+            return {"x-api-key": self.api_key}
+        else:
             return {}
-        return {"Authorization": f"Bearer {self.access_token}"}
 
     def _ensure_authenticated(self):
         if not self.access_token:
@@ -60,8 +69,9 @@ class BaseClient:
         return f"{self.base_url}/{version}/{endpoint}"
 
     def _prepare_request_args(self, endpoint: str, **kwargs) -> dict:
+
         headers = kwargs.pop("headers", {})
-        if self.access_token and endpoint not in [
+        if (self.access_token or self.api_key) and endpoint not in [
             "register",
             "login",
             "verify_email",

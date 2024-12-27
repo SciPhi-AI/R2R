@@ -60,7 +60,15 @@ jobs:
 
       - name: Run R2R Full Python Integration Test
         run: |
-          cd py && poetry run pytest tests/ \
+          cd py && poetry run pytest tests/unit \
+            --verbose \
+            --capture=no \
+            --log-cli-level=INFO \
+            --junit-xml=test-results/junit.xml \
+            --html=test-results/report.html
+      - name: Run R2R Full Python Integration Test
+        run: |
+          cd py && poetry run pytest tests/integration \
             --verbose \
             --capture=no \
             --log-cli-level=INFO \

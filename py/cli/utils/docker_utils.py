@@ -367,7 +367,6 @@ def build_docker_command(
         else:
             base_command = f"docker compose -f {compose_files['full_scale']}"
 
-    print("base_command = ", base_command)
     base_command += (
         f" --project-name {project_name or ('r2r-full' if full else 'r2r')}"
     )

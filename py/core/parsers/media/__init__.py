@@ -5,11 +5,7 @@ from .doc_parser import DOCParser
 from .docx_parser import DOCXParser
 from .img_parser import ImageParser
 from .odt_parser import ODTParser
-from .pdf_parser import (
-    BasicPDFParser,
-    PDFParserUnstructured,
-    VLMPDFParser,
-)
+from .pdf_parser import BasicPDFParser, PDFParserUnstructured, VLMPDFParser
 from .ppt_parser import PPTParser
 from .pptx_parser import PPTXParser
 from .rtf_parser import RTFParser

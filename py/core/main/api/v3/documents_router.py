@@ -297,7 +297,7 @@ class DocumentsRouter(BaseRouterV3):
                 True,
                 description="Whether or not ingestion runs with orchestration, default is `True`. When set to `False`, the ingestion process will run synchronous and directly return the result.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedIngestionResponse:
             """
             Creates a new Document object from an input file, text content, or chunks. The chosen `ingestion_mode` determines
@@ -313,6 +313,63 @@ class DocumentsRouter(BaseRouterV3):
             The ingestion process runs asynchronously and its progress can be tracked using the returned
             task_id.
             """
+            if not auth_user.is_superuser:
+                user_document_count = (
+                    await self.services.management.documents_overview(
+                        user_ids=[auth_user.id],
+                        offset=0,
+                        limit=1,
+                    )
+                )["total_entries"]
+                user_max_documents = (
+                    await self.services.management.get_user_max_documents(
+                        auth_user.id
+                    )
+                )
+
+                if user_document_count >= user_max_documents:
+                    raise R2RException(
+                        status_code=403,
+                        message=f"User has reached the maximum number of documents allowed ({user_max_documents}).",
+                    )
+
+                # Get chunks using the vector handler's list_chunks method
+                user_chunk_count = (
+                    await self.services.ingestion.list_chunks(
+                        filters={"owner_id": {"$eq": str(auth_user.id)}},
+                        offset=0,
+                        limit=1,
+                    )
+                )["page_info"]["total_entries"]
+                user_max_chunks = (
+                    await self.services.management.get_user_max_chunks(
+                        auth_user.id
+                    )
+                )
+                if user_chunk_count >= user_max_chunks:
+                    raise R2RException(
+                        status_code=403,
+                        message=f"User has reached the maximum number of chunks allowed ({user_max_chunks}).",
+                    )
+
+                user_collections_count = (
+                    await self.services.management.collections_overview(
+                        user_ids=[auth_user.id],
+                        offset=0,
+                        limit=1,
+                    )
+                )["total_entries"]
+                user_max_collections = (
+                    await self.services.management.get_user_max_collections(
+                        auth_user.id
+                    )
+                )
+                if user_collections_count >= user_max_collections:
+                    raise R2RException(
+                        status_code=403,
+                        message=f"User has reached the maximum number of collections allowed ({user_max_collections}).",
+                    )
+
             effective_ingestion_config = self._prepare_ingestion_config(
                 ingestion_mode=ingestion_mode,
                 ingestion_config=ingestion_config,
@@ -571,7 +628,7 @@ class DocumentsRouter(BaseRouterV3):
                 False,
                 description="Specifies whether or not to include embeddings of each document summary.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedDocumentsResponse:
             """
             Returns a paginated list of documents the authenticated user has access to.
@@ -676,7 +733,7 @@ class DocumentsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document to retrieve.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedDocumentResponse:
             """
             Retrieves detailed information about a specific document by its ID.
@@ -787,7 +844,7 @@ class DocumentsRouter(BaseRouterV3):
                 False,
                 description="Whether to include vector embeddings in the response.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedChunksResponse:
             """
             Retrieves the text chunks that were generated from a document during ingestion.
@@ -895,7 +952,7 @@ class DocumentsRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_document_file(
             id: str = Path(..., description="Document ID"),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> StreamingResponse:
             """
             Downloads the original file content of a document.
@@ -1021,7 +1078,7 @@ class DocumentsRouter(BaseRouterV3):
             filters: Json[dict] = Body(
                 ..., description="JSON-encoded filters"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Delete documents based on provided filters. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`. Deletion requests are limited to a user's own documents.
@@ -1030,7 +1087,9 @@ class DocumentsRouter(BaseRouterV3):
             filters_dict = {
                 "$and": [{"owner_id": {"$eq": str(auth_user.id)}}, filters]
             }
-            await self.services.management.delete(filters=filters_dict)
+            await self.services.management.delete_documents_and_chunks_by_filter(
+                filters=filters_dict
+            )
 
             return GenericBooleanResponse(success=True)  # type: ignore
 
@@ -1096,20 +1155,23 @@ class DocumentsRouter(BaseRouterV3):
         @self.base_endpoint
         async def delete_document_by_id(
             id: UUID = Path(..., description="Document ID"),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Delete a specific document. All chunks corresponding to the document are deleted, and all other references to the document are removed.
 
             NOTE - Deletions do not yet impact the knowledge graph or other derived data. This feature is planned for a future release.
             """
-            filters = {
-                "$and": [
-                    {"owner_id": {"$eq": str(auth_user.id)}},
-                    {"document_id": {"$eq": str(id)}},
-                ]
-            }
-            await self.services.management.delete(filters=filters)
+
+            filters = {"document_id": {"$eq": str(id)}}
+            if not auth_user.is_superuser:
+                filters = {
+                    "$and": [{"owner_id": {"$eq": str(auth_user.id)}}, filters]
+                }
+
+            await self.services.management.delete_documents_and_chunks_by_filter(
+                filters=filters
+            )
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.get(
@@ -1185,7 +1247,7 @@ class DocumentsRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionsResponse:
             """
             Retrieves all collections that contain the specified document. This endpoint is restricted
@@ -1259,7 +1321,7 @@ class DocumentsRouter(BaseRouterV3):
                 default=True,
                 description="Whether to run the entities and relationships extraction process with orchestration.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
             """
             Extracts entities and relationships from a document.
@@ -1302,7 +1364,7 @@ class DocumentsRouter(BaseRouterV3):
                     "message": "Estimate retrieved successfully",
                     "task_id": None,
                     "id": id,
-                    "estimate": await self.services.kg.get_creation_estimate(
+                    "estimate": await self.services.graph.get_creation_estimate(
                         document_id=id,
                         graph_creation_settings=server_graph_creation_settings,
                     ),
@@ -1322,7 +1384,7 @@ class DocumentsRouter(BaseRouterV3):
                 from core.main.orchestration import simple_kg_factory
 
                 logger.info("Running extract-triples without orchestration.")
-                simple_kg = simple_kg_factory(self.services.kg)
+                simple_kg = simple_kg_factory(self.services.graph)
                 await simple_kg["extract-triples"](workflow_input)
                 return {  # type: ignore
                     "message": "Graph created successfully.",
@@ -1374,7 +1436,7 @@ class DocumentsRouter(BaseRouterV3):
                 False,
                 description="Whether to include vector embeddings in the response.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedEntitiesResponse:
             """
             Retrieves the entities that were extracted from a document. These represent
@@ -1385,14 +1447,14 @@ class DocumentsRouter(BaseRouterV3):
 
             Results are returned in the order they were extracted from the document.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
-                    403,
-                )
+            # if (
+            #     not auth_user.is_superuser
+            #     and id not in auth_user.collection_ids
+            # ):
+            #     raise R2RException(
+            #         "The currently authenticated user does not have access to the specified collection.",
+            #         403,
+            #     )
 
             # First check if the document exists and user has access
             documents_overview_response = (
@@ -1515,7 +1577,7 @@ class DocumentsRouter(BaseRouterV3):
                 None,
                 description="Filter relationships by specific relationship types.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRelationshipsResponse:
             """
             Retrieves the relationships between entities that were extracted from a document. These represent
@@ -1526,14 +1588,14 @@ class DocumentsRouter(BaseRouterV3):
 
             Results are returned in the order they were extracted from the document.
             """
-            if (
-                not auth_user.is_superuser
-                and id not in auth_user.collection_ids
-            ):
-                raise R2RException(
-                    "The currently authenticated user does not have access to the specified collection.",
-                    403,
-                )
+            # if (
+            #     not auth_user.is_superuser
+            #     and id not in auth_user.collection_ids
+            # ):
+            #     raise R2RException(
+            #         "The currently authenticated user does not have access to the specified collection.",
+            #         403,
+            #     )
 
             # First check if the document exists and user has access
             documents_overview_response = (
@@ -1596,7 +1658,7 @@ class DocumentsRouter(BaseRouterV3):
                 default_factory=SearchSettings,
                 description="Settings for document search",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):  # -> WrappedDocumentSearchResponse:  # type: ignore
             """
             Perform a search query on the automatically generated document summaries in the system.

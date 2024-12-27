@@ -22,6 +22,9 @@ class PostgresLimitsHandler(Handler):
     ):
         super().__init__(project_name, connection_manager)
         self.config = config
+        logger.debug(
+            f"Initialized PostgresLimitsHandler with project: {project_name}"
+        )
 
     async def create_tables(self):
         query = f"""
@@ -31,6 +34,7 @@ class PostgresLimitsHandler(Handler):
             route TEXT NOT NULL
         );
         """
+        logger.debug("Creating request_log table if not exists")
         await self.connection_manager.execute_query(query)
 
     async def _count_requests(
@@ -45,6 +49,7 @@ class PostgresLimitsHandler(Handler):
               AND time >= $3
             """
             params = [user_id, route, since]
+            logger.debug(f"Counting requests for route {route}")
         else:
             query = f"""
             SELECT COUNT(*)::int
@@ -53,12 +58,11 @@ class PostgresLimitsHandler(Handler):
               AND time >= $2
             """
             params = [user_id, since]
+            logger.debug("Counting all requests")
 
         result = await self.connection_manager.fetchrow_query(query, params)
         count = result["count"] if result else 0
-        logger.debug(
-            f"_count_requests(user_id={user_id}, route={route}, since={since.isoformat()}): {count}"
-        )
+
         return count
 
     async def _count_monthly_requests(self, user_id: UUID) -> int:
@@ -66,6 +70,7 @@ class PostgresLimitsHandler(Handler):
         start_of_month = now.replace(
             day=1, hour=0, minute=0, second=0, microsecond=0
         )
+
         count = await self._count_requests(
             user_id, route=None, since=start_of_month
         )
@@ -74,24 +79,37 @@ class PostgresLimitsHandler(Handler):
     def _determine_limits_for(
         self, user_id: UUID, route: str
     ) -> LimitSettings:
+        # Start with base limits
         limits = self.config.limits
 
-        # Route-specific limits
+        # Route-specific limits - directly override if present
         route_limits = self.config.route_limits.get(route)
         if route_limits:
-            limits = limits.merge_with_defaults(route_limits)
+            # Only override non-None values from route_limits
+            if route_limits.global_per_min is not None:
+                limits.global_per_min = route_limits.global_per_min
+            if route_limits.route_per_min is not None:
+                limits.route_per_min = route_limits.route_per_min
+            if route_limits.monthly_limit is not None:
+                limits.monthly_limit = route_limits.monthly_limit
 
-        # User-specific limits
+        # User-specific limits - directly override if present
         user_limits = self.config.user_limits.get(user_id)
         if user_limits:
-            limits = limits.merge_with_defaults(user_limits)
+            # Only override non-None values from user_limits
+            if user_limits.global_per_min is not None:
+                limits.global_per_min = user_limits.global_per_min
+            if user_limits.route_per_min is not None:
+                limits.route_per_min = user_limits.route_per_min
+            if user_limits.monthly_limit is not None:
+                limits.monthly_limit = user_limits.monthly_limit
+
         return limits
 
     async def check_limits(self, user_id: UUID, route: str):
         # Determine final applicable limits
         limits = self._determine_limits_for(user_id, route)
         if not limits:
-            # If no limits found, use defaults
             limits = self.config.default_limits
 
         global_per_min = limits.global_per_min
@@ -101,17 +119,12 @@ class PostgresLimitsHandler(Handler):
         now = datetime.now(timezone.utc)
         one_min_ago = now - timedelta(minutes=1)
 
-        logger.info(
-            f"Checking limits for user_id={user_id}, route={route}, "
-            f"global_per_min={global_per_min}, route_per_min={route_per_min}, monthly_limit={monthly_limit}, now={now.isoformat()}"
-        )
-
         # Global per-minute check
         if global_per_min is not None:
             user_req_count = await self._count_requests(
                 user_id, None, one_min_ago
             )
-            if user_req_count >= global_per_min:
+            if user_req_count > global_per_min:
                 logger.warning(
                     f"Global per-minute limit exceeded for user_id={user_id}, route={route}"
                 )
@@ -122,7 +135,7 @@ class PostgresLimitsHandler(Handler):
             route_req_count = await self._count_requests(
                 user_id, route, one_min_ago
             )
-            if route_req_count >= route_per_min:
+            if route_req_count > route_per_min:
                 logger.warning(
                     f"Per-route per-minute limit exceeded for user_id={user_id}, route={route}"
                 )
@@ -131,7 +144,7 @@ class PostgresLimitsHandler(Handler):
         # Monthly limit check
         if monthly_limit is not None:
             monthly_count = await self._count_monthly_requests(user_id)
-            if monthly_count >= monthly_limit:
+            if monthly_count > monthly_limit:
                 logger.warning(
                     f"Monthly limit exceeded for user_id={user_id}, route={route}"
                 )

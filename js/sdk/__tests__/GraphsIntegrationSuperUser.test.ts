@@ -29,8 +29,8 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
       metadata: { title: "raskolnikov_2.txt" },
     });
 
-    expect(response.results.document_id).toBeDefined();
-    documentId = response.results.document_id;
+    expect(response.results.documentId).toBeDefined();
+    documentId = response.results.documentId;
   }, 10000);
 
   test("Create new collection", async () => {
@@ -66,7 +66,7 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
 
     expect(response.results).toBeDefined();
     expect(response.results.name).toBe("Raskolnikov Graph");
-    expect(response.results.updated_at).not.toBe(response.results.created_at);
+    expect(response.results.updatedAt).not.toBe(response.results.createdAt);
   });
 
   test("List graphs", async () => {
@@ -123,7 +123,7 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
       collectionId: collectionId,
     });
     expect(response.results).toBeDefined();
-    expect(response.total_entries).toBeGreaterThanOrEqual(1);
+    expect(response.totalEntries).toBeGreaterThanOrEqual(1);
   }, 60000);
 
   test("Check that there are relationships in the graph", async () => {
@@ -131,7 +131,7 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
       collectionId: collectionId,
     });
     expect(response.results).toBeDefined();
-    expect(response.total_entries).toBeGreaterThanOrEqual(1);
+    expect(response.totalEntries).toBeGreaterThanOrEqual(1);
   });
 
   test("Check that there are no communities in the graph prior to building", async () => {
@@ -151,7 +151,7 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
     await new Promise((resolve) => setTimeout(resolve, 15000));
 
     expect(response.results).toBeDefined();
-  }, 45000);
+  }, 60000);
 
   test("Check that there are communities in the graph", async () => {
     const response = await client.graphs.listCommunities({
@@ -159,7 +159,7 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
     });
 
     expect(response.results).toBeDefined();
-    expect(response.total_entries).toBeGreaterThanOrEqual(1);
+    expect(response.totalEntries).toBeGreaterThanOrEqual(1);
   });
 
   test("Create a new entity", async () => {

@@ -10,16 +10,16 @@ from shared.api.models.base import (
     WrappedBooleanResponse,
     WrappedGenericMessageResponse,
 )
+from shared.api.models.graph.responses import (
+    GraphResponse,
+    WrappedGraphResponse,
+    WrappedGraphsResponse,
+)
 from shared.api.models.ingestion.responses import (
     IngestionResponse,
     WrappedIngestionResponse,
     WrappedMetadataUpdateResponse,
     WrappedUpdateResponse,
-)
-from shared.api.models.kg.responses import (
-    GraphResponse,
-    WrappedGraphResponse,
-    WrappedGraphsResponse,
 )
 from shared.api.models.management.responses import (
     AnalyticsResponse,
@@ -31,6 +31,8 @@ from shared.api.models.management.responses import (
     ServerStats,
     SettingsResponse,
     WrappedAnalyticsResponse,
+    WrappedAPIKeyResponse,
+    WrappedAPIKeysResponse,
     WrappedChunkResponse,
     WrappedChunksResponse,
     WrappedCollectionResponse,
@@ -105,6 +107,8 @@ __all__ = [
     "WrappedConversationsResponse",
     # User Responses
     "WrappedUserResponse",
+    "WrappedAPIKeyResponse",
+    "WrappedAPIKeysResponse",
     "WrappedUsersResponse",
     # Base Responses
     "PaginatedR2RResult",

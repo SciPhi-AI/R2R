@@ -4,7 +4,7 @@ import json
 import logging
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID, uuid4
 
 from pydantic import Field
@@ -311,10 +311,11 @@ class ChunkEnrichmentSettings(R2RSerializable):
 class IngestionConfig(R2RSerializable):
     provider: str = "r2r"
     excluded_parsers: list[str] = ["mp4"]
+    chunking_strategy: str = "recursive"
     chunk_enrichment_settings: ChunkEnrichmentSettings = (
         ChunkEnrichmentSettings()
     )
-    extra_parsers: dict[str, str] = {}
+    extra_parsers: dict[str, Any] = {}
 
     audio_transcription_model: str = "openai/whisper-1"
 

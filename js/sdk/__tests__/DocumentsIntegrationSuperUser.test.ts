@@ -25,8 +25,8 @@ describe("r2rClient V3 Documents Integration Tests", () => {
       metadata: { title: "marmeladov.txt" },
     });
 
-    expect(response.results.document_id).toBeDefined();
-    documentId = response.results.document_id;
+    expect(response.results.documentId).toBeDefined();
+    documentId = response.results.documentId;
   }, 10000);
 
   test("Create document with content", async () => {
@@ -35,7 +35,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
       metadata: { title: "Test Document" },
     });
 
-    expect(response.results.document_id).toBeDefined();
+    expect(response.results.documentId).toBeDefined();
   }, 30000);
 
   test("Retrieve document", async () => {
@@ -45,15 +45,15 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
     expect(response.results).toBeDefined();
     expect(response.results.id).toBe(documentId);
-    expect(response.results.collection_ids).toContain(
+    expect(response.results.collectionIds).toContain(
       "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
     );
     expect(response.results.metadata.title).toBe("marmeladov.txt");
-    expect(response.results.size_in_bytes).toBeDefined();
-    expect(response.results.ingestion_status).toBe("success");
-    expect(response.results.extraction_status).toBe("pending");
-    expect(response.results.created_at).toBeDefined();
-    expect(response.results.updated_at).toBeDefined();
+    expect(response.results.sizeInBytes).toBeDefined();
+    expect(response.results.ingestionStatus).toBe("success");
+    expect(response.results.extractionStatus).toBe("pending");
+    expect(response.results.createdAt).toBeDefined();
+    expect(response.results.updatedAt).toBeDefined();
     expect(response.results.summary).toBeDefined();
   });
 

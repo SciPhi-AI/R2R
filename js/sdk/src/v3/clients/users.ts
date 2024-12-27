@@ -115,8 +115,8 @@ export class UsersClient {
 
     if (response?.results) {
       this.client.setTokens(
-        response.results.access_token.token,
-        response.results.refresh_token.token,
+        response.results.accessToken.token,
+        response.results.refreshToken.token,
       );
     }
 
@@ -184,8 +184,8 @@ export class UsersClient {
 
     if (response?.results) {
       this.client.setTokens(
-        response.results.access_token.token,
-        response.results.refresh_token.token,
+        response.results.accessToken.token,
+        response.results.refreshToken.token,
       );
     } else {
       throw new Error("Invalid response structure");

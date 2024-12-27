@@ -46,8 +46,8 @@ describe("r2rClient V3 Documents Integration Tests", () => {
       metadata: { title: "sonia.txt" },
     });
 
-    expect(response.results.document_id).toBeDefined();
-    documentId = response.results.document_id;
+    expect(response.results.documentId).toBeDefined();
+    documentId = response.results.documentId;
   }, 10000);
 
   test("Search documents with no parameters", async () => {

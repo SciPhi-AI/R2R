@@ -2,6 +2,8 @@ import json
 from typing import Any, Optional
 from uuid import UUID, uuid4
 
+from fastapi import HTTPException
+
 from core.base import Handler, Message, R2RException
 from shared.api.models.management.responses import (
     ConversationResponse,
@@ -19,10 +21,6 @@ class PostgresConversationsHandler(Handler):
         self.connection_manager = connection_manager
 
     async def create_tables(self):
-        # Ensure the uuid_generate_v4() extension is available
-        # Depending on your environment, you may need a separate call:
-        # await self.connection_manager.execute_query("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
-
         create_conversations_query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name("conversations")} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -48,103 +46,90 @@ class PostgresConversationsHandler(Handler):
         await self.connection_manager.execute_query(create_messages_query)
 
     async def create_conversation(
-        self, user_id: Optional[UUID] = None, name: Optional[str] = None
+        self,
+        user_id: Optional[UUID] = None,
+        name: Optional[str] = None,
     ) -> ConversationResponse:
         query = f"""
             INSERT INTO {self._get_table_name("conversations")} (user_id, name)
             VALUES ($1, $2)
             RETURNING id, extract(epoch from created_at) as created_at_epoch
         """
-        result = await self.connection_manager.fetchrow_query(
-            query, [user_id, name]
-        )
-
-        if not result:
-            raise R2RException(
-                status_code=500, message="Failed to create conversation."
+        try:
+            result = await self.connection_manager.fetchrow_query(
+                query, [user_id, name]
             )
 
-        return ConversationResponse(
-            id=str(result["id"]),
-            created_at=result["created_at_epoch"],
-        )
-
-    async def verify_conversation_access(
-        self, conversation_id: UUID, user_id: UUID
-    ) -> bool:
-        query = f"""
-            SELECT 1 FROM {self._get_table_name("conversations")}
-            WHERE id = $1 AND (user_id IS NULL OR user_id = $2)
-        """
-        row = await self.connection_manager.fetchrow_query(
-            query, [conversation_id, user_id]
-        )
-        return row is not None
+            return ConversationResponse(
+                id=result["id"],
+                created_at=result["created_at_epoch"],
+                user_id=user_id or None,
+                name=name or None,
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to create conversation: {str(e)}",
+            ) from e
 
     async def get_conversations_overview(
         self,
         offset: int,
         limit: int,
-        user_ids: Optional[UUID | list[UUID]] = None,
+        filter_user_ids: Optional[list[UUID]] = None,
         conversation_ids: Optional[list[UUID]] = None,
     ) -> dict[str, Any]:
-        # Construct conditions
         conditions = []
-        params = []
+        params: list = []
         param_index = 1
 
-        if user_ids is not None:
-            if isinstance(user_ids, UUID):
-                conditions.append(f"user_id = ${param_index}")
-                params.append(user_ids)
-                param_index += 1
-            else:
-                # user_ids is a list of UUIDs
-                placeholders = ", ".join(
-                    f"${i+param_index}" for i in range(len(user_ids))
+        if filter_user_ids:
+            conditions.append(
+                f"""
+                c.user_id IN (
+                    SELECT id
+                    FROM {self.project_name}.users
+                    WHERE id = ANY(${param_index})
                 )
-                conditions.append(
-                    f"user_id = ANY(ARRAY[{placeholders}]::uuid[])"
-                )
-                params.extend(user_ids)
-                param_index += len(user_ids)
-
-        if conversation_ids:
-            placeholders = ", ".join(
-                f"${i+param_index}" for i in range(len(conversation_ids))
+            """
             )
-            conditions.append(f"id = ANY(ARRAY[{placeholders}]::uuid[])")
-            params.extend(conversation_ids)
-            param_index += len(conversation_ids)
-
-        where_clause = ""
-        if conditions:
-            where_clause = "WHERE " + " AND ".join(conditions)
-
-        limit_clause = ""
-        if limit != -1:
-            limit_clause = f"LIMIT ${param_index}"
-            params.append(limit)
+            params.append(filter_user_ids)
             param_index += 1
 
-        offset_clause = f"OFFSET ${param_index}"
-        params.append(offset)
+        if conversation_ids:
+            conditions.append(f"c.id = ANY(${param_index})")
+            params.append(conversation_ids)
+            param_index += 1
+
+        where_clause = (
+            "WHERE " + " AND ".join(conditions) if conditions else ""
+        )
 
         query = f"""
             WITH conversation_overview AS (
-                SELECT id, extract(epoch from created_at) as created_at_epoch, user_id, name
-                FROM {self._get_table_name("conversations")}
+                SELECT c.id,
+                    extract(epoch from c.created_at) as created_at_epoch,
+                    c.user_id,
+                    c.name
+                FROM {self._get_table_name("conversations")} c
                 {where_clause}
             ),
             counted_overview AS (
                 SELECT *,
-                       COUNT(*) OVER() AS total_entries
+                    COUNT(*) OVER() AS total_entries
                 FROM conversation_overview
             )
             SELECT * FROM counted_overview
             ORDER BY created_at_epoch DESC
-            {limit_clause} {offset_clause}
+            OFFSET ${param_index}
         """
+        params.append(offset)
+        param_index += 1
+
+        if limit != -1:
+            query += f" LIMIT ${param_index}"
+            params.append(limit)
+
         results = await self.connection_manager.fetch_query(query, params)
 
         if not results:
@@ -224,56 +209,70 @@ class PostgresConversationsHandler(Handler):
                 status_code=500, message="Failed to insert message."
             )
 
-        return MessageResponse(id=str(message_id), message=content)
+        return MessageResponse(id=message_id, message=content)
 
     async def edit_message(
         self,
         message_id: UUID,
-        new_content: str,
-        additional_metadata: dict = {},
+        new_content: str | None = None,
+        additional_metadata: dict | None = None,
     ) -> dict[str, Any]:
         # Get the original message
         query = f"""
-            SELECT conversation_id, parent_id, content, metadata
+            SELECT conversation_id, parent_id, content, metadata, created_at
             FROM {self._get_table_name("messages")}
             WHERE id = $1
         """
         row = await self.connection_manager.fetchrow_query(query, [message_id])
         if not row:
             raise R2RException(
-                status_code=404, message=f"Message {message_id} not found."
+                status_code=404,
+                message=f"Message {message_id} not found.",
             )
 
         old_content = json.loads(row["content"])
         old_metadata = json.loads(row["metadata"])
 
-        # Update the content
-        old_message = Message(**old_content)
-        edited_message = Message(
-            role=old_message.role,
-            content=new_content,
-            name=old_message.name,
-            function_call=old_message.function_call,
-            tool_calls=old_message.tool_calls,
-        )
+        if new_content is not None:
+            old_message = Message(**old_content)
+            edited_message = Message(
+                role=old_message.role,
+                content=new_content,
+                name=old_message.name,
+                function_call=old_message.function_call,
+                tool_calls=old_message.tool_calls,
+            )
+            content_to_save = edited_message.model_dump()
+        else:
+            content_to_save = old_content
 
-        # Merge metadata and mark edited
-        new_metadata = {**old_metadata, **additional_metadata, "edited": True}
+        additional_metadata = additional_metadata or {}
 
-        # Instead of branching, we'll simply replace the message content and metadata:
-        # NOTE: If you prefer versioning or forking behavior, you'd add a new message.
-        # For simplicity, we just edit the existing message.
+        new_metadata = {
+            **old_metadata,
+            **additional_metadata,
+            "edited": (
+                True
+                if new_content is not None
+                else old_metadata.get("edited", False)
+            ),
+        }
+
+        # Update message without changing the timestamp
         update_query = f"""
             UPDATE {self._get_table_name("messages")}
-            SET content = $1::jsonb, metadata = $2::jsonb, created_at = NOW()
-            WHERE id = $3
+            SET content = $1::jsonb,
+                metadata = $2::jsonb,
+                created_at = $3
+            WHERE id = $4
             RETURNING id
         """
         updated = await self.connection_manager.fetchrow_query(
             update_query,
             [
-                json.dumps(edited_message.model_dump()),
+                json.dumps(content_to_save),
                 json.dumps(new_metadata),
+                row["created_at"],
                 message_id,
             ],
         )
@@ -284,7 +283,11 @@ class PostgresConversationsHandler(Handler):
 
         return {
             "id": str(message_id),
-            "message": edited_message,
+            "message": (
+                Message(**content_to_save)
+                if isinstance(content_to_save, dict)
+                else content_to_save
+            ),
             "metadata": new_metadata,
         }
 
@@ -302,7 +305,7 @@ class PostgresConversationsHandler(Handler):
                 status_code=404, message=f"Message {message_id} not found."
             )
 
-        current_metadata = row["metadata"] or {}
+        current_metadata = json.loads(row["metadata"]) or {}
         updated_metadata = {**current_metadata, **metadata}
 
         update_query = f"""
@@ -311,17 +314,37 @@ class PostgresConversationsHandler(Handler):
             WHERE id = $2
         """
         await self.connection_manager.execute_query(
-            update_query, [updated_metadata, message_id]
+            update_query, [json.dumps(updated_metadata), message_id]
         )
 
     async def get_conversation(
-        self, conversation_id: UUID
+        self,
+        conversation_id: UUID,
+        filter_user_ids: Optional[list[UUID]] = None,
     ) -> list[MessageResponse]:
-        # Check conversation
-        conv_query = f"SELECT extract(epoch from created_at) AS created_at_epoch FROM {self._get_table_name('conversations')} WHERE id = $1"
-        conv_row = await self.connection_manager.fetchrow_query(
-            conv_query, [conversation_id]
-        )
+        conditions = ["c.id = $1"]
+        params: list = [conversation_id]
+
+        if filter_user_ids:
+            param_index = 2
+            conditions.append(
+                f"""
+                c.user_id IN (
+                    SELECT id
+                    FROM {self.project_name}.users
+                    WHERE id = ANY(${param_index})
+                )
+            """
+            )
+            params.append(filter_user_ids)
+
+        query = f"""
+            SELECT c.id, extract(epoch from c.created_at) AS created_at_epoch
+            FROM {self._get_table_name('conversations')} c
+            WHERE {' AND '.join(conditions)}
+        """
+
+        conv_row = await self.connection_manager.fetchrow_query(query, params)
         if not conv_row:
             raise R2RException(
                 status_code=404,
@@ -329,8 +352,6 @@ class PostgresConversationsHandler(Handler):
             )
 
         # Retrieve messages in chronological order
-        # We'll recursively gather messages based on parent_id = NULL as root.
-        # Since no branching, we simply order by created_at.
         msg_query = f"""
             SELECT id, content, metadata
             FROM {self._get_table_name("messages")}
@@ -343,18 +364,76 @@ class PostgresConversationsHandler(Handler):
 
         return [
             MessageResponse(
-                id=str(row["id"]),
+                id=row["id"],
                 message=Message(**json.loads(row["content"])),
                 metadata=json.loads(row["metadata"]),
             )
             for row in results
         ]
 
-    async def delete_conversation(self, conversation_id: UUID):
-        # Check if conversation exists
-        conv_query = f"SELECT 1 FROM {self._get_table_name('conversations')} WHERE id = $1"
+    async def update_conversation(
+        self, conversation_id: UUID, name: str
+    ) -> ConversationResponse:
+        try:
+            # Check if conversation exists
+            conv_query = f"SELECT 1 FROM {self._get_table_name('conversations')} WHERE id = $1"
+            conv_row = await self.connection_manager.fetchrow_query(
+                conv_query, [conversation_id]
+            )
+            if not conv_row:
+                raise R2RException(
+                    status_code=404,
+                    message=f"Conversation {conversation_id} not found.",
+                )
+
+            update_query = f"""
+            UPDATE {self._get_table_name('conversations')}
+            SET name = $1 WHERE id = $2
+            RETURNING user_id, extract(epoch from created_at) as created_at_epoch
+            """
+            updated_row = await self.connection_manager.fetchrow_query(
+                update_query, [name, conversation_id]
+            )
+            return ConversationResponse(
+                id=conversation_id,
+                created_at=updated_row["created_at_epoch"],
+                user_id=updated_row["user_id"] or None,
+                name=name,
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to update conversation: {str(e)}",
+            ) from e
+
+    async def delete_conversation(
+        self,
+        conversation_id: UUID,
+        filter_user_ids: Optional[list[UUID]] = None,
+    ) -> None:
+        conditions = ["c.id = $1"]
+        params: list = [conversation_id]
+
+        if filter_user_ids:
+            param_index = 2
+            conditions.append(
+                f"""
+                c.user_id IN (
+                    SELECT id
+                    FROM {self.project_name}.users
+                    WHERE id = ANY(${param_index})
+                )
+            """
+            )
+            params.append(filter_user_ids)
+
+        conv_query = f"""
+            SELECT 1
+            FROM {self._get_table_name('conversations')} c
+            WHERE {' AND '.join(conditions)}
+        """
         conv_row = await self.connection_manager.fetchrow_query(
-            conv_query, [conversation_id]
+            conv_query, params
         )
         if not conv_row:
             raise R2RException(

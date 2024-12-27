@@ -20,18 +20,13 @@ from core.base import (
 )
 
 from .base import PostgresConnectionManager
+from .filters import apply_filters  # Add this near other imports
 
 logger = logging.getLogger()
 
 
 class PostgresDocumentsHandler(Handler):
     TABLE_NAME = "documents"
-    COLUMN_VARS = [
-        "extraction_id",
-        "id",
-        "owner_id",
-        "collection_ids",
-    ]
 
     def __init__(
         self,
@@ -517,12 +512,12 @@ class PostgresDocumentsHandler(Handler):
         where_clauses = ["summary_embedding IS NOT NULL"]
         params: list[str | int | bytes] = [str(query_embedding)]
 
-        # Handle filters
         if search_settings.filters:
-            filter_clause = self._build_filters(
-                search_settings.filters, params
+            filter_condition, params = apply_filters(
+                search_settings.filters, params, mode="condition_only"
             )
-            where_clauses.append(filter_clause)
+            if filter_condition:
+                where_clauses.append(filter_condition)
 
         where_clause = " AND ".join(where_clauses)
 
@@ -599,12 +594,12 @@ class PostgresDocumentsHandler(Handler):
         where_clauses = ["raw_tsvector @@ websearch_to_tsquery('english', $1)"]
         params: list[str | int | bytes] = [query_text]
 
-        # Handle filters
         if search_settings.filters:
-            filter_clause = self._build_filters(
-                search_settings.filters, params
+            filter_condition, params = apply_filters(
+                search_settings.filters, params, mode="condition_only"
             )
-            where_clauses.append(filter_clause)
+            if filter_condition:
+                where_clauses.append(filter_condition)
 
         where_clause = " AND ".join(where_clauses)
 
@@ -798,136 +793,3 @@ class PostgresDocumentsHandler(Handler):
             )
         else:
             return await self.full_text_document_search(query_text, settings)
-
-    # TODO - Remove copy pasta, consolidate
-    def _build_filters(
-        self, filters: dict, parameters: list[str | int | bytes]
-    ) -> str:
-
-        def parse_condition(key: str, value: Any) -> str:  # type: ignore
-            # nonlocal parameters
-            if key in self.COLUMN_VARS:
-                # Handle column-based filters
-                if isinstance(value, dict):
-                    op, clause = next(iter(value.items()))
-                    if op == "$eq":
-                        parameters.append(clause)
-                        return f"{key} = ${len(parameters)}"
-                    elif op == "$ne":
-                        parameters.append(clause)
-                        return f"{key} != ${len(parameters)}"
-                    elif op == "$in":
-                        parameters.append(clause)
-                        return f"{key} = ANY(${len(parameters)})"
-                    elif op == "$nin":
-                        parameters.append(clause)
-                        return f"{key} != ALL(${len(parameters)})"
-                    elif op == "$overlap":
-                        parameters.append(clause)
-                        return f"{key} && ${len(parameters)}"
-                    elif op == "$contains":
-                        parameters.append(clause)
-                        return f"{key} @> ${len(parameters)}"
-                    elif op == "$any":
-                        if key == "collection_ids":
-                            parameters.append(f"%{clause}%")
-                            return f"array_to_string({key}, ',') LIKE ${len(parameters)}"
-                        parameters.append(clause)
-                        return f"${len(parameters)} = ANY({key})"
-                    else:
-                        raise ValueError(
-                            f"Unsupported operator for column {key}: {op}"
-                        )
-                else:
-                    # Handle direct equality
-                    parameters.append(value)
-                    return f"{key} = ${len(parameters)}"
-            else:
-                # Handle JSON-based filters
-                json_col = "metadata"
-                if key.startswith("metadata."):
-                    key = key.split("metadata.")[1]
-                if isinstance(value, dict):
-                    op, clause = next(iter(value.items()))
-                    if op not in (
-                        "$eq",
-                        "$ne",
-                        "$lt",
-                        "$lte",
-                        "$gt",
-                        "$gte",
-                        "$in",
-                        "$contains",
-                    ):
-                        raise ValueError("unknown operator")
-
-                    if op == "$eq":
-                        parameters.append(json.dumps(clause))
-                        return (
-                            f"{json_col}->'{key}' = ${len(parameters)}::jsonb"
-                        )
-                    elif op == "$ne":
-                        parameters.append(json.dumps(clause))
-                        return (
-                            f"{json_col}->'{key}' != ${len(parameters)}::jsonb"
-                        )
-                    elif op == "$lt":
-                        parameters.append(json.dumps(clause))
-                        return f"({json_col}->'{key}')::float < (${len(parameters)}::jsonb)::float"
-                    elif op == "$lte":
-                        parameters.append(json.dumps(clause))
-                        return f"({json_col}->'{key}')::float <= (${len(parameters)}::jsonb)::float"
-                    elif op == "$gt":
-                        parameters.append(json.dumps(clause))
-                        return f"({json_col}->'{key}')::float > (${len(parameters)}::jsonb)::float"
-                    elif op == "$gte":
-                        parameters.append(json.dumps(clause))
-                        return f"({json_col}->'{key}')::float >= (${len(parameters)}::jsonb)::float"
-                    elif op == "$in":
-                        if not isinstance(clause, list):
-                            raise ValueError(
-                                "argument to $in filter must be a list"
-                            )
-                        parameters.append(json.dumps(clause))
-                        return f"{json_col}->'{key}' = ANY(SELECT jsonb_array_elements(${len(parameters)}::jsonb))"
-                    elif op == "$contains":
-                        if not isinstance(clause, (int, str, float, list)):
-                            raise ValueError(
-                                "argument to $contains filter must be a scalar or array"
-                            )
-                        parameters.append(json.dumps(clause))
-                        return (
-                            f"{json_col}->'{key}' @> ${len(parameters)}::jsonb"
-                        )
-
-        def parse_filter(filter_dict: dict) -> str:
-            filter_conditions = []
-            for key, value in filter_dict.items():
-                if key == "$and":
-                    and_conditions = [
-                        parse_filter(f) for f in value if f
-                    ]  # Skip empty dictionaries
-                    if and_conditions:
-                        filter_conditions.append(
-                            f"({' AND '.join(and_conditions)})"
-                        )
-                elif key == "$or":
-                    or_conditions = [
-                        parse_filter(f) for f in value if f
-                    ]  # Skip empty dictionaries
-                    if or_conditions:
-                        filter_conditions.append(
-                            f"({' OR '.join(or_conditions)})"
-                        )
-                else:
-                    filter_conditions.append(parse_condition(key, value))
-
-            # Check if there is only a single condition
-            if len(filter_conditions) == 1:
-                return filter_conditions[0]
-            else:
-                return " AND ".join(filter_conditions)
-
-        where_clause = parse_filter(filters)
-
-        return where_clause

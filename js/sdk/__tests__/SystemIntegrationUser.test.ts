@@ -23,7 +23,7 @@ describe("r2rClient V3 System Integration Tests User", () => {
     userId = response.results.id;
     name = response.results.name;
     expect(response.results).toBeDefined();
-    expect(response.results.is_superuser).toBe(false);
+    expect(response.results.isSuperuser).toBe(false);
     expect(response.results.name).toBe("Test User");
     expect(response.results.bio).toBe("This is the bio of the test user.");
   });

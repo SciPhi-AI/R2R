@@ -14,16 +14,22 @@ class ConversationsSDK:
     def __init__(self, client):
         self.client = client
 
-    async def create(self) -> WrappedConversationResponse:
+    async def create(
+        self,
+        name: Optional[str] = None,
+    ) -> WrappedConversationResponse:
         """
         Create a new conversation.
 
         Returns:
             dict: Created conversation information
         """
+        data = {"name": name} if name else None
+
         return await self.client._make_request(
             "POST",
             "conversations",
+            data=data,
             version="v3",
         )
 
@@ -74,6 +80,32 @@ class ConversationsSDK:
         return await self.client._make_request(
             "GET",
             f"conversations/{str(id)}",
+            version="v3",
+        )
+
+    async def update(
+        self,
+        id: str | UUID,
+        name: str,
+    ) -> WrappedConversationResponse:
+        """
+        Update an existing conversation.
+
+        Args:
+            id (Union[str, UUID]): The ID of the conversation to update
+            name (str): The new name of the conversation
+
+        Returns:
+            dict: The updated conversation
+        """
+        data: dict[str, Any] = {
+            "name": name,
+        }
+
+        return await self.client._make_request(
+            "POST",
+            f"conversations/{str(id)}",
+            json=data,
             version="v3",
         )
 
@@ -137,16 +169,17 @@ class ConversationsSDK:
         self,
         id: str | UUID,
         message_id: str,
-        content: str,
+        content: Optional[str] = None,
         metadata: Optional[dict] = None,
     ) -> dict:
         """
         Update an existing message in a conversation.
 
         Args:
-            id (Union[str, UUID]): The ID of the conversation containing the message
+            id (str | UUID): The ID of the conversation containing the message
             message_id (str): The ID of the message to update
             content (str): The new content of the message
+            metadata (dict): Additional metadata to attach to the message
 
         Returns:
             dict: Result of the operation, including the new message ID and branch ID
@@ -154,7 +187,6 @@ class ConversationsSDK:
         data: dict[str, Any] = {"content": content}
         if metadata:
             data["metadata"] = metadata
-        # data = {"content": content}
         return await self.client._make_request(
             "POST",
             f"conversations/{str(id)}/messages/{message_id}",

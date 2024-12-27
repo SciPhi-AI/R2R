@@ -130,3 +130,11 @@ class R2RAsyncClient(
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
+
+    def set_api_key(self, api_key: str) -> None:
+        if self.access_token:
+            raise ValueError("Cannot have both access token and api key.")
+        self.api_key = api_key
+
+    def unset_api_key(self) -> None:
+        self.api_key = None

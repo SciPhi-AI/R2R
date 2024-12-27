@@ -20,15 +20,13 @@ Tests verify:
 """
 
 import time
+from pathlib import Path
+from typing import Any, Optional
 from uuid import UUID
 
 import pytest
 
 from r2r import R2RClient, R2RException
-
-from pathlib import Path
-from typing import Any, Optional
-import time
 
 
 def file_ingestion(
@@ -237,7 +235,7 @@ def test_custom_ingestion_config(client: R2RClient):
     custom_config = {
         "provider": "r2r",
         "strategy": "auto",
-        "chunking_strategy": "by_title",
+        # "chunking_strategy": "by_title", Fixme: This was not implemented in the ingestion config
         "new_after_n_chars": 256,
         "max_characters": 512,
         "combine_under_n_chars": 64,

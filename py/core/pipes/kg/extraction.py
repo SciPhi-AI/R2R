@@ -32,7 +32,7 @@ class ClientError(Exception):
     pass
 
 
-class KGExtractionPipe(AsyncPipe[dict]):
+class GraphExtractionPipe(AsyncPipe[dict]):
     """
     Extracts knowledge graph information from document extractions.
     """
@@ -54,9 +54,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
     ):
         super().__init__(
             config=config
-            or AsyncPipe.PipeConfig(
-                name="default_kg_relationships_extraction_pipe"
-            ),
+            or AsyncPipe.PipeConfig(name="default_graph_extraction_pipe"),
         )
         self.database_provider = database_provider
         self.llm_provider = llm_provider
@@ -198,7 +196,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
         # add metadata to entities and relationships
 
         logger.info(
-            f"KGExtractionPipe: Completed task number {task_id} of {total_tasks} for document {extractions[0].document_id}",
+            f"GraphExtractionPipe: Completed task number {task_id} of {total_tasks} for document {extractions[0].document_id}",
         )
 
         return KGExtraction(
@@ -233,7 +231,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
         logger = input.message.get("logger", logging.getLogger())
 
         logger.info(
-            f"KGExtractionPipe: Processing document {document_id} for KG extraction",
+            f"GraphExtractionPipe: Processing document {document_id} for KG extraction",
         )
 
         # Then create the extractions from the results
@@ -277,7 +275,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
                 return
 
         logger.info(
-            f"KGExtractionPipe: Obtained {len(extractions)} extractions to process, time from start: {time.time() - start_time:.2f} seconds",
+            f"GraphExtractionPipe: Obtained {len(extractions)} extractions to process, time from start: {time.time() - start_time:.2f} seconds",
         )
 
         # sort the extractions accroding to chunk_order field in metadata in ascending order
@@ -293,7 +291,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
         ]
 
         logger.info(
-            f"KGExtractionPipe: Extracting KG Relationships for document and created {len(extractions_groups)} tasks, time from start: {time.time() - start_time:.2f} seconds",
+            f"GraphExtractionPipe: Extracting KG Relationships for document and created {len(extractions_groups)} tasks, time from start: {time.time() - start_time:.2f} seconds",
         )
 
         tasks = [
@@ -315,7 +313,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
         total_tasks = len(tasks)
 
         logger.info(
-            f"KGExtractionPipe: Waiting for {total_tasks} KG extraction tasks to complete",
+            f"GraphExtractionPipe: Waiting for {total_tasks} KG extraction tasks to complete",
         )
 
         for completed_task in asyncio.as_completed(tasks):
@@ -324,7 +322,7 @@ class KGExtractionPipe(AsyncPipe[dict]):
                 completed_tasks += 1
                 if completed_tasks % 100 == 0:
                     logger.info(
-                        f"KGExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks",
+                        f"GraphExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks",
                     )
             except Exception as e:
                 logger.error(f"Error in Extracting KG Relationships: {e}")
@@ -334,5 +332,5 @@ class KGExtractionPipe(AsyncPipe[dict]):
                 )
 
         logger.info(
-            f"KGExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks, time from start: {time.time() - start_time:.2f} seconds",
+            f"GraphExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks, time from start: {time.time() - start_time:.2f} seconds",
         )

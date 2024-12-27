@@ -1,11 +1,12 @@
 import asyncio
+import contextlib
 import datetime
 import json
 import logging
 import os
 import time
 from enum import Enum
-from typing import Any, AsyncGenerator, Optional, Tuple, Union
+from typing import Any, AsyncGenerator, Optional, Tuple
 from uuid import UUID
 
 import asyncpg
@@ -19,7 +20,6 @@ from core.base.abstractions import (
     Graph,
     KGCreationSettings,
     KGEnrichmentSettings,
-    KGEnrichmentStatus,
     KGEntityDeduplicationSettings,
     KGExtractionStatus,
     R2RException,
@@ -128,10 +128,8 @@ class PostgresEntitiesHandler(Handler):
         table_name = self._get_entity_table_for_store(store_type)
 
         if isinstance(metadata, str):
-            try:
+            with contextlib.suppress(json.JSONDecodeError):
                 metadata = json.loads(metadata)
-            except json.JSONDecodeError:
-                pass
 
         if isinstance(description_embedding, list):
             description_embedding = str(description_embedding)
@@ -238,12 +236,10 @@ class PostgresEntitiesHandler(Handler):
 
             # Process metadata if it exists and is a string
             if isinstance(entity_dict["metadata"], str):
-                try:
+                with contextlib.suppress(json.JSONDecodeError):
                     entity_dict["metadata"] = json.loads(
                         entity_dict["metadata"]
                     )
-                except json.JSONDecodeError:
-                    pass
 
             entities.append(Entity(**entity_dict))
 
@@ -266,10 +262,8 @@ class PostgresEntitiesHandler(Handler):
         param_index = 1
 
         if isinstance(metadata, str):
-            try:
+            with contextlib.suppress(json.JSONDecodeError):
                 metadata = json.loads(metadata)
-            except json.JSONDecodeError:
-                pass
 
         if name is not None:
             update_fields.append(f"name = ${param_index}")
@@ -327,7 +321,7 @@ class PostgresEntitiesHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while updating the entity: {e}",
-            )
+            ) from e
 
     async def delete(
         self,
@@ -478,10 +472,8 @@ class PostgresRelationshipsHandler(Handler):
         table_name = self._get_relationship_table_for_store(store_type)
 
         if isinstance(metadata, str):
-            try:
+            with contextlib.suppress(json.JSONDecodeError):
                 metadata = json.loads(metadata)
-            except json.JSONDecodeError:
-                pass
 
         if isinstance(description_embedding, list):
             description_embedding = str(description_embedding)
@@ -621,12 +613,10 @@ class PostgresRelationshipsHandler(Handler):
             if include_metadata and isinstance(
                 relationship_dict["metadata"], str
             ):
-                try:
+                with contextlib.suppress(json.JSONDecodeError):
                     relationship_dict["metadata"] = json.loads(
                         relationship_dict["metadata"]
                     )
-                except json.JSONDecodeError:
-                    pass
             elif not include_metadata:
                 relationship_dict.pop("metadata", None)
             relationships.append(Relationship(**relationship_dict))
@@ -654,10 +644,8 @@ class PostgresRelationshipsHandler(Handler):
         param_index = 1
 
         if isinstance(metadata, str):
-            try:
+            with contextlib.suppress(json.JSONDecodeError):
                 metadata = json.loads(metadata)
-            except json.JSONDecodeError:
-                pass
 
         if subject is not None:
             update_fields.append(f"subject = ${param_index}")
@@ -735,7 +723,7 @@ class PostgresRelationshipsHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while updating the relationship: {e}",
-            )
+            ) from e
 
     async def delete(
         self,
@@ -832,7 +820,6 @@ class PostgresCommunitiesHandler(Handler):
         rating_explanation: Optional[str],
         description_embedding: Optional[list[float] | str] = None,
     ) -> Community:
-        # Do we ever want to get communities from document store?
         table_name = "graphs_communities"
 
         if isinstance(description_embedding, list):
@@ -876,7 +863,7 @@ class PostgresCommunitiesHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while creating the community: {e}",
-            )
+            ) from e
 
     async def update(
         self,
@@ -956,45 +943,51 @@ class PostgresCommunitiesHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while updating the community: {e}",
-            )
+            ) from e
 
     async def delete(
         self,
         parent_id: UUID,
-        community_id: UUID,
+        community_id: UUID = None,
     ) -> None:
         table_name = "graphs_communities"
 
+        params = [community_id, parent_id]
+
+        # Delete the community
         query = f"""
             DELETE FROM {self._get_table_name(table_name)}
             WHERE id = $1 AND collection_id = $2
         """
 
-        params = [community_id, parent_id]
-
         try:
-            results = await self.connection_manager.execute_query(
-                query, params
-            )
+            await self.connection_manager.execute_query(query, params)
         except Exception as e:
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while deleting the community: {e}",
             )
 
-        params = [
-            community_id,
-            parent_id,
-        ]
+    async def delete_all_communities(
+        self,
+        parent_id: UUID,
+    ) -> None:
+        table_name = "graphs_communities"
+
+        params = [parent_id]
+
+        # Delete all communities for the parent_id
+        query = f"""
+            DELETE FROM {self._get_table_name(table_name)}
+            WHERE collection_id = $1
+        """
 
         try:
-            results = await self.connection_manager.execute_query(
-                query, params
-            )
+            await self.connection_manager.execute_query(query, params)
         except Exception as e:
             raise HTTPException(
                 status_code=500,
-                detail=f"An error occurred while deleting the community: {e}",
+                detail=f"An error occurred while deleting communities: {e}",
             )
 
     async def get(
@@ -1176,44 +1169,15 @@ class PostgresGraphsHandler(Handler):
         """
         Completely reset a graph and all associated data.
         """
-        try:
-            entity_delete_query = f"""
-                DELETE FROM {self._get_table_name("graphs_entities")}
-                WHERE parent_id = $1
-            """
-            await self.connection_manager.execute_query(
-                entity_delete_query, [parent_id]
-            )
 
-            # Delete all graph relationships
-            relationship_delete_query = f"""
-                DELETE FROM {self._get_table_name("graphs_relationships")}
-                WHERE parent_id = $1
-            """
-            await self.connection_manager.execute_query(
-                relationship_delete_query, [parent_id]
-            )
-
-            # Delete all graph relationships
-            community_delete_query = f"""
-                DELETE FROM {self._get_table_name("graphs_communities")}
-                WHERE collection_id = $1
-            """
-            await self.connection_manager.execute_query(
-                community_delete_query, [parent_id]
-            )
-
-            # Delete all graph communities and community info
-            query = f"""
-                DELETE FROM {self._get_table_name("graphs_communities")}
-                WHERE collection_id = $1
-            """
-
-            await self.connection_manager.execute_query(query, [parent_id])
-
-        except Exception as e:
-            logger.error(f"Error deleting graph {parent_id}: {str(e)}")
-            raise R2RException(f"Failed to delete graph: {str(e)}", 500)
+        await self.entities.delete(
+            parent_id=parent_id, store_type=StoreType.GRAPHS
+        )
+        await self.relationships.delete(
+            parent_id=parent_id, store_type=StoreType.GRAPHS
+        )
+        await self.communities.delete_all_communities(parent_id=parent_id)
+        return
 
     async def list_graphs(
         self,
@@ -1289,7 +1253,7 @@ class PostgresGraphsHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while fetching graphs: {e}",
-            )
+            ) from e
 
     async def get(
         self, offset: int, limit: int, graph_id: Optional[UUID] = None
@@ -1445,7 +1409,7 @@ class PostgresGraphsHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while updating the graph: {e}",
-            )
+            ) from e
 
     async def get_creation_estimate(
         self,
@@ -1676,7 +1640,9 @@ class PostgresGraphsHandler(Handler):
             )
         except Exception as e:
             logger.error(f"Error in get_deduplication_estimate: {str(e)}")
-            raise HTTPException(500, "Error fetching deduplication estimate.")
+            raise HTTPException(
+                500, "Error fetching deduplication estimate."
+            ) from e
 
     async def get_entities(
         self,
@@ -1754,12 +1720,10 @@ class PostgresGraphsHandler(Handler):
         for row in rows:
             entity_dict = dict(row)
             if isinstance(entity_dict["metadata"], str):
-                try:
+                with contextlib.suppress(json.JSONDecodeError):
                     entity_dict["metadata"] = json.loads(
                         entity_dict["metadata"]
                     )
-                except json.JSONDecodeError:
-                    pass
 
             entities.append(Entity(**entity_dict))
 
@@ -1840,12 +1804,10 @@ class PostgresGraphsHandler(Handler):
         for row in rows:
             relationship_dict = dict(row)
             if isinstance(relationship_dict["metadata"], str):
-                try:
+                with contextlib.suppress(json.JSONDecodeError):
                     relationship_dict["metadata"] = json.loads(
                         relationship_dict["metadata"]
                     )
-                except json.JSONDecodeError:
-                    pass
 
             relationships.append(Relationship(**relationship_dict))
 
@@ -1888,29 +1850,6 @@ class PostgresGraphsHandler(Handler):
             connection_manager=self.connection_manager,
             conflict_columns=conflict_columns,
         )
-
-    async def delete_node_via_document_id(
-        self, document_id: UUID, collection_id: UUID
-    ) -> None:
-        # don't delete if status is PROCESSING.
-        QUERY = f"""
-            SELECT graph_cluster_status FROM {self._get_table_name("collections")} WHERE id = $1
-        """
-        status = (
-            await self.connection_manager.fetch_query(QUERY, [collection_id])
-        )[0]["graph_cluster_status"]
-        if status == KGExtractionStatus.PROCESSING.value:
-            return
-
-        # Execute separate DELETE queries
-        delete_queries = [
-            f"""DELETE FROM {self._get_table_name("documents_relationships")} WHERE parent_id = $1""",
-            f"""DELETE FROM {self._get_table_name("documents_entities")} WHERE parent_id = $1""",
-        ]
-
-        for query in delete_queries:
-            await self.connection_manager.execute_query(query, [document_id])
-        return None
 
     async def get_all_relationships(
         self,
@@ -2056,64 +1995,17 @@ class PostgresGraphsHandler(Handler):
             QUERY, [tuple(non_null_attrs.values())]
         )
 
-    async def delete_graph_for_collection(
-        self, collection_id: UUID, cascade: bool = False
-    ) -> None:
+    # async def delete(self, collection_id: UUID, cascade: bool = False) -> None:
+    async def delete(self, collection_id: UUID) -> None:
 
-        # don't delete if status is PROCESSING.
-        QUERY = f"""
-            SELECT graph_cluster_status FROM {self._get_table_name("collections")} WHERE id = $1
-        """
-        status = (
-            await self.connection_manager.fetch_query(QUERY, [collection_id])
-        )[0]["graph_cluster_status"]
-        if status == KGExtractionStatus.PROCESSING.value:
-            return
+        graphs = await self.get(graph_id=collection_id, offset=0, limit=-1)
 
-        # remove all relationships for these documents.
-        DELETE_QUERIES = [
-            f"DELETE FROM {self._get_table_name('graphs_communities')} WHERE collection_id = $1;",
-        ]
-
-        # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
-        document_ids_response = (
-            await self.collections_handler.documents_in_collection(
-                offset=0,
-                limit=100,
-                collection_id=collection_id,
+        if len(graphs["results"]) == 0:
+            raise R2RException(
+                message=f"Graph not found for collection {collection_id}",
+                status_code=404,
             )
-        )
-
-        # This type ignore is due to insufficient typing of the documents_in_collection method
-        document_ids = [doc.id for doc in document_ids_response["results"]]  # type: ignore
-
-        # TODO: make these queries more efficient. Pass the document_ids as params.
-        if cascade:
-            DELETE_QUERIES += [
-                f"DELETE FROM {self._get_table_name('graphs_relationships')} WHERE document_id = ANY($1::uuid[]);",
-                f"DELETE FROM {self._get_table_name('graphs_entities')} WHERE document_id = ANY($1::uuid[]);",
-                f"DELETE FROM {self._get_table_name('graphs_entities')} WHERE collection_id = $1;",
-            ]
-
-            # setting the kg_creation_status to PENDING for this collection.
-            QUERY = f"""
-                UPDATE {self._get_table_name("documents")} SET extraction_status = $1 WHERE $2::uuid = ANY(collection_ids)
-            """
-            await self.connection_manager.execute_query(
-                QUERY, [KGExtractionStatus.PENDING, collection_id]
-            )
-
-        if document_ids:
-            for query in DELETE_QUERIES:
-                if "community" in query or "graphs_entities" in query:
-                    await self.connection_manager.execute_query(
-                        query, [collection_id]
-                    )
-                else:
-                    await self.connection_manager.execute_query(
-                        query, [document_ids]
-                    )
-
+        await self.reset(collection_id)
         # set status to PENDING for this collection.
         QUERY = f"""
             UPDATE {self._get_table_name("collections")} SET graph_cluster_status = $1 WHERE id = $2
@@ -2121,6 +2013,37 @@ class PostgresGraphsHandler(Handler):
         await self.connection_manager.execute_query(
             QUERY, [KGExtractionStatus.PENDING, collection_id]
         )
+        # Delete the graph
+        QUERY = f"""
+            DELETE FROM {self._get_table_name("graphs")} WHERE collection_id = $1
+        """
+
+        # if cascade:
+        #     documents = []
+        #     document_response = (
+        #         await self.collections_handler.documents_in_collection(
+        #             offset=0,
+        #             limit=100,
+        #             collection_id=collection_id,
+        #         )
+        #     )["results"]
+        #     documents.extend(document_response)
+        #     document_ids = [doc.id for doc in documents]
+        #     for document_id in document_ids:
+        #         self.entities.delete(
+        #             parent_id=document_id, store_type=StoreType.DOCUMENTS
+        #         )
+        #         self.relationships.delete(
+        #             parent_id=document_id, store_type=StoreType.DOCUMENTS
+        #         )
+
+        #     # setting the extraction status to PENDING for the documents in this collection.
+        #     QUERY = f"""
+        #         UPDATE {self._get_table_name("documents")} SET extraction_status = $1 WHERE $2::uuid = ANY(collection_ids)
+        #     """
+        #     await self.connection_manager.execute_query(
+        #         QUERY, [KGExtractionStatus.PENDING, collection_id]
+        #     )
 
     async def perform_graph_clustering(
         self,
@@ -2426,7 +2349,7 @@ class PostgresGraphsHandler(Handler):
         property_names_str = ", ".join(property_names)
 
         # Build the WHERE clause from filters
-        params: list[Union[str, int, bytes]] = [
+        params: list[str | int | bytes] = [
             json.dumps(query_embedding),
             limit,
         ]
@@ -2582,23 +2505,6 @@ class PostgresGraphsHandler(Handler):
             return " AND ".join(filter_conditions)
 
         return parse_filter(filter_dict)
-
-    # async def _create_graph_and_cluster(
-    #     self, relationships: list[Relationship], leiden_params: dict[str, Any]
-    # ) -> Any:
-
-    #     G = self.nx.Graph()
-    #     for relationship in relationships:
-    #         G.add_edge(
-    #             relationship.subject,
-    #             relationship.object,
-    #             weight=relationship.weight,
-    #             id=relationship.id,
-    #         )
-
-    #     logger.info(f"Graph has {len(G.nodes)} nodes and {len(G.edges)} edges")
-
-    #     return await self._compute_leiden_communities(G, leiden_params)
 
     async def _compute_leiden_communities(
         self,

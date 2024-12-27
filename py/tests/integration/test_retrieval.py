@@ -29,7 +29,7 @@ def test_search_basic_mode(client):
 
 
 def test_search_advanced_mode_with_filters(client):
-    filters = {"document_type": {"$eq": "txt"}}
+    filters = {"metadata.document_type": {"$eq": "txt"}}
     resp = client.retrieval.search(
         query="Philosophy",
         search_mode="advanced",
@@ -256,65 +256,11 @@ def test_agent_conversation_id(client):
     ), "No results from agent in second turn of conversation"
 
 
-# def _setup_collection_with_documents(client):
-#     collection_name = f"Test Collection {uuid.uuid4()}"
-#     collection_id = client.collections.create(name=collection_name)["results"][
-#         "id"
-#     ]
-
-#     docs = [
-#         {
-#             "text": f"Aristotle was a Greek philosopher who studied under Plato {str(uuid.uuid4())}.",
-#             "metadata": {
-#                 "rating": 5,
-#                 "tags": ["philosophy", "greek"],
-#                 "category": "ancient",
-#             },
-#         },
-#         {
-#             "text": f"Socrates is considered a founder of Western philosophy  {str(uuid.uuid4())}.",
-#             "metadata": {
-#                 "rating": 3,
-#                 "tags": ["philosophy", "classical"],
-#                 "category": "ancient",
-#             },
-#         },
-#         {
-#             "text": f"Rene Descartes was a French philosopher. unique_philosopher  {str(uuid.uuid4())}",
-#             "metadata": {
-#                 "rating": 8,
-#                 "tags": ["rationalism", "french"],
-#                 "category": "modern",
-#             },
-#         },
-#         {
-#             "text": f"Immanuel Kant, a German philosopher, influenced Enlightenment thought  {str(uuid.uuid4())}.",
-#             "metadata": {
-#                 "rating": 7,
-#                 "tags": ["enlightenment", "german"],
-#                 "category": "modern",
-#             },
-#         },
-#     ]
-
-#     doc_ids = []
-#     for doc in docs:
-#         result = client.documents.create(
-#             raw_text=doc["text"], metadata=doc["metadata"]
-#         )["results"]
-#         doc_id = result["document_id"]
-#         doc_ids.append(doc_id)
-#         client.collections.add_document(collection_id, doc_id)
-
-#     return collection_id, doc_ids
-
-
 def test_complex_filters_and_fulltext(client, test_collection):
     # collection_id, doc_ids = _setup_collection_with_documents(client)
 
     # rating > 5
     me = client.users.me()
-    print("me = ", me)
     # include  owner id and collection ids to make robust against other database interactions from other users
     filters = {
         "rating": {"$gt": 5},
@@ -329,7 +275,6 @@ def test_complex_filters_and_fulltext(client, test_collection):
         search_settings={"use_semantic_search": True, "filters": filters},
     )["results"]
     results = resp["chunk_search_results"]
-    print("results = ", results)
     assert (
         len(results) == 2
     ), f"Expected 2 docs with rating > 5, got {len(results)}"
@@ -356,11 +301,13 @@ def test_complex_filters_and_fulltext(client, test_collection):
         "$and": [
             {"metadata.rating": {"$gt": 5}},
             {"metadata.category": {"$eq": "modern"}},
+            {"owner_id": {"$eq": client.users.me()["results"]["id"]}},
+            {
+                "collection_ids": {
+                    "$overlap": [str(test_collection["collection_id"])]
+                }
+            },
         ],
-        "owner_id": {"$eq": client.users.me()["results"]["id"]},
-        "collection_ids": {
-            "$overlap": [str(test_collection["collection_id"])]
-        },
     }
     resp = client.retrieval.search(
         query="d",
@@ -407,11 +354,13 @@ def test_complex_nested_filters(client, test_collection):
                 ]
             },
             {"metadata.tags": {"$contains": ["philosophy"]}},
+            {"owner_id": {"$eq": client.users.me()["results"]["id"]}},
+            {
+                "collection_ids": {
+                    "$overlap": [str(test_collection["collection_id"])]
+                }
+            },
         ],
-        "owner_id": {"$eq": client.users.me()["results"]["id"]},
-        "collection_ids": {
-            "$overlap": [str(test_collection["collection_id"])]
-        },
     }
 
     resp = client.retrieval.search(
@@ -420,7 +369,6 @@ def test_complex_nested_filters(client, test_collection):
         search_settings={"filters": filters},
     )["results"]
     results = resp["chunk_search_results"]
-    print("results = ", results)
     assert len(results) == 2, f"Expected 2 docs, got {len(results)}"
 
 
@@ -446,7 +394,6 @@ def test_filters_no_match(client):
 
 
 def test_pagination_extremes(client):
-    # base_resp = client.retrieval.search(query="Aristotle", search_mode="basic")
     chunk_list = client.chunks.list()
     total_entries = chunk_list["total_entries"]
 
@@ -457,7 +404,6 @@ def test_pagination_extremes(client):
         search_settings={"limit": 10, "offset": offset},
     )["results"]
     results = resp["chunk_search_results"]
-    print("results = ", results)
     assert (
         len(results) == 0
     ), f"Expected no results at large offset, got {len(results)}"
@@ -549,7 +495,14 @@ def test_agent_long_conversation(client):
 
 
 def test_filter_by_document_type(client):
-    client.documents.create(chunks=["a", "b", "c"])
+    random_suffix = str(uuid.uuid4())
+    client.documents.create(
+        chunks=[
+            f"a {random_suffix}",
+            f"b {random_suffix}",
+            f"c {random_suffix}",
+        ]
+    )
     filters = {"document_type": {"$eq": "txt"}}
     resp = client.retrieval.search(
         query="a", search_settings={"filters": filters}

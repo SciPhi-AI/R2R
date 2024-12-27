@@ -15,6 +15,7 @@ from .collections import PostgresCollectionsHandler
 
 class PostgresUserHandler(Handler):
     TABLE_NAME = "users"
+    API_KEYS_TABLE_NAME = "users_api_keys"
 
     def __init__(
         self,
@@ -26,7 +27,7 @@ class PostgresUserHandler(Handler):
         self.crypto_provider = crypto_provider
 
     async def create_tables(self):
-        query = f"""
+        user_table_query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresUserHandler.TABLE_NAME)} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             email TEXT UNIQUE NOT NULL,
@@ -46,7 +47,27 @@ class PostgresUserHandler(Handler):
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
         """
-        await self.connection_manager.execute_query(query)
+        # API keys table with updated_at instead of last_used_at
+        api_keys_table_query = f"""
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresUserHandler.API_KEYS_TABLE_NAME)} (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            user_id UUID NOT NULL REFERENCES {self._get_table_name(PostgresUserHandler.TABLE_NAME)}(id) ON DELETE CASCADE,
+            public_key TEXT UNIQUE NOT NULL,
+            hashed_key TEXT NOT NULL,
+            name TEXT,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_api_keys_user_id
+        ON {self._get_table_name(PostgresUserHandler.API_KEYS_TABLE_NAME)}(user_id);
+
+        CREATE INDEX IF NOT EXISTS idx_api_keys_public_key
+        ON {self._get_table_name(PostgresUserHandler.API_KEYS_TABLE_NAME)}(public_key);
+        """
+
+        await self.connection_manager.execute_query(user_table_query)
+        await self.connection_manager.execute_query(api_keys_table_query)
 
     async def get_user_by_id(self, id: UUID) -> User:
         query, _ = (
@@ -502,7 +523,7 @@ class PostgresUserHandler(Handler):
 
     async def get_user_id_by_verification_code(
         self, verification_code: str
-    ) -> Optional[UUID]:
+    ) -> UUID:
         query = f"""
             SELECT id FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             WHERE verification_code = $1 AND verification_code_expiry > NOW()
@@ -549,9 +570,12 @@ class PostgresUserHandler(Handler):
                     u.is_superuser,
                     u.is_active,
                     u.is_verified,
+                    u.name,
+                    u.bio,
+                    u.profile_picture,
+                    u.collection_ids,
                     u.created_at,
                     u.updated_at,
-                    u.collection_ids,
                     COUNT(d.id) AS num_files,
                     COALESCE(SUM(d.size_in_bytes), 0) AS total_size_in_bytes,
                     ud.doc_ids as document_ids
@@ -588,6 +612,8 @@ class PostgresUserHandler(Handler):
                 is_superuser=row["is_superuser"],
                 is_active=row["is_active"],
                 is_verified=row["is_verified"],
+                name=row["name"],
+                bio=row["bio"],
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
                 collection_ids=row["collection_ids"] or [],
@@ -596,7 +622,7 @@ class PostgresUserHandler(Handler):
                 document_ids=(
                     []
                     if row["document_ids"] is None
-                    else [doc_id for doc_id in row["document_ids"]]
+                    else list(row["document_ids"])
                 ),
             )
             for row in results
@@ -658,3 +684,98 @@ class PostgresUserHandler(Handler):
                 ),
             }
         }
+
+    # API Key methods
+    async def store_user_api_key(
+        self,
+        user_id: UUID,
+        key_id: str,
+        hashed_key: str,
+        name: Optional[str] = None,
+    ) -> UUID:
+        """Store a new API key for a user"""
+        query = f"""
+            INSERT INTO {self._get_table_name(PostgresUserHandler.API_KEYS_TABLE_NAME)}
+            (user_id, public_key, hashed_key, name)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [user_id, key_id, hashed_key, name]
+        )
+        if not result:
+            raise R2RException(
+                status_code=500, message="Failed to store API key"
+            )
+        return result["id"]
+
+    async def get_api_key_record(self, key_id: str) -> Optional[dict]:
+        """Get API key record and update updated_at"""
+        query = f"""
+            UPDATE {self._get_table_name(PostgresUserHandler.API_KEYS_TABLE_NAME)}
+            SET updated_at = NOW()
+            WHERE public_key = $1
+            RETURNING user_id, hashed_key
+        """
+        result = await self.connection_manager.fetchrow_query(query, [key_id])
+        if not result:
+            return None
+        return {
+            "user_id": result["user_id"],
+            "hashed_key": result["hashed_key"],
+        }
+
+    async def get_user_api_keys(self, user_id: UUID) -> list[dict]:
+        """Get all API keys for a user"""
+        query = f"""
+            SELECT id, public_key, name, created_at, updated_at
+            FROM {self._get_table_name(PostgresUserHandler.API_KEYS_TABLE_NAME)}
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+        """
+        results = await self.connection_manager.fetch_query(query, [user_id])
+        return [
+            {
+                "key_id": str(row["id"]),
+                "public_key": row["public_key"],
+                "name": row["name"] or "",
+                "updated_at": row["updated_at"],
+            }
+            for row in results
+        ]
+
+    async def delete_api_key(self, user_id: UUID, key_id: UUID) -> dict:
+        """Delete a specific API key"""
+        query = f"""
+            DELETE FROM {self._get_table_name(PostgresUserHandler.API_KEYS_TABLE_NAME)}
+            WHERE id = $1 AND user_id = $2
+            RETURNING id, public_key, name
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [key_id, user_id]
+        )
+        if result is None:
+            raise R2RException(status_code=404, message="API key not found")
+
+        return {
+            "key_id": str(result["id"]),
+            "public_key": str(result["public_key"]),
+            "name": result["name"] or "",
+        }
+
+    async def update_api_key_name(
+        self, user_id: UUID, key_id: UUID, name: str
+    ) -> bool:
+        """Update the name of an API key"""
+        query = f"""
+            UPDATE {self._get_table_name(PostgresUserHandler.API_KEYS_TABLE_NAME)}
+            SET name = $1, updated_at = NOW()
+            WHERE id = $2 AND user_id = $3
+            RETURNING id
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [name, key_id, user_id]
+        )
+        if result is None:
+            raise R2RException(status_code=404, message="API key not found")
+        return True

@@ -14,7 +14,7 @@ from core.base.abstractions import GenerationConfig, RAGCompletion
 from ..abstractions.generator_pipe import GeneratorPipe
 
 
-class SearchRAGPipe(GeneratorPipe):
+class RAGPipe(GeneratorPipe):
     class Input(AsyncPipe.Input):
         message: AsyncGenerator[Tuple[str, AggregateSearchResult], None]
 

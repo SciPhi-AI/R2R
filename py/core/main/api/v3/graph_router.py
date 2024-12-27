@@ -44,7 +44,7 @@ class GraphRouter(BaseRouterV3):
         workflow_messages = {}
         if self.providers.orchestration.config.provider == "hatchet":
             workflow_messages["extract-triples"] = (
-                "Graph creation task queued successfully."
+                "Document extraction task queued successfully."
             )
             workflow_messages["build-communities"] = (
                 "Graph enrichment task queued successfully."
@@ -54,10 +54,10 @@ class GraphRouter(BaseRouterV3):
             )
         else:
             workflow_messages["extract-triples"] = (
-                "Document entities and relationships extracted successfully. To generate GraphRAG communities, POST to `/graphs/<collection_id>/communities/build` with a collection this document belongs to."
+                "Document entities and relationships extracted successfully."
             )
             workflow_messages["build-communities"] = (
-                "Graph communities created successfully. You can view the communities at http://localhost:7272/v2/communities"
+                "Graph communities created successfully."
             )
             workflow_messages["entity-deduplication"] = (
                 "KG Entity Deduplication completed successfully."
@@ -65,7 +65,7 @@ class GraphRouter(BaseRouterV3):
 
         self.providers.orchestration.register_workflows(
             Workflow.KG,
-            self.services.kg,
+            self.services.graph,
             workflow_messages,
         )
 
@@ -119,7 +119,7 @@ class GraphRouter(BaseRouterV3):
 
         # Return cost estimate if requested
         if run_type == KGRunType.ESTIMATE:
-            return await self.services.kg.get_deduplication_estimate(
+            return await self.services.graph.get_deduplication_estimate(
                 collection_id, server_settings
             )
 
@@ -136,7 +136,7 @@ class GraphRouter(BaseRouterV3):
         else:
             from core.main.orchestration import simple_kg_factory
 
-            simple_kg = simple_kg_factory(self.services.kg)
+            simple_kg = simple_kg_factory(self.services.graph)
             await simple_kg["entity-deduplication"](workflow_input)
             return {  # type: ignore
                 "message": "Entity deduplication completed successfully.",
@@ -207,7 +207,7 @@ class GraphRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGraphsResponse:
             """
             Returns a paginated list of graphs the authenticated user has access to.
@@ -223,7 +223,7 @@ class GraphRouter(BaseRouterV3):
 
             graph_uuids = [UUID(graph_id) for graph_id in collection_ids]
 
-            list_graphs_response = await self.services.kg.list_graphs(
+            list_graphs_response = await self.services.graph.list_graphs(
                 # user_ids=requesting_user_id,
                 graph_ids=graph_uuids,
                 offset=offset,
@@ -287,7 +287,7 @@ class GraphRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_graph(
             collection_id: UUID = Path(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGraphResponse:
             """
             Retrieves detailed information about a specific graph by ID.
@@ -302,7 +302,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            list_graphs_response = await self.services.kg.list_graphs(
+            list_graphs_response = await self.services.graph.list_graphs(
                 # user_ids=None,
                 graph_ids=[collection_id],
                 offset=0,
@@ -328,7 +328,7 @@ class GraphRouter(BaseRouterV3):
                 description="Settings for the graph enrichment process.",
             ),
             run_with_orchestration: Optional[bool] = Body(True),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
             """
             Creates communities in the graph by analyzing entity relationships and similarities.
@@ -394,7 +394,7 @@ class GraphRouter(BaseRouterV3):
                 from core.main.orchestration import simple_kg_factory
 
                 logger.info("Running build-communities without orchestration.")
-                simple_kg = simple_kg_factory(self.services.kg)
+                simple_kg = simple_kg_factory(self.services.graph)
                 await simple_kg["build-communities"](workflow_input)
                 return {
                     "message": "Graph communities created successfully.",
@@ -453,7 +453,7 @@ class GraphRouter(BaseRouterV3):
         @self.base_endpoint
         async def reset(
             collection_id: UUID = Path(...),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Deletes a graph and all its associated data.
@@ -476,7 +476,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            await self.services.kg.reset_graph_v3(id=collection_id)
+            await self.services.graph.reset_graph_v3(id=collection_id)
             # await _pull(collection_id, auth_user)
             return GenericBooleanResponse(success=True)  # type: ignore
 
@@ -540,7 +540,7 @@ class GraphRouter(BaseRouterV3):
             description: Optional[str] = Body(
                 None, description="An optional description of the graph"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
             """
             Update an existing graphs's configuration.
@@ -562,7 +562,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services.kg.update_graph(  # type: ignore
+            return await self.services.graph.update_graph(  # type: ignore
                 collection_id,
                 name=name,
                 description=description,
@@ -582,7 +582,7 @@ class GraphRouter(BaseRouterV3):
                             client = R2RClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
-                            response = client.graphs.get_entities(collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7")
+                            response = client.graphs.list_entities(collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7")
                             """
                         ),
                     },
@@ -595,7 +595,7 @@ class GraphRouter(BaseRouterV3):
                             const client = new r2rClient("http://localhost:7272");
 
                             function main() {
-                                const response = await client.graphs.get_entities({
+                                const response = await client.graphs.listEntities({
                                     collection_id: "d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 });
                             }
@@ -624,7 +624,7 @@ class GraphRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedEntitiesResponse:
             """Lists all entities in the graph with pagination support."""
             if (
@@ -637,7 +637,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            entities, count = await self.services.kg.get_entities(
+            entities, count = await self.services.graph.get_entities(
                 parent_id=collection_id,
                 offset=offset,
                 limit=limit,
@@ -669,7 +669,7 @@ class GraphRouter(BaseRouterV3):
             metadata: Optional[dict] = Body(
                 None, description="The metadata of the entity to create."
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedEntityResponse:
             """Creates a new entity in the graph."""
             if (
@@ -682,7 +682,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services.kg.create_entity(
+            return await self.services.graph.create_entity(
                 name=name,
                 description=description,
                 parent_id=collection_id,
@@ -727,7 +727,7 @@ class GraphRouter(BaseRouterV3):
             metadata: Optional[dict] = Body(
                 None, description="The metadata of the relationship to create."
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRelationshipResponse:
             """Creates a new relationship in the graph."""
             if not auth_user.is_superuser:
@@ -744,7 +744,7 @@ class GraphRouter(BaseRouterV3):
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
-            return await self.services.kg.create_relationship(
+            return await self.services.graph.create_relationship(
                 subject=subject,
                 subject_id=subject_id,
                 predicate=predicate,
@@ -808,7 +808,7 @@ class GraphRouter(BaseRouterV3):
             entity_id: UUID = Path(
                 ..., description="The ID of the entity to retrieve."
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedEntityResponse:
             """Retrieves a specific entity by its ID."""
             if (
@@ -857,7 +857,7 @@ class GraphRouter(BaseRouterV3):
             metadata: Optional[dict] = Body(
                 None, description="The updated metadata of the entity."
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedEntityResponse:
             """Updates an existing entity in the graph."""
             if not auth_user.is_superuser:
@@ -874,7 +874,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services.kg.update_entity(
+            return await self.services.graph.update_entity(
                 entity_id=entity_id,
                 name=name,
                 category=category,
@@ -936,7 +936,7 @@ class GraphRouter(BaseRouterV3):
                 ...,
                 description="The ID of the entity to remove from the graph.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """Removes an entity from the graph."""
             if not auth_user.is_superuser:
@@ -954,7 +954,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            await self.services.kg.delete_entity(
+            await self.services.graph.delete_entity(
                 parent_id=collection_id,
                 entity_id=entity_id,
             )
@@ -1018,7 +1018,7 @@ class GraphRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRelationshipsResponse:
             """
             Lists all relationships in the graph with pagination support.
@@ -1033,7 +1033,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            relationships, count = await self.services.kg.get_relationships(
+            relationships, count = await self.services.graph.get_relationships(
                 parent_id=collection_id,
                 offset=offset,
                 limit=limit,
@@ -1096,7 +1096,7 @@ class GraphRouter(BaseRouterV3):
             relationship_id: UUID = Path(
                 ..., description="The ID of the relationship to retrieve."
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRelationshipResponse:
             """Retrieves a specific relationship by its ID."""
             if (
@@ -1160,7 +1160,7 @@ class GraphRouter(BaseRouterV3):
             metadata: Optional[dict] = Body(
                 None, description="The updated metadata of the relationship."
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRelationshipResponse:
             """Updates an existing relationship in the graph."""
             if not auth_user.is_superuser:
@@ -1178,7 +1178,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services.kg.update_relationship(
+            return await self.services.graph.update_relationship(
                 relationship_id=relationship_id,
                 subject=subject,
                 subject_id=subject_id,
@@ -1244,7 +1244,7 @@ class GraphRouter(BaseRouterV3):
                 ...,
                 description="The ID of the relationship to remove from the graph.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """Removes a relationship from the graph."""
             if not auth_user.is_superuser:
@@ -1261,7 +1261,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            await self.services.kg.delete_relationship(
+            await self.services.graph.delete_relationship(
                 parent_id=collection_id,
                 relationship_id=relationship_id,
             )
@@ -1337,7 +1337,7 @@ class GraphRouter(BaseRouterV3):
             rating_explanation: Optional[str] = Body(
                 default="", description="Explanation for the rating"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCommunityResponse:
             """
             Creates a new community in the graph.
@@ -1368,7 +1368,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services.kg.create_community(
+            return await self.services.graph.create_community(
                 parent_id=collection_id,
                 name=name,
                 summary=summary,
@@ -1434,7 +1434,7 @@ class GraphRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCommunitiesResponse:
             """
             Lists all communities in the graph with pagination support.
@@ -1449,7 +1449,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            communities, count = await self.services.kg.get_communities(
+            communities, count = await self.services.graph.get_communities(
                 parent_id=collection_id,
                 offset=offset,
                 limit=limit,
@@ -1509,7 +1509,7 @@ class GraphRouter(BaseRouterV3):
                 ...,
                 description="The ID of the community to get.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCommunityResponse:
             """
             Retrieves a specific community by its ID.
@@ -1591,7 +1591,7 @@ class GraphRouter(BaseRouterV3):
                 ...,
                 description="The ID of the community to delete.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
             if (
                 not auth_user.is_superuser
@@ -1611,7 +1611,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            await self.services.kg.delete_community(
+            await self.services.graph.delete_community(
                 parent_id=collection_id,
                 community_id=community_id,
             )
@@ -1680,7 +1680,7 @@ class GraphRouter(BaseRouterV3):
             findings: Optional[list[str]] = Body(None),
             rating: Optional[float] = Body(default=None, ge=1, le=10),
             rating_explanation: Optional[str] = Body(None),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCommunityResponse:
             """
             Updates an existing community in the graph.
@@ -1703,7 +1703,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services.kg.update_community(
+            return await self.services.graph.update_community(
                 community_id=community_id,
                 name=name,
                 summary=summary,
@@ -1765,7 +1765,7 @@ class GraphRouter(BaseRouterV3):
             # document_ids: list[UUID] = Body(
             #     ..., description="List of document IDs to add to the graph."
             # ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Adds documents to a graph by copying their entities and relationships.
@@ -1801,7 +1801,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            list_graphs_response = await self.services.kg.list_graphs(
+            list_graphs_response = await self.services.graph.list_graphs(
                 # user_ids=None,
                 graph_ids=[collection_id],
                 offset=0,

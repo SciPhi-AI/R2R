@@ -28,7 +28,7 @@ from .tokens import PostgresTokensHandler
 from .users import PostgresUserHandler
 
 if TYPE_CHECKING:
-    from ..providers.crypto import BCryptProvider
+    from ..providers.crypto import NaClCryptoProvider
 
 logger = logging.getLogger()
 
@@ -57,7 +57,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
     dimension: int
     conn: Optional[Any]
 
-    crypto_provider: "BCryptProvider"
+    crypto_provider: "NaClCryptoProvider"
     postgres_configuration_settings: PostgresConfigurationSettings
     default_collection_name: str
     default_collection_description: str
@@ -81,7 +81,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
         self,
         config: DatabaseConfig,
         dimension: int,
-        crypto_provider: "BCryptProvider",
+        crypto_provider: "NaClCryptoProvider",
         quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
         *args,
         **kwargs,

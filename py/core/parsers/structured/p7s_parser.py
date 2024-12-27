@@ -1,10 +1,10 @@
 # type: ignore
-from typing import AsyncGenerator
+import email
 import logging
 from base64 import b64decode
 from datetime import datetime
-import email
 from email.message import Message
+from typing import AsyncGenerator
 
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (

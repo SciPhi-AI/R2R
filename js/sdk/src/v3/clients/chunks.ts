@@ -6,6 +6,7 @@ import {
   WrappedChunkResponse,
   WrappedChunksResponse,
 } from "../../types";
+import { ensureSnakeCase } from "../../utils";
 
 export class ChunksClient {
   constructor(private client: r2rClient) {}
@@ -28,7 +29,7 @@ export class ChunksClient {
   }): Promise<any> {
     return this.client.makeRequest("POST", "chunks", {
       data: {
-        raw_chunks: options.chunks,
+        raw_chunks: ensureSnakeCase(options.chunks),
         runWithOrchestration: options.runWithOrchestration,
       },
     });

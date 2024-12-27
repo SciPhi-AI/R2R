@@ -14,10 +14,6 @@ from core.base.api.models import (
     WrappedConversationsResponse,
     WrappedMessageResponse,
 )
-from core.providers import (
-    HatchetOrchestrationProvider,
-    SimpleOrchestrationProvider,
-)
 
 from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
@@ -91,14 +87,22 @@ class ConversationsRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def create_conversation(
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            name: Optional[str] = Body(
+                None, description="The name of the conversation", embed=True
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedConversationResponse:
             """
             Create a new conversation.
 
             This endpoint initializes a new conversation for the authenticated user.
             """
-            return await self.services.management.create_conversation()
+            user_id = auth_user.id
+
+            return await self.services.management.create_conversation(
+                user_id=user_id,
+                name=name,
+            )
 
         @self.router.get(
             "/conversations",
@@ -175,22 +179,27 @@ class ConversationsRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedConversationsResponse:
             """
             List conversations with pagination and sorting options.
 
             This endpoint returns a paginated list of conversations for the authenticated user.
             """
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
             conversation_uuids = [
                 UUID(conversation_id) for conversation_id in ids
             ]
 
             conversations_response = (
                 await self.services.management.conversations_overview(
-                    conversation_ids=conversation_uuids,
                     offset=offset,
                     limit=limit,
+                    conversation_ids=conversation_uuids,
+                    user_ids=requesting_user_id,
                 )
             )
             return conversations_response["results"], {  # type: ignore
@@ -261,17 +270,105 @@ class ConversationsRouter(BaseRouterV3):
             id: UUID = Path(
                 ..., description="The unique identifier of the conversation"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedConversationMessagesResponse:
             """
             Get details of a specific conversation.
 
             This endpoint retrieves detailed information about a single conversation identified by its UUID.
             """
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
             conversation = await self.services.management.get_conversation(
-                str(id)
+                conversation_id=id,
+                user_ids=requesting_user_id,
             )
             return conversation
+
+        @self.router.post(
+            "/conversations/{id}",
+            summary="Update conversation",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            result = client.conversations.update("123e4567-e89b-12d3-a456-426614174000", "new_name")
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                const response = await client.conversations.update({
+                                    id: "123e4567-e89b-12d3-a456-426614174000",
+                                    name: "new_name",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            r2r conversations delete 123e4567-e89b-12d3-a456-426614174000
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000" \
+                                -H "Authorization: Bearer YOUR_API_KEY" \
+                                -H "Content-Type: application/json" \
+                                -d '{"name": "new_name"}'
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def update_conversation(
+            id: UUID = Path(
+                ...,
+                description="The unique identifier of the conversation to delete",
+            ),
+            name: str = Body(
+                ...,
+                description="The updated name for the conversation",
+                embed=True,
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> WrappedConversationResponse:
+            """
+            Update an existing conversation.
+
+            This endpoint updates the name of an existing conversation identified by its UUID.
+            """
+            return await self.services.management.update_conversation(
+                conversation_id=id,
+                name=name,
+            )
 
         @self.router.delete(
             "/conversations/{id}",
@@ -336,14 +433,21 @@ class ConversationsRouter(BaseRouterV3):
                 ...,
                 description="The unique identifier of the conversation to delete",
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
             Delete an existing conversation.
 
             This endpoint deletes a conversation identified by its UUID.
             """
-            await self.services.management.delete_conversation(str(id))
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
+            await self.services.management.delete_conversation(
+                conversation_id=id,
+                user_ids=requesting_user_id,
+            )
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
@@ -417,13 +521,13 @@ class ConversationsRouter(BaseRouterV3):
             role: str = Body(
                 ..., description="The role of the message to add"
             ),
-            parent_id: Optional[str] = Body(
+            parent_id: Optional[UUID] = Body(
                 None, description="The ID of the parent message, if any"
             ),
             metadata: Optional[dict[str, str]] = Body(
                 None, description="Additional metadata for the message"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedMessageResponse:
             """
             Add a new message to a conversation.
@@ -436,10 +540,10 @@ class ConversationsRouter(BaseRouterV3):
                 raise R2RException("Invalid role", status_code=400)
             message = Message(role=role, content=content)
             return await self.services.management.add_message(
-                str(id),
-                message,
-                parent_id,
-                metadata,
+                conversation_id=id,
+                content=message,
+                parent_id=parent_id,
+                metadata=metadata,
             )
 
         @self.router.post(
@@ -504,23 +608,24 @@ class ConversationsRouter(BaseRouterV3):
             id: UUID = Path(
                 ..., description="The unique identifier of the conversation"
             ),
-            message_id: str = Path(
+            message_id: UUID = Path(
                 ..., description="The ID of the message to update"
             ),
-            content: str = Body(
-                ..., description="The new content for the message"
+            content: Optional[str] = Body(
+                None, description="The new content for the message"
             ),
             metadata: Optional[dict[str, str]] = Body(
                 None, description="Additional metadata for the message"
             ),
-            auth_user=Depends(self.providers.auth.auth_wrapper),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedMessageResponse:
             """
             Update an existing message in a conversation.
 
             This endpoint updates the content of an existing message in a conversation.
             """
-            messge_response = await self.services.management.edit_message(
-                message_id, content, metadata
+            return await self.services.management.edit_message(
+                message_id=message_id,
+                new_content=content,
+                additional_metadata=metadata,
             )
-            return messge_response

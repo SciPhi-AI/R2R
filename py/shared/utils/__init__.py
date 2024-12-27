@@ -2,6 +2,7 @@ from .base_utils import (
     _decorate_vector_type,
     _get_str_estimation_output,
     decrement_version,
+    deep_update,
     format_search_results_for_llm,
     format_search_results_for_stream,
     generate_default_prompt_id,
@@ -35,6 +36,7 @@ __all__ = [
     "to_async_generator",
     "llm_cost_per_million_tokens",
     "validate_uuid",
+    "deep_update",
     # Text splitter
     "RecursiveCharacterTextSplitter",
     "TextSplitter",

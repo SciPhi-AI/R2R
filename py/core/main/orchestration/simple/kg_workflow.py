@@ -6,12 +6,12 @@ import uuid
 from core import GenerationConfig, R2RException
 from core.base.abstractions import KGEnrichmentStatus
 
-from ...services import KgService
+from ...services import GraphService
 
 logger = logging.getLogger()
 
 
-def simple_kg_factory(service: KgService):
+def simple_kg_factory(service: GraphService):
 
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
