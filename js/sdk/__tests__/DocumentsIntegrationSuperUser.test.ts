@@ -108,11 +108,10 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
     expect(fs.existsSync(outputPath)).toBe(true);
     const content = fs.readFileSync(outputPath, "utf-8");
-    const headers = content.split("\n")[0].split(",");
-
-    console.log("Raw content:", content);
-    console.log("Headers array:", headers);
-    console.log("Last header:", headers[headers.length - 1]);
+    const headers = content
+      .split("\n")[0]
+      .split(",")
+      .map((h) => h.trim());
 
     expect(headers).toContain('"id"');
     expect(headers).toContain('"title"');
