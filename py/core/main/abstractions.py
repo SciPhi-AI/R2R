@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
@@ -107,8 +107,8 @@ class R2RAgents(BaseModel):
 
 @dataclass
 class R2RServices:
-    auth: Optional["AuthService"] = None
-    ingestion: Optional["IngestionService"] = None
-    management: Optional["ManagementService"] = None
-    retrieval: Optional["RetrievalService"] = None
-    graph: Optional["GraphService"] = None
+    auth: "AuthService"
+    ingestion: "IngestionService"
+    management: "ManagementService"
+    retrieval: "RetrievalService"
+    graph: "GraphService"

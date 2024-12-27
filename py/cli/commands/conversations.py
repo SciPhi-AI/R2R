@@ -4,7 +4,7 @@ import asyncclick as click
 from asyncclick import pass_context
 
 from cli.utils.timer import timer
-from r2r import R2RAsyncClient
+from r2r import R2RAsyncClient, R2RException
 
 
 @click.group()
@@ -15,14 +15,18 @@ def conversations():
 
 @conversations.command()
 @pass_context
-async def create(ctx):
+async def create(ctx: click.Context):
     """Create a conversation."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.conversations.create()
-
-    click.echo(json.dumps(response, indent=2))
+    try:
+        with timer():
+            response = await client.conversations.create()
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @conversations.command()
@@ -38,62 +42,58 @@ async def create(ctx):
     help="The maximum number of nodes to return. Defaults to 100.",
 )
 @pass_context
-async def list(ctx, ids, offset, limit):
+async def list(ctx: click.Context, ids, offset, limit):
     """Get an overview of conversations."""
     client: R2RAsyncClient = ctx.obj
     ids = list(ids) if ids else None
 
-    with timer():
-        response = await client.conversations.list(
-            ids=ids,
-            offset=offset,
-            limit=limit,
-        )
-
-    for user in response["results"]:
-        click.echo(json.dumps(user, indent=2))
+    try:
+        with timer():
+            response = await client.conversations.list(
+                ids=ids,
+                offset=offset,
+                limit=limit,
+            )
+        for user in response["results"]:  # type: ignore
+            click.echo(json.dumps(user, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @conversations.command()
 @click.argument("id", required=True, type=str)
 @pass_context
-async def retrieve(ctx, id):
+async def retrieve(ctx: click.Context, id):
     """Retrieve a collection by ID."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.conversations.retrieve(id=id)
-
-    click.echo(json.dumps(response, indent=2))
+    try:
+        with timer():
+            response = await client.conversations.retrieve(id=id)
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @conversations.command()
 @click.argument("id", required=True, type=str)
 @pass_context
-async def delete(ctx, id):
+async def delete(ctx: click.Context, id):
     """Delete a collection by ID."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.conversations.delete(id=id)
-
-    click.echo(json.dumps(response, indent=2))
-
-
-@conversations.command()
-@click.argument("id", required=True, type=str)
-@pass_context
-async def list_branches(ctx, id):
-    """List all branches in a conversation."""
-    client: R2RAsyncClient = ctx.obj
-
-    with timer():
-        response = await client.conversations.list_branches(
-            id=id,
-        )
-
-    for user in response["results"]:
-        click.echo(json.dumps(user, indent=2))
+    try:
+        with timer():
+            response = await client.conversations.delete(id=id)
+        click.echo(json.dumps(response, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)
 
 
 @conversations.command()
@@ -109,16 +109,20 @@ async def list_branches(ctx, id):
     help="The maximum number of nodes to return. Defaults to 100.",
 )
 @pass_context
-async def list_users(ctx, id, offset, limit):
+async def list_users(ctx: click.Context, id, offset, limit):
     """Get an overview of collections."""
     client: R2RAsyncClient = ctx.obj
 
-    with timer():
-        response = await client.collections.list_users(
-            id=id,
-            offset=offset,
-            limit=limit,
-        )
-
-    for user in response["results"]:
-        click.echo(json.dumps(user, indent=2))
+    try:
+        with timer():
+            response = await client.collections.list_users(
+                id=id,
+                offset=offset,
+                limit=limit,
+            )
+        for user in response["results"]:  # type: ignore
+            click.echo(json.dumps(user, indent=2))
+    except R2RException as e:
+        click.echo(str(e), err=True)
+    except Exception as e:
+        click.echo(str(f"An unexpected error occurred: {e}"), err=True)

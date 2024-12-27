@@ -194,7 +194,7 @@ class UsersSDK:
             self.client._refresh_token = None
             raise ValueError("Invalid token provided")
 
-    async def logout(self) -> WrappedGenericMessageResponse:
+    async def logout(self) -> WrappedGenericMessageResponse | None:
         """Log out the current user."""
         if self.client.access_token:
             response = await self.client._make_request(
@@ -209,6 +209,7 @@ class UsersSDK:
 
         self.client.access_token = None
         self.client._refresh_token = None
+        return None
 
     async def refresh_token(self) -> WrappedTokenResponse:
         """Refresh the access token using the refresh token."""

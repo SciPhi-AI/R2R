@@ -13,4 +13,5 @@ def timer():
     start = time.time()
     yield
     end = time.time()
-    click.echo(f"Time taken: {end - start:.2f} seconds")
+    duration = max(0, end - start)
+    click.echo(f"Time taken: {duration:.2f} seconds")
