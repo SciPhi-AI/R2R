@@ -8,7 +8,8 @@ from typing import Any, Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, File, Form, Path, Query, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.background import BackgroundTasks
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import Json
 
 from core.base import (
@@ -1685,11 +1686,50 @@ class DocumentsRouter(BaseRouterV3):
 
         @self.router.post(
             "/documents/export",
-            response_class=StreamingResponse,
             summary="Export documents to CSV",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "http://127.0.0.1:7272/v3/documents/export" \
+                            -H "Authorization: Bearer YOUR_API_KEY" \
+                            -H "Content-Type: application/json" \
+                            -H "Accept: text/csv" \
+                            -d '{"include_header": true}' \
+                            --output export.csv
+                            """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def export_documents(
+            background_tasks: BackgroundTasks,
             columns: Optional[list[str]] = Body(
                 None, description="Specific columns to export"
             ),
@@ -1699,27 +1739,32 @@ class DocumentsRouter(BaseRouterV3):
             include_header: Optional[bool] = Body(
                 True, description="Whether to include column headers"
             ),
-            # auth_user=Depends(self.providers.auth.auth_wrapper),
-        ) -> StreamingResponse:
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> FileResponse:
             """
             Export documents as a downloadable CSV file.
-
-            This endpoint streams the CSV data directly from the database to the client,
-            making it memory-efficient and suitable for large exports.
             """
-            print("Exporting documents")
-            # FIXME: Auth is broken within the crypto provider
-            return StreamingResponse(
-                self.services.management.export_documents(
+
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can export data.",
+                    403,
+                )
+
+            csv_file_path, temp_file = (
+                await self.services.management.export_documents(
                     columns=columns,
                     filters=filters,
                     include_header=include_header,
-                ),
+                )
+            )
+
+            background_tasks.add_task(temp_file.close)
+
+            return FileResponse(
+                path=csv_file_path,
                 media_type="text/csv",
-                headers={
-                    "Content-Disposition": "attachment; filename=documents_export.csv"
-                },
-                background=None,
+                filename="documents_export.csv",
             )
 
     @staticmethod

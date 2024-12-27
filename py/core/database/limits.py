@@ -103,8 +103,9 @@ class PostgresLimitsHandler(Handler):
 
     async def check_limits(self, user_id: UUID, route: str):
         # Determine final applicable limits
-        if limits := self._determine_limits_for(user_id, route):
-            limits = self.config.default_limits
+        limits = self._determine_limits_for(user_id, route)
+        if not limits:
+            limits = self.config.limits
 
         global_per_min = limits.global_per_min
         route_per_min = limits.route_per_min

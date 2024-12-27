@@ -11,6 +11,7 @@ import {
   WrappedRelationshipsResponse,
 } from "../../types";
 import { feature } from "../../feature";
+import { downloadBlob } from "../../utils";
 
 let fs: any;
 if (typeof window === "undefined") {
@@ -201,43 +202,61 @@ export class DocumentsClient {
   }
 
   /**
-   * Export documents as a CSV file. This method supports filtering the exported data
-   * and customizing which columns are included in the output.
+   * Export documents as a CSV file with support for filtering and column selection.
    *
-   * The data is streamed directly from the server to minimize memory usage and
-   * handle large exports efficiently.
-   *
-   * @param options Configuration options for the export
-   * @param options.columns Optional list of specific columns to include in the export
+   * @param options Export configuration options
+   * @param options.outputPath Path where the CSV file should be saved (Node.js only)
+   * @param options.columns Optional list of specific columns to include
    * @param options.filters Optional filters to limit which documents are exported
-   * @param options.includeHeader Whether to include column headers in the CSV (default: true)
-   * @returns A Blob containing the CSV data
+   * @param options.includeHeader Whether to include column headers (default: true)
+   * @returns Promise<Blob> in browser environments, Promise<void> in Node.js
+   *
+   * @example
+   * // Browser: Download CSV
+   * const blob = await client.documents.export();
+   * downloadBlob(blob, "documents.csv");
+   *
+   * // Node.js: Save directly to file
+   * await client.documents.export({
+   *   outputPath: "documents.csv",
+   *   columns: ["id", "title", "created_at"],
+   *   filters: { document_type: { $eq: "pdf" }}
+   * });
    */
   @feature("documents.export")
-  async export(options?: {
-    columns?: string[];
-    filters?: Record<string, any>;
-    includeHeader?: boolean;
-  }): Promise<Blob> {
+  async export(
+    options: {
+      outputPath?: string;
+      columns?: string[];
+      filters?: Record<string, any>;
+      includeHeader?: boolean;
+    } = {},
+  ): Promise<Blob | void> {
     const data: Record<string, any> = {
-      include_header: options?.includeHeader ?? true,
+      include_header: options.includeHeader ?? true,
     };
 
-    if (options?.columns) {
+    if (options.columns) {
       data.columns = options.columns;
     }
-
-    if (options?.filters) {
+    if (options.filters) {
       data.filters = options.filters;
     }
 
-    return this.client.makeRequest("POST", "documents/export", {
+    const response = await this.client.makeRequest("POST", "documents/export", {
       data,
-      responseType: "blob",
-      headers: {
-        Accept: "text/csv",
-      },
+      responseType: "arraybuffer",
+      headers: { Accept: "text/csv" },
     });
+
+    // Node environment
+    if (options.outputPath && typeof process !== "undefined") {
+      await fs.promises.writeFile(options.outputPath, Buffer.from(response));
+      return;
+    }
+
+    // Browser
+    return new Blob([response], { type: "text/csv" });
   }
 
   /**
@@ -253,16 +272,9 @@ export class DocumentsClient {
     includeHeader?: boolean;
   }): Promise<void> {
     const blob = await this.export(options);
-
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = options.filename;
-    document.body.appendChild(link);
-    link.click();
-
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    if (blob instanceof Blob) {
+      downloadBlob(blob, options.filename);
+    }
   }
 
   /**

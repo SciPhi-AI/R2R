@@ -1,7 +1,8 @@
 import logging
 import os
 from collections import defaultdict
-from typing import Any, AsyncGenerator, BinaryIO, Optional, Tuple
+from tempfile import NamedTemporaryFile
+from typing import Any, BinaryIO, Optional, Tuple
 from uuid import UUID
 
 import toml
@@ -224,16 +225,12 @@ class ManagementService(Service):
         columns: Optional[list[str]] = None,
         filters: Optional[dict] = None,
         include_header: bool = True,
-    ) -> AsyncGenerator[str, None]:
-        db_generator = self.providers.database.documents_handler.export_to_csv(
+    ) -> tuple[str, NamedTemporaryFile]:
+        return await self.providers.database.documents_handler.export_to_csv(
             columns=columns,
             filters=filters,
             include_header=include_header,
         )
-        async for chunk in db_generator:
-            print(chunk)
-            yield chunk
-
 
     @telemetry_event("DocumentsOverview")
     async def documents_overview(

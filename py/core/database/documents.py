@@ -1,8 +1,10 @@
 import asyncio
 import copy
+import csv
 import json
 import logging
-from typing import Any, AsyncGenerator, Optional
+import tempfile
+from typing import Any, Optional
 from uuid import UUID
 
 import asyncpg
@@ -797,12 +799,9 @@ class PostgresDocumentsHandler(Handler):
         columns: Optional[list[str]] = None,
         filters: Optional[dict] = None,
         include_header: bool = True,
-    ) -> AsyncGenerator[str, None]:
+    ) -> tuple[str, tempfile.NamedTemporaryFile]:
         """
-        Creates a generator that yields CSV data from PostgreSQL row by row.
-
-        Uses manual streaming with cursor-based fetching to ensure proper
-        connection handling and memory efficiency.
+        Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
         """
         if not columns:
             columns = [
@@ -827,15 +826,15 @@ class PostgresDocumentsHandler(Handler):
                 collection_ids::text,
                 owner_id::text,
                 type::text,
-                metadata::text as metadata,
+                metadata::text AS metadata,
                 title,
                 summary,
                 version,
                 size_in_bytes,
                 ingestion_status,
                 extraction_status,
-                to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') as created_at,
-                to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') as updated_at
+                to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at,
+                to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') AS updated_at
             FROM {self._get_table_name(self.TABLE_NAME)}
         """
 
@@ -849,36 +848,34 @@ class PostgresDocumentsHandler(Handler):
 
         select_stmt = f"{select_stmt} ORDER BY created_at DESC"
 
+        temp_file = None
         try:
-            print("About to open connection/transaction")
+            temp_file = tempfile.NamedTemporaryFile(
+                mode="w", delete=True, suffix=".csv"
+            )
+            writer = csv.writer(temp_file, quoting=csv.QUOTE_ALL)
+
             async with self.connection_manager.pool.get_connection() as conn:
                 async with conn.transaction():
-                    print("Got in db metod")
                     cursor = await conn.cursor(select_stmt, *params)
 
                     if include_header:
-                        print("Got in header")
-                        yield ",".join(columns) + "\n"
+                        writer.writerow(columns)
 
                     chunk_size = 1000
                     while True:
-                        print("Got in while loop")
                         rows = await cursor.fetch(chunk_size)
                         if not rows:
                             break
-
                         for row in rows:
-                            yield ",".join(
-                                (
-                                    f'"{str(val).replace('"', '""')}"'
-                                    if val is not None
-                                    else '""'
-                                )
-                                for val in row
-                            ) + "\n"
+                            writer.writerow(row)
+
+            temp_file.flush()
+            return temp_file.name, temp_file
 
         except Exception as e:
-            logger.error(f"Error in CSV export: {str(e)}")
+            if temp_file:
+                temp_file.close()  # Close on error
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to export data: {str(e)}",
