@@ -2,6 +2,7 @@ from cli.command_group import cli
 from cli.commands import (
     collections,
     conversations,
+    config,
     database,
     documents,
     graphs,
@@ -11,7 +12,11 @@ from cli.commands import (
     system,
     users,
 )
+
+from rich.console import Console
 from cli.utils.telemetry import posthog, telemetry
+
+console = Console()
 
 
 def add_command_with_telemetry(command):
@@ -39,18 +44,18 @@ add_command_with_telemetry(database.downgrade)
 add_command_with_telemetry(database.current)
 add_command_with_telemetry(database.history)
 
+add_command_with_telemetry(config.configure)
+
 
 def main():
     try:
         cli()
     except SystemExit:
-        # Silently exit without printing the traceback
         pass
     except Exception as e:
-        # Handle other exceptions if needed
-        raise e
+        console.print("[red]CLI error: An error occurred[/red]")
+        console.print_exception()
     finally:
-        # Ensure all events are flushed before exiting
         if posthog:
             posthog.flush()
             posthog.shutdown()
