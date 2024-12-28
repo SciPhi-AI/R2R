@@ -49,16 +49,20 @@ class SemaphoreConnectionPool:
     async def close(self):
         await self.pool.close()
 
-
 class QueryBuilder:
     def __init__(self, table_name: str):
         self.table_name = table_name
         self.conditions: list[str] = []
-        self.params: dict = {}
+        self.params: list = []  # Changed from dict to list for PostgreSQL $1, $2 style
         self.select_fields = "*"
         self.operation = "SELECT"
         self.limit_value: Optional[int] = None
+        self.offset_value: Optional[int] = None
+        self.order_by_fields: Optional[str] = None
+        self.returning_fields: Optional[list[str]] = None
         self.insert_data: Optional[dict] = None
+        self.update_data: Optional[dict] = None
+        self.param_counter = 1  # For generating $1, $2, etc.
 
     def select(self, fields: list[str]):
         self.select_fields = ", ".join(fields)
@@ -69,39 +73,72 @@ class QueryBuilder:
         self.insert_data = data
         return self
 
+    def update(self, data: dict):
+        self.operation = "UPDATE"
+        self.update_data = data
+        return self
+
     def delete(self):
         self.operation = "DELETE"
         return self
 
-    def where(self, condition: str, **kwargs):
+    def where(self, condition: str):
         self.conditions.append(condition)
-        self.params.update(kwargs)
         return self
 
-    def limit(self, value: int):
+    def limit(self, value: Optional[str]):
         self.limit_value = value
+        return self
+
+    def offset(self, value: str):
+        self.offset_value = value
+        return self
+
+    def order_by(self, fields: str):
+        self.order_by_fields = fields
+        return self
+
+    def returning(self, fields: list[str]):
+        self.returning_fields = fields
         return self
 
     def build(self):
         if self.operation == "SELECT":
             query = f"SELECT {self.select_fields} FROM {self.table_name}"
+        
         elif self.operation == "INSERT":
             columns = ", ".join(self.insert_data.keys())
-            values = ", ".join(f":{key}" for key in self.insert_data.keys())
-            query = (
-                f"INSERT INTO {self.table_name} ({columns}) VALUES ({values})"
-            )
-            self.params.update(self.insert_data)
+            placeholders = ", ".join(f"${i}" for i in range(1, len(self.insert_data) + 1))
+            query = f"INSERT INTO {self.table_name} ({columns}) VALUES ({placeholders})"
+            self.params.extend(list(self.insert_data.values()))
+        
+        elif self.operation == "UPDATE":
+            set_clauses = []
+            for i, (key, value) in enumerate(self.update_data.items(), start=len(self.params) + 1):
+                set_clauses.append(f"{key} = ${i}")
+                self.params.append(value)
+            query = f"UPDATE {self.table_name} SET {', '.join(set_clauses)}"
+        
         elif self.operation == "DELETE":
             query = f"DELETE FROM {self.table_name}"
+        
         else:
             raise ValueError(f"Unsupported operation: {self.operation}")
 
         if self.conditions:
             query += " WHERE " + " AND ".join(self.conditions)
 
-        if self.limit_value is not None and self.operation == "SELECT":
+        if self.order_by_fields and self.operation == "SELECT":
+            query += f" ORDER BY {self.order_by_fields}"
+
+        if self.offset_value is not None:
+            query += f" OFFSET {self.offset_value}"
+
+        if self.limit_value is not None:
             query += f" LIMIT {self.limit_value}"
+
+        if self.returning_fields:
+            query += f" RETURNING {', '.join(self.returning_fields)}"
 
         return query, self.params
 

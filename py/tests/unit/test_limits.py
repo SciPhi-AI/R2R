@@ -4,158 +4,225 @@ from uuid import UUID
 from datetime import datetime, timezone, timedelta
 
 from core.base import LimitSettings
+from shared.abstractions import User
 from core.database.postgres import PostgresLimitsHandler
-
 
 @pytest.mark.asyncio
 async def test_log_request_and_count(limits_handler):
+    """
+    Test that when we log requests, the count increments, and rate-limits are enforced.
+    Route-specific test using the /v3/retrieval/search endpoint limits.
+    """
+    # Clear existing logs first
+    clear_query = f"DELETE FROM {limits_handler._get_table_name(PostgresLimitsHandler.TABLE_NAME)}"
+    await limits_handler.connection_manager.execute_query(clear_query)
+
     user_id = uuid.uuid4()
-    route = "/test-route"
+    route = "/v3/retrieval/search"  # Using actual route from config
+    test_user = User(
+        id=user_id,
+        email="test@example.com",
+        is_active=True,
+        is_verified=True,
+        is_superuser=False,
+        limits_overrides=None,
+    )
 
-    # Initially no requests
-    now = datetime.now(timezone.utc)
-    one_min_ago = now - timedelta(minutes=1)
-    # Use handler's private method to count (for test)
-    # If you want to test the private method, you either mock or rely on test code:
-    # We'll rely on public methods only for best practice. Since no public method returns counts,
-    # let's do a check after logging requests.
-
-    # Before any requests are logged, we can try a limit check with large limits, should pass
-    await limits_handler.check_limits(user_id, route)  # no error
-
-    # Log a request
-    await limits_handler.log_request(user_id, route)
-
-    # Check that request count increments properly
-    # Because this is a private method, let's cheat and call it. Alternatively, set limits so low that we fail now.
-    # We'll just rely on a low limit scenario:
-    # Set user-specific route limit to 0 to force immediate fail on second request:
-    orig_config = limits_handler.config
-    # Temporarily override config for test
-    limits_handler.config.route_limits = {
-        route: LimitSettings(
-            route_per_min=1
-        )  # can allow just 1 request per minute
+    # Set route limit to match config: 5 requests per minute
+    old_route_limits = limits_handler.config.route_limits
+    new_route_limits = {
+        route: LimitSettings(route_per_min=5, monthly_limit=10)
     }
+    limits_handler.config.route_limits = new_route_limits
+    
+    print(f"\nTesting with route limits: {new_route_limits}")
+    print(f"Route settings: {limits_handler.config.route_limits[route]}")
 
-    # We've logged 1 request. Check limits again: still no error since we are at 1 request and limit=1
-    await limits_handler.check_limits(user_id, route)  # no error
+    try:
+        # Initial check should pass (no requests yet)
+        await limits_handler.check_limits(test_user, route)
+        print("Initial check passed (no requests)")
 
-    # Log another request
-    await limits_handler.log_request(user_id, route)
-    # Now we have 2 requests this minute, route limit = 1
-    with pytest.raises(
-        ValueError, match="Per-route per-minute rate limit exceeded"
-    ):
-        await limits_handler.check_limits(user_id, route)
+        # Log 5 requests (exactly at limit)
+        for i in range(5):
+            await limits_handler.log_request(user_id, route)
+            now = datetime.now(timezone.utc)
+            one_min_ago = now - timedelta(minutes=1)
+            route_count = await limits_handler._count_requests(user_id, route, one_min_ago)
+            print(f"Route count after request {i+1}: {route_count}")
 
-    # Restore original config after test
-    limits_handler.config.route_limits = orig_config.route_limits
+            # This should pass for all 5 requests
+            await limits_handler.check_limits(test_user, route)
+            print(f"Check limits passed after request {i+1}")
 
+        # Log the 6th request (over limit)
+        await limits_handler.log_request(user_id, route)
+        route_count = await limits_handler._count_requests(user_id, route, one_min_ago)
+        print(f"Route count after request 6: {route_count}")
+
+        # This check should fail as we've exceeded route_per_min=5
+        with pytest.raises(ValueError, match="Per-route per-minute rate limit exceeded"):
+            await limits_handler.check_limits(test_user, route)
+
+    finally:
+        limits_handler.config.route_limits = old_route_limits
 
 @pytest.mark.asyncio
 async def test_global_limit(limits_handler):
+    """
+    Test global limit using the configured limit of 10 requests per minute
+    """
+    # Clear existing logs
+    clear_query = f"DELETE FROM {limits_handler._get_table_name(PostgresLimitsHandler.TABLE_NAME)}"
+    await limits_handler.connection_manager.execute_query(clear_query)
+
     user_id = uuid.uuid4()
     route = "/global-test"
-    # Set global limit to 1 request per minute
-    orig_limits = limits_handler.config.limits
-    limits_handler.config.limits = LimitSettings(global_per_min=1)
+    test_user = User(
+        id=user_id,
+        email="globaltest@example.com",
+        is_active=True,
+        is_verified=True,
+        is_superuser=False,
+        limits_overrides=None,
+    )
 
-    # Log one request
-    await limits_handler.log_request(user_id, route)
-    # Check limits: should pass
-    await limits_handler.check_limits(user_id, route)
+    # Set global limit to match config: 10 requests per minute
+    old_limits = limits_handler.config.limits
+    limits_handler.config.limits = LimitSettings(global_per_min=10, monthly_limit=20)
 
-    # Log another request (2 in one minute)
-    await limits_handler.log_request(user_id, route)
-    # Check limits: should fail global limit
-    with pytest.raises(
-        ValueError, match="Global per-minute rate limit exceeded"
-    ):
-        await limits_handler.check_limits(user_id, route)
+    try:
+        # Initial check should pass (no requests)
+        await limits_handler.check_limits(test_user, route)
+        print("Initial global check passed (no requests)")
 
-    # Restore original limits
-    limits_handler.config.limits = orig_limits
+        # Log 10 requests (hits the limit)
+        for i in range(11):
+            await limits_handler.log_request(user_id, route)
+            
+        # Debug counts
+        now = datetime.now(timezone.utc)
+        one_min_ago = now - timedelta(minutes=1)
+        global_count = await limits_handler._count_requests(user_id, None, one_min_ago)
+        print(f"Global count after 10 requests: {global_count}")
+
+        # This should fail as we've hit global_per_min=10
+        with pytest.raises(ValueError, match="Global per-minute rate limit exceeded"):
+            await limits_handler.check_limits(test_user, route)
+
+    finally:
+        limits_handler.config.limits = old_limits
 
 
 @pytest.mark.asyncio
 async def test_monthly_limit(limits_handler):
-    # First, clear any existing data for clean test
-    clear_query = f"""
-    DELETE FROM {limits_handler._get_table_name(PostgresLimitsHandler.TABLE_NAME)}
     """
+    Test monthly limit using the configured limit of 20 requests per month
+    """
+    # Clear existing logs
+    clear_query = f"DELETE FROM {limits_handler._get_table_name(PostgresLimitsHandler.TABLE_NAME)}"
     await limits_handler.connection_manager.execute_query(clear_query)
 
     user_id = uuid.uuid4()
     route = "/monthly-test"
-    print(f"\n[TEST] Starting monthly limit test with user_id={user_id}")
-
-    # Set monthly limit to 1
-    orig_limits = limits_handler.config.limits
-    limits_handler.config.limits = LimitSettings(monthly_limit=1)
-    print(f"[TEST] Set monthly limit to 1")
-
-    # Verify initial count
-    initial_count = await limits_handler._count_monthly_requests(user_id)
-    print(f"[TEST] Initial count: {initial_count}")
-
-    # Log one request
-    print(f"[TEST] Logging first request")
-    await limits_handler.log_request(user_id, route)
-
-    # Verify count after first log
-    count_after_log = await limits_handler._count_monthly_requests(user_id)
-    print(f"[TEST] Count after first log: {count_after_log}")
-
-    # This should pass since we're at limit but not over
-    print(f"[TEST] Checking limits after first request")
-    await limits_handler.check_limits(user_id, route)
-
-    # Restore original limits
-    limits_handler.config.limits = orig_limits
-
-
-# @pytest.mark.asyncio
-# async def test_monthly_limit(limits_handler):
-#     user_id = uuid.uuid4()
-#     route = "/monthly-test"
-
-#     # Set monthly limit to 1
-#     orig_limits = limits_handler.config.limits
-#     limits_handler.config.limits = LimitSettings(monthly_limit=1)
-
-#     # Log one request
-#     await limits_handler.log_request(user_id, route)
-#     # Check limits: should pass
-#     await limits_handler.check_limits(user_id, route)
-
-#     # Another request in same month
-#     await limits_handler.log_request(user_id, route)
-#     # Check limits: should fail monthly limit
-#     with pytest.raises(ValueError, match="Monthly rate limit exceeded"):
-#         await limits_handler.check_limits(user_id, route)
-
-#     # Restore original limits
-#     limits_handler.config.limits = orig_limits
-
-
-@pytest.mark.asyncio
-async def test_no_limits_scenario(limits_handler):
-    user_id = uuid.uuid4()
-    route = "/no-limits"
-
-    # Set no limits at all
-    orig_limits = limits_handler.config.limits
-    limits_handler.config.limits = LimitSettings(
-        global_per_min=None, route_per_min=None, monthly_limit=None
+    test_user = User(
+        id=user_id,
+        email="monthly@example.com",
+        is_active=True,
+        is_verified=True,
+        is_superuser=False,
+        limits_overrides=None,
     )
 
-    # Log many requests
-    for _ in range(10):
+    old_limits = limits_handler.config.limits
+    limits_handler.config.limits = LimitSettings(monthly_limit=20)
+
+    try:
+        # Initial check should pass (no requests)
+        await limits_handler.check_limits(test_user, route)
+        print("Initial monthly check passed (no requests)")
+
+        # Log 20 requests (hits the monthly limit)
+        for i in range(21):
+            await limits_handler.log_request(user_id, route)
+
+        # Get current month's count
+        now = datetime.now(timezone.utc)
+        first_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        monthly_count = await limits_handler._count_requests(user_id, None, first_of_month)
+        print(f"Monthly count after 20 requests: {monthly_count}")
+
+        # This should fail as we've hit monthly_limit=20
+        with pytest.raises(ValueError, match="Monthly rate limit exceeded"):
+            await limits_handler.check_limits(test_user, route)
+
+    finally:
+        limits_handler.config.limits = old_limits
+
+@pytest.mark.asyncio
+async def test_user_level_override(limits_handler):
+    """
+    Test user-specific override limits with debug logging
+    """
+    user_id = UUID("47e53676-b478-5b3f-a409-234ca2164de5")
+    route = "/test-route"
+    
+    # Clear existing logs first
+    clear_query = f"DELETE FROM {limits_handler._get_table_name(PostgresLimitsHandler.TABLE_NAME)}"
+    await limits_handler.connection_manager.execute_query(clear_query)
+    
+    test_user = User(
+        id=user_id,
+        email="override@example.com",
+        is_active=True,
+        is_verified=True,
+        is_superuser=False,
+        limits_overrides={
+            "global_per_min": 2,
+            "route_per_min": 1,
+            "route_overrides": {
+                "/test-route": {
+                    "route_per_min": 1
+                }
+            }
+        },
+    )
+
+    # Set default limits that should be overridden
+    old_limits = limits_handler.config.limits
+    limits_handler.config.limits = LimitSettings(
+        global_per_min=10,
+        monthly_limit=20
+    )
+
+    # Debug: Print current limits
+    print(f"\nDefault limits: {limits_handler.config.limits}")
+    print(f"User overrides: {test_user.limits_overrides}")
+
+    try:
+        # First check limits (should pass as no requests yet)
+        await limits_handler.check_limits(test_user, route)
+        print("Initial check passed (no requests yet)")
+
+        # Log first request
         await limits_handler.log_request(user_id, route)
 
-    # Check limits: should never raise since no limits
-    await limits_handler.check_limits(user_id, route)
+        # Debug: Get current counts
+        now = datetime.now(timezone.utc)
+        one_min_ago = now - timedelta(minutes=1)
+        global_count = await limits_handler._count_requests(user_id, None, one_min_ago)
+        route_count = await limits_handler._count_requests(user_id, route, one_min_ago)
+        print(f"\nAfter first request:")
+        print(f"Global count: {global_count}")
+        print(f"Route count: {route_count}")
+        
+        # Log second request
+        await limits_handler.log_request(user_id, route)
 
-    # Restore original limits
-    limits_handler.config.limits = orig_limits
+        # This check should fail as we've hit route_per_min=1
+        with pytest.raises(ValueError, match="Per-route per-minute rate limit exceeded"):
+            await limits_handler.check_limits(test_user, route)
+            
+    finally:
+        # Cleanup
+        limits_handler.config.limits = old_limits

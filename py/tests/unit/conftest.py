@@ -25,7 +25,6 @@ TEST_DB_CONNECTION_STRING = os.environ.get(
     "postgresql://postgres:postgres@localhost:5432/test_db",
 )
 
-
 @pytest.fixture
 async def db_provider():
     crypto_provider = NaClCryptoProvider(NaClCryptoConfig(app={}))

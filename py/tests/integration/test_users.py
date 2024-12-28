@@ -2,6 +2,9 @@ import uuid
 
 import pytest
 
+from shared.abstractions import User
+from core.database.postgres import PostgresUserHandler
+
 from r2r import R2RClient, R2RException
 
 
@@ -334,7 +337,6 @@ def test_non_owner_delete_collection(client):
     client.users.login(non_owner_email, non_owner_password)
     with pytest.raises(R2RException) as exc_info:
         result = client.collections.delete(coll_id)
-        print("result = ", result)
     assert (
         exc_info.value.status_code == 403
     ), "Wrong error code for non-owner deletion attempt"
@@ -599,3 +601,33 @@ def test_multiple_api_keys(client):
         ), f"Key {key_id} still exists after deletion"
 
     client.users.logout()
+
+
+def test_update_user_limits_overrides(client: R2RClient):
+    # 1) Create user
+    user_email = f"test_{uuid.uuid4()}@example.com"
+    client.users.register(user_email, "SomePassword123!")
+    client.users.login(user_email, "SomePassword123!")
+
+    # 2) Confirm the default overrides is None
+    fetched_user = client.users.me()['results']
+    client.users.logout()
+
+    assert len(fetched_user['limits_overrides']) == 0
+
+    # 3) Update the overrides
+    overrides = {
+        "global_per_min": 10,
+        "monthly_limit": 3000,
+        "route_overrides": {
+            "/some-route": {"route_per_min": 5},
+        },
+    }
+    client.users.update(id=fetched_user["id"], limits_overrides=overrides)
+
+    # 4) Fetch user again, check
+    client.users.login(user_email, "SomePassword123!")
+    updated_user = client.users.me()['results']
+    assert len(updated_user['limits_overrides']) != 0
+    assert updated_user["limits_overrides"]["global_per_min"] == 10
+    assert updated_user["limits_overrides"]["route_overrides"]["/some-route"]["route_per_min"] == 5

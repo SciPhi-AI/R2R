@@ -1,5 +1,5 @@
 import textwrap
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
@@ -22,6 +22,7 @@ from core.base.api.models import (
 
 from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
+from core.base.providers.database import LimitSettings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -1322,6 +1323,10 @@ class UsersRouter(BaseRouterV3):
             bio: str | None = Body(None, description="Updated user bio"),
             profile_picture: str
             | None = Body(None, description="Updated profile picture URL"),
+            limits_overrides: dict = Body(
+                None,
+                description="Updated limits overrides",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUserResponse:
             """
@@ -1340,7 +1345,11 @@ class UsersRouter(BaseRouterV3):
                     "Only superusers can update other users' information",
                     403,
                 )
-
+            if not auth_user.is_superuser and limits_overrides is not None:
+                raise R2RException(
+                    "Only superusers can update other users' limits overrides",
+                    403,
+                )
             return await self.services.auth.update_user(
                 user_id=id,
                 email=email,
@@ -1348,6 +1357,7 @@ class UsersRouter(BaseRouterV3):
                 name=name,
                 bio=bio,
                 profile_picture=profile_picture,
+                limits_overrides=limits_overrides,
             )
 
         @self.router.post(
