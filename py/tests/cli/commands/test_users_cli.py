@@ -10,20 +10,22 @@ Tests for the user commands in the CLI.
 """
 
 import json
-import pytest
 import uuid
+
+import pytest
 from click.testing import CliRunner
+
 from cli.commands.users import (
+    add_to_collection,
     create,
     list,
-    retrieve,
-    me,
     list_collections,
-    add_to_collection,
+    me,
     remove_from_collection,
+    retrieve,
 )
-from tests.cli.async_invoke import async_invoke
 from r2r import R2RAsyncClient
+from tests.cli.async_invoke import async_invoke
 
 
 def extract_json_block(output: str) -> dict:

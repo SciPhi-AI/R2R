@@ -409,13 +409,13 @@ class SQLFilterBuilder:
 
 def apply_filters(
     filters: dict, params: list[Any], mode: str = "where_clause"
-) -> str:
+) -> tuple[str, list[Any]]:
     """
     Apply filters with consistent WHERE clause handling
     """
 
     if not filters:
-        return ""
+        return "", params
 
     parser = FilterParser()
     expr = parser.parse(filters)

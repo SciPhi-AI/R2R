@@ -22,7 +22,7 @@ from core.base import (
 )
 
 from .base import PostgresConnectionManager
-from .filters import apply_filters  # Add this near other imports
+from .filters import apply_filters
 
 logger = logging.getLogger()
 

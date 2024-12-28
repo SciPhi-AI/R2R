@@ -1,7 +1,7 @@
 import json
 from io import BytesIO
-from typing import Any, Optional
 from pathlib import Path
+from typing import Any, Optional
 from uuid import UUID
 
 import aiofiles

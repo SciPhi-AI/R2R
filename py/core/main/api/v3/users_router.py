@@ -3,6 +3,8 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
+from fastapi.background import BackgroundTasks
+from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import EmailStr
 
@@ -138,6 +140,112 @@ class UsersRouter(BaseRouterV3):
                 )
 
             return registration_response
+
+        @self.router.post(
+            "/users/export",
+            summary="Export users to CSV",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            response = client.users.export(
+                                output_path="export.csv",
+                                columns=["id", "name", "created_at"],
+                                include_header=True,
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                await client.users.export({
+                                    outputPath: "export.csv",
+                                    columns: ["id", "name", "created_at"],
+                                    includeHeader: true,
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "http://127.0.0.1:7272/v3/users/export" \
+                            -H "Authorization: Bearer YOUR_API_KEY" \
+                            -H "Content-Type: application/json" \
+                            -H "Accept: text/csv" \
+                            -d '{ "columns": ["id", "name", "created_at"], "include_header": true }' \
+                            --output export.csv
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def export_users(
+            background_tasks: BackgroundTasks,
+            columns: Optional[list[str]] = Body(
+                None, description="Specific columns to export"
+            ),
+            filters: Optional[dict] = Body(
+                None, description="Filters to apply to the export"
+            ),
+            include_header: Optional[bool] = Body(
+                True, description="Whether to include column headers"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> FileResponse:
+            """
+            Export users as a CSV file.
+            """
+
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can export data.",
+                    403,
+                )
+
+            csv_file_path, temp_file = (
+                await self.services.management.export_users(
+                    columns=columns,
+                    filters=filters,
+                    include_header=include_header,
+                )
+            )
+
+            background_tasks.add_task(temp_file.close)
+
+            return FileResponse(
+                path=csv_file_path,
+                media_type="text/csv",
+                filename="users_export.csv",
+            )
 
         # TODO: deprecated, remove in next release
         @self.router.post(

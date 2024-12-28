@@ -210,18 +210,6 @@ export class DocumentsClient {
    * @param options.filters Optional filters to limit which documents are exported
    * @param options.includeHeader Whether to include column headers (default: true)
    * @returns Promise<Blob> in browser environments, Promise<void> in Node.js
-   *
-   * @example
-   * // Browser: Download CSV
-   * const blob = await client.documents.export();
-   * downloadBlob(blob, "documents.csv");
-   *
-   * // Node.js: Save directly to file
-   * await client.documents.export({
-   *   outputPath: "documents.csv",
-   *   columns: ["id", "title", "created_at"],
-   *   filters: { document_type: { $eq: "pdf" }}
-   * });
    */
   @feature("documents.export")
   async export(

@@ -1,15 +1,35 @@
 import { r2rClient } from "../src/index";
-import { describe, test, beforeAll, expect } from "@jest/globals";
+import { describe, test, beforeAll, expect, afterAll } from "@jest/globals";
+import fs from "fs";
+import path from "path";
 
 const baseUrl = "http://localhost:7272";
+const TEST_OUTPUT_DIR = path.join(__dirname, "test-output");
 
 describe("r2rClient V3 Users Integration Tests", () => {
   let client: r2rClient;
+  let superUserClient: r2rClient;
   let userId: string;
   let name: string | undefined;
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);
+    superUserClient = new r2rClient(baseUrl);
+
+    await superUserClient.users.login({
+      email: "admin@example.com",
+      password: "change_me_immediately",
+    });
+
+    if (!fs.existsSync(TEST_OUTPUT_DIR)) {
+      fs.mkdirSync(TEST_OUTPUT_DIR);
+    }
+  });
+
+  afterAll(() => {
+    if (fs.existsSync(TEST_OUTPUT_DIR)) {
+      fs.rmSync(TEST_OUTPUT_DIR, { recursive: true, force: true });
+    }
   });
 
   test("Register a new user", async () => {
@@ -139,5 +159,71 @@ describe("r2rClient V3 Users Integration Tests", () => {
       password: "i_was_changed_immediately",
     });
     expect(response.results).toBeDefined();
+  });
+
+  test("Export users to CSV with default options", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "users_default.csv");
+    await superUserClient.users.export({ outputPath });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    expect(content).toBeTruthy();
+    expect(content.split("\n").length).toBeGreaterThan(1);
+  });
+
+  test("Export users to CSV with custom columns", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "users_custom.csv");
+    await superUserClient.users.export({
+      outputPath,
+      columns: ["id", "is_superuser", "created_at"],
+      includeHeader: true,
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    const headers = content
+      .split("\n")[0]
+      .split(",")
+      .map((h) => h.trim());
+
+    expect(headers).toContain('"id"');
+    expect(headers).toContain('"is_superuser"');
+    expect(headers).toContain('"created_at"');
+  });
+
+  test("Export filtered users to CSV", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "users_filtered.csv");
+    await superUserClient.users.export({
+      outputPath,
+      filters: { is_superuser: { $eq: true } },
+      includeHeader: true,
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    expect(content).toBeTruthy();
+  });
+
+  test("Export users without headers", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "users_no_header.csv");
+    await superUserClient.users.export({
+      outputPath,
+      includeHeader: false,
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+  });
+
+  test("Handle empty export result", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "users_empty.csv");
+    await superUserClient.users.export({
+      outputPath,
+      filters: { is_superuser: { $eq: false } },
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    expect(content.split("\n").filter((line) => line.trim()).length).toBe(1);
   });
 });

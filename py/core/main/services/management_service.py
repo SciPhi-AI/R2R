@@ -232,6 +232,19 @@ class ManagementService(Service):
             include_header=include_header,
         )
 
+    @telemetry_event("ExportUsers")
+    async def export_users(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, NamedTemporaryFile]:
+        return await self.providers.database.users_handler.export_to_csv(
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
     @telemetry_event("DocumentsOverview")
     async def documents_overview(
         self,

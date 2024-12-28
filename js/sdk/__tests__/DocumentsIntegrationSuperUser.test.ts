@@ -140,7 +140,6 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
     expect(fs.existsSync(outputPath)).toBe(true);
     const content = fs.readFileSync(outputPath, "utf-8");
-    // Add specific checks based on your CSV format when headers are disabled
   });
 
   test("Handle empty export result", async () => {

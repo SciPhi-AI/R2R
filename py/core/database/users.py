@@ -1,3 +1,5 @@
+import csv
+import tempfile
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
@@ -779,3 +781,123 @@ class PostgresUserHandler(Handler):
         if result is None:
             raise R2RException(status_code=404, message="API key not found")
         return True
+
+    async def export_to_csv(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, tempfile.NamedTemporaryFile]:
+        """
+        Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
+        """
+        valid_columns = {
+            "id",
+            "email",
+            "is_superuser",
+            "is_active",
+            "is_verified",
+            "name",
+            "bio",
+            "collection_ids",
+            "created_at",
+            "updated_at",
+        }
+
+        if not columns:
+            columns = [
+                "id",
+                "email",
+                "is_superuser",
+                "is_active",
+                "is_verified",
+                "name",
+                "bio",
+                "collection_ids",
+                "created_at",
+                "updated_at",
+            ]
+
+        select_stmt = f"""
+            SELECT
+                id::text,
+                email,
+                is_superuser,
+                is_active,
+                is_verified,
+                name,
+                bio,
+                to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at,
+                to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') AS updated_at
+            FROM {self._get_table_name(self.TABLE_NAME)}
+        """
+
+        params = []
+        if filters:
+            conditions = []
+            param_index = 1
+
+            # Only process filters for valid columns
+            for field, value in filters.items():
+                if field not in valid_columns:
+                    continue
+
+                if isinstance(value, dict):
+                    # Handle operations like $eq, $gt, etc.
+                    for op, val in value.items():
+                        if op == "$eq":
+                            conditions.append(f"{field} = ${param_index}")
+                            params.append(val)
+                            param_index += 1
+                        elif op == "$gt":
+                            conditions.append(f"{field} > ${param_index}")
+                            params.append(val)
+                            param_index += 1
+                        elif op == "$lt":
+                            conditions.append(f"{field} < ${param_index}")
+                            params.append(val)
+                            param_index += 1
+                        # Add more operators as needed
+                else:
+                    # Direct equality
+                    conditions.append(f"{field} = ${param_index}")
+                    params.append(value)
+                    param_index += 1
+
+            if conditions:
+                select_stmt = f"{select_stmt} WHERE {' AND '.join(conditions)}"
+
+        select_stmt = f"{select_stmt} ORDER BY created_at DESC"
+
+        temp_file = None
+        try:
+            temp_file = tempfile.NamedTemporaryFile(
+                mode="w", delete=True, suffix=".csv"
+            )
+            writer = csv.writer(temp_file, quoting=csv.QUOTE_ALL)
+
+            async with self.connection_manager.pool.get_connection() as conn:
+                async with conn.transaction():
+                    cursor = await conn.cursor(select_stmt, *params)
+
+                    if include_header:
+                        writer.writerow(columns)
+
+                    chunk_size = 1000
+                    while True:
+                        rows = await cursor.fetch(chunk_size)
+                        if not rows:
+                            break
+                        for row in rows:
+                            writer.writerow(row)
+
+            temp_file.flush()
+            return temp_file.name, temp_file
+
+        except Exception as e:
+            if temp_file:
+                temp_file.close()  # Close on error
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to export data: {str(e)}",
+            )

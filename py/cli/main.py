@@ -1,8 +1,10 @@
+from rich.console import Console
+
 from cli.command_group import cli
 from cli.commands import (
     collections,
-    conversations,
     config,
+    conversations,
     database,
     documents,
     graphs,
@@ -12,8 +14,6 @@ from cli.commands import (
     system,
     users,
 )
-
-from rich.console import Console
 from cli.utils.telemetry import posthog, telemetry
 
 console = Console()

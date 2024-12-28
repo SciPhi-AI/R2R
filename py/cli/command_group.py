@@ -1,12 +1,13 @@
+import types
 from functools import wraps
-from rich.console import Console
+from typing import Any, Never
+
 import asyncclick as click
-from rich import box
-from rich.table import Table
 from asyncclick import pass_context
 from asyncclick.exceptions import Exit
-import types
-from typing import Any, Never
+from rich import box
+from rich.console import Console
+from rich.table import Table
 
 from sdk import R2RAsyncClient
 
