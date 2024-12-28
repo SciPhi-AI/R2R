@@ -11,7 +11,7 @@ from r2r import R2RAsyncClient, R2RException
 class AsyncR2RTestClient:
     """Wrapper to ensure async operations use the correct event loop"""
 
-    def __init__(self, base_url: str = "https://api.cloud.sciphi.ai"):
+    def __init__(self, base_url: str = "http://localhost:7272"):
         self.client = R2RAsyncClient(base_url)
 
     async def create_document(
