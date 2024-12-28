@@ -837,13 +837,11 @@ class PostgresUserHandler(Handler):
             conditions = []
             param_index = 1
 
-            # Only process filters for valid columns
             for field, value in filters.items():
                 if field not in valid_columns:
                     continue
 
                 if isinstance(value, dict):
-                    # Handle operations like $eq, $gt, etc.
                     for op, val in value.items():
                         if op == "$eq":
                             conditions.append(f"{field} = ${param_index}")
@@ -857,7 +855,6 @@ class PostgresUserHandler(Handler):
                             conditions.append(f"{field} < ${param_index}")
                             params.append(val)
                             param_index += 1
-                        # Add more operators as needed
                 else:
                     # Direct equality
                     conditions.append(f"{field} = ${param_index}")
@@ -896,7 +893,7 @@ class PostgresUserHandler(Handler):
 
         except Exception as e:
             if temp_file:
-                temp_file.close()  # Close on error
+                temp_file.close()
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to export data: {str(e)}",
