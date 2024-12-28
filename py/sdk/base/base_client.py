@@ -1,3 +1,4 @@
+import os
 import asyncio
 import contextlib
 from functools import wraps
@@ -43,7 +44,7 @@ class BaseClient:
         self.timeout = timeout
         self.access_token: Optional[str] = None
         self._refresh_token: Optional[str] = None
-        self.api_key: Optional[str] = None
+        self.api_key: Optional[str] = os.getenv("R2R_API_KEY", None)
 
     def _get_auth_header(self) -> dict[str, str]:
         if self.access_token and self.api_key:
