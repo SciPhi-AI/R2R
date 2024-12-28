@@ -1,6 +1,6 @@
-import os
 import asyncio
 import contextlib
+import os
 from functools import wraps
 from typing import Optional
 
@@ -35,7 +35,7 @@ def sync_generator_wrapper(async_gen_func):
 class BaseClient:
     def __init__(
         self,
-        base_url: str = "http://localhost:7272",
+        base_url: str = "https://api.cloud.sciphi.ai",
         prefix: str = "/v2",
         timeout: float = 300.0,
     ):

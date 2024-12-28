@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from fastapi.responses import StreamingResponse
 
 from core.base import R2RException, manage_run
+
 from ...abstractions import R2RProviders, R2RServices
 
 logger = logging.getLogger()
@@ -40,6 +41,7 @@ class BaseRouterV3:
          - error handling
          - response shaping
         """
+
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             async with manage_run(
@@ -109,6 +111,7 @@ class BaseRouterV3:
         Adds a yield-based dependency for rate limiting each request.
         Checks the limits, then logs the request if the check passes.
         """
+
         async def rate_limit_dependency(
             request: Request,
             auth_user=Depends(self.providers.auth.auth_wrapper()),
@@ -127,15 +130,16 @@ class BaseRouterV3:
             route = request.scope["path"]
 
             # 1) Fetch the user from DB
-            user = await self.providers.database.users_handler.get_user_by_id(user_id)
+            user = await self.providers.database.users_handler.get_user_by_id(
+                user_id
+            )
             if not user:
                 raise HTTPException(status_code=404, detail="User not found.")
 
             # 2) Rate-limit check
             try:
                 await self.providers.database.limits_handler.check_limits(
-                    user=user,  # Pass the User object
-                    route=route
+                    user=user, route=route  # Pass the User object
                 )
             except ValueError as e:
                 # If check_limits raises ValueError -> 429 Too Many Requests

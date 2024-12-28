@@ -1,29 +1,31 @@
 # tests/conftest.py
-import pytest
 import os
+from uuid import uuid4
 
+import pytest
+
+from core.base import AppConfig, DatabaseConfig, VectorQuantizationType
 from core.database.postgres import (
     PostgresChunksHandler,
-    PostgresConnectionManager,
-    PostgresDatabaseProvider,
     PostgresCollectionsHandler,
+    PostgresConnectionManager,
     PostgresConversationsHandler,
+    PostgresDatabaseProvider,
     PostgresDocumentsHandler,
     PostgresGraphsHandler,
     PostgresLimitsHandler,
 )
-from core.providers import NaClCryptoConfig, NaClCryptoProvider
-from core.base import DatabaseConfig, VectorQuantizationType, AppConfig
-from core.database.users import (
+from core.database.users import (  # Make sure this import is correct
     PostgresUserHandler,
-)  # Make sure this import is correct
+)
+from core.providers import NaClCryptoConfig, NaClCryptoProvider
 from core.utils import generate_user_id
-from uuid import uuid4
 
 TEST_DB_CONNECTION_STRING = os.environ.get(
     "TEST_DB_CONNECTION_STRING",
     "postgresql://postgres:postgres@localhost:5432/test_db",
 )
+
 
 @pytest.fixture
 async def db_provider():

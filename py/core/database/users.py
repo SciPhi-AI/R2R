@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -178,21 +178,32 @@ class PostgresUserHandler(Handler):
         hashed_password = self.crypto_provider.get_password_hash(password)  # type: ignore
         query, params = (
             QueryBuilder(self._get_table_name(self.TABLE_NAME))
-            .insert({
-                "email": email,
-                "id": generate_user_id(email),
-                "is_superuser": is_superuser,
-                "hashed_password": hashed_password,
-                "collection_ids": [],
-                "limits_overrides": None
-            })
-            .returning([
-                "id", "email", "is_superuser", "is_active", "is_verified",
-                "created_at", "updated_at", "collection_ids", "limits_overrides"
-            ])
+            .insert(
+                {
+                    "email": email,
+                    "id": generate_user_id(email),
+                    "is_superuser": is_superuser,
+                    "hashed_password": hashed_password,
+                    "collection_ids": [],
+                    "limits_overrides": None,
+                }
+            )
+            .returning(
+                [
+                    "id",
+                    "email",
+                    "is_superuser",
+                    "is_active",
+                    "is_verified",
+                    "created_at",
+                    "updated_at",
+                    "collection_ids",
+                    "limits_overrides",
+                ]
+            )
             .build()
         )
-        
+
         result = await self.connection_manager.fetchrow_query(query, params)
         if not result:
             raise R2RException(
@@ -216,17 +227,17 @@ class PostgresUserHandler(Handler):
             profile_picture=None,
         )
 
-
-
-    async def update_user(self, user: User, merge_limits: bool = False) -> User:
+    async def update_user(
+        self, user: User, merge_limits: bool = False
+    ) -> User:
         """
         Update user information including limits_overrides.
-        
+
         Args:
             user: User object containing updated information
             merge_limits: If True, will merge existing limits_overrides with new ones.
                         If False, will overwrite existing limits_overrides.
-        
+
         Returns:
             Updated User object
         """
@@ -239,8 +250,15 @@ class PostgresUserHandler(Handler):
 
         # Merge or replace limits_overrides
         final_limits = user.limits_overrides
-        if merge_limits and current_user.limits_overrides and user.limits_overrides:
-            final_limits = {**current_user.limits_overrides, **user.limits_overrides}
+        if (
+            merge_limits
+            and current_user.limits_overrides
+            and user.limits_overrides
+        ):
+            final_limits = {
+                **current_user.limits_overrides,
+                **user.limits_overrides,
+            }
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
             SET email = $1,
@@ -254,8 +272,8 @@ class PostgresUserHandler(Handler):
                 collection_ids = $8,
                 limits_overrides = $9::jsonb
             WHERE id = $10
-            RETURNING id, email, is_superuser, is_active, is_verified, 
-                    created_at, updated_at, name, profile_picture, bio, 
+            RETURNING id, email, is_superuser, is_active, is_verified,
+                    created_at, updated_at, name, profile_picture, bio,
                     collection_ids, limits_overrides, hashed_password
         """
         result = await self.connection_manager.fetchrow_query(
@@ -283,7 +301,9 @@ class PostgresUserHandler(Handler):
         return User(
             id=result["id"],
             email=result["email"],
-            hashed_password=result["hashed_password"],  # Include hashed_password
+            hashed_password=result[
+                "hashed_password"
+            ],  # Include hashed_password
             is_superuser=result["is_superuser"],
             is_active=result["is_active"],
             is_verified=result["is_verified"],
@@ -292,8 +312,11 @@ class PostgresUserHandler(Handler):
             name=result["name"],
             profile_picture=result["profile_picture"],
             bio=result["bio"],
-            collection_ids=result["collection_ids"] or [],  # Ensure null becomes empty array
-            limits_overrides=json.loads(result["limits_overrides"] or "{}"),  # Can be null
+            collection_ids=result["collection_ids"]
+            or [],  # Ensure null becomes empty array
+            limits_overrides=json.loads(
+                result["limits_overrides"] or "{}"
+            ),  # Can be null
         )
 
     async def delete_user_relational(self, id: UUID) -> None:
@@ -305,7 +328,7 @@ class PostgresUserHandler(Handler):
             .where("id = $1")
             .build()
         )
-        
+
         collection_result = await self.connection_manager.fetchrow_query(
             collection_query, [id]
         )
@@ -315,12 +338,12 @@ class PostgresUserHandler(Handler):
 
         # Update documents query
         doc_update_query, doc_params = (
-            QueryBuilder(self._get_table_name('documents'))
+            QueryBuilder(self._get_table_name("documents"))
             .update({"id": None})
             .where("id = $1")
             .build()
         )
-        
+
         await self.connection_manager.execute_query(doc_update_query, [id])
 
         # Delete user query
@@ -331,7 +354,7 @@ class PostgresUserHandler(Handler):
             .returning(["id"])
             .build()
         )
-        
+
         result = await self.connection_manager.fetchrow_query(
             delete_query, [id]
         )
@@ -353,14 +376,26 @@ class PostgresUserHandler(Handler):
         """Get all users with minimal information."""
         query, params = (
             QueryBuilder(self._get_table_name(self.TABLE_NAME))
-            .select([
-                "id", "email", "is_superuser", "is_active", "is_verified",
-                "created_at", "updated_at", "collection_ids", "hashed_password",
-                "limits_overrides", "name", "bio", "profile_picture"
-            ])
+            .select(
+                [
+                    "id",
+                    "email",
+                    "is_superuser",
+                    "is_active",
+                    "is_verified",
+                    "created_at",
+                    "updated_at",
+                    "collection_ids",
+                    "hashed_password",
+                    "limits_overrides",
+                    "name",
+                    "bio",
+                    "profile_picture",
+                ]
+            )
             .build()
         )
-        
+
         results = await self.connection_manager.fetch_query(query, params)
         return [
             User(
@@ -373,7 +408,9 @@ class PostgresUserHandler(Handler):
                 created_at=result["created_at"],
                 updated_at=result["updated_at"],
                 collection_ids=result["collection_ids"] or [],
-                limits_overrides=json.loads(result["limits_overrides"] or "{}"),
+                limits_overrides=json.loads(
+                    result["limits_overrides"] or "{}"
+                ),
                 name=result["name"],
                 bio=result["bio"],
                 profile_picture=result["profile_picture"],
@@ -524,7 +561,6 @@ class PostgresUserHandler(Handler):
             )
         return True
 
-
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int, limit: int
     ) -> dict[str, list[User] | int]:
@@ -534,12 +570,24 @@ class PostgresUserHandler(Handler):
 
         query, params = (
             QueryBuilder(self._get_table_name(self.TABLE_NAME))
-            .select([
-                "id", "email", "is_active", "is_superuser", "created_at", 
-                "updated_at", "is_verified", "collection_ids", "name", 
-                "bio", "profile_picture", "hashed_password", "limits_overrides",
-                "COUNT(*) OVER() AS total_entries"
-            ])
+            .select(
+                [
+                    "id",
+                    "email",
+                    "is_active",
+                    "is_superuser",
+                    "created_at",
+                    "updated_at",
+                    "is_verified",
+                    "collection_ids",
+                    "name",
+                    "bio",
+                    "profile_picture",
+                    "hashed_password",
+                    "limits_overrides",
+                    "COUNT(*) OVER() AS total_entries",
+                ]
+            )
             .where("$1 = ANY(collection_ids)")
             .order_by("name")
             .offset("$2")
@@ -552,7 +600,7 @@ class PostgresUserHandler(Handler):
             conditions.append(limit)
 
         results = await self.connection_manager.fetch_query(query, conditions)
-        
+
         users_list = [
             User(
                 id=row["id"],
@@ -574,7 +622,6 @@ class PostgresUserHandler(Handler):
 
         total_entries = results[0]["total_entries"] if results else 0
         return {"results": users_list, "total_entries": total_entries}
-
 
     async def mark_user_as_superuser(self, id: UUID):
         query = f"""
@@ -693,7 +740,9 @@ class PostgresUserHandler(Handler):
                     num_files=row["num_files"],
                     total_size_in_bytes=row["total_size_in_bytes"],
                     document_ids=(
-                        list(row["document_ids"]) if row["document_ids"] else []
+                        list(row["document_ids"])
+                        if row["document_ids"]
+                        else []
                     ),
                 )
             )

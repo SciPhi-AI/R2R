@@ -44,7 +44,7 @@ class IndicesRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             # Create an HNSW index for efficient similarity search
@@ -89,7 +89,7 @@ class IndicesRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.indicies.create({
@@ -244,7 +244,7 @@ class IndicesRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
 
                             # List all indices
                             indices = client.indices.list(
@@ -260,7 +260,7 @@ class IndicesRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.indicies.list({
@@ -348,7 +348,7 @@ class IndicesRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
 
                             # Get detailed information about a specific index
                             index = client.indices.retrieve("index_1")
@@ -361,7 +361,7 @@ class IndicesRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.indicies.retrieve({
@@ -452,7 +452,7 @@ class IndicesRouter(BaseRouterV3):
         #                         "source": """
         # from r2r import R2RClient
 
-        # client = R2RClient("http://localhost:7272")
+        # client = R2RClient()
 
         # # Update HNSW index parameters
         # result = client.indices.update(
@@ -512,7 +512,7 @@ class IndicesRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
 
                             # Delete an index with orchestration for cleanup
                             result = client.indices.delete(
@@ -529,7 +529,7 @@ class IndicesRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.indicies.delete({

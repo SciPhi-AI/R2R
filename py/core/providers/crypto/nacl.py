@@ -18,6 +18,7 @@ from core.base import CryptoConfig, CryptoProvider
 
 DEFAULT_NACL_SECRET_KEY = "wNFbczH3QhUVcPALwtWZCPi0lrDlGV3P1DPRVEQCPbM"  # Replace or load from env or secrets manager
 
+
 def encode_bytes_readable(random_bytes: bytes, chars: str) -> str:
     """Convert random bytes to a readable string using the given character set."""
     # Each byte gives us 8 bits of randomness
@@ -27,7 +28,8 @@ def encode_bytes_readable(random_bytes: bytes, chars: str) -> str:
         # Use modulo to map the byte (0-255) to our character set length
         idx = byte % len(chars)
         result.append(chars[idx])
-    return ''.join(result)
+    return "".join(result)
+
 
 class NaClCryptoConfig(CryptoConfig):
     provider: str = "nacl"
@@ -84,15 +86,18 @@ class NaClCryptoProvider(CryptoProvider):
     def generate_api_key(self) -> Tuple[str, str]:
 
         # Define our character set (excluding ambiguous characters)
-        chars = string.ascii_letters.replace('l', '').replace('I', '').replace('O', '') + \
-                string.digits.replace('0', '').replace('1', '')
+        chars = string.ascii_letters.replace("l", "").replace("I", "").replace(
+            "O", ""
+        ) + string.digits.replace("0", "").replace("1", "")
 
         # Generate a unique key_id
         key_id_bytes = nacl.utils.random(16)  # 16 random bytes
         key_id = f"sk_{encode_bytes_readable(key_id_bytes, chars)}"
 
         # Generate a high-entropy API key
-        raw_api_key = encode_bytes_readable(nacl.utils.random(self.config.api_key_bytes), chars)
+        raw_api_key = encode_bytes_readable(
+            nacl.utils.random(self.config.api_key_bytes), chars
+        )
 
         # The caller will store the hashed version in the database
         return key_id, raw_api_key

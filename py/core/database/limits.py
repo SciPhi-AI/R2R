@@ -49,7 +49,7 @@ class PostgresLimitsHandler(Handler):
         since: datetime,
     ) -> int:
         """
-        Count how many requests a user (optionally for a specific route) 
+        Count how many requests a user (optionally for a specific route)
         has made since the given datetime.
         """
         if route:
@@ -61,7 +61,9 @@ class PostgresLimitsHandler(Handler):
               AND time >= $3
             """
             params = [user_id, route, since]
-            logger.debug(f"Counting requests for user={user_id}, route={route}")
+            logger.debug(
+                f"Counting requests for user={user_id}, route={route}"
+            )
         else:
             query = f"""
             SELECT COUNT(*)::int
@@ -80,7 +82,9 @@ class PostgresLimitsHandler(Handler):
         Count the number of requests so far this month for a given user.
         """
         now = datetime.now(timezone.utc)
-        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start_of_month = now.replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
+        )
         return await self._count_requests(user_id, None, start_of_month)
 
     async def check_limits(self, user: User, route: str):
@@ -100,13 +104,17 @@ class PostgresLimitsHandler(Handler):
         if route_config:
             # Check route-specific per-minute limit
             if route_config.route_per_min is not None:
-                route_req_count = await self._count_requests(user_id, route, one_min_ago)
+                route_req_count = await self._count_requests(
+                    user_id, route, one_min_ago
+                )
                 if route_req_count > route_config.route_per_min:
                     logger.warning(
                         f"Per-route per-minute limit exceeded for user_id={user_id}, route={route}"
                     )
-                    raise ValueError("Per-route per-minute rate limit exceeded")
-            
+                    raise ValueError(
+                        "Per-route per-minute rate limit exceeded"
+                    )
+
             # Check route-specific monthly limit
             if route_config.monthly_limit is not None:
                 monthly_count = await self._count_monthly_requests(user_id)
@@ -121,15 +129,21 @@ class PostgresLimitsHandler(Handler):
         base_limits = self.config.limits
 
         # Extract user-level overrides
-        global_per_min = user_overrides.get("global_per_min", base_limits.global_per_min)
-        monthly_limit = user_overrides.get("monthly_limit", base_limits.monthly_limit)
+        global_per_min = user_overrides.get(
+            "global_per_min", base_limits.global_per_min
+        )
+        monthly_limit = user_overrides.get(
+            "monthly_limit", base_limits.monthly_limit
+        )
 
         # 3) Check route-specific overrides from user config
         route_overrides = user_overrides.get("route_overrides", {})
         specific_config = route_overrides.get(route, {})
 
         # Apply route-specific overrides for per-minute limits
-        route_per_min = specific_config.get("route_per_min", base_limits.route_per_min)
+        route_per_min = specific_config.get(
+            "route_per_min", base_limits.route_per_min
+        )
 
         # If route specifically overrides global or monthly limits, apply them
         if "global_per_min" in specific_config:
@@ -139,7 +153,9 @@ class PostgresLimitsHandler(Handler):
 
         # 4) Check global per-minute limit
         if global_per_min is not None:
-            user_req_count = await self._count_requests(user_id, None, one_min_ago)
+            user_req_count = await self._count_requests(
+                user_id, None, one_min_ago
+            )
             if user_req_count > global_per_min:
                 logger.warning(
                     f"Global per-minute limit exceeded for user_id={user_id}, route={route}"
@@ -148,7 +164,9 @@ class PostgresLimitsHandler(Handler):
 
         # 5) Check user-specific route per-minute limit
         if route_per_min is not None:
-            route_req_count = await self._count_requests(user_id, route, one_min_ago)
+            route_req_count = await self._count_requests(
+                user_id, route, one_min_ago
+            )
             if route_req_count > route_per_min:
                 logger.warning(
                     f"Per-route per-minute limit exceeded for user_id={user_id}, route={route}"
@@ -163,7 +181,7 @@ class PostgresLimitsHandler(Handler):
                     f"Monthly limit exceeded for user_id={user_id}, route={route}"
                 )
                 raise ValueError("Monthly rate limit exceeded")
-            
+
     async def log_request(self, user_id: UUID, route: str):
         """
         Log a successful request to the request_log table.

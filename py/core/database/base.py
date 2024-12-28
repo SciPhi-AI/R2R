@@ -49,11 +49,14 @@ class SemaphoreConnectionPool:
     async def close(self):
         await self.pool.close()
 
+
 class QueryBuilder:
     def __init__(self, table_name: str):
         self.table_name = table_name
         self.conditions: list[str] = []
-        self.params: list = []  # Changed from dict to list for PostgreSQL $1, $2 style
+        self.params: list = (
+            []
+        )  # Changed from dict to list for PostgreSQL $1, $2 style
         self.select_fields = "*"
         self.operation = "SELECT"
         self.limit_value: Optional[int] = None
@@ -105,23 +108,27 @@ class QueryBuilder:
     def build(self):
         if self.operation == "SELECT":
             query = f"SELECT {self.select_fields} FROM {self.table_name}"
-        
+
         elif self.operation == "INSERT":
             columns = ", ".join(self.insert_data.keys())
-            placeholders = ", ".join(f"${i}" for i in range(1, len(self.insert_data) + 1))
+            placeholders = ", ".join(
+                f"${i}" for i in range(1, len(self.insert_data) + 1)
+            )
             query = f"INSERT INTO {self.table_name} ({columns}) VALUES ({placeholders})"
             self.params.extend(list(self.insert_data.values()))
-        
+
         elif self.operation == "UPDATE":
             set_clauses = []
-            for i, (key, value) in enumerate(self.update_data.items(), start=len(self.params) + 1):
+            for i, (key, value) in enumerate(
+                self.update_data.items(), start=len(self.params) + 1
+            ):
                 set_clauses.append(f"{key} = ${i}")
                 self.params.append(value)
             query = f"UPDATE {self.table_name} SET {', '.join(set_clauses)}"
-        
+
         elif self.operation == "DELETE":
             query = f"DELETE FROM {self.table_name}"
-        
+
         else:
             raise ValueError(f"Unsupported operation: {self.operation}")
 

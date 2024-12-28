@@ -2,10 +2,9 @@ import uuid
 
 import pytest
 
-from shared.abstractions import User
 from core.database.postgres import PostgresUserHandler
-
 from r2r import R2RClient, R2RException
+from shared.abstractions import User
 
 
 @pytest.fixture(scope="session")
@@ -610,10 +609,10 @@ def test_update_user_limits_overrides(client: R2RClient):
     client.users.login(user_email, "SomePassword123!")
 
     # 2) Confirm the default overrides is None
-    fetched_user = client.users.me()['results']
+    fetched_user = client.users.me()["results"]
     client.users.logout()
 
-    assert len(fetched_user['limits_overrides']) == 0
+    assert len(fetched_user["limits_overrides"]) == 0
 
     # 3) Update the overrides
     overrides = {
@@ -627,7 +626,12 @@ def test_update_user_limits_overrides(client: R2RClient):
 
     # 4) Fetch user again, check
     client.users.login(user_email, "SomePassword123!")
-    updated_user = client.users.me()['results']
-    assert len(updated_user['limits_overrides']) != 0
+    updated_user = client.users.me()["results"]
+    assert len(updated_user["limits_overrides"]) != 0
     assert updated_user["limits_overrides"]["global_per_min"] == 10
-    assert updated_user["limits_overrides"]["route_overrides"]["/some-route"]["route_per_min"] == 5
+    assert (
+        updated_user["limits_overrides"]["route_overrides"]["/some-route"][
+            "route_per_min"
+        ]
+        == 5
+    )
