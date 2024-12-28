@@ -13,12 +13,14 @@ Tests for the system commands in the CLI.
 """
 
 import json
+from importlib.metadata import version as get_version
+
 import pytest
 from click.testing import CliRunner
+
 from cli.commands.system import health, settings, status, version
-from tests.cli.async_invoke import async_invoke
 from r2r import R2RAsyncClient
-from importlib.metadata import version as get_version
+from tests.cli.async_invoke import async_invoke
 
 
 @pytest.mark.asyncio

@@ -40,28 +40,27 @@ class GraphRouter(BaseRouterV3):
         self._register_workflows()
 
     def _register_workflows(self):
-
         workflow_messages = {}
         if self.providers.orchestration.config.provider == "hatchet":
-            workflow_messages["extract-triples"] = (
-                "Document extraction task queued successfully."
-            )
-            workflow_messages["build-communities"] = (
-                "Graph enrichment task queued successfully."
-            )
-            workflow_messages["entity-deduplication"] = (
-                "KG Entity Deduplication task queued successfully."
-            )
+            workflow_messages[
+                "extract-triples"
+            ] = "Document extraction task queued successfully."
+            workflow_messages[
+                "build-communities"
+            ] = "Graph enrichment task queued successfully."
+            workflow_messages[
+                "entity-deduplication"
+            ] = "KG Entity Deduplication task queued successfully."
         else:
-            workflow_messages["extract-triples"] = (
-                "Document entities and relationships extracted successfully."
-            )
-            workflow_messages["build-communities"] = (
-                "Graph communities created successfully."
-            )
-            workflow_messages["entity-deduplication"] = (
-                "KG Entity Deduplication completed successfully."
-            )
+            workflow_messages[
+                "extract-triples"
+            ] = "Document entities and relationships extracted successfully."
+            workflow_messages[
+                "build-communities"
+            ] = "Graph communities created successfully."
+            workflow_messages[
+                "entity-deduplication"
+            ] = "KG Entity Deduplication completed successfully."
 
         self.providers.orchestration.register_workflows(
             Workflow.KG,
@@ -386,7 +385,6 @@ class GraphRouter(BaseRouterV3):
             }
 
             if run_with_orchestration:
-
                 return await self.providers.orchestration.run_workflow(  # type: ignore
                     "build-communities", {"request": workflow_input}, {}
                 )

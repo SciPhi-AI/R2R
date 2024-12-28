@@ -55,7 +55,6 @@ class BaseRouterV3:
                     raise
 
                 except Exception as e:
-
                     logger.error(
                         f"Error in base endpoint {func.__name__}() - \n\n{str(e)}",
                         exc_info=True,

@@ -2,22 +2,21 @@ import json
 import os
 import tempfile
 import uuid
-from typing import Any, Sequence, Optional
 from builtins import list as _list
+from typing import Any, Optional, Sequence
 from urllib.parse import urlparse
 from uuid import UUID
 
 import asyncclick as click
 import requests
 from asyncclick import pass_context
+from rich.box import ROUNDED
+from rich.console import Console
+from rich.table import Table
 
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
 from r2r import R2RAsyncClient, R2RException
-
-from rich.console import Console
-from rich.box import ROUNDED
-from rich.table import Table
 
 console = Console()
 

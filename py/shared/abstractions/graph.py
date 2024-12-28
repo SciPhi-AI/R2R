@@ -62,7 +62,6 @@ class Relationship(R2RSerializable):
 
 @dataclass
 class Community(R2RSerializable):
-
     name: str = ""
     summary: str = ""
 

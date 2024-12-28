@@ -116,7 +116,7 @@ class BCryptCryptoProvider(CryptoProvider, ABC):
 
         # Generate unique key_id
         key_entropy = nacl.utils.random(16)
-        key_id = f"key_{base64.urlsafe_b64encode(key_entropy).decode()}"
+        key_id = f"sk_{base64.urlsafe_b64encode(key_entropy).decode()}"
 
         private_key = base64.b64encode(bytes(signing_key)).decode()
         public_key = base64.b64encode(bytes(verify_key)).decode()

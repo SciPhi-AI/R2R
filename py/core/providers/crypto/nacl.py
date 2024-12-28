@@ -18,15 +18,25 @@ from core.base import CryptoConfig, CryptoProvider
 
 DEFAULT_NACL_SECRET_KEY = "wNFbczH3QhUVcPALwtWZCPi0lrDlGV3P1DPRVEQCPbM"  # Replace or load from env or secrets manager
 
+def encode_bytes_readable(random_bytes: bytes, chars: str) -> str:
+    """Convert random bytes to a readable string using the given character set."""
+    # Each byte gives us 8 bits of randomness
+    # We use modulo to map each byte to our character set
+    result = []
+    for byte in random_bytes:
+        # Use modulo to map the byte (0-255) to our character set length
+        idx = byte % len(chars)
+        result.append(chars[idx])
+    return ''.join(result)
 
 class NaClCryptoConfig(CryptoConfig):
     provider: str = "nacl"
     # Interactive parameters for password ops (fast)
-    ops_limit: int = argon2i.OPSLIMIT_INTERACTIVE
-    mem_limit: int = argon2i.MEMLIMIT_INTERACTIVE
+    ops_limit: int = argon2i.OPSLIMIT_MIN
+    mem_limit: int = argon2i.MEMLIMIT_MIN
     # Sensitive parameters for API key generation (slow but more secure)
-    api_ops_limit: int = argon2i.OPSLIMIT_SENSITIVE
-    api_mem_limit: int = argon2i.MEMLIMIT_SENSITIVE
+    api_ops_limit: int = argon2i.OPSLIMIT_INTERACTIVE
+    api_mem_limit: int = argon2i.MEMLIMIT_INTERACTIVE
     api_key_bytes: int = 32
     secret_key: Optional[str] = None
 
@@ -72,14 +82,17 @@ class NaClCryptoProvider(CryptoProvider):
         return base64.urlsafe_b64encode(random_bytes)[:length].decode("utf-8")
 
     def generate_api_key(self) -> Tuple[str, str]:
+
+        # Define our character set (excluding ambiguous characters)
+        chars = string.ascii_letters.replace('l', '').replace('I', '').replace('O', '') + \
+                string.digits.replace('0', '').replace('1', '')
+
         # Generate a unique key_id
         key_id_bytes = nacl.utils.random(16)  # 16 random bytes
-        key_id = f"key_{base64.urlsafe_b64encode(key_id_bytes).decode()}"
+        key_id = f"sk_{encode_bytes_readable(key_id_bytes, chars)}"
 
         # Generate a high-entropy API key
-        raw_api_key = base64.urlsafe_b64encode(
-            nacl.utils.random(self.config.api_key_bytes)
-        ).decode()
+        raw_api_key = encode_bytes_readable(nacl.utils.random(self.config.api_key_bytes), chars)
 
         # The caller will store the hashed version in the database
         return key_id, raw_api_key

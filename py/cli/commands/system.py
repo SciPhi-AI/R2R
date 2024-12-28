@@ -373,13 +373,13 @@ def generate_report():
     except subprocess.CalledProcessError as e:
         report["docker_error"] = f"Error running Docker command: {e}"
     except FileNotFoundError:
-        report["docker_error"] = (
-            "Docker command not found. Is Docker installed and in PATH?"
-        )
+        report[
+            "docker_error"
+        ] = "Docker command not found. Is Docker installed and in PATH?"
     except subprocess.TimeoutExpired:
-        report["docker_error"] = (
-            "Docker command timed out. Docker might be unresponsive."
-        )
+        report[
+            "docker_error"
+        ] = "Docker command timed out. Docker might be unresponsive."
 
     # Get OS information
     report["os_info"] = {

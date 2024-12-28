@@ -216,7 +216,6 @@ def hatchet_ingestion_factory(
                     )
 
                 if chunk_enrichment_settings.enable_chunk_enrichment:
-
                     logger.info("Enriching document with contextual chunks")
 
                     # TODO: the status updating doesn't work because document_info doesn't contain information about collection IDs

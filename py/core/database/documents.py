@@ -121,9 +121,9 @@ class PostgresDocumentsHandler(Handler):
                                 else:
                                     new_attempt_number = db_version
 
-                                db_entry["ingestion_attempt_number"] = (
-                                    new_attempt_number
-                                )
+                                db_entry[
+                                    "ingestion_attempt_number"
+                                ] = new_attempt_number
 
                                 update_query = f"""
                                 UPDATE {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
@@ -152,7 +152,6 @@ class PostgresDocumentsHandler(Handler):
                                     document.id,
                                 )
                             else:
-
                                 insert_query = f"""
                                 INSERT INTO {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
                                 (id, collection_ids, owner_id, type, metadata, title, version,

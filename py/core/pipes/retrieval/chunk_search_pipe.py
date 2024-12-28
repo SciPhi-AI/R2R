@@ -65,7 +65,6 @@ class VectorSearchPipe(SearchPipe):
             search_settings.use_fulltext_search
             and search_settings.use_semantic_search
         ) or search_settings.use_hybrid_search:
-
             search_results = (
                 await self.database_provider.chunks_handler.hybrid_search(
                     query_vector=query_vector,

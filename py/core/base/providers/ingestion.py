@@ -179,7 +179,6 @@ class IngestionConfig(ProviderConfig):
 
 
 class IngestionProvider(Provider, ABC):
-
     config: IngestionConfig
     database_provider: "PostgresDatabaseProvider"
     llm_provider: CompletionProvider

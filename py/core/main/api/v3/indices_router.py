@@ -23,7 +23,6 @@ logger = logging.getLogger()
 
 
 class IndicesRouter(BaseRouterV3):
-
     def __init__(
         self,
         providers: R2RProviders,
@@ -32,7 +31,6 @@ class IndicesRouter(BaseRouterV3):
         super().__init__(providers, services)
 
     def _setup_routes(self):
-
         ## TODO - Allow developer to pass the index id with the request
         @self.router.post(
             "/indices",

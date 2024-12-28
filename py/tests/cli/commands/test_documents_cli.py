@@ -14,23 +14,25 @@ Tests for the document commands in the CLI.
     x create-samples
 """
 
-import json
 import contextlib
+import json
 import os
-import pytest
 import tempfile
 import uuid
+
+import pytest
 from click.testing import CliRunner
+
 from cli.commands.documents import (
     create,
-    retrieve,
+    delete,
     list,
     list_chunks,
     list_collections,
-    delete,
+    retrieve,
 )
-from tests.cli.async_invoke import async_invoke
 from r2r import R2RAsyncClient
+from tests.cli.async_invoke import async_invoke
 
 
 @pytest.fixture

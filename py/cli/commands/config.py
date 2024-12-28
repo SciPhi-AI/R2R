@@ -1,10 +1,10 @@
-from rich.console import Console
-from rich.box import ROUNDED
-from rich.table import Table
-from pathlib import Path
 import configparser
+from pathlib import Path
 
 import asyncclick as click
+from rich.box import ROUNDED
+from rich.console import Console
+from rich.table import Table
 
 console = Console()
 

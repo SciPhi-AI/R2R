@@ -63,7 +63,6 @@ class GraphDeduplicationPipe(AsyncPipe):
     async def kg_named_entity_deduplication(
         self, graph_id: UUID | None, collection_id: UUID | None, **kwargs
     ):
-
         import numpy as np
 
         entities = await self._get_entities(graph_id, collection_id)

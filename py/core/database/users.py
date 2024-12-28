@@ -553,7 +553,6 @@ class PostgresUserHandler(Handler):
         limit: int,
         user_ids: Optional[list[UUID]] = None,
     ) -> dict[str, list[User] | int]:
-
         query = f"""
             WITH user_document_ids AS (
                 SELECT

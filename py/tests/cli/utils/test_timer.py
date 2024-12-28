@@ -2,8 +2,8 @@ import asyncio
 import time
 from unittest.mock import patch
 
-import pytest
 import asyncclick as click
+import pytest
 from click.testing import CliRunner
 
 from cli.utils.timer import timer

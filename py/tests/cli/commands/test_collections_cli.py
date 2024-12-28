@@ -9,19 +9,21 @@ Tests for the collection commands in the CLI.
 """
 
 import json
-import pytest
 import uuid
+
+import pytest
 from click.testing import CliRunner
+
 from cli.commands.collections import (
     create,
-    retrieve,
-    list,
     delete,
+    list,
     list_documents,
     list_users,
+    retrieve,
 )
-from tests.cli.async_invoke import async_invoke
 from r2r import R2RAsyncClient
+from tests.cli.async_invoke import async_invoke
 
 
 def extract_json_block(output: str) -> dict:

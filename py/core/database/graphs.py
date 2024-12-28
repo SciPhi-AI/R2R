@@ -776,7 +776,6 @@ class PostgresRelationshipsHandler(Handler):
 
 
 class PostgresCommunitiesHandler(Handler):
-
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.project_name: str = kwargs.get("project_name")  # type: ignore
         self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
@@ -784,7 +783,6 @@ class PostgresCommunitiesHandler(Handler):
         self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
 
     async def create_tables(self) -> None:
-
         vector_column_str = _decorate_vector_type(
             f"({self.dimension})", self.quantization_type
         )
@@ -1072,7 +1070,6 @@ class PostgresGraphsHandler(Handler):
         *args: Any,
         **kwargs: Any,
     ) -> None:
-
         self.project_name: str = kwargs.get("project_name")  # type: ignore
         self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
         self.dimension: int = kwargs.get("dimension")  # type: ignore
@@ -1258,9 +1255,7 @@ class PostgresGraphsHandler(Handler):
     async def get(
         self, offset: int, limit: int, graph_id: Optional[UUID] = None
     ):
-
         if graph_id is None:
-
             params = [offset, limit]
 
             QUERY = f"""
@@ -1498,7 +1493,6 @@ class PostgresGraphsHandler(Handler):
     ):
         """Get the estimated cost and time for enriching a KG."""
         if collection_id is not None:
-
             document_ids = [
                 doc.id
                 for doc in (
@@ -1857,7 +1851,6 @@ class PostgresGraphsHandler(Handler):
         graph_id: UUID | None,
         document_ids: Optional[list[UUID]] = None,
     ) -> list[Relationship]:
-
         QUERY = f"""
             SELECT id, subject, predicate, weight, object, parent_id FROM {self._get_table_name("graphs_relationships")} WHERE parent_id = ANY($1)
         """
@@ -1969,7 +1962,6 @@ class PostgresGraphsHandler(Handler):
         return communities, count
 
     async def add_community(self, community: Community) -> None:
-
         # TODO: Fix in the short term.
         # we need to do this because postgres insert needs to be a string
         community.description_embedding = str(community.description_embedding)  # type: ignore[assignment]
@@ -1997,7 +1989,6 @@ class PostgresGraphsHandler(Handler):
 
     # async def delete(self, collection_id: UUID, cascade: bool = False) -> None:
     async def delete(self, collection_id: UUID) -> None:
-
         graphs = await self.get(graph_id=collection_id, offset=0, limit=-1)
 
         if len(graphs["results"]) == 0:
@@ -2168,7 +2159,6 @@ class PostgresGraphsHandler(Handler):
         collection_id: Optional[UUID] = None,
         clustering_mode: str = "local",
     ) -> Tuple[int, Any]:
-
         # clear if there is any old information
         conditions = []
         if collection_id is not None:
@@ -2248,7 +2238,6 @@ class PostgresGraphsHandler(Handler):
     async def get_entity_map(
         self, offset: int, limit: int, document_id: UUID
     ) -> dict[str, dict[str, list[dict[str, Any]]]]:
-
         QUERY1 = f"""
             WITH entities_list AS (
                 SELECT DISTINCT name
@@ -2516,9 +2505,9 @@ class PostgresGraphsHandler(Handler):
             from graspologic.partition import hierarchical_leiden
 
             if "random_seed" not in leiden_params:
-                leiden_params["random_seed"] = (
-                    7272  # add seed to control randomness
-                )
+                leiden_params[
+                    "random_seed"
+                ] = 7272  # add seed to control randomness
 
             start_time = time.time()
             logger.info(
@@ -2555,7 +2544,6 @@ class PostgresGraphsHandler(Handler):
         distinct: bool = False,
         entity_table_name: str = "entity",
     ) -> int:
-
         if collection_id is None and document_id is None:
             raise ValueError(
                 "Either collection_id or document_id must be provided."
@@ -2576,7 +2564,6 @@ class PostgresGraphsHandler(Handler):
         ]
 
     async def update_entity_descriptions(self, entities: list[Entity]):
-
         query = f"""
             UPDATE {self._get_table_name("graphs_entities")}
             SET description = $3, description_embedding = $4
