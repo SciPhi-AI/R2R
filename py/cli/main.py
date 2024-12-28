@@ -83,7 +83,7 @@ def save_config(config_data: Dict[str, Any]) -> None:
 
 
 @cli.command("set-api-key", short_help="Set your R2R API key")
-@click.argument("api_key_key", required=True, type=str)
+@click.argument("api_key", required=True, type=str)
 @click.pass_context
 async def set_api_key(ctx, api_key: str):
     """
