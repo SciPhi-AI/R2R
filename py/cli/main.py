@@ -82,10 +82,10 @@ def save_config(config_data: Dict[str, Any]) -> None:
         json.dump(config_data, f, indent=2)
 
 
-@cli.command("set-api", short_help="Set your R2R API key")
-@click.argument("api_key", required=True, type=str)
+@cli.command("set-api-key", short_help="Set your R2R API key")
+@click.argument("api_key_key", required=True, type=str)
 @click.pass_context
-async def set_api(ctx, api_key: str):
+async def set_api_key(ctx, api_key: str):
     """
     Store your R2R API key locally so you don’t have to pass it on every command.
     Example usage:

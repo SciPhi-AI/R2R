@@ -492,7 +492,7 @@ def select_search_filters(
         }
 
         filters.pop("collection_ids", None)
-
-        filters = {"$and": [collection_filters, filters]}  # type: ignore
+        if filters != {}:
+            filters = {"$and": [collection_filters, filters]}  # type: ignore
 
     return filters
