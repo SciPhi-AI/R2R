@@ -82,7 +82,6 @@ class RetrievalRouterV3(BaseRouterV3):
         return effective_settings
 
     def _setup_routes(self):
-
         @self.router.post(
             "/retrieval/search",
             dependencies=[Depends(self.rate_limit_dependency)],
@@ -95,7 +94,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # if using auth, do client.login(...)
 
                             # Basic mode, no overrides
@@ -135,7 +134,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.search({
@@ -278,7 +277,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response =client.retrieval.rag(
@@ -309,7 +308,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.retrieval.rag({
@@ -464,7 +463,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             """
                         from r2r import R2RClient
 
-                        client = R2RClient("http://localhost:7272")
+                        client = R2RClient()
                         # when using auth, do client.login(...)
 
                         response =client.retrieval.agent(
@@ -500,7 +499,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.retrieval.agent({
@@ -693,7 +692,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response =client.completion(
@@ -719,7 +718,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.completion({
@@ -830,7 +829,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.retrieval.embedding(
@@ -845,7 +844,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.retrieval.embedding({

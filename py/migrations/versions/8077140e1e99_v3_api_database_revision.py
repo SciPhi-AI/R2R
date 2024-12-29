@@ -34,7 +34,6 @@ if (
 
 
 def upgrade() -> None:
-
     # Collections table migration
     op.alter_column(
         "collections",
@@ -195,7 +194,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-
     # Collections table migration
     op.alter_column(
         "collections",

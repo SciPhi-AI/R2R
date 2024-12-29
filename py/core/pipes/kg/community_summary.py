@@ -52,7 +52,6 @@ class GraphCommunitySummaryPipe(AsyncPipe):
         relationships: list[Relationship],
         max_summary_input_length: int,
     ):
-
         entity_map: dict[str, dict[str, list[Any]]] = {}
         for entity in entities:
             if not entity.name in entity_map:
@@ -172,7 +171,6 @@ class GraphCommunitySummaryPipe(AsyncPipe):
         )
 
         for attempt in range(3):
-
             description = (
                 (
                     await self.llm_provider.aget_completion(
@@ -268,34 +266,37 @@ class GraphCommunitySummaryPipe(AsyncPipe):
             f"GraphCommunitySummaryPipe: Checking if community summaries exist for communities {offset} to {offset + limit}"
         )
 
-        all_entities, _ = (
-            await self.database_provider.graphs_handler.get_entities(
-                parent_id=collection_id,
-                offset=0,
-                limit=-1,
-                include_embeddings=False,
-            )
+        (
+            all_entities,
+            _,
+        ) = await self.database_provider.graphs_handler.get_entities(
+            parent_id=collection_id,
+            offset=0,
+            limit=-1,
+            include_embeddings=False,
         )
 
-        all_relationships, _ = (
-            await self.database_provider.graphs_handler.get_relationships(
-                parent_id=collection_id,
-                offset=0,
-                limit=-1,
-                include_embeddings=False,
-            )
+        (
+            all_relationships,
+            _,
+        ) = await self.database_provider.graphs_handler.get_relationships(
+            parent_id=collection_id,
+            offset=0,
+            limit=-1,
+            include_embeddings=False,
         )
 
         # Perform clustering
         leiden_params = input.message.get("leiden_params", {})
-        _, community_clusters = (
-            await self.database_provider.graphs_handler._cluster_and_add_community_info(
-                relationships=all_relationships,
-                relationship_ids_cache={},
-                leiden_params=leiden_params,
-                collection_id=collection_id,
-                clustering_mode=clustering_mode,
-            )
+        (
+            _,
+            community_clusters,
+        ) = await self.database_provider.graphs_handler._cluster_and_add_community_info(
+            relationships=all_relationships,
+            relationship_ids_cache={},
+            leiden_params=leiden_params,
+            collection_id=collection_id,
+            clustering_mode=clustering_mode,
         )
 
         # Organize clusters
@@ -330,7 +331,6 @@ class GraphCommunitySummaryPipe(AsyncPipe):
         total_errors = 0
         completed_community_summary_jobs = 0
         for community_summary in asyncio.as_completed(community_summary_jobs):
-
             summary = await community_summary
             completed_community_summary_jobs += 1
             if completed_community_summary_jobs % 50 == 0:

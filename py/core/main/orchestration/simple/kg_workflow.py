@@ -12,10 +12,8 @@ logger = logging.getLogger()
 
 
 def simple_kg_factory(service: GraphService):
-
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
-
             if type(value) == uuid.UUID:
                 continue
 
@@ -41,7 +39,6 @@ def simple_kg_factory(service: GraphService):
         return input_data
 
     async def extract_triples(input_data):
-
         input_data = get_input_data_dict(input_data)
 
         if input_data.get("document_id"):
@@ -105,7 +102,6 @@ def simple_kg_factory(service: GraphService):
                 raise e
 
     async def enrich_graph(input_data):
-
         input_data = get_input_data_dict(input_data)
         workflow_status = await service.providers.database.documents_handler.get_workflow_status(
             id=input_data.get("collection_id", None),
@@ -157,7 +153,6 @@ def simple_kg_factory(service: GraphService):
             )
 
         except Exception as e:
-
             await service.providers.database.documents_handler.set_workflow_status(
                 id=input_data.get("collection_id", None),
                 status_type="graph_cluster_status",
@@ -167,7 +162,6 @@ def simple_kg_factory(service: GraphService):
             raise e
 
     async def kg_community_summary(input_data):
-
         logger.info(
             f"Running kg community summary for offset: {input_data['offset']}, limit: {input_data['limit']}"
         )
@@ -181,7 +175,6 @@ def simple_kg_factory(service: GraphService):
         )
 
     async def entity_deduplication_workflow(input_data):
-
         # TODO: We should determine how we want to handle the input here and syncronize it across all simple orchestration methods
         if isinstance(input_data["graph_entity_deduplication_settings"], str):
             input_data["graph_entity_deduplication_settings"] = json.loads(

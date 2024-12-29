@@ -101,7 +101,6 @@ def simple_ingestion_factory(service: IngestionService):
                         status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                     )
                 else:
-
                     for collection_id in collection_ids:
                         try:
                             # FIXME: Right now we just throw a warning if the collection already exists, but we should probably handle this more gracefully
@@ -332,7 +331,6 @@ def simple_ingestion_factory(service: IngestionService):
                 else:
                     for collection_id in collection_ids:
                         try:
-
                             name = document_info.title or "N/A"
                             description = ""
                             result = await service.providers.database.collections_handler.create_collection(
@@ -419,7 +417,6 @@ def simple_ingestion_factory(service: IngestionService):
             )
 
     async def create_vector_index(input_data):
-
         try:
             from core.main import IngestionServiceAdapter
 

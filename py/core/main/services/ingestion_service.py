@@ -300,7 +300,6 @@ class IngestionService(Service):
     async def finalize_ingestion(
         self, document_info: DocumentResponse
     ) -> None:
-
         async def empty_generator():
             yield document_info
 

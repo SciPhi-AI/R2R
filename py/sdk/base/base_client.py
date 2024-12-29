@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import os
 from functools import wraps
 from typing import Optional
 
@@ -34,7 +35,7 @@ def sync_generator_wrapper(async_gen_func):
 class BaseClient:
     def __init__(
         self,
-        base_url: str = "http://localhost:7272",
+        base_url: str = "https://api.cloud.sciphi.ai",
         prefix: str = "/v2",
         timeout: float = 300.0,
     ):
@@ -43,7 +44,7 @@ class BaseClient:
         self.timeout = timeout
         self.access_token: Optional[str] = None
         self._refresh_token: Optional[str] = None
-        self.api_key: Optional[str] = None
+        self.api_key: Optional[str] = os.getenv("R2R_API_KEY", None)
 
     def _get_auth_header(self) -> dict[str, str]:
         if self.access_token and self.api_key:
@@ -69,7 +70,6 @@ class BaseClient:
         return f"{self.base_url}/{version}/{endpoint}"
 
     def _prepare_request_args(self, endpoint: str, **kwargs) -> dict:
-
         headers = kwargs.pop("headers", {})
         if (self.access_token or self.api_key) and endpoint not in [
             "register",

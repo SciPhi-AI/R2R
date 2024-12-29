@@ -127,6 +127,7 @@ class AuthService(Service):
         name: Optional[str] = None,
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
+        limits_overrides: Optional[dict] = None,
     ) -> User:
         user: User = (
             await self.providers.database.users_handler.get_user_by_id(user_id)
@@ -143,6 +144,8 @@ class AuthService(Service):
             user.bio = bio
         if profile_picture is not None:
             user.profile_picture = profile_picture
+        if limits_overrides is not None:
+            user.limits_overrides = limits_overrides
         return await self.providers.database.users_handler.update_user(user)
 
     @telemetry_event("DeleteUserAccount")

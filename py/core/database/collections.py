@@ -75,7 +75,6 @@ class PostgresCollectionsHandler(Handler):
         description: str = "",
         collection_id: Optional[UUID] = None,
     ) -> CollectionResponse:
-
         if not name and not collection_id:
             name = self.config.default_collection_name
             collection_id = generate_default_user_collection_id(owner_id)

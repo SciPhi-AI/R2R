@@ -39,7 +39,7 @@ class SystemRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.system.health()
@@ -52,7 +52,7 @@ class SystemRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.system.health();
@@ -98,7 +98,7 @@ class SystemRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.system.settings()
@@ -111,7 +111,7 @@ class SystemRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.system.settings();
@@ -164,7 +164,7 @@ class SystemRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.system.status()
@@ -177,7 +177,7 @@ class SystemRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.system.status();

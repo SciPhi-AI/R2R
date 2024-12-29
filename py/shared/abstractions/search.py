@@ -468,7 +468,6 @@ def select_search_filters(
     auth_user: Any,
     search_settings: SearchSettings,
 ) -> dict[str, Any]:
-
     filters = copy(search_settings.filters)
     selected_collections = None
     if not auth_user.is_superuser:
@@ -493,7 +492,7 @@ def select_search_filters(
         }
 
         filters.pop("collection_ids", None)
-
-        filters = {"$and": [collection_filters, filters]}  # type: ignore
+        if filters != {}:
+            filters = {"$and": [collection_filters, filters]}  # type: ignore
 
     return filters

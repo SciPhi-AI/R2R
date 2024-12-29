@@ -49,7 +49,6 @@ class GraphStoragePipe(AsyncPipe):
         total_entities, total_relationships = 0, 0
 
         for extraction in kg_extractions:
-
             total_entities, total_relationships = (
                 total_entities + len(extraction.entities),
                 total_relationships + len(extraction.relationships),

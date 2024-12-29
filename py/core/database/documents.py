@@ -154,7 +154,6 @@ class PostgresDocumentsHandler(Handler):
                                     document.id,
                                 )
                             else:
-
                                 insert_query = f"""
                                 INSERT INTO {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
                                 (id, collection_ids, owner_id, type, metadata, title, version,

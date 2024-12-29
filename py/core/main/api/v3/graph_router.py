@@ -40,7 +40,6 @@ class GraphRouter(BaseRouterV3):
         self._register_workflows()
 
     def _register_workflows(self):
-
         workflow_messages = {}
         if self.providers.orchestration.config.provider == "hatchet":
             workflow_messages["extract-triples"] = (
@@ -164,7 +163,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.list()
@@ -177,7 +176,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.graphs.list({});
@@ -247,7 +246,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.get(
@@ -261,7 +260,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.graphs.retrieve({
@@ -386,7 +385,6 @@ class GraphRouter(BaseRouterV3):
             }
 
             if run_with_orchestration:
-
                 return await self.providers.orchestration.run_workflow(  # type: ignore
                     "build-communities", {"request": workflow_input}, {}
                 )
@@ -413,7 +411,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.reset(
@@ -427,7 +425,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.graphs.reset({
@@ -493,7 +491,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.update(
@@ -511,7 +509,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.graphs.update({
@@ -579,7 +577,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.list_entities(collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7")
@@ -592,7 +590,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.graphs.listEntities({
@@ -767,7 +765,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.get_entity(
@@ -783,7 +781,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.graphs.get_entity({
@@ -894,7 +892,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.remove_entity(
@@ -910,7 +908,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.graphs.removeEntity({
@@ -973,7 +971,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.list_relationships(collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7")
@@ -986,7 +984,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.graphs.listRelationships({
@@ -1055,7 +1053,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.get_relationship(
@@ -1071,7 +1069,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.graphs.getRelationship({
@@ -1202,7 +1200,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.delete_relationship(
@@ -1218,7 +1216,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.graphs.deleteRelationship({
@@ -1280,7 +1278,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.create_community(
@@ -1300,7 +1298,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.graphs.createCommunity({
@@ -1389,7 +1387,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.list_communities(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
@@ -1402,7 +1400,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.graphs.listCommunities({
@@ -1471,7 +1469,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.get_community(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
@@ -1484,7 +1482,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.graphs.getCommunity({
@@ -1549,7 +1547,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.delete_community(
@@ -1565,7 +1563,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.graphs.deleteCommunity({
@@ -1629,7 +1627,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.update_community(
@@ -1649,7 +1647,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             async function main() {
                                 const response = await client.graphs.updateCommunity({
@@ -1724,7 +1722,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.pull(
@@ -1738,7 +1736,7 @@ class GraphRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             async function main() {
                                 const response = await client.graphs.pull({

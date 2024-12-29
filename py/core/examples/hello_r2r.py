@@ -1,6 +1,6 @@
 from r2r import R2RClient
 
-client = R2RClient("http://localhost:7272")
+client = R2RClient()
 
 with open("test.txt", "w") as file:
     file.write("John is a person that works at Google.")

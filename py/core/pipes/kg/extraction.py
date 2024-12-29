@@ -212,7 +212,6 @@ class GraphExtractionPipe(AsyncPipe[dict]):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
-
         start_time = time.time()
 
         document_id = input.message["document_id"]

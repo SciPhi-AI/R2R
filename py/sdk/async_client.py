@@ -44,7 +44,7 @@ class R2RAsyncClient(
 
     def __init__(
         self,
-        base_url: str = "http://localhost:7272",
+        base_url: str = "https://api.cloud.sciphi.ai",
         prefix: str = "/v2",
         custom_client=None,
         timeout: float = 300.0,

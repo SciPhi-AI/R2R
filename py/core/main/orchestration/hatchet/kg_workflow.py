@@ -23,7 +23,6 @@ if TYPE_CHECKING:
 def hatchet_kg_factory(
     orchestration_provider: OrchestrationProvider, service: GraphService
 ) -> dict[str, "Hatchet.Workflow"]:
-
     def convert_to_dict(input_data):
         """
         Converts input data back to a plain dictionary format, handling special cases like UUID and GenerationConfig.
@@ -72,7 +71,6 @@ def hatchet_kg_factory(
 
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
-
             if value is None:
                 continue
 
@@ -212,7 +210,6 @@ def hatchet_kg_factory(
             retries=1, timeout="360m", parents=["kg_extract"]
         )
         async def kg_entity_description(self, context: Context) -> dict:
-
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
@@ -259,7 +256,6 @@ def hatchet_kg_factory(
 
     @orchestration_provider.workflow(name="extract-triples", timeout="600m")
     class CreateGraphWorkflow:
-
         @orchestration_provider.concurrency(  # type: ignore
             max_runs=orchestration_provider.config.kg_concurrency_limit,  # type: ignore
             limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
@@ -319,7 +315,6 @@ def hatchet_kg_factory(
                 }
 
             else:
-
                 # Extract relationships and store them
                 extractions = []
                 async for extraction in self.kg_service.kg_extraction(
@@ -399,7 +394,6 @@ def hatchet_kg_factory(
         async def kg_entity_deduplication_setup(
             self, context: Context
         ) -> dict:
-
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
@@ -467,7 +461,6 @@ def hatchet_kg_factory(
         async def kg_entity_deduplication_summary(
             self, context: Context
         ) -> dict:
-
             logger.info(
                 f"Running KG Entity Deduplication Summary for input data: {context.workflow_input()['request']}"
             )
@@ -660,7 +653,6 @@ def hatchet_kg_factory(
 
         @orchestration_provider.step(retries=1, timeout="360m")
         async def kg_community_summary(self, context: Context) -> dict:
-
             start_time = time.time()
 
             logger.info

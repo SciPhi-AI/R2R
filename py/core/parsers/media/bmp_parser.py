@@ -34,9 +34,13 @@ class BMPParser(AsyncParser[str | bytes]):
             header_size = self.struct.calcsize(header_format)
 
             # Unpack header data
-            signature, file_size, reserved, reserved2, data_offset = (
-                self.struct.unpack(header_format, data[:header_size])
-            )
+            (
+                signature,
+                file_size,
+                reserved,
+                reserved2,
+                data_offset,
+            ) = self.struct.unpack(header_format, data[:header_size])
 
             # DIB header
             dib_format = "<IiiHHIIiiII"

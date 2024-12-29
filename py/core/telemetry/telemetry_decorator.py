@@ -80,7 +80,6 @@ if os.getenv("TELEMETRY_ENABLED", "true").lower() in ("true", "1"):
 def telemetry_event(event_name):
     def decorator(func):
         def log_telemetry(event_type, user_id, metadata, error_message=None):
-
             if telemetry_thread_pool is None:
                 return
 

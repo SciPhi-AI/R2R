@@ -200,7 +200,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.documents.create(
@@ -217,7 +217,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.documents.create({
@@ -765,7 +765,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.documents.list(
@@ -781,7 +781,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.documents.list({
@@ -887,7 +887,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.documents.retrieve(
@@ -902,7 +902,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.documents.retrieve({
@@ -983,7 +983,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.documents.list_chunks(
@@ -998,7 +998,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.documents.listChunks({
@@ -1117,7 +1117,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.documents.download(
@@ -1132,7 +1132,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.documents.download({
@@ -1260,7 +1260,7 @@ class DocumentsRouter(BaseRouterV3):
                         "source": textwrap.dedent(
                             """
                             from r2r import R2RClient
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
                             response = client.documents.delete_by_filter(
                                 filters={"document_type": {"$eq": "txt"}}
@@ -1312,7 +1312,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.documents.delete(
@@ -1327,7 +1327,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.documents.delete({
@@ -1393,7 +1393,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.documents.list_collections(
@@ -1408,7 +1408,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.documents.listCollections({
@@ -1498,7 +1498,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.documents.extract(
@@ -1610,7 +1610,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.documents.extract(
@@ -1684,14 +1684,15 @@ class DocumentsRouter(BaseRouterV3):
                 raise R2RException("Document not found.", 404)
 
             # Get all entities for this document from the document_entity table
-            entities, count = (
-                await self.providers.database.graphs_handler.entities.get(
-                    parent_id=id,
-                    store_type="documents",
-                    offset=offset,
-                    limit=limit,
-                    include_embeddings=include_embeddings,
-                )
+            (
+                entities,
+                count,
+            ) = await self.providers.database.graphs_handler.entities.get(
+                parent_id=id,
+                store_type="documents",
+                offset=offset,
+                limit=limit,
+                include_embeddings=include_embeddings,
             )
 
             return entities, {"total_entries": count}  # type: ignore
@@ -1708,7 +1709,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.documents.list_relationships(
@@ -1725,7 +1726,7 @@ class DocumentsRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.documents.listRelationships({
@@ -1825,15 +1826,16 @@ class DocumentsRouter(BaseRouterV3):
                 raise R2RException("Document not found.", 404)
 
             # Get relationships for this document
-            relationships, count = (
-                await self.providers.database.graphs_handler.relationships.get(
-                    parent_id=id,
-                    store_type="documents",
-                    entity_names=entity_names,
-                    relationship_types=relationship_types,
-                    offset=offset,
-                    limit=limit,
-                )
+            (
+                relationships,
+                count,
+            ) = await self.providers.database.graphs_handler.relationships.get(
+                parent_id=id,
+                store_type="documents",
+                entity_names=entity_names,
+                relationship_types=relationship_types,
+                offset=offset,
+                limit=limit,
             )
 
             return relationships, {"total_entries": count}  # type: ignore

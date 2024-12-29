@@ -19,7 +19,6 @@ logger = logging.getLogger()
 
 
 class GraphDeduplicationSummaryPipe(AsyncPipe[Any]):
-
     class Input(AsyncPipe.Input):
         message: dict
 
@@ -48,7 +47,6 @@ class GraphDeduplicationSummaryPipe(AsyncPipe[Any]):
         entity_descriptions: list[str],
         generation_config: GenerationConfig,
     ) -> Entity:
-
         # find the index until the length is less than 1024
         index = 0
         description_length = 0
@@ -89,7 +87,6 @@ class GraphDeduplicationSummaryPipe(AsyncPipe[Any]):
         entity_descriptions: list[str],
         generation_config: GenerationConfig,
     ) -> Entity:
-
         # TODO: Expose this as a hyperparameter
         if len(entity_descriptions) <= 5:
             return Entity(
@@ -103,7 +100,6 @@ class GraphDeduplicationSummaryPipe(AsyncPipe[Any]):
     async def _prepare_and_upsert_entities(
         self, entities_batch: list[Entity], graph_id: UUID
     ) -> Any:
-
         embeddings = await self.embedding_provider.async_get_embeddings(
             [entity.description or "" for entity in entities_batch]
         )
@@ -135,7 +131,6 @@ class GraphDeduplicationSummaryPipe(AsyncPipe[Any]):
         limit: int,
         level,
     ):
-
         if graph_id is not None:
             return await self.database_provider.graphs_handler.entities.get(
                 parent_id=graph_id,
@@ -235,7 +230,6 @@ class GraphDeduplicationSummaryPipe(AsyncPipe[Any]):
                 tasks = []
 
         if tasks:
-
             entities_batch = await asyncio.gather(*tasks)
             for entity in entities_batch:
                 yield entity

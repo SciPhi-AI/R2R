@@ -423,7 +423,6 @@ class PostgresChunksHandler(Handler):
     async def full_text_search(
         self, query_text: str, search_settings: SearchSettings
     ) -> list[ChunkSearchResult]:
-
         conditions = []
         params: list[str | int | bytes] = [query_text]
 
@@ -1048,7 +1047,6 @@ class PostgresChunksHandler(Handler):
         id: UUID,
         similarity_threshold: float = 0.5,
     ) -> list[dict[str, Any]]:
-
         table_name = self._get_table_name(PostgresChunksHandler.TABLE_NAME)
         query = f"""
         WITH target_vector AS (

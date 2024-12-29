@@ -43,7 +43,6 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
 
         self.rerank_url = None
         if config.rerank_model:
-
             if "huggingface" not in config.rerank_model:
                 raise ValueError(
                     "LiteLLMEmbeddingProvider only supports re-ranking via the HuggingFace text-embeddings-inference API"
