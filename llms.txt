@@ -1463,13 +1463,13 @@ For detailed runtime configuration and combining `search_mode` with custom `sear
 
 1. **Optimize Database and Embeddings**:
    - Ensure Postgres indexing and vector store configurations are optimized for performance.
-   
+
 2. **Adjust Weights and Limits**:
    - Tweak `full_text_weight`, `semantic_weight`, and `rrf_k` values in `custom` mode.
-   
+
 3. **Regular Updates**:
    - Keep embeddings and indexes up-to-date to maintain search quality.
-   
+
 4. **Choose Appropriate Embeddings**:
    - Select an embedding model that fits your content domain for the best semantic results.
 
@@ -1978,12 +1978,12 @@ response = client.retrieval.rag(
    - Verify document extraction completed successfully.
    - Check document format and content.
    - Ensure collection graph was pulled after extraction.
-   
+
 2. **Graph Sync Issues**:
    - Confirm all documents are properly extracted.
    - Check collection membership.
    - Try resetting and re-pulling collection graph.
-   
+
 3. **Performance Problems**:
    - Monitor collection size.
    - Check extraction batch sizes.
@@ -2198,12 +2198,12 @@ For large collections, utilize R2R’s orchestration capabilities via Hatchet UI
    - Start with small document sets.
    - Test with single documents first.
    - Scale gradually to larger collections.
-   
+
 2. **Performance**:
    - Monitor community size and complexity.
    - Use pagination for large result sets.
    - Consider breaking very large collections.
-   
+
 3. **Quality**:
    - Review community summaries.
    - Validate findings accuracy.
@@ -2217,12 +2217,12 @@ For large collections, utilize R2R’s orchestration capabilities via Hatchet UI
    - Check entity extraction quality.
    - Review relationship connections.
    - Adjust collection scope.
-   
+
 2. **Performance Issues**:
    - Monitor graph size.
    - Check community complexity.
    - Use orchestration for large graphs.
-   
+
 3. **Integration Problems**:
    - Verify extraction completion.
    - Check collection synchronization.
@@ -2406,12 +2406,12 @@ response = client.retrieval.agent(
    - Maintain conversation IDs for related queries.
    - Use the system role to provide context about available files.
    - Clear conversation context when starting new topics.
-   
+
 2. **Search Optimization**:
    - Adjust the `limit` parameter based on needed context.
    - Use filters to narrow search scope.
    - Consider enabling web search for broader context.
-   
+
 3. **Response Handling**:
    - Use streaming for long responses.
    - Process response chunks appropriately in streaming mode.
@@ -2528,12 +2528,12 @@ Details about upcoming orchestration features will be available soon.
    - Start with small document sets.
    - Test with single documents first.
    - Scale gradually to larger collections.
-   
+
 2. **Performance**:
    - Monitor community size and complexity.
    - Use pagination for large result sets.
    - Consider breaking very large collections.
-   
+
 3. **Quality**:
    - Review community summaries.
    - Validate findings accuracy.
@@ -2545,11 +2545,11 @@ Details about upcoming orchestration features will be available soon.
 
 1. **Unable to Create/Modify Collections**:
    - Ensure the user has superuser privileges.
-   
+
 2. **User Not Seeing Collection Content**:
    - Verify that the user is correctly added to the collection.
    - Ensure documents are properly assigned.
-   
+
 3. **Performance Issues with Large Collections**:
    - Use pagination when retrieving users or documents.
    - Consider splitting large collections.
@@ -2621,12 +2621,12 @@ print('delete_response = ', delete_response)
    - Initial queries will be slower until the index is loaded into memory.
    - Implement explicit pre-warming in production.
    - Warming must be repeated after system restarts.
-   
+
 2. **Resource Usage**:
    - Index creation is CPU and memory intensive.
    - Memory usage scales with dataset size and the `m` parameter.
    - Create indices during off-peak hours.
-   
+
 3. **Performance Tuning**:
    - **HNSW Parameters**:
      - `m`: 16-64 (higher = better quality, more memory)
@@ -2758,7 +2758,7 @@ For applications serving many users:
 1. **Load Balancing**
    - Deploy multiple R2R instances behind a load balancer.
    - Each instance handles a subset of users.
-   
+
 2. **Sharding**
    - Shard by `user_id` for large multi-user deployments.
    - Each shard handles a subset of users, maintaining performance with millions of documents.
@@ -2772,7 +2772,7 @@ For applications requiring large single-user searches:
    - **Example Instance Types**:
      - `db.r6g.16xlarge`: Suitable for up to 100M vectors.
      - `db.r6g.metal`: Can handle 1B+ vectors.
-   
+
 2. **Memory Optimization**
 
 ```python
@@ -2807,7 +2807,7 @@ response = client.retrieval.search(
    - Group related documents into collections.
    - Enable efficient access control.
    - Optimize search scope.
-   
+
 3. **Resource Allocation**
    - Monitor per-user resource usage.
    - Implement usage quotas if needed.
@@ -2821,12 +2821,12 @@ Monitor the following metrics to inform scaling decisions:
    - Average query latency per user.
    - Number of vectors searched per query.
    - Cache hit rates.
-   
+
 2. **System Resources**
    - Memory usage per instance.
    - CPU utilization.
    - Storage growth rate.
-   
+
 3. **User Patterns**
    - Number of active users.
    - Query patterns and peak usage times.
@@ -2840,17 +2840,17 @@ When configuring embeddings in R2R, consider these optimization strategies:
    - Larger batch sizes improve throughput but increase latency.
    - Consider provider-specific rate limits when setting batch size.
    - Balance memory usage with processing speed.
-   
+
 2. **Concurrent Requests**:
    - Adjust `concurrent_request_limit` based on provider capabilities.
    - Monitor API usage and adjust limits accordingly.
    - Implement local caching for frequently embedded texts.
-   
+
 3. **Model Selection**:
    - Balance embedding dimension size with accuracy requirements.
    - Consider cost per token for different providers.
    - Evaluate multilingual requirements when choosing models.
-   
+
 4. **Resource Management**:
    - Monitor memory usage with large batch sizes.
    - Implement appropriate error handling and retry strategies.
@@ -3370,10 +3370,10 @@ R2R’s authentication system is flexible and can be customized to fit your spec
 
 1. **Login Fails After Registration**:
    - Ensure email verification is completed if enabled.
-   
+
 2. **Token Refresh Fails**:
    - Check if the refresh token has expired; the user may need to log in again.
-   
+
 3. **Unable to Change Password**:
    - Verify that the current password is correct.
 
@@ -3581,11 +3581,11 @@ While R2R’s current collection system follows a flat hierarchy, you can build 
 
 1. **Unable to Create/Modify Collections**:
    - Ensure the user has superuser privileges.
-   
+
 2. **User Not Seeing Collection Content**:
    - Verify that the user is correctly added to the collection.
    - Ensure documents are properly assigned.
-   
+
 3. **Performance Issues with Large Collections**:
    - Use pagination when retrieving users or documents.
    - Consider splitting large collections.
@@ -3724,17 +3724,17 @@ When configuring embeddings in R2R, consider these optimization strategies:
    - Larger batch sizes improve throughput but increase latency.
    - Consider provider-specific rate limits when setting batch size.
    - Balance memory usage with processing speed.
-   
+
 2. **Concurrent Requests**:
    - Adjust `concurrent_request_limit` based on provider capabilities.
    - Monitor API usage and adjust limits accordingly.
    - Implement local caching for frequently embedded texts.
-   
+
 3. **Model Selection**:
    - Balance embedding dimension size with accuracy requirements.
    - Consider cost per token for different providers.
    - Evaluate multilingual requirements when choosing models.
-   
+
 4. **Resource Management**:
    - Monitor memory usage with large batch sizes.
    - Implement appropriate error handling and retry strategies.
@@ -3778,11 +3778,11 @@ export OPENAI_API_KEY=your_openai_key
 1. **Batch Size Optimization**:
    - Larger batches improve throughput but may increase latency.
    - Balance batch size with memory and processing speed.
-   
+
 2. **Concurrent Requests**:
    - Adjust based on provider capabilities.
    - Monitor and optimize based on API usage.
-   
+
 3. **Model Selection**:
    - Choose models that fit your domain and accuracy needs.
    - Consider cost implications of different models.
@@ -4171,7 +4171,7 @@ A **Document** in R2R represents an ingested piece of content such as text files
 GET /v3/documents
 ```
 
-**Description:**  
+**Description:**
 Returns a paginated list of documents accessible to the authenticated user. Regular users see only their own documents or those shared through collections, while superusers see all documents.
 
 **Query Parameters:**
@@ -4222,7 +4222,7 @@ Returns a paginated list of documents accessible to the authenticated user. Regu
 POST /v3/documents
 ```
 
-**Description:**  
+**Description:**
 Creates a new Document object from an input file, text content, or pre-processed chunks. The ingestion process can be configured using an `ingestion_mode` or a custom `ingestion_config`.
 
 **Ingestion Modes:**
@@ -4231,7 +4231,7 @@ Creates a new Document object from an input file, text content, or pre-processed
 - `fast`: Speed-focused ingestion that skips certain enrichment steps like summaries.
 - `custom`: Provide a full `ingestion_config` to customize the entire ingestion process.
 
-**Note:**  
+**Note:**
 Either a file or text content must be provided, but not both. Documents are shared through `Collections`, allowing for specified cross-user interactions. The ingestion process runs asynchronously, and its progress can be tracked using the returned `task_id`.
 
 **Request (Multipart Form):**
@@ -4281,7 +4281,7 @@ curl -X POST "https://api.example.com/v3/documents" \
 GET /v3/documents/:id
 ```
 
-**Description:**  
+**Description:**
 Retrieves detailed information about a specific document by its ID. This includes metadata and processing status. The document’s content is **not** returned here; use `/documents/{id}/download` to retrieve the file itself.
 
 **Path Parameters:**
@@ -4333,7 +4333,7 @@ curl -X GET "https://api.example.com/v3/documents/document_id" \
 DELETE /v3/documents/:id
 ```
 
-**Description:**  
+**Description:**
 Deletes a specific document, including its associated chunks and references. **Note:** This action does not currently affect the knowledge graph or other derived data.
 
 **Path Parameters:**
@@ -4371,7 +4371,7 @@ curl -X DELETE "https://api.example.com/v3/documents/document_id" \
 DELETE /v3/documents/by-filter
 ```
 
-**Description:**  
+**Description:**
 Deletes multiple documents based on provided filters. Only the user’s own documents can be deleted using this method.
 
 **Request Body:**
@@ -4420,7 +4420,7 @@ curl -X DELETE "https://api.example.com/v3/documents/by-filter" \
 GET /v3/documents/:id/chunks
 ```
 
-**Description:**  
+**Description:**
 Retrieves the text chunks generated from a document during ingestion. Chunks represent semantic sections of the document and are used for retrieval and analysis.
 
 **Path Parameters:**
@@ -4475,7 +4475,7 @@ curl -X GET "https://api.example.com/v3/documents/document_id/chunks?limit=10" \
 GET /v3/documents/:id/download
 ```
 
-**Description:**  
+**Description:**
 Downloads the original file content of a document. For uploaded files, it returns the file with its proper MIME type. For text-only documents, it returns the content as plain text.
 
 **Path Parameters:**
@@ -4508,7 +4508,7 @@ curl -X GET "https://api.example.com/v3/documents/document_id/download" \
 GET /v3/documents/:id/collections
 ```
 
-**Description:**  
+**Description:**
 Lists all collections containing the specified document. **Superuser only**.
 
 **Path Parameters:**
@@ -4565,7 +4565,7 @@ curl -X GET "https://api.example.com/v3/documents/document_id/collections" \
 POST /v3/documents/:id/extract
 ```
 
-**Description:**  
+**Description:**
 Extracts entities and relationships from a document for knowledge graph creation. This process involves parsing the document into chunks, extracting entities and relationships using LLMs, and storing them in the knowledge graph.
 
 **Path Parameters:**
@@ -4675,7 +4675,7 @@ curl -X POST "https://api.example.com/v3/documents/document_id/extract" \
 GET /v3/documents/:id/entities
 ```
 
-**Description:**  
+**Description:**
 Retrieves entities extracted from the specified document.
 
 **Path Parameters:**
@@ -4723,7 +4723,7 @@ curl -X GET "https://api.example.com/v3/documents/document_id/entities" \
 GET /v3/documents/:id/relationships
 ```
 
-**Description:**  
+**Description:**
 Retrieves relationships extracted from the specified document.
 
 **Path Parameters:**
@@ -4806,7 +4806,7 @@ A **Chunk** in R2R represents a processed segment of text derived from a parent 
 GET /v3/chunks
 ```
 
-**Description:**  
+**Description:**
 Lists chunks with pagination, optionally filtering by metadata or including vectors.
 
 **Query Parameters:**
@@ -4856,7 +4856,7 @@ curl -X GET "https://api.example.com/v3/chunks?limit=10&include_vectors=true" \
 POST /v3/chunks/search
 ```
 
-**Description:**  
+**Description:**
 Performs a semantic search query over all stored chunks. This endpoint allows for complex filtering of search results using PostgreSQL-based queries, supporting various operators and advanced search configurations.
 
 **Allowed Operators:**
@@ -4937,7 +4937,7 @@ curl -X POST "https://api.example.com/v3/chunks/search" \
 GET /v3/chunks/:id
 ```
 
-**Description:**  
+**Description:**
 Retrieves a specific chunk by its ID, including its content, metadata, and associated document/collection information.
 
 **Path Parameters:**
@@ -4981,7 +4981,7 @@ curl -X GET "https://api.example.com/v3/chunks/chunk_id" \
 POST /v3/chunks/:id
 ```
 
-**Description:**  
+**Description:**
 Updates an existing chunk’s content and/or metadata. Upon updating, the chunk’s vectors are automatically recomputed based on the new content.
 
 **Path Parameters:**
@@ -5045,7 +5045,7 @@ curl -X POST "https://api.example.com/v3/chunks/chunk_id" \
 DELETE /v3/chunks/:id
 ```
 
-**Description:**  
+**Description:**
 Deletes a specific chunk by its ID. The parent document remains intact.
 
 **Path Parameters:**
@@ -5133,7 +5133,7 @@ A **Graph** in R2R is a knowledge graph associated with a specific **Collection*
 GET /v3/graphs
 ```
 
-**Description:**  
+**Description:**
 Returns a paginated list of graphs accessible to the authenticated user. Filter by `collection_ids` if needed. Regular users see only their own collections' graphs, while superusers see all graphs.
 
 **Query Parameters:**
@@ -5183,7 +5183,7 @@ curl -X GET "https://api.example.com/v3/graphs?limit=10" \
 GET /v3/graphs/:collection_id
 ```
 
-**Description:**  
+**Description:**
 Retrieves detailed information about a specific graph associated with a collection.
 
 **Path Parameters:**
@@ -5228,7 +5228,7 @@ curl -X GET "https://api.example.com/v3/graphs/collection_id" \
 POST /v3/graphs/:collection_id
 ```
 
-**Description:**  
+**Description:**
 Updates the configuration of a specific graph, including its name and description.
 
 **Path Parameters:**
@@ -5284,7 +5284,7 @@ curl -X POST "https://api.example.com/v3/graphs/collection_id" \
 POST /v3/graphs/:collection_id/reset
 ```
 
-**Description:**  
+**Description:**
 Resets the graph to its initial state by deleting all associated data. This action does **not** delete the underlying source documents.
 
 **Path Parameters:**
@@ -5322,7 +5322,7 @@ curl -X POST "https://api.example.com/v3/graphs/collection_id/reset" \
 POST /v3/graphs/:collection_id/pull
 ```
 
-**Description:**  
+**Description:**
 Synchronizes document entities and relationships into the graph, ensuring the graph reflects the latest document data.
 
 **Path Parameters:**
@@ -5405,7 +5405,7 @@ curl -X POST "https://api.example.com/v3/graphs/collection_id/pull" \
 GET /v3/graphs/:collection_id/entities
 ```
 
-**Description:**  
+**Description:**
 Lists all entities within a specific graph, supporting pagination.
 
 **Path Parameters:**
@@ -5460,7 +5460,7 @@ curl -X GET "https://api.example.com/v3/graphs/collection_id/entities?limit=10" 
 POST /v3/graphs/:collection_id/entities
 ```
 
-**Description:**  
+**Description:**
 Creates a new entity within a specified graph.
 
 **Path Parameters:**
@@ -5531,7 +5531,7 @@ curl -X POST "https://api.example.com/v3/graphs/collection_id/entities" \
 GET /v3/graphs/:collection_id/entities/:entity_id
 ```
 
-**Description:**  
+**Description:**
 Retrieves detailed information about a specific entity within a graph.
 
 **Path Parameters:**
@@ -5579,7 +5579,7 @@ curl -X GET "https://api.example.com/v3/graphs/collection_id/entities/entity_id"
 POST /v3/graphs/:collection_id/entities/:entity_id
 ```
 
-**Description:**  
+**Description:**
 Updates the details of an existing entity within a graph.
 
 **Path Parameters:**
@@ -5651,7 +5651,7 @@ curl -X POST "https://api.example.com/v3/graphs/collection_id/entities/entity_id
 DELETE /v3/graphs/:collection_id/entities/:entity_id
 ```
 
-**Description:**  
+**Description:**
 Deletes a specific entity from the graph.
 
 **Path Parameters:**
@@ -5694,7 +5694,7 @@ curl -X DELETE "https://api.example.com/v3/graphs/collection_id/entities/entity_
 
 1. **Connection Building**
     - Links between entities to represent interactions, hierarchies, or associations.
-  
+
 2. **Metadata and Weighting**
     - Stores additional information and weightings to signify the strength or importance of the relationship.
 
@@ -5719,7 +5719,7 @@ curl -X DELETE "https://api.example.com/v3/graphs/collection_id/entities/entity_
 GET /v3/graphs/:collection_id/relationships
 ```
 
-**Description:**  
+**Description:**
 Lists all relationships within a specific graph, supporting pagination.
 
 **Path Parameters:**
@@ -5778,7 +5778,7 @@ curl -X GET "https://api.example.com/v3/graphs/collection_id/relationships?limit
 POST /v3/graphs/:collection_id/relationships
 ```
 
-**Description:**  
+**Description:**
 Creates a new relationship within a specified graph, linking two entities.
 
 **Path Parameters:**
@@ -5861,7 +5861,7 @@ curl -X POST "https://api.example.com/v3/graphs/collection_id/relationships" \
 GET /v3/graphs/:collection_id/relationships/:relationship_id
 ```
 
-**Description:**  
+**Description:**
 Retrieves detailed information about a specific relationship within a graph.
 
 **Path Parameters:**
@@ -5913,7 +5913,7 @@ curl -X GET "https://api.example.com/v3/graphs/collection_id/relationships/relat
 POST /v3/graphs/:collection_id/relationships/:relationship_id
 ```
 
-**Description:**  
+**Description:**
 Updates the details of an existing relationship within a graph.
 
 **Path Parameters:**
@@ -5997,7 +5997,7 @@ curl -X POST "https://api.example.com/v3/graphs/collection_id/relationships/rela
 DELETE /v3/graphs/:collection_id/relationships/:relationship_id
 ```
 
-**Description:**  
+**Description:**
 Deletes a specific relationship from the graph.
 
 **Path Parameters:**
@@ -6069,7 +6069,7 @@ curl -X DELETE "https://api.example.com/v3/graphs/collection_id/relationships/re
 POST /v3/graphs/:collection_id/communities/build
 ```
 
-**Description:**  
+**Description:**
 Builds communities within the graph by analyzing entity relationships and similarities. This process utilizes clustering algorithms to identify and group related entities.
 
 **Path Parameters:**
@@ -6132,7 +6132,7 @@ curl -X POST "https://api.example.com/v3/graphs/collection_id/communities/build"
 GET /v3/graphs/:collection_id/communities
 ```
 
-**Description:**  
+**Description:**
 Lists all communities within a specific graph, supporting pagination.
 
 **Path Parameters:**
@@ -6192,7 +6192,7 @@ curl -X GET "https://api.example.com/v3/graphs/collection_id/communities?limit=1
 POST /v3/graphs/:collection_id/communities
 ```
 
-**Description:**  
+**Description:**
 Creates a new community within a graph. While communities are typically built automatically via the `/communities/build` endpoint, this endpoint allows for manual creation to reflect specific organizational needs.
 
 **Path Parameters:**
@@ -6266,7 +6266,7 @@ curl -X POST "https://api.example.com/v3/graphs/collection_id/communities" \
 GET /v3/graphs/:collection_id/communities/:community_id
 ```
 
-**Description:**  
+**Description:**
 Retrieves detailed information about a specific community within a graph.
 
 **Path Parameters:**
@@ -6317,7 +6317,7 @@ curl -X GET "https://api.example.com/v3/graphs/collection_id/communities/communi
 POST /v3/graphs/:collection_id/communities/:community_id
 ```
 
-**Description:**  
+**Description:**
 Updates the details of an existing community within a graph.
 
 **Path Parameters:**
@@ -6392,7 +6392,7 @@ curl -X POST "https://api.example.com/v3/graphs/collection_id/communities/commun
 DELETE /v3/graphs/:collection_id/communities/:community_id
 ```
 
-**Description:**  
+**Description:**
 Deletes a specific community from the graph.
 
 **Path Parameters:**
@@ -6488,7 +6488,7 @@ R2R’s **Retrieval** system offers advanced search and generation capabilities 
 POST /v3/retrieval/search
 ```
 
-**Description:**  
+**Description:**
 Performs a search query against vector and/or graph-based databases, supporting various search modes and complex filtering.
 
 **Search Modes:**
@@ -6497,7 +6497,7 @@ Performs a search query against vector and/or graph-based databases, supporting 
 - `advanced`: Combines semantic search with full-text search for more comprehensive results.
 - `custom`: Complete control over how search is performed. Provide a full `SearchSettings` object.
 
-**Note:**  
+**Note:**
 If `filters` or `limit` are provided alongside `basic` or `advanced`, they will override the default settings for that mode.
 
 **Allowed Operators:**
@@ -6599,7 +6599,7 @@ curl -X POST "https://api.example.com/v3/retrieval/search" \
 POST /v3/retrieval/rag
 ```
 
-**Description:**  
+**Description:**
 Executes a Retrieval-Augmented Generation (RAG) query. This endpoint combines search results with language model generation, allowing for context-based answers. It supports the same filtering capabilities as the search endpoint and can be customized using the `rag_generation_config` parameter.
 
 **Request Body:**
@@ -6697,7 +6697,7 @@ curl -X POST "https://api.example.com/v3/retrieval/rag" \
 POST /v3/retrieval/agent
 ```
 
-**Description:**  
+**Description:**
 Engages with an intelligent RAG-powered conversational agent for complex information retrieval and analysis. This advanced endpoint combines retrieval-augmented generation (RAG) with a conversational AI agent to provide detailed, context-aware responses based on your document collection.
 
 **Key Features:**
@@ -6798,7 +6798,7 @@ curl -X POST "https://api.example.com/v3/retrieval/agent" \
 POST /v3/retrieval/completion
 ```
 
-**Description:**  
+**Description:**
 Generates completions for a list of messages using the language model. The generation process can be customized using the `generation_config` parameter.
 
 **Request Body:**
@@ -6879,7 +6879,7 @@ curl -X POST "https://api.example.com/v3/retrieval/completion" \
 POST /v3/retrieval/embedding
 ```
 
-**Description:**  
+**Description:**
 Generates numerical embedding vectors for the provided text using a specified model.
 
 **Request Body:**
@@ -6931,10 +6931,10 @@ An **Index** in R2R represents a vector index structure optimized for similarity
 
 1. **Fast Similarity Search**
     - Enables rapid retrieval of similar vectors based on specified measures.
-  
+
 2. **Multiple Index Methods**
     - Supports various indexing methods like Hierarchical Navigable Small World (HNSW) and Inverted File (IVF-Flat) for different performance and recall needs.
-  
+
 3. **Configurable Similarity Measures**
     - Allows selection of similarity measures such as cosine distance, L2 distance, and inner product distance.
 
@@ -6964,7 +6964,7 @@ An **Index** in R2R represents a vector index structure optimized for similarity
 GET /v3/indices
 ```
 
-**Description:**  
+**Description:**
 Lists existing vector similarity search indices with pagination support. Returns details about each index including name, table name, indexing method, parameters, size, and performance statistics.
 
 **Query Parameters:**
@@ -7028,7 +7028,7 @@ curl -X GET "https://api.example.com/v3/indices?limit=10" \
 POST /v3/indices
 ```
 
-**Description:**  
+**Description:**
 Creates a new vector similarity search index over the target table. Supported tables include `vectors`, `entity`, `document_collections`, etc. This process is resource-intensive and supports concurrent building to prevent downtime.
 
 **Supported Index Methods:**
@@ -7132,7 +7132,7 @@ curl -X POST "https://api.example.com/v3/indices" \
 GET /v3/indices/:table_name/:index_name
 ```
 
-**Description:**  
+**Description:**
 Retrieves detailed information about a specific vector index, including its configuration, size, performance statistics, and maintenance information.
 
 **Path Parameters:**
@@ -7193,7 +7193,7 @@ curl -X GET "https://api.example.com/v3/indices/vectors/ai_research_vectors" \
 DELETE /v3/indices/:table_name/:index_name
 ```
 
-**Description:**  
+**Description:**
 Deletes an existing vector similarity search index. Deletion is permanent and cannot be undone. Underlying vector data remains intact, but queries will fall back to sequential scan, potentially slowing down search operations.
 
 **Notes:**
@@ -7290,7 +7290,7 @@ A **User** in R2R represents an authenticated entity that can interact with the 
 POST /v3/users/register
 ```
 
-**Description:**  
+**Description:**
 Registers a new user with the provided email and password. Upon registration, the user is inactive until their email is verified.
 
 **Request Body:**
@@ -7355,7 +7355,7 @@ curl -X POST "https://api.example.com/v3/users/register" \
 POST /v3/users/verify-email
 ```
 
-**Description:**  
+**Description:**
 Verifies a user’s email address using a verification code sent during registration.
 
 **Request Body:**
@@ -7404,7 +7404,7 @@ curl -X POST "https://api.example.com/v3/users/verify-email" \
 POST /v3/users/login
 ```
 
-**Description:**  
+**Description:**
 Authenticates a user and provides access and refresh tokens upon successful login.
 
 **Request Body:**
@@ -7460,7 +7460,7 @@ curl -X POST "https://api.example.com/v3/users/login" \
 POST /v3/users/logout
 ```
 
-**Description:**  
+**Description:**
 Logs out the current user, invalidating their access token.
 
 **Request Body:**
@@ -7496,7 +7496,7 @@ curl -X POST "https://api.example.com/v3/users/logout" \
 POST /v3/users/refresh-token
 ```
 
-**Description:**  
+**Description:**
 Refreshes the access token using a valid refresh token, providing new access and refresh tokens.
 
 **Request Body:**
@@ -7550,7 +7550,7 @@ curl -X POST "https://api.example.com/v3/users/refresh-token" \
 POST /v3/users/change-password
 ```
 
-**Description:**  
+**Description:**
 Changes the authenticated user’s password.
 
 **Request Body:**
@@ -7600,7 +7600,7 @@ curl -X POST "https://api.example.com/v3/users/change-password" \
 POST /v3/users/request-password-reset
 ```
 
-**Description:**  
+**Description:**
 Requests a password reset for a user by sending a reset link to their email.
 
 **Request Body:**
@@ -7647,7 +7647,7 @@ curl -X POST "https://api.example.com/v3/users/request-password-reset" \
 POST /v3/users/reset-password
 ```
 
-**Description:**  
+**Description:**
 Resets a user’s password using a valid reset token.
 
 **Request Body:**
@@ -7696,7 +7696,7 @@ curl -X POST "https://api.example.com/v3/users/reset-password" \
 GET /v3/users
 ```
 
-**Description:**  
+**Description:**
 Lists all users in the system with pagination and filtering options. Accessible only by superusers.
 
 **Query Parameters:**
@@ -7755,7 +7755,7 @@ curl -X GET "https://api.example.com/v3/users?limit=10" \
 GET /v3/users/me
 ```
 
-**Description:**  
+**Description:**
 Retrieves detailed information about the currently authenticated user.
 
 **Successful Response:**
@@ -7803,7 +7803,7 @@ curl -X GET "https://api.example.com/v3/users/me" \
 GET /v3/users/:id
 ```
 
-**Description:**  
+**Description:**
 Retrieves detailed information about a specific user. Users can only access their own information unless they are superusers.
 
 **Path Parameters:**
@@ -7857,7 +7857,7 @@ curl -X GET "https://api.example.com/v3/users/user_id" \
 POST /v3/users/:id
 ```
 
-**Description:**  
+**Description:**
 Updates user information. Users can only update their own information unless they are superusers. Superuser status can only be modified by existing superusers.
 
 **Path Parameters:**
@@ -7933,7 +7933,7 @@ curl -X POST "https://api.example.com/v3/users/user_id" \
 DELETE /v3/users/:id
 ```
 
-**Description:**  
+**Description:**
 Deletes a specific user account. Users can only delete their own account unless they are superusers.
 
 **Path Parameters:**
@@ -7989,7 +7989,7 @@ curl -X DELETE "https://api.example.com/v3/users/user_id" \
 GET /v3/users/:id/collections
 ```
 
-**Description:**  
+**Description:**
 Retrieves all collections associated with a specific user. Users can only access their own collections unless they are superusers.
 
 **Path Parameters:**
@@ -8046,7 +8046,7 @@ curl -X GET "https://api.example.com/v3/users/user_id/collections?limit=10" \
 POST /v3/users/:id/collections/:collection_id
 ```
 
-**Description:**  
+**Description:**
 Adds a user to a specific collection, granting them access to its documents and graphs. The authenticated user must have admin permissions for the collection to add new users.
 
 **Path Parameters:**
@@ -8085,7 +8085,7 @@ curl -X POST "https://api.example.com/v3/users/user_id/collections/collection_id
 DELETE /v3/users/:id/collections/:collection_id
 ```
 
-**Description:**  
+**Description:**
 Removes a user from a specific collection, revoking their access to its documents and graphs. The authenticated user must have admin permissions for the collection to remove users.
 
 **Path Parameters:**
@@ -8128,16 +8128,16 @@ A **Collection** in R2R is a logical grouping mechanism that organizes documents
 
 1. **Organizational Structure**
     - Groups related documents for better management and retrieval.
-  
+
 2. **Access Control & Permissions**
     - Manages user access at the collection level, allowing for granular permissions management.
-  
+
 3. **Content Sharing**
     - Facilitates sharing of documents and associated data among users within the collection.
-  
+
 4. **Collaboration Capabilities**
     - Enables multiple users to collaborate on document ingestion, management, and retrieval within a collection.
-  
+
 5. **Metadata Management**
     - Stores metadata and descriptions for each collection to provide context and organization.
 
@@ -8166,7 +8166,7 @@ A **Collection** in R2R is a logical grouping mechanism that organizes documents
 GET /v3/collections
 ```
 
-**Description:**  
+**Description:**
 Returns a paginated list of collections the authenticated user has access to. Results can be filtered by specific collection IDs. Regular users will see collections they own or have access to, while superusers can view all collections. Collections are ordered by last modification date, with the most recent first.
 
 **Query Parameters:**
@@ -8218,7 +8218,7 @@ curl -X GET "https://api.example.com/v3/collections?limit=10" \
 POST /v3/collections
 ```
 
-**Description:**  
+**Description:**
 Creates a new collection and automatically adds the creating user to it.
 
 **Request Body:**
@@ -8277,7 +8277,7 @@ curl -X POST "https://api.example.com/v3/collections" \
 GET /v3/collections/:id
 ```
 
-**Description:**  
+**Description:**
 Retrieves detailed information about a specific collection.
 
 **Path Parameters:**
@@ -8324,7 +8324,7 @@ curl -X GET "https://api.example.com/v3/collections/collection_id" \
 POST /v3/collections/:id
 ```
 
-**Description:**  
+**Description:**
 Updates the configuration of an existing collection, including its name and description.
 
 **Path Parameters:**
@@ -8389,7 +8389,7 @@ curl -X POST "https://api.example.com/v3/collections/collection_id" \
 DELETE /v3/collections/:id
 ```
 
-**Description:**  
+**Description:**
 Deletes an existing collection. This action removes all associations but does not delete the documents within it.
 
 **Path Parameters:**
@@ -8427,7 +8427,7 @@ curl -X DELETE "https://api.example.com/v3/collections/collection_id" \
 POST /v3/collections/:id/documents/:document_id
 ```
 
-**Description:**  
+**Description:**
 Adds a document to a specific collection, enabling access to the document within that collection's context.
 
 **Path Parameters:**
@@ -8466,7 +8466,7 @@ curl -X POST "https://api.example.com/v3/collections/collection_id/documents/doc
 DELETE /v3/collections/:id/documents/:document_id
 ```
 
-**Description:**  
+**Description:**
 Removes a document from a specific collection, revoking access to it within that collection's context. This action does not delete the document itself.
 
 **Path Parameters:**
@@ -8505,7 +8505,7 @@ curl -X DELETE "https://api.example.com/v3/collections/collection_id/documents/d
 GET /v3/collections/:id/documents
 ```
 
-**Description:**  
+**Description:**
 Retrieves all documents within a specific collection, supporting pagination and sorting options.
 
 **Path Parameters:**
@@ -8571,7 +8571,7 @@ curl -X GET "https://api.example.com/v3/collections/collection_id/documents?limi
 GET /v3/collections/:id/users
 ```
 
-**Description:**  
+**Description:**
 Retrieves all users with access to a specific collection, supporting pagination and sorting options.
 
 **Path Parameters:**
@@ -8635,7 +8635,7 @@ curl -X GET "https://api.example.com/v3/collections/collection_id/users?limit=10
 POST /v3/collections/:id/users/:user_id
 ```
 
-**Description:**  
+**Description:**
 Adds a user to a specific collection, granting them access to its documents and graphs. The authenticated user must have admin permissions for the collection to add new users.
 
 **Path Parameters:**
@@ -8674,7 +8674,7 @@ curl -X POST "https://api.example.com/v3/collections/collection_id/users/user_id
 DELETE /v3/collections/:id/users/:user_id
 ```
 
-**Description:**  
+**Description:**
 Removes a user from a specific collection, revoking their access to its documents and graphs. The authenticated user must have admin permissions for the collection to remove users.
 
 **Path Parameters:**
@@ -8713,7 +8713,7 @@ curl -X DELETE "https://api.example.com/v3/collections/collection_id/users/user_
 POST /v3/collections/:id/extract
 ```
 
-**Description:**  
+**Description:**
 Extracts entities and relationships from all unextracted documents within a collection, facilitating comprehensive knowledge graph construction.
 
 **Path Parameters:**
@@ -8797,7 +8797,7 @@ A **Conversation** in R2R represents a threaded exchange of messages that can br
 
 1. **Threaded Message Management**
     - Maintains a history of messages exchanged within the conversation.
-  
+
 2. **Branching Paths**
     - Supports branching, allowing the conversation to explore different topics or directions.
 
@@ -8830,7 +8830,7 @@ A **Conversation** in R2R represents a threaded exchange of messages that can br
 GET /v3/conversations
 ```
 
-**Description:**  
+**Description:**
 Lists all conversations accessible to the authenticated user, supporting pagination and filtering.
 
 **Query Parameters:**
@@ -8876,7 +8876,7 @@ curl -X GET "https://api.example.com/v3/conversations?limit=10" \
 POST /v3/conversations
 ```
 
-**Description:**  
+**Description:**
 Creates a new conversation for the authenticated user.
 
 **Request Body:**
@@ -8915,7 +8915,7 @@ curl -X POST "https://api.example.com/v3/conversations" \
 GET /v3/conversations/:id
 ```
 
-**Description:**  
+**Description:**
 Retrieves detailed information about a specific conversation. Can optionally retrieve details of a specific branch.
 
 **Path Parameters:**
@@ -8969,7 +8969,7 @@ curl -X GET "https://api.example.com/v3/conversations/conversation_id" \
 DELETE /v3/conversations/:id
 ```
 
-**Description:**  
+**Description:**
 Deletes an existing conversation, removing all associated messages and branches.
 
 **Path Parameters:**
@@ -9005,7 +9005,7 @@ curl -X DELETE "https://api.example.com/v3/conversations/conversation_id" \
 POST /v3/conversations/:id/messages
 ```
 
-**Description:**  
+**Description:**
 Adds a new message to an existing conversation.
 
 **Path Parameters:**
@@ -9077,7 +9077,7 @@ curl -X POST "https://api.example.com/v3/conversations/conversation_id/messages"
 PUT /v3/conversations/:id/messages/:message_id
 ```
 
-**Description:**  
+**Description:**
 Updates an existing message within a conversation.
 
 **Path Parameters:**
@@ -9145,7 +9145,7 @@ curl -X PUT "https://api.example.com/v3/conversations/conversation_id/messages/m
 GET /v3/conversations/:id/branches
 ```
 
-**Description:**  
+**Description:**
 Lists all branches within a specific conversation, supporting pagination.
 
 **Path Parameters:**
@@ -9202,16 +9202,16 @@ A **Prompt** in R2R represents a templated instruction or query pattern managed 
 
 1. **Templated Instruction Management**
     - Centralizes prompt templates for consistent usage.
-  
+
 2. **Type-safe Input Handling**
     - Defines input types for dynamic prompt generation.
-  
+
 3. **Centralized Governance**
     - Managed by superusers to maintain standardization.
-  
+
 4. **Dynamic Prompt Generation**
     - Supports dynamic insertion of input values into templates.
-  
+
 5. **Version Control**
     - Maintains versions of prompts for historical reference and rollback.
 
@@ -9233,7 +9233,7 @@ A **Prompt** in R2R represents a templated instruction or query pattern managed 
 GET /v3/prompts
 ```
 
-**Description:**  
+**Description:**
 Lists all available prompts. Accessible only by superusers.
 
 **Successful Response:**
@@ -9276,7 +9276,7 @@ curl -X GET "https://api.example.com/v3/prompts" \
 POST /v3/prompts
 ```
 
-**Description:**  
+**Description:**
 Creates a new prompt with the provided configuration. Only superusers can create prompts.
 
 **Request Body:**
@@ -9331,7 +9331,7 @@ curl -X POST "https://api.example.com/v3/prompts" \
 GET /v3/prompts/:name
 ```
 
-**Description:**  
+**Description:**
 Retrieves a specific prompt by name, optionally with input values and overrides.
 
 **Path Parameters:**
@@ -9402,7 +9402,7 @@ curl -X GET "https://api.example.com/v3/prompts/greeting_prompt" \
 PUT /v3/prompts/:name
 ```
 
-**Description:**  
+**Description:**
 Updates an existing prompt’s template and/or input types. Only superusers can update prompts.
 
 **Path Parameters:**
@@ -9462,7 +9462,7 @@ curl -X PUT "https://api.example.com/v3/prompts/greeting_prompt" \
 DELETE /v3/prompts/:name
 ```
 
-**Description:**  
+**Description:**
 Deletes a prompt by name. Only superusers can delete prompts.
 
 **Path Parameters:**
@@ -9504,10 +9504,10 @@ A **Conversation** in R2R maintains a threaded and potentially branching series 
 
 1. **Threaded Message Management**
     - Maintains a sequence of messages exchanged within the conversation.
-  
+
 2. **Branching Paths**
     - Supports branching to explore different topics or directions within the same conversation.
-  
+
 3. **Message Editing with History Preservation**
     - Allows updating existing messages while preserving the conversation history.
 
@@ -9537,7 +9537,7 @@ A **Conversation** in R2R maintains a threaded and potentially branching series 
 GET /v3/conversations
 ```
 
-**Description:**  
+**Description:**
 Lists all conversations accessible to the authenticated user, supporting pagination and filtering.
 
 **Query Parameters:**
@@ -9583,7 +9583,7 @@ curl -X GET "https://api.example.com/v3/conversations?limit=10" \
 POST /v3/conversations
 ```
 
-**Description:**  
+**Description:**
 Creates a new conversation for the authenticated user.
 
 **Request Body:**
@@ -9622,7 +9622,7 @@ curl -X POST "https://api.example.com/v3/conversations" \
 GET /v3/conversations/:id
 ```
 
-**Description:**  
+**Description:**
 Retrieves detailed information about a specific conversation. Optionally, you can retrieve details of a specific branch within the conversation.
 
 **Path Parameters:**
@@ -9676,7 +9676,7 @@ curl -X GET "https://api.example.com/v3/conversations/conversation_id" \
 DELETE /v3/conversations/:id
 ```
 
-**Description:**  
+**Description:**
 Deletes an existing conversation, removing all associated messages and branches.
 
 **Path Parameters:**
@@ -9712,7 +9712,7 @@ curl -X DELETE "https://api.example.com/v3/conversations/conversation_id" \
 POST /v3/conversations/:id/messages
 ```
 
-**Description:**  
+**Description:**
 Adds a new message to an existing conversation.
 
 **Path Parameters:**
@@ -9784,7 +9784,7 @@ curl -X POST "https://api.example.com/v3/conversations/conversation_id/messages"
 PUT /v3/conversations/:id/messages/:message_id
 ```
 
-**Description:**  
+**Description:**
 Updates an existing message within a conversation.
 
 **Path Parameters:**
@@ -9852,7 +9852,7 @@ curl -X PUT "https://api.example.com/v3/conversations/conversation_id/messages/m
 GET /v3/conversations/:id/branches
 ```
 
-**Description:**  
+**Description:**
 Lists all branches within a specific conversation, supporting pagination.
 
 **Path Parameters:**
@@ -9909,16 +9909,16 @@ A **Prompt** in R2R represents a templated instruction or query pattern that can
 
 1. **Templated Instruction Management**
     - Centralizes prompt templates for consistent usage.
-  
+
 2. **Type-safe Input Handling**
     - Defines input types for dynamic prompt generation.
-  
+
 3. **Centralized Governance**
     - Managed by superusers to maintain standardization.
-  
+
 4. **Dynamic Prompt Generation**
     - Supports dynamic insertion of input values into templates.
-  
+
 5. **Version Control**
     - Maintains versions of prompts for historical reference and rollback.
 
@@ -9940,7 +9940,7 @@ A **Prompt** in R2R represents a templated instruction or query pattern that can
 GET /v3/prompts
 ```
 
-**Description:**  
+**Description:**
 Lists all available prompts. Accessible only by superusers.
 
 **Successful Response:**
@@ -9983,7 +9983,7 @@ curl -X GET "https://api.example.com/v3/prompts" \
 POST /v3/prompts
 ```
 
-**Description:**  
+**Description:**
 Creates a new prompt with the provided configuration. Only superusers can create prompts.
 
 **Request Body:**
@@ -10038,7 +10038,7 @@ curl -X POST "https://api.example.com/v3/prompts" \
 GET /v3/prompts/:name
 ```
 
-**Description:**  
+**Description:**
 Retrieves a specific prompt by name, optionally with input values and overrides.
 
 **Path Parameters:**
@@ -10109,7 +10109,7 @@ curl -X GET "https://api.example.com/v3/prompts/greeting_prompt" \
 PUT /v3/prompts/:name
 ```
 
-**Description:**  
+**Description:**
 Updates an existing prompt’s template and/or input types. Only superusers can update prompts.
 
 **Path Parameters:**
@@ -10169,7 +10169,7 @@ curl -X PUT "https://api.example.com/v3/prompts/greeting_prompt" \
 DELETE /v3/prompts/:name
 ```
 
-**Description:**  
+**Description:**
 Deletes a prompt by name. Only superusers can delete prompts.
 
 **Path Parameters:**
@@ -10238,7 +10238,7 @@ The **System** section of the R2R API provides endpoints for monitoring and mana
 GET /v3/system/logs
 ```
 
-**Description:**  
+**Description:**
 Retrieves system logs for monitoring and debugging purposes.
 
 **Query Parameters:**
@@ -10292,7 +10292,7 @@ curl -X GET "https://api.example.com/v3/system/logs?limit=10" \
 GET /v3/system/health
 ```
 
-**Description:**  
+**Description:**
 Checks the overall health status of the R2R system, ensuring that all components are functioning correctly.
 
 **Successful Response:**
@@ -10324,7 +10324,7 @@ curl -X GET "https://api.example.com/v3/system/health" \
 GET /v3/system/settings
 ```
 
-**Description:**  
+**Description:**
 Retrieves the current configuration settings of the R2R system, including prompt configurations and project name.
 
 **Successful Response:**
@@ -10362,7 +10362,7 @@ curl -X GET "https://api.example.com/v3/system/settings" \
 GET /v3/system/status
 ```
 
-**Description:**  
+**Description:**
 Retrieves the current server status, including uptime and resource usage statistics.
 
 **Successful Response:**
