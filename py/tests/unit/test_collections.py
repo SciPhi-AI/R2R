@@ -176,7 +176,7 @@ async def test_remove_document_from_collection_relational(
     # Insert a doc already in collection
     doc_id = uuid.uuid4()
     insert_doc_query = f"""
-        INSERT INTO {db_provider.project_name}.documents 
+        INSERT INTO {db_provider.project_name}.documents
         (id, owner_id, type, metadata, title, version, size_in_bytes, ingestion_status, extraction_status, collection_ids)
         VALUES ($1, $2, 'txt', '{{}}'::jsonb, 'Another Doc', 'v1', 10, 'pending', 'pending', $3)
     """
