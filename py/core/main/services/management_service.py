@@ -219,6 +219,19 @@ class ManagementService(Service):
             return result
         return None
 
+    @telemetry_event("ExportCollections")
+    async def export_collections(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, NamedTemporaryFile]:
+        return await self.providers.database.collections_handler.export_to_csv(
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
     @telemetry_event("ExportDocuments")
     async def export_documents(
         self,

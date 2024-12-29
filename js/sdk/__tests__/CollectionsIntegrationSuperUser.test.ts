@@ -1,5 +1,8 @@
 import { r2rClient } from "../src/index";
-import { describe, test, beforeAll, expect } from "@jest/globals";
+import { describe, test, beforeAll, expect, afterAll } from "@jest/globals";
+import fs from "fs";
+import path from "path";
+const TEST_OUTPUT_DIR = path.join(__dirname, "test-output");
 
 const baseUrl = "http://localhost:7272";
 
@@ -17,6 +20,16 @@ describe("r2rClient V3 Collections Integration Tests", () => {
       email: "admin@example.com",
       password: "change_me_immediately",
     });
+
+    if (!fs.existsSync(TEST_OUTPUT_DIR)) {
+      fs.mkdirSync(TEST_OUTPUT_DIR);
+    }
+  });
+
+  afterAll(() => {
+    if (fs.existsSync(TEST_OUTPUT_DIR)) {
+      fs.rmSync(TEST_OUTPUT_DIR, { recursive: true, force: true });
+    }
   });
 
   test("Create new collection", async () => {
@@ -103,6 +116,72 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   //   });
   //   expect(response.results).toBeDefined();
   // });
+
+  test("Export documents to CSV with default options", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "documents_default.csv");
+    await client.documents.export({ outputPath });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    expect(content).toBeTruthy();
+    expect(content.split("\n").length).toBeGreaterThan(1);
+  });
+
+  test("Export documents to CSV with custom columns", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "documents_custom.csv");
+    await client.documents.export({
+      outputPath,
+      columns: ["id", "title", "created_at"],
+      includeHeader: true,
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    const headers = content
+      .split("\n")[0]
+      .split(",")
+      .map((h) => h.trim());
+
+    expect(headers).toContain('"id"');
+    expect(headers).toContain('"title"');
+    expect(headers).toContain('"created_at"');
+  });
+
+  test("Export filtered documents to CSV", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "documents_filtered.csv");
+    await client.documents.export({
+      outputPath,
+      filters: { document_type: { $eq: "txt" } },
+      includeHeader: true,
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    expect(content).toBeTruthy();
+  });
+
+  test("Export documents without headers", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "documents_no_header.csv");
+    await client.documents.export({
+      outputPath,
+      includeHeader: false,
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+  });
+
+  test("Handle empty export result", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "documents_empty.csv");
+    await client.documents.export({
+      outputPath,
+      filters: { document_type: { $eq: "non_existent_type" } },
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    expect(content.split("\n").filter((line) => line.trim()).length).toBe(1);
+  });
 
   test("Remove document from collection", async () => {
     const response = await client.collections.removeDocument({
