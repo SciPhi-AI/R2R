@@ -1,4 +1,5 @@
 from __future__ import annotations  # for Python 3.10+
+import json
 
 from typing import Optional
 from uuid import UUID
@@ -349,6 +350,7 @@ class UsersSDK:
         name: Optional[str] = None,
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
+        limits_overrides: dict | None = None,
     ) -> WrappedUserResponse:
         """
         Update user information.
@@ -375,6 +377,8 @@ class UsersSDK:
             data["bio"] = bio
         if profile_picture is not None:
             data["profile_picture"] = profile_picture
+        if limits_overrides is not None:
+            data["limits_overrides"] = limits_overrides
 
         return await self.client._make_request(
             "POST",

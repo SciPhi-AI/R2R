@@ -86,7 +86,6 @@ def test_delete_non_existent_conversation(client):
     bad_id = str(uuid.uuid4())
     with pytest.raises(R2RException) as exc_info:
         result = client.conversations.delete(id=bad_id)
-        print(result)
     assert (
         exc_info.value.status_code == 404
     ), "Wrong error code for delete non-existent"
@@ -122,7 +121,6 @@ def test_update_message(client, test_conversation):
         content="Updated content",
         metadata={"new_key": "new_value"},
     )["results"]
-    print(update_resp)
     # /new_branch_id = update_resp["new_branch_id"]
 
     assert update_resp["message"], "No message returned after update"

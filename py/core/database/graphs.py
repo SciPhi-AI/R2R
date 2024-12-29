@@ -2505,9 +2505,9 @@ class PostgresGraphsHandler(Handler):
             from graspologic.partition import hierarchical_leiden
 
             if "random_seed" not in leiden_params:
-                leiden_params[
-                    "random_seed"
-                ] = 7272  # add seed to control randomness
+                leiden_params["random_seed"] = (
+                    7272  # add seed to control randomness
+                )
 
             start_time = time.time()
             logger.info(

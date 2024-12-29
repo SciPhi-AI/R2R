@@ -42,7 +42,7 @@ class ConversationsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.conversations.create()
@@ -55,7 +55,7 @@ class ConversationsRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.conversations.create();
@@ -116,7 +116,7 @@ class ConversationsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.conversations.list(
@@ -132,7 +132,7 @@ class ConversationsRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.conversations.list();
@@ -218,7 +218,7 @@ class ConversationsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.conversations.get(
@@ -233,7 +233,7 @@ class ConversationsRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.conversations.retrieve({
@@ -299,7 +299,7 @@ class ConversationsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.conversations.update("123e4567-e89b-12d3-a456-426614174000", "new_name")
@@ -312,7 +312,7 @@ class ConversationsRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.conversations.update({
@@ -382,7 +382,7 @@ class ConversationsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.conversations.delete("123e4567-e89b-12d3-a456-426614174000")
@@ -395,7 +395,7 @@ class ConversationsRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.conversations.delete({
@@ -462,7 +462,7 @@ class ConversationsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.conversations.add_message(
@@ -481,7 +481,7 @@ class ConversationsRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.conversations.addMessage({
@@ -558,7 +558,7 @@ class ConversationsRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.conversations.update_message(
@@ -575,7 +575,7 @@ class ConversationsRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.conversations.updateMessage({

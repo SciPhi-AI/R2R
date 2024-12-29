@@ -122,7 +122,7 @@ class CustomGroup(click.Group):
 
         console.print("[bold cyan]Options:[/bold cyan]")
         console.print(
-            "  --base-url TEXT  Base URL for the API [default: http://localhost:7272]"
+            "  --base-url TEXT  Base URL for the API [default: https://api.cloud.sciphi.ai]"
         )
         console.print("  --help           Show this message and exit.\n")
 
@@ -167,7 +167,9 @@ def initialize_client(base_url: str) -> R2RAsyncClient:
 
 @click.group(cls=CustomGroup)
 @click.option(
-    "--base-url", default="http://localhost:7272", help="Base URL for the API"
+    "--base-url",
+    default="https://cloud.sciphi.ai",
+    help="Base URL for the API",
 )
 @pass_context
 async def cli(ctx: click.Context, base_url: str) -> None:

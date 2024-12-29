@@ -505,9 +505,9 @@ class PostgresChunksHandler(Handler):
         semantic_results: list[ChunkSearchResult] = await self.semantic_search(
             query_vector, semantic_settings
         )
-        full_text_results: list[
-            ChunkSearchResult
-        ] = await self.full_text_search(query_text, full_text_settings)
+        full_text_results: list[ChunkSearchResult] = (
+            await self.full_text_search(query_text, full_text_settings)
+        )
 
         semantic_limit = search_settings.limit
         full_text_limit = search_settings.hybrid_settings.full_text_limit

@@ -1,5 +1,5 @@
 import textwrap
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
@@ -19,6 +19,7 @@ from core.base.api.models import (
     WrappedUserResponse,
     WrappedUsersResponse,
 )
+from core.base.providers.database import LimitSettings
 
 from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
@@ -43,7 +44,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             new_user = client.users.create(
                                 email="jane.doe@example.com",
                                 password="secure_password123"
@@ -56,7 +57,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.create({
@@ -96,12 +97,15 @@ class UsersRouter(BaseRouterV3):
         async def register(
             email: EmailStr = Body(..., description="User's email address"),
             password: str = Body(..., description="User's password"),
-            name: str
-            | None = Body(None, description="The name for the new user"),
-            bio: str
-            | None = Body(None, description="The bio for the new user"),
-            profile_picture: str
-            | None = Body(None, description="Updated user profile picture"),
+            name: str | None = Body(
+                None, description="The name for the new user"
+            ),
+            bio: str | None = Body(
+                None, description="The bio for the new user"
+            ),
+            profile_picture: str | None = Body(
+                None, description="Updated user profile picture"
+            ),
             # auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUserResponse:
             """Register a new user with the given email and password."""
@@ -148,7 +152,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             new_user = client.users.register(
                                 email="jane.doe@example.com",
                                 password="secure_password123"
@@ -161,7 +165,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.register({
@@ -217,7 +221,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             tokens = client.users.verify_email(
                                 email="jane.doe@example.com",
                                 verification_code="1lklwal!awdclm"
@@ -230,7 +234,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.verifyEmail({
@@ -292,7 +296,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             tokens = client.users.login(
                                 email="jane.doe@example.com",
                                 password="secure_password123"
@@ -306,7 +310,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.login({
@@ -350,7 +354,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # client.login(...)
                             result = client.users.logout()
                             """
@@ -362,7 +366,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.logout();
@@ -404,7 +408,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # client.login(...)
 
                             new_tokens = client.users.refresh_token()
@@ -417,7 +421,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.refreshAccessToken();
@@ -463,7 +467,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # client.login(...)
 
                             result = client.users.change_password(
@@ -478,7 +482,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.changePassword({
@@ -533,7 +537,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             result = client.users.request_password_reset(
                                 email="jane.doe@example.com"
                             )"""
@@ -545,7 +549,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.requestPasswordReset({
@@ -591,7 +595,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             result = client.users.reset_password(
                                 reset_token="reset_token_received_via_email",
                                 new_password="new_secure_password789"
@@ -604,7 +608,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.resetPassword({
@@ -655,7 +659,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # client.login(...)
 
                             # List users with filters
@@ -672,7 +676,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.list();
@@ -762,7 +766,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # client.login(...)
 
                             # Get user details
@@ -776,7 +780,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.retrieve();
@@ -827,7 +831,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # client.login(...)
 
                             # Get user details
@@ -843,7 +847,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.retrieve({
@@ -914,7 +918,7 @@ class UsersRouter(BaseRouterV3):
                             """
                         from r2r import R2RClient
 
-                        client = R2RClient("http://localhost:7272")
+                        client = R2RClient()
                         # client.login(...)
 
                         # Delete user
@@ -928,7 +932,7 @@ class UsersRouter(BaseRouterV3):
                             """
                         const { r2rClient } = require("r2r-js");
 
-                        const client = new r2rClient("http://localhost:7272");
+                        const client = new r2rClient();
 
                         function main() {
                             const response = await client.users.delete({
@@ -988,7 +992,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # client.login(...)
 
                             # Get user collections
@@ -1006,7 +1010,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.listCollections({
@@ -1091,7 +1095,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # client.login(...)
 
                             # Add user to collection
@@ -1108,7 +1112,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.addToCollection({
@@ -1175,7 +1179,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # client.login(...)
 
                             # Remove user from collection
@@ -1192,7 +1196,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.removeFromCollection({
@@ -1263,7 +1267,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # client.login(...)
 
                             # Update user
@@ -1280,7 +1284,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             const { r2rClient } = require("r2r-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new r2rClient();
 
                             function main() {
                                 const response = await client.users.update({
@@ -1314,14 +1318,21 @@ class UsersRouter(BaseRouterV3):
         @self.base_endpoint
         async def update_user(
             id: UUID = Path(..., description="ID of the user to update"),
-            email: EmailStr
-            | None = Body(None, description="Updated email address"),
-            is_superuser: bool
-            | None = Body(None, description="Updated superuser status"),
+            email: EmailStr | None = Body(
+                None, description="Updated email address"
+            ),
+            is_superuser: bool | None = Body(
+                None, description="Updated superuser status"
+            ),
             name: str | None = Body(None, description="Updated user name"),
             bio: str | None = Body(None, description="Updated user bio"),
-            profile_picture: str
-            | None = Body(None, description="Updated profile picture URL"),
+            profile_picture: str | None = Body(
+                None, description="Updated profile picture URL"
+            ),
+            limits_overrides: dict = Body(
+                None,
+                description="Updated limits overrides",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUserResponse:
             """
@@ -1340,7 +1351,11 @@ class UsersRouter(BaseRouterV3):
                     "Only superusers can update other users' information",
                     403,
                 )
-
+            if not auth_user.is_superuser and limits_overrides is not None:
+                raise R2RException(
+                    "Only superusers can update other users' limits overrides",
+                    403,
+                )
             return await self.services.auth.update_user(
                 user_id=id,
                 email=email,
@@ -1348,6 +1363,7 @@ class UsersRouter(BaseRouterV3):
                 name=name,
                 bio=bio,
                 profile_picture=profile_picture,
+                limits_overrides=limits_overrides,
             )
 
         @self.router.post(
@@ -1363,7 +1379,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # client.login(...)
 
                             result = client.users.create_api_key(
@@ -1417,7 +1433,7 @@ class UsersRouter(BaseRouterV3):
                             """
                             from r2r import R2RClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # client.login(...)
 
                             keys = client.users.list_api_keys(
@@ -1475,7 +1491,7 @@ class UsersRouter(BaseRouterV3):
                             from r2r import R2RClient
                             from uuid import UUID
 
-                            client = R2RClient("http://localhost:7272")
+                            client = R2RClient()
                             # client.login(...)
 
                             response = client.users.delete_api_key(

@@ -58,9 +58,9 @@ class GraphStoragePipe(AsyncPipe):
                 if not extraction.entities[0].chunk_ids:
                     for i in range(len(extraction.entities)):
                         extraction.entities[i].chunk_ids = extraction.chunk_ids
-                        extraction.entities[
-                            i
-                        ].parent_id = extraction.document_id
+                        extraction.entities[i].parent_id = (
+                            extraction.document_id
+                        )
 
                 for entity in extraction.entities:
                     await self.database_provider.graphs_handler.entities.create(
@@ -70,12 +70,12 @@ class GraphStoragePipe(AsyncPipe):
             if extraction.relationships:
                 if not extraction.relationships[0].chunk_ids:
                     for i in range(len(extraction.relationships)):
-                        extraction.relationships[
-                            i
-                        ].chunk_ids = extraction.chunk_ids
-                    extraction.relationships[
-                        i
-                    ].document_id = extraction.document_id
+                        extraction.relationships[i].chunk_ids = (
+                            extraction.chunk_ids
+                        )
+                    extraction.relationships[i].document_id = (
+                        extraction.document_id
+                    )
 
                 await self.database_provider.graphs_handler.relationships.create(
                     extraction.relationships,

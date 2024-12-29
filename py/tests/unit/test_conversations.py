@@ -1,8 +1,10 @@
-import pytest
+import json
 import uuid
 from uuid import UUID
-import json
-from core.base import R2RException, Message
+
+import pytest
+
+from core.base import Message, R2RException
 from shared.api.models.management.responses import (
     ConversationResponse,
     MessageResponse,
@@ -28,6 +30,7 @@ async def test_create_conversation_with_user_and_name(conversations_handler):
     # There's no direct field for user_id in ConversationResponse,
     # but we can verify by fetch:
     # Just trust it for now since the handler doesn't return user_id directly.
+
 
 @pytest.mark.asyncio
 async def test_add_message(conversations_handler):
