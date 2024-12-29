@@ -79,6 +79,7 @@ async def search(ctx: click.Context, query, **kwargs):
 
     client: R2RAsyncClient = ctx.obj
 
+    print("client.base_url = ", client.base_url)
     try:
         with timer():
             results = await client.retrieval.search(
