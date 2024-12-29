@@ -3,6 +3,7 @@ import json
 import logging
 import mimetypes
 import textwrap
+from datetime import datetime
 from io import BytesIO
 from typing import Any, Optional
 from uuid import UUID
@@ -651,6 +652,105 @@ class DocumentsRouter(BaseRouterV3):
                 path=csv_file_path,
                 media_type="text/csv",
                 filename="documents_export.csv",
+            )
+
+        @self.router.get(
+            "/documents/download_zip",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            response_class=StreamingResponse,
+            summary="Export multiple documents as zip",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            client.documents.download_zip(
+                                document_ids=["uuid1", "uuid2"],
+                                start_date="2024-01-01",
+                                end_date="2024-12-31"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/v3/documents/download_zip?document_ids=uuid1,uuid2&start_date=2024-01-01&end_date=2024-12-31" \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def export_files(
+            document_ids: Optional[list[UUID]] = Query(
+                None,
+                description="List of document IDs to include in the export. If not provided, all accessible documents will be included.",
+            ),
+            start_date: Optional[datetime] = Query(
+                None,
+                description="Filter documents created on or after this date.",
+            ),
+            end_date: Optional[datetime] = Query(
+                None,
+                description="Filter documents created before this date.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> StreamingResponse:
+            """
+            Export multiple documents as a zip file. Documents can be filtered by IDs and/or date range.
+
+            The endpoint allows downloading:
+            - Specific documents by providing their IDs
+            - Documents within a date range
+            - All accessible documents if no filters are provided
+
+            Files are streamed as a zip archive to handle potentially large downloads efficiently.
+            """
+            if not auth_user.is_superuser:
+                # For non-superusers, verify access to requested documents
+                if document_ids:
+                    documents_overview = (
+                        await self.services.management.documents_overview(
+                            user_ids=[auth_user.id],
+                            document_ids=document_ids,
+                            offset=0,
+                            limit=len(document_ids),
+                        )
+                    )
+                    if len(documents_overview["results"]) != len(document_ids):
+                        raise R2RException(
+                            status_code=403,
+                            message="You don't have access to one or more requested documents.",
+                        )
+                if not document_ids:
+                    raise R2RException(
+                        status_code=403,
+                        message="Non-superusers must provide document IDs to export.",
+                    )
+
+            zip_name, zip_content, zip_size = (
+                await self.services.management.export_files(
+                    document_ids=document_ids,
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+            )
+
+            async def stream_file():
+                yield zip_content.getvalue()
+
+            return StreamingResponse(
+                stream_file(),
+                media_type="application/zip",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{zip_name}"',
+                    "Content-Length": str(zip_size),
+                },
             )
 
         @self.router.get(

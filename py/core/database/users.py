@@ -1,7 +1,7 @@
 import csv
 import tempfile
 from datetime import datetime
-from typing import Optional
+from typing import IO, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -787,7 +787,7 @@ class PostgresUserHandler(Handler):
         columns: Optional[list[str]] = None,
         filters: Optional[dict] = None,
         include_header: bool = True,
-    ) -> tuple[str, tempfile.NamedTemporaryFile]:
+    ) -> tuple[str, IO]:
         """
         Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
         """
@@ -873,7 +873,7 @@ class PostgresUserHandler(Handler):
             )
             writer = csv.writer(temp_file, quoting=csv.QUOTE_ALL)
 
-            async with self.connection_manager.pool.get_connection() as conn:
+            async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
                 async with conn.transaction():
                     cursor = await conn.cursor(select_stmt, *params)
 

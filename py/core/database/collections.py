@@ -2,7 +2,7 @@ import csv
 import json
 import logging
 import tempfile
-from typing import Any, Optional
+from typing import IO, Any, Optional
 from uuid import UUID, uuid4
 
 from asyncpg.exceptions import UniqueViolationError
@@ -477,7 +477,7 @@ class PostgresCollectionsHandler(Handler):
         columns: Optional[list[str]] = None,
         filters: Optional[dict] = None,
         include_header: bool = True,
-    ) -> tuple[str, tempfile.NamedTemporaryFile]:
+    ) -> tuple[str, IO]:
         """
         Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
         """
@@ -516,10 +516,10 @@ class PostgresCollectionsHandler(Handler):
                 description,
                 graph_sync_status,
                 graph_cluster_status,
-                user_count,
-                document_count,
                 to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at,
-                to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') AS updated_at
+                to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') AS updated_at,
+                user_count,
+                document_count
             FROM {self._get_table_name(self.TABLE_NAME)}
         """
 
@@ -564,7 +564,7 @@ class PostgresCollectionsHandler(Handler):
             )
             writer = csv.writer(temp_file, quoting=csv.QUOTE_ALL)
 
-            async with self.connection_manager.pool.get_connection() as conn:
+            async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
                 async with conn.transaction():
                     cursor = await conn.cursor(select_stmt, *params)
 

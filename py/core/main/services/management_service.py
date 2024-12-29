@@ -1,8 +1,8 @@
 import logging
 import os
 from collections import defaultdict
-from tempfile import NamedTemporaryFile
-from typing import Any, BinaryIO, Optional, Tuple
+from datetime import datetime
+from typing import IO, Any, BinaryIO, Optional, Tuple
 from uuid import UUID
 
 import toml
@@ -219,13 +219,28 @@ class ManagementService(Service):
             return result
         return None
 
+    @telemetry_event("ExportFiles")
+    async def export_files(
+        self,
+        document_ids: Optional[list[UUID]] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+    ) -> tuple[str, BinaryIO, int]:
+        return (
+            await self.providers.database.files_handler.retrieve_files_as_zip(
+                document_ids=document_ids,
+                start_date=start_date,
+                end_date=end_date,
+            )
+        )
+
     @telemetry_event("ExportCollections")
     async def export_collections(
         self,
         columns: Optional[list[str]] = None,
         filters: Optional[dict] = None,
         include_header: bool = True,
-    ) -> tuple[str, NamedTemporaryFile]:
+    ) -> tuple[str, IO]:
         return await self.providers.database.collections_handler.export_to_csv(
             columns=columns,
             filters=filters,
@@ -238,7 +253,7 @@ class ManagementService(Service):
         columns: Optional[list[str]] = None,
         filters: Optional[dict] = None,
         include_header: bool = True,
-    ) -> tuple[str, NamedTemporaryFile]:
+    ) -> tuple[str, IO]:
         return await self.providers.database.documents_handler.export_to_csv(
             columns=columns,
             filters=filters,
@@ -251,7 +266,7 @@ class ManagementService(Service):
         columns: Optional[list[str]] = None,
         filters: Optional[dict] = None,
         include_header: bool = True,
-    ) -> tuple[str, NamedTemporaryFile]:
+    ) -> tuple[str, IO]:
         return await self.providers.database.users_handler.export_to_csv(
             columns=columns,
             filters=filters,

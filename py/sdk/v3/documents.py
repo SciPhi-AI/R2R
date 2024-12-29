@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Optional
@@ -150,6 +151,46 @@ class DocumentsSDK:
         )
         if not isinstance(response, BytesIO):
             raise ValueError("Expected BytesIO response")
+        return response
+
+    async def download_zip(
+        self,
+        document_ids: Optional[list[str | UUID]] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        output_path: Optional[str | Path] = None,
+    ) -> BytesIO:
+        """
+        Download multiple documents as a zip file.
+        """
+        params: list = {}
+        if document_ids:
+            params["document_ids"] = [str(doc_id) for doc_id in document_ids]
+        if start_date:
+            params["start_date"] = start_date.isoformat()
+        if end_date:
+            params["end_date"] = end_date.isoformat()
+
+        response = await self.client._make_request(
+            "GET",
+            "documents/download_zip",
+            params=params,
+            version="v3",
+        )
+
+        if not isinstance(response, BytesIO):
+            raise ValueError("Expected BytesIO response")
+
+        if output_path:
+            output_path = (
+                Path(output_path)
+                if isinstance(output_path, str)
+                else output_path
+            )
+            async with aiofiles.open(output_path, "wb") as f:
+                await f.write(response.getvalue())
+            return None
+
         return response
 
     async def export(

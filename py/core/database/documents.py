@@ -4,7 +4,7 @@ import csv
 import json
 import logging
 import tempfile
-from typing import Any, Optional
+from typing import IO, Any, Optional
 from uuid import UUID
 
 import asyncpg
@@ -250,7 +250,7 @@ class PostgresDocumentsHandler(Handler):
         Get the IDs from a given table.
 
         Args:
-            status (Union[str, list[str]]): The status or list of statuses to retrieve.
+            status (str | list[str]): The status or list of statuses to retrieve.
             table_name (str): The table name.
             status_type (str): The type of status to retrieve.
         """
@@ -316,7 +316,7 @@ class PostgresDocumentsHandler(Handler):
         Get the workflow status for a given document or list of documents.
 
         Args:
-            id (Union[UUID, list[UUID]]): The document ID or list of document IDs.
+            id (UUID | list[UUID]): The document ID or list of document IDs.
             status_type (str): The type of status to retrieve.
 
         Returns:
@@ -342,7 +342,7 @@ class PostgresDocumentsHandler(Handler):
         Set the workflow status for a given document or list of documents.
 
         Args:
-            id (Union[UUID, list[UUID]]): The document ID or list of document IDs.
+            id (UUID | list[UUID]): The document ID or list of document IDs.
             status_type (str): The type of status to set.
             status (str): The status to set.
         """
@@ -369,7 +369,7 @@ class PostgresDocumentsHandler(Handler):
         Args:
             ids_key (str): The key to retrieve the IDs.
             status_type (str): The type of status to retrieve.
-            status (Union[str, list[str]]): The status or list of statuses to retrieve.
+            status (str | list[str]): The status or list of statuses to retrieve.
         """
 
         if isinstance(status, str):
@@ -799,7 +799,7 @@ class PostgresDocumentsHandler(Handler):
         columns: Optional[list[str]] = None,
         filters: Optional[dict] = None,
         include_header: bool = True,
-    ) -> tuple[str, tempfile.NamedTemporaryFile]:
+    ) -> tuple[str, IO]:
         """
         Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
         """
@@ -855,7 +855,7 @@ class PostgresDocumentsHandler(Handler):
             )
             writer = csv.writer(temp_file, quoting=csv.QUOTE_ALL)
 
-            async with self.connection_manager.pool.get_connection() as conn:
+            async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
                 async with conn.transaction():
                     cursor = await conn.cursor(select_stmt, *params)
 

@@ -248,6 +248,71 @@ export class DocumentsClient {
   }
 
   /**
+   * Download multiple documents as a zip file.
+   * @param options Configuration options for the zip download
+   * @param options.documentIds Optional list of document IDs to include
+   * @param options.startDate Optional filter for documents created after this date
+   * @param options.endDate Optional filter for documents created before this date
+   * @param options.outputPath Optional path to save the zip file (Node.js only)
+   * @returns Promise<Blob> in browser environments, Promise<void> in Node.js
+   */
+  @feature("documents.downloadZip")
+  async downloadZip(options: {
+    documentIds?: string[];
+    startDate?: Date;
+    endDate?: Date;
+    outputPath?: string;
+  }): Promise<Blob | void> {
+    const params: Record<string, any> = {};
+
+    if (options.documentIds) {
+      params.document_ids = options.documentIds;
+    }
+    if (options.startDate) {
+      params.start_date = options.startDate.toISOString();
+    }
+    if (options.endDate) {
+      params.end_date = options.endDate.toISOString();
+    }
+
+    const response = await this.client.makeRequest(
+      "GET",
+      "documents/download_zip",
+      {
+        params,
+        responseType: "arraybuffer",
+        headers: { Accept: "application/zip" },
+      },
+    );
+
+    // Node environment
+    if (options.outputPath && typeof process !== "undefined") {
+      await fs.promises.writeFile(options.outputPath, Buffer.from(response));
+      return;
+    }
+
+    // Browser
+    return new Blob([response], { type: "application/zip" });
+  }
+
+  /**
+   * Download multiple documents as a zip file and save to the user's device.
+   * @param options
+   */
+  @feature("documents.downloadZipToFile")
+  async downloadZipToFile(options: {
+    filename: string;
+    documentIds?: string[];
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<void> {
+    const blob = await this.downloadZip(options);
+    if (blob instanceof Blob) {
+      downloadBlob(blob, options.filename);
+    }
+  }
+
+  /**
    * Export documents as a CSV file and save it to the user's device.
    * @param filename
    * @param options
