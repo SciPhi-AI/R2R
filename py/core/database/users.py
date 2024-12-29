@@ -1,8 +1,8 @@
 import csv
-import tempfile
 import json
+import tempfile
 from datetime import datetime
-from typing import Any, Dict, List, Optional, IO
+from typing import IO, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -374,7 +374,7 @@ class PostgresUserHandler(Handler):
             query, [new_hashed_password, id]
         )
 
-    async def get_all_users(self) -> List[User]:
+    async def get_all_users(self) -> list[User]:
         """Get all users with minimal information."""
         query, params = (
             QueryBuilder(self._get_table_name(self.TABLE_NAME))

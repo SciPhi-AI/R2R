@@ -1,6 +1,6 @@
 from __future__ import annotations  # for Python 3.10+
-import json
 
+import json
 from typing import Optional
 from uuid import UUID
 
