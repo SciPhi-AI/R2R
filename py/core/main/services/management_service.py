@@ -260,6 +260,38 @@ class ManagementService(Service):
             include_header=include_header,
         )
 
+    @telemetry_event("ExportDocumentEntities")
+    async def export_document_entities(
+        self,
+        id: UUID,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.graphs_handler.entities.export_to_csv(
+            parent_id=id,
+            store_type="documents",  # type: ignore
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportDocumentRelationships")
+    async def export_document_relationships(
+        self,
+        id: UUID,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.graphs_handler.relationships.export_to_csv(
+            parent_id=id,
+            store_type="documents",  # type: ignore
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
     @telemetry_event("ExportUsers")
     async def export_users(
         self,
