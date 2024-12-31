@@ -139,7 +139,7 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
     );
     await client.documents.exportEntities({
       id: documentId,
-      outputPath,
+      outputPath: outputPath,
       columns: ["id", "name", "created_at"],
       includeHeader: true,
     });
@@ -193,9 +193,10 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
       TEST_OUTPUT_DIR,
       "document_entities_empty.csv",
     );
-    await client.documents.export({
-      outputPath,
-      filters: { document_type: { $eq: "non_existent_type" } },
+    await client.documents.exportEntities({
+      id: documentId,
+      outputPath: outputPath,
+      filters: { name: { $eq: "non_existent_name" } },
     });
 
     expect(fs.existsSync(outputPath)).toBe(true);
@@ -226,7 +227,7 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
     );
     await client.documents.exportRelationships({
       id: documentId,
-      outputPath,
+      outputPath: outputPath,
       columns: ["subject", "object", "created_at"],
       includeHeader: true,
     });
@@ -275,14 +276,15 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
     const content = fs.readFileSync(outputPath, "utf-8");
   });
 
-  test("Handle empty document entity export result", async () => {
+  test("Handle empty document relationships export result", async () => {
     const outputPath = path.join(
       TEST_OUTPUT_DIR,
       "document_relationships_empty.csv",
     );
-    await client.documents.export({
-      outputPath,
-      filters: { document_type: { $eq: "non_existent_type" } },
+    await client.documents.exportRelationships({
+      id: documentId,
+      outputPath: outputPath,
+      filters: { subject: { $eq: "non_existent_subject" } },
     });
 
     expect(fs.existsSync(outputPath)).toBe(true);
@@ -319,6 +321,173 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
     });
     expect(response.results).toBeDefined();
     expect(response.totalEntries).toBeGreaterThanOrEqual(1);
+  });
+
+  test("Export graph entities to CSV with default options", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "graph_entities_default.csv");
+    await client.graphs.exportEntities({
+      collectionId: collectionId,
+      outputPath: outputPath,
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    expect(content).toBeTruthy();
+    expect(content.split("\n").length).toBeGreaterThan(1);
+  });
+
+  test("Export graph entities to CSV with custom columns", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "graph_entities_custom.csv");
+    await client.graphs.exportEntities({
+      collectionId: collectionId,
+      outputPath: outputPath,
+      columns: ["id", "name", "created_at"],
+      includeHeader: true,
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    const headers = content
+      .split("\n")[0]
+      .split(",")
+      .map((h) => h.trim());
+
+    expect(headers).toContain('"id"');
+    expect(headers).toContain('"name"');
+    expect(headers).toContain('"created_at"');
+  });
+
+  test("Export filtered graph entities to CSV", async () => {
+    const outputPath = path.join(
+      TEST_OUTPUT_DIR,
+      "graph_entities_filtered.csv",
+    );
+    await client.graphs.exportEntities({
+      collectionId: collectionId,
+      outputPath: outputPath,
+      filters: { document_type: { $eq: "txt" } },
+      includeHeader: true,
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    expect(content).toBeTruthy();
+  });
+
+  test("Export graph entities without headers", async () => {
+    const outputPath = path.join(
+      TEST_OUTPUT_DIR,
+      "graph_entities_no_header.csv",
+    );
+    await client.graphs.exportEntities({
+      collectionId: collectionId,
+      outputPath: outputPath,
+      includeHeader: false,
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+  });
+
+  test("Handle empty graph entity export result", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "graph_entities_empty.csv");
+    await client.graphs.exportEntities({
+      collectionId: collectionId,
+      outputPath: outputPath,
+      filters: { document_type: { $eq: "non_existent_type" } },
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    expect(content.split("\n").filter((line) => line.trim()).length).toBe(1);
+  });
+
+  test("Export graph relationships to CSV with default options", async () => {
+    const outputPath = path.join(
+      TEST_OUTPUT_DIR,
+      "graphs_relationships_default.csv",
+    );
+    await client.graphs.exportRelationships({
+      collectionId: collectionId,
+      outputPath: outputPath,
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    expect(content).toBeTruthy();
+    expect(content.split("\n").length).toBeGreaterThan(1);
+  });
+
+  test("Export graph relationships to CSV with custom columns", async () => {
+    const outputPath = path.join(
+      TEST_OUTPUT_DIR,
+      "graph_relationships_custom.csv",
+    );
+    await client.graphs.exportRelationships({
+      collectionId: collectionId,
+      outputPath: outputPath,
+      columns: ["subject", "object", "created_at"],
+      includeHeader: true,
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    const headers = content
+      .split("\n")[0]
+      .split(",")
+      .map((h) => h.trim());
+
+    expect(headers).toContain('"subject"');
+    expect(headers).toContain('"object"');
+    expect(headers).toContain('"created_at"');
+  });
+
+  test("Export filtered graphs entities to CSV", async () => {
+    const outputPath = path.join(
+      TEST_OUTPUT_DIR,
+      "graphs_entities_filtered.csv",
+    );
+    await client.graphs.exportEntities({
+      collectionId: collectionId,
+      outputPath: outputPath,
+      filters: { document_type: { $eq: "txt" } },
+      includeHeader: true,
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    expect(content).toBeTruthy();
+  });
+
+  test("Export document relationships without headers", async () => {
+    const outputPath = path.join(
+      TEST_OUTPUT_DIR,
+      "document_relationships_no_header.csv",
+    );
+    await client.documents.exportRelationships({
+      id: documentId,
+      outputPath: outputPath,
+      includeHeader: false,
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+  });
+
+  test("Handle empty graphs entity export result", async () => {
+    const outputPath = path.join(
+      TEST_OUTPUT_DIR,
+      "document_relationships_empty.csv",
+    );
+    await client.graphs.exportEntities({
+      collectionId: collectionId,
+      outputPath: outputPath,
+      filters: { document_type: { $eq: "non_existent_type" } },
+    });
+
+    expect(fs.existsSync(outputPath)).toBe(true);
+    const content = fs.readFileSync(outputPath, "utf-8");
+    expect(content.split("\n").filter((line) => line.trim()).length).toBe(1);
   });
 
   test("Check that there are no communities in the graph prior to building", async () => {

@@ -2022,7 +2022,7 @@ class DocumentsRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def export_entities(
+        async def export_relationships(
             background_tasks: BackgroundTasks,
             id: UUID = Path(
                 ...,
