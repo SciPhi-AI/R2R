@@ -90,7 +90,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
   test("Export documents to CSV with default options", async () => {
     const outputPath = path.join(TEST_OUTPUT_DIR, "documents_default.csv");
-    await client.documents.export({ outputPath });
+    await client.documents.export({ outputPath: outputPath });
 
     expect(fs.existsSync(outputPath)).toBe(true);
     const content = fs.readFileSync(outputPath, "utf-8");
@@ -101,7 +101,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   test("Export documents to CSV with custom columns", async () => {
     const outputPath = path.join(TEST_OUTPUT_DIR, "documents_custom.csv");
     await client.documents.export({
-      outputPath,
+      outputPath: outputPath,
       columns: ["id", "title", "created_at"],
       includeHeader: true,
     });
@@ -121,7 +121,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   test("Export filtered documents to CSV", async () => {
     const outputPath = path.join(TEST_OUTPUT_DIR, "documents_filtered.csv");
     await client.documents.export({
-      outputPath,
+      outputPath: outputPath,
       filters: { document_type: { $eq: "txt" } },
       includeHeader: true,
     });
@@ -134,7 +134,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   test("Export documents without headers", async () => {
     const outputPath = path.join(TEST_OUTPUT_DIR, "documents_no_header.csv");
     await client.documents.export({
-      outputPath,
+      outputPath: outputPath,
       includeHeader: false,
     });
 
@@ -145,7 +145,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   test("Handle empty export result", async () => {
     const outputPath = path.join(TEST_OUTPUT_DIR, "documents_empty.csv");
     await client.documents.export({
-      outputPath,
+      outputPath: outputPath,
       filters: { type: { $eq: "non_existent_type" } },
     });
 

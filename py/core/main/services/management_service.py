@@ -292,6 +292,19 @@ class ManagementService(Service):
             include_header=include_header,
         )
 
+    @telemetry_event("ExportConversations")
+    async def export_conversations(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.conversations_handler.export_conversations_to_csv(
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
     @telemetry_event("ExportGraphEntities")
     async def export_graph_entities(
         self,
@@ -335,6 +348,19 @@ class ManagementService(Service):
         return await self.providers.database.graphs_handler.communities.export_to_csv(
             parent_id=id,
             store_type="graphs",  # type: ignore
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportMessages")
+    async def export_messages(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.conversations_handler.export_messages_to_csv(
             columns=columns,
             filters=filters,
             include_header=include_header,
