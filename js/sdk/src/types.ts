@@ -71,6 +71,11 @@ export interface ConversationResponse {
   name?: string;
 }
 
+export interface Message {
+  role: string;
+  content: string;
+}
+
 export interface MessageResponse {
   id: string;
   message: any;

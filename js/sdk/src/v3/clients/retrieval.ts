@@ -1,11 +1,11 @@
 import { r2rClient } from "../../r2rClient";
 
-import { Message } from "../../models";
 import { feature } from "../../feature";
 import {
+  GenerationConfig,
+  Message,
   SearchSettings,
   WrappedSearchResponse,
-  GenerationConfig,
 } from "../../types";
 import { ensureSnakeCase } from "../../utils";
 
