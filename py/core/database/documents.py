@@ -501,7 +501,7 @@ class PostgresDocumentsHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail="Database query failed",
-            )
+            ) from e
 
     async def semantic_document_search(
         self, query_embedding: list[float], search_settings: SearchSettings
@@ -802,22 +802,26 @@ class PostgresDocumentsHandler(Handler):
         """
         Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
         """
+        valid_columns = {
+            "id",
+            "collection_ids",
+            "owner_id",
+            "type",
+            "metadata",
+            "title",
+            "summary",
+            "version",
+            "size_in_bytes",
+            "ingestion_status",
+            "extraction_status",
+            "created_at",
+            "updated_at",
+        }
+
         if not columns:
-            columns = [
-                "id",
-                "collection_ids",
-                "owner_id",
-                "type",
-                "metadata",
-                "title",
-                "summary",
-                "version",
-                "size_in_bytes",
-                "ingestion_status",
-                "extraction_status",
-                "created_at",
-                "updated_at",
-            ]
+            columns = list(valid_columns)
+        elif invalid_cols := set(columns) - valid_columns:
+            raise ValueError(f"Invalid columns: {invalid_cols}")
 
         select_stmt = f"""
             SELECT
@@ -837,13 +841,37 @@ class PostgresDocumentsHandler(Handler):
             FROM {self._get_table_name(self.TABLE_NAME)}
         """
 
-        params = []
+        conditions = []
+        params: list[Any] = []
+        param_index = 1
+
         if filters:
-            filter_condition, params = apply_filters(
-                filters, [], mode="condition_only"
-            )
-            if filter_condition:
-                select_stmt = f"{select_stmt} WHERE {filter_condition}"
+            for field, value in filters.items():
+                if field not in valid_columns:
+                    continue
+
+                if isinstance(value, dict):
+                    for op, val in value.items():
+                        if op == "$eq":
+                            conditions.append(f"{field} = ${param_index}")
+                            params.append(val)
+                            param_index += 1
+                        elif op == "$gt":
+                            conditions.append(f"{field} > ${param_index}")
+                            params.append(val)
+                            param_index += 1
+                        elif op == "$lt":
+                            conditions.append(f"{field} < ${param_index}")
+                            params.append(val)
+                            param_index += 1
+                else:
+                    # Direct equality
+                    conditions.append(f"{field} = ${param_index}")
+                    params.append(value)
+                    param_index += 1
+
+        if conditions:
+            select_stmt = f"{select_stmt} WHERE {' AND '.join(conditions)}"
 
         select_stmt = f"{select_stmt} ORDER BY created_at DESC"
 
@@ -874,8 +902,8 @@ class PostgresDocumentsHandler(Handler):
 
         except Exception as e:
             if temp_file:
-                temp_file.close()  # Close on error
+                temp_file.close()
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to export data: {str(e)}",
-            )
+            ) from e

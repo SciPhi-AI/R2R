@@ -403,10 +403,8 @@ class PostgresEntitiesHandler(Handler):
 
         if not columns:
             columns = list(valid_columns)
-        else:
-            invalid_cols = set(columns) - valid_columns
-            if invalid_cols:
-                raise ValueError(f"Invalid columns: {invalid_cols}")
+        elif invalid_cols := set(columns) - valid_columns:
+            raise ValueError(f"Invalid columns: {invalid_cols}")
 
         select_stmt = f"""
             SELECT
@@ -487,7 +485,7 @@ class PostgresEntitiesHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to export data: {str(e)}",
-            )
+            ) from e
 
 
 class PostgresRelationshipsHandler(Handler):
@@ -916,10 +914,8 @@ class PostgresRelationshipsHandler(Handler):
 
         if not columns:
             columns = list(valid_columns)
-        else:
-            invalid_cols = set(columns) - valid_columns
-            if invalid_cols:
-                raise ValueError(f"Invalid columns: {invalid_cols}")
+        elif invalid_cols := set(columns) - valid_columns:
+            raise ValueError(f"Invalid columns: {invalid_cols}")
 
         select_stmt = f"""
             SELECT
@@ -1319,10 +1315,8 @@ class PostgresCommunitiesHandler(Handler):
 
         if not columns:
             columns = list(valid_columns)
-        else:
-            invalid_cols = set(columns) - valid_columns
-            if invalid_cols:
-                raise ValueError(f"Invalid columns: {invalid_cols}")
+        elif invalid_cols := set(columns) - valid_columns:
+            raise ValueError(f"Invalid columns: {invalid_cols}")
 
         table_name = "graphs_communities"
 

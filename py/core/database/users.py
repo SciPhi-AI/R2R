@@ -923,18 +923,9 @@ class PostgresUserHandler(Handler):
         }
 
         if not columns:
-            columns = [
-                "id",
-                "email",
-                "is_superuser",
-                "is_active",
-                "is_verified",
-                "name",
-                "bio",
-                "collection_ids",
-                "created_at",
-                "updated_at",
-            ]
+            columns = list(valid_columns)
+        elif invalid_cols := set(columns) - valid_columns:
+            raise ValueError(f"Invalid columns: {invalid_cols}")
 
         select_stmt = f"""
             SELECT

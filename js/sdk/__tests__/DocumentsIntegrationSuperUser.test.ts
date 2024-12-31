@@ -146,7 +146,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
     const outputPath = path.join(TEST_OUTPUT_DIR, "documents_empty.csv");
     await client.documents.export({
       outputPath,
-      filters: { document_type: { $eq: "non_existent_type" } },
+      filters: { type: { $eq: "non_existent_type" } },
     });
 
     expect(fs.existsSync(outputPath)).toBe(true);

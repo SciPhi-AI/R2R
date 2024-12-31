@@ -117,9 +117,9 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   //   expect(response.results).toBeDefined();
   // });
 
-  test("Export documents to CSV with default options", async () => {
-    const outputPath = path.join(TEST_OUTPUT_DIR, "documents_default.csv");
-    await client.documents.export({ outputPath });
+  test("Export collections to CSV with default options", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "collections_default.csv");
+    await client.collections.export({ outputPath: outputPath });
 
     expect(fs.existsSync(outputPath)).toBe(true);
     const content = fs.readFileSync(outputPath, "utf-8");
@@ -128,10 +128,10 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   });
 
   test("Export documents to CSV with custom columns", async () => {
-    const outputPath = path.join(TEST_OUTPUT_DIR, "documents_custom.csv");
-    await client.documents.export({
-      outputPath,
-      columns: ["id", "title", "created_at"],
+    const outputPath = path.join(TEST_OUTPUT_DIR, "collections_custom.csv");
+    await client.collections.export({
+      outputPath: outputPath,
+      columns: ["id", "name", "created_at"],
       includeHeader: true,
     });
 
@@ -143,15 +143,15 @@ describe("r2rClient V3 Collections Integration Tests", () => {
       .map((h) => h.trim());
 
     expect(headers).toContain('"id"');
-    expect(headers).toContain('"title"');
+    expect(headers).toContain('"name"');
     expect(headers).toContain('"created_at"');
   });
 
-  test("Export filtered documents to CSV", async () => {
-    const outputPath = path.join(TEST_OUTPUT_DIR, "documents_filtered.csv");
-    await client.documents.export({
-      outputPath,
-      filters: { document_type: { $eq: "txt" } },
+  test("Export filtered collections to CSV", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "collections_filtered.csv");
+    await client.collections.export({
+      outputPath: outputPath,
+      filters: { id: { $eq: collectionId } },
       includeHeader: true,
     });
 
@@ -160,10 +160,10 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     expect(content).toBeTruthy();
   });
 
-  test("Export documents without headers", async () => {
-    const outputPath = path.join(TEST_OUTPUT_DIR, "documents_no_header.csv");
-    await client.documents.export({
-      outputPath,
+  test("Export collections without headers", async () => {
+    const outputPath = path.join(TEST_OUTPUT_DIR, "collections_no_header.csv");
+    await client.collections.export({
+      outputPath: outputPath,
       includeHeader: false,
     });
 
@@ -172,10 +172,10 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   });
 
   test("Handle empty export result", async () => {
-    const outputPath = path.join(TEST_OUTPUT_DIR, "documents_empty.csv");
-    await client.documents.export({
-      outputPath,
-      filters: { document_type: { $eq: "non_existent_type" } },
+    const outputPath = path.join(TEST_OUTPUT_DIR, "collections_empty.csv");
+    await client.collections.export({
+      outputPath: outputPath,
+      filters: { name: { $eq: "non_existent_name" } },
     });
 
     expect(fs.existsSync(outputPath)).toBe(true);

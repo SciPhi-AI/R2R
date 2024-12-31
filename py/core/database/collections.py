@@ -119,6 +119,11 @@ class PostgresCollectionsHandler(Handler):
                 message="Collection with this ID already exists",
                 status_code=409,
             )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while creating the collection: {e}",
+            ) from e
 
     async def update_collection(
         self,
@@ -191,7 +196,7 @@ class PostgresCollectionsHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while updating the collection: {e}",
-            )
+            ) from e
 
     async def delete_collection_relational(self, collection_id: UUID) -> None:
         # Remove collection_id from users
@@ -363,7 +368,7 @@ class PostgresCollectionsHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while fetching collections: {e}",
-            )
+            ) from e
 
     async def assign_document_to_collection_relational(
         self,
@@ -437,7 +442,7 @@ class PostgresCollectionsHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error '{e}' occurred while assigning the document to the collection",
-            )
+            ) from e
 
     async def remove_document_from_collection_relational(
         self, document_id: UUID, collection_id: UUID
@@ -494,18 +499,9 @@ class PostgresCollectionsHandler(Handler):
         }
 
         if not columns:
-            columns = [
-                "id",
-                "owner_id",
-                "name",
-                "description",
-                "graph_sync_status",
-                "graph_cluster_status",
-                "created_at",
-                "updated_at",
-                "user_count",
-                "document_count",
-            ]
+            columns = list(valid_columns)
+        elif invalid_cols := set(columns) - valid_columns:
+            raise ValueError(f"Invalid columns: {invalid_cols}")
 
         select_stmt = f"""
             SELECT
@@ -587,4 +583,4 @@ class PostgresCollectionsHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to export data: {str(e)}",
-            )
+            ) from e
