@@ -1,6 +1,5 @@
 import json
-from typing import Any, Optional, Tuple, Union
-from uuid import UUID
+from typing import Any, Optional, Tuple
 
 COLUMN_VARS = [
     "id",
@@ -46,7 +45,7 @@ class FilterCondition:
 class FilterExpression:
     def __init__(self, logical_op: Optional[str] = None):
         self.logical_op = logical_op
-        self.conditions: list[Union[FilterCondition, "FilterExpression"]] = []
+        self.conditions: list[FilterCondition | "FilterExpression"] = []
 
 
 class FilterParser:
@@ -410,13 +409,13 @@ class SQLFilterBuilder:
 
 def apply_filters(
     filters: dict, params: list[Any], mode: str = "where_clause"
-) -> str:
+) -> tuple[str, list[Any]]:
     """
     Apply filters with consistent WHERE clause handling
     """
 
     if not filters:
-        return ""
+        return "", params
 
     parser = FilterParser()
     expr = parser.parse(filters)

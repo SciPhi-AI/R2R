@@ -4,7 +4,7 @@ from abc import abstractmethod
 from typing import Callable, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
 from core.base import R2RException, manage_run
 
@@ -64,7 +64,7 @@ class BaseRouterV3:
                     else:
                         results, outer_kwargs = func_result, {}
 
-                    if isinstance(results, StreamingResponse):
+                    if isinstance(results, (StreamingResponse, FileResponse)):
                         return results
                     return {"results": results, **outer_kwargs}
 

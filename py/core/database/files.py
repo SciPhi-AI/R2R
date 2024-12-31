@@ -1,7 +1,10 @@
 import io
 import logging
-from typing import BinaryIO, Optional, Union
+from datetime import datetime
+from io import BytesIO
+from typing import BinaryIO, Optional
 from uuid import UUID
+from zipfile import ZipFile
 
 import asyncpg
 from fastapi import HTTPException
@@ -150,6 +153,62 @@ class PostgresFilesHandler(Handler):
             file_content = await self._read_lobject(conn, oid)
             return file_name, io.BytesIO(file_content), size
 
+    async def retrieve_files_as_zip(
+        self,
+        document_ids: Optional[list[UUID]] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+    ) -> tuple[str, BinaryIO, int]:
+        """Retrieve multiple files and return them as a zip file."""
+
+        query = f"""
+        SELECT document_id, name, oid, size
+        FROM {self._get_table_name(PostgresFilesHandler.TABLE_NAME)}
+        WHERE 1=1
+        """
+        params: list = []
+
+        if document_ids:
+            query += f" AND document_id = ANY(${len(params) + 1})"
+            params.append([str(doc_id) for doc_id in document_ids])
+
+        if start_date:
+            query += f" AND created_at >= ${len(params) + 1}"
+            params.append(start_date)
+
+        if end_date:
+            query += f" AND created_at <= ${len(params) + 1}"
+            params.append(end_date)
+
+        query += " ORDER BY created_at DESC"
+
+        results = await self.connection_manager.fetch_query(query, params)
+
+        if not results:
+            raise R2RException(
+                status_code=404,
+                message="No files found matching the specified criteria",
+            )
+
+        zip_buffer = BytesIO()
+        total_size = 0
+
+        async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
+            with ZipFile(zip_buffer, "w") as zip_file:
+                for record in results:
+                    file_content = await self._read_lobject(
+                        conn, record["oid"]
+                    )
+
+                    zip_file.writestr(record["name"], file_content)
+                    total_size += record["size"]
+
+        zip_buffer.seek(0)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        zip_filename = f"files_export_{timestamp}.zip"
+
+        return zip_filename, zip_buffer, zip_buffer.getbuffer().nbytes
+
     async def _read_lobject(self, conn, oid: int) -> bytes:
         """Read content from a large object."""
         file_data = io.BytesIO()
@@ -233,7 +292,7 @@ class PostgresFilesHandler(Handler):
     ) -> list[dict]:
         """Get an overview of stored files."""
         conditions = []
-        params: list[Union[str, list[str], int]] = []
+        params: list[str | list[str] | int] = []
         query = f"""
         SELECT document_id, name, oid, size, type, created_at, updated_at
         FROM {self._get_table_name(PostgresFilesHandler.TABLE_NAME)}

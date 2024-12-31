@@ -1,7 +1,8 @@
 import logging
 import os
 from collections import defaultdict
-from typing import Any, BinaryIO, Optional, Tuple
+from datetime import datetime
+from typing import IO, Any, BinaryIO, Optional, Tuple
 from uuid import UUID
 
 import toml
@@ -217,6 +218,166 @@ class ManagementService(Service):
         ):
             return result
         return None
+
+    @telemetry_event("ExportFiles")
+    async def export_files(
+        self,
+        document_ids: Optional[list[UUID]] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+    ) -> tuple[str, BinaryIO, int]:
+        return (
+            await self.providers.database.files_handler.retrieve_files_as_zip(
+                document_ids=document_ids,
+                start_date=start_date,
+                end_date=end_date,
+            )
+        )
+
+    @telemetry_event("ExportCollections")
+    async def export_collections(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.collections_handler.export_to_csv(
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportDocuments")
+    async def export_documents(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.documents_handler.export_to_csv(
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportDocumentEntities")
+    async def export_document_entities(
+        self,
+        id: UUID,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.graphs_handler.entities.export_to_csv(
+            parent_id=id,
+            store_type="documents",  # type: ignore
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportDocumentRelationships")
+    async def export_document_relationships(
+        self,
+        id: UUID,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.graphs_handler.relationships.export_to_csv(
+            parent_id=id,
+            store_type="documents",  # type: ignore
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportConversations")
+    async def export_conversations(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.conversations_handler.export_conversations_to_csv(
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportGraphEntities")
+    async def export_graph_entities(
+        self,
+        id: UUID,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.graphs_handler.entities.export_to_csv(
+            parent_id=id,
+            store_type="graphs",  # type: ignore
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportGraphRelationships")
+    async def export_graph_relationships(
+        self,
+        id: UUID,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.graphs_handler.relationships.export_to_csv(
+            parent_id=id,
+            store_type="graphs",  # type: ignore
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportGraphCommunities")
+    async def export_graph_communities(
+        self,
+        id: UUID,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.graphs_handler.communities.export_to_csv(
+            parent_id=id,
+            store_type="graphs",  # type: ignore
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportMessages")
+    async def export_messages(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.conversations_handler.export_messages_to_csv(
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportUsers")
+    async def export_users(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.users_handler.export_to_csv(
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
 
     @telemetry_event("DocumentsOverview")
     async def documents_overview(

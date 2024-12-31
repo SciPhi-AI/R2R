@@ -1,7 +1,11 @@
 import json
+from datetime import datetime
 from io import BytesIO
+from pathlib import Path
 from typing import Any, Optional
 from uuid import UUID
+
+import aiofiles
 
 from shared.api.models.base import WrappedBooleanResponse
 from shared.api.models.ingestion.responses import WrappedIngestionResponse
@@ -136,7 +140,6 @@ class DocumentsSDK:
             version="v3",
         )
 
-    # you could do something like:
     async def download(
         self,
         id: str | UUID,
@@ -145,11 +148,196 @@ class DocumentsSDK:
             "GET",
             f"documents/{str(id)}/download",
             version="v3",
-            # No json parsing here, if possible
         )
         if not isinstance(response, BytesIO):
             raise ValueError("Expected BytesIO response")
         return response
+
+    async def download_zip(
+        self,
+        document_ids: Optional[list[str | UUID]] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        output_path: Optional[str | Path] = None,
+    ) -> BytesIO:
+        """
+        Download multiple documents as a zip file.
+        """
+        params: list = {}
+        if document_ids:
+            params["document_ids"] = [str(doc_id) for doc_id in document_ids]
+        if start_date:
+            params["start_date"] = start_date.isoformat()
+        if end_date:
+            params["end_date"] = end_date.isoformat()
+
+        response = await self.client._make_request(
+            "GET",
+            "documents/download_zip",
+            params=params,
+            version="v3",
+        )
+
+        if not isinstance(response, BytesIO):
+            raise ValueError("Expected BytesIO response")
+
+        if output_path:
+            output_path = (
+                Path(output_path)
+                if isinstance(output_path, str)
+                else output_path
+            )
+            async with aiofiles.open(output_path, "wb") as f:
+                await f.write(response.getvalue())
+            return None
+
+        return response
+
+    async def export(
+        self,
+        output_path: str | Path,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> None:
+        """
+        Export documents to a CSV file, streaming the results directly to disk.
+
+        Args:
+            output_path (str | Path): Local path where the CSV file should be saved
+            columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
+            filters (Optional[dict]): Optional filters to apply when selecting documents
+            include_header (bool): Whether to include column headers in the CSV (default: True)
+        """
+        # Convert path to string if it's a Path object
+        output_path = (
+            str(output_path) if isinstance(output_path, Path) else output_path
+        )
+
+        # Prepare request data
+        data = {"include_header": include_header}
+        if columns:
+            data["columns"] = columns
+        if filters:
+            data["filters"] = filters
+
+        # Stream response directly to file
+        async with aiofiles.open(output_path, "wb") as f:
+            async with self.client.session.post(
+                f"{self.client.base_url}/v3/documents/export",
+                json=data,
+                headers={
+                    "Accept": "text/csv",
+                    **self.client._get_auth_headers(),
+                },
+            ) as response:
+                if response.status != 200:
+                    raise ValueError(
+                        f"Export failed with status {response.status}",
+                        response,
+                    )
+
+                async for chunk in response.content.iter_chunks():
+                    if chunk:
+                        await f.write(chunk[0])
+
+    async def export_entities(
+        self,
+        id: str | UUID,
+        output_path: str | Path,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> None:
+        """
+        Export documents to a CSV file, streaming the results directly to disk.
+
+        Args:
+            output_path (str | Path): Local path where the CSV file should be saved
+            columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
+            filters (Optional[dict]): Optional filters to apply when selecting documents
+            include_header (bool): Whether to include column headers in the CSV (default: True)
+        """
+        # Convert path to string if it's a Path object
+        output_path = (
+            str(output_path) if isinstance(output_path, Path) else output_path
+        )
+
+        # Prepare request data
+        data = {"include_header": include_header}
+        if columns:
+            data["columns"] = columns
+        if filters:
+            data["filters"] = filters
+
+        # Stream response directly to file
+        async with aiofiles.open(output_path, "wb") as f:
+            async with self.client.session.post(
+                f"{self.client.base_url}/v3/documents/{str(id)}/entities/export",
+                json=data,
+                headers={
+                    "Accept": "text/csv",
+                    **self.client._get_auth_headers(),
+                },
+            ) as response:
+                if response.status != 200:
+                    raise ValueError(
+                        f"Export failed with status {response.status}",
+                        response,
+                    )
+
+                async for chunk in response.content.iter_chunks():
+                    if chunk:
+                        await f.write(chunk[0])
+
+    async def export_relationships(
+        self,
+        id: str | UUID,
+        output_path: str | Path,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> None:
+        """
+        Export document relationships to a CSV file, streaming the results directly to disk.
+
+        Args:
+            output_path (str | Path): Local path where the CSV file should be saved
+            columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
+            filters (Optional[dict]): Optional filters to apply when selecting documents
+            include_header (bool): Whether to include column headers in the CSV (default: True)
+        """
+        # Convert path to string if it's a Path object
+        output_path = (
+            str(output_path) if isinstance(output_path, Path) else output_path
+        )
+
+        # Prepare request data
+        data = {"include_header": include_header}
+        if columns:
+            data["columns"] = columns
+        if filters:
+            data["filters"] = filters
+
+        # Stream response directly to file
+        async with aiofiles.open(output_path, "wb") as f:
+            async with self.client.session.post(
+                f"{self.client.base_url}/v3/documents/{str(id)}/relationships/export",
+                json=data,
+                headers={
+                    "Accept": "text/csv",
+                    **self.client._get_auth_headers(),
+                },
+            ) as response:
+                if response.status != 200:
+                    raise ValueError(
+                        f"Export failed with status {response.status}",
+                        response,
+                    )
+
+                async for chunk in response.content.iter_chunks():
+                    if chunk:
+                        await f.write(chunk[0])
 
     async def delete(
         self,
@@ -349,28 +537,6 @@ class DocumentsSDK:
             params=params,
             version="v3",
         )
-
-    # async def extract(
-    #     self,
-    #     id: str | UUID,
-    #     run_type: Optional[str] = None,
-    #     run_with_orchestration: Optional[bool] = True,
-    # ):
-    #     data = {}
-
-    #     if run_type:
-    #         data["run_type"] = run_type
-    #     if run_with_orchestration is not None:
-    #         data["run_with_orchestration"] = str(run_with_orchestration)
-
-    #     return await self.client._make_request(
-    #         "POST",
-    #         f"documents/{str(id)}/extract",
-    #         params=data,
-    #         version="v3",
-    #     )
-
-    # Be sure to put at bottom of the page...
 
     async def list(
         self,

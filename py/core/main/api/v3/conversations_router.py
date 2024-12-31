@@ -4,6 +4,8 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
+from fastapi.background import BackgroundTasks
+from fastapi.responses import FileResponse
 
 from core.base import Message, R2RException
 from core.base.api.models import (
@@ -205,6 +207,218 @@ class ConversationsRouter(BaseRouterV3):
             return conversations_response["results"], {  # type: ignore
                 "total_entries": conversations_response["total_entries"]
             }
+
+        @self.router.post(
+            "/conversations/export",
+            summary="Export conversations to CSV",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            response = client.conversations.export(
+                                output_path="export.csv",
+                                columns=["id", "created_at"],
+                                include_header=True,
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                await client.conversations.export({
+                                    outputPath: "export.csv",
+                                    columns: ["id", "created_at"],
+                                    includeHeader: true,
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "http://127.0.0.1:7272/v3/conversations/export" \
+                            -H "Authorization: Bearer YOUR_API_KEY" \
+                            -H "Content-Type: application/json" \
+                            -H "Accept: text/csv" \
+                            -d '{ "columns": ["id", "created_at"], "include_header": true }' \
+                            --output export.csv
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def export_conversations(
+            background_tasks: BackgroundTasks,
+            columns: Optional[list[str]] = Body(
+                None, description="Specific columns to export"
+            ),
+            filters: Optional[dict] = Body(
+                None, description="Filters to apply to the export"
+            ),
+            include_header: Optional[bool] = Body(
+                True, description="Whether to include column headers"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> FileResponse:
+            """
+            Export conversations as a downloadable CSV file.
+            """
+
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can export data.",
+                    403,
+                )
+
+            csv_file_path, temp_file = (
+                await self.services.management.export_conversations(
+                    columns=columns,
+                    filters=filters,
+                    include_header=include_header,
+                )
+            )
+
+            background_tasks.add_task(temp_file.close)
+
+            return FileResponse(
+                path=csv_file_path,
+                media_type="text/csv",
+                filename="documents_export.csv",
+            )
+
+        @self.router.post(
+            "/conversations/export_messages",
+            summary="Export messages to CSV",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            response = client.conversations.export_messages(
+                                output_path="export.csv",
+                                columns=["id", "created_at"],
+                                include_header=True,
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                await client.conversations.exportMessages({
+                                    outputPath: "export.csv",
+                                    columns: ["id", "created_at"],
+                                    includeHeader: true,
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "http://127.0.0.1:7272/v3/conversations/export_messages" \
+                            -H "Authorization: Bearer YOUR_API_KEY" \
+                            -H "Content-Type: application/json" \
+                            -H "Accept: text/csv" \
+                            -d '{ "columns": ["id", "created_at"], "include_header": true }' \
+                            --output export.csv
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def export_messages(
+            background_tasks: BackgroundTasks,
+            columns: Optional[list[str]] = Body(
+                None, description="Specific columns to export"
+            ),
+            filters: Optional[dict] = Body(
+                None, description="Filters to apply to the export"
+            ),
+            include_header: Optional[bool] = Body(
+                True, description="Whether to include column headers"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> FileResponse:
+            """
+            Export conversations as a downloadable CSV file.
+            """
+
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can export data.",
+                    403,
+                )
+
+            csv_file_path, temp_file = (
+                await self.services.management.export_messages(
+                    columns=columns,
+                    filters=filters,
+                    include_header=include_header,
+                )
+            )
+
+            background_tasks.add_task(temp_file.close)
+
+            return FileResponse(
+                path=csv_file_path,
+                media_type="text/csv",
+                filename="documents_export.csv",
+            )
 
         @self.router.get(
             "/conversations/{id}",

@@ -11,6 +11,14 @@ import {
   WrappedCommunitiesResponse,
   WrappedCommunityResponse,
 } from "../../types";
+import { downloadBlob } from "../../utils";
+
+let fs: any;
+if (typeof window === "undefined") {
+  import("fs").then((module) => {
+    fs = module;
+  });
+}
 
 export class GraphsClient {
   constructor(private client: r2rClient) {}
@@ -356,6 +364,210 @@ export class GraphsClient {
       "DELETE",
       `graphs/${options.collectionId}/relationships/${options.relationshipId}`,
     );
+  }
+
+  /**
+   * Export graph entities as a CSV file with support for filtering and column selection.
+   *
+   * @param options Export configuration options
+   * @param options.outputPath Path where the CSV file should be saved (Node.js only)
+   * @param options.columns Optional list of specific columns to include
+   * @param options.filters Optional filters to limit which documents are exported
+   * @param options.includeHeader Whether to include column headers (default: true)
+   * @returns Promise<Blob> in browser environments, Promise<void> in Node.js
+   */
+  @feature("graphs.exportEntities")
+  async exportEntities(options: {
+    collectionId: string;
+    outputPath?: string;
+    columns?: string[];
+    filters?: Record<string, any>;
+    includeHeader?: boolean;
+  }): Promise<Blob | void> {
+    const data: Record<string, any> = {
+      include_header: options.includeHeader ?? true,
+    };
+
+    if (options.columns) {
+      data.columns = options.columns;
+    }
+    if (options.filters) {
+      data.filters = options.filters;
+    }
+
+    const response = await this.client.makeRequest(
+      "POST",
+      `graphs/${options.collectionId}/entities/export`,
+      {
+        data,
+        responseType: "arraybuffer",
+        headers: { Accept: "text/csv" },
+      },
+    );
+
+    // Node environment
+    if (options.outputPath && typeof process !== "undefined") {
+      await fs.promises.writeFile(options.outputPath, Buffer.from(response));
+      return;
+    }
+
+    // Browser
+    return new Blob([response], { type: "text/csv" });
+  }
+
+  /**
+   * Export graph entities as a CSV file and save it to the user's device.
+   * @param filename
+   * @param options
+   */
+  @feature("graphs.exportEntitiesToFile")
+  async exportEntitiesToFile(options: {
+    filename: string;
+    collectionId: string;
+    columns?: string[];
+    filters?: Record<string, any>;
+    includeHeader?: boolean;
+  }): Promise<void> {
+    const blob = await this.exportEntities(options);
+    if (blob instanceof Blob) {
+      downloadBlob(blob, options.filename);
+    }
+  }
+
+  /**
+   * Export graph relationships as a CSV file with support for filtering and column selection.
+   *
+   * @param options Export configuration options
+   * @param options.outputPath Path where the CSV file should be saved (Node.js only)
+   * @param options.columns Optional list of specific columns to include
+   * @param options.filters Optional filters to limit which documents are exported
+   * @param options.includeHeader Whether to include column headers (default: true)
+   * @returns Promise<Blob> in browser environments, Promise<void> in Node.js
+   */
+  @feature("graphs.exportRelationships")
+  async exportRelationships(options: {
+    collectionId: string;
+    outputPath?: string;
+    columns?: string[];
+    filters?: Record<string, any>;
+    includeHeader?: boolean;
+  }): Promise<Blob | void> {
+    const data: Record<string, any> = {
+      include_header: options.includeHeader ?? true,
+    };
+
+    if (options.columns) {
+      data.columns = options.columns;
+    }
+    if (options.filters) {
+      data.filters = options.filters;
+    }
+
+    const response = await this.client.makeRequest(
+      "POST",
+      `graphs/${options.collectionId}/relationships/export`,
+      {
+        data,
+        responseType: "arraybuffer",
+        headers: { Accept: "text/csv" },
+      },
+    );
+
+    // Node environment
+    if (options.outputPath && typeof process !== "undefined") {
+      await fs.promises.writeFile(options.outputPath, Buffer.from(response));
+      return;
+    }
+
+    // Browser
+    return new Blob([response], { type: "text/csv" });
+  }
+
+  /**
+   * Export graph relationships as a CSV file and save it to the user's device.
+   * @param filename
+   * @param options
+   */
+  @feature("graphs.exportRelationshipsToFile")
+  async exportRelationshipsToFile(options: {
+    filename: string;
+    collectionId: string;
+    columns?: string[];
+    filters?: Record<string, any>;
+    includeHeader?: boolean;
+  }): Promise<void> {
+    const blob = await this.exportRelationships(options);
+    if (blob instanceof Blob) {
+      downloadBlob(blob, options.filename);
+    }
+  }
+
+  /**
+   * Export graph communities as a CSV file with support for filtering and column selection.
+   *
+   * @param options Export configuration options
+   * @param options.outputPath Path where the CSV file should be saved (Node.js only)
+   * @param options.columns Optional list of specific columns to include
+   * @param options.filters Optional filters to limit which documents are exported
+   * @param options.includeHeader Whether to include column headers (default: true)
+   * @returns Promise<Blob> in browser environments, Promise<void> in Node.js
+   */
+  @feature("graphs.exportCommunities")
+  async exportCommunities(options: {
+    collectionId: string;
+    outputPath?: string;
+    columns?: string[];
+    filters?: Record<string, any>;
+    includeHeader?: boolean;
+  }): Promise<Blob | void> {
+    const data: Record<string, any> = {
+      include_header: options.includeHeader ?? true,
+    };
+
+    if (options.columns) {
+      data.columns = options.columns;
+    }
+    if (options.filters) {
+      data.filters = options.filters;
+    }
+
+    const response = await this.client.makeRequest(
+      "POST",
+      `graphs/${options.collectionId}/communities/export`,
+      {
+        data,
+        responseType: "arraybuffer",
+        headers: { Accept: "text/csv" },
+      },
+    );
+
+    // Node environment
+    if (options.outputPath && typeof process !== "undefined") {
+      await fs.promises.writeFile(options.outputPath, Buffer.from(response));
+      return;
+    }
+
+    // Browser
+    return new Blob([response], { type: "text/csv" });
+  }
+
+  /**
+   * Export graph communities as a CSV file and save it to the user's device.
+   * @param filename
+   * @param options
+   */
+  @feature("graphs.exportCommunitiesToFile")
+  async exportCommunitiesToFile(options: {
+    filename: string;
+    collectionId: string;
+    columns?: string[];
+    filters?: Record<string, any>;
+    includeHeader?: boolean;
+  }): Promise<void> {
+    const blob = await this.exportRelationships(options);
+    if (blob instanceof Blob) {
+      downloadBlob(blob, options.filename);
+    }
   }
 
   /**

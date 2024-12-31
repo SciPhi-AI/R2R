@@ -3,12 +3,14 @@ import json
 import logging
 import mimetypes
 import textwrap
+from datetime import datetime
 from io import BytesIO
 from typing import Any, Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, File, Form, Path, Query, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.background import BackgroundTasks
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import Json
 
 from core.base import (
@@ -545,6 +547,211 @@ class DocumentsRouter(BaseRouterV3):
                     "document_id": str(document_id),
                     "task_id": None,
                 }
+
+        @self.router.post(
+            "/documents/export",
+            summary="Export documents to CSV",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            response = client.documents.export(
+                                output_path="export.csv",
+                                columns=["id", "title", "created_at"],
+                                include_header=True,
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                await client.documents.export({
+                                    outputPath: "export.csv",
+                                    columns: ["id", "title", "created_at"],
+                                    includeHeader: true,
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "http://127.0.0.1:7272/v3/documents/export" \
+                            -H "Authorization: Bearer YOUR_API_KEY" \
+                            -H "Content-Type: application/json" \
+                            -H "Accept: text/csv" \
+                            -d '{ "columns": ["id", "title", "created_at"], "include_header": true }' \
+                            --output export.csv
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def export_documents(
+            background_tasks: BackgroundTasks,
+            columns: Optional[list[str]] = Body(
+                None, description="Specific columns to export"
+            ),
+            filters: Optional[dict] = Body(
+                None, description="Filters to apply to the export"
+            ),
+            include_header: Optional[bool] = Body(
+                True, description="Whether to include column headers"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> FileResponse:
+            """
+            Export documents as a downloadable CSV file.
+            """
+
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can export data.",
+                    403,
+                )
+
+            csv_file_path, temp_file = (
+                await self.services.management.export_documents(
+                    columns=columns,
+                    filters=filters,
+                    include_header=include_header,
+                )
+            )
+
+            background_tasks.add_task(temp_file.close)
+
+            return FileResponse(
+                path=csv_file_path,
+                media_type="text/csv",
+                filename="documents_export.csv",
+            )
+
+        @self.router.get(
+            "/documents/download_zip",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            response_class=StreamingResponse,
+            summary="Export multiple documents as zip",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            client.documents.download_zip(
+                                document_ids=["uuid1", "uuid2"],
+                                start_date="2024-01-01",
+                                end_date="2024-12-31"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X GET "https://api.example.com/v3/documents/download_zip?document_ids=uuid1,uuid2&start_date=2024-01-01&end_date=2024-12-31" \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def export_files(
+            document_ids: Optional[list[UUID]] = Query(
+                None,
+                description="List of document IDs to include in the export. If not provided, all accessible documents will be included.",
+            ),
+            start_date: Optional[datetime] = Query(
+                None,
+                description="Filter documents created on or after this date.",
+            ),
+            end_date: Optional[datetime] = Query(
+                None,
+                description="Filter documents created before this date.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> StreamingResponse:
+            """
+            Export multiple documents as a zip file. Documents can be filtered by IDs and/or date range.
+
+            The endpoint allows downloading:
+            - Specific documents by providing their IDs
+            - Documents within a date range
+            - All accessible documents if no filters are provided
+
+            Files are streamed as a zip archive to handle potentially large downloads efficiently.
+            """
+            if not auth_user.is_superuser:
+                # For non-superusers, verify access to requested documents
+                if document_ids:
+                    documents_overview = (
+                        await self.services.management.documents_overview(
+                            user_ids=[auth_user.id],
+                            document_ids=document_ids,
+                            offset=0,
+                            limit=len(document_ids),
+                        )
+                    )
+                    if len(documents_overview["results"]) != len(document_ids):
+                        raise R2RException(
+                            status_code=403,
+                            message="You don't have access to one or more requested documents.",
+                        )
+                if not document_ids:
+                    raise R2RException(
+                        status_code=403,
+                        message="Non-superusers must provide document IDs to export.",
+                    )
+
+            zip_name, zip_content, zip_size = (
+                await self.services.management.export_files(
+                    document_ids=document_ids,
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+            )
+
+            async def stream_file():
+                yield zip_content.getvalue()
+
+            return StreamingResponse(
+                stream_file(),
+                media_type="application/zip",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{zip_name}"',
+                    "Content-Length": str(zip_size),
+                },
+            )
 
         @self.router.get(
             "/documents",
@@ -1490,6 +1697,119 @@ class DocumentsRouter(BaseRouterV3):
 
             return entities, {"total_entries": count}  # type: ignore
 
+        @self.router.post(
+            "/documents/{id}/entities/export",
+            summary="Export document entities to CSV",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            response = client.documents.export_entities(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                output_path="export.csv",
+                                columns=["id", "title", "created_at"],
+                                include_header=True,
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                await client.documents.exportEntities({
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                    outputPath: "export.csv",
+                                    columns: ["id", "title", "created_at"],
+                                    includeHeader: true,
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "http://127.0.0.1:7272/v3/documents/export_entities" \
+                            -H "Authorization: Bearer YOUR_API_KEY" \
+                            -H "Content-Type: application/json" \
+                            -H "Accept: text/csv" \
+                            -d '{ "columns": ["id", "title", "created_at"], "include_header": true }' \
+                            --output export.csv
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def export_entities(
+            background_tasks: BackgroundTasks,
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to export entities from.",
+            ),
+            columns: Optional[list[str]] = Body(
+                None, description="Specific columns to export"
+            ),
+            filters: Optional[dict] = Body(
+                None, description="Filters to apply to the export"
+            ),
+            include_header: Optional[bool] = Body(
+                True, description="Whether to include column headers"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> FileResponse:
+            """
+            Export documents as a downloadable CSV file.
+            """
+
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can export data.",
+                    403,
+                )
+
+            csv_file_path, temp_file = (
+                await self.services.management.export_document_entities(
+                    id=id,
+                    columns=columns,
+                    filters=filters,
+                    include_header=include_header,
+                )
+            )
+
+            background_tasks.add_task(temp_file.close)
+
+            return FileResponse(
+                path=csv_file_path,
+                media_type="text/csv",
+                filename="documents_export.csv",
+            )
+
         @self.router.get(
             "/documents/{id}/relationships",
             dependencies=[Depends(self.rate_limit_dependency)],
@@ -1632,6 +1952,119 @@ class DocumentsRouter(BaseRouterV3):
             )
 
             return relationships, {"total_entries": count}  # type: ignore
+
+        @self.router.post(
+            "/documents/{id}/relationships/export",
+            summary="Export document relationships to CSV",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient("http://localhost:7272")
+                            # when using auth, do client.login(...)
+
+                            response = client.documents.export_entities(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                output_path="export.csv",
+                                columns=["id", "title", "created_at"],
+                                include_header=True,
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient("http://localhost:7272");
+
+                            function main() {
+                                await client.documents.exportEntities({
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                    outputPath: "export.csv",
+                                    columns: ["id", "title", "created_at"],
+                                    includeHeader: true,
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "CLI",
+                        "source": textwrap.dedent(
+                            """
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "http://127.0.0.1:7272/v3/documents/export_entities" \
+                            -H "Authorization: Bearer YOUR_API_KEY" \
+                            -H "Content-Type: application/json" \
+                            -H "Accept: text/csv" \
+                            -d '{ "columns": ["id", "title", "created_at"], "include_header": true }' \
+                            --output export.csv
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def export_relationships(
+            background_tasks: BackgroundTasks,
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to export entities from.",
+            ),
+            columns: Optional[list[str]] = Body(
+                None, description="Specific columns to export"
+            ),
+            filters: Optional[dict] = Body(
+                None, description="Filters to apply to the export"
+            ),
+            include_header: Optional[bool] = Body(
+                True, description="Whether to include column headers"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> FileResponse:
+            """
+            Export documents as a downloadable CSV file.
+            """
+
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can export data.",
+                    403,
+                )
+
+            csv_file_path, temp_file = (
+                await self.services.management.export_document_relationships(
+                    id=id,
+                    columns=columns,
+                    filters=filters,
+                    include_header=include_header,
+                )
+            )
+
+            background_tasks.add_task(temp_file.close)
+
+            return FileResponse(
+                path=csv_file_path,
+                media_type="text/csv",
+                filename="documents_export.csv",
+            )
 
         @self.router.post(
             "/documents/search",

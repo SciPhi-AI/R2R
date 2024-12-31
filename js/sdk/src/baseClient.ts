@@ -153,6 +153,14 @@ export abstract class BaseClient {
 
     try {
       const response = await this.axiosInstance.request(config);
+
+      if (options.responseType === "arraybuffer") {
+        if (options.returnFullResponse) {
+          return response as unknown as T;
+        }
+        return response.data as T;
+      }
+
       const responseData = options.returnFullResponse
         ? { ...response, data: ensureCamelCase(response.data) }
         : ensureCamelCase(response.data);

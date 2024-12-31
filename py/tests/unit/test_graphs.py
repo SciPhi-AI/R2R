@@ -1,9 +1,10 @@
-import pytest
 import uuid
+from enum import Enum
 from uuid import UUID
 
-from enum import Enum
-from core.base.abstractions import Entity, Relationship, Community
+import pytest
+
+from core.base.abstractions import Community, Entity, Relationship
 from core.base.api.models import GraphResponse
 
 

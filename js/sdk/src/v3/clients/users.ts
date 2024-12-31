@@ -8,6 +8,14 @@ import {
   WrappedUserResponse,
   WrappedUsersResponse,
 } from "../../types";
+import { downloadBlob } from "../../utils";
+
+let fs: any;
+if (typeof window === "undefined") {
+  import("fs").then((module) => {
+    fs = module;
+  });
+}
 
 export class UsersClient {
   constructor(private client: r2rClient) {}
@@ -385,5 +393,69 @@ export class UsersClient {
       "DELETE",
       `users/${options.id}/collections/${options.collectionId}`,
     );
+  }
+
+  /**
+   * Export users as a CSV file with support for filtering and column selection.
+   *
+   * @param options Export configuration options
+   * @param options.outputPath Path where the CSV file should be saved (Node.js only)
+   * @param options.columns Optional list of specific columns to include
+   * @param options.filters Optional filters to limit which users are exported
+   * @param options.includeHeader Whether to include column headers (default: true)
+   * @returns Promise<Blob> in browser environments, Promise<void> in Node.js
+   */
+  @feature("users.export")
+  async export(
+    options: {
+      outputPath?: string;
+      columns?: string[];
+      filters?: Record<string, any>;
+      includeHeader?: boolean;
+    } = {},
+  ): Promise<Blob | void> {
+    const data: Record<string, any> = {
+      include_header: options.includeHeader ?? true,
+    };
+
+    if (options.columns) {
+      data.columns = options.columns;
+    }
+    if (options.filters) {
+      data.filters = options.filters;
+    }
+
+    const response = await this.client.makeRequest("POST", "users/export", {
+      data,
+      responseType: "arraybuffer",
+      headers: { Accept: "text/csv" },
+    });
+
+    // Node environment
+    if (options.outputPath && typeof process !== "undefined") {
+      await fs.promises.writeFile(options.outputPath, Buffer.from(response));
+      return;
+    }
+
+    // Browser
+    return new Blob([response], { type: "text/csv" });
+  }
+
+  /**
+   * Export users as a CSV file and save it to the user's device.
+   * @param filename
+   * @param options
+   */
+  @feature("users.exportToFile")
+  async exportToFile(options: {
+    filename: string;
+    columns?: string[];
+    filters?: Record<string, any>;
+    includeHeader?: boolean;
+  }): Promise<void> {
+    const blob = await this.export(options);
+    if (blob instanceof Blob) {
+      downloadBlob(blob, options.filename);
+    }
   }
 }

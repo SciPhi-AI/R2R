@@ -1,5 +1,9 @@
+from builtins import list as _list
+from pathlib import Path
 from typing import Any, Optional
 from uuid import UUID
+
+import aiofiles
 
 from shared.api.models.base import WrappedBooleanResponse
 from shared.api.models.management.responses import (
@@ -193,3 +197,99 @@ class ConversationsSDK:
             json=data,
             version="v3",
         )
+
+    async def export(
+        self,
+        output_path: str | Path,
+        columns: Optional[_list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> None:
+        """
+        Export conversations to a CSV file, streaming the results directly to disk.
+
+        Args:
+            output_path (str | Path): Local path where the CSV file should be saved
+            columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
+            filters (Optional[dict]): Optional filters to apply when selecting conversations
+            include_header (bool): Whether to include column headers in the CSV (default: True)
+        """
+        # Convert path to string if it's a Path object
+        output_path = (
+            str(output_path) if isinstance(output_path, Path) else output_path
+        )
+
+        # Prepare request data
+        data = {"include_header": include_header}
+        if columns:
+            data["columns"] = columns
+        if filters:
+            data["filters"] = filters
+
+        # Stream response directly to file
+        async with aiofiles.open(output_path, "wb") as f:
+            async with self.client.session.post(
+                f"{self.client.base_url}/v3/conversations/export",
+                json=data,
+                headers={
+                    "Accept": "text/csv",
+                    **self.client._get_auth_headers(),
+                },
+            ) as response:
+                if response.status != 200:
+                    raise ValueError(
+                        f"Export failed with status {response.status}",
+                        response,
+                    )
+
+                async for chunk in response.content.iter_chunks():
+                    if chunk:
+                        await f.write(chunk[0])
+
+    async def export_messages(
+        self,
+        output_path: str | Path,
+        columns: Optional[_list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> None:
+        """
+        Export messages to a CSV file, streaming the results directly to disk.
+
+        Args:
+            output_path (str | Path): Local path where the CSV file should be saved
+            columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
+            filters (Optional[dict]): Optional filters to apply when selecting messages
+            include_header (bool): Whether to include column headers in the CSV (default: True)
+        """
+        # Convert path to string if it's a Path object
+        output_path = (
+            str(output_path) if isinstance(output_path, Path) else output_path
+        )
+
+        # Prepare request data
+        data = {"include_header": include_header}
+        if columns:
+            data["columns"] = columns
+        if filters:
+            data["filters"] = filters
+
+        # Stream response directly to file
+        async with aiofiles.open(output_path, "wb") as f:
+            async with self.client.session.post(
+                f"{self.client.base_url}/v3/conversations/export_messages",
+                json=data,
+                headers={
+                    "Accept": "text/csv",
+                    **self.client._get_auth_headers(),
+                },
+            ) as response:
+                if response.status != 200:
+                    raise ValueError(
+                        f"Export failed with status {response.status}",
+                        response,
+                    )
+
+                async for chunk in response.content.iter_chunks():
+                    if chunk:
+                        await f.write(chunk[0])

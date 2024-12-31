@@ -1,12 +1,14 @@
 import asyncio
 import contextlib
+import csv
 import datetime
 import json
 import logging
 import os
+import tempfile
 import time
 from enum import Enum
-from typing import Any, AsyncGenerator, Optional, Tuple
+from typing import IO, Any, AsyncGenerator, Optional, Tuple
 from uuid import UUID
 
 import asyncpg
@@ -375,6 +377,115 @@ class PostgresEntitiesHandler(Handler):
                     f"Some entities not found in {store_type} store or no permission to delete",
                     404,
                 )
+
+    async def export_to_csv(
+        self,
+        parent_id: UUID,
+        store_type: StoreType,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        """
+        Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
+        """
+        valid_columns = {
+            "id",
+            "name",
+            "category",
+            "description",
+            "parent_id",
+            "chunk_ids",
+            "metadata",
+            "created_at",
+            "updated_at",
+        }
+
+        if not columns:
+            columns = list(valid_columns)
+        elif invalid_cols := set(columns) - valid_columns:
+            raise ValueError(f"Invalid columns: {invalid_cols}")
+
+        select_stmt = f"""
+            SELECT
+                id::text,
+                name,
+                category,
+                description,
+                parent_id::text,
+                chunk_ids::text,
+                metadata::text,
+                to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at,
+                to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') AS updated_at
+            FROM {self._get_table_name(self._get_entity_table_for_store(store_type))}
+        """
+
+        conditions = ["parent_id = $1"]
+        params: list[Any] = [parent_id]
+        param_index = 2
+
+        if filters:
+            for field, value in filters.items():
+                if field not in valid_columns:
+                    continue
+
+                if isinstance(value, dict):
+                    for op, val in value.items():
+                        if op == "$eq":
+                            conditions.append(f"{field} = ${param_index}")
+                            params.append(val)
+                            param_index += 1
+                        elif op == "$gt":
+                            conditions.append(f"{field} > ${param_index}")
+                            params.append(val)
+                            param_index += 1
+                        elif op == "$lt":
+                            conditions.append(f"{field} < ${param_index}")
+                            params.append(val)
+                            param_index += 1
+                else:
+                    # Direct equality
+                    conditions.append(f"{field} = ${param_index}")
+                    params.append(value)
+                    param_index += 1
+
+        if conditions:
+            select_stmt = f"{select_stmt} WHERE {' AND '.join(conditions)}"
+
+        select_stmt = f"{select_stmt} ORDER BY created_at DESC"
+
+        temp_file = None
+        try:
+            temp_file = tempfile.NamedTemporaryFile(
+                mode="w", delete=True, suffix=".csv"
+            )
+            writer = csv.writer(temp_file, quoting=csv.QUOTE_ALL)
+
+            async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
+                async with conn.transaction():
+                    cursor = await conn.cursor(select_stmt, *params)
+
+                    if include_header:
+                        writer.writerow(columns)
+
+                    chunk_size = 1000
+                    while True:
+                        rows = await cursor.fetch(chunk_size)
+                        if not rows:
+                            break
+                        for row in rows:
+                            writer.writerow(row)
+
+            temp_file.flush()
+            return temp_file.name, temp_file
+
+        except Exception as e:
+            if temp_file:
+                temp_file.close()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to export data: {str(e)}",
+            ) from e
 
 
 class PostgresRelationshipsHandler(Handler):
@@ -774,6 +885,123 @@ class PostgresRelationshipsHandler(Handler):
                     404,
                 )
 
+    async def export_to_csv(
+        self,
+        parent_id: UUID,
+        store_type: StoreType,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        """
+        Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
+        """
+        valid_columns = {
+            "id",
+            "subject",
+            "predicate",
+            "object",
+            "description",
+            "subject_id",
+            "object_id",
+            "weight",
+            "chunk_ids",
+            "parent_id",
+            "metadata",
+            "created_at",
+            "updated_at",
+        }
+
+        if not columns:
+            columns = list(valid_columns)
+        elif invalid_cols := set(columns) - valid_columns:
+            raise ValueError(f"Invalid columns: {invalid_cols}")
+
+        select_stmt = f"""
+            SELECT
+                id::text,
+                subject,
+                predicate,
+                object,
+                description,
+                subject_id::text,
+                object_id::text,
+                weight,
+                chunk_ids::text,
+                parent_id::text,
+                metadata::text,
+                to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at,
+                to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') AS updated_at
+            FROM {self._get_table_name(self._get_relationship_table_for_store(store_type))}
+        """
+
+        conditions = ["parent_id = $1"]
+        params: list[Any] = [parent_id]
+        param_index = 2
+
+        if filters:
+            for field, value in filters.items():
+                if field not in valid_columns:
+                    continue
+
+                if isinstance(value, dict):
+                    for op, val in value.items():
+                        if op == "$eq":
+                            conditions.append(f"{field} = ${param_index}")
+                            params.append(val)
+                            param_index += 1
+                        elif op == "$gt":
+                            conditions.append(f"{field} > ${param_index}")
+                            params.append(val)
+                            param_index += 1
+                        elif op == "$lt":
+                            conditions.append(f"{field} < ${param_index}")
+                            params.append(val)
+                            param_index += 1
+                else:
+                    # Direct equality
+                    conditions.append(f"{field} = ${param_index}")
+                    params.append(value)
+                    param_index += 1
+
+        if conditions:
+            select_stmt = f"{select_stmt} WHERE {' AND '.join(conditions)}"
+
+        select_stmt = f"{select_stmt} ORDER BY created_at DESC"
+
+        temp_file = None
+        try:
+            temp_file = tempfile.NamedTemporaryFile(
+                mode="w", delete=True, suffix=".csv"
+            )
+            writer = csv.writer(temp_file, quoting=csv.QUOTE_ALL)
+
+            async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
+                async with conn.transaction():
+                    cursor = await conn.cursor(select_stmt, *params)
+
+                    if include_header:
+                        writer.writerow(columns)
+
+                    chunk_size = 1000
+                    while True:
+                        rows = await cursor.fetch(chunk_size)
+                        if not rows:
+                            break
+                        for row in rows:
+                            writer.writerow(row)
+
+            temp_file.flush()
+            return temp_file.name, temp_file
+
+        except Exception as e:
+            if temp_file:
+                temp_file.close()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to export data: {str(e)}",
+            )
+
 
 class PostgresCommunitiesHandler(Handler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -1058,6 +1286,123 @@ class PostgresCommunitiesHandler(Handler):
             communities.append(Community(**community_dict))
 
         return communities, count
+
+    async def export_to_csv(
+        self,
+        parent_id: UUID,
+        store_type: StoreType,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        """
+        Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
+        """
+        valid_columns = {
+            "id",
+            "collection_id",
+            "community_id",
+            "level",
+            "name",
+            "summary",
+            "findings",
+            "rating",
+            "rating_explanation",
+            "created_at",
+            "updated_at",
+            "metadata",
+        }
+
+        if not columns:
+            columns = list(valid_columns)
+        elif invalid_cols := set(columns) - valid_columns:
+            raise ValueError(f"Invalid columns: {invalid_cols}")
+
+        table_name = "graphs_communities"
+
+        select_stmt = f"""
+            SELECT
+                id::text,
+                collection_id::text,
+                community_id::text,
+                level,
+                name,
+                summary,
+                findings::text,
+                rating,
+                rating_explanation,
+                to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at,
+                to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') AS updated_at,
+                metadata::text
+            FROM {self._get_table_name(table_name)}
+        """
+
+        conditions = ["collection_id = $1"]
+        params: list[Any] = [parent_id]
+        param_index = 2
+
+        if filters:
+            for field, value in filters.items():
+                if field not in valid_columns:
+                    continue
+
+                if isinstance(value, dict):
+                    for op, val in value.items():
+                        if op == "$eq":
+                            conditions.append(f"{field} = ${param_index}")
+                            params.append(val)
+                            param_index += 1
+                        elif op == "$gt":
+                            conditions.append(f"{field} > ${param_index}")
+                            params.append(val)
+                            param_index += 1
+                        elif op == "$lt":
+                            conditions.append(f"{field} < ${param_index}")
+                            params.append(val)
+                            param_index += 1
+                else:
+                    # Direct equality
+                    conditions.append(f"{field} = ${param_index}")
+                    params.append(value)
+                    param_index += 1
+
+        if conditions:
+            select_stmt = f"{select_stmt} WHERE {' AND '.join(conditions)}"
+
+        select_stmt = f"{select_stmt} ORDER BY created_at DESC"
+
+        temp_file = None
+        try:
+            temp_file = tempfile.NamedTemporaryFile(
+                mode="w", delete=True, suffix=".csv"
+            )
+            writer = csv.writer(temp_file, quoting=csv.QUOTE_ALL)
+
+            async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
+                async with conn.transaction():
+                    cursor = await conn.cursor(select_stmt, *params)
+
+                    if include_header:
+                        writer.writerow(columns)
+
+                    chunk_size = 1000
+                    while True:
+                        rows = await cursor.fetch(chunk_size)
+                        if not rows:
+                            break
+                        for row in rows:
+                            writer.writerow(row)
+
+            temp_file.flush()
+            return temp_file.name, temp_file
+
+        except Exception as e:
+            if temp_file:
+                temp_file.close()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to export data: {str(e)}",
+            )
 
 
 class PostgresGraphsHandler(Handler):

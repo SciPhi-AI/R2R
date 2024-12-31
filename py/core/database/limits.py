@@ -87,6 +87,38 @@ class PostgresLimitsHandler(Handler):
         )
         return await self._count_requests(user_id, None, start_of_month)
 
+        return await self._count_requests(
+            user_id, route=None, since=start_of_month
+        )
+
+    def _determine_limits_for(
+        self, user_id: UUID, route: str
+    ) -> LimitSettings:
+        # Start with base limits
+        limits = self.config.limits
+
+        # Route-specific limits - directly override if present
+        if route_limits := self.config.route_limits.get(route):
+            # Only override non-None values from route_limits
+            if route_limits.global_per_min is not None:
+                limits.global_per_min = route_limits.global_per_min
+            if route_limits.route_per_min is not None:
+                limits.route_per_min = route_limits.route_per_min
+            if route_limits.monthly_limit is not None:
+                limits.monthly_limit = route_limits.monthly_limit
+
+        # User-specific limits - directly override if present
+        if user_limits := self.config.user_limits.get(user_id):
+            # Only override non-None values from user_limits
+            if user_limits.global_per_min is not None:
+                limits.global_per_min = user_limits.global_per_min
+            if user_limits.route_per_min is not None:
+                limits.route_per_min = user_limits.route_per_min
+            if user_limits.monthly_limit is not None:
+                limits.monthly_limit = user_limits.monthly_limit
+
+        return limits
+
     async def check_limits(self, user: User, route: str):
         """
         Perform rate limit checks for a user on a specific route.
