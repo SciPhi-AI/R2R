@@ -324,6 +324,22 @@ class ManagementService(Service):
             include_header=include_header,
         )
 
+    @telemetry_event("ExportGraphCommunities")
+    async def export_graph_communities(
+        self,
+        id: UUID,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.graphs_handler.communities.export_to_csv(
+            parent_id=id,
+            store_type="graphs",  # type: ignore
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
     @telemetry_event("ExportUsers")
     async def export_users(
         self,
