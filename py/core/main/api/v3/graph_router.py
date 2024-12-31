@@ -8,7 +8,7 @@ from fastapi.background import BackgroundTasks
 from fastapi.responses import FileResponse
 
 from core.base import KGEnrichmentStatus, R2RException, Workflow
-from core.base.abstractions import KGRunType
+from core.base.abstractions import KGRunType, StoreType
 from core.base.api.models import (
     GenericBooleanResponse,
     WrappedBooleanResponse,
@@ -1049,7 +1049,7 @@ class GraphRouter(BaseRouterV3):
 
             result = await self.providers.database.graphs_handler.entities.get(
                 parent_id=collection_id,
-                store_type="graphs",
+                store_type=StoreType.GRAPHS,
                 offset=0,
                 limit=1,
                 entity_ids=[entity_id],
@@ -1338,7 +1338,7 @@ class GraphRouter(BaseRouterV3):
             results = (
                 await self.providers.database.graphs_handler.relationships.get(
                     parent_id=collection_id,
-                    store_type="graphs",
+                    store_type=StoreType.GRAPHS,
                     offset=0,
                     limit=1,
                     relationship_ids=[relationship_id],
@@ -1754,7 +1754,7 @@ class GraphRouter(BaseRouterV3):
                 await self.providers.database.graphs_handler.communities.get(
                     parent_id=collection_id,
                     community_ids=[community_id],
-                    store_type="graphs",
+                    store_type=StoreType.GRAPHS,
                     offset=0,
                     limit=1,
                 )
@@ -2180,7 +2180,7 @@ class GraphRouter(BaseRouterV3):
                 entities = (
                     await self.providers.database.graphs_handler.entities.get(
                         parent_id=document.id,
-                        store_type="documents",
+                        store_type=StoreType.DOCUMENTS,
                         offset=0,
                         limit=100,
                     )

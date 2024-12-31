@@ -25,6 +25,7 @@ from shared.abstractions.graph import (
     Graph,
     KGExtraction,
     Relationship,
+    StoreType,
 )
 from shared.abstractions.ingestion import (
     ChunkEnrichmentSettings,
@@ -110,6 +111,7 @@ __all__ = [
     # Graph abstractions
     "Entity",
     "Community",
+    "StoreType",
     "KGExtraction",
     "Relationship",
     # Index abstractions

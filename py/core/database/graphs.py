@@ -7,7 +7,6 @@ import logging
 import os
 import tempfile
 import time
-from enum import Enum
 from typing import IO, Any, AsyncGenerator, Optional, Tuple
 from uuid import UUID
 
@@ -26,6 +25,7 @@ from core.base.abstractions import (
     KGExtractionStatus,
     R2RException,
     Relationship,
+    StoreType,
     VectorQuantizationType,
 )
 from core.base.api.models import GraphResponse
@@ -38,12 +38,6 @@ from core.base.utils import (
 
 from .base import PostgresConnectionManager
 from .collections import PostgresCollectionsHandler
-
-
-class StoreType(str, Enum):
-    GRAPHS = "graphs"
-    DOCUMENTS = "documents"
-
 
 logger = logging.getLogger()
 

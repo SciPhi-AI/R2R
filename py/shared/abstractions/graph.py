@@ -1,6 +1,7 @@
 import json
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
 
@@ -134,3 +135,8 @@ class Graph(R2RSerializable):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+
+class StoreType(str, Enum):
+    GRAPHS = "graphs"
+    DOCUMENTS = "documents"

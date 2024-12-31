@@ -25,7 +25,7 @@ from core.base import (
     generate_id,
     select_search_filters,
 )
-from core.base.abstractions import KGCreationSettings, KGRunType
+from core.base.abstractions import KGCreationSettings, KGRunType, StoreType
 from core.base.api.models import (
     GenericBooleanResponse,
     WrappedBooleanResponse,
@@ -1584,7 +1584,7 @@ class DocumentsRouter(BaseRouterV3):
                     "user": auth_user.json(),
                 }
 
-                return await self.providers.orchestration.run_workflow(
+                return await self.providers.orchestration.run_workflow(  # type: ignore
                     "extract-triples", {"request": workflow_input}, {}
                 )
             else:
@@ -1689,7 +1689,7 @@ class DocumentsRouter(BaseRouterV3):
                 count,
             ) = await self.providers.database.graphs_handler.entities.get(
                 parent_id=id,
-                store_type="documents",
+                store_type=StoreType.DOCUMENTS,
                 offset=offset,
                 limit=limit,
                 include_embeddings=include_embeddings,
@@ -1944,7 +1944,7 @@ class DocumentsRouter(BaseRouterV3):
                 count,
             ) = await self.providers.database.graphs_handler.relationships.get(
                 parent_id=id,
-                store_type="documents",
+                store_type=StoreType.DOCUMENTS,
                 entity_names=entity_names,
                 relationship_types=relationship_types,
                 offset=offset,

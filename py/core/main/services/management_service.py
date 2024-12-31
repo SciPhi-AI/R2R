@@ -17,6 +17,7 @@ from core.base import (
     Prompt,
     R2RException,
     RunManager,
+    StoreType,
     User,
 )
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -190,10 +191,12 @@ class ManagementService(Service):
         for doc_id in docs_to_delete:
             # Delete related entities & relationships if needed:
             await self.providers.database.graphs_handler.entities.delete(
-                parent_id=doc_id, store_type="documents"
+                parent_id=doc_id,
+                store_type=StoreType.DOCUMENTS,
             )
             await self.providers.database.graphs_handler.relationships.delete(
-                parent_id=doc_id, store_type="documents"
+                parent_id=doc_id,
+                store_type=StoreType.DOCUMENTS,
             )
 
             # Finally, delete the document from documents_overview:
@@ -270,7 +273,7 @@ class ManagementService(Service):
     ) -> tuple[str, IO]:
         return await self.providers.database.graphs_handler.entities.export_to_csv(
             parent_id=id,
-            store_type="documents",  # type: ignore
+            store_type=StoreType.DOCUMENTS,
             columns=columns,
             filters=filters,
             include_header=include_header,
@@ -286,7 +289,7 @@ class ManagementService(Service):
     ) -> tuple[str, IO]:
         return await self.providers.database.graphs_handler.relationships.export_to_csv(
             parent_id=id,
-            store_type="documents",  # type: ignore
+            store_type=StoreType.DOCUMENTS,
             columns=columns,
             filters=filters,
             include_header=include_header,
@@ -315,7 +318,7 @@ class ManagementService(Service):
     ) -> tuple[str, IO]:
         return await self.providers.database.graphs_handler.entities.export_to_csv(
             parent_id=id,
-            store_type="graphs",  # type: ignore
+            store_type=StoreType.GRAPHS,
             columns=columns,
             filters=filters,
             include_header=include_header,
@@ -331,7 +334,7 @@ class ManagementService(Service):
     ) -> tuple[str, IO]:
         return await self.providers.database.graphs_handler.relationships.export_to_csv(
             parent_id=id,
-            store_type="graphs",  # type: ignore
+            store_type=StoreType.GRAPHS,
             columns=columns,
             filters=filters,
             include_header=include_header,
@@ -347,7 +350,7 @@ class ManagementService(Service):
     ) -> tuple[str, IO]:
         return await self.providers.database.graphs_handler.communities.export_to_csv(
             parent_id=id,
-            store_type="graphs",  # type: ignore
+            store_type=StoreType.GRAPHS,
             columns=columns,
             filters=filters,
             include_header=include_header,
