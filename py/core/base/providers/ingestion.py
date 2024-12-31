@@ -131,31 +131,6 @@ class IngestionConfig(ProviderConfig):
         else:
             return cls(app=app)
 
-    @classmethod
-    def get_default(cls, mode: str, app) -> "IngestionConfig":
-        """Return default ingestion configuration for a given mode."""
-        if mode == "hi-res":
-            # More thorough parsing, no skipping summaries, possibly larger `chunks_for_document_summary`.
-            return cls(app=app, parser_overrides={"pdf": "zerox"})
-        # elif mode == "fast":
-        #     # Skip summaries and other enrichment steps for speed.
-        #     return cls(
-        #         app=app,
-        #     )
-        else:
-            # For `custom` or any unrecognized mode, return a base config
-            return cls(app=app)
-
-    @classmethod
-    def set_default(cls, **kwargs):
-        for key, value in kwargs.items():
-            if key in cls._defaults:
-                cls._defaults[key] = value
-            else:
-                raise AttributeError(
-                    f"No default attribute '{key}' in GenerationConfig"
-                )
-
     class Config:
         populate_by_name = True
         json_schema_extra = {

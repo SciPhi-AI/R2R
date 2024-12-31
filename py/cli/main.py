@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict
+from typing import Any
 
 import asyncclick as click
 from rich.console import Console
@@ -73,7 +73,7 @@ def _ensure_config_dir_exists() -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def save_config(config_data: Dict[str, Any]) -> None:
+def save_config(config_data: dict[str, Any]) -> None:
     """
     Persist the given config data to ~/.r2r/config.json.
     """
