@@ -9,11 +9,6 @@ class BaseTelemetryEvent:
         self.event_id = str(uuid.uuid4())
 
 
-class DailyActiveUserEvent(BaseTelemetryEvent):
-    def __init__(self, user_id: str):
-        super().__init__("DailyActiveUser", {"user_id": user_id})
-
-
 class FeatureUsageEvent(BaseTelemetryEvent):
     def __init__(
         self,
@@ -47,68 +42,4 @@ class ErrorEvent(BaseTelemetryEvent):
                 "error_message": error_message,
                 "properties": properties or {},
             },
-        )
-
-
-class RequestLatencyEvent(BaseTelemetryEvent):
-    def __init__(
-        self,
-        endpoint: str,
-        latency: float,
-        properties: Optional[dict[str, Any]] = None,
-    ):
-        super().__init__(
-            "RequestLatency",
-            {
-                "endpoint": endpoint,
-                "latency": latency,
-                "properties": properties or {},
-            },
-        )
-
-
-class GeographicDistributionEvent(BaseTelemetryEvent):
-    def __init__(
-        self,
-        user_id: str,
-        country: str,
-        properties: Optional[dict[str, Any]] = None,
-    ):
-        super().__init__(
-            "GeographicDistribution",
-            {
-                "user_id": user_id,
-                "country": country,
-                "properties": properties or {},
-            },
-        )
-
-
-class SessionDurationEvent(BaseTelemetryEvent):
-    def __init__(
-        self,
-        user_id: str,
-        duration: float,
-        properties: Optional[dict[str, Any]] = None,
-    ):
-        super().__init__(
-            "SessionDuration",
-            {
-                "user_id": user_id,
-                "duration": duration,
-                "properties": properties or {},
-            },
-        )
-
-
-class UserPathEvent(BaseTelemetryEvent):
-    def __init__(
-        self,
-        user_id: str,
-        path: str,
-        properties: Optional[dict[str, Any]] = None,
-    ):
-        super().__init__(
-            "UserPath",
-            {"user_id": user_id, "path": path, "properties": properties or {}},
         )

@@ -18,7 +18,7 @@ from .exception import (
     R2RDocumentProcessingError,
     R2RException,
 )
-from .graph import Community, Entity, KGExtraction, Relationship
+from .graph import Community, Entity, KGExtraction, Relationship, StoreType
 from .kg import (
     GraphBuildSettings,
     GraphCommunitySettings,
@@ -99,6 +99,7 @@ __all__ = [
     "Community",
     "KGExtraction",
     "Relationship",
+    "StoreType",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",

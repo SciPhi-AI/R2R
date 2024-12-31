@@ -25,6 +25,7 @@ from core.base.abstractions import (
     KGEntityDeduplicationType,
     R2RException,
     Relationship,
+    StoreType,
 )
 from core.base.api.models import GraphResponse
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -144,7 +145,7 @@ class GraphService(Service):
         return await self.providers.database.graphs_handler.entities.create(
             name=name,
             parent_id=parent_id,
-            store_type="graphs",  # type: ignore
+            store_type=StoreType.GRAPHS,
             category=category,
             description=description,
             description_embedding=description_embedding,
@@ -168,7 +169,7 @@ class GraphService(Service):
 
         return await self.providers.database.graphs_handler.entities.update(
             entity_id=entity_id,
-            store_type="graphs",  # type: ignore
+            store_type=StoreType.GRAPHS,
             name=name,
             description=description,
             description_embedding=description_embedding,
@@ -185,7 +186,7 @@ class GraphService(Service):
         return await self.providers.database.graphs_handler.entities.delete(
             parent_id=parent_id,
             entity_ids=[entity_id],
-            store_type="graphs",  # type: ignore
+            store_type=StoreType.GRAPHS,
         )
 
     @telemetry_event("get_entities")
@@ -238,7 +239,7 @@ class GraphService(Service):
                 description_embedding=description_embedding,
                 weight=weight,
                 metadata=metadata,
-                store_type="graphs",  # type: ignore
+                store_type=StoreType.GRAPHS,
             )
         )
 
@@ -252,7 +253,7 @@ class GraphService(Service):
             await self.providers.database.graphs_handler.relationships.delete(
                 parent_id=parent_id,
                 relationship_ids=[relationship_id],
-                store_type="graphs",  # type: ignore
+                store_type=StoreType.GRAPHS,
             )
         )
 
@@ -287,7 +288,7 @@ class GraphService(Service):
                 description_embedding=description_embedding,
                 weight=weight,
                 metadata=metadata,
-                store_type="graphs",  # type: ignore
+                store_type=StoreType.GRAPHS,
             )
         )
 
@@ -302,7 +303,7 @@ class GraphService(Service):
     ):
         return await self.providers.database.graphs_handler.relationships.get(
             parent_id=parent_id,
-            store_type="graphs",  # type: ignore
+            store_type=StoreType.GRAPHS,
             offset=offset,
             limit=limit,
             relationship_ids=relationship_ids,
@@ -324,7 +325,7 @@ class GraphService(Service):
         )
         return await self.providers.database.graphs_handler.communities.create(
             parent_id=parent_id,
-            store_type="graphs",  # type: ignore
+            store_type=StoreType.GRAPHS,
             name=name,
             summary=summary,
             description_embedding=description_embedding,
@@ -351,7 +352,7 @@ class GraphService(Service):
 
         return await self.providers.database.graphs_handler.communities.update(
             community_id=community_id,
-            store_type="graphs",  # type: ignore
+            store_type=StoreType.GRAPHS,
             name=name,
             summary=summary,
             summary_embedding=summary_embedding,
@@ -380,7 +381,7 @@ class GraphService(Service):
     ):
         return await self.providers.database.graphs_handler.communities.get(
             parent_id=collection_id,
-            store_type="graphs",  # type: ignore
+            store_type=StoreType.GRAPHS,
             offset=offset,
             limit=limit,
         )
@@ -1045,7 +1046,7 @@ class GraphService(Service):
                 result = await self.providers.database.graphs_handler.entities.create(
                     name=entity.name,
                     parent_id=entity.parent_id,
-                    store_type="documents",  # type: ignore
+                    store_type=StoreType.DOCUMENTS,
                     category=entity.category,
                     description=entity.description,
                     description_embedding=entity.description_embedding,
@@ -1067,5 +1068,5 @@ class GraphService(Service):
                         description_embedding=relationship.description_embedding,
                         weight=relationship.weight,
                         metadata=relationship.metadata,
-                        store_type="documents",  # type: ignore
+                        store_type=StoreType.DOCUMENTS,
                     )
