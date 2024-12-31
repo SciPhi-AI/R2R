@@ -8,11 +8,9 @@ import os
 import tempfile
 import time
 from enum import Enum
-from pathlib import Path
 from typing import IO, Any, AsyncGenerator, Optional, Tuple
 from uuid import UUID
 
-import aiofiles
 import asyncpg
 import httpx
 from asyncpg.exceptions import UndefinedTableError, UniqueViolationError
@@ -1177,104 +1175,6 @@ class PostgresCommunitiesHandler(Handler):
                 detail=f"An error occurred while updating the community: {e}",
             ) from e
 
-    async def export_entities(
-        self,
-        id: str | UUID,
-        output_path: str | Path,
-        columns: Optional[list[str]] = None,
-        filters: Optional[dict] = None,
-        include_header: bool = True,
-    ) -> None:
-        """
-        Export documents to a CSV file, streaming the results directly to disk.
-
-        Args:
-            output_path (str | Path): Local path where the CSV file should be saved
-            columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
-            filters (Optional[dict]): Optional filters to apply when selecting documents
-            include_header (bool): Whether to include column headers in the CSV (default: True)
-        """
-        # Convert path to string if it's a Path object
-        output_path = (
-            str(output_path) if isinstance(output_path, Path) else output_path
-        )
-
-        # Prepare request data
-        data = {"include_header": include_header}
-        if columns:
-            data["columns"] = columns
-        if filters:
-            data["filters"] = filters
-
-        # Stream response directly to file
-        async with aiofiles.open(output_path, "wb") as f:
-            async with self.client.session.post(
-                f"{self.client.base_url}/v3/documents/{str(id)}/entities/export",
-                json=data,
-                headers={
-                    "Accept": "text/csv",
-                    **self.client._get_auth_headers(),
-                },
-            ) as response:
-                if response.status != 200:
-                    raise ValueError(
-                        f"Export failed with status {response.status}",
-                        response,
-                    )
-
-                async for chunk in response.content.iter_chunks():
-                    if chunk:
-                        await f.write(chunk[0])
-
-    async def export_relationships(
-        self,
-        id: str | UUID,
-        output_path: str | Path,
-        columns: Optional[list[str]] = None,
-        filters: Optional[dict] = None,
-        include_header: bool = True,
-    ) -> None:
-        """
-        Export document relationships to a CSV file, streaming the results directly to disk.
-
-        Args:
-            output_path (str | Path): Local path where the CSV file should be saved
-            columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
-            filters (Optional[dict]): Optional filters to apply when selecting documents
-            include_header (bool): Whether to include column headers in the CSV (default: True)
-        """
-        # Convert path to string if it's a Path object
-        output_path = (
-            str(output_path) if isinstance(output_path, Path) else output_path
-        )
-
-        # Prepare request data
-        data = {"include_header": include_header}
-        if columns:
-            data["columns"] = columns
-        if filters:
-            data["filters"] = filters
-
-        # Stream response directly to file
-        async with aiofiles.open(output_path, "wb") as f:
-            async with self.client.session.post(
-                f"{self.client.base_url}/v3/documents/{str(id)}/relationships/export",
-                json=data,
-                headers={
-                    "Accept": "text/csv",
-                    **self.client._get_auth_headers(),
-                },
-            ) as response:
-                if response.status != 200:
-                    raise ValueError(
-                        f"Export failed with status {response.status}",
-                        response,
-                    )
-
-                async for chunk in response.content.iter_chunks():
-                    if chunk:
-                        await f.write(chunk[0])
-
     async def delete(
         self,
         parent_id: UUID,
@@ -1438,9 +1338,9 @@ class PostgresCommunitiesHandler(Handler):
                 rating,
                 rating_explanation,
                 to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at,
-                to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') AS updated_at
-                metadata::text,
-            FROM {self._get_table_name(self._get_table_name(table_name))}
+                to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') AS updated_at,
+                metadata::text
+            FROM {self._get_table_name(table_name)}
         """
 
         conditions = ["collection_id = $1"]
