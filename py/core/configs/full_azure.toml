@@ -15,9 +15,6 @@ concurrent_request_limit = 128
     clustering_mode = "remote"
     generation_config = { model = "azure/gpt-4o-mini" }
 
-  [database.graph_entity_deduplication_settings]
-    generation_config = { model = "azure/gpt-4o-mini" }
-
   [database.graph_enrichment_settings]
     generation_config = { model = "azure/gpt-4o-mini" }
 

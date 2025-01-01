@@ -10,7 +10,7 @@ class CryptoConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["bcrypt", "nacl"]  # Add other crypto providers as needed
+        return ["bcrypt", "nacl"]
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:

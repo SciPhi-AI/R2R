@@ -113,26 +113,8 @@ class KGCommunityResult(R2RSerializable):
         }
 
 
-class KGGlobalResult(R2RSerializable):
-    name: str
-    description: str
-    metadata: Optional[dict[str, Any]] = None
-
-    class Config:
-        json_schema_extra = {
-            "name": "Global Result Name",
-            "description": "Global Result Description",
-            "metadata": {},
-        }
-
-
 class GraphSearchResult(R2RSerializable):
-    content: (
-        KGEntityResult
-        | KGRelationshipResult
-        | KGCommunityResult
-        | KGGlobalResult
-    )
+    content: KGEntityResult | KGRelationshipResult | KGCommunityResult
     result_type: Optional[KGSearchResultType] = None
     chunk_ids: Optional[list[UUID]] = None
     metadata: dict[str, Any] = {}

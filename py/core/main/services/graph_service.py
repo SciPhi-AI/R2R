@@ -21,8 +21,6 @@ from core.base.abstractions import (
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEnrichmentStatus,
-    KGEntityDeduplicationSettings,
-    KGEntityDeduplicationType,
     R2RException,
     Relationship,
     StoreType,
@@ -623,21 +621,17 @@ class GraphService(Service):
     async def delete_graph(
         self,
         collection_id: UUID,
-        cascade: bool,
-        **kwargs,
     ):
-        return await self.delete(collection_id=collection_id, cascade=cascade)
+        return await self.delete(collection_id=collection_id)
 
     @telemetry_event("delete")
     async def delete(
         self,
         collection_id: UUID,
-        cascade: bool,
         **kwargs,
     ):
         return await self.providers.database.graphs_handler.delete(
             collection_id=collection_id,
-            cascade=cascade,
         )
 
     @telemetry_event("get_creation_estimate")
@@ -674,75 +668,6 @@ class GraphService(Service):
             graph_id=graph_id,
             graph_enrichment_settings=graph_enrichment_settings,
         )
-
-    @telemetry_event("get_deduplication_estimate")
-    async def get_deduplication_estimate(
-        self,
-        collection_id: UUID,
-        kg_deduplication_settings: KGEntityDeduplicationSettings,
-        **kwargs,
-    ):
-        return await self.providers.database.graphs_handler.get_deduplication_estimate(
-            collection_id=collection_id,
-            kg_deduplication_settings=kg_deduplication_settings,
-        )
-
-    @telemetry_event("kg_entity_deduplication")
-    async def kg_entity_deduplication(
-        self,
-        collection_id: UUID,
-        graph_id: UUID,
-        graph_entity_deduplication_type: KGEntityDeduplicationType,
-        graph_entity_deduplication_prompt: str,
-        generation_config: GenerationConfig,
-        **kwargs,
-    ):
-        deduplication_results = await self.pipes.graph_deduplication_pipe.run(
-            input=self.pipes.graph_deduplication_pipe.Input(
-                message={
-                    "collection_id": collection_id,
-                    "graph_id": graph_id,
-                    "graph_entity_deduplication_type": graph_entity_deduplication_type,
-                    "graph_entity_deduplication_prompt": graph_entity_deduplication_prompt,
-                    "generation_config": generation_config,
-                    **kwargs,
-                }
-            ),
-            state=None,
-            run_manager=self.run_manager,
-        )
-        return await _collect_results(deduplication_results)
-
-    @telemetry_event("kg_entity_deduplication_summary")
-    async def kg_entity_deduplication_summary(
-        self,
-        collection_id: UUID,
-        offset: int,
-        limit: int,
-        graph_entity_deduplication_type: KGEntityDeduplicationType,
-        graph_entity_deduplication_prompt: str,
-        generation_config: GenerationConfig,
-        **kwargs,
-    ):
-        logger.info(
-            f"Running kg_entity_deduplication_summary for collection {collection_id} with settings {kwargs}"
-        )
-        deduplication_summary_results = await self.pipes.graph_deduplication_summary_pipe.run(
-            input=self.pipes.graph_deduplication_summary_pipe.Input(
-                message={
-                    "collection_id": collection_id,
-                    "offset": offset,
-                    "limit": limit,
-                    "graph_entity_deduplication_type": graph_entity_deduplication_type,
-                    "graph_entity_deduplication_prompt": graph_entity_deduplication_prompt,
-                    "generation_config": generation_config,
-                }
-            ),
-            state=None,
-            run_manager=self.run_manager,
-        )
-
-        return await _collect_results(deduplication_summary_results)
 
     async def kg_extraction(  # type: ignore
         self,

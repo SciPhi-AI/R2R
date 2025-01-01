@@ -377,8 +377,6 @@ class R2RPipeFactory:
         streaming_rag_pipe_override: Optional[AsyncPipe] = None,
         graph_description_pipe: Optional[AsyncPipe] = None,
         graph_clustering_pipe: Optional[AsyncPipe] = None,
-        graph_deduplication_pipe: Optional[AsyncPipe] = None,
-        graph_deduplication_summary_pipe: Optional[AsyncPipe] = None,
         graph_community_summary_pipe: Optional[AsyncPipe] = None,
         *args,
         **kwargs,
@@ -410,10 +408,6 @@ class R2RPipeFactory:
             or self.create_graph_description_pipe(*args, **kwargs),
             graph_clustering_pipe=graph_clustering_pipe
             or self.create_graph_clustering_pipe(*args, **kwargs),
-            graph_deduplication_pipe=graph_deduplication_pipe
-            or self.create_graph_deduplication_pipe(*args, **kwargs),
-            graph_deduplication_summary_pipe=graph_deduplication_summary_pipe
-            or self.create_graph_deduplication_summary_pipe(*args, **kwargs),
             graph_community_summary_pipe=graph_community_summary_pipe
             or self.create_graph_community_summary_pipe(*args, **kwargs),
         )
@@ -598,16 +592,6 @@ class R2RPipeFactory:
             config=AsyncPipe.PipeConfig(name="graph_clustering_pipe"),
         )
 
-    def create_kg_deduplication_summary_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import GraphDeduplicationSummaryPipe
-
-        return GraphDeduplicationSummaryPipe(
-            database_provider=self.providers.database,
-            llm_provider=self.providers.llm,
-            embedding_provider=self.providers.embedding,
-            config=AsyncPipe.PipeConfig(name="kg_deduplication_summary_pipe"),
-        )
-
     def create_graph_community_summary_pipe(self, *args, **kwargs) -> Any:
         from core.pipes import GraphCommunitySummaryPipe
 
@@ -616,28 +600,6 @@ class R2RPipeFactory:
             llm_provider=self.providers.llm,
             embedding_provider=self.providers.embedding,
             config=AsyncPipe.PipeConfig(name="graph_community_summary_pipe"),
-        )
-
-    def create_graph_deduplication_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import GraphDeduplicationPipe
-
-        return GraphDeduplicationPipe(
-            database_provider=self.providers.database,
-            llm_provider=self.providers.llm,
-            embedding_provider=self.providers.embedding,
-            config=AsyncPipe.PipeConfig(name="graph_deduplication_pipe"),
-        )
-
-    def create_graph_deduplication_summary_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import GraphDeduplicationSummaryPipe
-
-        return GraphDeduplicationSummaryPipe(
-            database_provider=self.providers.database,
-            llm_provider=self.providers.llm,
-            embedding_provider=self.providers.embedding,
-            config=AsyncPipe.PipeConfig(
-                name="graph_deduplication_summary_pipe"
-            ),
         )
 
 

@@ -20,13 +20,9 @@ from .exception import (
 )
 from .graph import Community, Entity, KGExtraction, Relationship, StoreType
 from .kg import (
-    GraphBuildSettings,
     GraphCommunitySettings,
-    GraphEntitySettings,
-    GraphRelationshipSettings,
     KGCreationSettings,
     KGEnrichmentSettings,
-    KGEntityDeduplicationSettings,
     KGRunType,
 )
 from .llm import (
@@ -47,7 +43,6 @@ from .search import (
     HybridSearchSettings,
     KGCommunityResult,
     KGEntityResult,
-    KGGlobalResult,
     KGRelationshipResult,
     KGSearchResultType,
     SearchMode,
@@ -115,7 +110,6 @@ __all__ = [
     "KGEntityResult",
     "KGRelationshipResult",
     "KGCommunityResult",
-    "KGGlobalResult",
     "GraphSearchSettings",
     "ChunkSearchSettings",
     "ChunkSearchResult",
@@ -128,8 +122,6 @@ __all__ = [
     "KGEnrichmentSettings",
     "KGExtraction",
     "KGRunType",
-    "GraphEntitySettings",
-    "GraphRelationshipSettings",
     "GraphCommunitySettings",
     # User abstractions
     "Token",

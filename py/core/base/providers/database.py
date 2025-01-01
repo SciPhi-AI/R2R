@@ -1,55 +1,19 @@
+"""Base classes for database providers."""
+
 import logging
-from abc import abstractmethod
-from datetime import datetime
-from io import BytesIO
-from typing import BinaryIO, Optional, Tuple
+from abc import ABC, abstractmethod
+from typing import Any, Optional, Sequence
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from core.base.abstractions import (
-    ChunkSearchResult,
-    Community,
-    DocumentResponse,
-    Entity,
-    IndexArgsHNSW,
-    IndexArgsIVFFlat,
-    IndexMeasure,
-    IndexMethod,
-    KGCreationSettings,
-    KGEnrichmentSettings,
-    KGEntityDeduplicationSettings,
-    Message,
-    Relationship,
-    SearchSettings,
-    User,
-    VectorEntry,
-    VectorTableName,
-)
-from core.base.api.models import CollectionResponse, GraphResponse
-
-from .base import Provider, ProviderConfig
-
-"""Base classes for knowledge graph providers."""
-
-import logging
-from abc import ABC, abstractmethod
-from typing import Any, Optional, Sequence, Tuple, Type
-from uuid import UUID
-
-from pydantic import BaseModel
-
-from ..abstractions import (
-    Community,
-    Entity,
     GraphSearchSettings,
     KGCreationSettings,
     KGEnrichmentSettings,
-    KGEntityDeduplicationSettings,
-    KGExtraction,
-    R2RSerializable,
-    Relationship,
 )
+
+from .base import Provider, ProviderConfig
 
 logger = logging.getLogger()
 
@@ -168,14 +132,11 @@ class DatabaseConfig(ProviderConfig):
     collection_summary_task_prompt: str = "default_collection_summary"
     enable_fts: bool = False
 
-    # KG settings
+    # Graph settings
     batch_size: Optional[int] = 1
     kg_store_path: Optional[str] = None
     graph_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings()
     graph_creation_settings: KGCreationSettings = KGCreationSettings()
-    graph_entity_deduplication_settings: KGEntityDeduplicationSettings = (
-        KGEntityDeduplicationSettings()
-    )
     graph_search_settings: GraphSearchSettings = GraphSearchSettings()
 
     # Rate limits
