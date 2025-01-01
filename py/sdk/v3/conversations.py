@@ -28,7 +28,9 @@ class ConversationsSDK:
         Returns:
             dict: Created conversation information
         """
-        data = {"name": name} if name else None
+        data: dict[str, Any] = {}
+        if name:
+            data["name"] = name
 
         return await self.client._make_request(
             "POST",
@@ -47,7 +49,7 @@ class ConversationsSDK:
         List conversations with pagination and sorting options.
 
         Args:
-            ids (Optional[list[Union[str, UUID]]]): List of conversation IDs to retrieve
+            ids (Optional[list[str | UUID]]): List of conversation IDs to retrieve
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
@@ -76,7 +78,7 @@ class ConversationsSDK:
         Get detailed information about a specific conversation.
 
         Args:
-            id (Union[str, UUID]): The ID of the conversation to retrieve
+            id (str | UUID): The ID of the conversation to retrieve
 
         Returns:
             dict: Detailed conversation information
@@ -96,7 +98,7 @@ class ConversationsSDK:
         Update an existing conversation.
 
         Args:
-            id (Union[str, UUID]): The ID of the conversation to update
+            id (str | UUID): The ID of the conversation to update
             name (str): The new name of the conversation
 
         Returns:
@@ -121,7 +123,7 @@ class ConversationsSDK:
         Delete a conversation.
 
         Args:
-            id (Union[str, UUID]): The ID of the conversation to delete
+            id (str | UUID): The ID of the conversation to delete
 
         Returns:
             bool: True if deletion was successful
@@ -144,7 +146,7 @@ class ConversationsSDK:
         Add a new message to a conversation.
 
         Args:
-            id (Union[str, UUID]): The ID of the conversation to add the message to
+            id (str | UUID): The ID of the conversation to add the message to
             content (str): The content of the message
             role (str): The role of the message (e.g., "user" or "assistant")
             parent_id (Optional[str]): The ID of the parent message
@@ -220,7 +222,7 @@ class ConversationsSDK:
         )
 
         # Prepare request data
-        data = {"include_header": include_header}
+        data: dict[str, Any] = {"include_header": include_header}
         if columns:
             data["columns"] = columns
         if filters:
@@ -268,7 +270,7 @@ class ConversationsSDK:
         )
 
         # Prepare request data
-        data = {"include_header": include_header}
+        data: dict[str, Any] = {"include_header": include_header}
         if columns:
             data["columns"] = columns
         if filters:

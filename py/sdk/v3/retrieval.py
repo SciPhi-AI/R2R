@@ -1,4 +1,4 @@
-from typing import AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Optional
 
 from ..models import (
     CombinedSearchResponse,
@@ -41,7 +41,7 @@ class RetrievalSDK:
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
 
-        data = {
+        data: dict[str, Any] = {
             "query": query,
             "search_settings": search_settings,
         }
@@ -68,7 +68,7 @@ class RetrievalSDK:
         if generation_config and not isinstance(generation_config, dict):
             generation_config = generation_config.model_dump()
 
-        data = {
+        data: dict[str, Any] = {
             "messages": [msg.model_dump() for msg in cast_messages],
             "generation_config": generation_config,
         }
@@ -83,7 +83,7 @@ class RetrievalSDK:
         self,
         text: str,
     ):
-        data = {
+        data: dict[str, Any] = {
             "text": text,
         }
 
@@ -123,7 +123,7 @@ class RetrievalSDK:
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
 
-        data = {
+        data: dict[str, Any] = {
             "query": query,
             "rag_generation_config": rag_generation_config,
             "search_settings": search_settings,
@@ -179,7 +179,7 @@ class RetrievalSDK:
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
 
-        data = {
+        data: dict[str, Any] = {
             "rag_generation_config": rag_generation_config or {},
             "search_settings": search_settings,
             "task_prompt_override": task_prompt_override,

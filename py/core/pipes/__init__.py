@@ -5,8 +5,6 @@ from .ingestion.parsing_pipe import ParsingPipe
 from .ingestion.vector_storage_pipe import VectorStoragePipe
 from .kg.clustering import GraphClusteringPipe
 from .kg.community_summary import GraphCommunitySummaryPipe
-from .kg.deduplication import GraphDeduplicationPipe
-from .kg.deduplication_summary import GraphDeduplicationSummaryPipe
 from .kg.description import GraphDescriptionPipe
 from .kg.extraction import GraphExtractionPipe
 from .kg.storage import GraphStoragePipe
@@ -36,6 +34,4 @@ __all__ = [
     "MultiSearchPipe",
     "GraphCommunitySummaryPipe",
     "RoutingSearchPipe",
-    "GraphDeduplicationPipe",
-    "GraphDeduplicationSummaryPipe",
 ]

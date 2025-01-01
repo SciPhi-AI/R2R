@@ -106,17 +106,24 @@ class R2RAuthProvider(AuthProvider):
                 status_code=401, message="Invalid or expired token"
             )
 
-        email: str = payload.get("sub")
-        token_type: str = payload.get("token_type")
-        exp: float = payload.get("exp")
+        email = payload.get("sub")
+        token_type = payload.get("token_type")
+        exp = payload.get("exp")
+
         if email is None or token_type is None or exp is None:
             raise R2RException(status_code=401, message="Invalid token claims")
 
-        exp_datetime = datetime.fromtimestamp(exp, tz=timezone.utc)
+        email_str: str = email
+        token_type_str: str = token_type
+        exp_float: float = exp
+
+        exp_datetime = datetime.fromtimestamp(exp_float, tz=timezone.utc)
         if exp_datetime < datetime.now(timezone.utc):
             raise R2RException(status_code=401, message="Token has expired")
 
-        return TokenData(email=email, token_type=token_type, exp=exp_datetime)
+        return TokenData(
+            email=email_str, token_type=token_type_str, exp=exp_datetime
+        )
 
     async def authenticate_api_key(self, api_key: str) -> Optional[User]:
         """
@@ -479,7 +486,7 @@ class R2RAuthProvider(AuthProvider):
             user_id=user_id
         )
 
-    async def delete_user_api_key(self, user_id: UUID, key_id: UUID) -> bool:
+    async def delete_user_api_key(self, user_id: UUID, key_id: UUID) -> dict:
         return await self.database_provider.users_handler.delete_api_key(
             user_id=user_id,
             key_id=key_id,

@@ -50,9 +50,6 @@ class GraphRouter(BaseRouterV3):
             workflow_messages["build-communities"] = (
                 "Graph enrichment task queued successfully."
             )
-            workflow_messages["entity-deduplication"] = (
-                "KG Entity Deduplication task queued successfully."
-            )
         else:
             workflow_messages["extract-triples"] = (
                 "Document entities and relationships extracted successfully."
@@ -60,89 +57,12 @@ class GraphRouter(BaseRouterV3):
             workflow_messages["build-communities"] = (
                 "Graph communities created successfully."
             )
-            workflow_messages["entity-deduplication"] = (
-                "KG Entity Deduplication completed successfully."
-            )
 
         self.providers.orchestration.register_workflows(
             Workflow.KG,
             self.services.graph,
             workflow_messages,
         )
-
-    async def _deduplicate_entities(
-        self,
-        collection_id: UUID,
-        settings,
-        run_type: Optional[KGRunType] = KGRunType.ESTIMATE,
-        run_with_orchestration: bool = True,
-        auth_user=None,
-    ):
-        """Deduplicates entities in the knowledge graph using LLM-based analysis.
-
-        The deduplication process:
-        1. Groups potentially duplicate entities by name/type
-        2. Uses LLM analysis to determine if entities refer to same thing
-        3. Merges duplicate entities while preserving relationships
-        4. Updates all references to use canonical entity IDs
-
-        Args:
-            id (UUID): Graph containing the entities
-            settings (dict, optional): Deduplication settings including:
-                - graph_entity_deduplication_type (str): Deduplication method (e.g. "by_name")
-                - graph_entity_deduplication_prompt (str): Custom prompt for analysis
-                - max_description_input_length (int): Max chars for entity descriptions
-                - generation_config (dict): LLM generation parameters
-            run_type (KGRunType): Whether to estimate cost or run deduplication
-            run_with_orchestration (bool): Whether to run async with task queue
-            auth_user: Authenticated user making request
-
-        Returns:
-            Result containing:
-                message (str): Status message
-                task_id (UUID): Async task ID if run with orchestration
-
-        Raises:
-            R2RException: If user unauthorized or deduplication fails
-        """
-        if not auth_user.is_superuser:
-            raise R2RException(
-                "Only superusers can deduplicate a graphs entities", 403
-            )
-
-        server_settings = (
-            self.providers.database.config.graph_entity_deduplication_settings
-        )
-        if settings:
-            server_settings = update_settings_from_dict(
-                server_settings, settings
-            )
-
-        # Return cost estimate if requested
-        if run_type == KGRunType.ESTIMATE:
-            return await self.services.graph.get_deduplication_estimate(
-                collection_id, server_settings
-            )
-
-        workflow_input = {
-            "graph_id": str(collection_id),
-            "graph_entity_deduplication_settings": server_settings.model_dump_json(),
-            "user": auth_user.model_dump_json(),
-        }
-
-        if run_with_orchestration:
-            return await self.providers.orchestration.run_workflow(  # type: ignore
-                "entity-deduplication", {"request": workflow_input}, {}
-            )
-        else:
-            from core.main.orchestration import simple_kg_factory
-
-            simple_kg = simple_kg_factory(self.services.graph)
-            await simple_kg["entity-deduplication"](workflow_input)
-            return {  # type: ignore
-                "message": "Entity deduplication completed successfully.",
-                "task_id": None,
-            }
 
     async def _get_collection_id(
         self, collection_id: Optional[UUID], auth_user
@@ -309,7 +229,7 @@ class GraphRouter(BaseRouterV3):
                 offset=0,
                 limit=1,
             )
-            return list_graphs_response["results"][0]
+            return list_graphs_response["results"][0]  # type: ignore
 
         @self.router.post(
             "/graphs/{collection_id}/communities/build",

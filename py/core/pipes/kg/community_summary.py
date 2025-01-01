@@ -300,7 +300,7 @@ class GraphCommunitySummaryPipe(AsyncPipe):
         )
 
         # Organize clusters
-        clusters: dict[Any] = {}
+        clusters: dict[Any, Any] = {}
         for item in community_clusters:
             cluster_id = (
                 item["cluster"]

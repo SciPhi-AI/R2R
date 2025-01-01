@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from shared.api.models.base import (
@@ -32,7 +32,7 @@ class CollectionsSDK:
         Returns:
             dict: Created collection information
         """
-        data = {"name": name, "description": description}
+        data: dict[str, Any] = {"name": name, "description": description}
         return await self.client._make_request(
             "POST",
             "collections",
@@ -104,7 +104,7 @@ class CollectionsSDK:
         Returns:
             dict: Updated collection information
         """
-        data = {}
+        data: dict[str, Any] = {}
         if name is not None:
             data["name"] = name
         if description is not None:
@@ -304,7 +304,7 @@ class CollectionsSDK:
             "run_with_orchestration": run_with_orchestration
         }
 
-        data = {}
+        data: dict[str, Any] = {}
         if settings is not None:
             data["settings"] = settings
 
@@ -312,6 +312,6 @@ class CollectionsSDK:
             "POST",
             f"collections/{str(id)}/extract",
             params=params,
-            json=data if data else None,
+            json=data or None,
             version="v3",
         )

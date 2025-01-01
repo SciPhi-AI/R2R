@@ -17,7 +17,6 @@ from ..abstractions.search import (
     AggregateSearchResult,
     KGCommunityResult,
     KGEntityResult,
-    KGGlobalResult,
     KGRelationshipResult,
 )
 from ..abstractions.vector import VectorQuantizationType

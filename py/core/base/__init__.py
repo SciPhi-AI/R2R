@@ -34,7 +34,6 @@ __all__ = [
     "KGExtraction",
     "Relationship",
     "Community",
-    "StoreType",
     "KGCreationSettings",
     "KGEnrichmentSettings",
     "KGRunType",

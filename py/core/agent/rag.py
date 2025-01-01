@@ -1,5 +1,3 @@
-from typing import Union
-
 from core.agent import R2RAgent, R2RStreamingAgent
 from core.base import (
     format_search_results_for_llm,
@@ -126,9 +124,7 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
     def __init__(
         self,
         database_provider: DatabaseProvider,
-        llm_provider: Union[
-            LiteLLMCompletionProvider, OpenAICompletionProvider
-        ],
+        llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
         search_pipeline: SearchPipeline,
         config: AgentConfig,
     ):
@@ -144,9 +140,7 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
     def __init__(
         self,
         database_provider: DatabaseProvider,
-        llm_provider: Union[
-            LiteLLMCompletionProvider, OpenAICompletionProvider
-        ],
+        llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
         search_pipeline: SearchPipeline,
         config: AgentConfig,
     ):

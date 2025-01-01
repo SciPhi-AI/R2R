@@ -108,7 +108,7 @@ class GraphsSDK:
         Returns:
             dict: Updated graph information
         """
-        data = {}
+        data: dict[str, Any] = {}
         if name is not None:
             data["name"] = name
         if description is not None:
@@ -290,7 +290,7 @@ class GraphsSDK:
         Returns:
             dict: Success message
         """
-        data = {
+        data: dict[str, Any] = {
             "run_type": run_type,
             "run_with_orchestration": run_with_orchestration,
         }

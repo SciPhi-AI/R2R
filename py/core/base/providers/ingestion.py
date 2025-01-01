@@ -16,6 +16,19 @@ if TYPE_CHECKING:
     from core.database import PostgresDatabaseProvider
 
 
+class ChunkingStrategy(str, Enum):
+    RECURSIVE = "recursive"
+    CHARACTER = "character"
+    BASIC = "basic"
+    BY_TITLE = "by_title"
+
+
+class IngestionMode(str, Enum):
+    hi_res = "hi-res"
+    fast = "fast"
+    custom = "custom"
+
+
 class IngestionConfig(ProviderConfig):
     _defaults: ClassVar[dict] = {
         "app": AppConfig(),
@@ -44,7 +57,7 @@ class IngestionConfig(ProviderConfig):
     excluded_parsers: list[str] = Field(
         default_factory=lambda: IngestionConfig._defaults["excluded_parsers"]
     )
-    chunking_strategy: str = Field(
+    chunking_strategy: str | ChunkingStrategy = Field(
         default_factory=lambda: IngestionConfig._defaults["chunking_strategy"]
     )
     chunk_enrichment_settings: ChunkEnrichmentSettings = Field(
@@ -168,16 +181,3 @@ class IngestionProvider(Provider, ABC):
         self.config: IngestionConfig = config
         self.llm_provider = llm_provider
         self.database_provider: "PostgresDatabaseProvider" = database_provider
-
-
-class ChunkingStrategy(str, Enum):
-    RECURSIVE = "recursive"
-    CHARACTER = "character"
-    BASIC = "basic"
-    BY_TITLE = "by_title"
-
-
-class IngestionMode(str, Enum):
-    hi_res = "hi-res"
-    fast = "fast"
-    custom = "custom"

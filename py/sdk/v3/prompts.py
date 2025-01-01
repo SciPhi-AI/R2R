@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Any, Optional
 
 from shared.api.models.base import (
     WrappedBooleanResponse,
@@ -27,7 +27,11 @@ class PromptsSDK:
         Returns:
             dict: Created prompt information
         """
-        data = {"name": name, "template": template, "input_types": input_types}
+        data: dict[str, Any] = {
+            "name": name,
+            "template": template,
+            "input_types": input_types,
+        }
         return await self.client._make_request(
             "POST",
             "prompts",

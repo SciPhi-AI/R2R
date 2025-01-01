@@ -16,9 +16,6 @@ batch_size = 256
   [database.graph_creation_settings]
     generation_config = { model = "azure/gpt-4o-mini" }
 
-  [database.graph_entity_deduplication_settings]
-    generation_config = { model = "azure/gpt-4o-mini" }
-
   [database.graph_enrichment_settings]
     generation_config = { model = "azure/gpt-4o-mini" }
 

@@ -27,7 +27,7 @@ class ChunkEnrichmentSettings(R2RSerializable):
     )
     strategies: list[ChunkEnrichmentStrategy] = Field(
         default=[],
-        description="The strategies to use for chunk enrichment. Union of chunks obtained from each strategy is used as context.",
+        description="The strategies to use for chunk enrichment.",
     )
     forward_chunks: int = Field(
         default=3,

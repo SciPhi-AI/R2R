@@ -29,11 +29,14 @@ class EmailConfig(ProviderConfig):
         ]  # Could add more providers like AWS SES, SendGrid etc.
 
     def validate_config(self) -> None:
-        if self.provider == "sendgrid":
-            if not (self.sendgrid_api_key or os.getenv("SENDGRID_API_KEY")):
-                raise ValueError(
-                    "SendGrid API key is required when using SendGrid provider"
-                )
+        if (
+            self.provider == "sendgrid"
+            and not self.sendgrid_api_key
+            and not os.getenv("SENDGRID_API_KEY")
+        ):
+            raise ValueError(
+                "SendGrid API key is required when using SendGrid provider"
+            )
 
 
 logger = logging.getLogger(__name__)
@@ -46,7 +49,7 @@ class EmailProvider(Provider, ABC):
                 "EmailProvider must be initialized with an EmailConfig"
             )
         super().__init__(config)
-        self.config: EmailConfig = config  # for type hinting
+        self.config: EmailConfig = config
 
     @abstractmethod
     async def send_email(

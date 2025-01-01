@@ -66,10 +66,8 @@ class AuthProvider(Provider, ABC):
         self.database_provider = database_provider
         self.email_provider = email_provider
         super().__init__(config)
-        self.config: AuthConfig = config  # for type hinting
-        self.database_provider: "PostgresDatabaseProvider" = (
-            database_provider  # for type hinting
-        )
+        self.config: AuthConfig = config
+        self.database_provider: "PostgresDatabaseProvider" = database_provider
 
     async def _get_default_admin_user(self) -> User:
         return await self.database_provider.users_handler.get_user_by_email(

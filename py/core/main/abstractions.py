@@ -10,8 +10,6 @@ from core.pipes import (
     EmbeddingPipe,
     GraphClusteringPipe,
     GraphCommunitySummaryPipe,
-    GraphDeduplicationPipe,
-    GraphDeduplicationSummaryPipe,
     GraphDescriptionPipe,
     GraphExtractionPipe,
     GraphSearchSearchPipe,
@@ -76,8 +74,6 @@ class R2RPipes(BaseModel):
     graph_storage_pipe: GraphStoragePipe
     graph_description_pipe: GraphDescriptionPipe
     graph_clustering_pipe: GraphClusteringPipe
-    graph_deduplication_pipe: GraphDeduplicationPipe
-    graph_deduplication_summary_pipe: GraphDeduplicationSummaryPipe
     graph_community_summary_pipe: GraphCommunitySummaryPipe
     rag_pipe: RAGPipe
     streaming_rag_pipe: StreamingRAGPipe

@@ -446,7 +446,7 @@ class DocumentsRouter(BaseRouterV3):
                         )
                     )
                     raw_message["document_id"] = str(document_id)
-                    return raw_message
+                    return raw_message  # type: ignore
 
                 else:
                     logger.info(

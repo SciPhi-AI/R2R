@@ -45,8 +45,8 @@ class DocumentsSDK:
         Args:
             file_path (Optional[str]): The file to upload, if any
             content (Optional[str]): Optional text content to upload, if no file path is provided
-            id (Optional[Union[str, UUID]]): Optional ID to assign to the document
-            collection_ids (Optional[list[Union[str, UUID]]]): Collection IDs to associate with the document. If none are provided, the document will be assigned to the user's default collection.
+            id (Optional[str | UUID]): Optional ID to assign to the document
+            collection_ids (Optional[list[str | UUID]]): Collection IDs to associate with the document. If none are provided, the document will be assigned to the user's default collection.
             metadata (Optional[dict]): Optional metadata to assign to the document
             ingestion_config (Optional[dict]): Optional ingestion configuration to use
             run_with_orchestration (Optional[bool]): Whether to run with orchestration
@@ -64,17 +64,23 @@ class DocumentsSDK:
                 "Only one of `file_path`, `raw_text` or `chunks` may be provided"
             )
 
-        data = {}
+        data: dict[str, Any] = {}
         files = None
 
         if id:
-            data["id"] = str(id)  # json.dumps(str(id))
+            data["id"] = str(id)
         if metadata:
             data["metadata"] = json.dumps(metadata)
         if ingestion_config:
-            if not isinstance(ingestion_config, dict):
-                ingestion_config = ingestion_config.model_dump()
-            ingestion_config["app"] = {}
+            if isinstance(ingestion_config, IngestionMode):
+                ingestion_config = {"mode": ingestion_config.value}
+            app_config: dict[str, Any] = (
+                {}
+                if isinstance(ingestion_config, dict)
+                else ingestion_config["app"]
+            )
+            ingestion_config = dict(ingestion_config)
+            ingestion_config["app"] = app_config
             data["ingestion_config"] = json.dumps(ingestion_config)
         if collection_ids:
             collection_ids = [str(collection_id) for collection_id in collection_ids]  # type: ignore
@@ -129,7 +135,7 @@ class DocumentsSDK:
         Get a specific document by ID.
 
         Args:
-            id (Union[str, UUID]): ID of document to retrieve
+            id (str | UUID): ID of document to retrieve
 
         Returns:
             dict: Document information
@@ -159,11 +165,11 @@ class DocumentsSDK:
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         output_path: Optional[str | Path] = None,
-    ) -> BytesIO:
+    ) -> BytesIO | None:
         """
         Download multiple documents as a zip file.
         """
-        params: list = {}
+        params: dict[str, Any] = {}
         if document_ids:
             params["document_ids"] = [str(doc_id) for doc_id in document_ids]
         if start_date:
@@ -214,8 +220,7 @@ class DocumentsSDK:
             str(output_path) if isinstance(output_path, Path) else output_path
         )
 
-        # Prepare request data
-        data = {"include_header": include_header}
+        data: dict[str, Any] = {"include_header": include_header}
         if columns:
             data["columns"] = columns
         if filters:
@@ -264,7 +269,7 @@ class DocumentsSDK:
         )
 
         # Prepare request data
-        data = {"include_header": include_header}
+        data: dict[str, Any] = {"include_header": include_header}
         if columns:
             data["columns"] = columns
         if filters:
@@ -313,7 +318,7 @@ class DocumentsSDK:
         )
 
         # Prepare request data
-        data = {"include_header": include_header}
+        data: dict[str, Any] = {"include_header": include_header}
         if columns:
             data["columns"] = columns
         if filters:
@@ -347,7 +352,7 @@ class DocumentsSDK:
         Delete a specific document.
 
         Args:
-            id (Union[str, UUID]): ID of document to delete
+            id (str | UUID): ID of document to delete
         """
         return await self.client._make_request(
             "DELETE",
@@ -366,7 +371,7 @@ class DocumentsSDK:
         Get chunks for a specific document.
 
         Args:
-            id (Union[str, UUID]): ID of document to retrieve chunks for
+            id (str | UUID): ID of document to retrieve chunks for
             include_vectors (Optional[bool]): Whether to include vector embeddings in the response
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
@@ -397,7 +402,7 @@ class DocumentsSDK:
         List collections for a specific document.
 
         Args:
-            id (Union[str, UUID]): ID of document to retrieve collections for
+            id (str | UUID): ID of document to retrieve collections for
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
@@ -447,7 +452,7 @@ class DocumentsSDK:
         Extract entities and relationships from a document.
 
         Args:
-            id (Union[str, UUID]): ID of document to extract from
+            id (str, UUID): ID of document to extract from
             run_type (Optional[str]): Whether to return an estimate or run extraction
             settings (Optional[dict]): Settings for extraction process
             run_with_orchestration (Optional[bool]): Whether to run with orchestration
@@ -455,7 +460,7 @@ class DocumentsSDK:
         Returns:
             dict: Extraction results or cost estimate
         """
-        data = {}
+        data: dict[str, Any] = {}
         if run_type:
             data["run_type"] = run_type
         if settings:
@@ -481,7 +486,7 @@ class DocumentsSDK:
         List entities extracted from a document.
 
         Args:
-            id (Union[str, UUID]): ID of document to get entities from
+            id (str | UUID): ID of document to get entities from
             offset (Optional[int]): Number of items to skip
             limit (Optional[int]): Max number of items to return
             include_embeddings (Optional[bool]): Whether to include embeddings
@@ -513,7 +518,7 @@ class DocumentsSDK:
         List relationships extracted from a document.
 
         Args:
-            id (Union[str, UUID]): ID of document to get relationships from
+            id (str | UUID): ID of document to get relationships from
             offset (Optional[int]): Number of items to skip
             limit (Optional[int]): Max number of items to return
             entity_names (Optional[list[str]]): Filter by entity names
@@ -548,7 +553,7 @@ class DocumentsSDK:
         List documents with pagination.
 
         Args:
-            ids (Optional[list[Union[str, UUID]]]): Optional list of document IDs to filter by
+            ids (Optional[list[str | UUID]]): Optional list of document IDs to filter by
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
@@ -590,7 +595,7 @@ class DocumentsSDK:
 
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
-        data = {
+        data: dict[str, Any] = {
             "query": query,
             "search_settings": search_settings,
         }

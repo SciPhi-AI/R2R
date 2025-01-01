@@ -32,14 +32,9 @@ from shared.abstractions.ingestion import (
     ChunkEnrichmentStrategy,
 )
 from shared.abstractions.kg import (
-    GraphBuildSettings,
     GraphCommunitySettings,
-    GraphEntitySettings,
-    GraphRelationshipSettings,
     KGCreationSettings,
     KGEnrichmentSettings,
-    KGEntityDeduplicationSettings,
-    KGEntityDeduplicationType,
     KGRunType,
 )
 from shared.abstractions.llm import (
@@ -60,7 +55,6 @@ from shared.abstractions.search import (
     HybridSearchSettings,
     KGCommunityResult,
     KGEntityResult,
-    KGGlobalResult,
     KGRelationshipResult,
     KGSearchResultType,
     SearchMode,
@@ -132,7 +126,6 @@ __all__ = [
     "KGEntityResult",
     "KGRelationshipResult",
     "KGCommunityResult",
-    "KGGlobalResult",
     "GraphSearchSettings",
     "ChunkSearchSettings",
     "ChunkSearchResult",
@@ -143,12 +136,7 @@ __all__ = [
     # KG abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",
-    "KGEntityDeduplicationSettings",
-    "GraphBuildSettings",
-    "GraphEntitySettings",
-    "GraphRelationshipSettings",
     "GraphCommunitySettings",
-    "KGEntityDeduplicationType",
     "KGRunType",
     # User abstractions
     "Token",

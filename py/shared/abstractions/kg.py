@@ -19,17 +19,6 @@ class KGRunType(str, Enum):
 GraphRunType = KGRunType
 
 
-class KGEntityDeduplicationType(str, Enum):
-    """Type of KG entity deduplication."""
-
-    BY_NAME = "by_name"
-    BY_DESCRIPTION = "by_description"
-    BY_LLM = "by_llm"
-
-    def __str__(self):
-        return self.value
-
-
 class KGCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 
@@ -81,30 +70,6 @@ class KGCreationSettings(R2RSerializable):
     )
 
 
-class KGEntityDeduplicationSettings(R2RSerializable):
-    """Settings for knowledge graph entity deduplication."""
-
-    graph_entity_deduplication_type: KGEntityDeduplicationType = Field(
-        default=KGEntityDeduplicationType.BY_NAME,
-        description="The type of entity deduplication to use.",
-    )
-
-    max_description_input_length: int = Field(
-        default=65536,
-        description="The maximum length of the description for a node in the graph.",
-    )
-
-    graph_entity_deduplication_prompt: str = Field(
-        default="graphrag_entity_deduplication",
-        description="The prompt to use for knowledge graph entity deduplication.",
-    )
-
-    generation_config: GenerationConfig = Field(
-        default_factory=GenerationConfig,
-        description="Configuration for text generation during graph entity deduplication.",
-    )
-
-
 class KGEnrichmentSettings(R2RSerializable):
     """Settings for knowledge graph enrichment."""
 
@@ -135,36 +100,6 @@ class KGEnrichmentSettings(R2RSerializable):
     )
 
 
-class GraphEntitySettings(R2RSerializable):
-    """Settings for knowledge graph entity creation."""
-
-    graph_entity_deduplication_type: KGEntityDeduplicationType = Field(
-        default=KGEntityDeduplicationType.BY_NAME,
-        description="The type of entity deduplication to use.",
-    )
-
-    max_description_input_length: int = Field(
-        default=65536,
-        description="The maximum length of the description for a node in the graph.",
-    )
-
-    graph_entity_deduplication_prompt: str = Field(
-        default="graphrag_entity_deduplication",
-        description="The prompt to use for knowledge graph entity deduplication.",
-    )
-
-    generation_config: GenerationConfig = Field(
-        default_factory=GenerationConfig,
-        description="Configuration for text generation during graph entity deduplication.",
-    )
-
-
-class GraphRelationshipSettings(R2RSerializable):
-    """Settings for knowledge graph relationship creation."""
-
-    pass
-
-
 class GraphCommunitySettings(R2RSerializable):
     """Settings for knowledge graph community enrichment."""
 
@@ -191,23 +126,4 @@ class GraphCommunitySettings(R2RSerializable):
     leiden_params: dict = Field(
         default_factory=dict,
         description="Parameters for the Leiden algorithm.",
-    )
-
-
-class GraphBuildSettings(R2RSerializable):
-    """Settings for knowledge graph build."""
-
-    entity_settings: GraphEntitySettings = Field(
-        default=GraphEntitySettings(),
-        description="Settings for knowledge graph entity creation.",
-    )
-
-    relationship_settings: GraphRelationshipSettings = Field(
-        default=GraphRelationshipSettings(),
-        description="Settings for knowledge graph relationship creation.",
-    )
-
-    community_settings: GraphCommunitySettings = Field(
-        default=GraphCommunitySettings(),
-        description="Settings for knowledge graph community enrichment.",
     )

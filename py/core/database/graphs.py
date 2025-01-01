@@ -21,7 +21,6 @@ from core.base.abstractions import (
     Graph,
     KGCreationSettings,
     KGEnrichmentSettings,
-    KGEntityDeduplicationSettings,
     KGExtractionStatus,
     R2RException,
     Relationship,
@@ -55,9 +54,7 @@ class PostgresEntitiesHandler(Handler):
 
     def _get_entity_table_for_store(self, store_type: StoreType) -> str:
         """Get the appropriate table name for the store type."""
-        if isinstance(store_type, StoreType):
-            store_type = store_type.value
-        return f"{store_type}_entities"
+        return f"{store_type.value}_entities"
 
     def _get_parent_constraint(self, store_type: StoreType) -> str:
         """Get the appropriate foreign key constraint for the store type."""
@@ -495,9 +492,7 @@ class PostgresRelationshipsHandler(Handler):
 
     def _get_relationship_table_for_store(self, store_type: StoreType) -> str:
         """Get the appropriate table name for the store type."""
-        if isinstance(store_type, StoreType):
-            store_type = store_type.value
-        return f"{store_type}_relationships"
+        return f"{store_type.value}_relationships"
 
     def _get_parent_constraint(self, store_type: StoreType) -> str:
         """Get the appropriate foreign key constraint for the store type."""
@@ -994,7 +989,7 @@ class PostgresRelationshipsHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to export data: {str(e)}",
-            )
+            ) from e
 
 
 class PostgresCommunitiesHandler(Handler):
@@ -1168,7 +1163,7 @@ class PostgresCommunitiesHandler(Handler):
     async def delete(
         self,
         parent_id: UUID,
-        community_id: UUID = None,
+        community_id: UUID,
     ) -> None:
         table_name = "graphs_communities"
 
@@ -1186,7 +1181,7 @@ class PostgresCommunitiesHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while deleting the community: {e}",
-            )
+            ) from e
 
     async def delete_all_communities(
         self,
@@ -1208,7 +1203,7 @@ class PostgresCommunitiesHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while deleting communities: {e}",
-            )
+            ) from e
 
     async def get(
         self,
@@ -1396,7 +1391,7 @@ class PostgresCommunitiesHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to export data: {str(e)}",
-            )
+            ) from e
 
 
 class PostgresGraphsHandler(Handler):
@@ -1911,72 +1906,6 @@ class PostgresGraphsHandler(Handler):
             + _get_str_estimation_output(estimated_time),
         }
 
-    async def get_deduplication_estimate(
-        self,
-        collection_id: UUID,
-        kg_deduplication_settings: KGEntityDeduplicationSettings,
-    ):
-        """Get the estimated cost and time for deduplicating entities in a KG."""
-        try:
-            query = f"""
-                SELECT name, count(name)
-                FROM {self._get_table_name("entity")}
-                WHERE document_id = ANY(
-                    SELECT document_id FROM {self._get_table_name("documents")}
-                    WHERE $1 = ANY(collection_ids)
-                )
-                GROUP BY name
-                HAVING count(name) >= 5
-            """
-            entities = await self.connection_manager.fetch_query(
-                query, [collection_id]
-            )
-            num_entities = len(entities)
-
-            estimated_llm_calls = (num_entities, num_entities)
-            tokens_in_millions = (
-                estimated_llm_calls[0] * 1000 / 1000000,
-                estimated_llm_calls[1] * 5000 / 1000000,
-            )
-            cost_per_million = llm_cost_per_million_tokens(
-                kg_deduplication_settings.generation_config.model
-            )
-            estimated_cost = (
-                tokens_in_millions[0] * cost_per_million,
-                tokens_in_millions[1] * cost_per_million,
-            )
-            estimated_time = (
-                tokens_in_millions[0] * 10 / 60,
-                tokens_in_millions[1] * 10 / 60,
-            )
-
-            return {
-                "message": "Ran Deduplication Estimate (not the actual run). Note that these are estimated ranges.",
-                "num_entities": num_entities,
-                "estimated_llm_calls": _get_str_estimation_output(
-                    estimated_llm_calls
-                ),
-                "estimated_total_in_out_tokens_in_millions": _get_str_estimation_output(
-                    tokens_in_millions
-                ),
-                "estimated_cost_in_usd": _get_str_estimation_output(
-                    estimated_cost
-                ),
-                "estimated_total_time_in_minutes": _get_str_estimation_output(
-                    estimated_time
-                ),
-            }
-        except UndefinedTableError:
-            raise R2RException(
-                "Entity embedding table not found. Please run `extract-triples` first.",
-                404,
-            )
-        except Exception as e:
-            logger.error(f"Error in get_deduplication_estimate: {str(e)}")
-            raise HTTPException(
-                500, "Error fetching deduplication estimate."
-            ) from e
-
     async def get_entities(
         self,
         parent_id: UUID,
@@ -2326,7 +2255,6 @@ class PostgresGraphsHandler(Handler):
             QUERY, [tuple(non_null_attrs.values())]
         )
 
-    # async def delete(self, collection_id: UUID, cascade: bool = False) -> None:
     async def delete(self, collection_id: UUID) -> None:
         graphs = await self.get(graph_id=collection_id, offset=0, limit=-1)
 
@@ -2347,33 +2275,6 @@ class PostgresGraphsHandler(Handler):
         QUERY = f"""
             DELETE FROM {self._get_table_name("graphs")} WHERE collection_id = $1
         """
-
-        # if cascade:
-        #     documents = []
-        #     document_response = (
-        #         await self.collections_handler.documents_in_collection(
-        #             offset=0,
-        #             limit=100,
-        #             collection_id=collection_id,
-        #         )
-        #     )["results"]
-        #     documents.extend(document_response)
-        #     document_ids = [doc.id for doc in documents]
-        #     for document_id in document_ids:
-        #         self.entities.delete(
-        #             parent_id=document_id, store_type=StoreType.DOCUMENTS
-        #         )
-        #         self.relationships.delete(
-        #             parent_id=document_id, store_type=StoreType.DOCUMENTS
-        #         )
-
-        #     # setting the extraction status to PENDING for the documents in this collection.
-        #     QUERY = f"""
-        #         UPDATE {self._get_table_name("documents")} SET extraction_status = $1 WHERE $2::uuid = ANY(collection_ids)
-        #     """
-        #     await self.connection_manager.execute_query(
-        #         QUERY, [KGExtractionStatus.PENDING, collection_id]
-        #     )
 
     async def perform_graph_clustering(
         self,
@@ -2563,13 +2464,13 @@ class PostgresGraphsHandler(Handler):
                 relationship_ids_cache.setdefault(relationship.subject, [])
                 if relationship.id is not None:
                     relationship_ids_cache[relationship.subject].append(
-                        relationship.id
+                        int(relationship.id)
                     )
             if relationship.object is not None:
                 relationship_ids_cache.setdefault(relationship.object, [])
                 if relationship.id is not None:
                     relationship_ids_cache[relationship.object].append(
-                        relationship.id
+                        int(relationship.id)
                     )
 
         return relationship_ids_cache
