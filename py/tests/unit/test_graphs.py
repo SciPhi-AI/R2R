@@ -1,10 +1,8 @@
 import uuid
 from enum import Enum
-from uuid import UUID
 
 import pytest
 
-from core.base.abstractions import Community, Entity, Relationship
 from core.base.api.models import GraphResponse
 
 
@@ -36,7 +34,7 @@ async def test_add_entities_and_relationships(graphs_handler):
     # Add an entity
     entity = await graphs_handler.entities.create(
         parent_id=graph_id,
-        store_type=StoreType.GRAPHS.value,
+        store_type=StoreType.GRAPHS,
         name="TestEntity",
         category="Person",
         description="A test entity",
@@ -46,7 +44,7 @@ async def test_add_entities_and_relationships(graphs_handler):
     # Add another entity
     entity2 = await graphs_handler.entities.create(
         parent_id=graph_id,
-        store_type=StoreType.GRAPHS.value,
+        store_type=StoreType.GRAPHS,
         name="AnotherEntity",
         category="Place",
         description="A test place",
@@ -60,7 +58,7 @@ async def test_add_entities_and_relationships(graphs_handler):
         object="AnotherEntity",
         object_id=entity2.id,
         parent_id=graph_id,
-        store_type=StoreType.GRAPHS.value,
+        store_type=StoreType.GRAPHS,
         description="Entity lives in AnotherEntity",
     )
     assert rel.predicate == "lives_in"
@@ -93,12 +91,12 @@ async def test_delete_entities_and_relationships(graphs_handler):
     # Add entities
     e1 = await graphs_handler.entities.create(
         parent_id=graph_id,
-        store_type=StoreType.GRAPHS.value,
+        store_type=StoreType.GRAPHS,
         name="DeleteMe",
     )
     e2 = await graphs_handler.entities.create(
         parent_id=graph_id,
-        store_type=StoreType.GRAPHS.value,
+        store_type=StoreType.GRAPHS,
         name="DeleteMeToo",
     )
 
@@ -110,14 +108,14 @@ async def test_delete_entities_and_relationships(graphs_handler):
         object="DeleteMeToo",
         object_id=e2.id,
         parent_id=graph_id,
-        store_type=StoreType.GRAPHS.value,
+        store_type=StoreType.GRAPHS,
     )
 
     # Delete one entity
     await graphs_handler.entities.delete(
         parent_id=graph_id,
         entity_ids=[e1.id],
-        store_type=StoreType.GRAPHS.value,
+        store_type=StoreType.GRAPHS,
     )
     ents, count = await graphs_handler.get_entities(
         parent_id=graph_id, offset=0, limit=10
@@ -129,7 +127,7 @@ async def test_delete_entities_and_relationships(graphs_handler):
     await graphs_handler.relationships.delete(
         parent_id=graph_id,
         relationship_ids=[rel.id],
-        store_type=StoreType.GRAPHS.value,
+        store_type=StoreType.GRAPHS,
     )
     rels, rel_count = await graphs_handler.get_relationships(
         parent_id=graph_id, offset=0, limit=10
@@ -143,7 +141,7 @@ async def test_communities(graphs_handler):
     coll_id = uuid.uuid4()
     await graphs_handler.communities.create(
         parent_id=coll_id,
-        store_type=StoreType.GRAPHS.value,
+        store_type=StoreType.GRAPHS,
         name="CommunityOne",
         summary="Test community",
         findings=["finding1", "finding2"],
@@ -154,7 +152,7 @@ async def test_communities(graphs_handler):
 
     comms, count = await graphs_handler.communities.get(
         parent_id=coll_id,
-        store_type=StoreType.GRAPHS.value,
+        store_type=StoreType.GRAPHS,
         offset=0,
         limit=10,
     )
@@ -285,7 +283,7 @@ async def test_bulk_entities(graphs_handler):
     for ent in entities_to_add:
         await graphs_handler.entities.create(
             parent_id=graph_id,
-            store_type=StoreType.GRAPHS.value,
+            store_type=StoreType.GRAPHS,
             name=ent["name"],
             category=ent["category"],
             description=ent["description"],
@@ -310,13 +308,13 @@ async def test_relationship_filtering(graphs_handler):
 
     # Add entities
     e1 = await graphs_handler.entities.create(
-        parent_id=graph_id, store_type=StoreType.GRAPHS.value, name="Node1"
+        parent_id=graph_id, store_type=StoreType.GRAPHS, name="Node1"
     )
     e2 = await graphs_handler.entities.create(
-        parent_id=graph_id, store_type=StoreType.GRAPHS.value, name="Node2"
+        parent_id=graph_id, store_type=StoreType.GRAPHS, name="Node2"
     )
     e3 = await graphs_handler.entities.create(
-        parent_id=graph_id, store_type=StoreType.GRAPHS.value, name="Node3"
+        parent_id=graph_id, store_type=StoreType.GRAPHS, name="Node3"
     )
 
     # Add different relationships
@@ -327,7 +325,7 @@ async def test_relationship_filtering(graphs_handler):
         object="Node2",
         object_id=e2.id,
         parent_id=graph_id,
-        store_type=StoreType.GRAPHS.value,
+        store_type=StoreType.GRAPHS,
     )
 
     await graphs_handler.relationships.create(
@@ -337,7 +335,7 @@ async def test_relationship_filtering(graphs_handler):
         object="Node3",
         object_id=e3.id,
         parent_id=graph_id,
-        store_type=StoreType.GRAPHS.value,
+        store_type=StoreType.GRAPHS,
     )
 
     # Get all relationships
@@ -367,15 +365,15 @@ async def test_delete_all_entities(graphs_handler):
 
     # Add some entities
     await graphs_handler.entities.create(
-        parent_id=graph_id, store_type=StoreType.GRAPHS.value, name="E1"
+        parent_id=graph_id, store_type=StoreType.GRAPHS, name="E1"
     )
     await graphs_handler.entities.create(
-        parent_id=graph_id, store_type=StoreType.GRAPHS.value, name="E2"
+        parent_id=graph_id, store_type=StoreType.GRAPHS, name="E2"
     )
 
     # Delete all entities without specifying IDs
     await graphs_handler.entities.delete(
-        parent_id=graph_id, store_type=StoreType.GRAPHS.value
+        parent_id=graph_id, store_type=StoreType.GRAPHS
     )
     ents, count = await graphs_handler.get_entities(
         parent_id=graph_id, offset=0, limit=10
@@ -393,10 +391,10 @@ async def test_delete_all_relationships(graphs_handler):
 
     # Add two entities and a relationship
     e1 = await graphs_handler.entities.create(
-        parent_id=graph_id, store_type=StoreType.GRAPHS.value, name="E1"
+        parent_id=graph_id, store_type=StoreType.GRAPHS, name="E1"
     )
     e2 = await graphs_handler.entities.create(
-        parent_id=graph_id, store_type=StoreType.GRAPHS.value, name="E2"
+        parent_id=graph_id, store_type=StoreType.GRAPHS, name="E2"
     )
     await graphs_handler.relationships.create(
         subject="E1",
@@ -405,12 +403,12 @@ async def test_delete_all_relationships(graphs_handler):
         object="E2",
         object_id=e2.id,
         parent_id=graph_id,
-        store_type=StoreType.GRAPHS.value,
+        store_type=StoreType.GRAPHS,
     )
 
     # Delete all relationships
     await graphs_handler.relationships.delete(
-        parent_id=graph_id, store_type=StoreType.GRAPHS.value
+        parent_id=graph_id, store_type=StoreType.GRAPHS
     )
     rels, rel_count = await graphs_handler.get_relationships(
         parent_id=graph_id, offset=0, limit=10
