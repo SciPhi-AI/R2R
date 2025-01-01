@@ -194,12 +194,12 @@ describe("r2rClient V3 Documents Integration Tests", () => {
     ).toBe(true);
   });
 
-  test("Search with $gte filter should only return documents with numericId >= 400", async () => {
+  test("Search with $gte filter should only return documents with metadata.numericId >= 400", async () => {
     const response = await client.retrieval.search({
       query: "Test query",
       searchSettings: {
         filters: {
-          numericId: { $gte: 400 },
+          "metadata.numericId": { $gte: 400 },
         },
       },
     });
@@ -235,7 +235,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
       query: "Test query",
       searchSettings: {
         filters: {
-          numericId: {
+          "metadata.numericId": {
             $gte: 500,
           },
         },
@@ -267,13 +267,13 @@ describe("r2rClient V3 Documents Integration Tests", () => {
     expect(numericIds.filter((id) => id !== undefined)).toContain(456);
   });
 
-  test("Filter on collection_ids", async () => {
+  test("Filter on collection_id", async () => {
     const response = await client.retrieval.search({
       query: "Test query",
       searchSettings: {
         filters: {
           collection_ids: {
-            $overlap: ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
+            $contains: ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
           },
         },
       },
@@ -283,6 +283,21 @@ describe("r2rClient V3 Documents Integration Tests", () => {
     expect(response.results.chunkSearchResults[0].collectionIds).toContain(
       "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
     );
+  });
+
+  test("Filter on non-existant column", async () => {
+    await expect(
+      client.retrieval.search({
+        query: "Test query",
+        searchSettings: {
+          filters: {
+            nonExistentColumn: {
+              $eq: ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
+            },
+          },
+        },
+      }),
+    ).rejects.toThrow(/Status 400/);
   });
 
   test("Delete marmeladov.txt", async () => {

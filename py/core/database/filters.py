@@ -296,8 +296,7 @@ class SQLFilterBuilder:
         json_col = self.json_column
 
         # Strip "metadata." prefix if present
-        if key.startswith("metadata."):
-            key = key[len("metadata.") :]
+        key = key.removeprefix("metadata.")
 
         # Split on '.' to handle nested keys
         parts = key.split(".")
@@ -310,7 +309,7 @@ class SQLFilterBuilder:
             "$gte",
             "$eq",
             "$ne",
-        )
+        ) and isinstance(val, (int, float, str))
         if op == "$in" or op == "$contains" or isinstance(val, (list, dict)):
             use_text_extraction = False
 
@@ -330,21 +329,20 @@ class SQLFilterBuilder:
             for p in inner_parts:
                 path_expr += f"->'{p}'"
             # Last part
-            if use_text_extraction:
-                path_expr += f"->>'{last_part}'"
-            else:
-                path_expr += f"->'{last_part}'"
+            path_expr += (
+                f"->>'{last_part}'"
+                if use_text_extraction
+                else f"->'{last_part}'"
+            )
 
         # Convert numeric values to strings for text comparison
         def prepare_value(v):
-            if isinstance(v, (int, float)):
-                return str(v)
-            return v
+            return str(v) if isinstance(v, (int, float)) else v
 
-        # Now apply the operator logic
         if op == "$eq":
             if use_text_extraction:
-                self.params.append(prepare_value(val))
+                prepared_val = prepare_value(val)
+                self.params.append(prepared_val)
                 return f"{path_expr} = ${param_idx}"
             else:
                 self.params.append(json.dumps(val))
