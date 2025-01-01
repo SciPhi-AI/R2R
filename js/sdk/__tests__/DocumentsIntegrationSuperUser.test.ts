@@ -9,6 +9,7 @@ const TEST_OUTPUT_DIR = path.join(__dirname, "test-output");
 /**
  * marmeladov.txt will have an id of 83ef5342-4275-5b75-92d6-692fa32f8523
  * The untitled document will have an id of 5556836e-a51c-57c7-916a-de76c79df2b6
+ * The default collection id is 122fdf6a-e116-546b-a8f6-e4cb2e2c0a09
  */
 describe("r2rClient V3 Documents Integration Tests", () => {
   let client: r2rClient;
@@ -35,7 +36,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   test("Create document with file path", async () => {
     const response = await client.documents.create({
       file: { path: "examples/data/marmeladov.txt", name: "marmeladov.txt" },
-      metadata: { title: "marmeladov.txt" },
+      metadata: { title: "marmeladov.txt", numericId: 123 },
     });
 
     expect(response.results.documentId).toBeDefined();
@@ -45,7 +46,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   test("Create document with content", async () => {
     const response = await client.documents.create({
       raw_text: "This is a test document",
-      metadata: { title: "Test Document" },
+      metadata: { title: "Test Document", numericId: 456 },
     });
 
     expect(response.results.documentId).toBeDefined();
@@ -175,7 +176,116 @@ describe("r2rClient V3 Documents Integration Tests", () => {
     ).rejects.toThrow(/Only one of file, raw_text, or chunks may be provided/);
   });
 
-  test("Delete Raskolnikov.txt", async () => {
+  test("Search with $lte filter should only return documents with numericId <= 200", async () => {
+    const response = await client.retrieval.search({
+      query: "Test query",
+      searchSettings: {
+        filters: {
+          numericId: { $lte: 200 },
+        },
+      },
+    });
+
+    expect(response.results.chunkSearchResults).toBeDefined();
+    expect(
+      response.results.chunkSearchResults.every(
+        (result) => result.metadata?.numericId <= 200,
+      ),
+    ).toBe(true);
+  });
+
+  test("Search with $gte filter should only return documents with numericId >= 400", async () => {
+    const response = await client.retrieval.search({
+      query: "Test query",
+      searchSettings: {
+        filters: {
+          numericId: { $gte: 400 },
+        },
+      },
+    });
+
+    expect(response.results.chunkSearchResults).toBeDefined();
+    expect(
+      response.results.chunkSearchResults.every(
+        (result) => result.metadata?.numericId >= 400,
+      ),
+    ).toBe(true);
+  });
+
+  test("Search with $eq filter should only return exact matches", async () => {
+    const response = await client.retrieval.search({
+      query: "Test query",
+      searchSettings: {
+        filters: {
+          numericId: { $eq: 123 },
+        },
+      },
+    });
+
+    expect(response.results.chunkSearchResults).toBeDefined();
+    expect(
+      response.results.chunkSearchResults.every(
+        (result) => result.metadata?.numericId === 123,
+      ),
+    ).toBe(true);
+  });
+
+  test("Search with range filter should return documents within range", async () => {
+    const response = await client.retrieval.search({
+      query: "Test query",
+      searchSettings: {
+        filters: {
+          numericId: {
+            $gte: 500,
+          },
+        },
+      },
+    });
+
+    expect(response.results.chunkSearchResults).toBeDefined();
+    expect(
+      response.results.chunkSearchResults.every((result) => {
+        const numericId = result.metadata?.numericId;
+        return numericId >= 100 && numericId <= 500;
+      }),
+    ).toBe(true);
+  });
+
+  test("Search without filters should return both documents", async () => {
+    const response = await client.retrieval.search({
+      query: "Test query",
+    });
+
+    expect(response.results.chunkSearchResults).toBeDefined();
+    expect(response.results.chunkSearchResults.length).toBeGreaterThan(0);
+
+    const numericIds = response.results.chunkSearchResults.map((result) => {
+      return result.metadata?.numericId || result.metadata?.numericid;
+    });
+
+    expect(numericIds.filter((id) => id !== undefined)).toContain(123);
+    expect(numericIds.filter((id) => id !== undefined)).toContain(456);
+  });
+
+  test("Filter on collection_ids", async () => {
+    const response = await client.retrieval.search({
+      query: "Test query",
+      searchSettings: {
+        filters: {
+          collection_ids: {
+            $overlap: ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
+          },
+        },
+      },
+    });
+    expect(response.results.chunkSearchResults).toBeDefined();
+    expect(response.results.chunkSearchResults.length).toBeGreaterThan(0);
+    expect(response.results.chunkSearchResults[0].collectionIds).toContain(
+      "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+    );
+  });
+
+  test("Delete marmeladov.txt", async () => {
     const response = await client.documents.delete({
       id: "83ef5342-4275-5b75-92d6-692fa32f8523",
     });
