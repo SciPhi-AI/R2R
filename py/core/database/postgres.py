@@ -1,7 +1,6 @@
 # TODO: Clean this up and make it more congruent across the vector database and the relational database.
 import logging
 import os
-import warnings
 from typing import TYPE_CHECKING, Any, Optional
 
 from ..base.abstractions import VectorQuantizationType
@@ -31,15 +30,6 @@ if TYPE_CHECKING:
     from ..providers.crypto import NaClCryptoProvider
 
 logger = logging.getLogger()
-
-
-def get_env_var(new_var, old_var, config_value):
-    value = config_value or os.getenv(new_var) or os.getenv(old_var)
-    if os.getenv(old_var) and not os.getenv(new_var):
-        warnings.warn(
-            f"{old_var} is deprecated and support for it will be removed in release 3.5.0. Use {new_var} instead."
-        )
-    return value
 
 
 class PostgresDatabaseProvider(DatabaseProvider):
@@ -89,29 +79,26 @@ class PostgresDatabaseProvider(DatabaseProvider):
         super().__init__(config)
 
         env_vars = [
-            ("user", "R2R_POSTGRES_USER", "POSTGRES_USER"),
-            ("password", "R2R_POSTGRES_PASSWORD", "POSTGRES_PASSWORD"),
-            ("host", "R2R_POSTGRES_HOST", "POSTGRES_HOST"),
-            ("port", "R2R_POSTGRES_PORT", "POSTGRES_PORT"),
-            ("db_name", "R2R_POSTGRES_DBNAME", "POSTGRES_DBNAME"),
+            ("user", "R2R_POSTGRES_USER"),
+            ("password", "R2R_POSTGRES_PASSWORD"),
+            ("host", "R2R_POSTGRES_HOST"),
+            ("port", "R2R_POSTGRES_PORT"),
+            ("db_name", "R2R_POSTGRES_DBNAME"),
         ]
 
-        for attr, new_var, old_var in env_vars:
-            if value := get_env_var(new_var, old_var, getattr(config, attr)):
+        for attr, env_var in env_vars:
+            if value := (getattr(config, attr) or os.getenv(env_var)):
                 setattr(self, attr, value)
             else:
                 raise ValueError(
-                    f"Error, please set a valid {new_var} environment variable or set a '{attr}' in the 'database' settings of your `r2r.toml`."
+                    f"Error, please set a valid {env_var} environment variable or set a '{attr}' in the 'database' settings of your `r2r.toml`."
                 )
 
         self.port = int(self.port)
 
         self.project_name = (
-            get_env_var(
-                "R2R_PROJECT_NAME",
-                "R2R_POSTGRES_PROJECT_NAME",  # Remove this after deprecation
-                config.app.project_name,
-            )
+            config.app.project_name
+            or os.getenv("R2R_PROJECT_NAME")
             or "r2r_default"
         )
 

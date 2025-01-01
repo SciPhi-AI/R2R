@@ -122,7 +122,7 @@ class PostgresFilesHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to write to large object: {e}",
-            )
+            ) from e
 
     async def retrieve_file(
         self, document_id: UUID

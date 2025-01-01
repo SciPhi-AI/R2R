@@ -4,7 +4,7 @@ from typing import Optional
 from uuid import UUID
 
 from core.base import Handler
-from shared.abstractions import User  # your domain user model
+from shared.abstractions import User
 
 from ..base.providers.database import DatabaseConfig, LimitSettings
 from .base import PostgresConnectionManager
