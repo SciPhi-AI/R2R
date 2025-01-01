@@ -54,9 +54,7 @@ class PostgresEntitiesHandler(Handler):
 
     def _get_entity_table_for_store(self, store_type: StoreType) -> str:
         """Get the appropriate table name for the store type."""
-        if isinstance(store_type, StoreType):
-            store_type = store_type.value
-        return f"{store_type}_entities"
+        return f"{store_type.value}_entities"
 
     def _get_parent_constraint(self, store_type: StoreType) -> str:
         """Get the appropriate foreign key constraint for the store type."""
@@ -494,9 +492,7 @@ class PostgresRelationshipsHandler(Handler):
 
     def _get_relationship_table_for_store(self, store_type: StoreType) -> str:
         """Get the appropriate table name for the store type."""
-        if isinstance(store_type, StoreType):
-            store_type = store_type.value
-        return f"{store_type}_relationships"
+        return f"{store_type.value}_relationships"
 
     def _get_parent_constraint(self, store_type: StoreType) -> str:
         """Get the appropriate foreign key constraint for the store type."""
@@ -2468,13 +2464,13 @@ class PostgresGraphsHandler(Handler):
                 relationship_ids_cache.setdefault(relationship.subject, [])
                 if relationship.id is not None:
                     relationship_ids_cache[relationship.subject].append(
-                        relationship.id
+                        int(relationship.id)
                     )
             if relationship.object is not None:
                 relationship_ids_cache.setdefault(relationship.object, [])
                 if relationship.id is not None:
                     relationship_ids_cache[relationship.object].append(
-                        relationship.id
+                        int(relationship.id)
                     )
 
         return relationship_ids_cache

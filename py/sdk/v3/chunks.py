@@ -102,7 +102,7 @@ class ChunksSDK:
         Delete a specific chunk.
 
         Args:
-            id (Union[str, UUID]): ID of chunk to delete
+            id (str | UUID): ID of chunk to delete
         """
         return await self.client._make_request(
             "DELETE",

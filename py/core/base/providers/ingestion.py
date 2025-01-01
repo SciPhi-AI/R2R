@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic import Field
 
+from core.base import ChunkingStrategy
 from core.base.abstractions import ChunkEnrichmentSettings
 
 from .base import AppConfig, Provider, ProviderConfig
@@ -44,7 +45,7 @@ class IngestionConfig(ProviderConfig):
     excluded_parsers: list[str] = Field(
         default_factory=lambda: IngestionConfig._defaults["excluded_parsers"]
     )
-    chunking_strategy: str = Field(
+    chunking_strategy: str | ChunkingStrategy = Field(
         default_factory=lambda: IngestionConfig._defaults["chunking_strategy"]
     )
     chunk_enrichment_settings: ChunkEnrichmentSettings = Field(

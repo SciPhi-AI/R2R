@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, AsyncGenerator, Optional, Union
+from typing import Any, AsyncGenerator
 
 from core.base import (
     AsyncState,
@@ -113,7 +113,7 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
 
     async def _process_extraction(
         self, extraction: DocumentChunk
-    ) -> Union[VectorEntry, R2RDocumentProcessingError]:
+    ) -> VectorEntry | R2RDocumentProcessingError:
         try:
             if isinstance(extraction.data, bytes):
                 raise ValueError(

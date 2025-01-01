@@ -1,5 +1,5 @@
 # type: ignore
-from typing import IO, AsyncGenerator, Optional, Union
+from typing import IO, AsyncGenerator, Optional
 
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
@@ -29,7 +29,7 @@ class CSVParser(AsyncParser[str | bytes]):
         self.StringIO = StringIO
 
     async def ingest(
-        self, data: Union[str, bytes], *args, **kwargs
+        self, data: str | bytes, *args, **kwargs
     ) -> AsyncGenerator[str, None]:
         """Ingest CSV data and yield text from each row."""
         if isinstance(data, bytes):
@@ -72,7 +72,7 @@ class CSVParserAdvanced(AsyncParser[str | bytes]):
 
     async def ingest(
         self,
-        data: Union[str, bytes],
+        data: str | bytes,
         num_col_times_num_rows: int = 100,
         *args,
         **kwargs,

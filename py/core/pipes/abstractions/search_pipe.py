@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod
-from typing import Any, AsyncGenerator, Optional, Union
+from typing import Any, AsyncGenerator
 from uuid import UUID
 
 from core.base import AsyncPipe, AsyncState, ChunkSearchResult
@@ -15,7 +15,7 @@ class SearchPipe(AsyncPipe[ChunkSearchResult]):
         limit: int = 10
 
     class Input(AsyncPipe.Input):
-        message: Union[AsyncGenerator[str, None], str]
+        message: AsyncGenerator[str, None] | str
 
     def __init__(
         self,

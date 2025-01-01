@@ -8,14 +8,14 @@ All public classes, enums, and functions are re-exported by `vecs.adapters` modu
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Generator, Iterable, Optional, Tuple, Union
+from typing import Any, Generator, Iterable, Optional, Tuple
 from uuid import UUID
 
 from vecs.exc import ArgError
 
-MetadataValues = Union[str, int, float, bool, list[str]]
+MetadataValues = str | int | float | bool | list[str]
 Metadata = dict[str, MetadataValues]
-Numeric = Union[int, float, complex]
+Numeric = int | float | complex
 
 Record = Tuple[
     UUID,

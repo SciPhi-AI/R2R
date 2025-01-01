@@ -63,7 +63,7 @@ class UnstructuredIngestionConfig(IngestionConfig):
     split_pdf_page: Optional[bool] = None
     starting_page_number: Optional[int] = None
     strategy: Optional[str] = None
-    chunking_strategy: Optional[ChunkingStrategy] = None
+    chunking_strategy: Optional[str | ChunkingStrategy] = None
     unique_element_ids: Optional[bool] = None
     xml_keep_tags: Optional[bool] = None
 
@@ -99,8 +99,8 @@ class UnstructuredIngestionProvider(IngestionProvider):
     EXTRA_PARSERS = {
         DocumentType.CSV: {"advanced": parsers.CSVParserAdvanced},  # type: ignore
         DocumentType.PDF: {
-            "unstructured": parsers.PDFParserUnstructured,
-            "zerox": parsers.VLMPDFParser,
+            "unstructured": parsers.PDFParserUnstructured,  # type: ignore
+            "zerox": parsers.VLMPDFParser,  # type: ignore
         },
         DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},  # type: ignore
     }

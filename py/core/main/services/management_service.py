@@ -702,7 +702,9 @@ class ManagementService(Service):
             return {
                 "message": (
                     await self.providers.database.prompts_handler.get_cached_prompt(
-                        prompt_name, inputs, prompt_override
+                        prompt_name=prompt_name,
+                        inputs=inputs,
+                        prompt_override=prompt_override,
                     )
                 )
             }
@@ -838,11 +840,11 @@ class ManagementService(Service):
             filter_user_ids=user_ids,
         )
 
-    async def get_user_max_documents(self, user_id: UUID) -> int:
+    async def get_user_max_documents(self, user_id: UUID) -> int | None:
         return self.config.app.default_max_documents_per_user
 
-    async def get_user_max_chunks(self, user_id: UUID) -> int:
+    async def get_user_max_chunks(self, user_id: UUID) -> int | None:
         return self.config.app.default_max_chunks_per_user
 
-    async def get_user_max_collections(self, user_id: UUID) -> int:
+    async def get_user_max_collections(self, user_id: UUID) -> int | None:
         return self.config.app.default_max_collections_per_user

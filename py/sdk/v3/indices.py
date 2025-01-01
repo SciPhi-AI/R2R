@@ -20,7 +20,7 @@ class IndicesSDK:
         Create a new vector similarity search index in the database.
 
         Args:
-            config (Union[dict, IndexConfig]): Configuration for the vector index.
+            config (dict | IndexConfig): Configuration for the vector index.
             run_with_orchestration (Optional[bool]): Whether to run index creation as an orchestrated task.
         """
         if not isinstance(config, dict):

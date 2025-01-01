@@ -1,5 +1,7 @@
 import logging
 import os
+from typing import Optional
+from uuid import UUID
 
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
@@ -216,3 +218,20 @@ class SupabaseAuthProvider(AuthProvider):
 
     async def send_reset_email(self, email: str) -> dict[str, str]:
         raise NotImplementedError("send_reset_email is not used with Supabase")
+
+    async def create_user_api_key(
+        self, user_id: UUID, name: Optional[str] = None
+    ) -> dict[str, str]:
+        raise NotImplementedError(
+            "API key management is not supported with Supabase authentication"
+        )
+
+    async def list_user_api_keys(self, user_id: UUID) -> list[dict]:
+        raise NotImplementedError(
+            "API key management is not supported with Supabase authentication"
+        )
+
+    async def delete_user_api_key(self, user_id: UUID, key_id: UUID) -> dict:
+        raise NotImplementedError(
+            "API key management is not supported with Supabase authentication"
+        )

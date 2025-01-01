@@ -17,7 +17,23 @@ from core.base import (
     OrchestrationConfig,
 )
 from core.pipelines import RAGPipeline, SearchPipeline
-from core.pipes import GeneratorPipe, MultiSearchPipe, SearchPipe
+from core.pipes import (
+    EmbeddingPipe,
+    GeneratorPipe,
+    GraphClusteringPipe,
+    GraphCommunitySummaryPipe,
+    GraphDescriptionPipe,
+    GraphExtractionPipe,
+    GraphSearchSearchPipe,
+    GraphStoragePipe,
+    MultiSearchPipe,
+    ParsingPipe,
+    RAGPipe,
+    SearchPipe,
+    StreamingRAGPipe,
+    VectorSearchPipe,
+    VectorStoragePipe,
+)
 from core.providers.email.sendgrid import SendGridEmailProvider
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -366,18 +382,20 @@ class R2RPipeFactory:
 
     def create_pipes(
         self,
-        parsing_pipe_override: Optional[AsyncPipe] = None,
-        embedding_pipe_override: Optional[AsyncPipe] = None,
-        graph_extraction_pipe_override: Optional[AsyncPipe] = None,
-        graph_storage_pipe_override: Optional[AsyncPipe] = None,
-        graph_search_pipe_override: Optional[AsyncPipe] = None,
-        vector_storage_pipe_override: Optional[AsyncPipe] = None,
-        vector_search_pipe_override: Optional[AsyncPipe] = None,
-        rag_pipe_override: Optional[AsyncPipe] = None,
-        streaming_rag_pipe_override: Optional[AsyncPipe] = None,
-        graph_description_pipe: Optional[AsyncPipe] = None,
-        graph_clustering_pipe: Optional[AsyncPipe] = None,
-        graph_community_summary_pipe: Optional[AsyncPipe] = None,
+        parsing_pipe_override: Optional[ParsingPipe] = None,
+        embedding_pipe_override: Optional[EmbeddingPipe] = None,
+        graph_extraction_pipe_override: Optional[GraphExtractionPipe] = None,
+        graph_storage_pipe_override: Optional[GraphStoragePipe] = None,
+        graph_search_pipe_override: Optional[GraphSearchSearchPipe] = None,
+        vector_storage_pipe_override: Optional[VectorStoragePipe] = None,
+        vector_search_pipe_override: Optional[VectorSearchPipe] = None,
+        rag_pipe_override: Optional[RAGPipe] = None,
+        streaming_rag_pipe_override: Optional[StreamingRAGPipe] = None,
+        graph_description_pipe: Optional[GraphDescriptionPipe] = None,
+        graph_clustering_pipe: Optional[GraphClusteringPipe] = None,
+        graph_community_summary_pipe: Optional[
+            GraphCommunitySummaryPipe
+        ] = None,
         *args,
         **kwargs,
     ) -> R2RPipes:

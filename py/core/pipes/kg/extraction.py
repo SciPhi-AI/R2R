@@ -3,7 +3,7 @@ import json
 import logging
 import re
 import time
-from typing import Any, AsyncGenerator, Optional, Union
+from typing import Any, AsyncGenerator, Optional
 
 from core.base import (
     AsyncState,
@@ -211,7 +211,7 @@ class GraphExtractionPipe(AsyncPipe[dict]):
         run_id: Any,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[Union[KGExtraction, R2RDocumentProcessingError], None]:
+    ) -> AsyncGenerator[KGExtraction | R2RDocumentProcessingError, None]:
         start_time = time.time()
 
         document_id = input.message["document_id"]
