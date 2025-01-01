@@ -64,7 +64,7 @@ class DocumentsSDK:
                 "Only one of `file_path`, `raw_text` or `chunks` may be provided"
             )
 
-        data = {}
+        data: dict[str, Any] = {}
         files = None
 
         if id:
@@ -214,8 +214,7 @@ class DocumentsSDK:
             str(output_path) if isinstance(output_path, Path) else output_path
         )
 
-        # Prepare request data
-        data = {"include_header": include_header}
+        data: dict[str, Any] = {"include_header": include_header}
         if columns:
             data["columns"] = columns
         if filters:
@@ -264,7 +263,7 @@ class DocumentsSDK:
         )
 
         # Prepare request data
-        data = {"include_header": include_header}
+        data: dict[str, Any] = {"include_header": include_header}
         if columns:
             data["columns"] = columns
         if filters:
@@ -313,7 +312,7 @@ class DocumentsSDK:
         )
 
         # Prepare request data
-        data = {"include_header": include_header}
+        data: dict[str, Any] = {"include_header": include_header}
         if columns:
             data["columns"] = columns
         if filters:
@@ -455,7 +454,7 @@ class DocumentsSDK:
         Returns:
             dict: Extraction results or cost estimate
         """
-        data = {}
+        data: dict[str, Any] = {}
         if run_type:
             data["run_type"] = run_type
         if settings:
@@ -590,7 +589,7 @@ class DocumentsSDK:
 
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
-        data = {
+        data: dict[str, Any] = {
             "query": query,
             "search_settings": search_settings,
         }

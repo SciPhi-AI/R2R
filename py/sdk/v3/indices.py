@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Any, Optional
 
 from shared.api.models.base import WrappedGenericMessageResponse
 from shared.api.models.ingestion.responses import (
@@ -26,7 +26,7 @@ class IndicesSDK:
         if not isinstance(config, dict):
             config = config.model_dump()
 
-        data = {
+        data: dict[str, Any] = {
             "config": config,
             "run_with_orchestration": run_with_orchestration,
         }
@@ -87,32 +87,6 @@ class IndicesSDK:
             f"indices/{table_name}/{index_name}",
             version="v3",
         )
-
-    # async def update_index(
-    #     self,
-    #     id: Union[str, UUID],
-    #     config: dict,  # Union[dict, IndexConfig],
-    #     run_with_orchestration: Optional[bool] = True,
-    # ) -> dict:
-    #     """
-    #     Update an existing index's configuration.
-
-    #     Args:
-    #         id (Union[str, UUID]): The ID of the index to update.
-    #         config (Union[dict, IndexConfig]): The new configuration for the index.
-    #         run_with_orchestration (Optional[bool]): Whether to run the update as an orchestrated task.
-
-    #     Returns:
-    #         WrappedUpdateIndexResponse: The response containing the updated index details.
-    #     """
-    #     if not isinstance(config, dict):
-    #         config = config.model_dump()
-
-    #     data = {
-    #         "config": config,
-    #         "run_with_orchestration": run_with_orchestration,
-    #     }
-    #     return await self.client._make_request("POST", f"indices/{id}", json=data)  # type: ignore
 
     async def delete(
         self,

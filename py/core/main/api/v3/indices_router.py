@@ -230,7 +230,7 @@ class IndicesRouter(BaseRouterV3):
                 },
             )
 
-            return result
+            return result  # type: ignore
 
         @self.router.get(
             "/indices",
@@ -599,7 +599,7 @@ class IndicesRouter(BaseRouterV3):
                 f"Deleting vector index {index_name} from table {table_name}"
             )
 
-            return await self.providers.orchestration.run_workflow(
+            return await self.providers.orchestration.run_workflow(  # type: ignore
                 "delete-vector-index",
                 {
                     "request": {

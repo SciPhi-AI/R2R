@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from shared.api.models.base import WrappedBooleanResponse
@@ -168,7 +168,7 @@ class ChunksSDK:
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
 
-        data = {
+        data: dict[str, Any] = {
             "query": query,
             "search_settings": search_settings,
         }

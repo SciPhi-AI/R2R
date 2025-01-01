@@ -28,7 +28,7 @@ class ConversationsSDK:
         Returns:
             dict: Created conversation information
         """
-        data = {"name": name} if name else None
+        data: dict[str, Any] = {"name": name} if name else None
 
         return await self.client._make_request(
             "POST",
@@ -220,7 +220,7 @@ class ConversationsSDK:
         )
 
         # Prepare request data
-        data = {"include_header": include_header}
+        data: dict[str, Any] = {"include_header": include_header}
         if columns:
             data["columns"] = columns
         if filters:
@@ -268,7 +268,7 @@ class ConversationsSDK:
         )
 
         # Prepare request data
-        data = {"include_header": include_header}
+        data: dict[str, Any] = {"include_header": include_header}
         if columns:
             data["columns"] = columns
         if filters:

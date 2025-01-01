@@ -229,7 +229,7 @@ class GraphRouter(BaseRouterV3):
                 offset=0,
                 limit=1,
             )
-            return list_graphs_response["results"][0]
+            return list_graphs_response["results"][0]  # type: ignore
 
         @self.router.post(
             "/graphs/{collection_id}/communities/build",

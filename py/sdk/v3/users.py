@@ -1,7 +1,6 @@
 from __future__ import annotations  # for Python 3.10+
 
-import json
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from shared.api.models.auth.responses import WrappedTokenResponse
@@ -72,7 +71,7 @@ class UsersSDK:
         Returns:
             UserResponse: New user information
         """
-        data = {"email": email, "password": password}
+        data: dict[str, Any] = {"email": email, "password": password}
         return await self.client._make_request(
             "POST",
             "users/register",
@@ -94,7 +93,7 @@ class UsersSDK:
         Returns:
             dict: Deletion result
         """
-        data = {"password": password}
+        data: dict[str, Any] = {"password": password}
         response = await self.client._make_request(
             "DELETE",
             f"users/{str(id)}",
@@ -118,7 +117,10 @@ class UsersSDK:
         Returns:
             dict: Verification result
         """
-        data = {"email": email, "verification_code": verification_code}
+        data: dict[str, Any] = {
+            "email": email,
+            "verification_code": verification_code,
+        }
         return await self.client._make_request(
             "POST",
             "users/verify-email",
@@ -141,7 +143,7 @@ class UsersSDK:
             raise ValueError(
                 "Cannot log in after setting an API key, please unset your R2R_API_KEY variable or call client.set_api_key(None)"
             )
-        data = {"username": email, "password": password}
+        data: dict[str, Any] = {"username": email, "password": password}
         response = await self.client._make_request(
             "POST",
             "users/login",
@@ -227,7 +229,7 @@ class UsersSDK:
         Returns:
             dict: Change password result
         """
-        data = {
+        data: dict[str, Any] = {
             "current_password": current_password,
             "new_password": new_password,
         }
@@ -270,7 +272,10 @@ class UsersSDK:
         Returns:
             dict: Password reset result
         """
-        data = {"reset_token": reset_token, "new_password": new_password}
+        data: dict[str, Any] = {
+            "reset_token": reset_token,
+            "new_password": new_password,
+        }
         return await self.client._make_request(
             "POST",
             "users/reset-password",
