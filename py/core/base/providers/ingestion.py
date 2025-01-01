@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic import Field
 
-from core.base import ChunkingStrategy
 from core.base.abstractions import ChunkEnrichmentSettings
 
 from .base import AppConfig, Provider, ProviderConfig
@@ -15,6 +14,19 @@ logger = logging.getLogger()
 
 if TYPE_CHECKING:
     from core.database import PostgresDatabaseProvider
+
+
+class ChunkingStrategy(str, Enum):
+    RECURSIVE = "recursive"
+    CHARACTER = "character"
+    BASIC = "basic"
+    BY_TITLE = "by_title"
+
+
+class IngestionMode(str, Enum):
+    hi_res = "hi-res"
+    fast = "fast"
+    custom = "custom"
 
 
 class IngestionConfig(ProviderConfig):
@@ -169,16 +181,3 @@ class IngestionProvider(Provider, ABC):
         self.config: IngestionConfig = config
         self.llm_provider = llm_provider
         self.database_provider: "PostgresDatabaseProvider" = database_provider
-
-
-class ChunkingStrategy(str, Enum):
-    RECURSIVE = "recursive"
-    CHARACTER = "character"
-    BASIC = "basic"
-    BY_TITLE = "by_title"
-
-
-class IngestionMode(str, Enum):
-    hi_res = "hi-res"
-    fast = "fast"
-    custom = "custom"
