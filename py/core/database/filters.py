@@ -140,9 +140,7 @@ class SQLFilterBuilder:
         else:
             self.top_level_columns = set(top_level_columns)
         self.json_column = json_column
-        self.params: list[Any] = (
-            params  # params are mutated during construction
-        )
+        self.params: list[Any] = params  # mutated during construction
         self.mode = mode
 
     def build(self, expr: FilterExpression) -> Tuple[str, list[Any]]:
@@ -171,9 +169,8 @@ class SQLFilterBuilder:
     @staticmethod
     def _psql_quote_literal(value: str) -> str:
         """
-        Safely quote a string literal for PostgreSQL to prevent SQL injection.
-        This is a simple implementation - in production, you should use proper parameterization
-        or your database driver's quoting functions.
+        Simple quoting for demonstration. In production, use parameterized queries or
+        your DB driver's quoting function instead.
         """
         return "'" + value.replace("'", "''") + "'"
 
@@ -183,31 +180,81 @@ class SQLFilterBuilder:
         op = cond.operator
         val = cond.value
 
-        # Handle special logic for collection_id
+        # 1. If the filter references "parent_id", handle it as a single-UUID column for graphs:
+        if key == "parent_id":
+            return self._build_parent_id_condition(op, val)
+
+        # 2. If the filter references "collection_id", handle it as an array column (chunks)
         if key == "collection_id":
             return self._build_collection_id_condition(op, val)
 
+        # 3. Otherwise, decide if it's top-level or metadata:
         if field_is_metadata:
             return self._build_metadata_condition(key, op, val)
         else:
             return self._build_column_condition(key, op, val)
 
-    def _build_collection_id_condition(self, op: str, val: Any) -> str:
+    def _build_parent_id_condition(self, op: str, val: Any) -> str:
+        """
+        For 'graphs' tables, parent_id is a single UUID (not an array).
+        We handle the same ops but in a simpler, single-UUID manner.
+        """
         param_idx = len(self.params) + 1
 
-        # Handle operations
         if op == "$eq":
-            # Expect a single UUID, ensure val is a string
+            if not isinstance(val, str):
+                raise FilterError(
+                    "$eq for parent_id expects a single UUID string"
+                )
+            self.params.append(val)
+            return f"parent_id = ${param_idx}::uuid"
+
+        elif op == "$ne":
+            if not isinstance(val, str):
+                raise FilterError(
+                    "$ne for parent_id expects a single UUID string"
+                )
+            self.params.append(val)
+            return f"parent_id != ${param_idx}::uuid"
+
+        elif op == "$in":
+            # A list of UUIDs, any of which might match
+            if not isinstance(val, list):
+                raise FilterError(
+                    "$in for parent_id expects a list of UUID strings"
+                )
+            self.params.append(val)
+            return f"parent_id = ANY(${param_idx}::uuid[])"
+
+        elif op == "$nin":
+            # A list of UUIDs, none of which may match
+            if not isinstance(val, list):
+                raise FilterError(
+                    "$nin for parent_id expects a list of UUID strings"
+                )
+            self.params.append(val)
+            return f"parent_id != ALL(${param_idx}::uuid[])"
+
+        else:
+            # You could add more (like $gt, $lt, etc.) if your schema wants them
+            raise FilterError(f"Unsupported operator {op} for parent_id")
+
+    def _build_collection_id_condition(self, op: str, val: Any) -> str:
+        """
+        For the 'chunks' table, collection_ids is an array of UUIDs.
+        This logic stays exactly as you had it.
+        """
+        param_idx = len(self.params) + 1
+
+        if op == "$eq":
             if not isinstance(val, str):
                 raise FilterError(
                     "$eq for collection_id expects a single UUID string"
                 )
             self.params.append(val)
-            # Check if val is in the collection_ids array
             return f"${param_idx}::uuid = ANY(collection_ids)"
 
         elif op == "$ne":
-            # Not equal means val is not in collection_ids
             if not isinstance(val, str):
                 raise FilterError(
                     "$ne for collection_id expects a single UUID string"
@@ -216,31 +263,25 @@ class SQLFilterBuilder:
             return f"NOT (${param_idx}::uuid = ANY(collection_ids))"
 
         elif op == "$in":
-            # Expect a list of UUIDs, any of which may match
             if not isinstance(val, list):
                 raise FilterError(
                     "$in for collection_id expects a list of UUID strings"
                 )
             self.params.append(val)
-            # Use overlap to check if any of the given IDs are in collection_ids
             return f"collection_ids && ${param_idx}::uuid[]"
 
         elif op == "$nin":
-            # None of the given UUIDs should be in collection_ids
             if not isinstance(val, list):
                 raise FilterError(
                     "$nin for collection_id expects a list of UUID strings"
                 )
             self.params.append(val)
-            # Negate overlap condition
             return f"NOT (collection_ids && ${param_idx}::uuid[])"
 
         elif op == "$contains":
-            # If someone tries "$contains" with a single collection_id, we can check if collection_ids fully contain it
-            # Usually $contains might mean we want to see if collection_ids contain a certain element.
-            # That's basically $eq logic. For a single value:
             if isinstance(val, str):
-                self.params.append([val])  # Array of one element
+                # single string -> array with one element
+                self.params.append([val])
                 return f"collection_ids @> ${param_idx}::uuid[]"
             elif isinstance(val, list):
                 self.params.append(val)
@@ -278,7 +319,6 @@ class SQLFilterBuilder:
             self.params.append(val)
             return f"{col} @> ${param_idx}"
         elif op == "$any":
-            # If col == "collection_ids" handle special case
             if col == "collection_ids":
                 self.params.append(f"%{val}%")
                 return f"array_to_string({col}, ',') LIKE ${param_idx}"
@@ -315,25 +355,19 @@ class SQLFilterBuilder:
 
         # Build the JSON path expression
         if len(parts) == 1:
-            # Single part key
             if use_text_extraction:
                 path_expr = f"{json_col}->>'{parts[0]}'"
             else:
                 path_expr = f"{json_col}->'{parts[0]}'"
         else:
-            # Multiple segments
-            inner_parts = parts[:-1]
-            last_part = parts[-1]
-            # Build chain for the inner parts
             path_expr = json_col
-            for p in inner_parts:
+            for p in parts[:-1]:
                 path_expr += f"->'{p}'"
-            # Last part
-            path_expr += (
-                f"->>'{last_part}'"
-                if use_text_extraction
-                else f"->'{last_part}'"
-            )
+            last_part = parts[-1]
+            if use_text_extraction:
+                path_expr += f"->>'{last_part}'"
+            else:
+                path_expr += f"->'{last_part}'"
 
         # Convert numeric values to strings for text comparison
         def prepare_value(v):
@@ -370,7 +404,6 @@ class SQLFilterBuilder:
             if not isinstance(val, list):
                 raise FilterError("argument to $in filter must be a list")
 
-            # For regular scalar values, use ANY with text extraction
             if use_text_extraction:
                 str_vals = [
                     str(v) if isinstance(v, (int, float)) else v for v in val
@@ -411,7 +444,6 @@ def apply_filters(
     """
     Apply filters with consistent WHERE clause handling
     """
-
     if not filters:
         return "", params
 
