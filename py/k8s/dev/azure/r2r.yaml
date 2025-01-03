@@ -78,14 +78,14 @@ spec:
             path: /v2/health
           initialDelaySeconds: 15
           periodSeconds: 10
-        volumeMounts:
-          - mountPath: /mnt/r2r-config
-            name: r2r-config-mount
+#        volumeMounts:
+#          - mountPath: /mnt/r2r-config
+#            name: r2r-config-mount
       restartPolicy: Always
-      volumes:
-        - name: r2r-config-mount
-          persistentVolumeClaim:
-            claimName: pvc-r2r-config-blob
+#      volumes:
+#        - name: r2r-config-mount
+#          persistentVolumeClaim:
+#            claimName: pvc-r2r-config-blob
 ---
 apiVersion: v1
 kind: Service

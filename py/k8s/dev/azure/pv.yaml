@@ -14,16 +14,16 @@ spec:
       storage: 256Gi
 
 ---
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: pvc-r2r-config-blob
-  namespace: r2r-dev
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 256Mi
-  volumeName: pv-r2r-config-blob
-  storageClassName: azureblob-nfs-premium
+#kind: PersistentVolumeClaim
+#apiVersion: v1
+#metadata:
+#  name: pvc-r2r-config-blob
+#  namespace: r2r-dev
+#spec:
+#  accessModes:
+#    - ReadWriteMany
+#  resources:
+#    requests:
+#      storage: 256Mi
+#  volumeName: pv-r2r-config-blob
+#  storageClassName: azureblob-nfs-premium
