@@ -596,10 +596,7 @@ def hatchet_ingestion_factory(
 
                 document_info = documents_overview[0]
 
-                if (
-                    not document_info.ingestion_status
-                    == IngestionStatus.SUCCESS
-                ):
+                if document_info.ingestion_status != IngestionStatus.SUCCESS:
                     await self.ingestion_service.update_document_status(
                         document_info, status=IngestionStatus.FAILED
                     )
