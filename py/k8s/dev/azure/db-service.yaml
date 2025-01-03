@@ -5,4 +5,4 @@ metadata:
   namespace: r2r-dev
 spec:
   type: ExternalName
-  externalName:  pg-amplifi-server-dev.postgres.database.azure.com
+  externalName:  pg-amplifi-r2r-server-dev-01.postgres.database.azure.com
