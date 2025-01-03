@@ -409,8 +409,7 @@ class SearchSettings(R2RSerializable):
         super().__init__(**data)
 
     def model_dump(self, *args, **kwargs):
-        dump = super().model_dump(*args, **kwargs)
-        return dump
+        return super().model_dump(*args, **kwargs)
 
     @classmethod
     def get_default(cls, mode: str) -> "SearchSettings":
