@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import json
 import logging
 import math
@@ -9,7 +10,11 @@ from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
 from core import GenerationConfig
 from core.base import OrchestrationProvider, R2RException
-from core.base.abstractions import KGEnrichmentStatus, KGExtractionStatus
+from core.base.abstractions import (
+    KGEnrichmentStatus,
+    KGExtraction,
+    KGExtractionStatus,
+)
 
 from ...services import GraphService
 
@@ -47,7 +52,7 @@ def hatchet_kg_factory(
 
             try:
                 output_data[key] = value.model_dump()
-            except:
+            except Exception:
                 # Handle nested dictionaries that might contain settings
                 if isinstance(value, dict):
                     output_data[key] = convert_to_dict(value)
@@ -84,24 +89,22 @@ def hatchet_kg_factory(
                 input_data[key] = uuid.UUID(value)
 
             if key == "graph_creation_settings":
-                try:
+                with contextlib.suppress(Exception):
                     input_data[key] = json.loads(value)
-                except:
-                    pass
                 input_data[key]["generation_config"] = GenerationConfig(
                     **input_data[key]["generation_config"]
                 )
             if key == "graph_enrichment_settings":
-                try:
+                with contextlib.suppress(Exception):
                     input_data[key] = json.loads(value)
-                except:
-                    pass
 
             if key == "generation_config":
                 input_data[key] = GenerationConfig(**input_data[key])
         return input_data
 
-    @orchestration_provider.workflow(name="kg-extract", timeout="360m")
+    @orchestration_provider.workflow(
+        name="kg-extract", schedule_timeout="360m"
+    )
     class KGExtractDescribeEmbedWorkflow:
         def __init__(self, kg_service: GraphService):
             self.kg_service = kg_service
@@ -166,10 +169,6 @@ def hatchet_kg_factory(
                     "result": f"successfully submitted extraction request {document_id} in {time.time() - start_time:.2f} seconds",
                 }
 
-            # await self.kg_service.kg_relationships_extraction(
-            #     document_id=document_id,
-            #     **input_data["graph_creation_settings"],
-            # )
             else:
                 extractions = []
                 async for extraction in service.kg_extraction(
@@ -177,7 +176,16 @@ def hatchet_kg_factory(
                     **input_data["graph_creation_settings"],
                 ):
                     extractions.append(extraction)
-                await service.store_kg_extractions(extractions)
+
+                valid_extractions = [
+                    e for e in extractions if isinstance(e, KGExtraction)
+                ]
+                if valid_extractions:
+                    await service.store_kg_extractions(valid_extractions)
+                if len(valid_extractions) != len(extractions):
+                    logger.warning(
+                        f"Some extractions failed for document {document_id}"
+                    )
 
                 logger.info(
                     f"Successfully ran kg relationships extraction for document {document_id}"
@@ -235,7 +243,7 @@ def hatchet_kg_factory(
                     f"Failed to update document status for {document_id}: {e}"
                 )
 
-    @orchestration_provider.workflow(name="extract-triples", timeout="600m")
+    @orchestration_provider.workflow(name="extract-triples", timeout="360m")
     class CreateGraphWorkflow:
         @orchestration_provider.concurrency(  # type: ignore
             max_runs=orchestration_provider.config.kg_concurrency_limit,  # type: ignore
@@ -243,17 +251,15 @@ def hatchet_kg_factory(
         )
         def concurrency(self, context: Context) -> str:
             # TODO: Possible bug in hatchet, the job can't find context.workflow_input() when rerun
-            try:
+            with contextlib.suppress(Exception):
                 return str(
                     context.workflow_input()["request"]["collection_id"]
                 )
-            except Exception as e:
-                pass
 
         def __init__(self, kg_service: GraphService):
             self.kg_service = kg_service
 
-        @orchestration_provider.step(retries=1)
+        @orchestration_provider.step(retries=1, timeout="360m")
         async def kg_extraction(self, context: Context) -> dict:
             request = context.workflow_input()["request"]
 
@@ -318,7 +324,9 @@ def hatchet_kg_factory(
                     "document_id": str(document_id),
                 }
 
-        @orchestration_provider.step(retries=1, parents=["kg_extraction"])
+        @orchestration_provider.step(
+            retries=1, timeout="360m", parents=["kg_extraction"]
+        )
         async def kg_entity_description(self, context: Context) -> dict:
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
@@ -369,7 +377,7 @@ def hatchet_kg_factory(
         def __init__(self, kg_service: GraphService):
             self.kg_service = kg_service
 
-        @orchestration_provider.step(retries=1, parents=[], timeout="360m")
+        @orchestration_provider.step(retries=1, timeout="360m", parents=[])
         async def kg_clustering(self, context: Context) -> dict:
             logger.info("Running KG Clustering")
             input_data = get_input_data_dict(
@@ -410,7 +418,7 @@ def hatchet_kg_factory(
                 )
 
                 return {
-                    "result": f"successfully ran kg clustering",
+                    "result": "successfully ran kg clustering",
                     "kg_clustering": kg_clustering_results,
                 }
             except Exception as e:
@@ -421,7 +429,9 @@ def hatchet_kg_factory(
                 )
                 raise e
 
-        @orchestration_provider.step(retries=1, parents=["kg_clustering"])
+        @orchestration_provider.step(
+            retries=1, timeout="360m", parents=["kg_clustering"]
+        )
         async def kg_community_summary(self, context: Context) -> dict:
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]

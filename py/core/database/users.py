@@ -91,7 +91,7 @@ class PostgresUserHandler(Handler):
                     "profile_picture",
                     "bio",
                     "collection_ids",
-                    "limits_overrides",  # Fetch JSONB column
+                    "limits_overrides",
                 ]
             )
             .where("id = $1")
@@ -115,7 +115,6 @@ class PostgresUserHandler(Handler):
             profile_picture=result["profile_picture"],
             bio=result["bio"],
             collection_ids=result["collection_ids"],
-            # Add the new field
             limits_overrides=json.loads(result["limits_overrides"] or "{}"),
         )
 
@@ -288,8 +287,8 @@ class PostgresUserHandler(Handler):
                 user.name,
                 user.profile_picture,
                 user.bio,
-                user.collection_ids or [],  # Ensure null becomes empty array
-                json.dumps(final_limits),  # Already handled null case
+                user.collection_ids or [],
+                json.dumps(final_limits),
                 user.id,
             ],
         )
