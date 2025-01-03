@@ -6,59 +6,71 @@ import pytest
 from r2r import R2RClient, R2RException
 
 
-def test_create_document_with_file(client):
+@pytest.fixture
+def cleanup_documents(client):
+    doc_ids = []
+
+    def _track_document(doc_id):
+        doc_ids.append(doc_id)
+        return doc_id
+
+    yield _track_document
+
+    # Cleanup all documents
+    for doc_id in doc_ids:
+        try:
+            client.documents.delete(id=doc_id)
+        except R2RException:
+            pass
+
+
+def test_create_document_with_file(client, cleanup_documents):
     resp = client.documents.create(
         file_path="core/examples/data/aristotle.txt",
         run_with_orchestration=False,
     )["results"]
+    doc_id = cleanup_documents(resp["document_id"])
     assert (
         "document_id" in resp and resp["document_id"]
     ), "No document_id returned after file ingestion"
-    # Cleanup
-    client.documents.delete(id=resp["document_id"])
 
 
-def test_create_document_with_raw_text(client):
+def test_create_document_with_raw_text(client, cleanup_documents):
     resp = client.documents.create(
         raw_text="This is raw text content.", run_with_orchestration=False
     )["results"]
-    doc_id = resp["document_id"]
+    doc_id = cleanup_documents(resp["document_id"])
     assert doc_id, "No document_id returned after raw text ingestion"
     # Verify retrieval
     retrieved = client.documents.retrieve(id=doc_id)["results"]
     assert (
         retrieved["id"] == doc_id
     ), "Failed to retrieve the ingested raw text document"
-    # Cleanup
-    client.documents.delete(id=doc_id)
 
 
-def test_create_document_with_chunks(client):
+def test_create_document_with_chunks(client, cleanup_documents):
     suffix = str(uuid.uuid4())[:8]
     resp = client.documents.create(
         chunks=["Chunk one" + suffix, "Chunk two" + suffix],
         run_with_orchestration=False,
     )["results"]
-    doc_id = resp["document_id"]
+    doc_id = cleanup_documents(resp["document_id"])
     assert doc_id, "No document_id returned after chunk ingestion"
     retrieved = client.documents.retrieve(id=doc_id)["results"]
     assert (
         retrieved["id"] == doc_id
     ), "Failed to retrieve the chunk-based document"
-    # Cleanup
-    client.documents.delete(id=doc_id)
 
 
-def test_create_document_different_modes(client):
+def test_create_document_different_modes(client, cleanup_documents):
     # hi-res mode
     hi_res_resp = client.documents.create(
         raw_text="High resolution doc.",
         ingestion_mode="hi-res",
         run_with_orchestration=False,
     )["results"]
-    hi_res_id = hi_res_resp["document_id"]
+    hi_res_id = cleanup_documents(hi_res_resp["document_id"])
     assert hi_res_id, "No doc_id returned for hi-res ingestion"
-    client.documents.delete(id=hi_res_id)
 
     # fast mode
     fast_resp = client.documents.create(
@@ -66,9 +78,8 @@ def test_create_document_different_modes(client):
         ingestion_mode="fast",
         run_with_orchestration=False,
     )["results"]
-    fast_id = fast_resp["document_id"]
+    fast_id = cleanup_documents(fast_resp["document_id"])
     assert fast_id, "No doc_id returned for fast ingestion"
-    client.documents.delete(id=fast_id)
 
 
 def test_list_documents(client, test_document):
@@ -186,7 +197,7 @@ def test_search_documents(client, test_document):
     ), "Search results not a list"
 
 
-def test_list_document_chunks(mutable_client):
+def test_list_document_chunks(mutable_client, cleanup_documents):
     temp_user = f"{uuid.uuid4()}@me.com"
     mutable_client.users.register(temp_user, "password")
     mutable_client.users.login(temp_user, "password")
@@ -194,19 +205,20 @@ def test_list_document_chunks(mutable_client):
     resp = mutable_client.documents.create(
         chunks=["C1", "C2", "C3"], run_with_orchestration=False
     )["results"]
-    doc_id = resp["document_id"]
+    doc_id = cleanup_documents(resp["document_id"])
     chunks_resp = mutable_client.documents.list_chunks(id=doc_id)
     results = chunks_resp["results"]
     assert len(results) == 3, "Expected 3 chunks"
-    mutable_client.documents.delete(id=doc_id)
     mutable_client.users.logout()
 
 
-def test_search_documents_extended(client):
-    doc_id = client.documents.create(
-        raw_text="Aristotle was a Greek philosopher.",
-        run_with_orchestration=False,
-    )["results"]["document_id"]
+def test_search_documents_extended(client, cleanup_documents):
+    doc_id = cleanup_documents(
+        client.documents.create(
+            raw_text="Aristotle was a Greek philosopher.",
+            run_with_orchestration=False,
+        )["results"]["document_id"]
+    )
 
     time.sleep(1)  # If indexing is asynchronous
     search_results = client.documents.search(
@@ -216,7 +228,6 @@ def test_search_documents_extended(client):
     )
     assert "results" in search_results, "No results key in search response"
     assert len(search_results["results"]) > 0, "No documents found"
-    client.documents.delete(id=doc_id)
 
 
 def test_retrieve_document_not_found(client):
@@ -251,11 +262,13 @@ def test_get_document_collections_non_superuser(client):
     ), "Expected 403 for non-superuser collections access"
 
 
-def test_access_document_not_owned(client):
+def test_access_document_not_owned(client, cleanup_documents):
     # Create a doc as superuser
-    doc_id = client.documents.create(
-        raw_text="Owner doc test", run_with_orchestration=False
-    )["results"]["document_id"]
+    doc_id = cleanup_documents(
+        client.documents.create(
+            raw_text="Owner doc test", run_with_orchestration=False
+        )["results"]["document_id"]
+    )
 
     # Now try to access with a non-superuser
     non_super_client = R2RClient(client.base_url)
@@ -269,29 +282,22 @@ def test_access_document_not_owned(client):
         exc_info.value.status_code == 403
     ), "Wrong error code for unauthorized access"
 
-    # Cleanup
-    client.documents.delete(id=doc_id)
 
-
-def test_list_documents_with_pagination(mutable_client):
+def test_list_documents_with_pagination(mutable_client, cleanup_documents):
     temp_user = f"{uuid.uuid4()}@me.com"
     mutable_client.users.register(temp_user, "password")
     mutable_client.users.login(temp_user, "password")
 
-    doc_ids = []
     for i in range(3):
-        resp = mutable_client.documents.create(
-            raw_text=f"Doc {i}", run_with_orchestration=False
-        )["results"]
-        doc_ids.append(resp["document_id"])
+        cleanup_documents(
+            mutable_client.documents.create(
+                raw_text=f"Doc {i}", run_with_orchestration=False
+            )["results"]["document_id"]
+        )
 
     listed = mutable_client.documents.list(limit=2, offset=0)
     results = listed["results"]
     assert len(results) == 2, "Expected 2 results for paginated listing"
-
-    # Cleanup
-    for d in doc_ids:
-        mutable_client.documents.delete(id=d)
 
 
 def test_ingest_invalid_chunks(client):
@@ -317,17 +323,21 @@ def test_ingest_too_many_chunks(client):
     ), "Wrong error code for exceeding max chunks"
 
 
-def test_delete_by_complex_filter(client):
-    doc1 = client.documents.create(
-        raw_text="Doc with tag A",
-        metadata={"tag": "A"},
-        run_with_orchestration=False,
-    )["results"]["document_id"]
-    doc2 = client.documents.create(
-        raw_text="Doc with tag B",
-        metadata={"tag": "B"},
-        run_with_orchestration=False,
-    )["results"]["document_id"]
+def test_delete_by_complex_filter(client, cleanup_documents):
+    doc1 = cleanup_documents(
+        client.documents.create(
+            raw_text="Doc with tag A",
+            metadata={"tag": "A"},
+            run_with_orchestration=False,
+        )["results"]["document_id"]
+    )
+    doc2 = cleanup_documents(
+        client.documents.create(
+            raw_text="Doc with tag B",
+            metadata={"tag": "B"},
+            run_with_orchestration=False,
+        )["results"]["document_id"]
+    )
 
     filters = {"$or": [{"tag": {"$eq": "A"}}, {"tag": {"$eq": "B"}}]}
     del_resp = client.documents.delete_by_filter(filters)["results"]
@@ -342,12 +352,14 @@ def test_delete_by_complex_filter(client):
         ), f"Document {d_id} still exists after deletion"
 
 
-def test_search_documents_no_match(client):
-    doc_id = client.documents.create(
-        raw_text="Just a random document",
-        metadata={"category": "unrelated"},
-        run_with_orchestration=False,
-    )["results"]["document_id"]
+def test_search_documents_no_match(client, cleanup_documents):
+    doc_id = cleanup_documents(
+        client.documents.create(
+            raw_text="Just a random document",
+            metadata={"category": "unrelated"},
+            run_with_orchestration=False,
+        )["results"]["document_id"]
+    )
 
     # Search for non-existent category
     search_results = client.documents.search(
@@ -361,9 +373,6 @@ def test_search_documents_no_match(client):
     assert "results" in search_results, "Search missing results key"
     assert len(search_results["results"]) == 0, "Expected zero results"
 
-    # Cleanup
-    client.documents.delete(id=doc_id)
-
 
 from datetime import datetime
 
@@ -372,47 +381,61 @@ import pytest
 from r2r import R2RException
 
 
-def test_delete_by_workflow_metadata(client):
+def test_delete_by_workflow_metadata(client, cleanup_documents):
     """Test deletion by workflow state metadata."""
     # Create test documents with workflow metadata
     random_suffix = uuid.uuid4()
-    docs = [
-        client.documents.create(
-            raw_text="Draft document 1" + str(random_suffix),
-            metadata={
-                "workflow": {
-                    "state": "draft",
-                    "assignee": "user1",
-                    "review_count": 0,
-                }
-            },
-            run_with_orchestration=False,
-        )["results"]["document_id"],
-        client.documents.create(
-            raw_text="Draft document 2" + str(random_suffix),
-            metadata={
-                "workflow": {
-                    "state": "draft",
-                    "assignee": "user2",
-                    "review_count": 1,
-                }
-            },
-            run_with_orchestration=False,
-        )["results"]["document_id"],
-        client.documents.create(
-            raw_text="Published document" + str(random_suffix),
-            metadata={
-                "workflow": {
-                    "state": "published",
-                    "assignee": "user1",
-                    "review_count": 2,
-                }
-            },
-            run_with_orchestration=False,
-        )["results"]["document_id"],
-    ]
+    docs = []
 
     try:
+        docs.append(
+            cleanup_documents(
+                client.documents.create(
+                    raw_text="Draft document 1" + str(random_suffix),
+                    metadata={
+                        "workflow": {
+                            "state": "draft",
+                            "assignee": "user1",
+                            "review_count": 0,
+                        }
+                    },
+                    run_with_orchestration=False,
+                )["results"]["document_id"]
+            )
+        )
+
+        docs.append(
+            cleanup_documents(
+                client.documents.create(
+                    raw_text="Draft document 2" + str(random_suffix),
+                    metadata={
+                        "workflow": {
+                            "state": "draft",
+                            "assignee": "user2",
+                            "review_count": 1,
+                        }
+                    },
+                    run_with_orchestration=False,
+                )["results"]["document_id"]
+            )
+        )
+
+        docs.append(
+            cleanup_documents(
+                client.documents.create(
+                    raw_text="Published document" + str(random_suffix),
+                    metadata={
+                        "workflow": {
+                            "state": "published",
+                            "assignee": "user1",
+                            "review_count": 2,
+                        }
+                    },
+                    run_with_orchestration=False,
+                )["results"]["document_id"]
+            )
+        )
+
         # Delete drafts with no reviews
         filters = {
             "$and": [
@@ -433,44 +456,46 @@ def test_delete_by_workflow_metadata(client):
         assert client.documents.retrieve(id=docs[1])
         assert client.documents.retrieve(id=docs[2])
 
-    finally:
-        # Cleanup remaining documents
-        for doc_id in docs[1:]:
-            try:
-                client.documents.delete(id=doc_id)
-            except R2RException:
-                pass
+    except Exception:
+        raise
 
 
-def test_delete_by_classification_metadata(client):
+def test_delete_by_classification_metadata(client, cleanup_documents):
     """Test deletion by document classification metadata."""
-    # Create test documents with classification metadata
-    docs = [
-        client.documents.create(
-            raw_text="Confidential document",
-            metadata={
-                "classification": {
-                    "level": "confidential",
-                    "department": "HR",
-                    "retention_years": 7,
-                }
-            },
-            run_with_orchestration=False,
-        )["results"]["document_id"],
-        client.documents.create(
-            raw_text="Public document",
-            metadata={
-                "classification": {
-                    "level": "public",
-                    "department": "Marketing",
-                    "retention_years": 1,
-                }
-            },
-            run_with_orchestration=False,
-        )["results"]["document_id"],
-    ]
-
+    docs = []
     try:
+        docs.append(
+            cleanup_documents(
+                client.documents.create(
+                    raw_text="Confidential document",
+                    metadata={
+                        "classification": {
+                            "level": "confidential",
+                            "department": "HR",
+                            "retention_years": 7,
+                        }
+                    },
+                    run_with_orchestration=False,
+                )["results"]["document_id"]
+            )
+        )
+
+        docs.append(
+            cleanup_documents(
+                client.documents.create(
+                    raw_text="Public document",
+                    metadata={
+                        "classification": {
+                            "level": "public",
+                            "department": "Marketing",
+                            "retention_years": 1,
+                        }
+                    },
+                    run_with_orchestration=False,
+                )["results"]["document_id"]
+            )
+        )
+
         # Delete HR documents with high retention
         filters = {
             "$and": [
@@ -490,48 +515,51 @@ def test_delete_by_classification_metadata(client):
         # Verify public doc still exists
         assert client.documents.retrieve(id=docs[1])
 
-    finally:
-        # Cleanup remaining document
-        try:
-            client.documents.delete(id=docs[1])
-        except R2RException:
-            pass
+    except Exception:
+        raise
 
 
-def test_delete_by_version_metadata(client):
+def test_delete_by_version_metadata(client, cleanup_documents):
     """Test deletion by version and status metadata with array conditions."""
     suffix = uuid.uuid4()
-    docs = [
-        client.documents.create(
-            raw_text="Old version document" + str(suffix),
-            metadata={
-                "version_info": {
-                    "number": "1.0.0",
-                    "status": "deprecated",
-                    "tags": ["legacy", "unsupported"],
-                },
-            },
-            run_with_orchestration=False,
-        )["results"]["document_id"],
-        client.documents.create(
-            raw_text="Current version document" + str(suffix),
-            metadata={
-                "version_info": {
-                    "number": "2.0.0",
-                    "status": "current",
-                    "tags": ["stable", "supported"],
-                },
-            },
-            run_with_orchestration=False,
-        )["results"]["document_id"],
-    ]
-
+    docs = []
     try:
+        docs.append(
+            cleanup_documents(
+                client.documents.create(
+                    raw_text="Old version document" + str(suffix),
+                    metadata={
+                        "version_info": {
+                            "number": "1.0.0",
+                            "status": "deprecated",
+                            "tags": ["legacy", "unsupported"],
+                        },
+                    },
+                    run_with_orchestration=False,
+                )["results"]["document_id"]
+            )
+        )
+
+        docs.append(
+            cleanup_documents(
+                client.documents.create(
+                    raw_text="Current version document" + str(suffix),
+                    metadata={
+                        "version_info": {
+                            "number": "2.0.0",
+                            "status": "current",
+                            "tags": ["stable", "supported"],
+                        },
+                    },
+                    run_with_orchestration=False,
+                )["results"]["document_id"]
+            )
+        )
+
         # Delete deprecated documents with legacy tag
         filters = {
             "$and": [
                 {"metadata.version_info.status": {"$eq": "deprecated"}},
-                # TODO - WHy is `$in` not working for deletion?
                 {"metadata.version_info.tags": {"$in": ["legacy"]}},
             ]
         }
@@ -547,9 +575,5 @@ def test_delete_by_version_metadata(client):
         # Verify current doc still exists
         assert client.documents.retrieve(id=docs[1])
 
-    finally:
-        # Cleanup remaining document
-        try:
-            client.documents.delete(id=docs[1])
-        except R2RException:
-            pass
+    except Exception:
+        raise
