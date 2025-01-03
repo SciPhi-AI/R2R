@@ -33,6 +33,9 @@ provider = "bcrypt"
 
 [database]
 provider = "postgres"
+host = "postgres-service"
+port = "5432"
+db_name = "postgres"
 default_collection_name = "Default"
 default_collection_description = "Your default collection."
 
