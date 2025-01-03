@@ -318,6 +318,8 @@ def test_user_cannot_add_document_to_collection_they_cannot_edit(
 
     # Cleanup
     normal_user_client.collections.delete(coll_id)
+    normal_user_client.documents.delete(doc_id)
+    second_client.documents.delete(doc2_id)
 
 
 def test_user_cannot_remove_document_from_collection_they_cannot_edit(
@@ -543,3 +545,5 @@ def test_member_cannot_add_document_to_non_existent_collection(
         400,
         404,
     ], "Expected error when adding doc to non-existent collection."
+
+    normal_user_client.documents.delete(doc_id)

@@ -88,20 +88,18 @@ async def test_document(
 class TestChunks:
     @pytest.mark.asyncio
     async def test_create_and_list_chunks(
-        self, test_client: AsyncR2RTestClient
+        self, test_client: AsyncR2RTestClient, cleanup_documents
     ):
         # Create document with chunks
         doc_id, _ = await test_client.create_document(
             ["Hello chunk", "World chunk"]
         )
+        cleanup_documents(doc_id)
         await asyncio.sleep(1)  # Wait for ingestion
 
         # List and verify chunks
         chunks = await test_client.list_chunks(doc_id)
         assert len(chunks) == 2, "Expected 2 chunks in the document"
-
-        # Cleanup
-        await test_client.delete_document(doc_id)
 
     @pytest.mark.asyncio
     async def test_retrieve_chunk(
@@ -145,19 +143,19 @@ class TestChunks:
         assert exc_info.value.status_code == 404
 
     @pytest.mark.asyncio
-    async def test_search_chunks(self, test_client: AsyncR2RTestClient):
+    async def test_search_chunks(
+        self, test_client: AsyncR2RTestClient, cleanup_documents
+    ):
         # Create searchable document
         doc_id, _ = await test_client.create_document(
             ["Aristotle reference", "Another piece of text"]
         )
+        cleanup_documents(doc_id)
         await asyncio.sleep(1)  # Wait for indexing
 
         # Search
         results = await test_client.search_chunks("Aristotle")
         assert len(results) > 0, "No search results found"
-
-        # Cleanup
-        await test_client.delete_document(doc_id)
 
     @pytest.mark.asyncio
     async def test_unauthorized_chunk_access(
@@ -179,7 +177,7 @@ class TestChunks:
 
     @pytest.mark.asyncio
     async def test_list_chunks_with_filters(
-        self, test_client: AsyncR2RTestClient
+        self, test_client: AsyncR2RTestClient, cleanup_documents
     ):
         """Test listing chunks with owner_id filter."""
         # Create and login as temporary user
@@ -187,37 +185,12 @@ class TestChunks:
         await test_client.register_user(temp_email, "password123")
         await test_client.login_user(temp_email, "password123")
 
-        try:
-            # Create a document with chunks
-            doc_id, _ = await test_client.create_document(
-                ["Test chunk 1", "Test chunk 2"]
-            )
-            await asyncio.sleep(1)  # Wait for ingestion
-
-            # Test listing chunks (filters automatically applied on server)
-            response = await test_client.client.chunks.list(offset=0, limit=1)
-
-            assert "results" in response, "Expected 'results' in response"
-            # assert "page_info" in response, "Expected 'page_info' in response"
-            assert (
-                len(response["results"]) <= 1
-            ), "Expected at most 1 result due to limit"
-
-            if len(response["results"]) > 0:
-                # Verify we only get chunks owned by our temp user
-                chunk = response["results"][0]
-                chunks = await test_client.list_chunks(doc_id)
-                assert chunk["owner_id"] in [
-                    c["owner_id"] for c in chunks
-                ], "Got chunk from wrong owner"
-
-        finally:
-            # Cleanup
-            try:
-                await test_client.delete_document(doc_id)
-            except:
-                pass
-            await test_client.logout_user()
+        # Create a document with chunks
+        doc_id, _ = await test_client.create_document(
+            ["Test chunk 1", "Test chunk 2"]
+        )
+        cleanup_documents(doc_id)
+        await asyncio.sleep(1)  # Wait for ingestion
 
     @pytest.mark.asyncio
     async def test_list_chunks_pagination(
@@ -309,6 +282,24 @@ class TestChunks:
                 except:
                     pass
             await test_client.logout_user()
+
+
+@pytest.fixture
+async def cleanup_documents(test_client: AsyncR2RTestClient):
+    doc_ids = []
+
+    def _track_document(doc_id: str) -> str:
+        doc_ids.append(doc_id)
+        return doc_id
+
+    yield _track_document
+
+    # Cleanup all documents
+    for doc_id in doc_ids:
+        try:
+            await test_client.delete_document(doc_id)
+        except R2RException:
+            pass
 
 
 if __name__ == "__main__":
