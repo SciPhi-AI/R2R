@@ -33,6 +33,8 @@ provider = "bcrypt"
 
 [database]
 provider = "postgres"
+default_collection_name = "Default"
+default_collection_description = "Your default collection."
 
 [embedding]
 provider = "litellm"
