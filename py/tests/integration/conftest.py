@@ -103,7 +103,7 @@ def test_document(client):
 
 @pytest.fixture(scope="session")
 def test_collection(client, test_document):
-    """Create a test collection with sample documents."""
+    """Create a test collection with sample documents and clean up after tests."""
     collection_name = f"Test Collection {uuid.uuid4()}"
     collection_id = client.collections.create(name=collection_name)["results"][
         "id"
@@ -153,4 +153,21 @@ def test_collection(client, test_document):
         doc_ids.append(doc_id)
         client.collections.add_document(collection_id, doc_id)
     client.collections.add_document(collection_id, test_document)
-    return {"collection_id": collection_id, "document_ids": doc_ids}
+
+    yield {"collection_id": collection_id, "document_ids": doc_ids}
+
+    # Cleanup after tests
+    try:
+        # Remove and delete all documents
+        for doc_id in doc_ids:
+            try:
+                client.documents.delete(id=doc_id)
+            except R2RException:
+                pass
+        # Delete the collection
+        try:
+            client.collections.delete(collection_id)
+        except R2RException:
+            pass
+    except Exception as e:
+        print(f"Error during test_collection cleanup: {e}")
