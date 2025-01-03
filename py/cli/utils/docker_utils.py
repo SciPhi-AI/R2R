@@ -111,7 +111,6 @@ async def run_local_serve(
         model_provider = llm_model.split("/")[0]
         check_llm_reqs(llm_provider, model_provider)
 
-    click.echo("R2R now runs on port 7272 by default!")
     available_port = find_available_port(port)
 
     await r2r_instance.orchestration_provider.start_worker()
@@ -158,7 +157,6 @@ def run_docker_serve(
         scale,
     )
 
-    click.secho("R2R now runs on port 7272 by default!", fg="yellow")
     click.echo("Pulling Docker images...")
     click.echo(f"Calling `{pull_command}`")
     os.system(pull_command)
