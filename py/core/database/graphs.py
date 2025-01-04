@@ -12,7 +12,7 @@ from uuid import UUID
 
 import asyncpg
 import httpx
-from asyncpg.exceptions import UndefinedColumnError, UniqueViolationError
+from asyncpg.exceptions import UndefinedTableError, UniqueViolationError
 from fastapi import HTTPException
 
 from core.base.abstractions import (
@@ -37,7 +37,6 @@ from core.base.utils import (
 
 from .base import PostgresConnectionManager
 from .collections import PostgresCollectionsHandler
-from .filters import apply_filters
 
 logger = logging.getLogger()
 
@@ -2600,63 +2599,141 @@ class PostgresGraphsHandler(Handler):
             ORDER BY {embedding_type} <=> $1
             LIMIT $2;
         """
-        try:
-            results = await self.connection_manager.fetch_query(
-                QUERY, tuple(params)
-            )
 
-            for result in results:
-                output = {
-                    prop: result[prop]
-                    for prop in property_names
-                    if prop in result
-                }
-                output["similarity_score"] = 1 - float(
-                    result["similarity_score"]
-                )
-                yield output
-        except UndefinedColumnError as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"An error occurred while searching: {e}",
-            ) from e
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"An error occurred while updating the entity: {e}",
-            ) from e
+        results = await self.connection_manager.fetch_query(
+            QUERY, tuple(params)
+        )
+
+        for result in results:
+            output = {
+                prop: result[prop] for prop in property_names if prop in result
+            }
+            output["similarity_score"] = 1 - float(result["similarity_score"])
+            yield output
 
     def _build_filters(
         self, filter_dict: dict, parameters: list[Any], search_type: str
     ) -> str:
-        """Use the filter module to build WHERE clause for graph search."""
-        if not filter_dict:
+        """
+        Build a WHERE clause from a nested filter dictionary for the graph search.
+        For communities we use collection_id as primary key filter; for entities/relationships we use parent_id.
+        """
+
+        # Determine primary identifier column depending on search_type
+        # communities: use collection_id
+        # entities/relationships: use parent_id
+        base_id_column = (
+            "collection_id" if search_type == "communities" else "parent_id"
+        )
+
+        def parse_condition(key: str, value: Any) -> str:
+            # This function returns a single condition (string) or empty if no valid condition.
+            # Supported keys:
+            # - base_id_column (collection_id or parent_id)
+            # - metadata fields: metadata.some_field
+            # Supported ops: $eq, $ne, $lt, $lte, $gt, $gte, $in, $contains
+            if key == base_id_column:
+                # e.g. {"collection_id": {"$eq": "<some-uuid>"}}
+                if isinstance(value, dict):
+                    op, clause = next(iter(value.items()))
+                    if op == "$eq":
+                        parameters.append(str(clause))
+                        return f"{base_id_column} = ${len(parameters)}::uuid"
+                    elif op == "$in":
+                        # $in expects a list of UUIDs
+                        parameters.append([str(x) for x in clause])
+                        return f"{base_id_column} = ANY(${len(parameters)}::uuid[])"
+                else:
+                    # direct equality?
+                    parameters.append(str(value))
+                    return f"{base_id_column} = ${len(parameters)}::uuid"
+
+            elif key.startswith("metadata."):
+                # Handle metadata filters
+                # Example: {"metadata.some_key": {"$eq": "value"}}
+                field = key.split("metadata.")[1]
+
+                if isinstance(value, dict):
+                    op, clause = next(iter(value.items()))
+                    if op == "$eq":
+                        parameters.append(clause)
+                        return f"(metadata->>'{field}') = ${len(parameters)}"
+                    elif op == "$ne":
+                        parameters.append(clause)
+                        return f"(metadata->>'{field}') != ${len(parameters)}"
+                    elif op == "$lt":
+                        parameters.append(clause)
+                        return f"(metadata->>'{field}')::float < ${len(parameters)}::float"
+                    elif op == "$lte":
+                        parameters.append(clause)
+                        return f"(metadata->>'{field}')::float <= ${len(parameters)}::float"
+                    elif op == "$gt":
+                        parameters.append(clause)
+                        return f"(metadata->>'{field}')::float > ${len(parameters)}::float"
+                    elif op == "$gte":
+                        parameters.append(clause)
+                        return f"(metadata->>'{field}')::float >= ${len(parameters)}::float"
+                    elif op == "$in":
+                        # Ensure clause is a list
+                        if not isinstance(clause, list):
+                            raise Exception(
+                                "argument to $in filter must be a list"
+                            )
+                        # Append the Python list as a parameter; many drivers can convert Python lists to arrays
+                        parameters.append(clause)
+                        # Cast the parameter to a text array type
+                        return f"(metadata->>'{key}')::text = ANY(${len(parameters)}::text[])"
+
+                    # elif op == "$in":
+                    #     # For $in, we assume an array of values and check if the field is in that set.
+                    #     # Note: This is simplistic, adjust as needed.
+                    #     parameters.append(clause)
+                    #     # convert field to text and check membership
+                    #     return f"(metadata->>'{field}') = ANY(SELECT jsonb_array_elements_text(${len(parameters)}::jsonb))"
+                    elif op == "$contains":
+                        # $contains for metadata likely means metadata @> clause in JSON.
+                        # If clause is dict or list, we use json containment.
+                        parameters.append(json.dumps(clause))
+                        return f"metadata @> ${len(parameters)}::jsonb"
+                else:
+                    # direct equality
+                    parameters.append(value)
+                    return f"(metadata->>'{field}') = ${len(parameters)}"
+
+            # Add additional conditions for other columns if needed
+            # If key not recognized, return empty so it doesn't break query
             return ""
 
-        working_filter = filter_dict.copy()
+        def parse_filter(fd: dict) -> str:
+            filter_conditions = []
+            for k, v in fd.items():
+                if k == "$and":
+                    and_parts = [parse_filter(sub) for sub in v if sub]
+                    # Remove empty strings
+                    and_parts = [x for x in and_parts if x.strip()]
+                    if and_parts:
+                        filter_conditions.append(
+                            f"({' AND '.join(and_parts)})"
+                        )
+                elif k == "$or":
+                    or_parts = [parse_filter(sub) for sub in v if sub]
+                    # Remove empty strings
+                    or_parts = [x for x in or_parts if x.strip()]
+                    if or_parts:
+                        filter_conditions.append(f"({' OR '.join(or_parts)})")
+                else:
+                    # Regular condition
+                    c = parse_condition(k, v)
+                    if c and c.strip():
+                        filter_conditions.append(c)
 
-        # Handle communities case
-        if search_type == "communities":
-            working_filter = {
-                "collection_id" if k == "parent_id" else k: v
-                for k, v in working_filter.items()
-            }
+            if not filter_conditions:
+                return ""
+            if len(filter_conditions) == 1:
+                return filter_conditions[0]
+            return " AND ".join(filter_conditions)
 
-        # Handle collection_ids filter for combined search
-        if "collection_ids" in working_filter:
-            collection_filter = working_filter.pop("collection_ids")
-            # Transform the collection_ids filter into an OR condition
-            working_filter["$or"] = [
-                {"collection_ids": collection_filter},  # For chunks table
-                {"parent_id": collection_filter},  # For graphs tables
-            ]
-
-        filter_clause, new_params = apply_filters(
-            filters=working_filter,
-            params=parameters,
-            mode="condition_only",
-        )
-        return filter_clause
+        return parse_filter(filter_dict)
 
     async def _compute_leiden_communities(
         self,
