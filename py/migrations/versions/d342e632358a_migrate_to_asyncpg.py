@@ -34,23 +34,34 @@ class Vector(UserDefinedType):
 
 
 def check_if_upgrade_needed():
-    """Check if the upgrade has already been applied"""
-    # Get database connection
+    """Check if the upgrade has already been applied or is needed"""
     connection = op.get_bind()
     inspector = inspect(connection)
 
-    # Check if the new vectors table exists
+    # First check if the old table exists - if it doesn't, we don't need this migration
+    has_old_table = inspector.has_table(
+        old_vector_table_name, schema=project_name
+    )
+    if not has_old_table:
+        print(
+            f"Migration not needed: Original '{old_vector_table_name}' table doesn't exist"
+        )
+        # Skip this migration since we're starting from a newer state
+        return False
+
+    # Only if the old table exists, check if we need to migrate it
     has_new_table = inspector.has_table(
         new_vector_table_name, schema=project_name
     )
-
     if has_new_table:
         print(
             f"Migration not needed: '{new_vector_table_name}' table already exists"
         )
         return False
 
-    print(f"Migration needed: '{new_vector_table_name}' table does not exist")
+    print(
+        f"Migration needed: Need to migrate from '{old_vector_table_name}' to '{new_vector_table_name}'"
+    )
     return True
 
 

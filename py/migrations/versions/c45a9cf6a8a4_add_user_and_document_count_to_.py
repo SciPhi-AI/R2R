@@ -1,7 +1,7 @@
 """Add user and document count to collection
 
 Revision ID: c45a9cf6a8a4
-Revises:
+Revises: 8077140e1e99
 Create Date: 2024-12-10 13:28:07.798167
 
 """
@@ -11,10 +11,11 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy import inspect
 
 # revision identifiers, used by Alembic.
 revision: str = "c45a9cf6a8a4"
-down_revision: Union[str, None] = None
+down_revision: Union[str, None] = "8077140e1e99"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -25,7 +26,30 @@ if not project_name:
     )
 
 
+def check_if_upgrade_needed():
+    """Check if the upgrade has already been applied"""
+    connection = op.get_bind()
+    inspector = inspect(connection)
+
+    collections_columns = {
+        col["name"]
+        for col in inspector.get_columns("collections", schema=project_name)
+    }
+
+    if "user_count" in collections_columns:
+        print(
+            "Migration not needed: collections table already has count columns"
+        )
+        return False
+    else:
+        print("Migration needed: collections table needs count columns")
+        return True
+
+
 def upgrade():
+    if not check_if_upgrade_needed():
+        return
+
     # Add the new columns with default value of 0
     op.add_column(
         "collections",

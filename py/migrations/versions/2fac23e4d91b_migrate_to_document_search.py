@@ -188,12 +188,19 @@ def generate_all_summaries():
 
 
 def check_if_upgrade_needed():
-    """Check if the upgrade has already been applied by checking for summary column"""
+    """Check if the upgrade has already been applied or is needed"""
     # Get database connection
     connection = op.get_bind()
     inspector = inspect(connection)
 
-    # Check if the columns exist
+    # First check if the document_info table exists
+    if not inspector.has_table("document_info", schema=project_name):
+        print(
+            f"Migration not needed: '{project_name}.document_info' table doesn't exist yet"
+        )
+        return False
+
+    # Then check if the columns exist
     existing_columns = [
         col["name"]
         for col in inspector.get_columns(f"document_info", schema=project_name)
