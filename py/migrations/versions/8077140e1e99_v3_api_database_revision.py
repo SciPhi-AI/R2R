@@ -11,6 +11,7 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy import inspect
 
 # revision identifiers, used by Alembic.
 revision: str = "8077140e1e99"
@@ -24,16 +25,39 @@ if not project_name:
         "Environment variable `R2R_PROJECT_NAME` must be provided migrate, it should be set equal to the value of `project_name` in your `r2r.toml`."
     )
 
-if (
-    input(
-        "WARNING: This migration will delete all graph data. Are you sure you want to continue? (yes/no) "
-    ).lower()
-    != "yes"
-):
-    raise ValueError("Migration aborted.")
+
+def check_if_upgrade_needed():
+    """Check if the upgrade has already been applied or is needed"""
+    connection = op.get_bind()
+    inspector = inspect(connection)
+
+    # Check collections table column names
+    collections_columns = {
+        col["name"]
+        for col in inspector.get_columns("collections", schema=project_name)
+    }
+
+    # If we find a new column name, we don't need to migrate
+    # If we find an old column name, we do need to migrate
+    if "id" in collections_columns:
+        print(
+            "Migration not needed: collections table already has 'id' column"
+        )
+        return False
+    elif "collection_id" in collections_columns:
+        print("Migration needed: collections table has old column names")
+        return True
+    else:
+        print(
+            "Migration not needed: collections table doesn't exist or has different structure"
+        )
+        return False
 
 
 def upgrade() -> None:
+    if not check_if_upgrade_needed():
+        return
+
     # Collections table migration
     op.alter_column(
         "collections",
