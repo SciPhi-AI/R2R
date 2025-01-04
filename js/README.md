@@ -1,10 +1,10 @@
 # R2R JavaScript SDK Documentation
 
-For the complete look at the R2R JavaScript SDK, [visit our documentation.](https://r2r-docs.sciphi.ai/documentation/js-sdk/introduction)
+For the complete look at the R2R JavaScript SDK, [visit our documentation.](https://r2r-docs.sciphi.ai/api-and-sdks/introduction)
 
 ## Installation
 
-Before starting, make sure you have completed the [R2R installation](/documentation/installation).
+Before starting, make sure you have completed the [R2R installation](https://r2r-docs.sciphi.ai/documentation/installation/overview).
 
 Install the R2R JavaScript SDK:
 
