@@ -1,4 +1,3 @@
-# from .main import load_config
 import json
 import types
 from functools import wraps
