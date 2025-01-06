@@ -376,3 +376,60 @@ export type WrappedServerStatsResponse = ResultsWrapper<ServerStats>;
 export type WrappedTokenResponse = ResultsWrapper<TokenResponse>;
 export type WrappedUserResponse = ResultsWrapper<User>;
 export type WrappedUsersResponse = PaginatedResultsWrapper<User[]>;
+
+
+
+/**
+ * The "base" shape for an R2R results wrapper.
+ */
+export interface R2RResults<T> {
+  results: T;
+  // Potentially other fields, e.g. "info", "status", etc.
+}
+
+/**
+ * A paginated results wrapper typically includes a 'meta' object
+ * or something similar for "total_entries".
+ */
+export interface PaginatedR2RResult<T> extends R2RResults<T> {
+  meta: {
+    total_entries: number;
+  };
+}
+
+// ---------------------------
+//  API Key Models
+// ---------------------------
+
+/**
+ * Full API Key model (includes the private `api_key` which is only
+ * returned ONCE at creation time).
+ */
+export interface ApiKey {
+  public_key: string;
+  /** The private key, only returned during creation. */
+  api_key: string;
+  key_id: string;
+  name?: string;
+}
+
+/**
+ * API Key model that omits the private `api_key`. Typically used
+ * for listing user keys.
+ */
+export interface ApiKeyNoPriv {
+  public_key: string;
+  key_id: string;
+  name?: string;
+  updated_at: string;  // or `Date` if your code auto-parses
+}
+
+/**
+ * Wrapped response that contains one newly created API key.
+ */
+export type WrappedAPIKeyResponse = R2RResults<ApiKey>;
+
+/**
+ * Wrapped response that contains a list of existing API keys (no private keys).
+ */
+export type WrappedAPIKeysResponse = PaginatedR2RResult<ApiKeyNoPriv[]>;

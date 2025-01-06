@@ -92,12 +92,10 @@ class NaClCryptoProvider(CryptoProvider):
 
         # Generate a unique key_id
         key_id_bytes = nacl.utils.random(16)  # 16 random bytes
-        key_id = f"sk_{encode_bytes_readable(key_id_bytes, chars)}"
+        key_id = f"pk_{encode_bytes_readable(key_id_bytes, chars)}"
 
         # Generate a high-entropy API key
-        raw_api_key = encode_bytes_readable(
-            nacl.utils.random(self.config.api_key_bytes), chars
-        )
+        raw_api_key = f"sk_{encode_bytes_readable(nacl.utils.random(self.config.api_key_bytes), chars)}"
 
         # The caller will store the hashed version in the database
         return key_id, raw_api_key

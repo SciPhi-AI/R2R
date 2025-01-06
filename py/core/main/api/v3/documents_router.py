@@ -471,6 +471,22 @@ class DocumentsRouter(BaseRouterV3):
                 if file:
                     file_data = await self._process_file(file)
                     content_length = len(file_data["content"])
+                    file_ext = file.filename.split(".")[
+                        -1
+                    ]  # e.g. "pdf", "txt"
+                    max_allowed_size = await self.services.management.get_max_upload_size_by_type(
+                        user_id=auth_user.id, file_type_or_ext=file_ext
+                    )
+
+                    if content_length > max_allowed_size:
+                        raise R2RException(
+                            status_code=413,  # HTTP 413: Payload Too Large
+                            message=(
+                                f"File size exceeds maximum of {max_allowed_size} bytes "
+                                f"for extension '{file_ext}'."
+                            ),
+                        )
+
                     file_content = BytesIO(
                         base64.b64decode(file_data["content"])
                     )
