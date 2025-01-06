@@ -122,3 +122,6 @@ class R2RAsyncClient(BaseClient):
 
     def unset_api_key(self) -> None:
         self.api_key = None
+
+    def set_base_url(self, base_url: str) -> None:
+        self.base_url = base_url
