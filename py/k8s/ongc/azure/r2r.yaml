@@ -27,6 +27,7 @@ data:
 #  HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH: "134217728"
 
   AZURE_API_VERSION: "2024-02-01"
+  AZURE_API_BASE: https://amplifi-text-embedding.openai.azure.com
 
 kind: ConfigMap
 metadata:
