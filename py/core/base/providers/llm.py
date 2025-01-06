@@ -23,7 +23,7 @@ class CompletionConfig(ProviderConfig):
     provider: Optional[str] = None
     generation_config: GenerationConfig = GenerationConfig()
     concurrent_request_limit: int = 256
-    max_retries: int = 8
+    max_retries: int = 3
     initial_backoff: float = 1.0
     max_backoff: float = 64.0
 

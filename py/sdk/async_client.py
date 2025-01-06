@@ -29,7 +29,7 @@ class R2RAsyncClient(BaseClient):
     def __init__(
         self,
         base_url: str = "https://api.cloud.sciphi.ai",
-        prefix: str = "/v2",
+        prefix: str = "/v3",
         custom_client=None,
         timeout: float = 300.0,
     ):
@@ -47,7 +47,7 @@ class R2RAsyncClient(BaseClient):
         self.users = UsersSDK(self)
 
     async def _make_request(
-        self, method: str, endpoint: str, version: str = "v2", **kwargs
+        self, method: str, endpoint: str, version: str = "v3", **kwargs
     ):
         url = self._get_full_url(endpoint, version)
         request_args = self._prepare_request_args(endpoint, **kwargs)
@@ -70,7 +70,7 @@ class R2RAsyncClient(BaseClient):
             ) from e
 
     async def _make_streaming_request(
-        self, method: str, endpoint: str, version: str = "v2", **kwargs
+        self, method: str, endpoint: str, version: str = "v3", **kwargs
     ) -> AsyncGenerator[Any, None]:
         url = self._get_full_url(endpoint, version)
         request_args = self._prepare_request_args(endpoint, **kwargs)

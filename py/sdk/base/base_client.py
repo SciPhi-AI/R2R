@@ -36,7 +36,7 @@ class BaseClient:
     def __init__(
         self,
         base_url: str = "https://api.cloud.sciphi.ai",
-        prefix: str = "/v2",
+        prefix: str = "/v3",
         timeout: float = 300.0,
     ):
         self.base_url = base_url
@@ -66,7 +66,7 @@ class BaseClient:
                 message="Not authenticated. Please login first.",
             )
 
-    def _get_full_url(self, endpoint: str, version: str = "v2") -> str:
+    def _get_full_url(self, endpoint: str, version: str = "v3") -> str:
         return f"{self.base_url}/{version}/{endpoint}"
 
     def _prepare_request_args(self, endpoint: str, **kwargs) -> dict:
