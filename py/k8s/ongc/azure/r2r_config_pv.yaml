@@ -1,0 +1,23 @@
+#apiVersion: v1
+#kind: PersistentVolume
+#metadata:
+#  name: pv-r2r-config-blob
+#  namespace: r2r-dev
+#spec:
+#  capacity:
+#    storage: 256Mi
+#  accessModes:
+#    - ReadWriteMany
+#  persistentVolumeReclaimPolicy: Retain  # If set as "Delete" container would be removed after pvc deletion
+#  storageClassName: azureblob-nfs-premium
+#  csi:
+#    driver: blob.csi.azure.com
+#    readOnly: false
+#    # make sure this volumeid is unique in the cluster
+#    # `#` is not allowed in self defined volumeHandle
+#    volumeHandle: rg-amplifi-dev#amplifidev#r2r-config
+#    volumeAttributes:
+#      resourceGroup: rg-amplifi-dev
+#      storageAccount: amplifidev
+#      containerName: r2r-config
+#      protocol: nfs
