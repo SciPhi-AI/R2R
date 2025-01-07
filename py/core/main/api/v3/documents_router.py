@@ -1307,7 +1307,10 @@ class DocumentsRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
-            Delete documents based on provided filters. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`. Deletion requests are limited to a user's own documents.
+            Delete documents based on provided filters. Allowed operators
+            include: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`,
+            `ilike`, `in`, and `nin`. Deletion requests are limited to a
+            user's own documents.
             """
 
             filters_dict = {
