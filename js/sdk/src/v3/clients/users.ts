@@ -81,7 +81,10 @@ export class UsersClient {
     email: string;
   }): Promise<WrappedGenericMessageResponse> {
     return this.client.makeRequest("POST", "users/send-verification-email", {
-      data: { email: options.email },
+      data: options.email,
+      headers: {
+        "Content-Type": "text/plain",
+      },
     });
   }
   /**
