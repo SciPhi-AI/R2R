@@ -337,9 +337,8 @@ class UsersRouter(BaseRouterV3):
                             from r2r import R2RClient
 
                             client = R2RClient()
-                            tokens = client.users.verify_email(
+                            tokens = client.users.send_verification_email(
                                 email="jane.doe@example.com",
-                                verification_code="1lklwal!awdclm"
                             )"""
                         ),
                     },
@@ -352,9 +351,8 @@ class UsersRouter(BaseRouterV3):
                             const client = new r2rClient();
 
                             function main() {
-                                const response = await client.users.verifyEmail({
+                                const response = await client.users.sendVerificationEmail({
                                     email: jane.doe@example.com",
-                                    verificationCode: "1lklwal!awdclm"
                                 });
                             }
 
@@ -366,9 +364,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
-                            curl -X POST "https://api.example.com/v3/users/login" \\
+                            curl -X POST "https://api.example.com/v3/users/send-verification-email" \\
                                 -H "Content-Type: application/x-www-form-urlencoded" \\
-                                -d "email=jane.doe@example.com&verification_code=1lklwal!awdclm"
+                                -d "email=jane.doe@example.com"
                             """
                         ),
                     },
@@ -391,9 +389,7 @@ class UsersRouter(BaseRouterV3):
                     message="This email is already verified. Please log in.",
                 )
 
-            result = await self.services.auth.send_verification_email(
-                email=email
-            )
+            await self.services.auth.send_verification_email(email=email)
             return GenericMessageResponse(message="A verification email has been sent.")  # type: ignore
 
         @self.router.post(
