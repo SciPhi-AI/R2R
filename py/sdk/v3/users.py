@@ -1,5 +1,3 @@
-from __future__ import annotations  # for Python 3.10+
-
 from typing import Any, Optional
 from uuid import UUID
 
