@@ -55,23 +55,6 @@ export class UsersClient {
   }
 
   /**
-   * Register a new user.
-   * @param email User's email address
-   * @param password User's password
-   * @returns WrappedUserResponse
-   * @deprecated Use `client.users.create` instead.
-   */
-  @feature("users.register")
-  async register(options: {
-    email: string;
-    password: string;
-  }): Promise<WrappedUserResponse> {
-    return this.client.makeRequest("POST", "users/register", {
-      data: options,
-    });
-  }
-
-  /**
    * Send a verification email to a user.
    * @param email User's email address
    * @returns WrappedGenericMessageResponse

@@ -1,5 +1,3 @@
-from __future__ import annotations  # for Python 3.10+
-
 from typing import Any, Optional
 from uuid import UUID
 
@@ -55,26 +53,6 @@ class UsersSDK:
         return await self.client._make_request(
             "POST",
             "users",
-            json=data,
-            version="v3",
-        )
-
-    # @deprecated("Use client.users.create() instead")
-    async def register(self, email: str, password: str) -> WrappedUserResponse:
-        """
-        Register a new user.
-
-        Args:
-            email (str): User's email address
-            password (str): User's password
-
-        Returns:
-            UserResponse: New user information
-        """
-        data: dict[str, Any] = {"email": email, "password": password}
-        return await self.client._make_request(
-            "POST",
-            "users/register",
             json=data,
             version="v3",
         )

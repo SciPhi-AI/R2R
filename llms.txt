@@ -3133,7 +3133,7 @@ from r2r import R2RClient
 client = R2RClient("http://localhost:7272")  # Replace with your R2R deployment URL
 
 # Register a new user
-user_result = client.users.register("user1@test.com", "password123")
+user_result = client.users.create("user1@test.com", "password123")
 print(user_result)
 # {'results': {'email': 'user1@test.com', 'id': 'bf417057-f104-4e75-8579-c74d26fcbed3', ...}}
 

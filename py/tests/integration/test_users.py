@@ -605,7 +605,7 @@ def test_multiple_api_keys(client):
 def test_update_user_limits_overrides(client: R2RClient):
     # 1) Create user
     user_email = f"test_{uuid.uuid4()}@example.com"
-    client.users.register(user_email, "SomePassword123!")
+    client.users.create(user_email, "SomePassword123!")
     client.users.login(user_email, "SomePassword123!")
 
     # 2) Confirm the default overrides is None
