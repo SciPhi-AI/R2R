@@ -895,7 +895,22 @@ class PostgresDocumentsHandler(Handler):
                         if not rows:
                             break
                         for row in rows:
-                            writer.writerow(row)
+                            row_dict = {
+                                "id": row[0],
+                                "collection_ids": row[1],
+                                "owner_id": row[2],
+                                "type": row[3],
+                                "metadata": row[4],
+                                "title": row[5],
+                                "summary": row[6],
+                                "version": row[7],
+                                "size_in_bytes": row[8],
+                                "ingestion_status": row[9],
+                                "extraction_status": row[10],
+                                "created_at": row[11],
+                                "updated_at": row[12],
+                            }
+                            writer.writerow([row_dict[col] for col in columns])
 
             temp_file.flush()
             return temp_file.name, temp_file
