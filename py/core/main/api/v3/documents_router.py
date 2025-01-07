@@ -6,6 +6,7 @@ import textwrap
 from datetime import datetime
 from io import BytesIO
 from typing import Any, Optional
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import Body, Depends, File, Form, Path, Query, UploadFile
@@ -756,6 +757,7 @@ class DocumentsRouter(BaseRouterV3):
                     end_date=end_date,
                 )
             )
+            encoded_filename = quote(zip_name)
 
             async def stream_file():
                 yield zip_content.getvalue()
@@ -764,7 +766,7 @@ class DocumentsRouter(BaseRouterV3):
                 stream_file(),
                 media_type="application/zip",
                 headers={
-                    "Content-Disposition": f'attachment; filename="{zip_name}"',
+                    "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
                     "Content-Length": str(zip_size),
                 },
             )
@@ -1243,6 +1245,7 @@ class DocumentsRouter(BaseRouterV3):
                 raise R2RException(status_code=404, message="File not found.")
 
             file_name, file_content, file_size = file_tuple
+            encoded_filename = quote(file_name)
 
             mime_type, _ = mimetypes.guess_type(file_name)
             if not mime_type:
@@ -1260,7 +1263,7 @@ class DocumentsRouter(BaseRouterV3):
                 file_stream(),
                 media_type=mime_type,
                 headers={
-                    "Content-Disposition": f'inline; filename="{file_name}"',
+                    "Content-Disposition": f"inline; filename*=UTF-8''{encoded_filename}",
                     "Content-Length": str(file_size),
                 },
             )
