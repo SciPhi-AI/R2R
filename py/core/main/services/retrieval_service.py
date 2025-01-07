@@ -390,7 +390,6 @@ class RetrievalService(Service):
                 )
 
                 if rag_generation_config.stream:
-                    # collected_output = []
                     async def stream_response():
                         try:
                             async with manage_run(
@@ -409,8 +408,6 @@ class RetrievalService(Service):
                                     rag_generation_config=rag_generation_config,
                                     include_title_if_available=include_title_if_available,
                                 ):
-                                    # print(chunk)
-                                    # collected_output.append(chunk)
                                     yield chunk
                         except Exception as e:
                             logger.error(f"Error streaming agent output: {e}")

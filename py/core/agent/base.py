@@ -162,7 +162,6 @@ class R2RStreamingAgent(R2RAgent):
         content_buffer = ""
 
         async for chunk in stream:
-            print("chunk = ", chunk)
             delta = chunk.choices[0].delta
             if delta.tool_calls:
                 for tool_call in delta.tool_calls:
