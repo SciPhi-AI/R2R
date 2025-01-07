@@ -154,6 +154,13 @@ class UsersSDK:
         self.client._refresh_token = response["results"]["refresh_token"][
             "token"
         ]
+        user = await self.client._make_request(
+            "GET",
+            "users/me",
+            version="v3",
+        )
+
+        self.client._user_id = user["results"]["id"]
         return response
 
     # FIXME: What is going on here...
@@ -516,5 +523,12 @@ class UsersSDK:
         return await self.client._make_request(
             "DELETE",
             f"users/{str(id)}/api-keys/{str(key_id)}",
+            version="v3",
+        )
+
+    async def get_limits(self) -> dict[str, Any]:
+        return await self.client._make_request(
+            "GET",
+            f"users/{str(self.client._user_id)}/limits",
             version="v3",
         )

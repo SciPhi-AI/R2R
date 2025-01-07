@@ -501,4 +501,8 @@ export class UsersClient {
     );
   }
 
+  async getLimits(options: { id: string }): Promise<any> {
+    return this.client.makeRequest("GET", `users/${options.id}/limits`);
+  }
+
 }
