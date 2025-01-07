@@ -1649,3 +1649,82 @@ class UsersRouter(BaseRouterV3):
                     "API key not found or could not be deleted", 400
                 )
             return {"success": True}  # type: ignore
+
+        @self.router.get(
+            "/users/{id}/limits",
+            summary="Fetch User Limits",
+            responses={
+                200: {
+                    "description": "Returns system default limits, user overrides, and final effective settings."
+                },
+                403: {
+                    "description": "If the requesting user is neither the same user nor a superuser."
+                },
+                404: {"description": "If the user ID does not exist."},
+            },
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": """
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+                            # client.login(...)
+
+                            user_limits = client.users.get_limits("550e8400-e29b-41d4-a716-446655440000")
+                            print(user_limits)
+                        """,
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient();
+                            // await client.users.login(...)
+
+                            async function main() {
+                                const userLimits = await client.users.getLimits({
+                                    id: "550e8400-e29b-41d4-a716-446655440000"
+                                });
+                                console.log(userLimits);
+                            }
+
+                            main();
+                        """,
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": """
+                            curl -X GET "https://api.example.com/v3/users/550e8400-e29b-41d4-a716-446655440000/limits" \\
+                                -H "Authorization: Bearer YOUR_API_KEY"
+                        """,
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def get_user_limits(
+            id: UUID = Path(
+                ..., description="ID of the user to fetch limits for"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> dict[str, dict]:
+            """
+            Return the system default limits, user-level overrides, and final "effective" limit settings
+            for the specified user.
+
+            Only superusers or the user themself may fetch these values.
+            """
+            if (auth_user.id != id) and (not auth_user.is_superuser):
+                raise R2RException(
+                    "Only the user themselves or a superuser can view these limits.",
+                    status_code=403,
+                )
+
+            # This calls the new helper you created in ManagementService
+            limits_info = await self.services.management.get_all_user_limits(
+                id
+            )
+            return limits_info
