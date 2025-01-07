@@ -192,13 +192,38 @@ export class DocumentsClient {
   /**
    * Download a document's file content.
    * @param id ID of document to download
-   * @returns
+   * @returns Blob containing the document's file content
    */
   @feature("documents.download")
-  async download(options: { id: string }): Promise<any> {
-    return this.client.makeRequest("GET", `documents/${options.id}/download`, {
-      responseType: "blob",
-    });
+  async download(options: { id: string }): Promise<Blob> {
+    console.log("Starting download request...");
+
+    const response = await this.client.makeRequest(
+      "GET",
+      `documents/${options.id}/download`,
+      {
+        responseType: "arraybuffer",
+        returnFullResponse: true,
+      },
+    );
+
+    if (!response.data) {
+      throw new Error("No data received in response");
+    }
+
+    const contentType =
+      response.headers?.["content-type"] || "application/octet-stream";
+
+    if (response.data instanceof Blob) {
+      return response.data;
+    }
+
+    if (response.data instanceof ArrayBuffer) {
+      console.log("Creating Blob from ArrayBuffer");
+      return new Blob([response.data], { type: contentType });
+    }
+
+    return new Blob([response.data], { type: contentType });
   }
 
   /**
