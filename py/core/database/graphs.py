@@ -465,7 +465,18 @@ class PostgresEntitiesHandler(Handler):
                         if not rows:
                             break
                         for row in rows:
-                            writer.writerow(row)
+                            row_dict = {
+                                "id": row[0],
+                                "name": row[1],
+                                "category": row[2],
+                                "description": row[3],
+                                "parent_id": row[4],
+                                "chunk_ids": row[5],
+                                "metadata": row[6],
+                                "created_at": row[7],
+                                "updated_at": row[8],
+                            }
+                            writer.writerow([row_dict[col] for col in columns])
 
             temp_file.flush()
             return temp_file.name, temp_file

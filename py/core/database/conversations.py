@@ -539,7 +539,13 @@ class PostgresConversationsHandler(Handler):
                         if not rows:
                             break
                         for row in rows:
-                            writer.writerow(row)
+                            row_dict = {
+                                "id": row[0],
+                                "user_id": row[1],
+                                "created_at": row[2],
+                                "name": row[3],
+                            }
+                            writer.writerow([row_dict[col] for col in columns])
 
             temp_file.flush()
             return temp_file.name, temp_file
@@ -640,7 +646,15 @@ class PostgresConversationsHandler(Handler):
                         if not rows:
                             break
                         for row in rows:
-                            writer.writerow(row)
+                            row_dict = {
+                                "id": row[0],
+                                "conversation_id": row[1],
+                                "parent_id": row[2],
+                                "content": row[3],
+                                "metadata": row[4],
+                                "created_at": row[5],
+                            }
+                            writer.writerow([row_dict[col] for col in columns])
 
             temp_file.flush()
             return temp_file.name, temp_file

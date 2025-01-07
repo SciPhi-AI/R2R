@@ -926,7 +926,9 @@ class ManagementService(Service):
         - The usage for each relevant limit (how many requests used, how many remain, etc.)
         """
         # 1. Fetch the user to see if they have overrides
-        user = await self.providers.database.users_handler.get_user_by_id(user_id)
+        user = await self.providers.database.users_handler.get_user_by_id(
+            user_id
+        )
 
         # 2. System defaults
         system_defaults = {
@@ -948,7 +950,9 @@ class ManagementService(Service):
 
         # If the user added "global_per_min" or "monthly_limit" overrides, override them
         if user_overrides.get("global_per_min") is not None:
-            effective_limits["global_per_min"] = user_overrides["global_per_min"]
+            effective_limits["global_per_min"] = user_overrides[
+                "global_per_min"
+            ]
         if user_overrides.get("monthly_limit") is not None:
             effective_limits["monthly_limit"] = user_overrides["monthly_limit"]
         if user_overrides.get("route_per_min") is not None:
@@ -958,8 +962,12 @@ class ManagementService(Service):
         #   - self.config.route_limits  (system route overrides)
         #   - user_overrides["route_overrides"] (user route overrides)
         # So we can later show usage for each route.
-        system_route_limits = self.config.database.route_limits  # dict[str, LimitSettings]
-        user_route_overrides = user_overrides.get("route_overrides", {})  # e.g. { "/api/foo": {...}, ... }
+        system_route_limits = (
+            self.config.database.route_limits
+        )  # dict[str, LimitSettings]
+        user_route_overrides = user_overrides.get(
+            "route_overrides", {}
+        )  # e.g. { "/api/foo": {...}, ... }
 
         # 5. Build usage data
         usage = {}
@@ -971,10 +979,14 @@ class ManagementService(Service):
         one_min_ago = now - timedelta(minutes=1)
 
         # Use your limits_handler to count
-        global_per_min_used = await self.providers.database.limits_handler._count_requests(
-            user_id, route=None, since=one_min_ago
+        global_per_min_used = (
+            await self.providers.database.limits_handler._count_requests(
+                user_id, route=None, since=one_min_ago
+            )
         )
-        monthly_used = await self.providers.database.limits_handler._count_monthly_requests(user_id)
+        monthly_used = await self.providers.database.limits_handler._count_monthly_requests(
+            user_id
+        )
 
         # The final effective global/min is in `effective_limits["global_per_min"]`, etc.
         usage["global_per_min"] = {
@@ -998,17 +1010,33 @@ class ManagementService(Service):
 
         # (b) Build route-level usage
         # We'll gather a union of the routes from system_route_limits + user_route_overrides
-        route_keys = set(system_route_limits.keys()) | set(user_route_overrides.keys())
+        route_keys = set(system_route_limits.keys()) | set(
+            user_route_overrides.keys()
+        )
         usage["routes"] = {}
         for route in route_keys:
             # 1) System route-limits
             sys_route_lim = system_route_limits.get(route)  # or None
-            route_global_per_min = sys_route_lim.global_per_min if sys_route_lim else system_defaults["global_per_min"]
-            route_route_per_min = sys_route_lim.route_per_min if sys_route_lim else system_defaults["route_per_min"]
-            route_monthly_limit = sys_route_lim.monthly_limit if sys_route_lim else system_defaults["monthly_limit"]
+            route_global_per_min = (
+                sys_route_lim.global_per_min
+                if sys_route_lim
+                else system_defaults["global_per_min"]
+            )
+            route_route_per_min = (
+                sys_route_lim.route_per_min
+                if sys_route_lim
+                else system_defaults["route_per_min"]
+            )
+            route_monthly_limit = (
+                sys_route_lim.monthly_limit
+                if sys_route_lim
+                else system_defaults["monthly_limit"]
+            )
 
             # 2) Merge user overrides for that route
-            user_route_cfg = user_route_overrides.get(route, {})  # e.g. { "route_per_min": 25, "global_per_min": 80, ... }
+            user_route_cfg = user_route_overrides.get(
+                route, {}
+            )  # e.g. { "route_per_min": 25, "global_per_min": 80, ... }
             if user_route_cfg.get("global_per_min") is not None:
                 route_global_per_min = user_route_cfg["global_per_min"]
             if user_route_cfg.get("route_per_min") is not None:
@@ -1017,8 +1045,10 @@ class ManagementService(Service):
                 route_monthly_limit = user_route_cfg["monthly_limit"]
 
             # Now let's measure usage for this route over the last minute
-            route_per_min_used = await self.providers.database.limits_handler._count_requests(
-                user_id, route, one_min_ago
+            route_per_min_used = (
+                await self.providers.database.limits_handler._count_requests(
+                    user_id, route, one_min_ago
+                )
             )
             # monthly usage is the same for all routes if there's a global monthly limit,
             # but if you have route-specific monthly limits, we still want to do a global monthly count.
@@ -1043,7 +1073,6 @@ class ManagementService(Service):
                 # If you want to represent the "global_per_min" that applies to this route,
                 # you could put that here too if it’s route-specific.
                 # But typically "global_per_min" is for all requests, so usage is the same as above.
-
                 # The route-specific monthly usage, in your code, is not specifically counted by route,
                 # but if you want to do it the same as route_per_min, you'd do:
                 # route_monthly_used = await self.providers.database.limits_handler._count_requests(
@@ -1058,7 +1087,7 @@ class ManagementService(Service):
                         if route_monthly_limit is not None
                         else None
                     ),
-                }
+                },
             }
 
         # Return a structured response

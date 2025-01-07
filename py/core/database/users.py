@@ -994,7 +994,18 @@ class PostgresUserHandler(Handler):
                         if not rows:
                             break
                         for row in rows:
-                            writer.writerow(row)
+                            row_dict = {
+                                "id": row[0],
+                                "email": row[1],
+                                "is_superuser": row[2],
+                                "is_active": row[3],
+                                "is_verified": row[4],
+                                "name": row[5],
+                                "bio": row[6],
+                                "created_at": row[7],
+                                "updated_at": row[8],
+                            }
+                            writer.writerow([row_dict[col] for col in columns])
 
             temp_file.flush()
             return temp_file.name, temp_file
