@@ -106,6 +106,26 @@ async def set_api_key(ctx, api_key: str):
         console.print("[red]Failed to set API key:[/red]", str(e))
 
 
+# Commands for Setting / Retrieving Base URL
+#
+@cli.command("set-api-base", short_help="Set your R2R API base URL")
+@click.argument("base_url", required=True, type=str)
+@click.pass_context
+async def set_api_base(ctx, base_url: str):
+    """
+    Store your R2R API base URL locally so you don’t have to pass it on every command.
+    Example usage:
+      r2r set-api-base https://api.example.com
+    """
+    try:
+        config = load_config()
+        config["api_base"] = base_url
+        save_config(config)
+        console.print("[green]API base URL set successfully![/green]")
+    except Exception as e:
+        console.print("[red]Failed to set API base:[/red]", str(e))
+
+
 @cli.command("get-api", short_help="Get your stored R2R API key")
 @click.pass_context
 async def get_api(ctx):

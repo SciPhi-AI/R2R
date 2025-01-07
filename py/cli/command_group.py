@@ -1,4 +1,5 @@
 import json
+import os
 import types
 from functools import wraps
 from pathlib import Path
@@ -142,18 +143,32 @@ class CustomContext(click.Context):
         raise SystemExit(code)
 
 
-def initialize_client(base_url: str) -> R2RAsyncClient:
+def initialize_client() -> R2RAsyncClient:
     """Initialize R2R client with API key from config if available."""
     client = R2RAsyncClient()
 
     try:
         config = load_config()
-        if api_key := config.get("api_key"):
-            client.set_api_key(api_key)
-            if not client.api_key:
-                console.print(
-                    "[yellow]Warning: API key not properly set in client[/yellow]"
-                )
+
+        env_api_base = os.getenv("R2R_API_BASE")
+        config_api_base = config.get("api_base")
+        if env_api_base:
+            api_base = env_api_base
+        elif config_api_base:
+            api_base = config_api_base
+        else:
+            api_base = "https://cloud.sciphi.ai"
+        client.set_base_url(api_base)
+
+        env_api_key = os.getenv("R2R_API_KEY")
+        config_api_key = config.get("api_key")
+        if env_api_key:
+            api_key = env_api_key
+        elif config_api_key:
+            api_key = config_api_key
+        else:
+            api_key = None
+        client.set_api_key(api_key)
 
     except Exception as e:
         console.print(
@@ -165,12 +180,7 @@ def initialize_client(base_url: str) -> R2RAsyncClient:
 
 
 @click.group(cls=CustomGroup)
-@click.option(
-    "--base-url",
-    default="https://cloud.sciphi.ai",
-    help="Base URL for the API",
-)
 @pass_context
-async def cli(ctx: click.Context, base_url: str) -> None:
+async def cli(ctx: click.Context) -> None:
     """R2R CLI for all core operations."""
-    ctx.obj = initialize_client(base_url)
+    ctx.obj = initialize_client()

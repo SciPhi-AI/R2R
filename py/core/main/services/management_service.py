@@ -841,10 +841,78 @@ class ManagementService(Service):
         )
 
     async def get_user_max_documents(self, user_id: UUID) -> int | None:
+        # Fetch the user to see if they have any overrides stored
+        user = await self.providers.database.users_handler.get_user_by_id(
+            user_id
+        )
+        if user.limits_overrides and "max_documents" in user.limits_overrides:
+            return user.limits_overrides["max_documents"]
         return self.config.app.default_max_documents_per_user
 
     async def get_user_max_chunks(self, user_id: UUID) -> int | None:
+        user = await self.providers.database.users_handler.get_user_by_id(
+            user_id
+        )
+        if user.limits_overrides and "max_chunks" in user.limits_overrides:
+            return user.limits_overrides["max_chunks"]
         return self.config.app.default_max_chunks_per_user
 
     async def get_user_max_collections(self, user_id: UUID) -> int | None:
+        user = await self.providers.database.users_handler.get_user_by_id(
+            user_id
+        )
+        if (
+            user.limits_overrides
+            and "max_collections" in user.limits_overrides
+        ):
+            return user.limits_overrides["max_collections"]
         return self.config.app.default_max_collections_per_user
+
+    async def get_max_upload_size_by_type(
+        self, user_id: UUID, file_type_or_ext: str
+    ) -> int:
+        """
+        Return the maximum allowed upload size (in bytes) for the given user's file type/extension.
+        Respects user-level overrides if present, falling back to the system config.
+
+        ```json
+        {
+            "limits_overrides": {
+                "max_file_size": 20_000_000,
+                "max_file_size_by_type":
+                {
+                "pdf": 50_000_000,
+                "docx": 30_000_000
+                },
+                ...
+            }
+        }
+        ```
+
+        """
+        # 1. Normalize extension
+        ext = file_type_or_ext.lower().lstrip(".")
+
+        # 2. Fetch user from DB to see if we have any overrides
+        user = await self.providers.database.users_handler.get_user_by_id(
+            user_id
+        )
+        user_overrides = user.limits_overrides or {}
+
+        # 3. Check if there's a user-level override for "max_file_size_by_type"
+        user_file_type_limits = user_overrides.get("max_file_size_by_type", {})
+        if ext in user_file_type_limits:
+            return user_file_type_limits[ext]
+
+        # 4. If not, check if there's a user-level fallback "max_file_size"
+        if "max_file_size" in user_overrides:
+            return user_overrides["max_file_size"]
+
+        # 5. If none exist at user level, use system config
+        #    Example config paths:
+        system_type_limits = self.config.app.max_upload_size_by_type
+        if ext in system_type_limits:
+            return system_type_limits[ext]
+
+        # 6. Otherwise, return the global default
+        return self.config.app.default_max_upload_size

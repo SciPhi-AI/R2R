@@ -28,6 +28,42 @@ from .base import Service
 logger = logging.getLogger()
 
 
+import tiktoken
+
+
+def tokens_count_for_message(message, encoding):
+    """Return the number of tokens used by a single message."""
+    tokens_per_message = 3
+
+    num_tokens = 0
+    num_tokens += tokens_per_message
+    if message.get("function_call"):
+        num_tokens += len(encoding.encode(message["function_call"]["name"]))
+        num_tokens += len(
+            encoding.encode(message["function_call"]["arguments"])
+        )
+    else:
+        num_tokens += len(encoding.encode(message["content"]))
+
+    return num_tokens
+
+
+def num_tokens_from_messages(messages, model="gpt-4o"):
+    """Return the number of tokens used by a list of messages for both user and assistant."""
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        print("Warning: model not found. Using cl100k_base encoding.")
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+    tokens = 0
+    for i, message in enumerate(messages):
+        tokens += tokens_count_for_message(messages[i], encoding)
+
+        tokens += 3  # every reply is primed with assistant
+    return tokens
+
+
 class RetrievalService(Service):
     def __init__(
         self,
@@ -356,21 +392,45 @@ class RetrievalService(Service):
                 if rag_generation_config.stream:
 
                     async def stream_response():
-                        async with manage_run(self.run_manager, "rag_agent"):
-                            agent = R2RStreamingRAGAgent(
-                                database_provider=self.providers.database,
-                                llm_provider=self.providers.llm,
-                                config=self.config.agent,
-                                search_pipeline=self.pipelines.search_pipeline,
-                            )
-                            async for chunk in agent.arun(
-                                messages=messages,
-                                system_instruction=task_prompt_override,
-                                search_settings=search_settings,
-                                rag_generation_config=rag_generation_config,
-                                include_title_if_available=include_title_if_available,
+                        try:
+                            async with manage_run(
+                                self.run_manager, "rag_agent"
                             ):
-                                yield chunk
+                                agent = R2RStreamingRAGAgent(
+                                    database_provider=self.providers.database,
+                                    llm_provider=self.providers.llm,
+                                    config=self.config.agent,
+                                    search_pipeline=self.pipelines.search_pipeline,
+                                )
+                                async for chunk in agent.arun(
+                                    messages=messages,
+                                    system_instruction=task_prompt_override,
+                                    search_settings=search_settings,
+                                    rag_generation_config=rag_generation_config,
+                                    include_title_if_available=include_title_if_available,
+                                ):
+                                    yield chunk
+                        except Exception as e:
+                            logger.error(f"Error streaming agent output: {e}")
+                            raise
+                        finally:
+                            msgs = [
+                                msg.to_dict()
+                                for msg in agent.conversation.messages
+                            ]
+                            input_tokens = num_tokens_from_messages(msgs[:-1])
+                            output_tokens = num_tokens_from_messages(
+                                [msgs[-1]]
+                            )
+                            await self.providers.database.conversations_handler.add_message(
+                                conversation_id=conversation_id,
+                                content=agent.conversation.messages[-1],
+                                parent_id=message_id,
+                                metadata={
+                                    "input_tokens": input_tokens,
+                                    "output_tokens": output_tokens,
+                                },
+                            )
 
                     return stream_response()
 
@@ -392,10 +452,17 @@ class RetrievalService(Service):
                         role="assistant", content=str(results[-1])
                     )
 
+                input_tokens = num_tokens_from_messages(results[:-1])
+                output_tokens = num_tokens_from_messages([results[-1]])
+
                 await self.providers.database.conversations_handler.add_message(
                     conversation_id=conversation_id,
                     content=assistant_message,
                     parent_id=message_id,
+                    metadata={
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens,
+                    },
                 )
 
                 return {

@@ -1,6 +1,8 @@
 import { feature } from "../../feature";
 import { r2rClient } from "../../r2rClient";
 import {
+  WrappedAPIKeyResponse,
+  WrappedAPIKeysResponse,
   WrappedBooleanResponse,
   WrappedGenericMessageResponse,
   WrappedCollectionsResponse,
@@ -458,4 +460,45 @@ export class UsersClient {
       downloadBlob(blob, options.filename);
     }
   }
+
+  /**
+   * Create a new API key for the specified user.
+   * Only superusers or the user themselves may create an API key.
+   * @param id ID of the user for whom to create an API key
+   * @returns WrappedAPIKeyResponse
+   */
+  @feature("users.createApiKey")
+  async createApiKey(options: { id: string }): Promise<WrappedAPIKeyResponse> {
+    return this.client.makeRequest("POST", `users/${options.id}/api-keys`);
+  }
+
+  /**
+   * List all API keys for the specified user.
+   * Only superusers or the user themselves may list the API keys.
+   * @param id ID of the user whose API keys to list
+   * @returns WrappedAPIKeysResponse
+   */
+  @feature("users.listApiKeys")
+  async listApiKeys(options: { id: string }): Promise<WrappedAPIKeysResponse> {
+    return this.client.makeRequest("GET", `users/${options.id}/api-keys`);
+  }
+
+  /**
+   * Delete a specific API key for the specified user.
+   * Only superusers or the user themselves may delete the API key.
+   * @param id ID of the user
+   * @param keyId ID of the API key to delete
+   * @returns WrappedBooleanResponse
+   */
+  @feature("users.deleteApiKey")
+  async deleteApiKey(options: {
+    id: string;
+    keyId: string;
+  }): Promise<WrappedBooleanResponse> {
+    return this.client.makeRequest(
+      "DELETE",
+      `users/${options.id}/api-keys/${options.keyId}`,
+    );
+  }
+
 }
