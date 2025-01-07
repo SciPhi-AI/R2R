@@ -935,6 +935,7 @@ class PostgresUserHandler(Handler):
                 is_verified,
                 name,
                 bio,
+                collection_ids::text,
                 to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at,
                 to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') AS updated_at
             FROM {self._get_table_name(self.TABLE_NAME)}
@@ -1002,8 +1003,9 @@ class PostgresUserHandler(Handler):
                                 "is_verified": row[4],
                                 "name": row[5],
                                 "bio": row[6],
-                                "created_at": row[7],
-                                "updated_at": row[8],
+                                "collection_ids": row[7],
+                                "created_at": row[8],
+                                "updated_at": row[9],
                             }
                             writer.writerow([row_dict[col] for col in columns])
 
