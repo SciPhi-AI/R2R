@@ -81,13 +81,9 @@ export class UsersClient {
     email: string;
   }): Promise<WrappedGenericMessageResponse> {
     return this.client.makeRequest("POST", "users/send-verification-email", {
-      data: `email=${encodeURIComponent(options.email)}`,
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
+      data: { email: options.email },
     });
   }
-
   /**
    * Delete a specific user.
    * Users can only delete their own account unless they are superusers.
