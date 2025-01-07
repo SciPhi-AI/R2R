@@ -182,7 +182,7 @@ class ManagementService(Service):
         docs_to_delete = []
         for doc_id in document_ids:
             document = await self.providers.database.documents_handler.get_documents_overview(
-                filter_document_ids=[doc_id]
+                offset=0, limit=1, filter_document_ids=[doc_id]
             )
             if not document:
                 raise R2RException(

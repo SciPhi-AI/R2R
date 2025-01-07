@@ -712,21 +712,6 @@ class IngestionServiceAdapter:
         return User.from_dict(user_data)
 
     @staticmethod
-    def _parse_chunk_enrichment_settings(
-        chunk_enrichment_settings: dict,
-    ) -> ChunkEnrichmentSettings:
-        if isinstance(chunk_enrichment_settings, str):
-            try:
-                chunk_enrichment_settings = json.loads(
-                    chunk_enrichment_settings
-                )
-            except json.JSONDecodeError as e:
-                raise ValueError(
-                    f"Invalid chunk enrichment settings format: {chunk_enrichment_settings}"
-                ) from e
-        return ChunkEnrichmentSettings.from_dict(chunk_enrichment_settings)
-
-    @staticmethod
     def parse_ingest_file_input(data: dict) -> dict:
         return {
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),

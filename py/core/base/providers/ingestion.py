@@ -150,7 +150,7 @@ class IngestionConfig(ProviderConfig):
             "provider": "r2r",
             "excluded_parsers": ["mp4"],
             "chunking_strategy": "recursive",
-            "chunk_enrichment_settings": ChunkEnrichmentSettings().dict(),
+            "chunk_enrichment_settings": ChunkEnrichmentSettings(),
             "extra_parsers": {},
             "audio_transcription_model": "openai/whisper-1",
             "vision_img_prompt_name": "vision_img",
