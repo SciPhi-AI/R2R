@@ -181,13 +181,16 @@ class ManagementService(Service):
         # Check if the document still has any chunks left
         docs_to_delete = []
         for doc_id in document_ids:
-            document = await self.providers.database.documents_handler.get_documents_overview(
+            documents_overview_response = await self.providers.database.documents_handler.get_documents_overview(
                 offset=0, limit=1, filter_document_ids=[doc_id]
             )
-            if not document:
+            if not documents_overview_response["results"]:
                 raise R2RException(
                     status_code=404, message="Document not found"
                 )
+
+            document = documents_overview_response["results"][0]
+
             if owner_id and str(document.owner_id) != owner_id:
                 raise R2RException(
                     status_code=404,
@@ -688,10 +691,10 @@ class ManagementService(Service):
             ),
         )
 
-        collection_summary = response.choices[0].message.content
-        if not collection_summary:
+        if collection_summary := response.choices[0].message.content:
+            return collection_summary
+        else:
             raise ValueError("Expected a generated response.")
-        return collection_summary
 
     @telemetry_event("AddPrompt")
     async def add_prompt(
