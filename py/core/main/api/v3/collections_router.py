@@ -1,6 +1,5 @@
 import logging
 import textwrap
-from tempfile import NamedTemporaryFile
 from typing import Optional
 from uuid import UUID
 
@@ -655,7 +654,7 @@ class CollectionsRouter(BaseRouterV3):
                 auth_user, id, CollectionAction.DELETE, self.services
             )
 
-            await self.services.management.delete_collection(id)
+            await self.services.management.delete_collection(collection_id=id)
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(

@@ -12,7 +12,7 @@ from uuid import UUID
 
 import asyncpg
 import httpx
-from asyncpg.exceptions import UndefinedTableError, UniqueViolationError
+from asyncpg.exceptions import UniqueViolationError
 from fastapi import HTTPException
 
 from core.base.abstractions import (
@@ -2286,6 +2286,13 @@ class PostgresGraphsHandler(Handler):
         QUERY = f"""
             DELETE FROM {self._get_table_name("graphs")} WHERE collection_id = $1
         """
+        try:
+            await self.connection_manager.execute_query(QUERY, [collection_id])
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while deleting the graph: {e}",
+            ) from e
 
     async def perform_graph_clustering(
         self,
