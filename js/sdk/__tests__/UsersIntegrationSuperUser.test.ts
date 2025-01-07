@@ -69,6 +69,13 @@ describe("r2rClient V3 Users Integration Tests", () => {
     await client.users.logout();
   });
 
+  test("Request verification email", async () => {
+    const response = await client.users.sendVerificationEmail({
+      email: "new_user@example.com",
+    });
+    expect(response.results).toBeDefined();
+  });
+
   test("Login as a user after logout", async () => {
     const response = await client.users.login({
       email: "new_user@example.com",

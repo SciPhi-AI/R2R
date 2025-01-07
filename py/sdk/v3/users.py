@@ -79,6 +79,19 @@ class UsersSDK:
             version="v3",
         )
 
+    async def send_verification_email(
+        self, email: str
+    ) -> WrappedGenericMessageResponse:
+        """
+        Request that a verification email to a user.
+        """
+        return await self.client._make_request(
+            "POST",
+            "users/send-verification-email",
+            json=email,
+            version="v3",
+        )
+
     async def delete(
         self, id: str | UUID, password: str
     ) -> WrappedBooleanResponse:

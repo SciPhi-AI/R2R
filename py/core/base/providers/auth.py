@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from fastapi import Security
@@ -96,6 +97,12 @@ class AuthProvider(Provider, ABC):
 
     @abstractmethod
     async def register(self, email: str, password: str) -> User:
+        pass
+
+    @abstractmethod
+    async def send_verification_email(
+        self, email: str, user: Optional[User] = None
+    ) -> tuple[str, datetime]:
         pass
 
     @abstractmethod

@@ -377,8 +377,6 @@ export type WrappedTokenResponse = ResultsWrapper<TokenResponse>;
 export type WrappedUserResponse = ResultsWrapper<User>;
 export type WrappedUsersResponse = PaginatedResultsWrapper<User[]>;
 
-
-
 /**
  * The "base" shape for an R2R results wrapper.
  */
@@ -421,7 +419,7 @@ export interface ApiKeyNoPriv {
   public_key: string;
   key_id: string;
   name?: string;
-  updated_at: string;  // or `Date` if your code auto-parses
+  updated_at: string; // or `Date` if your code auto-parses
 }
 
 /**

@@ -1,7 +1,7 @@
 import functools
 import logging
 from abc import abstractmethod
-from typing import Callable, Optional
+from typing import Callable
 
 from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from fastapi.responses import FileResponse, StreamingResponse

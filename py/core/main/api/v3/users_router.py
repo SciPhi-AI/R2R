@@ -247,76 +247,6 @@ class UsersRouter(BaseRouterV3):
                 filename="users_export.csv",
             )
 
-        # TODO: deprecated, remove in next release
-        @self.router.post(
-            "/users/register",
-            # dependencies=[Depends(self.rate_limit_dependency)],
-            response_model=WrappedUserResponse,
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient()
-                            new_user = client.users.register(
-                                email="jane.doe@example.com",
-                                password="secure_password123"
-                            )"""
-                        ),
-                    },
-                    {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
-                            const { r2rClient } = require("r2r-js");
-
-                            const client = new r2rClient();
-
-                            function main() {
-                                const response = await client.users.register({
-                                    email: "jane.doe@example.com",
-                                    password: "secure_password123"
-                                });
-                            }
-
-                            main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r users register jane.doe@example.com secure_password123
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X POST "https://api.example.com/v3/users/register" \\
-                                -H "Content-Type: application/json" \\
-                                -d '{
-                                    "email": "jane.doe@example.com",
-                                    "password": "secure_password123"
-                                }'"""
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def register(
-            email: EmailStr = Body(..., description="User's email address"),
-            password: str = Body(..., description="User's password"),
-        ):
-            """Register a new user with the given email and password."""
-            return await self.services.auth.register(email, password)
-
         @self.router.post(
             "/users/verify-email",
             # dependencies=[Depends(self.rate_limit_dependency)],
@@ -391,6 +321,80 @@ class UsersRouter(BaseRouterV3):
                 email, verification_code
             )
             return GenericMessageResponse(message=result["message"])  # type: ignore
+
+        @self.router.post(
+            "/users/send-verification-email",
+            dependencies=[
+                Depends(self.providers.auth.auth_wrapper(public=True))
+            ],
+            response_model=WrappedGenericMessageResponse,
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+                            tokens = client.users.verify_email(
+                                email="jane.doe@example.com",
+                                verification_code="1lklwal!awdclm"
+                            )"""
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient();
+
+                            function main() {
+                                const response = await client.users.verifyEmail({
+                                    email: jane.doe@example.com",
+                                    verificationCode: "1lklwal!awdclm"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/users/login" \\
+                                -H "Content-Type: application/x-www-form-urlencoded" \\
+                                -d "email=jane.doe@example.com&verification_code=1lklwal!awdclm"
+                            """
+                        ),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def send_verification_email(
+            email: EmailStr = Body(..., description="User's email address"),
+        ) -> WrappedGenericMessageResponse:
+            """Send a user's email a verification code."""
+            user = (
+                await self.providers.database.users_handler.get_user_by_email(
+                    email
+                )
+            )
+            if user and user.is_verified:
+                raise R2RException(
+                    status_code=400,
+                    message="This email is already verified. Please log in.",
+                )
+
+            result = await self.services.auth.send_verification_email(
+                email=email
+            )
+            return GenericMessageResponse(message="A verification email has been sent.")  # type: ignore
 
         @self.router.post(
             "/users/login",
@@ -693,7 +697,9 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users/reset-password",
-            dependencies=[Depends(self.rate_limit_dependency)],
+            dependencies=[
+                Depends(self.providers.auth.auth_wrapper(public=True))
+            ],
             response_model=WrappedGenericMessageResponse,
             openapi_extra={
                 "x-codeSamples": [

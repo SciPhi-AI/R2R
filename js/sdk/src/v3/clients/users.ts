@@ -72,6 +72,20 @@ export class UsersClient {
   }
 
   /**
+   * Send a verification email to a user.
+   * @param email User's email address
+   * @returns WrappedGenericMessageResponse
+   */
+  @feature("users.sendVerificationEmail")
+  async sendVerificationEmail(options: {
+    email: string;
+  }): Promise<WrappedGenericMessageResponse> {
+    return this.client.makeRequest("POST", "users/send-verification-email", {
+      data: options,
+    });
+  }
+
+  /**
    * Delete a specific user.
    * Users can only delete their own account unless they are superusers.
    * @param id User ID to delete
@@ -504,5 +518,4 @@ export class UsersClient {
   async getLimits(options: { id: string }): Promise<any> {
     return this.client.makeRequest("GET", `users/${options.id}/limits`);
   }
-
 }
