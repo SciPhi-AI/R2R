@@ -59,26 +59,6 @@ class UsersSDK:
             version="v3",
         )
 
-    # @deprecated("Use client.users.create() instead")
-    async def register(self, email: str, password: str) -> WrappedUserResponse:
-        """
-        Register a new user.
-
-        Args:
-            email (str): User's email address
-            password (str): User's password
-
-        Returns:
-            UserResponse: New user information
-        """
-        data: dict[str, Any] = {"email": email, "password": password}
-        return await self.client._make_request(
-            "POST",
-            "users/register",
-            json=data,
-            version="v3",
-        )
-
     async def send_verification_email(
         self, email: str
     ) -> WrappedGenericMessageResponse:
