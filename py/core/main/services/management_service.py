@@ -114,29 +114,18 @@ class ManagementService(Service):
                 return transformed
             return filters
 
-        # 1. (Optional) Validate the input filters based on your rules.
-        #    E.g., check if filters is not empty, allowed fields, etc.
-        # validate_filters(filters)
-
-        # 2. Transform filters if needed.
-        #    For example, if `chunk_id` is used, map it to `id`, or similar transformations.
+        # Transform filters if needed.
         transformed_filters = transform_chunk_id_to_id(filters)
 
-        # 3. First, find out which chunks match these filters *before* deleting, so we know which docs are affected.
-        #    You can do a list operation on chunks to see which chunk IDs and doc IDs would be hit.
+        # Find chunks that match the filters before deleting
         interim_results = (
             await self.providers.database.chunks_handler.list_chunks(
                 filters=transformed_filters,
                 offset=0,
-                limit=1_000,  # Arbitrary large limit or pagination logic
+                limit=1_000,
                 include_vectors=False,
             )
         )
-
-        if interim_results["page_info"]["total_entries"] == 0:
-            raise R2RException(
-                status_code=404, message="No entries found for deletion."
-            )
 
         results = interim_results["results"]
         while interim_results["page_info"]["total_entries"] == 1_000:
@@ -151,43 +140,48 @@ class ManagementService(Service):
                 )
             )
             results.extend(interim_results["results"])
-        matched_chunk_docs = {UUID(chunk["document_id"]) for chunk in results}
 
-        # If no chunks match, raise or return a no-op result
-        if not matched_chunk_docs:
-            return {
-                "success": False,
-                "message": "No chunks match the given filters.",
-            }
+        document_ids = set()
+        if "document_id" in filters:
+            doc_id = filters["document_id"]
+            if isinstance(doc_id, str):
+                document_ids.add(UUID(doc_id))
+            elif isinstance(doc_id, UUID):
+                document_ids.add(doc_id)
+            elif isinstance(doc_id, dict):
+                # Handle dictionary filters like {"$eq": "some-uuid"}
+                if "$eq" in doc_id:
+                    value = doc_id["$eq"]
+                    document_ids.add(
+                        UUID(value) if isinstance(value, str) else value
+                    )
 
-        # 4. Delete the matching chunks from the database.
+        # Delete matching chunks from the database
         delete_results = await self.providers.database.chunks_handler.delete(
             transformed_filters
         )
 
-        # 5. From `delete_results`, extract the document_ids that were affected.
-        #    The delete_results should map chunk_id to details including `document_id`.
+        # Extract the document_ids that were affected.
         affected_doc_ids = {
             UUID(info["document_id"])
             for info in delete_results.values()
             if info.get("document_id")
         }
+        document_ids.update(affected_doc_ids)
 
-        # 6. For each affected document, check if the document still has any chunks left.
+        # Check if the document still has any chunks left
         docs_to_delete = []
-        for doc_id in affected_doc_ids:
+        for doc_id in document_ids:
             remaining = await self.providers.database.chunks_handler.list_document_chunks(
                 document_id=doc_id,
                 offset=0,
-                limit=1,  # Just need to know if there's at least one left
+                limit=1,
                 include_vectors=False,
             )
-            # If no remaining chunks, we should delete the document.
             if remaining["total_entries"] == 0:
                 docs_to_delete.append(doc_id)
 
-        # 7. Delete documents that no longer have associated chunks.
-        #    Also update graphs if needed (entities/relationships).
+        # Delete documents that no longer have associated chunks
         for doc_id in docs_to_delete:
             # Delete related entities & relationships if needed:
             await self.providers.database.graphs_handler.entities.delete(
@@ -204,7 +198,6 @@ class ManagementService(Service):
                 document_id=doc_id
             )
 
-        # 8. Return a summary of what happened.
         return {
             "success": True,
             "deleted_chunks_count": len(delete_results),
