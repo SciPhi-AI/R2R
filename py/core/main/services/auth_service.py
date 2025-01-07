@@ -39,7 +39,9 @@ class AuthService(Service):
         return await self.providers.auth.register(email, password)
 
     @telemetry_event("SendVerificationEmail")
-    async def send_verification_email(self, email: str) -> dict[str, str]:
+    async def send_verification_email(
+        self, email: str
+    ) -> tuple[str, datetime]:
         return await self.providers.auth.send_verification_email(email=email)
 
     @telemetry_event("VerifyEmail")

@@ -586,6 +586,14 @@ class ManagementService(Service):
         await self.providers.database.chunks_handler.delete_collection_vector(
             collection_id
         )
+        try:
+            await self.providers.database.graphs_handler.delete(
+                collection_id=collection_id,
+            )
+        except Exception as e:
+            logger.warning(
+                f"Error deleting graph for collection {collection_id}: {e}"
+            )
         return True
 
     @telemetry_event("ListCollections")
@@ -619,10 +627,9 @@ class ManagementService(Service):
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
-        x = await self.providers.database.users_handler.remove_user_from_collection(
+        return await self.providers.database.users_handler.remove_user_from_collection(
             user_id, collection_id
         )
-        return x
 
     @telemetry_event("GetUsersInCollection")
     async def get_users_in_collection(

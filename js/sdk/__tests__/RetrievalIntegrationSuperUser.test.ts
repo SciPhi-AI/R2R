@@ -123,11 +123,23 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   //   expect(content.length).toBeGreaterThan(0);
   // }, 30000);
 
-  test("Delete untitled document", async () => {
-    const response = await client.documents.delete({
-      id: "28ce9a4c-4d15-5287-b0c6-67834b9c4546",
-    });
+  test("List and delete conversations", async () => {
+    const listResponse = await client.conversations.list();
+    expect(listResponse.results).toBeDefined();
 
+    for (const conversation of listResponse.results) {
+      const deleteResponse = await client.conversations.delete({
+        id: conversation.id,
+      });
+      expect(deleteResponse.results).toBeDefined();
+    }
+
+    const finalListResponse = await client.conversations.list();
+    expect(finalListResponse.results.length).toBe(0);
+  });
+
+  test("Delete document", async () => {
+    const response = await client.documents.delete({ id: documentId });
     expect(response.results).toBeDefined();
   });
 });
