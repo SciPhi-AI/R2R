@@ -387,6 +387,8 @@ services:
         condition: service_completed_successfully
       unstructured:
         condition: service_healthy
+      graph_clustering:
+        condition: service_healthy
 
   r2r-dashboard:
     image: emrgntcmplxty/r2r-dashboard:latest

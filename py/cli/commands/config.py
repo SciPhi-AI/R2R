@@ -71,9 +71,7 @@ async def reset():
     Config._config = configparser.ConfigParser()  # Reset the config in memory
 
     # Set default values
-    Config.set_credentials(
-        "Base URL", {"base_url": "https://api.cloud.sciphi.ai"}
-    )
+    Config.set_credentials("Base URL", {"base_url": "http://localhost:7272"})
 
     console.print(
         "[green]Successfully reset configuration to defaults[/green]"

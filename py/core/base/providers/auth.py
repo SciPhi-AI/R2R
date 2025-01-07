@@ -133,7 +133,7 @@ class AuthProvider(Provider, ABC):
                 return await self._get_default_admin_user()
             if not auth and not api_key:
                 raise R2RException(
-                    message="No credentials provided",
+                    message="No credentials provided. Create an account at https://app.sciphi.ai and set your API key using `r2r configure key` OR change your base URL to a custom deployment.",
                     status_code=401,
                 )
             if auth and api_key:

@@ -390,6 +390,7 @@ class RetrievalService(Service):
                 )
 
                 if rag_generation_config.stream:
+
                     async def stream_response():
                         try:
                             async with manage_run(
