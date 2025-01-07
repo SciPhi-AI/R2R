@@ -60,7 +60,7 @@ export abstract class BaseClient {
     method: Method,
     endpoint: string,
     options: any = {},
-    version: "v2" | "v3" = "v2",
+    version: "v3" = "v3",
   ): Promise<T> {
     const url = `/${version}/${endpoint}`;
     const config: AxiosRequestConfig = {
@@ -154,7 +154,9 @@ export abstract class BaseClient {
     try {
       const response = await this.axiosInstance.request(config);
 
-      if (options.responseType === "arraybuffer") {
+      if (options.responseType === "blob") {
+        return response.data as T;
+      } else if (options.responseType === "arraybuffer") {
         if (options.returnFullResponse) {
           return response as unknown as T;
         }
