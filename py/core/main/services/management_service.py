@@ -142,19 +142,28 @@ class ManagementService(Service):
             results.extend(interim_results["results"])
 
         document_ids = set()
-        if "document_id" in filters:
+        owner_id = None
+
+        if "$and" in filters:
+            for condition in filters["$and"]:
+                if "owner_id" in condition and "$eq" in condition["owner_id"]:
+                    owner_id = condition["owner_id"]["$eq"]
+                elif (
+                    "document_id" in condition
+                    and "$eq" in condition["document_id"]
+                ):
+                    document_ids.add(UUID(condition["document_id"]["$eq"]))
+        elif "document_id" in filters:
             doc_id = filters["document_id"]
             if isinstance(doc_id, str):
                 document_ids.add(UUID(doc_id))
             elif isinstance(doc_id, UUID):
                 document_ids.add(doc_id)
-            elif isinstance(doc_id, dict):
-                # Handle dictionary filters like {"$eq": "some-uuid"}
-                if "$eq" in doc_id:
-                    value = doc_id["$eq"]
-                    document_ids.add(
-                        UUID(value) if isinstance(value, str) else value
-                    )
+            elif isinstance(doc_id, dict) and "$eq" in doc_id:
+                value = doc_id["$eq"]
+                document_ids.add(
+                    UUID(value) if isinstance(value, str) else value
+                )
 
         # Delete matching chunks from the database
         delete_results = await self.providers.database.chunks_handler.delete(
@@ -172,14 +181,19 @@ class ManagementService(Service):
         # Check if the document still has any chunks left
         docs_to_delete = []
         for doc_id in document_ids:
-            remaining = await self.providers.database.chunks_handler.list_document_chunks(
-                document_id=doc_id,
-                offset=0,
-                limit=1,
-                include_vectors=False,
+            document = await self.providers.database.documents_handler.get_documents_overview(
+                filter_document_ids=[doc_id]
             )
-            if remaining["total_entries"] == 0:
-                docs_to_delete.append(doc_id)
+            if not document:
+                raise R2RException(
+                    status_code=404, message="Document not found"
+                )
+            if owner_id and str(document.owner_id) != owner_id:
+                raise R2RException(
+                    status_code=404,
+                    message="Document not found or insufficient permissions",
+                )
+            docs_to_delete.append(doc_id)
 
         # Delete documents that no longer have associated chunks
         for doc_id in docs_to_delete:
