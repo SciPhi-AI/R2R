@@ -69,7 +69,7 @@ class LoadTester:
         """Register and login a single user with robust error handling."""
         # Register user
         reg_result = await self.safe_call(
-            self.client.users.register(user_email, password),
+            self.client.users.create(user_email, password),
             timeout=REGISTER_TIMEOUT,
             operation_desc=f"register user {user_email}",
         )

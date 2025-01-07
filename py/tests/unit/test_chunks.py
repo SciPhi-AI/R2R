@@ -52,7 +52,7 @@ class AsyncR2RTestClient:
         return response["results"]
 
     async def register_user(self, email: str, password: str) -> None:
-        await self.client.users.register(email, password)
+        await self.client.users.create(email, password)
 
     async def login_user(self, email: str, password: str) -> None:
         await self.client.users.login(email, password)

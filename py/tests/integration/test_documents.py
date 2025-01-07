@@ -199,7 +199,7 @@ def test_search_documents(client, test_document):
 
 def test_list_document_chunks(mutable_client, cleanup_documents):
     temp_user = f"{uuid.uuid4()}@me.com"
-    mutable_client.users.register(temp_user, "password")
+    mutable_client.users.create(temp_user, "password")
     mutable_client.users.login(temp_user, "password")
 
     resp = mutable_client.documents.create(
@@ -251,7 +251,7 @@ def test_get_document_collections_non_superuser(client):
     # Create a non-superuser client
     non_super_client = R2RClient(client.base_url)
     random_string = str(uuid.uuid4())
-    non_super_client.users.register(f"{random_string}@me.com", "password")
+    non_super_client.users.create(f"{random_string}@me.com", "password")
     non_super_client.users.login(f"{random_string}@me.com", "password")
 
     document_id = str(uuid.uuid4())  # Some doc ID
@@ -273,7 +273,7 @@ def test_access_document_not_owned(client, cleanup_documents):
     # Now try to access with a non-superuser
     non_super_client = R2RClient(client.base_url)
     random_string = str(uuid.uuid4())
-    non_super_client.users.register(f"{random_string}@me.com", "password")
+    non_super_client.users.create(f"{random_string}@me.com", "password")
     non_super_client.users.login(f"{random_string}@me.com", "password")
 
     with pytest.raises(R2RException) as exc_info:
@@ -285,7 +285,7 @@ def test_access_document_not_owned(client, cleanup_documents):
 
 def test_list_documents_with_pagination(mutable_client, cleanup_documents):
     temp_user = f"{uuid.uuid4()}@me.com"
-    mutable_client.users.register(temp_user, "password")
+    mutable_client.users.create(temp_user, "password")
     mutable_client.users.login(temp_user, "password")
 
     for i in range(3):
