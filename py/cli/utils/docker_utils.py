@@ -313,10 +313,10 @@ def get_compose_files():
         "..",
     )
     compose_files = {
-        "base": os.path.join(package_dir, "compose.yaml"),
-        "full": os.path.join(package_dir, "compose.full.yaml"),
+        "base": os.path.join(package_dir, "r2r", "compose.yaml"),
+        "full": os.path.join(package_dir, "r2r", "compose.full.yaml"),
         "full_scale": os.path.join(
-            package_dir, "compose.full_with_replicas.yaml"
+            package_dir, "r2r", "compose.full_with_replicas.yaml"
         ),
     }
 

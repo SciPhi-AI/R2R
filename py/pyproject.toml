@@ -5,27 +5,24 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-version = "3.3.23"
+version = "3.3.24"
 
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
-include = [
-    "r2r.toml",
-    "compose.yaml",
-    "compose.full.yaml",
-    "compose.full_with_replicas.yaml",
-    "pyproject.toml",
-    "migrations/**/*",
-    "r2r/**/*.yaml",
-    "r2r/**/*.toml"
-]
+
 packages = [
-    { include = "r2r" },
+    { include = "r2r", from = "." },
     { include = "sdk", from = "." },
     { include = "shared", from = "." },
     { include = "core", from = "." },
     { include = "cli", from = "." },
+]
+include = [
+    { path = "migrations/**/*", format = ["sdist", "wheel"] },
+    { path = "pyproject.toml", format = ["sdist", "wheel"] },
+    { path = "r2r/**/*.yaml", format = ["sdist", "wheel"] },
+    { path = "r2r/**/*.toml", format = ["sdist", "wheel"] }
 ]
 
 [tool.poetry.dependencies]
