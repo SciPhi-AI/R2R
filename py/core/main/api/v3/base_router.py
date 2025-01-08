@@ -152,10 +152,11 @@ class BaseRouterV3:
             try:
                 yield
             finally:
-                # 4) Log the request afterwards
-                await self.providers.database.limits_handler.log_request(
-                    user_id, route
-                )
+                # 4) Log only POST and DELETE requests
+                if request.method in ["POST", "DELETE"]:
+                    await self.providers.database.limits_handler.log_request(
+                        user_id, route
+                    )
 
         async def websocket_rate_limit_dependency(websocket: WebSocket):
             # Example: if you want to rate-limit websockets similarly
