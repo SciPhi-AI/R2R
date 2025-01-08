@@ -300,6 +300,7 @@ services:
       - R2R_CONFIG_NAME=${R2R_CONFIG_NAME:-}
       - R2R_CONFIG_PATH=${R2R_CONFIG_PATH:-}
       - R2R_PROJECT_NAME=${R2R_PROJECT_NAME:-r2r_default}
+      - R2R_SECRET_KEY=${R2R_SECRET_KEY:-}
 
       # Postgres
       - R2R_POSTGRES_USER=${R2R_POSTGRES_USER:-postgres}
