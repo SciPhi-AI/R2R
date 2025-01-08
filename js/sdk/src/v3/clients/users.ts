@@ -219,17 +219,27 @@ export class UsersClient {
     });
   }
 
-  /**
-   * Request a password reset.
-   * @param email User's email address
-   * @returns
-   */
+  // /**
+  //  * Request a password reset.
+  //  * @param email User's email address
+  //  * @returns
+  //  */
+  // @feature("users.requestPasswordReset")
+  // async requestPasswordReset(options: {
+  //   email: string;
+  // }): Promise<WrappedGenericMessageResponse> {
+  //   return this.client.makeRequest("POST", "users/request-password-reset", {
+  //     data: options,
+  //   });
+  // }
+
   @feature("users.requestPasswordReset")
-  async requestPasswordReset(options: {
-    email: string;
-  }): Promise<WrappedGenericMessageResponse> {
+  async requestPasswordReset(email: string): Promise<WrappedGenericMessageResponse> {
     return this.client.makeRequest("POST", "users/request-password-reset", {
-      data: options,
+      data: email, // Pass the raw string email
+      headers: {
+        "Content-Type": "text/plain", // Ensure headers specify plain text
+      },
     });
   }
 
