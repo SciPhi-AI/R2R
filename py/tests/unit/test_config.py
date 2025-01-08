@@ -11,7 +11,7 @@ from core.main.config import R2RConfig
 @pytest.fixture
 def base_config():
     """Load the base r2r.toml config"""
-    config_path = Path(__file__).parent.parent.parent / "r2r.toml"
+    config_path = Path(__file__).parent.parent.parent / "r2r/r2r.toml"
     with open(config_path) as f:
         return toml.load(f)
 
