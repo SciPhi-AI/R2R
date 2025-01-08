@@ -55,22 +55,21 @@ export class UsersClient {
   }
 
   /**
-   * Register a new user.
+   * Send a verification email to a user.
    * @param email User's email address
-   * @param password User's password
-   * @returns WrappedUserResponse
-   * @deprecated Use `client.users.create` instead.
+   * @returns WrappedGenericMessageResponse
    */
-  @feature("users.register")
-  async register(options: {
+  @feature("users.sendVerificationEmail")
+  async sendVerificationEmail(options: {
     email: string;
-    password: string;
-  }): Promise<WrappedUserResponse> {
-    return this.client.makeRequest("POST", "users/register", {
-      data: options,
+  }): Promise<WrappedGenericMessageResponse> {
+    return this.client.makeRequest("POST", "users/send-verification-email", {
+      data: options.email,
+      headers: {
+        "Content-Type": "text/plain",
+      },
     });
   }
-
   /**
    * Delete a specific user.
    * Users can only delete their own account unless they are superusers.

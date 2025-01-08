@@ -1,5 +1,6 @@
 import logging
 import os
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
@@ -92,6 +93,13 @@ class SupabaseAuthProvider(AuthProvider):
             raise R2RException(
                 status_code=400, message="User registration failed"
             )
+
+    async def send_verification_email(
+        self, email: str, user: Optional[User] = None
+    ) -> tuple[str, datetime]:
+        raise NotImplementedError(
+            "send_verification_email is not used with Supabase"
+        )
 
     async def verify_email(
         self, email: str, verification_code: str

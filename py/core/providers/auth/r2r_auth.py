@@ -217,25 +217,8 @@ class R2RAuthProvider(AuthProvider):
         )
 
         if self.config.require_email_verification:
-            verification_code = (
-                self.crypto_provider.generate_verification_code()
-            )
-            expiry = datetime.now(timezone.utc) + timedelta(hours=24)
-            await self.database_provider.users_handler.store_verification_code(
-                id=new_user.id,
-                verification_code=verification_code,
-                expiry=expiry,
-            )
-            new_user.verification_code_expiry = expiry
-
-            first_name = (
-                new_user.name.split(" ")[0]
-                if new_user.name
-                else email.split("@")[0]
-            )
-
-            await self.email_provider.send_verification_email(
-                new_user.email, verification_code, {"first_name": first_name}
+            verification_code, _ = await self.send_verification_email(
+                email=email, user=new_user
             )
         else:
             expiry = datetime.now(timezone.utc) + timedelta(hours=366 * 10)
@@ -249,6 +232,40 @@ class R2RAuthProvider(AuthProvider):
             )
 
         return new_user
+
+    async def send_verification_email(
+        self, email: str, user: Optional[User] = None
+    ) -> tuple[str, datetime]:
+        if user is None:
+            user = (
+                await self.database_provider.users_handler.get_user_by_email(
+                    email=email
+                )
+            )
+            if not user:
+                raise R2RException(status_code=404, message="User not found")
+
+        verification_code = self.crypto_provider.generate_verification_code()
+        expiry = datetime.now(timezone.utc) + timedelta(hours=24)
+
+        await self.database_provider.users_handler.store_verification_code(
+            id=user.id,
+            verification_code=verification_code,
+            expiry=expiry,
+        )
+
+        if hasattr(user, "verification_code_expiry"):
+            user.verification_code_expiry = expiry
+
+        first_name = (
+            user.name.split(" ")[0] if user.name else email.split("@")[0]
+        )
+
+        await self.email_provider.send_verification_email(
+            user.email, verification_code, {"first_name": first_name}
+        )
+
+        return verification_code, expiry
 
     async def verify_email(
         self, email: str, verification_code: str
@@ -432,25 +449,8 @@ class R2RAuthProvider(AuthProvider):
         await self.database_provider.token_handler.clean_expired_blacklisted_tokens()
 
     async def send_reset_email(self, email: str) -> dict:
-        user = await self.database_provider.users_handler.get_user_by_email(
+        verification_code, expiry = await self.send_verification_email(
             email=email
-        )
-        if not user:
-            raise R2RException(status_code=404, message="User not found")
-
-        verification_code = self.crypto_provider.generate_verification_code()
-        expiry = datetime.now(timezone.utc) + timedelta(hours=24)
-        await self.database_provider.users_handler.store_verification_code(
-            id=user.id,
-            verification_code=verification_code,
-            expiry=expiry,
-        )
-
-        first_name = (
-            user.name.split(" ")[0] if user.name else email.split("@")[0]
-        )
-        await self.email_provider.send_verification_email(
-            email, verification_code, {"first_name": first_name}
         )
 
         return {

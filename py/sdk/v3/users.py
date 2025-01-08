@@ -1,5 +1,3 @@
-from __future__ import annotations  # for Python 3.10+
-
 from typing import Any, Optional
 from uuid import UUID
 
@@ -59,23 +57,16 @@ class UsersSDK:
             version="v3",
         )
 
-    # @deprecated("Use client.users.create() instead")
-    async def register(self, email: str, password: str) -> WrappedUserResponse:
+    async def send_verification_email(
+        self, email: str
+    ) -> WrappedGenericMessageResponse:
         """
-        Register a new user.
-
-        Args:
-            email (str): User's email address
-            password (str): User's password
-
-        Returns:
-            UserResponse: New user information
+        Request that a verification email to a user.
         """
-        data: dict[str, Any] = {"email": email, "password": password}
         return await self.client._make_request(
             "POST",
-            "users/register",
-            json=data,
+            "users/send-verification-email",
+            json=email,
             version="v3",
         )
 

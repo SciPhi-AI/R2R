@@ -53,7 +53,7 @@ def num_tokens_from_messages(messages, model="gpt-4o"):
     try:
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:
-        print("Warning: model not found. Using cl100k_base encoding.")
+        logger.warning("Warning: model not found. Using cl100k_base encoding.")
         encoding = tiktoken.get_encoding("cl100k_base")
 
     tokens = 0

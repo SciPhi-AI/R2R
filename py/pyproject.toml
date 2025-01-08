@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-version = "3.3.21"
+version = "3.3.22"
 
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
@@ -30,6 +30,7 @@ packages = [
 # Python Versions
 python = ">=3.10,<3.13"
 
+aiofiles = "^24.1.0"
 alembic = "^1.13.3"
 asyncclick = "^8.1.7.2"
 click = "^8.0.0"
@@ -79,7 +80,6 @@ uvicorn = { version = "^0.27.0.post1", optional = true }
 vecs = { version = "^0.4.0", optional = true }
 
 # R2R Ingestion
-aiofiles = { version = "^24.1.0", optional = true }
 aioshutil = { version = "^1.5", optional = true }
 beautifulsoup4 = { version = "^4.12.3", optional = true }
 bs4 = { version = "^0.0.2", optional = true }
@@ -137,7 +137,6 @@ core = [
     "pynacl"
 ]
 ingestion-bundle = [
-    "aiofiles",
     "aioshutil",
     "beautifulsoup4",
     "bs4",

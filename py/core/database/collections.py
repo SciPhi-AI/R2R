@@ -572,7 +572,19 @@ class PostgresCollectionsHandler(Handler):
                         if not rows:
                             break
                         for row in rows:
-                            writer.writerow(row)
+                            row_dict = {
+                                "id": row[0],
+                                "owner_id": row[1],
+                                "name": row[2],
+                                "description": row[3],
+                                "graph_sync_status": row[4],
+                                "graph_cluster_status": row[5],
+                                "created_at": row[6],
+                                "updated_at": row[7],
+                                "user_count": row[8],
+                                "document_count": row[9],
+                            }
+                            writer.writerow([row_dict[col] for col in columns])
 
             temp_file.flush()
             return temp_file.name, temp_file
