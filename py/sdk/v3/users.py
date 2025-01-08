@@ -461,19 +461,30 @@ class UsersSDK:
     async def create_api_key(
         self,
         id: str | UUID,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
     ) -> dict:
         """
         Create a new API key for the specified user.
 
         Args:
             id (str | UUID): User ID to create API key for
+            name (Optional[str]): Name of the API key
+            description (Optional[str]): Description of the API key
 
         Returns:
             dict: { "message": "API key created successfully", "api_key": "key_id.raw_api_key" }
         """
+        data: dict[str, Any] = {}
+        if name:
+            data["name"] = name
+        if description:
+            data["description"] = description
+
         return await self.client._make_request(
             "POST",
             f"users/{str(id)}/api-keys",
+            json=data,
             version="v3",
         )
 
@@ -521,5 +532,27 @@ class UsersSDK:
         return await self.client._make_request(
             "GET",
             f"users/{str(self.client._user_id)}/limits",
+            version="v3",
+        )
+
+    async def patch_metadata(
+        self,
+        # user_id: str | UUID,
+        metadata: dict[str, str | None],
+    ) -> WrappedUserResponse:
+        """
+        Partially update metadata for the specified user (Stripe-like).
+
+        This method merges existing metadata with the new key-values:
+        - metadata[key] = <string> => update or add that key
+        - metadata[key] = "" => remove that key
+        - if metadata == {} => remove all keys
+        """
+
+        # We assume you'll define the endpoint as PATCH /users/{id}/metadata
+        return await self.client._make_request(
+            "PATCH",
+            f"users/{str(self.client._user_id)}/metadata",
+            json=metadata,  # The dictionary of key->new_value
             version="v3",
         )

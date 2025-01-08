@@ -297,6 +297,9 @@ export interface User {
   name?: string;
   bio?: string;
   profilePicture?: string;
+  metadata?: Record<string, any>;
+  limitOverrides?: Record<string, any>;
+  documentIds?: string[];
 }
 
 // Generic Responses

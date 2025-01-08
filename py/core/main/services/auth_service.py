@@ -134,6 +134,8 @@ class AuthService(Service):
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
         limits_overrides: Optional[dict] = None,
+        merge_limits: Optional[dict] = None,
+        new_metadata: Optional[dict] = None,
     ) -> User:
         user: User = (
             await self.providers.database.users_handler.get_user_by_id(user_id)
@@ -152,7 +154,9 @@ class AuthService(Service):
             user.profile_picture = profile_picture
         if limits_overrides is not None:
             user.limits_overrides = limits_overrides
-        return await self.providers.database.users_handler.update_user(user)
+        return await self.providers.database.users_handler.update_user(
+            user, merge_limits=merge_limits, new_metadata=new_metadata
+        )
 
     @telemetry_event("DeleteUserAccount")
     async def delete_user(
@@ -277,17 +281,23 @@ class AuthService(Service):
         """
         return await self.providers.auth.send_reset_email(email)
 
-    async def create_user_api_key(self, user_id: UUID) -> dict:
+    async def create_user_api_key(
+        self, user_id: UUID, name: Optional[str], description: Optional[str]
+    ) -> dict:
         """
-        Generate a new API key for the user.
+        Generate a new API key for the user with optional name and description.
 
         Args:
             user_id (UUID): The ID of the user
+            name (Optional[str]): Name of the API key
+            description (Optional[str]): Description of the API key
 
         Returns:
             dict: Contains the API key and message
         """
-        return await self.providers.auth.create_user_api_key(user_id)
+        return await self.providers.auth.create_user_api_key(
+            user_id=user_id, name=name, description=description
+        )
 
     async def delete_user_api_key(self, user_id: UUID, key_id: UUID) -> bool:
         """

@@ -53,10 +53,9 @@ class User(R2RSerializable):
     graph_ids: list[UUID] = []
     document_ids: list[UUID] = []
 
-    # Add the new limits_overrides field
-    limits_overrides: Optional[dict] = None
-
     # Optional fields (to update or set at creation)
+    limits_overrides: Optional[dict] = None
+    metadata: Optional[dict] = None
     hashed_password: Optional[str] = None
     verification_code_expiry: Optional[datetime] = None
     name: Optional[str] = None

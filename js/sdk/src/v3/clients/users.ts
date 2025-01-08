@@ -467,8 +467,19 @@ export class UsersClient {
    * @returns WrappedAPIKeyResponse
    */
   @feature("users.createApiKey")
-  async createApiKey(options: { id: string }): Promise<WrappedAPIKeyResponse> {
-    return this.client.makeRequest("POST", `users/${options.id}/api-keys`);
+  async createApiKey(options: {
+    id: string;
+    name?: string;
+    description?: string;
+  }): Promise<WrappedAPIKeyResponse> {
+    const data = {
+      ...(options.name && { name: options.name }),
+      ...(options.description && { description: options.description }),
+    };
+
+    return this.client.makeRequest("POST", `users/${options.id}/api-keys`, {
+      data,
+    });
   }
 
   /**
@@ -502,5 +513,28 @@ export class UsersClient {
 
   async getLimits(options: { id: string }): Promise<any> {
     return this.client.makeRequest("GET", `users/${options.id}/limits`);
+  }
+
+
+  /**
+   * **Patch metadata** for a user using a Stripe-like approach.
+   *
+   * The `metadata` parameter merges existing metadata with new keys and values:
+   * - `metadata[key] = "some value"` => sets or updates the key
+   * - `metadata[key] = ""` => removes the key
+   * - empty `{}` => removes all metadata keys
+   *
+   * @param id The user ID to patch
+   * @param metadata Partial metadata updates
+   * @returns WrappedUserResponse
+   */
+  @feature("users.patchMetadata")
+  async patchMetadata(options: {
+    id: string;
+    metadata: Record<string, string | null>;
+  }): Promise<WrappedUserResponse> {
+    return this.client.makeRequest("PATCH", `users/${options.id}/metadata`, {
+      data: options.metadata,
+    });
   }
 }
