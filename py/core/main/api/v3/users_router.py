@@ -1443,6 +1443,7 @@ class UsersRouter(BaseRouterV3):
                 None,
                 description="Updated limits overrides",
             ),
+            metadata: dict[str, str | None] | None = None,
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUserResponse:
             """
@@ -1456,16 +1457,21 @@ class UsersRouter(BaseRouterV3):
                     "Only superusers can update the superuser status of a user",
                     403,
                 )
+
             if not auth_user.is_superuser and auth_user.id != id:
                 raise R2RException(
                     "Only superusers can update other users' information",
                     403,
                 )
+
             if not auth_user.is_superuser and limits_overrides is not None:
                 raise R2RException(
                     "Only superusers can update other users' limits overrides",
                     403,
                 )
+
+            # Pass `metadata` to our auth or management service so it can do a
+            # partial (Stripe-like) merge of metadata.
             return await self.services.auth.update_user(
                 user_id=id,
                 email=email,
@@ -1474,6 +1480,7 @@ class UsersRouter(BaseRouterV3):
                 bio=bio,
                 profile_picture=profile_picture,
                 limits_overrides=limits_overrides,
+                new_metadata=metadata,
             )
 
         @self.router.post(
@@ -1740,76 +1747,3 @@ class UsersRouter(BaseRouterV3):
                 id
             )
             return limits_info
-
-        @self.router.patch(
-            "/users/{id}/metadata",
-            summary="Partially update user metadata (Stripe-like)",
-            # dependencies=[Depends(self.rate_limit_dependency)],
-            response_model=WrappedUserResponse,
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
-                            from r2r import R2RClient
-
-                            client = R2RClient()
-                            client.login(...)  # Or some other auth flow
-
-                            metadata_update = {
-                                "some_key": "some_value",
-                                "old_key": ""
-                            }
-                            updated_user = client.users.patch_metadata("550e8400-e29b-41d4-a716-446655440000", metadata_update)
-                            """,
-                        ),
-                    },
-                    {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
-                            curl -X PATCH "https://api.example.com/v3/users/550e8400-e29b-41d4-a716-446655440000/metadata" \\
-                                -H "Authorization: Bearer YOUR_API_TOKEN" \\
-                                -H "Content-Type: application/json" \\
-                                -d '{"some_key":"some_value","old_key":""}'
-                            """,
-                        ),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def patch_user_metadata(
-            id: UUID = Path(
-                ..., description="ID of the user to patch metadata"
-            ),
-            metadata: dict[str, Optional[str]] = Body(
-                ..., description="Partial metadata in Stripe-style format"
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ) -> WrappedUserResponse:
-            """
-            Patch the user's metadata in a merge-style approach:
-
-            - If `metadata == {}`, remove all keys.
-            - If `metadata[key] == ""`, remove that key.
-            - Otherwise, set or update that key to the given value.
-
-            Only superusers or the user themself may modify metadata.
-            """
-            if not auth_user.is_superuser and auth_user.id != id:
-                raise R2RException(
-                    "Only the user themselves or a superuser can patch this user's metadata.",
-                    403,
-                )
-            updated_user = await self.services.auth.update_user(
-                user_id=id,
-                # # pass the other fields the same as the user already has, if needed
-                # # or the service can fetch them itself
-                # name=db_user.name,
-                # bio=db_user.bio,
-                # email=db_user.email,
-                new_metadata=metadata,  # This is the partial dict
-            )
-            return updated_user

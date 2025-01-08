@@ -60,6 +60,12 @@ class VectorStoragePipe(AsyncPipe[StorageResult]):
     ) -> AsyncGenerator[StorageResult, None]:
         vector_batch = []
         document_counts: dict[UUID, int] = {}
+        current_usage = (
+            await self.database_provider.chunks_handler.list_chunks(
+                limit=1, offset=0, filters={"owner_id": msg.owner_id}
+            )
+        )["page_info"]["total_entries"]
+        count = 0
 
         for msg in input.message:
             user = await self.database_provider.users_handler.get_user_by_id(
@@ -75,14 +81,8 @@ class VectorStoragePipe(AsyncPipe[StorageResult]):
             document_counts[msg.document_id] = (
                 document_counts.get(msg.document_id, 0) + 1
             )
-
-            current_usage = (
-                await self.database_provider.chunks_handler.list_chunks(
-                    limit=1, offset=0, filters={"owner_id": msg.owner_id}
-                )
-            )["page_info"]["total_entries"]
-
-            if current_usage + len(vector_batch) > max_chunks:
+            count += 1
+            if current_usage + len(vector_batch) + count > max_chunks:
                 error_message = f"User has exceeded the maximum number of allowed chunks: {max_chunks}"
                 logger.error(error_message)
                 yield StorageResult(

@@ -247,3 +247,245 @@ async def test_user_level_override(limits_handler):
     finally:
         # Cleanup
         limits_handler.config.limits = old_limits
+
+
+@pytest.mark.asyncio
+async def test_determine_effective_limits(limits_handler):
+    """
+    Test that user-level overrides > route-level overrides > global defaults.
+    This is a pure logic test of the 'determine_effective_limits' method.
+    """
+    # Setup global/base defaults
+    old_limits = limits_handler.config.limits
+    limits_handler.config.limits = LimitSettings(
+        global_per_min=10, route_per_min=5, monthly_limit=50
+    )
+
+    # Setup route-level override
+    route = "/some-route"
+    old_route_limits = limits_handler.config.route_limits
+    limits_handler.config.route_limits = {
+        route: LimitSettings(
+            global_per_min=8, route_per_min=3, monthly_limit=30
+        )
+    }
+
+    # Setup user-level override
+    test_user = User(
+        id=uuid.uuid4(),
+        email="test@example.com",
+        is_active=True,
+        is_verified=True,
+        is_superuser=False,
+        limits_overrides={
+            "global_per_min": 6,  # should override
+            "route_overrides": {
+                route: {"route_per_min": 2}  # should override
+            },
+        },
+    )
+
+    try:
+        effective = limits_handler.determine_effective_limits(test_user, route)
+
+        # Check final / effective limits
+        # Global limit overridden to 6
+        assert (
+            effective.global_per_min == 6
+        ), "User-level global override not applied"
+
+        # route_per_min should be overridden to 2 (not the route-level 3)
+        assert (
+            effective.route_per_min == 2
+        ), "User-level route override not applied"
+
+        # monthly_limit from route-level override is 30, user didn't override it, so it should stay 30
+        assert (
+            effective.monthly_limit == 30
+        ), "Route-level monthly override not applied"
+    finally:
+        # revert changes
+        limits_handler.config.limits = old_limits
+        limits_handler.config.route_limits = old_route_limits
+
+
+@pytest.mark.asyncio
+async def test_separate_route_usage_is_isolated(limits_handler):
+    """
+    Confirm that calls to /routeA do NOT increment the per-route usage for /routeB,
+    and vice-versa.
+    """
+    # 1) Clear existing logs
+    clear_query = f"DELETE FROM {limits_handler._get_table_name(limits_handler.TABLE_NAME)}"
+    await limits_handler.connection_manager.execute_query(clear_query)
+
+    # 2) Setup user & routes
+    import uuid
+
+    from shared.abstractions import User
+
+    user_id = uuid.uuid4()
+    routeA = "/v3/retrieval/rag"
+    routeB = "/v3/retrieval/search"
+
+    test_user = User(
+        id=user_id,
+        email="test@example.com",
+        is_active=True,
+        is_verified=True,
+        is_superuser=False,
+        limits_overrides=None,
+    )
+
+    # 3) Insert some logs for routeA only
+    for _ in range(3):
+        await limits_handler.log_request(user_id, routeA)
+
+    # 4) Check usage for routeA → Should be 3 in last minute
+    now = datetime.now(timezone.utc)
+    one_min_ago = now - timedelta(minutes=1)
+    routeA_count = await limits_handler._count_requests(
+        user_id, routeA, one_min_ago
+    )
+    assert routeA_count == 3, f"Expected 3 for routeA, got {routeA_count}"
+
+    # 5) Check usage for routeB → Should be 0
+    routeB_count = await limits_handler._count_requests(
+        user_id, routeB, one_min_ago
+    )
+    assert routeB_count == 0, f"Expected 0 for routeB, got {routeB_count}"
+
+    # 6) Insert some logs for routeB only
+    for _ in range(2):
+        await limits_handler.log_request(user_id, routeB)
+
+    # 7) Recheck usage
+    routeA_count_after = await limits_handler._count_requests(
+        user_id, routeA, one_min_ago
+    )
+    routeB_count_after = await limits_handler._count_requests(
+        user_id, routeB, one_min_ago
+    )
+    assert (
+        routeA_count_after == 3
+    ), f"RouteA usage changed unexpectedly: {routeA_count_after}"
+    assert (
+        routeB_count_after == 2
+    ), f"RouteB usage is wrong: {routeB_count_after}"
+
+
+# @pytest.mark.asyncio
+# async def test_check_limits_multiple_routes(limits_handler):
+#     """
+#     Demonstrates that routeA calls do not count against routeB's per-minute limit.
+#     """
+#     # Clear logs
+#     clear_query = f"DELETE FROM {limits_handler._get_table_name(limits_handler.TABLE_NAME)}"
+#     await limits_handler.connection_manager.execute_query(clear_query)
+
+#     import uuid
+#     from shared.abstractions import User
+#     user_id = uuid.uuid4()
+#     routeA = "/v3/retrieval/rag"
+#     routeB = "/v3/retrieval/search"
+
+#     # Suppose routeA has a limit of 2/min, routeB has a limit of 3/min
+#     # (You can do this by setting config.route_limits[routeA].route_per_min, etc.)
+#     # Or just rely on your global config if needed.
+
+#     test_user = User(
+#         id=user_id,
+#         email="test@example.com",
+#         is_active=True,
+#         is_verified=True,
+#         is_superuser=False,
+#         limits_overrides=None,
+#     )
+
+#     # 1) Make 2 calls to routeA
+#     await limits_handler.check_limits(test_user, routeA)
+#     await limits_handler.log_request(user_id, routeA)
+
+#     await limits_handler.check_limits(test_user, routeA)
+#     await limits_handler.log_request(user_id, routeA)
+#     await limits_handler.check_limits(test_user, routeA)
+#     await limits_handler.log_request(user_id, routeA)
+
+#     # 2) Confirm next call to routeA fails if the limit is 2/min
+#     with pytest.raises(ValueError, match="Per-route per-minute rate limit exceeded"):
+#         await limits_handler.check_limits(test_user, routeA)
+
+#     # 3) Meanwhile, routeB usage should be unaffected
+#     #    We can still do 3 calls to routeB (assuming route_per_min=3).
+#     await limits_handler.check_limits(test_user, routeB)
+#     await limits_handler.log_request(user_id, routeB)
+#     await limits_handler.check_limits(test_user, routeB)
+#     await limits_handler.log_request(user_id, routeB)
+#     await limits_handler.check_limits(test_user, routeB)
+#     await limits_handler.log_request(user_id, routeB)
+
+
+@pytest.mark.asyncio
+async def test_route_specific_monthly_usage(limits_handler):
+    """
+    Confirm that monthly usage is tracked per-route
+    and doesn't get incremented by calls to other routes.
+    """
+    # 1) Clear existing logs
+    clear_query = f"DELETE FROM {limits_handler._get_table_name(limits_handler.TABLE_NAME)}"
+    await limits_handler.connection_manager.execute_query(clear_query)
+
+    # 2) Setup
+    user_id = uuid.uuid4()
+    routeA = "/v3/retrieval/rag"
+    routeB = "/v3/retrieval/search"
+    test_user = User(
+        id=user_id,
+        email="test_monthly_routes@example.com",
+        is_active=True,
+        is_verified=True,
+        is_superuser=False,
+        limits_overrides=None,
+    )
+
+    # 3) Log 5 requests for routeA
+    for _ in range(5):
+        await limits_handler.log_request(user_id, routeA)
+
+    # 4) Check monthly usage for routeA => should be 5
+    routeA_monthly = await limits_handler._count_monthly_requests(
+        user_id, routeA
+    )
+    assert routeA_monthly == 5, f"Expected 5 for routeA, got {routeA_monthly}"
+
+    # routeB => should still be 0
+    routeB_monthly = await limits_handler._count_monthly_requests(
+        user_id, routeB
+    )
+    assert routeB_monthly == 0, f"Expected 0 for routeB, got {routeB_monthly}"
+
+    # 5) Now log 3 requests for routeB
+    for _ in range(3):
+        await limits_handler.log_request(user_id, routeB)
+
+    # Re-check usage
+    routeA_monthly_after = await limits_handler._count_monthly_requests(
+        user_id, routeA
+    )
+    routeB_monthly_after = await limits_handler._count_monthly_requests(
+        user_id, routeB
+    )
+    assert (
+        routeA_monthly_after == 5
+    ), f"RouteA usage changed unexpectedly: {routeA_monthly_after}"
+    assert (
+        routeB_monthly_after == 3
+    ), f"RouteB usage is wrong: {routeB_monthly_after}"
+
+    # Additionally confirm total usage across all routes
+    global_monthly = await limits_handler._count_monthly_requests(
+        user_id, route=None
+    )
+    assert (
+        global_monthly == 8
+    ), f"Expected total of 8 monthly requests, got {global_monthly}"
