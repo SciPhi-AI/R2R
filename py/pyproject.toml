@@ -19,10 +19,10 @@ packages = [
     { include = "cli", from = "." },
 ]
 include = [
-    "migrations/**/*",
-    "pyproject.toml",
-    "r2r/**/*.yaml",
-    "r2r/**/*.toml"
+    { path = "migrations/**/*", format = ["sdist", "wheel"] },
+    { path = "pyproject.toml", format = ["sdist", "wheel"] },
+    { path = "r2r/**/*.yaml", format = ["sdist", "wheel"] },
+    { path = "r2r/**/*.toml", format = ["sdist", "wheel"] }
 ]
 
 [tool.poetry.dependencies]
