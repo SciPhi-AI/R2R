@@ -225,7 +225,7 @@ def hatchet_ingestion_factory(
                         await self.ingestion_service.providers.database.documents_handler.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                             offset=0,
                             limit=100,
-                            filter_user_ids=[document_info.user_id],
+                            filter_user_ids=[document_info.owner_id],
                             filter_document_ids=[document_info.id],
                         )
                     )["results"][0]
