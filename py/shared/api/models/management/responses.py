@@ -111,6 +111,7 @@ class ApiKeyNoPriv(BaseModel):
     key_id: str
     name: Optional[str] = None
     updated_at: datetime
+    description: Optional[str] = None
 
 
 # Chunk Responses

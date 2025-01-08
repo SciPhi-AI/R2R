@@ -1492,6 +1492,8 @@ class UsersRouter(BaseRouterV3):
 
                             result = client.users.create_api_key(
                                 id="550e8400-e29b-41d4-a716-446655440000",
+                                name="My API Key",
+                                description="API key for accessing the app",
                             )
                             # result["api_key"] contains the newly created API key
                             """
@@ -1502,7 +1504,8 @@ class UsersRouter(BaseRouterV3):
                         "source": textwrap.dedent(
                             """
                             curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/api-keys" \\
-                                -H "Authorization: Bearer YOUR_API_TOKEN"
+                                -H "Authorization: Bearer YOUR_API_TOKEN" \\
+                                -d '{"name": "My API Key", "description": "API key for accessing the app"}'
                             """
                         ),
                     },
@@ -1513,6 +1516,12 @@ class UsersRouter(BaseRouterV3):
         async def create_user_api_key(
             id: UUID = Path(
                 ..., description="ID of the user for whom to create an API key"
+            ),
+            name: Optional[str] = Body(
+                None, description="Name of the API key"
+            ),
+            description: Optional[str] = Body(
+                None, description="Description of the API key"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAPIKeyResponse:
@@ -1526,7 +1535,12 @@ class UsersRouter(BaseRouterV3):
                     403,
                 )
 
-            api_key = await self.services.auth.create_user_api_key(id)
+            print("name =", name)
+            print("description =", description)
+
+            api_key = await self.services.auth.create_user_api_key(
+                id, name=name, description=description
+            )
             return api_key  # type: ignore
 
         @self.router.get(
@@ -1728,3 +1742,73 @@ class UsersRouter(BaseRouterV3):
                 id
             )
             return limits_info
+
+        @self.router.patch(
+            "/users/{id}/metadata",
+            summary="Partially update user metadata (Stripe-like)",
+            # dependencies=[Depends(self.rate_limit_dependency)],
+            response_model=WrappedUserResponse,
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": """
+from r2r import R2RClient
+
+client = R2RClient()
+client.login(...)  # Or some other auth flow
+
+metadata_update = {
+    "some_key": "some_value",
+    "old_key": ""
+}
+updated_user = client.users.patch_metadata("550e8400-e29b-41d4-a716-446655440000", metadata_update)
+print(updated_user)
+                        """,
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": """
+curl -X PATCH "https://api.example.com/v3/users/550e8400-e29b-41d4-a716-446655440000/metadata" \\
+     -H "Authorization: Bearer YOUR_API_TOKEN" \\
+     -H "Content-Type: application/json" \\
+     -d '{"some_key":"some_value","old_key":""}'
+                        """,
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def patch_user_metadata(
+            id: UUID = Path(
+                ..., description="ID of the user to patch metadata"
+            ),
+            metadata: dict[str, Optional[str]] = Body(
+                ..., description="Partial metadata in Stripe-style format"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> WrappedUserResponse:
+            """
+            Patch the user's metadata in a merge-style approach:
+
+            - If `metadata == {}`, remove all keys.
+            - If `metadata[key] == ""`, remove that key.
+            - Otherwise, set or update that key to the given value.
+
+            Only superusers or the user themself may modify metadata.
+            """
+            if not auth_user.is_superuser and auth_user.id != id:
+                raise R2RException(
+                    "Only the user themselves or a superuser can patch this user's metadata.",
+                    403,
+                )
+            updated_user = await self.services.auth.update_user(
+                user_id=id,
+                # # pass the other fields the same as the user already has, if needed
+                # # or the service can fetch them itself
+                # name=db_user.name,
+                # bio=db_user.bio,
+                # email=db_user.email,
+                new_metadata=metadata,  # This is the partial dict
+            )
+            return updated_user

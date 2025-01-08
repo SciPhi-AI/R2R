@@ -2,7 +2,10 @@ import asyncio
 import contextlib
 import functools
 import inspect
-from typing import Any, Callable, Coroutine, TypeVar
+from collections.abc import AsyncGenerator as AsyncGenType
+
+# from typing import Any, Callable, Coroutine, TypeVar
+from typing import Any, AsyncGenerator, Callable, Coroutine, Generator, TypeVar
 
 from .async_client import R2RAsyncClient
 
@@ -27,8 +30,50 @@ class R2RClient(R2RAsyncClient):
             self._async_make_request(*args, **kwargs)
         )
 
+    def _wrap_async_generator(
+        self, async_gen: AsyncGenerator[T, None]
+    ) -> Generator[T, None, None]:
+        """
+        Convert a real async generator (object) into a synchronous generator.
+        """
+        while True:
+            try:
+                yield self._loop.run_until_complete(async_gen.__anext__())
+            except StopAsyncIteration:
+                break
+
+    def _wrap_async_method(
+        self,
+        async_method: Callable[..., Any],
+    ) -> Callable[..., Any]:
+        """
+        Wraps a normal async method (returns awaitable) or an async method that
+        *returns* an async generator into a synchronous method/generator.
+
+        - If the method returns a normal object (like dict, str, etc.), just return it.
+        - If the method returns an async generator, yield items in a sync generator.
+        """
+
+        @functools.wraps(async_method)
+        def sync_wrapper(*args, **kwargs):
+            # Call the async method in our event loop:
+            result = self._loop.run_until_complete(
+                async_method(*args, **kwargs)
+            )
+
+            # If the returned object is actually an async generator, wrap it:
+            if isinstance(result, AsyncGenType):
+                return self._wrap_async_generator(result)
+            else:
+                return result
+
+        return sync_wrapper
+
     def _wrap_v3_methods(self) -> None:
-        """Wraps only v3 SDK object methods"""
+        """
+        Inspect the v3 SDK objects and replace all async methods
+        (including those returning an async generator) with sync equivalents.
+        """
         sdk_objects = [
             self.chunks,
             self.collections,
@@ -38,18 +83,20 @@ class R2RClient(R2RAsyncClient):
             self.indices,
             self.prompts,
             self.retrieval,
-            self.users,
             self.system,
+            self.users,
         ]
 
         for sdk_obj in sdk_objects:
             for name in dir(sdk_obj):
                 if name.startswith("_"):
                     continue
-
                 attr = getattr(sdk_obj, name)
+
+                # We only care about coroutine functions
                 if inspect.iscoroutinefunction(attr):
-                    wrapped = self._make_sync_method(attr)
+                    # Wrap every async method with our unified wrapper:
+                    wrapped = self._wrap_async_method(attr)
                     setattr(sdk_obj, name, wrapped)
 
     # def _make_sync_method(self, async_method):

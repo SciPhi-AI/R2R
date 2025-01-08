@@ -460,7 +460,10 @@ class R2RAuthProvider(AuthProvider):
         }
 
     async def create_user_api_key(
-        self, user_id: UUID, name: Optional[str] = None
+        self,
+        user_id: UUID,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
     ) -> dict[str, str]:
         key_id, raw_api_key = self.crypto_provider.generate_api_key()
         hashed_key = self.crypto_provider.hash_api_key(raw_api_key)
@@ -471,6 +474,7 @@ class R2RAuthProvider(AuthProvider):
                 key_id=key_id,
                 hashed_key=hashed_key,
                 name=name,
+                description=description,
             )
         )
 
