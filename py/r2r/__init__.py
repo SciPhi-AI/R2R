@@ -1,7 +1,5 @@
 import logging
-from pathlib import Path
-
-import toml
+from importlib import metadata
 
 from sdk.async_client import R2RAsyncClient
 from sdk.models import R2RException
@@ -9,9 +7,7 @@ from sdk.sync_client import R2RClient
 
 logger = logging.getLogger()
 
-pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
-pyproject_data = toml.load(pyproject_path)
-__version__ = pyproject_data["tool"]["poetry"]["version"]
+__version__ = metadata.version("r2r")
 
 __all__ = [
     "R2RAsyncClient",

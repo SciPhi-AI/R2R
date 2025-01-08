@@ -1537,9 +1537,6 @@ class UsersRouter(BaseRouterV3):
                     403,
                 )
 
-            print("name =", name)
-            print("description =", description)
-
             api_key = await self.services.auth.create_user_api_key(
                 id, name=name, description=description
             )
@@ -1753,28 +1750,31 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": """
-from r2r import R2RClient
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
 
-client = R2RClient()
-client.login(...)  # Or some other auth flow
+                            client = R2RClient()
+                            client.login(...)  # Or some other auth flow
 
-metadata_update = {
-    "some_key": "some_value",
-    "old_key": ""
-}
-updated_user = client.users.patch_metadata("550e8400-e29b-41d4-a716-446655440000", metadata_update)
-print(updated_user)
-                        """,
+                            metadata_update = {
+                                "some_key": "some_value",
+                                "old_key": ""
+                            }
+                            updated_user = client.users.patch_metadata("550e8400-e29b-41d4-a716-446655440000", metadata_update)
+                            """,
+                        ),
                     },
                     {
                         "lang": "cURL",
-                        "source": """
-curl -X PATCH "https://api.example.com/v3/users/550e8400-e29b-41d4-a716-446655440000/metadata" \\
-     -H "Authorization: Bearer YOUR_API_TOKEN" \\
-     -H "Content-Type: application/json" \\
-     -d '{"some_key":"some_value","old_key":""}'
-                        """,
+                        "source": textwrap.dedent(
+                            """
+                            curl -X PATCH "https://api.example.com/v3/users/550e8400-e29b-41d4-a716-446655440000/metadata" \\
+                                -H "Authorization: Bearer YOUR_API_TOKEN" \\
+                                -H "Content-Type: application/json" \\
+                                -d '{"some_key":"some_value","old_key":""}'
+                            """,
+                        ),
                     },
                 ]
             },
