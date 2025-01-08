@@ -98,6 +98,6 @@ spec:
   - protocol: TCP
     port: 7272
     targetPort: 7272
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: r2r

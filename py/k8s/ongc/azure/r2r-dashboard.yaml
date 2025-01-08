@@ -35,6 +35,6 @@ spec:
   - protocol: TCP
     port: 7273
     targetPort: 3000
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: r2r-dashboard
