@@ -60,14 +60,16 @@ class VectorStoragePipe(AsyncPipe[StorageResult]):
     ) -> AsyncGenerator[StorageResult, None]:
         vector_batch = []
         document_counts: dict[UUID, int] = {}
-        current_usage = (
-            await self.database_provider.chunks_handler.list_chunks(
-                limit=1, offset=0, filters={"owner_id": msg.owner_id}
-            )
-        )["page_info"]["total_entries"]
+        current_usage = None
+
         count = 0
 
         for msg in input.message:
+            if not current_usage:
+                # ASSUME ONLY ONE OWNER PER MESSAGE
+                current_usage = await self.database_provider.chunks_handler.get_user_chunk_count(
+                    msg.owner_id
+                )
             user = await self.database_provider.users_handler.get_user_by_id(
                 msg.owner_id
             )
