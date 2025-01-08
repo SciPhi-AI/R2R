@@ -25,6 +25,7 @@ packages = [
     { include = "core", from = "." },
     { include = "cli", from = "." },
 ]
+package_data = { "r2r" = ["*.yaml", "*.toml"] }
 
 [tool.poetry.dependencies]
 # Python Versions
