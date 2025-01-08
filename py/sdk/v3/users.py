@@ -354,6 +354,7 @@ class UsersSDK:
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
         limits_overrides: dict | None = None,
+        metadata: dict[str, str | None] | None = None,
     ) -> WrappedUserResponse:
         """
         Update user information.
@@ -382,6 +383,8 @@ class UsersSDK:
             data["profile_picture"] = profile_picture
         if limits_overrides is not None:
             data["limits_overrides"] = limits_overrides
+        if metadata is not None:
+            data["metadata"] = metadata
 
         return await self.client._make_request(
             "POST",
@@ -532,27 +535,5 @@ class UsersSDK:
         return await self.client._make_request(
             "GET",
             f"users/{str(self.client._user_id)}/limits",
-            version="v3",
-        )
-
-    async def patch_metadata(
-        self,
-        # user_id: str | UUID,
-        metadata: dict[str, str | None],
-    ) -> WrappedUserResponse:
-        """
-        Partially update metadata for the specified user (Stripe-like).
-
-        This method merges existing metadata with the new key-values:
-        - metadata[key] = <string> => update or add that key
-        - metadata[key] = "" => remove that key
-        - if metadata == {} => remove all keys
-        """
-
-        # We assume you'll define the endpoint as PATCH /users/{id}/metadata
-        return await self.client._make_request(
-            "PATCH",
-            f"users/{str(self.client._user_id)}/metadata",
-            json=metadata,  # The dictionary of key->new_value
             version="v3",
         )

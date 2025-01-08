@@ -323,6 +323,7 @@ export class UsersClient {
     name?: string;
     bio?: string;
     profilePicture?: string;
+    metadata?: Record<string, string | null>;
   }): Promise<WrappedUserResponse> {
     const data = {
       ...(options.email && { email: options.email }),
@@ -332,6 +333,7 @@ export class UsersClient {
       ...(options.profilePicture && {
         profile_picture: options.profilePicture,
       }),
+      ...(options.metadata && { metadata: options.metadata }),
     };
 
     return this.client.makeRequest("POST", `users/${options.id}`, {
@@ -515,26 +517,4 @@ export class UsersClient {
     return this.client.makeRequest("GET", `users/${options.id}/limits`);
   }
 
-
-  /**
-   * **Patch metadata** for a user using a Stripe-like approach.
-   *
-   * The `metadata` parameter merges existing metadata with new keys and values:
-   * - `metadata[key] = "some value"` => sets or updates the key
-   * - `metadata[key] = ""` => removes the key
-   * - empty `{}` => removes all metadata keys
-   *
-   * @param id The user ID to patch
-   * @param metadata Partial metadata updates
-   * @returns WrappedUserResponse
-   */
-  @feature("users.patchMetadata")
-  async patchMetadata(options: {
-    id: string;
-    metadata: Record<string, string | null>;
-  }): Promise<WrappedUserResponse> {
-    return this.client.makeRequest("PATCH", `users/${options.id}/metadata`, {
-      data: options.metadata,
-    });
-  }
 }

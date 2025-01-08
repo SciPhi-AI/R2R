@@ -152,6 +152,7 @@ class BaseRouterV3:
             try:
                 yield
             finally:
+                print(f"logging request {user_id} {route}")
                 # 4) Log the request afterwards
                 await self.providers.database.limits_handler.log_request(
                     user_id, route

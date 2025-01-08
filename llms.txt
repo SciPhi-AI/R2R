@@ -11001,7 +11001,7 @@ Below is a sample `r2r.toml` with essential configurations:
 ```toml
 [app]
 default_max_documents_per_user = 100
-default_max_chunks_per_user = 100000
+default_max_chunks_per_user = 10000
 default_max_collections_per_user = 10
 
 [agent]
