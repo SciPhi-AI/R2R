@@ -26,7 +26,7 @@ class R2RConfig:
     current_file_path = os.path.dirname(__file__)
     config_dir_root = os.path.join(current_file_path, "..", "configs")
     default_config_path = os.path.join(
-        current_file_path, "..", "..", "r2r.toml"
+        current_file_path, "..", "..", "r2r", "r2r.toml"
     )
 
     CONFIG_OPTIONS: dict[str, Optional[str]] = {}

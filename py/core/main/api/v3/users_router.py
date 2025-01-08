@@ -1544,9 +1544,6 @@ class UsersRouter(BaseRouterV3):
                     403,
                 )
 
-            print("name =", name)
-            print("description =", description)
-
             api_key = await self.services.auth.create_user_api_key(
                 id, name=name, description=description
             )
