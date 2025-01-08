@@ -34,7 +34,7 @@ class ClientError(Exception):
 
 class GraphExtractionPipe(AsyncPipe[dict]):
     """
-    Extracts knowledge graph information from document extractions.
+    Extracts knowledge graph information from document chunks.
     """
 
     # TODO - Apply correct type hints to storage messages
@@ -65,7 +65,7 @@ class GraphExtractionPipe(AsyncPipe[dict]):
 
     async def extract_kg(
         self,
-        extractions: list[DocumentChunk],
+        chunks: list[DocumentChunk],
         generation_config: GenerationConfig,
         max_knowledge_relationships: int,
         entity_types: list[str],
@@ -76,16 +76,16 @@ class GraphExtractionPipe(AsyncPipe[dict]):
         total_tasks: Optional[int] = None,
     ) -> KGExtraction:
         """
-        Extracts NER relationships from a extraction with retries.
+        Extracts NER relationships from a chunk with retries.
         """
 
-        # combine all extractions into a single string
-        combined_extraction: str = " ".join([extraction.data for extraction in extractions])  # type: ignore
+        # combine all chunks into a single string
+        combined_chunks: str = " ".join([chunk.data for chunk in chunks])  # type: ignore
 
         messages = await self.database_provider.prompts_handler.get_message_payload(
             task_prompt_name=self.database_provider.config.graph_creation_settings.graphrag_relationships_extraction_few_shot,
             task_inputs={
-                "input": combined_extraction,
+                "input": combined_chunks,
                 "max_knowledge_relationships": max_knowledge_relationships,
                 "entity_types": "\n".join(entity_types),
                 "relation_types": "\n".join(relation_types),
@@ -103,7 +103,7 @@ class GraphExtractionPipe(AsyncPipe[dict]):
 
                 if not kg_extraction:
                     raise R2RException(
-                        "No knowledge graph extraction found in the response string, the selected LLM likely failed to format it's response correctly.",
+                        "No knowledge graph chunk found in the response string, the selected LLM likely failed to format it's response correctly.",
                         400,
                     )
 
@@ -139,10 +139,8 @@ class GraphExtractionPipe(AsyncPipe[dict]):
                                 category=entity_category,
                                 description=entity_description,
                                 name=entity_value,
-                                parent_id=extractions[0].document_id,
-                                chunk_ids=[
-                                    extraction.id for extraction in extractions
-                                ],
+                                parent_id=chunks[0].document_id,
+                                chunk_ids=[chunk.id for chunk in chunks],
                                 attributes={},
                             )
                         )
@@ -163,10 +161,8 @@ class GraphExtractionPipe(AsyncPipe[dict]):
                                 object=object,
                                 description=description,
                                 weight=weight,
-                                parent_id=extractions[0].document_id,
-                                chunk_ids=[
-                                    extraction.id for extraction in extractions
-                                ],
+                                parent_id=chunks[0].document_id,
+                                chunk_ids=[chunk.id for chunk in chunks],
                                 attributes={},
                             )
                         )
@@ -190,13 +186,13 @@ class GraphExtractionPipe(AsyncPipe[dict]):
                     await asyncio.sleep(delay)
                 else:
                     logger.error(
-                        f"Failed after retries with for chunk {extractions[0].id} of document {extractions[0].document_id}: {e}"
+                        f"Failed after retries with for chunk {chunks[0].id} of document {chunks[0].document_id}: {e}"
                     )
                     # raise e # you should raise an error.
         # add metadata to entities and relationships
 
         logger.info(
-            f"GraphExtractionPipe: Completed task number {task_id} of {total_tasks} for document {extractions[0].document_id}",
+            f"GraphExtractionPipe: Completed task number {task_id} of {total_tasks} for document {chunks[0].document_id}",
         )
 
         return KGExtraction(
@@ -230,20 +226,20 @@ class GraphExtractionPipe(AsyncPipe[dict]):
         logger = input.message.get("logger", logging.getLogger())
 
         logger.info(
-            f"GraphExtractionPipe: Processing document {document_id} for KG extraction",
+            f"GraphExtractionPipe: Processing document {document_id} for KG chunk",
         )
 
-        # Then create the extractions from the results
-        extractions = [
+        # Then create the chunks from the results
+        chunks = [
             DocumentChunk(
-                id=extraction["id"],
-                document_id=extraction["document_id"],
-                owner_id=extraction["owner_id"],
-                collection_ids=extraction["collection_ids"],
-                data=extraction["text"],
-                metadata=extraction["metadata"],
+                id=chunk["id"],
+                document_id=chunk["document_id"],
+                owner_id=chunk["owner_id"],
+                collection_ids=chunk["collection_ids"],
+                data=chunk["text"],
+                metadata=chunk["metadata"],
             )
-            for extraction in (
+            for chunk in (
                 await self.database_provider.documents_handler.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                     document_id=document_id,
                     offset=0,
@@ -252,41 +248,37 @@ class GraphExtractionPipe(AsyncPipe[dict]):
             )["results"]
         ]
 
-        logger.info(
-            f"Found {len(extractions)} extractions for document {document_id}"
-        )
+        logger.info(f"Found {len(chunks)} chunks for document {document_id}")
 
         if filter_out_existing_chunks:
             existing_chunk_ids = await self.database_provider.graphs_handler.get_existing_document_entity_chunk_ids(
                 document_id=document_id
             )
-            extractions = [
-                extraction
-                for extraction in extractions
-                if extraction.id not in existing_chunk_ids
+            chunks = [
+                chunk for chunk in chunks if chunk.id not in existing_chunk_ids
             ]
             logger.info(
-                f"Filtered out {len(existing_chunk_ids)} existing extractions, remaining {len(extractions)} extractions for document {document_id}"
+                f"Filtered out {len(existing_chunk_ids)} existing chunks, remaining {len(chunks)} chunks for document {document_id}"
             )
 
-            if len(extractions) == 0:
-                logger.info(f"No extractions left for document {document_id}")
+            if len(chunks) == 0:
+                logger.info(f"No chunks left for document {document_id}")
                 return
 
         logger.info(
-            f"GraphExtractionPipe: Obtained {len(extractions)} extractions to process, time from start: {time.time() - start_time:.2f} seconds",
+            f"GraphExtractionPipe: Obtained {len(chunks)} chunks to process, time from start: {time.time() - start_time:.2f} seconds",
         )
 
-        # sort the extractions accroding to chunk_order field in metadata in ascending order
-        extractions = sorted(
-            extractions,
+        # sort the chunks accroding to chunk_order field in metadata in ascending order
+        chunks = sorted(
+            chunks,
             key=lambda x: x.metadata.get("chunk_order", float("inf")),
         )
 
-        # group these extractions into groups of chunk_merge_count
+        # group these chunks into groups of chunk_merge_count
         extractions_groups = [
-            extractions[i : i + chunk_merge_count]
-            for i in range(0, len(extractions), chunk_merge_count)
+            chunks[i : i + chunk_merge_count]
+            for i in range(0, len(chunks), chunk_merge_count)
         ]
 
         logger.info(
@@ -296,7 +288,7 @@ class GraphExtractionPipe(AsyncPipe[dict]):
         tasks = [
             asyncio.create_task(
                 self.extract_kg(
-                    extractions=extractions_group,
+                    chunks=extractions_group,
                     generation_config=generation_config,
                     max_knowledge_relationships=max_knowledge_relationships,
                     entity_types=entity_types,
@@ -312,7 +304,7 @@ class GraphExtractionPipe(AsyncPipe[dict]):
         total_tasks = len(tasks)
 
         logger.info(
-            f"GraphExtractionPipe: Waiting for {total_tasks} KG extraction tasks to complete",
+            f"GraphExtractionPipe: Waiting for {total_tasks} KG chunk tasks to complete",
         )
 
         for completed_task in asyncio.as_completed(tasks):
@@ -321,7 +313,7 @@ class GraphExtractionPipe(AsyncPipe[dict]):
                 completed_tasks += 1
                 if completed_tasks % 100 == 0:
                     logger.info(
-                        f"GraphExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks",
+                        f"GraphExtractionPipe: Completed {completed_tasks}/{total_tasks} KG chunk tasks",
                     )
             except Exception as e:
                 logger.error(f"Error in Extracting KG Relationships: {e}")
@@ -331,5 +323,5 @@ class GraphExtractionPipe(AsyncPipe[dict]):
                 )
 
         logger.info(
-            f"GraphExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks, time from start: {time.time() - start_time:.2f} seconds",
+            f"GraphExtractionPipe: Completed {completed_tasks}/{total_tasks} KG chunk tasks, time from start: {time.time() - start_time:.2f} seconds",
         )

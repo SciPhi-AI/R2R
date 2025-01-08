@@ -109,6 +109,20 @@ class PostgresUserHandler(Handler):
         await self.connection_manager.execute_query(user_table_query)
         await self.connection_manager.execute_query(api_keys_table_query)
 
+        # (New) Code snippet for adding columns if missing
+        # Postgres >= 9.6 supports "ADD COLUMN IF NOT EXISTS"
+        check_columns_query = f"""
+        ALTER TABLE {self._get_table_name(self.TABLE_NAME)}
+            ADD COLUMN IF NOT EXISTS metadata JSONB;
+
+        ALTER TABLE {self._get_table_name(self.TABLE_NAME)}
+            ADD COLUMN IF NOT EXISTS limits_overrides JSONB;
+
+        ALTER TABLE {self._get_table_name(self.API_KEYS_TABLE_NAME)}
+            ADD COLUMN IF NOT EXISTS description TEXT;
+        """
+        await self.connection_manager.execute_query(check_columns_query)
+
     async def get_user_by_id(self, id: UUID) -> User:
         query, _ = (
             QueryBuilder(self._get_table_name("users"))
