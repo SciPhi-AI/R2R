@@ -86,15 +86,16 @@ def test_rag_stream_query(client):
     # Consume a few chunks from the async generator
     import asyncio
 
-    async def consume_stream():
+    def consume_stream():
         count = 0
-        async for chunk in resp:
+        for chunk in resp:
             count += 1
             if count > 1:
                 break
         return count
 
-    count = asyncio.run(consume_stream())
+    # count = asyncio.run(consume_stream())
+    count = consume_stream()
     assert count > 0, "No chunks received from streamed RAG query"
 
 
@@ -119,15 +120,15 @@ def test_agent_query_stream(client):
 
     import asyncio
 
-    async def consume_stream():
+    def consume_stream():
         count = 0
-        async for chunk in resp:
+        for chunk in resp:
             count += 1
             if count > 1:
                 break
         return count
 
-    count = asyncio.run(consume_stream())
+    count = consume_stream()  # asyncio.run(consume_stream())
     assert count > 0, "No streaming chunks received from agent"
 
 

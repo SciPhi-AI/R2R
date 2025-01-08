@@ -80,7 +80,7 @@ class GraphExtractionPipe(AsyncPipe[dict]):
         """
 
         # combine all chunks into a single string
-        combined_chunks: str = " ".join([chunk.data for chunk in chunks])  # type: ignore
+        combined_chunks: str = " ".join([chunk.data for chunk in chunks])
 
         messages = await self.database_provider.prompts_handler.get_message_payload(
             task_prompt_name=self.database_provider.config.graph_creation_settings.graphrag_relationships_extraction_few_shot,
