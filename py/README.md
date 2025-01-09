@@ -8,7 +8,7 @@
       <h3>
          <a href="https://app.sciphi.ai">
             <strong>Sign up</strong>
-         </a> · 
+         </a> ·
          <a href="https://r2r-docs.sciphi.ai/self-hosting/installation/overview">
             <strong>Self Host</strong>
       </h3>
@@ -17,7 +17,7 @@
       <a href="https://r2r-docs.sciphi.ai/"><strong>Docs</strong></a> ·
       <a href="https://github.com/SciPhi-AI/R2R/issues/new?assignees=&labels=&projects=&template=bug_report.md&title="><strong>Report Bug</strong></a> ·
       <a href="https://github.com/SciPhi-AI/R2R/issues/new?assignees=&labels=&projects=&template=feature_request.md&title="><strong>Feature Request</strong></a> ·
-      <a href="https://discord.gg/p6KqD2kjtB"><strong>Discord</strong></a> 
+      <a href="https://discord.gg/p6KqD2kjtB"><strong>Discord</strong></a>
    </div>
    <br />
    <p align="center">

@@ -538,7 +538,6 @@ class UsersSDK:
             version="v3",
         )
 
-
     async def oauth_google_authorize(self) -> dict[str, str]:
         """
         Get Google OAuth 2.0 authorization URL from the server.
