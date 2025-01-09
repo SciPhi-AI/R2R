@@ -1,4 +1,4 @@
-<p align="left">
+<p align="center">
   <a href="https://r2r-docs.sciphi.ai"><img src="https://img.shields.io/badge/docs.sciphi.ai-3F16E4" alt="Docs"></a>
   <a href="https://discord.gg/p6KqD2kjtB"><img src="https://img.shields.io/discord/1120774652915105934?style=social&logo=discord" alt="Discord"></a>
   <a href="https://github.com/SciPhi-AI"><img src="https://img.shields.io/github/stars/SciPhi-AI/R2R" alt="Github Stars"></a>
@@ -97,7 +97,7 @@ The command above will install the `full` installation which includes Hatchet fo
 
 [Join our Discord](https://discord.gg/p6KqD2kjtB) to get support and connect with both the R2R team and other developers in the community. Whether you're encountering issues, looking for advice on best practices, or just want to share your experiences, we're here to help.
 
-# Contributing
+## Contributing
 
 We welcome contributions of all sizes! Here's how you can help:
 
