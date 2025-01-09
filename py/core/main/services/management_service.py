@@ -1200,7 +1200,6 @@ class ManagementService(Service):
     #         },
     #         "usage": usage,
     #     }
-    #     print('result = ', result)
     #     return result
 
     # async def get_all_user_limits(self, user_id: UUID) -> dict[str, Any]:
@@ -1319,7 +1318,6 @@ class ManagementService(Service):
     #         },
     #         "usage": usage,
     #     }
-    #     print('result = ', result)
     #     return result
 
     # # async def get_all_user_limits(self, user_id: UUID) -> dict[str, Any]:

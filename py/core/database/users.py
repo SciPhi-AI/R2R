@@ -140,8 +140,6 @@ class PostgresUserHandler(Handler):
         """
         await self.connection_manager.execute_query(check_columns_query)
 
-
-
     async def get_user_by_id(self, id: UUID) -> User:
         query, _ = (
             QueryBuilder(self._get_table_name("users"))
@@ -246,7 +244,13 @@ class PostgresUserHandler(Handler):
         )
 
     async def create_user(
-        self, email: str, password: Optional[str] = None, account_type: Optional[str] = "password", google_id: Optional[str] = None, github_id: Optional[str] = None, is_superuser: bool = False
+        self,
+        email: str,
+        password: Optional[str] = None,
+        account_type: Optional[str] = "password",
+        google_id: Optional[str] = None,
+        github_id: Optional[str] = None,
+        is_superuser: bool = False,
     ) -> User:
         """Create a new user."""
         # 1) Check if a user with this email already exists
@@ -298,7 +302,8 @@ class PostgresUserHandler(Handler):
                     "limits_overrides": None,
                     "metadata": None,
                     "account_type": account_type,
-                    "hashed_password": hashed_password or "", # Ensure hashed_password is not None
+                    "hashed_password": hashed_password
+                    or "",  # Ensure hashed_password is not None
                     # !!WARNING - Upstream checks are required to treat oauth differently from password!!
                     "google_id": google_id,
                     "github_id": github_id,
@@ -374,7 +379,6 @@ class PostgresUserHandler(Handler):
         except R2RException:
             raise R2RException(status_code=404, message="User not found")
 
-
         # If the new user.google_id != current_user.google_id, check for duplicates
         if user.email and (user.email != current_user.email):
             existing_email_user = await self.get_user_by_email(user.email)
@@ -384,10 +388,11 @@ class PostgresUserHandler(Handler):
                     message="That email account is already associated with another user.",
                 )
 
-
         # If the new user.google_id != current_user.google_id, check for duplicates
         if user.google_id and (user.google_id != current_user.google_id):
-            existing_google_user = await self.get_user_by_google_id(user.google_id)
+            existing_google_user = await self.get_user_by_google_id(
+                user.google_id
+            )
             if existing_google_user and existing_google_user.id != user.id:
                 raise R2RException(
                     status_code=400,
@@ -396,7 +401,9 @@ class PostgresUserHandler(Handler):
 
         # Similarly for GitHub:
         if user.github_id and (user.github_id != current_user.github_id):
-            existing_github_user = await self.get_user_by_github_id(user.github_id)
+            existing_github_user = await self.get_user_by_github_id(
+                user.github_id
+            )
             if existing_github_user and existing_github_user.id != user.id:
                 raise R2RException(
                     status_code=400,
@@ -765,7 +772,6 @@ class PostgresUserHandler(Handler):
                     "google_id",
                     "github_id",
                     "COUNT(*) OVER() AS total_entries",
-
                 ]
             )
             .where("$1 = ANY(collection_ids)")
@@ -1208,7 +1214,6 @@ class PostgresUserHandler(Handler):
                 detail=f"Failed to export data: {str(e)}",
             )
 
-
     async def get_user_by_google_id(self, google_id: str) -> Optional[User]:
         """Return a User if the google_id is found; otherwise None."""
         query, params = (
@@ -1237,7 +1242,9 @@ class PostgresUserHandler(Handler):
             .where("google_id = $1")
             .build()
         )
-        result = await self.connection_manager.fetchrow_query(query, [google_id])
+        result = await self.connection_manager.fetchrow_query(
+            query, [google_id]
+        )
         if not result:
             return None
 
@@ -1260,7 +1267,6 @@ class PostgresUserHandler(Handler):
             google_id=result["google_id"],
             github_id=result["github_id"],
         )
-
 
     async def get_user_by_github_id(self, github_id: str) -> Optional[User]:
         """Return a User if the github_id is found; otherwise None."""
@@ -1290,7 +1296,9 @@ class PostgresUserHandler(Handler):
             .where("github_id = $1")
             .build()
         )
-        result = await self.connection_manager.fetchrow_query(query, [github_id])
+        result = await self.connection_manager.fetchrow_query(
+            query, [github_id]
+        )
         if not result:
             return None
 
