@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import math
 from copy import deepcopy
 from datetime import datetime
 from typing import (
@@ -298,6 +299,23 @@ def _decorate_vector_type(
     quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
 ) -> str:
     return f"{quantization_type.db_type}{input_str}"
+
+
+def _get_vector_column_str(
+    dimension: int | float, quantization_type: VectorQuantizationType
+) -> str:
+    """
+    Returns a string representation of a vector column type.
+
+    Explicitly handles the case where the dimension is not a valid number
+    meant to support embedding models that do not allow for specifying
+    the dimension.
+    """
+    if math.isnan(dimension) or dimension <= 0:
+        vector_dim = ""  # Allows for Postgres to handle any dimension
+    else:
+        vector_dim = f"({dimension})"
+    return _decorate_vector_type(vector_dim, quantization_type)
 
 
 def _get_str_estimation_output(x: tuple[Any, Any]) -> str:

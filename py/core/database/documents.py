@@ -3,6 +3,7 @@ import copy
 import csv
 import json
 import logging
+import math
 import tempfile
 from typing import IO, Any, Optional
 from uuid import UUID
@@ -43,6 +44,12 @@ class PostgresDocumentsHandler(Handler):
         logger.info(
             f"Creating table, if not exists: {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}"
         )
+
+        vector_dim = (
+            "" if math.isnan(self.dimension) else f"({self.dimension})"
+        )
+        vector_type = f"vector{vector_dim}"
+
         try:
             query = f"""
             CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)} (
@@ -53,7 +60,7 @@ class PostgresDocumentsHandler(Handler):
                 metadata JSONB,
                 title TEXT,
                 summary TEXT NULL,
-                summary_embedding vector({self.dimension}) NULL,
+                summary_embedding {vector_type} NULL,
                 version TEXT,
                 size_in_bytes INT,
                 ingestion_status TEXT DEFAULT 'pending',
@@ -511,6 +518,10 @@ class PostgresDocumentsHandler(Handler):
         where_clauses = ["summary_embedding IS NOT NULL"]
         params: list[str | int | bytes] = [str(query_embedding)]
 
+        vector_dim = (
+            "" if math.isnan(self.dimension) else f"({self.dimension})"
+        )
+
         if search_settings.filters:
             filter_condition, params = apply_filters(
                 search_settings.filters, params, mode="condition_only"
@@ -537,7 +548,7 @@ class PostgresDocumentsHandler(Handler):
                 updated_at,
                 summary,
                 summary_embedding,
-                (summary_embedding <=> $1::vector({self.dimension})) as semantic_distance
+                (summary_embedding <=> $1::vector({vector_dim})) as semantic_distance
             FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
             WHERE {where_clause}
             ORDER BY semantic_distance ASC
