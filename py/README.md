@@ -48,11 +48,9 @@ For a more complete view of R2R, check out the [full documentation](https://r2r-
 
 ## Getting Started
 
-### SciPhi Cloud
+### [SciPhi Cloud](https://app.sciphi.ai)
 
 Access R2R through a deployment managed by the SciPhi team, which includes a generous free-tier. No credit card required.
-
-**[SciPhi Cloud](https://app.sciphi.ai)**
 
 ## Self Hosting
 
