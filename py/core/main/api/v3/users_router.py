@@ -147,15 +147,12 @@ class UsersRouter(BaseRouterV3):
             #     )
 
             registration_response = await self.services.auth.register(
-                email, password
+                email=email,
+                password=password,
+                name=name,
+                bio=bio,
+                profile_picture=profile_picture
             )
-            if name or bio or profile_picture:
-                return await self.services.auth.update_user(
-                    user_id=registration_response.id,
-                    name=name,
-                    bio=bio,
-                    profile_picture=profile_picture,
-                )
 
             return registration_response
 

@@ -203,6 +203,9 @@ class R2RAuthProvider(AuthProvider):
         account_type: str = "password",
         github_id: Optional[str] = None,
         google_id: Optional[str] = None,
+        name: Optional[str] = None,
+        bio: Optional[str] = None,
+        profile_picture: Optional[str] = None
     ) -> User:
         if account_type == "password":
             if not password:
@@ -228,6 +231,9 @@ class R2RAuthProvider(AuthProvider):
             account_type=account_type,
             github_id=github_id,
             google_id=google_id,
+            name=name,
+            bio=bio,
+            profile_picture=profile_picture
         )
         default_collection: CollectionResponse = (
             await self.database_provider.collections_handler.create_collection(

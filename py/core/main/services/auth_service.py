@@ -35,8 +35,21 @@ class AuthService(Service):
         )
 
     @telemetry_event("RegisterUser")
-    async def register(self, email: str, password: str) -> User:
-        return await self.providers.auth.register(email, password)
+    async def register(
+        self,
+        email: str,
+        password: str,
+        name: Optional[str] = None,
+        bio: Optional[str] = None,
+        profile_picture: Optional[str] = None,
+    ) -> User:
+        return await self.providers.auth.register(
+            email=email,
+            password=password,
+            name=name,
+            bio=bio,
+            profile_picture=profile_picture
+        )
 
     @telemetry_event("SendVerificationEmail")
     async def send_verification_email(
