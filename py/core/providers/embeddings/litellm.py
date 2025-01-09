@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 from copy import copy
 from typing import Any
@@ -72,6 +73,10 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
     async def _execute_task(self, task: dict[str, Any]) -> list[list[float]]:
         texts = task["texts"]
         kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
+
+        if "dimensions" in kwargs and math.isnan(kwargs["dimensions"]):
+            kwargs.pop("dimensions")
+            logger.warning("Dropping nan dimensions from kwargs")
 
         try:
             response = await self.litellm_aembedding(

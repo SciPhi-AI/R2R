@@ -1,6 +1,7 @@
 import copy
 import json
 import logging
+import math
 import time
 import uuid
 from typing import Any, Optional, TypedDict
@@ -122,13 +123,18 @@ class PostgresChunksHandler(Handler):
             else f"vec_binary bit({self.dimension}),"
         )
 
+        if self.dimension > 0:
+            vector_col = f"vec vector({self.dimension})"
+        else:
+            vector_col = "vec vector"
+
         query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresChunksHandler.TABLE_NAME)} (
             id UUID PRIMARY KEY,
             document_id UUID,
             owner_id UUID,
             collection_ids UUID[],
-            vec vector({self.dimension}),
+            {vector_col},
             {binary_col}
             text TEXT,
             metadata JSONB,
@@ -149,11 +155,15 @@ class PostgresChunksHandler(Handler):
         """
         # Check the quantization type to determine which columns to use
         if self.quantization_type == VectorQuantizationType.INT1:
+            bit_dim = (
+                "" if math.isnan(self.dimension) else f"({self.dimension})"
+            )
+
             # For quantized vectors, use vec_binary column
             query = f"""
             INSERT INTO {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
             (id, document_id, owner_id, collection_ids, vec, vec_binary, text, metadata)
-            VALUES ($1, $2, $3, $4, $5, $6::bit({self.dimension}), $7, $8)
+            VALUES ($1, $2, $3, $4, $5, $6::bit({bit_dim}), $7, $8)
             ON CONFLICT (id) DO UPDATE SET
             document_id = EXCLUDED.document_id,
             owner_id = EXCLUDED.owner_id,
@@ -212,11 +222,15 @@ class PostgresChunksHandler(Handler):
         Matches the table schema where vec_binary column only exists for INT1 quantization.
         """
         if self.quantization_type == VectorQuantizationType.INT1:
+            bit_dim = (
+                "" if math.isnan(self.dimension) else f"({self.dimension})"
+            )
+
             # For quantized vectors, use vec_binary column
             query = f"""
             INSERT INTO {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
             (id, document_id, owner_id, collection_ids, vec, vec_binary, text, metadata)
-            VALUES ($1, $2, $3, $4, $5, $6::bit({self.dimension}), $7, $8)
+            VALUES ($1, $2, $3, $4, $5, $6::bit({bit_dim}), $7, $8)
             ON CONFLICT (id) DO UPDATE SET
             document_id = EXCLUDED.document_id,
             owner_id = EXCLUDED.owner_id,
@@ -313,7 +327,10 @@ class PostgresChunksHandler(Handler):
                 )
 
             # Use binary column and binary-specific distance measures for first stage
-            stage1_distance = f"{table_name}.vec_binary {binary_search_measure_repr} $1::bit({self.dimension})"
+            bit_dim = (
+                "" if math.isnan(self.dimension) else f"({self.dimension})"
+            )
+            stage1_distance = f"{table_name}.vec_binary {binary_search_measure_repr} $1::bit{bit_dim}"
             stage1_param = binary_query
 
             cols.append(
@@ -330,6 +347,10 @@ class PostgresChunksHandler(Handler):
                 where_clause, params = apply_filters(
                     search_settings.filters, params, mode="where_clause"
                 )
+
+            vector_dim = (
+                "" if math.isnan(self.dimension) else f"({self.dimension})"
+            )
 
             # First stage: Get candidates using binary search
             query = f"""
@@ -350,7 +371,7 @@ class PostgresChunksHandler(Handler):
                 collection_ids,
                 text,
                 {"metadata," if search_settings.include_metadatas else ""}
-                (vec <=> ${len(params) + 4}::vector({self.dimension})) as distance
+                (vec <=> ${len(params) + 4}::vector{vector_dim}) as distance
             FROM candidates
             ORDER BY distance
             LIMIT ${len(params) + 3}
@@ -367,7 +388,10 @@ class PostgresChunksHandler(Handler):
 
         else:
             # Standard float vector handling
-            distance_calc = f"{table_name}.vec {search_settings.chunk_settings.index_measure.pgvector_repr} $1::vector({self.dimension})"
+            vector_dim = (
+                "" if math.isnan(self.dimension) else f"({self.dimension})"
+            )
+            distance_calc = f"{table_name}.vec {search_settings.chunk_settings.index_measure.pgvector_repr} $1::vector{vector_dim}"
             query_param = str(query_vector)
 
             if search_settings.include_scores:
@@ -1048,19 +1072,24 @@ class PostgresChunksHandler(Handler):
         similarity_threshold: float = 0.5,
     ) -> list[dict[str, Any]]:
         table_name = self._get_table_name(PostgresChunksHandler.TABLE_NAME)
+        vector_dim = (
+            "" if math.isnan(self.dimension) else f"({self.dimension})"
+        )
+
         query = f"""
         WITH target_vector AS (
-            SELECT vec FROM {table_name}
+            SELECT vec::vector{vector_dim} FROM {table_name}
             WHERE document_id = $1 AND id = $2
         )
-        SELECT t.id, t.text, t.metadata, t.document_id, (t.vec <=> tv.vec) AS similarity
+        SELECT t.id, t.text, t.metadata, t.document_id, (t.vec::vector{vector_dim} <=> tv.vec) AS similarity
         FROM {table_name} t, target_vector tv
-        WHERE (t.vec <=> tv.vec) >= $3
+        WHERE (t.vec::vector{vector_dim} <=> tv.vec) >= $3
             AND t.document_id = $1
             AND t.id != $2
         ORDER BY similarity ASC
         LIMIT $4
         """
+
         results = await self.connection_manager.fetch_query(
             query,
             (str(document_id), str(id), similarity_threshold, limit),
