@@ -101,6 +101,9 @@ services:
       # Ollama
       - OLLAMA_API_BASE=${OLLAMA_API_BASE:-http://host.docker.internal:11434}
 
+      # LM Studio
+      - LM_STUDIO_API_BASE=${LM_STUDIO_API_BASE:-http://host.docker.internal:1234}
+
     networks:
       - r2r-network
     healthcheck:
