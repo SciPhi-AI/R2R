@@ -290,9 +290,9 @@ class R2RAuthProvider(AuthProvider):
         )
 
         await self.email_provider.send_verification_email(
-            email=user.email, 
-            verification_code=verification_code, 
-            template_data={"first_name": first_name}
+            to_email=user.email, 
+            verification_code=verification_code,
+            dynamic_template_data={"first_name": first_name}
         )
 
         return verification_code, expiry
@@ -422,8 +422,8 @@ class R2RAuthProvider(AuthProvider):
         )
         try:
             await self.email_provider.send_password_changed_email(
-                email=user.email, 
-                template_data={"first_name": user.name.split(" ")[0] or 'User'}
+                to_email=user.email, 
+                dynamic_template_data={"first_name": user.name.split(" ")[0] or 'User'}
             )
         except Exception as e:
             logger.error(f"Failed to send password change notification: {str(e)}")
@@ -450,7 +450,9 @@ class R2RAuthProvider(AuthProvider):
                 user.name.split(" ")[0] if user.name else email.split("@")[0]
             )
             await self.email_provider.send_password_reset_email(
-                email, reset_token, {"first_name": first_name}
+                to_email=email, 
+                reset_token=reset_token, 
+                dynamic_template_data={"first_name": first_name}
             )
 
             return {
@@ -493,8 +495,8 @@ class R2RAuthProvider(AuthProvider):
 
         try:
             await self.email_provider.send_password_changed_email(
-                email=user.email, 
-                template_data={"first_name": user.name.split(" ")[0] or 'User'}
+                to_email=user.email, 
+                dynamic_template_data={"first_name": user.name.split(" ")[0] or 'User'}
             )
         except Exception as e:
             logger.error(f"Failed to send password change notification: {str(e)}")
