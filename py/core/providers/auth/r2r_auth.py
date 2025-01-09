@@ -290,7 +290,9 @@ class R2RAuthProvider(AuthProvider):
         )
 
         await self.email_provider.send_verification_email(
-            user.email, verification_code, {"first_name": first_name}
+            email=user.email, 
+            verification_code=verification_code, 
+            template_data={"first_name": first_name}
         )
 
         return verification_code, expiry
@@ -418,6 +420,14 @@ class R2RAuthProvider(AuthProvider):
             id=user.id,
             new_hashed_password=hashed_new_password,
         )
+        try:
+            await self.email_provider.send_password_changed_email(
+                email=user.email, 
+                template_data={"first_name": user.name.split(" ")[0] or 'User'}
+            )
+        except Exception as e:
+            logger.error(f"Failed to send password change notification: {str(e)}")
+
         return {"message": "Password changed successfully"}
 
     async def request_password_reset(self, email: str) -> dict[str, str]:
@@ -476,6 +486,19 @@ class R2RAuthProvider(AuthProvider):
         await self.database_provider.users_handler.remove_reset_token(
             id=user_id
         )
+         # Get the user information
+        user = await self.database_provider.users_handler.get_user_by_id(
+            id=user_id
+        )
+
+        try:
+            await self.email_provider.send_password_changed_email(
+                email=user.email, 
+                template_data={"first_name": user.name.split(" ")[0] or 'User'}
+            )
+        except Exception as e:
+            logger.error(f"Failed to send password change notification: {str(e)}")
+
         return {"message": "Password reset successfully"}
 
     async def logout(self, token: str) -> dict[str, str]:
