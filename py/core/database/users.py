@@ -82,7 +82,10 @@ class PostgresUserHandler(Handler):
             limits_overrides JSONB,
             metadata JSONB,
             created_at TIMESTAMPTZ DEFAULT NOW(),
-            updated_at TIMESTAMPTZ DEFAULT NOW()
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
+            account_type TEXT NOT NULL DEFAULT 'password',
+            google_id TEXT,
+            github_id TEXT
         );
         """
 
@@ -123,6 +126,22 @@ class PostgresUserHandler(Handler):
         """
         await self.connection_manager.execute_query(check_columns_query)
 
+        # Optionally, create indexes for quick lookups:
+        check_columns_query = f"""
+        ALTER TABLE {self._get_table_name(self.TABLE_NAME)}
+            ADD COLUMN IF NOT EXISTS account_type TEXT NOT NULL DEFAULT 'password',
+            ADD COLUMN IF NOT EXISTS google_id TEXT,
+            ADD COLUMN IF NOT EXISTS github_id TEXT;
+
+        CREATE INDEX IF NOT EXISTS idx_users_google_id
+            ON {self._get_table_name(self.TABLE_NAME)}(google_id);
+        CREATE INDEX IF NOT EXISTS idx_users_github_id
+            ON {self._get_table_name(self.TABLE_NAME)}(github_id);
+        """
+        await self.connection_manager.execute_query(check_columns_query)
+
+
+
     async def get_user_by_id(self, id: UUID) -> User:
         query, _ = (
             QueryBuilder(self._get_table_name("users"))
@@ -130,7 +149,6 @@ class PostgresUserHandler(Handler):
                 [
                     "id",
                     "email",
-                    "hashed_password",
                     "is_superuser",
                     "is_active",
                     "is_verified",
@@ -142,6 +160,10 @@ class PostgresUserHandler(Handler):
                     "collection_ids",
                     "limits_overrides",
                     "metadata",
+                    "account_type",
+                    "hashed_password",
+                    "google_id",
+                    "github_id",
                 ]
             )
             .where("id = $1")
@@ -155,7 +177,6 @@ class PostgresUserHandler(Handler):
         return User(
             id=result["id"],
             email=result["email"],
-            hashed_password=result["hashed_password"],
             is_superuser=result["is_superuser"],
             is_active=result["is_active"],
             is_verified=result["is_verified"],
@@ -167,6 +188,10 @@ class PostgresUserHandler(Handler):
             collection_ids=result["collection_ids"],
             limits_overrides=json.loads(result["limits_overrides"] or "{}"),
             metadata=json.loads(result["metadata"] or "{}"),
+            hashed_password=result["hashed_password"],
+            account_type=result["account_type"],
+            google_id=result["google_id"],
+            github_id=result["github_id"],
         )
 
     async def get_user_by_email(self, email: str) -> User:
@@ -176,7 +201,6 @@ class PostgresUserHandler(Handler):
                 [
                     "id",
                     "email",
-                    "hashed_password",
                     "is_superuser",
                     "is_active",
                     "is_verified",
@@ -188,6 +212,10 @@ class PostgresUserHandler(Handler):
                     "collection_ids",
                     "metadata",
                     "limits_overrides",
+                    "account_type",
+                    "hashed_password",
+                    "google_id",
+                    "github_id",
                 ]
             )
             .where("email = $1")
@@ -200,7 +228,6 @@ class PostgresUserHandler(Handler):
         return User(
             id=result["id"],
             email=result["email"],
-            hashed_password=result["hashed_password"],
             is_superuser=result["is_superuser"],
             is_active=result["is_active"],
             is_verified=result["is_verified"],
@@ -212,12 +239,17 @@ class PostgresUserHandler(Handler):
             collection_ids=result["collection_ids"],
             limits_overrides=json.loads(result["limits_overrides"] or "{}"),
             metadata=json.loads(result["metadata"] or "{}"),
+            account_type=result["account_type"],
+            hashed_password=result["hashed_password"],
+            google_id=result["google_id"],
+            github_id=result["github_id"],
         )
 
     async def create_user(
-        self, email: str, password: str, is_superuser: bool = False
+        self, email: str, password: Optional[str] = None, account_type: Optional[str] = "password", google_id: Optional[str] = None, github_id: Optional[str] = None, is_superuser: bool = False
     ) -> User:
         """Create a new user."""
+        # 1) Check if a user with this email already exists
         try:
             existing = await self.get_user_by_email(email)
             if existing:
@@ -228,8 +260,33 @@ class PostgresUserHandler(Handler):
         except R2RException as e:
             if e.status_code != 404:
                 raise e
+        # 2) If google_id is provided, ensure no user already has it
+        if google_id:
+            existing_google_user = await self.get_user_by_google_id(google_id)
+            if existing_google_user:
+                raise R2RException(
+                    status_code=400,
+                    message="User with this Google account already exists",
+                )
 
-        hashed_password = self.crypto_provider.get_password_hash(password)  # type: ignore
+        # 3) If github_id is provided, ensure no user already has it
+        if github_id:
+            existing_github_user = await self.get_user_by_github_id(github_id)
+            if existing_github_user:
+                raise R2RException(
+                    status_code=400,
+                    message="User with this GitHub account already exists",
+                )
+
+        hashed_password = None
+        if account_type == "password":
+            if password is None:
+                raise R2RException(
+                    status_code=400,
+                    message="Password is required for a 'password' account_type",
+                )
+            hashed_password = self.crypto_provider.get_password_hash(password)  # type: ignore
+
         query, params = (
             QueryBuilder(self._get_table_name(self.TABLE_NAME))
             .insert(
@@ -237,10 +294,15 @@ class PostgresUserHandler(Handler):
                     "email": email,
                     "id": generate_user_id(email),
                     "is_superuser": is_superuser,
-                    "hashed_password": hashed_password,
                     "collection_ids": [],
                     "limits_overrides": None,
                     "metadata": None,
+                    "account_type": account_type,
+                    "hashed_password": hashed_password or "", # Ensure hashed_password is not None
+                    # !!WARNING - Upstream checks are required to treat oauth differently from password!!
+                    "google_id": google_id,
+                    "github_id": github_id,
+                    "is_verified": account_type != "password",
                 }
             )
             .returning(
@@ -276,12 +338,15 @@ class PostgresUserHandler(Handler):
             created_at=result["created_at"],
             updated_at=result["updated_at"],
             collection_ids=result["collection_ids"] or [],
-            hashed_password=hashed_password,
             limits_overrides=json.loads(result["limits_overrides"] or "{}"),
             metadata=json.loads(result["metadata"] or "{}"),
             name=None,
             bio=None,
             profile_picture=None,
+            account_type=account_type,
+            hashed_password=hashed_password,
+            google_id=google_id,
+            github_id=github_id,
         )
 
     async def update_user(
@@ -308,6 +373,35 @@ class PostgresUserHandler(Handler):
             current_user = await self.get_user_by_id(user.id)
         except R2RException:
             raise R2RException(status_code=404, message="User not found")
+
+
+        # If the new user.google_id != current_user.google_id, check for duplicates
+        if user.email and (user.email != current_user.email):
+            existing_email_user = await self.get_user_by_email(user.email)
+            if existing_email_user and existing_email_user.id != user.id:
+                raise R2RException(
+                    status_code=400,
+                    message="That email account is already associated with another user.",
+                )
+
+
+        # If the new user.google_id != current_user.google_id, check for duplicates
+        if user.google_id and (user.google_id != current_user.google_id):
+            existing_google_user = await self.get_user_by_google_id(user.google_id)
+            if existing_google_user and existing_google_user.id != user.id:
+                raise R2RException(
+                    status_code=400,
+                    message="That Google account is already associated with another user.",
+                )
+
+        # Similarly for GitHub:
+        if user.github_id and (user.github_id != current_user.github_id):
+            existing_github_user = await self.get_user_by_github_id(user.github_id)
+            if existing_github_user and existing_github_user.id != user.id:
+                raise R2RException(
+                    status_code=400,
+                    message="That GitHub account is already associated with another user.",
+                )
 
         # Merge or replace metadata if provided
         final_metadata = current_user.metadata or {}
@@ -341,7 +435,8 @@ class PostgresUserHandler(Handler):
             WHERE id = $11
             RETURNING id, email, is_superuser, is_active, is_verified,
                     created_at, updated_at, name, profile_picture, bio,
-                    collection_ids, limits_overrides, metadata, hashed_password
+                    collection_ids, limits_overrides, metadata, hashed_password,
+                    account_type, google_id, github_id
         """
         result = await self.connection_manager.fetchrow_query(
             query,
@@ -369,9 +464,6 @@ class PostgresUserHandler(Handler):
         return User(
             id=result["id"],
             email=result["email"],
-            hashed_password=result[
-                "hashed_password"
-            ],  # Include hashed_password
             is_superuser=result["is_superuser"],
             is_active=result["is_active"],
             is_verified=result["is_verified"],
@@ -386,6 +478,12 @@ class PostgresUserHandler(Handler):
                 result["limits_overrides"] or "{}"
             ),  # Can be null
             metadata=json.loads(result["metadata"] or "{}"),
+            account_type=result["account_type"],
+            hashed_password=result[
+                "hashed_password"
+            ],  # Include hashed_password
+            google_id=result["google_id"],
+            github_id=result["github_id"],
         )
 
     async def delete_user_relational(self, id: UUID) -> None:
@@ -461,6 +559,9 @@ class PostgresUserHandler(Handler):
                     "name",
                     "bio",
                     "profile_picture",
+                    "account_type",
+                    "google_id",
+                    "github_id",
                 ]
             )
             .build()
@@ -471,7 +572,6 @@ class PostgresUserHandler(Handler):
             User(
                 id=result["id"],
                 email=result["email"],
-                hashed_password=result["hashed_password"],
                 is_superuser=result["is_superuser"],
                 is_active=result["is_active"],
                 is_verified=result["is_verified"],
@@ -485,6 +585,10 @@ class PostgresUserHandler(Handler):
                 name=result["name"],
                 bio=result["bio"],
                 profile_picture=result["profile_picture"],
+                account_type=result["account_type"],
+                hashed_password=result["hashed_password"],
+                google_id=result["google_id"],
+                github_id=result["github_id"],
             )
             for result in results
         ]
@@ -654,10 +758,14 @@ class PostgresUserHandler(Handler):
                     "name",
                     "bio",
                     "profile_picture",
-                    "hashed_password",
                     "limits_overrides",
                     "metadata",
+                    "account_type",
+                    "hashed_password",
+                    "google_id",
+                    "github_id",
                     "COUNT(*) OVER() AS total_entries",
+
                 ]
             )
             .where("$1 = ANY(collection_ids)")
@@ -686,9 +794,12 @@ class PostgresUserHandler(Handler):
                 name=row["name"],
                 bio=row["bio"],
                 profile_picture=row["profile_picture"],
-                hashed_password=row["hashed_password"],
                 limits_overrides=json.loads(row["limits_overrides"] or "{}"),
                 metadata=json.loads(row["metadata"] or "{}"),
+                account_type=row["account_type"],
+                hashed_password=row["hashed_password"],
+                google_id=row["google_id"],
+                github_id=row["github_id"],
             )
             for row in results
         ]
@@ -1096,3 +1207,109 @@ class PostgresUserHandler(Handler):
                 status_code=500,
                 detail=f"Failed to export data: {str(e)}",
             )
+
+
+    async def get_user_by_google_id(self, google_id: str) -> Optional[User]:
+        """Return a User if the google_id is found; otherwise None."""
+        query, params = (
+            QueryBuilder(self._get_table_name("users"))
+            .select(
+                [
+                    "id",
+                    "email",
+                    "is_superuser",
+                    "is_active",
+                    "is_verified",
+                    "created_at",
+                    "updated_at",
+                    "name",
+                    "profile_picture",
+                    "bio",
+                    "collection_ids",
+                    "limits_overrides",
+                    "metadata",
+                    "account_type",
+                    "hashed_password",
+                    "google_id",
+                    "github_id",
+                ]
+            )
+            .where("google_id = $1")
+            .build()
+        )
+        result = await self.connection_manager.fetchrow_query(query, [google_id])
+        if not result:
+            return None
+
+        return User(
+            id=result["id"],
+            email=result["email"],
+            is_superuser=result["is_superuser"],
+            is_active=result["is_active"],
+            is_verified=result["is_verified"],
+            created_at=result["created_at"],
+            updated_at=result["updated_at"],
+            name=result["name"],
+            profile_picture=result["profile_picture"],
+            bio=result["bio"],
+            collection_ids=result["collection_ids"] or [],
+            limits_overrides=json.loads(result["limits_overrides"] or "{}"),
+            metadata=json.loads(result["metadata"] or "{}"),
+            account_type=result["account_type"],
+            hashed_password=result["hashed_password"],
+            google_id=result["google_id"],
+            github_id=result["github_id"],
+        )
+
+
+    async def get_user_by_github_id(self, github_id: str) -> Optional[User]:
+        """Return a User if the github_id is found; otherwise None."""
+        query, params = (
+            QueryBuilder(self._get_table_name("users"))
+            .select(
+                [
+                    "id",
+                    "email",
+                    "is_superuser",
+                    "is_active",
+                    "is_verified",
+                    "created_at",
+                    "updated_at",
+                    "name",
+                    "profile_picture",
+                    "bio",
+                    "collection_ids",
+                    "limits_overrides",
+                    "metadata",
+                    "account_type",
+                    "hashed_password",
+                    "google_id",
+                    "github_id",
+                ]
+            )
+            .where("github_id = $1")
+            .build()
+        )
+        result = await self.connection_manager.fetchrow_query(query, [github_id])
+        if not result:
+            return None
+
+        return User(
+            id=result["id"],
+            email=result["email"],
+            is_superuser=result["is_superuser"],
+            is_active=result["is_active"],
+            is_verified=result["is_verified"],
+            created_at=result["created_at"],
+            updated_at=result["updated_at"],
+            name=result["name"],
+            profile_picture=result["profile_picture"],
+            bio=result["bio"],
+            collection_ids=result["collection_ids"] or [],
+            limits_overrides=json.loads(result["limits_overrides"] or "{}"),
+            metadata=json.loads(result["metadata"] or "{}"),
+            account_type=result["account_type"],
+            hashed_password=result["hashed_password"],
+            google_id=result["google_id"],
+            github_id=result["github_id"],
+        )

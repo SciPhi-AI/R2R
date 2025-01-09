@@ -537,3 +537,26 @@ class UsersSDK:
             f"users/{str(self.client._user_id)}/limits",
             version="v3",
         )
+
+
+    async def oauth_google_authorize(self) -> dict[str, str]:
+        """
+        Get Google OAuth 2.0 authorization URL from the server.
+        Returns: {"redirect_url": "..."}
+        """
+        return await self.client._make_request(
+            "GET",
+            "users/oauth/google/authorize",
+            version="v3",
+        )
+
+    async def oauth_github_authorize(self) -> dict[str, str]:
+        """
+        Get GitHub OAuth 2.0 authorization URL from the server.
+        Returns: {"redirect_url": "..."}
+        """
+        return await self.client._make_request(
+            "GET",
+            "users/oauth/github/authorize",
+            version="v3",
+        )

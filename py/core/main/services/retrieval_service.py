@@ -114,6 +114,7 @@ class RetrievalService(Service):
                     status_code=400,
                     message="Hybrid search settings must be specified in the input configuration.",
                 )
+
             # TODO - Remove these transforms once we have a better way to handle this
             for filter, value in search_settings.filters.items():
                 if isinstance(value, UUID):
