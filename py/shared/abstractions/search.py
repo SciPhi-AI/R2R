@@ -475,5 +475,6 @@ def select_search_filters(
         filters.pop("collection_ids", None)
         if filters != {}:
             filters = {"$and": [collection_filters, filters]}  # type: ignore
-
+        else:
+            filters = collection_filters
     return filters

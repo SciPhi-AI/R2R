@@ -56,10 +56,14 @@ class User(R2RSerializable):
     # Optional fields (to update or set at creation)
     limits_overrides: Optional[dict] = None
     metadata: Optional[dict] = None
-    hashed_password: Optional[str] = None
     verification_code_expiry: Optional[datetime] = None
     name: Optional[str] = None
     bio: Optional[str] = None
     profile_picture: Optional[str] = None
     total_size_in_bytes: Optional[int] = None
     num_files: Optional[int] = None
+
+    account_type: str = "password"
+    hashed_password: Optional[str] = None
+    google_id: Optional[str] = None
+    github_id: Optional[str] = None

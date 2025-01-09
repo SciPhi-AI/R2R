@@ -1,12 +1,14 @@
+import os
 import textwrap
 from typing import Optional
 from uuid import UUID
 
-from fastapi import Body, Depends, Path, Query
+from fastapi import Body, Depends, Path, Query, Request, HTTPException
 from fastapi.background import BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import EmailStr
+import requests
 
 from core.base import R2RException
 from core.base.api.models import (
@@ -25,6 +27,10 @@ from core.base.providers.database import LimitSettings
 
 from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
+# missing these lines
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+import urllib.parse
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -32,6 +38,13 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 class UsersRouter(BaseRouterV3):
     def __init__(self, providers: R2RProviders, services: R2RServices):
         super().__init__(providers, services)
+        self.google_client_id = os.environ.get("GOOGLE_CLIENT_ID")
+        self.google_client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+        self.google_redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI")
+
+        self.github_client_id = os.environ.get("GITHUB_CLIENT_ID")
+        self.github_client_secret = os.environ.get("GITHUB_CLIENT_SECRET")
+        self.github_redirect_uri = os.environ.get("GITHUB_REDIRECT_URI")
 
     def _setup_routes(self):
         @self.router.post(
@@ -126,7 +139,10 @@ class UsersRouter(BaseRouterV3):
                     return False
                 return True
 
-            validate_password(password)
+            if not validate_password(password):
+                raise R2RException(
+                    f"Password must be at least 10 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character from '!@#$%^&*'.",
+                )
 
             registration_response = await self.services.auth.register(
                 email, password
@@ -1747,3 +1763,129 @@ class UsersRouter(BaseRouterV3):
                 id
             )
             return limits_info
+        @self.router.get("/users/oauth/google/authorize")
+        async def google_authorize():
+            """
+            Redirect user to Google's OAuth 2.0 consent screen.
+            """
+            state = "some_random_string_or_csrf_token"  # Usually you store a random state in session/Redis
+            scope = "openid email profile"
+
+            # Build the Google OAuth URL
+            params = {
+                "client_id": self.google_client_id,
+                "redirect_uri": self.google_redirect_uri,
+                "response_type": "code",
+                "scope": scope,
+                "state": state,
+                "access_type": "offline",  # to get refresh token if needed
+                "prompt": "consent",  # Force consent each time if you want
+            }
+            google_auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
+            return {"redirect_url": google_auth_url}
+            # In a real app, you might return a RedirectResponse(google_auth_url)
+
+        @self.router.get("/users/oauth/google/callback")
+        async def google_callback(request: Request, code: str = Query(...), state: str = Query(...)):
+            """
+            Google's callback that will receive the `code` and `state`.
+            We then exchange code for tokens, verify, and log the user in.
+            """
+            # 1. Exchange `code` for tokens
+            token_data = requests.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "code": code,
+                    "client_id": self.google_client_id,
+                    "client_secret": self.google_client_secret,
+                    "redirect_uri": self.google_redirect_uri,
+                    "grant_type": "authorization_code",
+                },
+            ).json()
+
+            if "error" in token_data:
+                raise HTTPException(status_code=400, detail=f"Failed to get token: {token_data}")
+
+            # 2. Verify the ID token
+            id_token_str = token_data["id_token"]
+            try:
+                # google_auth.transport.requests.Request() is a session for verifying
+                id_info = id_token.verify_oauth2_token(
+                    id_token_str, google_requests.Request(), self.google_client_id
+                )
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=f"Token verification failed: {str(e)}")
+
+            # id_info will contain "sub", "email", etc.
+            google_id = id_info["sub"]
+            email = id_info.get("email")
+
+            # 3. Now call our R2RAuthProvider method that handles "oauth-based" user creation or login
+            token_response = await self.providers.auth.oauth_callback_handler(
+                provider="google",
+                oauth_id=google_id,
+                email=email,
+            )
+
+            # 4. Return tokens or redirect to your front-end
+            #   Some people store tokens in a cookie or redirect to a front-end route passing them as a query param.
+            return token_response
+
+        # =============== GITHUB OAUTH ===============
+        @self.router.get("/users/oauth/github/authorize")
+        async def github_authorize():
+            """
+            Redirect user to GitHub's OAuth consent screen.
+            """
+            state = "some_random_string_or_csrf_token"
+            scope = "read:user user:email"  # whatever scopes you need
+
+            params = {
+                "client_id": self.github_client_id,
+                "redirect_uri": self.github_redirect_uri,
+                "scope": scope,
+                "state": state,
+            }
+            github_auth_url = f"https://github.com/login/oauth/authorize?{urllib.parse.urlencode(params)}"
+            return {"redirect_url": github_auth_url}
+
+        @self.router.get("/users/oauth/github/callback")
+        async def github_callback(code: str = Query(...), state: str = Query(...)):
+            """
+            GitHub callback route to exchange code for an access_token,
+            then fetch user info from GitHub's API,
+            then do the same 'oauth-based' login or registration.
+            """
+            # 1. Exchange code for access_token
+            token_resp = requests.post(
+                "https://github.com/login/oauth/access_token",
+                data={
+                    "client_id": self.github_client_id,
+                    "client_secret": self.github_client_secret,
+                    "code": code,
+                    "redirect_uri": self.github_redirect_uri,
+                    "state": state,
+                },
+                headers={"Accept": "application/json"},
+            )
+            token_data = token_resp.json()
+            if "error" in token_data:
+                raise HTTPException(status_code=400, detail=f"Failed to get token: {token_data}")
+            access_token = token_data["access_token"]
+
+            # 2. Use the access_token to fetch user info
+            user_info_resp = requests.get(
+                "https://api.github.com/user",
+                headers={"Authorization": f"Bearer {access_token}"}
+            ).json()
+            github_id = str(user_info_resp["id"])  # GitHub user ID is typically an integer
+            # fetch email (sometimes you need to call /user/emails endpoint if user sets email private)
+            email = user_info_resp.get("email")
+
+            # 3. Pass to your auth provider
+            token_response = await self.providers.auth.oauth_callback_handler(
+                provider="github",
+                oauth_id=github_id,
+                email=email,
+            )
+            return token_response

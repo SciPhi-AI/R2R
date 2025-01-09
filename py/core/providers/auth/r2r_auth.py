@@ -196,10 +196,32 @@ class R2RAuthProvider(AuthProvider):
         return current_user
 
     async def register(
-        self, email: str, password: str, is_superuser: bool = False
+        self,
+        email: str,
+        password: Optional[str] = None,
+        is_superuser: bool = False,
+        account_type: str = "password",
+        github_id: Optional[str] = None,
+        google_id: Optional[str] = None,
     ) -> User:
+        if account_type == "password":
+            if not password:
+                raise R2RException(
+                    status_code=400, message="Password is required for password accounts"
+                )
+        else:
+            if github_id and google_id:
+                raise R2RException(
+                    status_code=400,
+                    message="Cannot register OAuth with both GitHub and Google IDs",
+                )
+            if not github_id and not google_id:
+                raise R2RException(
+                    status_code=400,
+                    message="Invalid OAuth specification without GitHub or Google ID",
+                )
         new_user = await self.database_provider.users_handler.create_user(
-            email=email, password=password, is_superuser=is_superuser
+            email=email, password=password, is_superuser=is_superuser, account_type=account_type, github_id=github_id, google_id=google_id
         )
         default_collection: CollectionResponse = (
             await self.database_provider.collections_handler.create_collection(
@@ -286,6 +308,13 @@ class R2RAuthProvider(AuthProvider):
         user = await self.database_provider.users_handler.get_user_by_email(
             email=email
         )
+
+        if user.account_type != "password":
+            logger.warning(f"Password login not allowed for {user.account_type} accounts: {email}")
+            raise R2RException(
+                status_code=401,
+                message=f"This account is configured for {user.account_type} login, not password."
+            )
 
         logger.debug(f"User found: {user}")
 
@@ -504,3 +533,61 @@ class R2RAuthProvider(AuthProvider):
             key_id=key_id,
             name=new_name,
         )
+
+    async def oauth_callback_handler(self, provider: str, oauth_id: str, email: Optional[str]) -> dict[str, Token]:
+        """
+        Handles a login/registration flow for OAuth providers (e.g., Google or GitHub).
+        :param provider: "google" or "github"
+        :param oauth_id: The unique ID from the OAuth provider (e.g. Google's 'sub')
+        :param email: The user's email from the provider, if available.
+        :return: dict with access_token and refresh_token
+        """
+        # 1) Attempt to find user by google_id or github_id, or by email
+        #    The logic depends on your preference. We'll assume "google" => google_id, etc.
+        try:
+            if provider == "google":
+                user = await self.database_provider.users_handler.get_user_by_email(email)
+                # If user found, check if user.google_id matches or is null. If null, update it
+                if user and not user.google_id:
+                    user.google_id = oauth_id
+                    user.account_type = "google"
+                    await self.database_provider.users_handler.update_user(user)
+                elif user and user.google_id != oauth_id:
+                    # Edge case: Another user with same email? Or user changed google account?
+                    # Decide how to handle.
+                    pass
+
+                if not user:
+                    # Create new user
+                    user = await self.database_provider.users_handler.create_user(
+                        email=email or f"{oauth_id}@google_oauth.fake",  # fallback
+                        password=None,  # no password
+                        account_type="google",
+                        google_id=oauth_id
+                    )
+            elif provider == "github":
+                # Similar approach for GitHub
+                # ...
+                pass
+            # else handle other providers
+
+        except R2RException:
+            # If no user found or creation fails
+            raise R2RException(status_code=401, message="Could not create or fetch user")
+
+        # If user is inactive, etc.
+        if not user.is_active:
+            raise R2RException(status_code=401, message="User account is inactive")
+
+        # Possibly mark user as verified if you trust the OAuth provider's email
+        user.is_verified = True
+        await self.database_provider.users_handler.update_user(user)
+
+        # 2) Generate tokens
+        access_token = self.create_access_token(data={"sub": user.email})
+        refresh_token = self.create_refresh_token(data={"sub": user.email})
+
+        return {
+            "access_token": Token(token=access_token, token_type="access"),
+            "refresh_token": Token(token=refresh_token, token_type="refresh"),
+        }

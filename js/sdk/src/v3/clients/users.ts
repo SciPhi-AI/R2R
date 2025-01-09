@@ -527,4 +527,14 @@ export class UsersClient {
     return this.client.makeRequest("GET", `users/${options.id}/limits`);
   }
 
+  @feature("users.oauthGoogleAuthorize")
+  async oauthGoogleAuthorize(): Promise<{ redirect_url: string }> {
+    // For GET requests, we set the method to "GET" and pass no data
+    return this.client.makeRequest("GET", "users/oauth/google/authorize");
+  }
+
+  @feature("users.oauthGithubAuthorize")
+  async oauthGithubAuthorize(): Promise<{ redirect_url: string }> {
+    return this.client.makeRequest("GET", "users/oauth/github/authorize");
+  }
 }
