@@ -1,14 +1,19 @@
 import os
 import textwrap
+import urllib.parse
 from typing import Optional
 from uuid import UUID
 
-from fastapi import Body, Depends, Path, Query, Request, HTTPException
+import requests
+from fastapi import Body, Depends, HTTPException, Path, Query, Request
 from fastapi.background import BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from google.auth.transport import requests as google_requests
+
+# missing these lines
+from google.oauth2 import id_token
 from pydantic import EmailStr
-import requests
 
 from core.base import R2RException
 from core.base.api.models import (
@@ -27,10 +32,6 @@ from core.base.providers.database import LimitSettings
 
 from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
-# missing these lines
-from google.oauth2 import id_token
-from google.auth.transport import requests as google_requests
-import urllib.parse
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -139,10 +140,11 @@ class UsersRouter(BaseRouterV3):
                     return False
                 return True
 
-            if not validate_password(password):
-                raise R2RException(
-                    f"Password must be at least 10 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character from '!@#$%^&*'.",
-                )
+            # if not validate_password(password):
+            #     raise R2RException(
+            #         f"Password must be at least 10 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character from '!@#$%^&*'.",
+            #         400,
+            #     )
 
             registration_response = await self.services.auth.register(
                 email, password
@@ -1763,6 +1765,7 @@ class UsersRouter(BaseRouterV3):
                 id
             )
             return limits_info
+
         @self.router.get("/users/oauth/google/authorize")
         async def google_authorize():
             """
@@ -1786,7 +1789,9 @@ class UsersRouter(BaseRouterV3):
             # In a real app, you might return a RedirectResponse(google_auth_url)
 
         @self.router.get("/users/oauth/google/callback")
-        async def google_callback(request: Request, code: str = Query(...), state: str = Query(...)):
+        async def google_callback(
+            code: str = Query(...), state: str = Query(...)
+        ):
             """
             Google's callback that will receive the `code` and `state`.
             We then exchange code for tokens, verify, and log the user in.
@@ -1802,19 +1807,33 @@ class UsersRouter(BaseRouterV3):
                     "grant_type": "authorization_code",
                 },
             ).json()
-
+            print("token data = ", token_data)
             if "error" in token_data:
-                raise HTTPException(status_code=400, detail=f"Failed to get token: {token_data}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Failed to get token: {token_data}",
+                )
 
+            print("verifying...")
             # 2. Verify the ID token
             id_token_str = token_data["id_token"]
             try:
                 # google_auth.transport.requests.Request() is a session for verifying
                 id_info = id_token.verify_oauth2_token(
-                    id_token_str, google_requests.Request(), self.google_client_id
+                    id_token_str,
+                    google_requests.Request(),
+                    self.google_client_id,
                 )
+                print("id_info = ", id_info)
             except ValueError as e:
-                raise HTTPException(status_code=400, detail=f"Token verification failed: {str(e)}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Token verification failed: {str(e)}",
+                )
+
+            print(
+                "doing the final call, storing data with our oauth callback handler..."
+            )
 
             # id_info will contain "sub", "email", etc.
             google_id = id_info["sub"]
@@ -1826,6 +1845,7 @@ class UsersRouter(BaseRouterV3):
                 oauth_id=google_id,
                 email=email,
             )
+            print("token_response = ", token_response)
 
             # 4. Return tokens or redirect to your front-end
             #   Some people store tokens in a cookie or redirect to a front-end route passing them as a query param.
@@ -1850,7 +1870,9 @@ class UsersRouter(BaseRouterV3):
             return {"redirect_url": github_auth_url}
 
         @self.router.get("/users/oauth/github/callback")
-        async def github_callback(code: str = Query(...), state: str = Query(...)):
+        async def github_callback(
+            code: str = Query(...), state: str = Query(...)
+        ):
             """
             GitHub callback route to exchange code for an access_token,
             then fetch user info from GitHub's API,
@@ -1870,15 +1892,20 @@ class UsersRouter(BaseRouterV3):
             )
             token_data = token_resp.json()
             if "error" in token_data:
-                raise HTTPException(status_code=400, detail=f"Failed to get token: {token_data}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Failed to get token: {token_data}",
+                )
             access_token = token_data["access_token"]
 
             # 2. Use the access_token to fetch user info
             user_info_resp = requests.get(
                 "https://api.github.com/user",
-                headers={"Authorization": f"Bearer {access_token}"}
+                headers={"Authorization": f"Bearer {access_token}"},
             ).json()
-            github_id = str(user_info_resp["id"])  # GitHub user ID is typically an integer
+            github_id = str(
+                user_info_resp["id"]
+            )  # GitHub user ID is typically an integer
             # fetch email (sometimes you need to call /user/emails endpoint if user sets email private)
             email = user_info_resp.get("email")
 

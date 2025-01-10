@@ -538,7 +538,6 @@ class UsersSDK:
             version="v3",
         )
 
-
     async def oauth_google_authorize(self) -> dict[str, str]:
         """
         Get Google OAuth 2.0 authorization URL from the server.
@@ -558,5 +557,31 @@ class UsersSDK:
         return await self.client._make_request(
             "GET",
             "users/oauth/github/authorize",
+            version="v3",
+        )
+
+    async def oauth_google_callback(
+        self, code: str, state: str
+    ) -> dict[str, Any]:
+        """
+        Exchange `code` and `state` with the Google OAuth 2.0 callback route.
+        """
+        return await self.client._make_request(
+            "GET",
+            "users/oauth/google/callback",
+            params={"code": code, "state": state},
+            version="v3",
+        )
+
+    async def oauth_github_callback(
+        self, code: str, state: str
+    ) -> dict[str, Any]:
+        """
+        Exchange `code` and `state` with the GitHub OAuth 2.0 callback route.
+        """
+        return await self.client._make_request(
+            "GET",
+            "users/oauth/github/callback",
+            params={"code": code, "state": state},
             version="v3",
         )

@@ -446,7 +446,7 @@ class RetrievalRouterV3(BaseRouterV3):
                         return
 
                 return StreamingResponse(
-                    stream_generator(), media_type="application/json"
+                    stream_generator(), media_type="text/event-stream"
                 )  # type: ignore
             else:
                 return response
@@ -673,7 +673,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             return
 
                     return StreamingResponse(
-                        stream_generator(), media_type="application/json"
+                        stream_generator(), media_type="text/event-stream"
                     )  # type: ignore
                 else:
                     return response
