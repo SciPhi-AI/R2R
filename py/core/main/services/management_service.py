@@ -1068,7 +1068,6 @@ class ManagementService(Service):
             )
         )["total_entries"]
 
-
         storage_limits = {
             "chunks": {
                 "limit": max_chunks,
@@ -1084,7 +1083,7 @@ class ManagementService(Service):
                 "limit": max_collections,
                 "used": used_collections,
                 "remaining": max_collections - used_collections,
-            }
+            },
         }
         # 5) Return a structured response
         result = {
