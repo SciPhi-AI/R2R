@@ -1838,7 +1838,6 @@ class UsersRouter(BaseRouterV3):
                 oauth_id=google_id,
                 email=email,
             )
-            print("token_response = ", token_response)
 
             # 4. Return tokens or redirect to your front-end
             #   Some people store tokens in a cookie or redirect to a front-end route passing them as a query param.
