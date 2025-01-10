@@ -74,12 +74,12 @@ class SupabaseAuthProvider(AuthProvider):
 
     async def register(
         self,
-        email: str, 
+        email: str,
         password: str,
         name: Optional[str] = None,
         bio: Optional[str] = None,
-        profile_picture: Optional[str] = None
-        ) -> User:  # type: ignore
+        profile_picture: Optional[str] = None,
+    ) -> User:  # type: ignore
         # Use Supabase client to create a new user
 
         if user := self.supabase.auth.sign_up(email=email, password=password):

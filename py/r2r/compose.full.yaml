@@ -328,6 +328,9 @@ services:
       - VERTEX_PROJECT=${VERTEX_PROJECT:-}
       - VERTEX_LOCATION=${VERTEX_LOCATION:-}
 
+      # Google Gemini
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+
       # AWS Bedrock
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
