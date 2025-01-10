@@ -573,14 +573,32 @@ class R2RAuthProvider(AuthProvider):
                             email=email
                             or f"{oauth_id}@google_oauth.fake",  # fallback
                             password=None,  # no password
-                            account_type="google",
+                            account_type="oauth",
                             google_id=oauth_id,
                         )
                     )
             elif provider == "github":
-                # Similar approach for GitHub
-                # ...
-                pass
+                try:
+                    user = await self.database_provider.users_handler.get_user_by_email(
+                        email
+                    )
+                    # If user found, check if user.google_id matches or is null. If null, update it
+                    if user and not user.github_id:
+                        raise R2RException(
+                            status_code=401,
+                            message="User already exists and is not linked to Github account",
+                        )
+                except:
+                    # Create new user
+                    user = (
+                        await self.database_provider.users_handler.create_user(
+                            email=email
+                            or f"{oauth_id}@github_oauth.fake",  # fallback
+                            password=None,  # no password
+                            account_type="oauth",
+                            github_id=oauth_id,
+                        )
+                    )
             # else handle other providers
 
         except R2RException:
