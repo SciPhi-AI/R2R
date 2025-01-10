@@ -4,7 +4,6 @@ import csv
 import datetime
 import json
 import logging
-import math
 import os
 import tempfile
 import time
@@ -2327,17 +2326,12 @@ class PostgresGraphsHandler(Handler):
             if offset >= count:
                 break
 
-        relationship_ids_cache = await self._get_relationship_ids_cache(
-            all_relationships
-        )
-
         logger.info(
             f"Clustering over {len(all_relationships)} relationships for {collection_id} with settings: {leiden_params}"
         )
 
         return await self._cluster_and_add_community_info(
             relationships=all_relationships,
-            relationship_ids_cache=relationship_ids_cache,
             leiden_params=leiden_params,
             collection_id=collection_id,
             clustering_mode=clustering_mode,
@@ -2415,7 +2409,6 @@ class PostgresGraphsHandler(Handler):
     async def _cluster_and_add_community_info(
         self,
         relationships: list[Relationship],
-        relationship_ids_cache: dict[str, list[int]],
         leiden_params: dict[str, Any],
         collection_id: Optional[UUID] = None,
         clustering_mode: str = "local",
@@ -2439,13 +2432,6 @@ class PostgresGraphsHandler(Handler):
 
         logger.info(
             f"Computing Leiden communities completed, time {time.time() - start_time:.2f} seconds."
-        )
-
-        def relationship_ids(node: str) -> list[int]:
-            return relationship_ids_cache.get(node, [])
-
-        logger.info(
-            f"Cached {len(relationship_ids_cache)} relationship ids, time {time.time() - start_time:.2f} seconds."
         )
 
         # If remote: hierarchical_communities is a list of dicts like:
@@ -2475,26 +2461,6 @@ class PostgresGraphsHandler(Handler):
         )
 
         return num_communities, hierarchical_communities
-
-    async def _get_relationship_ids_cache(
-        self, relationships: list[Relationship]
-    ) -> dict[str, list[int]]:
-        relationship_ids_cache: dict[str, list[int]] = {}
-        for relationship in relationships:
-            if relationship.subject is not None:
-                relationship_ids_cache.setdefault(relationship.subject, [])
-                if relationship.id is not None:
-                    relationship_ids_cache[relationship.subject].append(
-                        int(relationship.id)
-                    )
-            if relationship.object is not None:
-                relationship_ids_cache.setdefault(relationship.object, [])
-                if relationship.id is not None:
-                    relationship_ids_cache[relationship.object].append(
-                        int(relationship.id)
-                    )
-
-        return relationship_ids_cache
 
     async def get_entity_map(
         self, offset: int, limit: int, document_id: UUID

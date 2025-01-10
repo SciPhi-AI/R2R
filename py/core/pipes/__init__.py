@@ -6,7 +6,6 @@ from .ingestion.vector_storage_pipe import VectorStoragePipe
 from .kg.clustering import GraphClusteringPipe
 from .kg.community_summary import GraphCommunitySummaryPipe
 from .kg.description import GraphDescriptionPipe
-from .kg.extraction import GraphExtractionPipe
 from .kg.storage import GraphStoragePipe
 from .retrieval.chunk_search_pipe import VectorSearchPipe
 from .retrieval.graph_search_pipe import GraphSearchSearchPipe
@@ -20,7 +19,6 @@ __all__ = [
     "SearchPipe",
     "GeneratorPipe",
     "EmbeddingPipe",
-    "GraphExtractionPipe",
     "GraphSearchSearchPipe",
     "GraphDescriptionPipe",
     "ParsingPipe",

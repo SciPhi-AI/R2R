@@ -149,12 +149,6 @@ async def serve(
 
     click.echo(f"Running on {host}:{port}, with docker={docker}")
 
-    # TODO: Remove after the next couple of releases
-    click.secho(
-        "Warning: if you are migrating from R2R version 3.3.18 or earlier, you must run `r2r db upgrade` before starting the server.",
-        fg="red",
-    )
-
     if full:
         click.echo(
             "Running the full R2R setup which includes `Hatchet` and `Unstructured.io`."
