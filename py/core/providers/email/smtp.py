@@ -150,3 +150,30 @@ class AsyncSMTPEmailProvider(EmailProvider):
             body=body,
             html_body=html_body,
         )
+
+    async def send_password_changed_email(
+        self, 
+        to_email: str, 
+        *args, 
+        **kwargs
+    ) -> None:
+        body = """
+        Your password has been successfully changed.
+
+        If you did not make this change, please contact support immediately and secure your account.
+
+        """
+
+        html_body = """
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1>Password Changed Successfully</h1>
+            <p>Your password has been successfully changed.</p>
+        </div>
+        """
+
+        await self.send_email(
+            to_email=to_email,
+            subject="Your Password Has Been Changed",
+            body=body,
+            html_body=html_body,
+        )

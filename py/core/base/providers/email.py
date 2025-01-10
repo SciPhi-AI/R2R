@@ -17,6 +17,7 @@ class EmailConfig(ProviderConfig):
     sendgrid_api_key: Optional[str] = None
     verify_email_template_id: Optional[str] = None
     reset_password_template_id: Optional[str] = None
+    password_changed_template_id: Optional[str] = None
     frontend_url: Optional[str] = None
     sender_name: Optional[str] = None
 
@@ -72,5 +73,14 @@ class EmailProvider(Provider, ABC):
     @abstractmethod
     async def send_password_reset_email(
         self, to_email: str, reset_token: str, *args, **kwargs
+    ) -> None:
+        pass
+
+    @abstractmethod
+    async def send_password_changed_email(
+        self,
+        to_email: str,
+        *args,
+        **kwargs,
     ) -> None:
         pass
