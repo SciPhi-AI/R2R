@@ -1061,6 +1061,14 @@ class ManagementService(Service):
             )
         )["page_info"]["total_entries"]
 
+        max_collections = await self.get_user_max_collections(user_id)
+        used_collections = (
+            await self.providers.database.collections_handler.get_collections_overview(
+                limit=1, offset=0, filter_user_ids=[user_id]
+            )
+        )["total_entries"]
+
+
         storage_limits = {
             "chunks": {
                 "limit": max_chunks,
@@ -1072,6 +1080,11 @@ class ManagementService(Service):
                 "used": used_documents,
                 "remaining": max_documents - used_documents,
             },
+            "collections": {
+                "limit": max_collections,
+                "used": used_collections,
+                "remaining": max_collections - used_collections,
+            }
         }
         # 5) Return a structured response
         result = {
