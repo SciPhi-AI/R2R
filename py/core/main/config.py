@@ -103,7 +103,6 @@ class R2RConfig:
                 self.database.update(self.kg)  # type: ignore
         except:
             pass
-
         self.app = AppConfig.create(**self.app)  # type: ignore
         self.auth = AuthConfig.create(**self.auth, app=self.app)  # type: ignore
         self.completion = CompletionConfig.create(**self.completion, app=self.app)  # type: ignore
