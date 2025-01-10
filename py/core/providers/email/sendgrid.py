@@ -218,10 +218,13 @@ class SendGridEmailProvider(EmailProvider):
         to_email: str,
         dynamic_template_data: Optional[dict] = None,
         *args,
-        **kwargs
+        **kwargs,
     ) -> None:
         try:
-            if hasattr(self, 'password_changed_template_id') and self.password_changed_template_id:
+            if (
+                hasattr(self, "password_changed_template_id")
+                and self.password_changed_template_id
+            ):
                 await self.send_email(
                     to_email=to_email,
                     template_id=self.password_changed_template_id,
@@ -233,7 +236,7 @@ class SendGridEmailProvider(EmailProvider):
                 Your password has been successfully changed.
 
                 If you did not make this change, please contact support immediately and secure your account.
-                
+
                 """
                 html_body = """
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

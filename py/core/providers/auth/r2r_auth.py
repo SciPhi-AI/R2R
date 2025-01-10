@@ -205,7 +205,7 @@ class R2RAuthProvider(AuthProvider):
         google_id: Optional[str] = None,
         name: Optional[str] = None,
         bio: Optional[str] = None,
-        profile_picture: Optional[str] = None
+        profile_picture: Optional[str] = None,
     ) -> User:
         if account_type == "password":
             if not password:
@@ -233,7 +233,7 @@ class R2RAuthProvider(AuthProvider):
             google_id=google_id,
             name=name,
             bio=bio,
-            profile_picture=profile_picture
+            profile_picture=profile_picture,
         )
         default_collection: CollectionResponse = (
             await self.database_provider.collections_handler.create_collection(
@@ -296,9 +296,9 @@ class R2RAuthProvider(AuthProvider):
         )
 
         await self.email_provider.send_verification_email(
-            to_email=user.email, 
+            to_email=user.email,
             verification_code=verification_code,
-            dynamic_template_data={"first_name": first_name}
+            dynamic_template_data={"first_name": first_name},
         )
 
         return verification_code, expiry
@@ -428,11 +428,15 @@ class R2RAuthProvider(AuthProvider):
         )
         try:
             await self.email_provider.send_password_changed_email(
-                to_email=user.email, 
-                dynamic_template_data={"first_name": user.name.split(" ")[0] or 'User'}
+                to_email=user.email,
+                dynamic_template_data={
+                    "first_name": user.name.split(" ")[0] or "User"
+                },
             )
         except Exception as e:
-            logger.error(f"Failed to send password change notification: {str(e)}")
+            logger.error(
+                f"Failed to send password change notification: {str(e)}"
+            )
 
         return {"message": "Password changed successfully"}
 
@@ -456,9 +460,9 @@ class R2RAuthProvider(AuthProvider):
                 user.name.split(" ")[0] if user.name else email.split("@")[0]
             )
             await self.email_provider.send_password_reset_email(
-                to_email=email, 
-                reset_token=reset_token, 
-                dynamic_template_data={"first_name": first_name}
+                to_email=email,
+                reset_token=reset_token,
+                dynamic_template_data={"first_name": first_name},
             )
 
             return {
@@ -494,18 +498,22 @@ class R2RAuthProvider(AuthProvider):
         await self.database_provider.users_handler.remove_reset_token(
             id=user_id
         )
-         # Get the user information
+        # Get the user information
         user = await self.database_provider.users_handler.get_user_by_id(
             id=user_id
         )
 
         try:
             await self.email_provider.send_password_changed_email(
-                to_email=user.email, 
-                dynamic_template_data={"first_name": user.name.split(" ")[0] or 'User'}
+                to_email=user.email,
+                dynamic_template_data={
+                    "first_name": user.name.split(" ")[0] or "User"
+                },
             )
         except Exception as e:
-            logger.error(f"Failed to send password change notification: {str(e)}")
+            logger.error(
+                f"Failed to send password change notification: {str(e)}"
+            )
 
         return {"message": "Password reset successfully"}
 

@@ -67,7 +67,7 @@ class ConsoleMockEmailProvider(EmailProvider):
             Subject: Your Password Has Been Changed
             Body:
             Your password has been successfully changed.
-            
+
             For security reasons, you will need to log in again on all your devices.
             -----------------------------
             """

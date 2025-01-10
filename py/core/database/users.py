@@ -253,7 +253,7 @@ class PostgresUserHandler(Handler):
         is_superuser: bool = False,
         name: Optional[str] = None,
         bio: Optional[str] = None,
-        profile_picture: Optional[str] = None
+        profile_picture: Optional[str] = None,
     ) -> User:
         """Create a new user."""
         # 1) Check if a user with this email already exists

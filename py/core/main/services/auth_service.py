@@ -48,7 +48,7 @@ class AuthService(Service):
             password=password,
             name=name,
             bio=bio,
-            profile_picture=profile_picture
+            profile_picture=profile_picture,
         )
 
     @telemetry_event("SendVerificationEmail")

@@ -152,10 +152,7 @@ class AsyncSMTPEmailProvider(EmailProvider):
         )
 
     async def send_password_changed_email(
-        self, 
-        to_email: str, 
-        *args, 
-        **kwargs
+        self, to_email: str, *args, **kwargs
     ) -> None:
         body = """
         Your password has been successfully changed.
