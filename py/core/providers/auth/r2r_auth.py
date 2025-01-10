@@ -556,7 +556,6 @@ class R2RAuthProvider(AuthProvider):
         #    The logic depends on your preference. We'll assume "google" => google_id, etc.
         try:
             if provider == "google":
-                print("getting user...")
                 try:
                     user = await self.database_provider.users_handler.get_user_by_email(
                         email

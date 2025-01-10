@@ -245,8 +245,8 @@ class UsersRouter(BaseRouterV3):
 
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can export data.",
-                    403,
+                    status_code=403,
+                    message="Only a superuser can export data.",
                 )
 
             csv_file_path, temp_file = (
@@ -867,8 +867,8 @@ class UsersRouter(BaseRouterV3):
 
             if not auth_user.is_superuser:
                 raise R2RException(
-                    "Only a superuser can call the `users_overview` endpoint.",
-                    403,
+                    status_code=403,
+                    message="Only a superuser can call the `users_overview` endpoint.",
                 )
 
             user_uuids = [UUID(user_id) for user_id in ids]
@@ -1830,10 +1830,6 @@ class UsersRouter(BaseRouterV3):
                     status_code=400,
                     detail=f"Token verification failed: {str(e)}",
                 )
-
-            print(
-                "doing the final call, storing data with our oauth callback handler..."
-            )
 
             # id_info will contain "sub", "email", etc.
             google_id = id_info["sub"]

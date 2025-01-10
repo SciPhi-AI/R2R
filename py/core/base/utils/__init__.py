@@ -3,6 +3,7 @@ from shared.utils import (
     TextSplitter,
     _decorate_vector_type,
     _get_str_estimation_output,
+    _get_vector_column_str,
     decrement_version,
     deep_update,
     format_search_results_for_llm,
@@ -39,5 +40,6 @@ __all__ = [
     "validate_uuid",
     "deep_update",
     "_decorate_vector_type",
+    "_get_vector_column_str",
     "_get_str_estimation_output",
 ]

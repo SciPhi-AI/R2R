@@ -1,6 +1,7 @@
 from .base_utils import (
     _decorate_vector_type,
     _get_str_estimation_output,
+    _get_vector_column_str,
     decrement_version,
     deep_update,
     format_search_results_for_llm,
@@ -42,5 +43,6 @@ __all__ = [
     "TextSplitter",
     # Vector utils
     "_decorate_vector_type",
+    "_get_vector_column_str",
     "_get_str_estimation_output",
 ]

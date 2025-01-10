@@ -234,7 +234,9 @@ export class UsersClient {
   // }
 
   @feature("users.requestPasswordReset")
-  async requestPasswordReset(email: string): Promise<WrappedGenericMessageResponse> {
+  async requestPasswordReset(
+    email: string,
+  ): Promise<WrappedGenericMessageResponse> {
     return this.client.makeRequest("POST", "users/request-password-reset", {
       data: email, // Pass the raw string email
       headers: {

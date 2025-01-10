@@ -4,6 +4,7 @@ import csv
 import datetime
 import json
 import logging
+import math
 import os
 import tempfile
 import time
@@ -32,6 +33,7 @@ from core.base.providers.database import Handler
 from core.base.utils import (
     _decorate_vector_type,
     _get_str_estimation_output,
+    _get_vector_column_str,
     llm_cost_per_million_tokens,
 )
 
@@ -75,8 +77,8 @@ class PostgresEntitiesHandler(Handler):
 
     async def create_tables(self) -> None:
         """Create separate tables for graph and document entities."""
-        vector_column_str = _decorate_vector_type(
-            f"({self.dimension})", self.quantization_type
+        vector_column_str = _get_vector_column_str(
+            self.dimension, self.quantization_type
         )
 
         for store_type in StoreType:
@@ -527,9 +529,10 @@ class PostgresRelationshipsHandler(Handler):
         for store_type in StoreType:
             table_name = self._get_relationship_table_for_store(store_type)
             parent_constraint = self._get_parent_constraint(store_type)
-            vector_column_str = _decorate_vector_type(
-                f"({self.dimension})", self.quantization_type
+            vector_column_str = _get_vector_column_str(
+                self.dimension, self.quantization_type
             )
+
             QUERY = f"""
                 CREATE TABLE IF NOT EXISTS {self._get_table_name(table_name)} (
                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1011,8 +1014,8 @@ class PostgresCommunitiesHandler(Handler):
         self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
 
     async def create_tables(self) -> None:
-        vector_column_str = _decorate_vector_type(
-            f"({self.dimension})", self.quantization_type
+        vector_column_str = _get_vector_column_str(
+            self.dimension, self.quantization_type
         )
 
         query = f"""

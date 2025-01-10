@@ -23,7 +23,7 @@ logger = logging.getLogger()
 class EmbeddingConfig(ProviderConfig):
     provider: str
     base_model: str
-    base_dimension: int
+    base_dimension: int | float
     rerank_model: Optional[str] = None
     rerank_url: Optional[str] = None
     batch_size: int = 1
