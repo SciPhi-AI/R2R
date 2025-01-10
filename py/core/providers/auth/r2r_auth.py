@@ -250,6 +250,10 @@ class R2RAuthProvider(AuthProvider):
             new_user.id, default_collection.id
         )
 
+        new_user = await self.database_provider.users_handler.get_user_by_id(
+            new_user.id
+        )
+
         if self.config.require_email_verification:
             verification_code, _ = await self.send_verification_email(
                 email=email, user=new_user
@@ -607,14 +611,12 @@ class R2RAuthProvider(AuthProvider):
                         )
                 except:
                     # Create new user
-                    user = (
-                        await self.database_provider.users_handler.create_user(
-                            email=email
-                            or f"{oauth_id}@google_oauth.fake",  # fallback
-                            password=None,  # no password
-                            account_type="oauth",
-                            google_id=oauth_id,
-                        )
+                    user = await self.register(
+                        email=email
+                        or f"{oauth_id}@google_oauth.fake",  # fallback
+                        password=None,  # no password
+                        account_type="oauth",
+                        google_id=oauth_id,
                     )
             elif provider == "github":
                 try:
@@ -629,14 +631,12 @@ class R2RAuthProvider(AuthProvider):
                         )
                 except:
                     # Create new user
-                    user = (
-                        await self.database_provider.users_handler.create_user(
-                            email=email
-                            or f"{oauth_id}@github_oauth.fake",  # fallback
-                            password=None,  # no password
-                            account_type="oauth",
-                            github_id=oauth_id,
-                        )
+                    user = await self.register(
+                        email=email
+                        or f"{oauth_id}@github_oauth.fake",  # fallback
+                        password=None,  # no password
+                        account_type="oauth",
+                        github_id=oauth_id,
                     )
             # else handle other providers
 
