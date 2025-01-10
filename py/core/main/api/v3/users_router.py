@@ -1807,14 +1807,12 @@ class UsersRouter(BaseRouterV3):
                     "grant_type": "authorization_code",
                 },
             ).json()
-            print("token data = ", token_data)
             if "error" in token_data:
                 raise HTTPException(
                     status_code=400,
                     detail=f"Failed to get token: {token_data}",
                 )
 
-            print("verifying...")
             # 2. Verify the ID token
             id_token_str = token_data["id_token"]
             try:
@@ -1824,7 +1822,6 @@ class UsersRouter(BaseRouterV3):
                     google_requests.Request(),
                     self.google_client_id,
                 )
-                print("id_info = ", id_info)
             except ValueError as e:
                 raise HTTPException(
                     status_code=400,
