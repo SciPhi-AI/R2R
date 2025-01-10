@@ -542,7 +542,7 @@ export class UsersClient {
 
   @feature("users.oauthGoogleCallback")
   async oauthGoogleCallback(options: { code: string; state: string }): Promise<any> {
-    return this.client.makeRequest("POST", "users/oauth/google/callback", {
+    return this.client.makeRequest("GET", "users/oauth/google/callback", {
       params: {
         code: options.code,
         state: options.state,
@@ -552,7 +552,7 @@ export class UsersClient {
 
   @feature("users.oauthGithubCallback")
   async oauthGithubCallback(options: { code: string; state: string }): Promise<any> {
-    return this.client.makeRequest("POST", "users/oauth/github/callback", {
+    return this.client.makeRequest("GET", "users/oauth/github/callback", {
       params: {
         code: options.code,
         state: options.state,
