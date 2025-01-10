@@ -1831,6 +1831,7 @@ class UsersRouter(BaseRouterV3):
             # id_info will contain "sub", "email", etc.
             google_id = id_info["sub"]
             email = id_info.get("email")
+            email = email or f"{google_id}@google_oauth.fake"
 
             # 3. Now call our R2RAuthProvider method that handles "oauth-based" user creation or login
             token_response = await self.providers.auth.oauth_callback_handler(
@@ -1895,12 +1896,13 @@ class UsersRouter(BaseRouterV3):
                 "https://api.github.com/user",
                 headers={"Authorization": f"Bearer {access_token}"},
             ).json()
+
             github_id = str(
                 user_info_resp["id"]
             )  # GitHub user ID is typically an integer
             # fetch email (sometimes you need to call /user/emails endpoint if user sets email private)
             email = user_info_resp.get("email")
-
+            email = email or f"{github_id}@github_oauth.fake"
             # 3. Pass to your auth provider
             token_response = await self.providers.auth.oauth_callback_handler(
                 provider="github",
