@@ -142,8 +142,8 @@ class UsersRouter(BaseRouterV3):
 
             # if not validate_password(password):
             #     raise R2RException(
-            #         status_code=400,
-            #         message=f"Password must be at least 10 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character from '!@#$%^&*'.",
+            #         f"Password must be at least 10 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character from '!@#$%^&*'.",
+            #         400,
             #     )
 
             registration_response = await self.services.auth.register(
@@ -1790,7 +1790,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.get("/users/oauth/google/callback")
         async def google_callback(
-            request: Request, code: str = Query(...), state: str = Query(...)
+            code: str = Query(...), state: str = Query(...)
         ):
             """
             Google's callback that will receive the `code` and `state`.
@@ -1807,7 +1807,6 @@ class UsersRouter(BaseRouterV3):
                     "grant_type": "authorization_code",
                 },
             ).json()
-
             if "error" in token_data:
                 raise HTTPException(
                     status_code=400,
@@ -1839,6 +1838,7 @@ class UsersRouter(BaseRouterV3):
                 oauth_id=google_id,
                 email=email,
             )
+            print("token_response = ", token_response)
 
             # 4. Return tokens or redirect to your front-end
             #   Some people store tokens in a cookie or redirect to a front-end route passing them as a query param.

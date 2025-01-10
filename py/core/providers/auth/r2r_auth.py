@@ -556,22 +556,17 @@ class R2RAuthProvider(AuthProvider):
         #    The logic depends on your preference. We'll assume "google" => google_id, etc.
         try:
             if provider == "google":
-                user = await self.database_provider.users_handler.get_user_by_email(
-                    email
-                )
-                # If user found, check if user.google_id matches or is null. If null, update it
-                if user and not user.google_id:
-                    user.google_id = oauth_id
-                    user.account_type = "google"
-                    await self.database_provider.users_handler.update_user(
-                        user
+                try:
+                    user = await self.database_provider.users_handler.get_user_by_email(
+                        email
                     )
-                elif user and user.google_id != oauth_id:
-                    # Edge case: Another user with same email? Or user changed google account?
-                    # Decide how to handle.
-                    pass
-
-                if not user:
+                    # If user found, check if user.google_id matches or is null. If null, update it
+                    if user and not user.google_id:
+                        raise R2RException(
+                            status_code=401,
+                            message="User already exists and is not linked to Google account",
+                        )
+                except:
                     # Create new user
                     user = (
                         await self.database_provider.users_handler.create_user(
