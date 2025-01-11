@@ -65,13 +65,23 @@ def hatchet_ingestion_factory(
                     input_data
                 )
 
-                ingestion_result = (
-                    await self.ingestion_service.ingest_file_ingress(
-                        **parsed_data
+                # ingestion_result = (
+                #     await self.ingestion_service.ingest_file_ingress(
+                #         **parsed_data
+                #     )
+                # )
+
+                # document_info = ingestion_result["info"]
+                document_info = (
+                    self.ingestion_service.create_document_info_from_file(
+                        parsed_data["document_id"],
+                        parsed_data["user"],
+                        parsed_data["file_data"]["filename"],
+                        parsed_data["metadata"],
+                        parsed_data["version"],
+                        parsed_data["size_in_bytes"],
                     )
                 )
-
-                document_info = ingestion_result["info"]
 
                 await self.ingestion_service.update_document_status(
                     document_info,

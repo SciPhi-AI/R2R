@@ -524,6 +524,7 @@ class DocumentsRouter(BaseRouterV3):
                 ),
                 "user": auth_user.model_dump_json(),
                 "size_in_bytes": content_length,
+                "version": "v0",
             }
 
             file_name = file_data["filename"]
@@ -534,21 +535,17 @@ class DocumentsRouter(BaseRouterV3):
                 file_data["content_type"],
             )
 
+            self.services.ingestion.ingest_file_ingress(
+                file_data=workflow_input["file_data"],
+                user=auth_user,
+                document_id=workflow_input["document_id"],
+                size_in_bytes=workflow_input["size_in_bytes"],
+                metadata=workflow_input["metadata"],
+                version=workflow_input["version"],
+            )
+
             if run_with_orchestration:
                 # TODO - Modify create_chunks so that we can add chunks to existing document
-                document_info = (
-                    self.services.ingestion._create_document_info_from_file(
-                        document_id,
-                        auth_user,
-                        file_name,
-                        workflow_input["metadata"],
-                        "v0",
-                        workflow_input["size_in_bytes"],
-                    )
-                )
-                await self.providers.database.documents_handler.upsert_documents_overview(
-                    document_info
-                )
 
                 raw_message: dict[str, str | None] = await self.providers.orchestration.run_workflow(  # type: ignore
                     "ingest-files",

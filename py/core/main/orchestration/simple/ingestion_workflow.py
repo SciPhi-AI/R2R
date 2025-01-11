@@ -31,8 +31,17 @@ def simple_ingestion_factory(service: IngestionService):
             parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
                 input_data
             )
-            ingestion_result = await service.ingest_file_ingress(**parsed_data)
-            document_info = ingestion_result["info"]
+            # ingestion_result = await service.ingest_file_ingress(**parsed_data)
+            # document_info = ingestion_result["info"]
+
+            document_info = service.create_document_info_from_file(
+                parsed_data["document_id"],
+                parsed_data["user"],
+                parsed_data["file_data"]["filename"],
+                parsed_data["metadata"],
+                parsed_data["version"],
+                parsed_data["size_in_bytes"],
+            )
 
             await service.update_document_status(
                 document_info, status=IngestionStatus.PARSING

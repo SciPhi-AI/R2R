@@ -73,7 +73,7 @@ class IngestionService(Service):
         size_in_bytes,
         metadata: Optional[dict] = None,
         version: Optional[str] = None,
-        collection_ids: Optional[list[UUID]] = None,
+        # collection_ids: Optional[list[UUID]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> dict:
@@ -91,7 +91,7 @@ class IngestionService(Service):
             metadata = metadata or {}
 
             version = version or STARTING_VERSION
-            document_info = self._create_document_info_from_file(
+            document_info = self.create_document_info_from_file(
                 document_id,
                 user,
                 file_data["filename"],
@@ -121,7 +121,7 @@ class IngestionService(Service):
                         status_code=409,
                         message=f"Document {document_id} is currently ingesting with status {existing_doc.ingestion_status}.",
                     )
-
+            document_info.ingestion_status = IngestionStatus.PARSING
             await self.providers.database.documents_handler.upsert_documents_overview(
                 document_info
             )
@@ -137,7 +137,7 @@ class IngestionService(Service):
                 status_code=500, detail=f"Error during ingestion: {str(e)}"
             )
 
-    def _create_document_info_from_file(
+    def create_document_info_from_file(
         self,
         document_id: UUID,
         user: User,
