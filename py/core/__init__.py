@@ -213,7 +213,6 @@ __all__ = [
     ## PIPES
     "SearchPipe",
     "EmbeddingPipe",
-    "GraphExtractionPipe",
     "ParsingPipe",
     "QueryTransformPipe",
     "RAGPipe",
