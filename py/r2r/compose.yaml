@@ -104,6 +104,10 @@ services:
       # Ollama
       - OLLAMA_API_BASE=${OLLAMA_API_BASE:-http://host.docker.internal:11434}
 
+
+      # LM Studio
+      - LM_STUDIO_API_BASE=${LM_STUDIO_API_BASE:-http://host.docker.internal:1234}
+
       # Huggingface
       - HUGGINGFACE_API_BASE=${HUGGINGFACE_API_BASE:-http://host.docker.internal:8080}
       - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
@@ -125,6 +129,7 @@ services:
       - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
       - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
       - GITHUB_REDIRECT_URI=${GITHUB_REDIRECT_URI}
+
 
     networks:
       - r2r-network
