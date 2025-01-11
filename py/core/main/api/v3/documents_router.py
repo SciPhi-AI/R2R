@@ -431,8 +431,6 @@ class DocumentsRouter(BaseRouterV3):
                     ),
                 }
 
-                # TODO - Modify create_chunks so that we can add chunks to existing document
-
                 if run_with_orchestration:
                     # Run ingestion with orchestration
                     raw_message = (
@@ -537,6 +535,21 @@ class DocumentsRouter(BaseRouterV3):
             )
 
             if run_with_orchestration:
+                # TODO - Modify create_chunks so that we can add chunks to existing document
+                document_info = (
+                    self.services.ingestion._create_document_info_from_file(
+                        document_id,
+                        auth_user,
+                        file_name,
+                        workflow_input["metadata"],
+                        "v0",
+                        workflow_input["size_in_bytes"],
+                    )
+                )
+                await self.providers.database.documents_handler.upsert_documents_overview(
+                    document_info
+                )
+
                 raw_message: dict[str, str | None] = await self.providers.orchestration.run_workflow(  # type: ignore
                     "ingest-files",
                     {"request": workflow_input},
