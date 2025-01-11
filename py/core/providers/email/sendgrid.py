@@ -37,6 +37,10 @@ class SendGridEmailProvider(EmailProvider):
             config.reset_password_template_id
             or os.getenv("SENDGRID_RESET_TEMPLATE_ID")
         )
+        self.password_changed_template_id = (
+            config.password_changed_template_id
+            or os.getenv("SENDGRID_PASSWORD_CHANGED_TEMPLATE_ID")
+        )
         self.client = SendGridAPIClient(api_key=self.api_key)
         self.sender_name = config.sender_name
 
@@ -206,5 +210,48 @@ class SendGridEmailProvider(EmailProvider):
             error_msg = (
                 f"Failed to send password reset email to {to_email}: {str(e)}"
             )
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
+
+    async def send_password_changed_email(
+        self,
+        to_email: str,
+        dynamic_template_data: Optional[dict] = None,
+        *args,
+        **kwargs,
+    ) -> None:
+        try:
+            if (
+                hasattr(self, "password_changed_template_id")
+                and self.password_changed_template_id
+            ):
+                await self.send_email(
+                    to_email=to_email,
+                    template_id=self.password_changed_template_id,
+                    dynamic_template_data=dynamic_template_data,
+                )
+            else:
+                subject = "Your Password Has Been Changed"
+                body = """
+                Your password has been successfully changed.
+
+                If you did not make this change, please contact support immediately and secure your account.
+
+                """
+                html_body = """
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h1>Password Changed Successfully</h1>
+                    <p>Your password has been successfully changed.</p>
+                </div>
+                """
+                # Move send_email inside the else block
+                await self.send_email(
+                    to_email=to_email,
+                    subject=subject,
+                    html_body=html_body,
+                    body=body,
+                )
+        except Exception as e:
+            error_msg = f"Failed to send password change notification to {to_email}: {str(e)}"
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e

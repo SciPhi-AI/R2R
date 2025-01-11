@@ -1,5 +1,6 @@
 import base64
 import json
+import logging
 import os
 import secrets
 import string
@@ -51,6 +52,7 @@ class NaClCryptoProvider(CryptoProvider):
             )
         super().__init__(config)
         self.config: NaClCryptoConfig = config
+        logging.info("Initializing NaClCryptoProvider")
 
         # Securely load the secret key for JWT
         # Priority: config.secret_key > environment variable > default

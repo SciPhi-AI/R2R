@@ -326,6 +326,9 @@ services:
       - VERTEX_PROJECT=${VERTEX_PROJECT:-}
       - VERTEX_LOCATION=${VERTEX_LOCATION:-}
 
+      # Google Gemini
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+
       # AWS Bedrock
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
@@ -363,6 +366,15 @@ services:
 
       # Graphologic
       - CLUSTERING_SERVICE_URL=http://graph_clustering:7276
+
+      # OAuth Credentials
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - GITHUB_REDIRECT_URI=${GITHUB_REDIRECT_URI}
 
     command: >
       sh -c '

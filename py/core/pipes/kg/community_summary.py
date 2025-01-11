@@ -1,8 +1,9 @@
 import asyncio
-import json
 import logging
 import random
+import re
 import time
+import xml.etree.ElementTree as ET
 from typing import Any, AsyncGenerator
 from uuid import UUID, uuid4
 
@@ -143,13 +144,13 @@ class GraphCommunitySummaryPipe(AsyncPipe):
         Process a community by summarizing it and creating a summary embedding and storing it to a database.
         """
 
-        response = await self.database_provider.collections_handler.get_collections_overview(  # type: ignore
+        response = await self.database_provider.collections_handler.get_collections_overview(
             offset=0,
             limit=1,
             filter_collection_ids=[collection_id],
         )
         collection_description = (
-            response["results"][0].description if response["results"] else None  # type: ignore
+            response["results"][0].description if response["results"] else None
         )
 
         entities = [entity for entity in all_entities if entity.name in nodes]
@@ -171,40 +172,79 @@ class GraphCommunitySummaryPipe(AsyncPipe):
         )
 
         for attempt in range(3):
-            description = (
-                (
-                    await self.llm_provider.aget_completion(
-                        messages=await self.database_provider.prompts_handler.get_message_payload(
-                            task_prompt_name=self.database_provider.config.graph_enrichment_settings.graphrag_communities,
-                            task_inputs={
-                                "collection_description": collection_description,
-                                "input_text": input_text,
-                            },
-                        ),
-                        generation_config=generation_config,
-                    )
-                )
-                .choices[0]
-                .message.content
-            )
-
             try:
-                if description and description.startswith("```json"):
-                    description = (
-                        description.strip("```json").strip("```").strip()
+                description = (
+                    (
+                        await self.llm_provider.aget_completion(
+                            messages=await self.database_provider.prompts_handler.get_message_payload(
+                                task_prompt_name=self.database_provider.config.graph_enrichment_settings.graphrag_communities,
+                                task_inputs={
+                                    "collection_description": collection_description,
+                                    "input_text": input_text,
+                                },
+                            ),
+                            generation_config=generation_config,
+                        )
                     )
-                else:
+                    .choices[0]
+                    .message.content
+                )
+
+                # Extract XML content
+                match = re.search(
+                    r"<community>.*?</community>", description, re.DOTALL
+                )
+                if not match:
                     raise ValueError(
-                        f"Failed to generate a summary for community {community_id}"
+                        "Could not find community XML tags in response"
                     )
 
-                description_dict = json.loads(description)
-                name = description_dict["name"]
-                summary = description_dict["summary"]
-                findings = description_dict["findings"]
-                rating = description_dict["rating"]
-                rating_explanation = description_dict["rating_explanation"]
-                break
+                xml_content = match.group(0)
+                root = ET.fromstring(xml_content)
+
+                # Extract available fields, defaulting to None if not found
+                name = root.find("name")
+                summary = root.find("summary")
+                rating = root.find("rating")
+                rating_explanation = root.find("rating_explanation")
+                findings_elem = root.find("findings")
+
+                community = Community(
+                    community_id=community_id,
+                    collection_id=collection_id,
+                    name=name.text if name is not None else "",
+                    summary=summary.text if summary is not None else "",
+                    rating=float(rating.text) if rating is not None else None,
+                    rating_explanation=(
+                        rating_explanation.text
+                        if rating_explanation is not None
+                        else None
+                    ),
+                    findings=(
+                        [f.text for f in findings_elem.findall("finding")]
+                        if findings_elem is not None
+                        else []
+                    ),
+                    description_embedding=await self.embedding_provider.async_get_embedding(
+                        "Summary:\n"
+                        + (summary.text if summary is not None else "")
+                        + "\n\nFindings:\n"
+                        + "\n".join(
+                            [f.text for f in findings_elem.findall("finding")]
+                            if findings_elem is not None
+                            else []
+                        )
+                    ),
+                )
+
+                await self.database_provider.graphs_handler.add_community(
+                    community
+                )
+                return {
+                    "community_id": community.community_id,
+                    "name": community.name,
+                }
+
             except Exception as e:
                 if attempt == 2:
                     logger.error(
@@ -214,29 +254,7 @@ class GraphCommunitySummaryPipe(AsyncPipe):
                         "community_id": community_id,
                         "error": str(e),
                     }
-
-        community = Community(
-            community_id=community_id,
-            collection_id=collection_id,
-            name=name,
-            summary=summary,
-            rating=rating,
-            rating_explanation=rating_explanation,
-            findings=findings,
-            description_embedding=await self.embedding_provider.async_get_embedding(
-                "Summary:\n"
-                + summary
-                + "\n\nFindings:\n"
-                + "\n".join(findings)
-            ),
-        )
-
-        await self.database_provider.graphs_handler.add_community(community)
-
-        return {
-            "community_id": community.community_id,
-            "name": community.name,
-        }
+                await asyncio.sleep(1)
 
     async def _run_logic(  # type: ignore
         self,
@@ -293,7 +311,6 @@ class GraphCommunitySummaryPipe(AsyncPipe):
             community_clusters,
         ) = await self.database_provider.graphs_handler._cluster_and_add_community_info(
             relationships=all_relationships,
-            relationship_ids_cache={},
             leiden_params=leiden_params,
             collection_id=collection_id,
             clustering_mode=clustering_mode,

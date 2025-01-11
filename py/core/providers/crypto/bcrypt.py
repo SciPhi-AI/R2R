@@ -1,4 +1,5 @@
 import base64
+import logging
 import os
 from abc import ABC
 from datetime import datetime, timezone
@@ -53,6 +54,7 @@ class BCryptCryptoProvider(CryptoProvider, ABC):
             raise ValueError(
                 "BcryptCryptoProvider must be initialized with a BcryptCryptoConfig"
             )
+        logging.info("Initializing BcryptCryptoProvider")
         super().__init__(config)
         self.config: BcryptCryptoConfig = config
 

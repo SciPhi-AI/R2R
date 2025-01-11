@@ -203,6 +203,9 @@ class R2RAuthProvider(AuthProvider):
         account_type: str = "password",
         github_id: Optional[str] = None,
         google_id: Optional[str] = None,
+        name: Optional[str] = None,
+        bio: Optional[str] = None,
+        profile_picture: Optional[str] = None,
     ) -> User:
         if account_type == "password":
             if not password:
@@ -228,6 +231,9 @@ class R2RAuthProvider(AuthProvider):
             account_type=account_type,
             github_id=github_id,
             google_id=google_id,
+            name=name,
+            bio=bio,
+            profile_picture=profile_picture,
         )
         default_collection: CollectionResponse = (
             await self.database_provider.collections_handler.create_collection(
@@ -242,6 +248,10 @@ class R2RAuthProvider(AuthProvider):
 
         await self.database_provider.users_handler.add_user_to_collection(
             new_user.id, default_collection.id
+        )
+
+        new_user = await self.database_provider.users_handler.get_user_by_id(
+            new_user.id
         )
 
         if self.config.require_email_verification:
@@ -290,7 +300,9 @@ class R2RAuthProvider(AuthProvider):
         )
 
         await self.email_provider.send_verification_email(
-            user.email, verification_code, {"first_name": first_name}
+            to_email=user.email,
+            verification_code=verification_code,
+            dynamic_template_data={"first_name": first_name},
         )
 
         return verification_code, expiry
@@ -418,6 +430,18 @@ class R2RAuthProvider(AuthProvider):
             id=user.id,
             new_hashed_password=hashed_new_password,
         )
+        try:
+            await self.email_provider.send_password_changed_email(
+                to_email=user.email,
+                dynamic_template_data={
+                    "first_name": user.name.split(" ")[0] or "User"
+                },
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to send password change notification: {str(e)}"
+            )
+
         return {"message": "Password changed successfully"}
 
     async def request_password_reset(self, email: str) -> dict[str, str]:
@@ -440,7 +464,9 @@ class R2RAuthProvider(AuthProvider):
                 user.name.split(" ")[0] if user.name else email.split("@")[0]
             )
             await self.email_provider.send_password_reset_email(
-                email, reset_token, {"first_name": first_name}
+                to_email=email,
+                reset_token=reset_token,
+                dynamic_template_data={"first_name": first_name},
             )
 
             return {
@@ -476,6 +502,23 @@ class R2RAuthProvider(AuthProvider):
         await self.database_provider.users_handler.remove_reset_token(
             id=user_id
         )
+        # Get the user information
+        user = await self.database_provider.users_handler.get_user_by_id(
+            id=user_id
+        )
+
+        try:
+            await self.email_provider.send_password_changed_email(
+                to_email=user.email,
+                dynamic_template_data={
+                    "first_name": user.name.split(" ")[0] or "User"
+                },
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to send password change notification: {str(e)}"
+            )
+
         return {"message": "Password reset successfully"}
 
     async def logout(self, token: str) -> dict[str, str]:
@@ -556,36 +599,45 @@ class R2RAuthProvider(AuthProvider):
         #    The logic depends on your preference. We'll assume "google" => google_id, etc.
         try:
             if provider == "google":
-                user = await self.database_provider.users_handler.get_user_by_email(
-                    email
-                )
-                # If user found, check if user.google_id matches or is null. If null, update it
-                if user and not user.google_id:
-                    user.google_id = oauth_id
-                    user.account_type = "google"
-                    await self.database_provider.users_handler.update_user(
-                        user
+                try:
+                    user = await self.database_provider.users_handler.get_user_by_email(
+                        email
                     )
-                elif user and user.google_id != oauth_id:
-                    # Edge case: Another user with same email? Or user changed google account?
-                    # Decide how to handle.
-                    pass
-
-                if not user:
-                    # Create new user
-                    user = (
-                        await self.database_provider.users_handler.create_user(
-                            email=email
-                            or f"{oauth_id}@google_oauth.fake",  # fallback
-                            password=None,  # no password
-                            account_type="google",
-                            google_id=oauth_id,
+                    # If user found, check if user.google_id matches or is null. If null, update it
+                    if user and not user.google_id:
+                        raise R2RException(
+                            status_code=401,
+                            message="User already exists and is not linked to Google account",
                         )
+                except:
+                    # Create new user
+                    user = await self.register(
+                        email=email
+                        or f"{oauth_id}@google_oauth.fake",  # fallback
+                        password=None,  # no password
+                        account_type="oauth",
+                        google_id=oauth_id,
                     )
             elif provider == "github":
-                # Similar approach for GitHub
-                # ...
-                pass
+                try:
+                    user = await self.database_provider.users_handler.get_user_by_email(
+                        email
+                    )
+                    # If user found, check if user.google_id matches or is null. If null, update it
+                    if user and not user.github_id:
+                        raise R2RException(
+                            status_code=401,
+                            message="User already exists and is not linked to Github account",
+                        )
+                except:
+                    # Create new user
+                    user = await self.register(
+                        email=email
+                        or f"{oauth_id}@github_oauth.fake",  # fallback
+                        password=None,  # no password
+                        account_type="oauth",
+                        github_id=oauth_id,
+                    )
             # else handle other providers
 
         except R2RException:

@@ -11,7 +11,6 @@ from core.pipes import (
     GraphClusteringPipe,
     GraphCommunitySummaryPipe,
     GraphDescriptionPipe,
-    GraphExtractionPipe,
     GraphSearchSearchPipe,
     GraphStoragePipe,
     ParsingPipe,
@@ -70,7 +69,6 @@ class R2RPipes(BaseModel):
     parsing_pipe: ParsingPipe
     embedding_pipe: EmbeddingPipe
     graph_search_pipe: GraphSearchSearchPipe
-    graph_extraction_pipe: GraphExtractionPipe
     graph_storage_pipe: GraphStoragePipe
     graph_description_pipe: GraphDescriptionPipe
     graph_clustering_pipe: GraphClusteringPipe

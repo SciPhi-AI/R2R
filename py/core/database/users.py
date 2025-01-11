@@ -251,6 +251,9 @@ class PostgresUserHandler(Handler):
         google_id: Optional[str] = None,
         github_id: Optional[str] = None,
         is_superuser: bool = False,
+        name: Optional[str] = None,
+        bio: Optional[str] = None,
+        profile_picture: Optional[str] = None,
     ) -> User:
         """Create a new user."""
         # 1) Check if a user with this email already exists
@@ -308,6 +311,9 @@ class PostgresUserHandler(Handler):
                     "google_id": google_id,
                     "github_id": github_id,
                     "is_verified": account_type != "password",
+                    "name": name,
+                    "bio": bio,
+                    "profile_picture": profile_picture,
                 }
             )
             .returning(
@@ -322,6 +328,9 @@ class PostgresUserHandler(Handler):
                     "collection_ids",
                     "limits_overrides",
                     "metadata",
+                    "name",
+                    "bio",
+                    "profile_picture",
                 ]
             )
             .build()
@@ -345,9 +354,9 @@ class PostgresUserHandler(Handler):
             collection_ids=result["collection_ids"] or [],
             limits_overrides=json.loads(result["limits_overrides"] or "{}"),
             metadata=json.loads(result["metadata"] or "{}"),
-            name=None,
-            bio=None,
-            profile_picture=None,
+            name=result["name"],
+            bio=result["bio"],
+            profile_picture=result["profile_picture"],
             account_type=account_type,
             hashed_password=hashed_password,
             google_id=google_id,

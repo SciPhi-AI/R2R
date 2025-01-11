@@ -2,8 +2,8 @@ import asyncio
 import json
 import logging
 import math
-import re
 import time
+import xml.etree.ElementTree as ET
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
@@ -65,67 +65,6 @@ class GraphService(Service):
             agents,
             run_manager,
         )
-
-    @telemetry_event("kg_relationships_extraction")
-    async def kg_relationships_extraction(
-        self,
-        document_id: UUID,
-        generation_config: GenerationConfig,
-        chunk_merge_count: int,
-        max_knowledge_relationships: int,
-        entity_types: list[str],
-        relation_types: list[str],
-        **kwargs,
-    ):
-        try:
-            logger.info(
-                f"KGService: Processing document {document_id} for KG extraction"
-            )
-
-            await self.providers.database.documents_handler.set_workflow_status(
-                id=document_id,
-                status_type="extraction_status",
-                status=KGExtractionStatus.PROCESSING,
-            )
-
-            relationships = await self.pipes.graph_extraction_pipe.run(
-                input=self.pipes.graph_extraction_pipe.Input(
-                    message={
-                        "document_id": document_id,
-                        "generation_config": generation_config,
-                        "chunk_merge_count": chunk_merge_count,
-                        "max_knowledge_relationships": max_knowledge_relationships,
-                        "entity_types": entity_types,
-                        "relation_types": relation_types,
-                        "logger": logger,
-                    }
-                ),
-                state=None,
-                run_manager=self.run_manager,
-            )
-
-            logger.info(
-                f"KGService: Finished processing document {document_id} for KG extraction"
-            )
-
-            result_gen = await self.pipes.graph_storage_pipe.run(
-                input=self.pipes.graph_storage_pipe.Input(
-                    message=relationships
-                ),
-                state=None,
-                run_manager=self.run_manager,
-            )
-
-        except Exception as e:
-            logger.error(f"KGService: Error in kg_extraction: {e}")
-            await self.providers.database.documents_handler.set_workflow_status(
-                id=document_id,
-                status_type="extraction_status",
-                status=KGExtractionStatus.FAILED,
-            )
-            raise e
-
-        return await _collect_results(result_gen)
 
     @telemetry_event("create_entity")
     async def create_entity(
@@ -685,7 +624,7 @@ class GraphService(Service):
         start_time = time.time()
 
         logger.info(
-            f"GraphExtractionPipe: Processing document {document_id} for KG extraction",
+            f"Graph Extraction: Processing document {document_id} for KG extraction",
         )
 
         # Then create the extractions from the results
@@ -740,7 +679,7 @@ class GraphService(Service):
                 return
 
         logger.info(
-            f"GraphExtractionPipe: Obtained {len(chunks)} chunks to process, time from start: {time.time() - start_time:.2f} seconds",
+            f"Graph Extraction: Obtained {len(chunks)} chunks to process, time from start: {time.time() - start_time:.2f} seconds",
         )
 
         # sort the extractions accroding to chunk_order field in metadata in ascending order
@@ -756,7 +695,7 @@ class GraphService(Service):
         ]
 
         logger.info(
-            f"GraphExtractionPipe: Extracting KG Relationships for document and created {len(grouped_chunks)} tasks, time from start: {time.time() - start_time:.2f} seconds",
+            f"Graph Extraction: Extracting KG Relationships for document and created {len(grouped_chunks)} tasks, time from start: {time.time() - start_time:.2f} seconds",
         )
 
         tasks = [
@@ -778,7 +717,7 @@ class GraphService(Service):
         total_tasks = len(tasks)
 
         logger.info(
-            f"GraphExtractionPipe: Waiting for {total_tasks} KG extraction tasks to complete",
+            f"Graph Extraction: Waiting for {total_tasks} KG extraction tasks to complete",
         )
 
         for completed_task in asyncio.as_completed(tasks):
@@ -787,7 +726,7 @@ class GraphService(Service):
                 completed_tasks += 1
                 if completed_tasks % 100 == 0:
                     logger.info(
-                        f"GraphExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks",
+                        f"Graph Extraction: Completed {completed_tasks}/{total_tasks} KG extraction tasks",
                     )
             except Exception as e:
                 logger.error(f"Error in Extracting KG Relationships: {e}")
@@ -797,7 +736,7 @@ class GraphService(Service):
                 )
 
         logger.info(
-            f"GraphExtractionPipe: Completed {completed_tasks}/{total_tasks} KG extraction tasks, time from start: {time.time() - start_time:.2f} seconds",
+            f"Graph Extraction: Completed {completed_tasks}/{total_tasks} KG extraction tasks, time from start: {time.time() - start_time:.2f} seconds",
         )
 
     async def _extract_kg(
@@ -854,14 +793,19 @@ class GraphService(Service):
                         400,
                     )
 
-                entity_pattern = (
-                    r'\("entity"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\)'
-                )
-                relationship_pattern = r'\("relationship"\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\${4}([^$]+)\${4}(\d+(?:\.\d+)?)\)'
-
                 async def parse_fn(response_str: str) -> Any:
-                    entities = re.findall(entity_pattern, response_str)
+                    # Wrap the response in a root element to ensure it is valid XML
+                    wrapped_xml = f"<root>{response_str}</root>"
 
+                    try:
+                        root = ET.fromstring(wrapped_xml)
+                    except ET.ParseError as e:
+                        raise R2RException(
+                            f"Failed to parse XML response: {e}. Response: {response_str}",
+                            400,
+                        )
+
+                    entities = root.findall(".//entity")
                     if (
                         len(kg_extraction)
                         > MIN_VALID_KG_EXTRACTION_RESPONSE_LENGTH
@@ -872,20 +816,20 @@ class GraphService(Service):
                             400,
                         )
 
-                    relationships = re.findall(
-                        relationship_pattern, response_str
-                    )
-
                     entities_arr = []
-                    for entity in entities:
-                        entity_value = entity[0]
-                        entity_category = entity[1]
-                        entity_description = entity[2]
+                    for entity_elem in entities:
+                        entity_value = entity_elem.get("name")
+                        entity_category = entity_elem.find("type").text
+                        entity_description = entity_elem.find(
+                            "description"
+                        ).text
+
                         description_embedding = (
                             await self.providers.embedding.async_get_embedding(
                                 entity_description
                             )
                         )
+
                         entities_arr.append(
                             Entity(
                                 category=entity_category,
@@ -899,32 +843,57 @@ class GraphService(Service):
                         )
 
                     relations_arr = []
-                    for relationship in relationships:
-                        subject = relationship[0]
-                        object = relationship[1]
-                        predicate = relationship[2]
-                        description = relationship[3]
-                        weight = float(relationship[4])
-                        relationship_embedding = (
-                            await self.providers.embedding.async_get_embedding(
-                                description
-                            )
-                        )
+                    for rel_elem in root.findall(".//relationship"):
+                        if rel_elem is not None:
+                            source_elem = rel_elem.find("source")
+                            target_elem = rel_elem.find("target")
+                            type_elem = rel_elem.find("type")
+                            desc_elem = rel_elem.find("description")
+                            weight_elem = rel_elem.find("weight")
 
-                        # check if subject and object are in entities_dict
-                        relations_arr.append(
-                            Relationship(
-                                subject=subject,
-                                predicate=predicate,
-                                object=object,
-                                description=description,
-                                weight=weight,
-                                parent_id=chunks[0].document_id,
-                                chunk_ids=[chunk.id for chunk in chunks],
-                                attributes={},
-                                description_embedding=relationship_embedding,
-                            )
-                        )
+                            if all(
+                                [
+                                    elem is not None
+                                    for elem in [
+                                        source_elem,
+                                        target_elem,
+                                        type_elem,
+                                        desc_elem,
+                                        weight_elem,
+                                    ]
+                                ]
+                            ):
+                                assert source_elem is not None
+                                assert target_elem is not None
+                                assert type_elem is not None
+                                assert desc_elem is not None
+                                assert weight_elem is not None
+
+                                subject = source_elem.text
+                                object = target_elem.text
+                                predicate = type_elem.text
+                                description = desc_elem.text
+                                weight = float(weight_elem.text)
+
+                                relationship_embedding = await self.providers.embedding.async_get_embedding(
+                                    description
+                                )
+
+                                relations_arr.append(
+                                    Relationship(
+                                        subject=subject,
+                                        predicate=predicate,
+                                        object=object,
+                                        description=description,
+                                        weight=weight,
+                                        parent_id=chunks[0].document_id,
+                                        chunk_ids=[
+                                            chunk.id for chunk in chunks
+                                        ],
+                                        attributes={},
+                                        description_embedding=relationship_embedding,
+                                    )
+                                )
 
                     return entities_arr, relations_arr
 
@@ -949,7 +918,7 @@ class GraphService(Service):
                     )
 
         logger.info(
-            f"GraphExtractionPipe: Completed task number {task_id} of {total_tasks} for document {chunks[0].document_id}",
+            f"Graph Extraction: Completed task number {task_id} of {total_tasks} for document {chunks[0].document_id}",
         )
 
         return KGExtraction(

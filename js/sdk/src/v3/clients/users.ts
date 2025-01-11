@@ -539,4 +539,24 @@ export class UsersClient {
   async oauthGithubAuthorize(): Promise<{ redirect_url: string }> {
     return this.client.makeRequest("GET", "users/oauth/github/authorize");
   }
+
+  @feature("users.oauthGoogleCallback")
+  async oauthGoogleCallback(options: { code: string; state: string }): Promise<any> {
+    return this.client.makeRequest("GET", "users/oauth/google/callback", {
+      params: {
+        code: options.code,
+        state: options.state,
+      },
+    });
+  }
+
+  @feature("users.oauthGithubCallback")
+  async oauthGithubCallback(options: { code: string; state: string }): Promise<any> {
+    return this.client.makeRequest("GET", "users/oauth/github/callback", {
+      params: {
+        code: options.code,
+        state: options.state,
+      },
+    });
+  }
 }

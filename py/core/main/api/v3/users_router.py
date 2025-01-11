@@ -142,20 +142,17 @@ class UsersRouter(BaseRouterV3):
 
             # if not validate_password(password):
             #     raise R2RException(
-            #         status_code=400,
-            #         message=f"Password must be at least 10 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character from '!@#$%^&*'.",
+            #         f"Password must be at least 10 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character from '!@#$%^&*'.",
+            #         400,
             #     )
 
             registration_response = await self.services.auth.register(
-                email, password
+                email=email,
+                password=password,
+                name=name,
+                bio=bio,
+                profile_picture=profile_picture,
             )
-            if name or bio or profile_picture:
-                return await self.services.auth.update_user(
-                    user_id=registration_response.id,
-                    name=name,
-                    bio=bio,
-                    profile_picture=profile_picture,
-                )
 
             return registration_response
 
@@ -1790,7 +1787,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.get("/users/oauth/google/callback")
         async def google_callback(
-            request: Request, code: str = Query(...), state: str = Query(...)
+            code: str = Query(...), state: str = Query(...)
         ):
             """
             Google's callback that will receive the `code` and `state`.
@@ -1807,7 +1804,6 @@ class UsersRouter(BaseRouterV3):
                     "grant_type": "authorization_code",
                 },
             ).json()
-
             if "error" in token_data:
                 raise HTTPException(
                     status_code=400,
@@ -1832,6 +1828,7 @@ class UsersRouter(BaseRouterV3):
             # id_info will contain "sub", "email", etc.
             google_id = id_info["sub"]
             email = id_info.get("email")
+            email = email or f"{google_id}@google_oauth.fake"
 
             # 3. Now call our R2RAuthProvider method that handles "oauth-based" user creation or login
             token_response = await self.providers.auth.oauth_callback_handler(
@@ -1896,12 +1893,13 @@ class UsersRouter(BaseRouterV3):
                 "https://api.github.com/user",
                 headers={"Authorization": f"Bearer {access_token}"},
             ).json()
+
             github_id = str(
                 user_info_resp["id"]
             )  # GitHub user ID is typically an integer
             # fetch email (sometimes you need to call /user/emails endpoint if user sets email private)
             email = user_info_resp.get("email")
-
+            email = email or f"{github_id}@github_oauth.fake"
             # 3. Pass to your auth provider
             token_response = await self.providers.auth.oauth_callback_handler(
                 provider="github",

@@ -23,7 +23,6 @@ from core.pipes import (
     GraphClusteringPipe,
     GraphCommunitySummaryPipe,
     GraphDescriptionPipe,
-    GraphExtractionPipe,
     GraphSearchSearchPipe,
     GraphStoragePipe,
     MultiSearchPipe,
@@ -384,7 +383,6 @@ class R2RPipeFactory:
         self,
         parsing_pipe_override: Optional[ParsingPipe] = None,
         embedding_pipe_override: Optional[EmbeddingPipe] = None,
-        graph_extraction_pipe_override: Optional[GraphExtractionPipe] = None,
         graph_storage_pipe_override: Optional[GraphStoragePipe] = None,
         graph_search_pipe_override: Optional[GraphSearchSearchPipe] = None,
         vector_storage_pipe_override: Optional[VectorStoragePipe] = None,
@@ -408,8 +406,6 @@ class R2RPipeFactory:
             ),
             embedding_pipe=embedding_pipe_override
             or self.create_embedding_pipe(*args, **kwargs),
-            graph_extraction_pipe=graph_extraction_pipe_override
-            or self.create_graph_extraction_pipe(*args, **kwargs),
             graph_storage_pipe=graph_storage_pipe_override
             or self.create_graph_storage_pipe(*args, **kwargs),
             vector_storage_pipe=vector_storage_pipe_override
@@ -537,15 +533,6 @@ class R2RPipeFactory:
             },
             default_strategy="hyde",
             config=AsyncPipe.PipeConfig(name="routing_search_pipe"),
-        )
-
-    def create_graph_extraction_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import GraphExtractionPipe
-
-        return GraphExtractionPipe(
-            llm_provider=self.providers.llm,
-            database_provider=self.providers.database,
-            config=AsyncPipe.PipeConfig(name="graph_extraction_pipe"),
         )
 
     def create_graph_storage_pipe(self, *args, **kwargs) -> Any:

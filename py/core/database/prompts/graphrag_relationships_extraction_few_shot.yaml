@@ -1,30 +1,30 @@
 graphrag_relationships_extraction_few_shot:
   template: >
-    -Goal-
+    # Context
+    {document_summary}
+
+    # Goal
     Given both a document summary and full text, identify all entities and their entity types, along with all relationships among the identified entities.
     Extract up to {max_knowledge_relationships} entity-relation relationships using both the summary context and full text.
 
-    -Context Summary-
-    {document_summary}
-
-    -Steps-
-    1. Identify all entities. For each identified entity, extract the following information:
+    # Steps
     1. Identify all entities given the full text, grounding and contextualizing them based on the summary. For each identified entity, extract:
-    - entity_name: Name of the entity, capitalized
-    - entity_type: Type of the entity (constrained to {entity_types} if provided, otherwise all types)
-    - entity_description: Comprehensive description incorporating context from both summary and full text
+      - entit: Name of the entity, capitalized
+      - entity_type: Type of the entity (constrained to {entity_types} if provided, otherwise all types)
+      - entity_description: Comprehensive description incorporating context from both summary and full text
 
-    Format each entity as ("entity"$$$$<entity_name>$$$$<entity_type>$$$$<entity_description>)
+    Format each Entity in XML tags as follows: <entity name="entity"><type>entity_type</type><description>entity_description</description></entity>
+
     Note: Generate additional entities from descriptions if they contain named entities for relationship mapping.
 
     2. From the identified entities, identify all related entity pairs, using both summary and full text context:
-    - source_entity: name of the source entity
-    - target_entity: name of the target entity
-    - relation: relationship type (constrained to {relation_types} if provided)
-    - relationship_description: justification based on both summary and full text context
-    - relationship_weight: strength score 0-10
+      - source_entity: name of the source entity
+      - target_entity: name of the target entity
+      - relation: relationship type (constrained to {relation_types} if provided)
+      - relationship_description: justification based on both summary and full text context
+      - relationship_weight: strength score 0-10
 
-    Format each relationship as ("relationship"$$$$<source_entity>$$$$<target_entity>$$$$<relation>$$$$<relationship_description>$$$$<relationship_weight>)
+    Format each relationship in XML tags as follows: <relationship><source>source_entity</source><target>target_entity</target><type>relation</type><description>relationship_description</description><weight>relationship_weight</weight></relationship>
 
     3. Coverage Requirements:
     - Each entity must have at least one relationship
@@ -37,81 +37,47 @@ graphrag_relationships_extraction_few_shot:
     Entity_types:
     Relation_types:
     Text:
-    The Verdantis's Central Institution is scheduled to meet on Monday and Thursday, with the institution planning to release its latest policy decision on Thursday at 1:30 p.m. PDT, followed by a press conference where Central Institution Chair Martin Smith will take questions. Investors expect the Market Strategy Committee to hold its benchmark interest rate steady in a range of 3.5%-3.75%.
+    San Francisco is a city in California. It is known for the Golden Gate Bridge, cable cars, and steep hills. The city is surrounded by the Pacific Ocean and the San Francisco Bay.
     ######################
     Output:
-    ("entity"$$$$Central Institution$$$$Organization$$$$The central bank of Verdantis, responsible for monetary policy and setting interest rates)
-    ("entity"$$$$Martin Smith$$$$Person$$$$Chair of the Central Institution of Verdantis)
-    ("entity"$$$$Market Strategy Committee$$$$Organization$$$$Committee within the Central Institution that makes key decisions on monetary policy)
-    ("entity"$$$$Monday$$$$Time$$$$First meeting day of the Central Institution)
-    ("entity"$$$$Thursday$$$$Time$$$$Second meeting day of the Central Institution, when policy decisions are announced)
-    ("entity"$$$$1:30 PM PDT$$$$Time$$$$Scheduled time for the Central Institution's policy decision release on Thursday)
-    ("entity"$$$$Press Conference$$$$Event$$$$Media briefing held by the Central Institution following the policy decision release)
-    ("entity"$$$$Interest Rate$$$$Economic Concept$$$$Key monetary policy tool used by the Central Institution to influence the economy)
-    ("entity"$$$$3.5%-3.75%$$$$Economic Value$$$$Expected range for the benchmark interest rate)
-    ("relationship"$$$$Martin Smith$$$$Central Institution$$$$Chairs$$$$Martin Smith is the Chair of the Central Institution and will lead the press conference$$$$9)
-    ("relationship"$$$$Central Institution$$$$Press Conference$$$$Conducts$$$$The Central Institution conducts a press conference following its policy decision release$$$$9)
-    ("relationship"$$$$Market Strategy Committee$$$$Central Institution$$$$Part Of$$$$The Market Strategy Committee is a key decision-making body within the Central Institution$$$$9)
-    ("relationship"$$$$Market Strategy Committee$$$$Interest Rate$$$$Sets$$$$The Market Strategy Committee determines the benchmark interest rate$$$$9)
-    ("relationship"$$$$Central Institution$$$$Interest Rate$$$$Controls$$$$The Central Institution controls interest rates as part of its monetary policy$$$$9)
-    ("relationship"$$$$3.5%-3.75%$$$$Interest Rate$$$$Expected Range$$$$Investors anticipate the benchmark interest rate to remain within this range$$$$8)
-    ("relationship"$$$$Monday$$$$Central Institution$$$$Meeting Day$$$$The Central Institution holds its first meeting of the week on Monday$$$$7)
-    ("relationship"$$$$Thursday$$$$Central Institution$$$$Decision Day$$$$The Central Institution announces its policy decision on Thursday$$$$9)
-    ("relationship"$$$$1:30 PM PDT$$$$Central Institution$$$$Press Conference$$$$The policy decision release at 1:30 PM PDT is followed by the press conference$$$$8)
+    <entity name="San Francisco"><type>City</type><description>San Francisco is a city in California known for the Golden Gate Bridge, cable cars, and steep hills. It is surrounded by the Pacific Ocean and the San Francisco Bay.</description></entity>
+    <entity name="California"><type>State</type><description>California is a state in the United States.</description></entity>
+    <entity name="Golden Gate Bridge"><type>Landmark</type><description>The Golden Gate Bridge is a famous bridge in San Francisco.</description></entity>
+    <entity name="Pacific Ocean"><type>Body of Water</type><description>The Pacific Ocean is a large body of water that surrounds San Francisco.</description></entity>
+    <entity name="San Francisco Bay"><type>Body of Water</type><description>The San Francisco Bay is a body of water that surrounds San Francisco.</description></entity>
+    <relationship><source>San Francisco</source><target>California</target><type>Located In</type><description>San Francisco is a city located in California.</description><weight>8</weight></relationship>
+    <relationship><source>San Francisco</source><target>Golden Gate Bridge</target><type>Features</type><description>San Francisco features the Golden Gate Bridge.</description><weight>9</weight></relationship>
+    <relationship><source>San Francisco</source><target>Pacific Ocean</target><type>Surrounded By</type><description>San Francisco is surrounded by the Pacific Ocean.</description><weight>7</weight></relationship>
+    <relationship><source>San Francisco</source><target>San Francisco Bay</target><type>Surrounded By</type><description>San Francisco is surrounded by the San Francisco Bay.</description><weight>7</weight></relationship>
+    <relationship><source>California</source><target>San Francisco</target><type>Contains</type><description>California contains the city of San Francisco.</description><weight>8</weight></relationship>
+    <relationship><source>Golden Gate Bridge</source><target>San Francisco</target><type>Located In</type><description>The Golden Gate Bridge is located in San Francisco.</description><weight>8</weight></relationship>
+    <relationship><source>Pacific Ocean</source><target>San Francisco</target><type>Surrounds</type><description>The Pacific Ocean surrounds San Francisco.</description><weight>7</weight></relationship>
+    <relationship><source>San Francisco Bay</source><target>San Francisco</target><type>Surrounds</type><description>The San Francisco Bay surrounds San Francisco.</description><weight>7</weight></relationship>
 
     ######################
     Example 2:
     If the list is empty, extract all entities and relations.
-    Entity_types: Organization
-    Relation_types: Formerly Owned By
+    Entity_types: Organization, Person
+    Relation_types: Located In, Features
 
     Text:
-    TechGlobal's (TG) stock skyrocketed in its opening day on the Global Exchange Thursday. But IPO experts warn that the semiconductor corporation's debut on the public markets isn't indicative of how other newly listed companies may perform.
-
-    TechGlobal, a formerly public company, was taken private by Vision Holdings in 2014. The well-established chip designer says it powers 85% of premium smartphones.
+    The Green Bay Packers are a professional American football team based in Green Bay, Wisconsin. The team was established in 1919 by Earl "Curly" Lambeau and George Calhoun. The Packers are the third-oldest franchise in the NFL and have won 13 league championships, including four Super Bowls. The team's home games are played at Lambeau Field, which is named after Curly Lambeau.
     ######################
     Output:
-    ("entity"$$$$TECHGLOBAL$$$$Organization$$$$TechGlobal is a stock now listed on the Global Exchange which powers 85% of premium smartphones)
-    ("entity"$$$$VISION HOLDINGS$$$$Organization$$$$Vision Holdings is a firm that previously owned TechGlobal)
-    ("relationship"$$$$TECHGLOBAL$$$$VISION HOLDINGS$$$$Formerly Owned By$$$$Vision Holdings formerly owned TechGlobal from 2014 until present$$$$5)
-
-    ######################
-    Example 3:
-    If the list is empty, extract all entities and relations.
-    Entity_types: Organization,Geo,Person
-    Relation_types: ""
-    Text:
-    Five Aurelians jailed for 8 years in Firuzabad and widely regarded as hostages are on their way home to Aurelia.
-
-    The swap orchestrated by Quintara was finalized when $8bn of Firuzi funds were transferred to financial institutions in Krohaara, the capital of Quintara.
-
-    The exchange initiated in Firuzabad's capital, Tiruzia, led to the four men and one woman, who are also Firuzi nationals, boarding a chartered flight to Krohaara.
-
-    They were welcomed by senior Aurelian officials and are now on their way to Aurelia's capital, Cashion.
-
-    The Aurelians include 39-year-old businessman Samuel Namara, who has been held in Tiruzia's Alhamia Prison, as well as journalist Durke Bataglani, 59, and environmentalist Meggie Tazbah, 53, who also holds Bratinas nationality.
-    ######################
-    Output:
-    ("entity"$$$$FIRUZABAD$$$$Geo$$$$Firuzabad held Aurelians as hostages)
-    ("entity"$$$$AURELIA$$$$Geo$$$$Country seeking to release hostages)
-    ("entity"$$$$QUINTARA$$$$Geo$$$$Country that negotiated a swap of money in exchange for hostages)
-    ("entity"$$$$TIRUZIA$$$$Geo$$$$Capital of Firuzabad where the Aurelians were being held)
-    ("entity"$$$$KROHAARA$$$$Geo$$$$Capital city in Quintara)
-    ("entity"$$$$CASHION$$$$Geo$$$$Capital city in Aurelia)
-    ("entity"$$$$SAMUEL NAMARA$$$$Person$$$$Aurelian who spent time in Tiruzia's Alhamia Prison)
-    ("entity"$$$$ALHAMIA PRISON$$$$Geo$$$$Prison in Tiruzia)
-    ("entity"$$$$DURKE BATAGLANI$$$$Person$$$$Aurelian journalist who was held hostage)
-    ("entity"$$$$MEGGIE TAZBAH$$$$Person$$$$Bratinas national and environmentalist who was held hostage)
-    ("relationship"$$$$FIRUZABAD$$$$AURELIA$$$$Negotiated Hostage Exchange$$$$Firuzabad negotiated a hostage exchange with Aurelia$$$$2)
-    ("relationship"$$$$QUINTARA$$$$AURELIA$$$$Negotiated Hostage Exchange$$$$Quintara brokered the hostage exchange between Firuzabad and Aurelia$$$$2)
-    ("relationship"$$$$QUINTARA$$$$FIRUZABAD$$$$Negotiated Hostage Exchange$$$$Quintara brokered the hostage exchange between Firuzabad and Aurelia$$$$2)
-    ("relationship"$$$$SAMUEL NAMARA$$$$ALHAMIA PRISON$$$$Held At Alhamia Prison$$$$Samuel Namara was a prisoner at Alhamia prison$$$$8)
-    ("relationship"$$$$SAMUEL NAMARA$$$$MEGGIE TAZBAH$$$$Exchanged Hostages$$$$Samuel Namara and Meggie Tazbah were exchanged in the same hostage release$$$$2)
-    ("relationship"$$$$SAMUEL NAMARA$$$$DURKE BATAGLANI$$$$Exchanged Hostages$$$$Samuel Namara and Durke Bataglani were exchanged in the same hostage release$$$$2)
-    ("relationship"$$$$MEGGIE TAZBAH$$$$DURKE BATAGLANI$$$$Exchanged Hostages$$$$Meggie Tazbah and Durke Bataglani were exchanged in the same hostage release$$$$2)
-    ("relationship"$$$$SAMUEL NAMARA$$$$FIRUZABAD$$$$Held As Hostage$$$$Samuel Namara was a hostage in Firuzabad$$$$2)
-    ("relationship"$$$$MEGGIE TAZBAH$$$$FIRUZABAD$$$$Held As Hostage$$$$Meggie Tazbah was a hostage in Firuzabad$$$$2)
-    ("relationship"$$$$DURKE BATAGLANI$$$$FIRUZABAD$$$$Held As Hostage$$$$Durke Bataglani was a hostage in Firuzabad$$$$2)
+    <entity name="Green Bay Packers"><type>Organization</type><description>The Green Bay Packers are a professional American football team based in Green Bay, Wisconsin. The team was established in 1919 by Earl "Curly" Lambeau and George Calhoun. The Packers are the third-oldest franchise in the NFL and have won 13 league championships, including four Super Bowls. The team's home games are played at Lambeau Field, which is named after Curly Lambeau.</description></entity>
+    <entity name="Green Bay"><type>City</type><description>Green Bay is a city in Wisconsin.</description></entity>
+    <entity name="Wisconsin"><type>State</type><description>Wisconsin is a state in the United States.</description></entity>
+    <entity name="Earl "Curly" Lambeau"><type>Person</type><description>Earl "Curly" Lambeau was a co-founder of the Green Bay Packers.</description></entity>
+    <entity name="George Calhoun"><type>Person</type><description>George Calhoun was a co-founder of the Green Bay Packers.</description></entity>
+    <entity name="NFL"><type>Organization</type><description>The NFL is the National Football League.</description></entity>
+    <entity name="Super Bowl"><type>Event</type><description>The Super Bowl is the championship game of the NFL.</description></entity>
+    <entity name="Lambeau Field"><type>Stadium</type><description>Lambeau Field is the home stadium of the Green Bay Packers.</description></entity>
+    <relationship><source>Green Bay Packers</source><target>Green Bay</target><type>Located In</type><description>The Green Bay Packers are based in Green Bay, Wisconsin.</description><weight>8</weight></relationship>
+    <relationship><source>Green Bay</source><target>Wisconsin</target><type>Located In</type><description>Green Bay is located in Wisconsin.</description><weight>8</weight></relationship>
+    <relationship><source>Green Bay Packers</source><target>Earl "Curly" Lambeau</target><type>Founded By</type><description>The Green Bay Packers were established by Earl "Curly" Lambeau.</description><weight>9</weight></relationship>
+    <relationship><source>Green Bay Packers</source><target>George Calhoun</target><type>Founded By</type><description>The Green Bay Packers were established by George Calhoun.</description><weight>9</weight></relationship>
+    <relationship><source>Green Bay Packers</source><target>NFL</target><type>League</type><description>The Green Bay Packers are a franchise in the NFL.</description><weight>8</weight></relationship>
+    <relationship><source>Green Bay Packers</source><target>Super Bowl</target><type>Championships</type><description>The Green Bay Packers have won four Super Bowls.</description><weight>9</weight></relationship>
 
     -Real Data-
     ######################

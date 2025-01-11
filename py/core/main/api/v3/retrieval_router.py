@@ -440,13 +440,17 @@ class RetrievalRouterV3(BaseRouterV3):
                 async def stream_generator():
                     try:
                         async for chunk in response:
-                            yield chunk
+                            if len(chunk) > 1024:
+                                for i in range(0, len(chunk), 1024):
+                                    yield chunk[i : i + 1024]
+                            else:
+                                yield chunk
                     except GeneratorExit:
                         # Clean up if needed, then return
                         return
 
                 return StreamingResponse(
-                    stream_generator(), media_type="application/json"
+                    stream_generator(), media_type="text/event-stream"
                 )  # type: ignore
             else:
                 return response
@@ -667,13 +671,17 @@ class RetrievalRouterV3(BaseRouterV3):
                     async def stream_generator():
                         try:
                             async for chunk in response:
-                                yield chunk
+                                if len(chunk) > 1024:
+                                    for i in range(0, len(chunk), 1024):
+                                        yield chunk[i : i + 1024]
+                                else:
+                                    yield chunk
                         except GeneratorExit:
                             # Clean up if needed, then return
                             return
 
                     return StreamingResponse(
-                        stream_generator(), media_type="application/json"
+                        stream_generator(), media_type="text/event-stream"
                     )  # type: ignore
                 else:
                     return response

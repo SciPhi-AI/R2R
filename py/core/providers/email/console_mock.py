@@ -56,3 +56,19 @@ class ConsoleMockEmailProvider(EmailProvider):
         -----------------------------
         """
         )
+
+    async def send_password_changed_email(
+        self, to_email: str, *args, **kwargs
+    ) -> None:
+        logger.info(
+            f"""
+            -------- Email Message --------
+            To: {to_email}
+            Subject: Your Password Has Been Changed
+            Body:
+            Your password has been successfully changed.
+
+            For security reasons, you will need to log in again on all your devices.
+            -----------------------------
+            """
+        )

@@ -167,6 +167,21 @@ class CollectionsRouter(BaseRouterV3):
             This endpoint allows authenticated users to create a new collection with a specified name
             and optional description. The user creating the collection is automatically added as a member.
             """
+            user_collections_count = (
+                await self.services.management.collections_overview(
+                    user_ids=[auth_user.id], limit=1, offset=0
+                )
+            )["total_entries"]
+            user_max_collections = (
+                await self.services.management.get_user_max_collections(
+                    auth_user.id
+                )
+            )
+            if (user_collections_count + 1) >= user_max_collections:
+                raise R2RException(
+                    f"User has reached the maximum number of collections allowed ({user_max_collections}).",
+                    400,
+                )
             collection = await self.services.management.create_collection(
                 owner_id=auth_user.id,
                 name=name,
