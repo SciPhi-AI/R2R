@@ -3,7 +3,7 @@ import os
 import types
 from functools import wraps
 from pathlib import Path
-from typing import Any, Never
+from typing import Any
 
 import asyncclick as click
 from asyncclick import pass_context
@@ -11,6 +11,7 @@ from asyncclick.exceptions import Exit
 from rich import box
 from rich.console import Console
 from rich.table import Table
+from typing_extensions import Never
 
 from sdk import R2RAsyncClient
 
