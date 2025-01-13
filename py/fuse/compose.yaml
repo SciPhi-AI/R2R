@@ -1,0 +1,154 @@
+networks:
+  fuse-network:
+    driver: bridge
+    attachable: true
+    labels:
+      - "com.docker.compose.recreate=always"
+
+volumes:
+  postgres_data:
+    name: ${VOLUME_POSTGRES_DATA:-postgres_data}
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    profiles: [postgres]
+    environment:
+      - POSTGRES_USER=${FUSE_POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${FUSE_POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_HOST=${FUSE_POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${FUSE_POSTGRES_PORT:-5432}
+      - POSTGRES_MAX_CONNECTIONS=${FUSE_POSTGRES_MAX_CONNECTIONS:-1024}
+      - PGPORT=${FUSE_POSTGRES_PORT:-5432}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - fuse-network
+    ports:
+      - "${FUSE_POSTGRES_PORT:-5432}:${FUSE_POSTGRES_PORT:-5432}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${FUSE_POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    command: >
+      postgres
+      -c max_connections=${FUSE_POSTGRES_MAX_CONNECTIONS:-1024}
+
+  fuse:
+    image: ${FUSE_IMAGE:-ragtoriches/prod:latest}
+    build:
+      context: .
+      args:
+        PORT: ${FUSE_PORT:-7272}
+        FUSE_PORT: ${FUSE_PORT:-7272}
+        HOST: ${FUSE_HOST:-0.0.0.0}
+        FUSE_HOST: ${FUSE_HOST:-0.0.0.0}
+    ports:
+      - "${FUSE_PORT:-7272}:${FUSE_PORT:-7272}"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - FUSE_PORT=${FUSE_PORT:-7272}
+      - FUSE_HOST=${FUSE_HOST:-0.0.0.0}
+
+      # FUSE
+      - FUSE_CONFIG_NAME=${FUSE_CONFIG_NAME:-}
+      - FUSE_CONFIG_PATH=${FUSE_CONFIG_PATH:-}
+      - FUSE_PROJECT_NAME=${FUSE_PROJECT_NAME:-fuse_default}
+      - FUSE_SECRET_KEY=${FUSE_SECRET_KEY:-}
+
+      # Postgres
+      - FUSE_POSTGRES_USER=${FUSE_POSTGRES_USER:-postgres}
+      - FUSE_POSTGRES_PASSWORD=${FUSE_POSTGRES_PASSWORD:-postgres}
+      - FUSE_POSTGRES_HOST=${FUSE_POSTGRES_HOST:-postgres}
+      - FUSE_POSTGRES_PORT=${FUSE_POSTGRES_PORT:-5432}
+      - FUSE_POSTGRES_DBNAME=${FUSE_POSTGRES_DBNAME:-postgres}
+      - FUSE_POSTGRES_MAX_CONNECTIONS=${FUSE_POSTGRES_MAX_CONNECTIONS:-1024}
+      - FUSE_POSTGRES_STATEMENT_CACHE_SIZE=${FUSE_POSTGRES_STATEMENT_CACHE_SIZE:-100}
+
+      # OpenAI
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-}
+
+      # Anthropic
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+
+      # Azure
+      - AZURE_API_KEY=${AZURE_API_KEY:-}
+      - AZURE_API_BASE=${AZURE_API_BASE:-}
+      - AZURE_API_VERSION=${AZURE_API_VERSION:-}
+
+      # Google Vertex AI
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-}
+      - VERTEX_PROJECT=${VERTEX_PROJECT:-}
+      - VERTEX_LOCATION=${VERTEX_LOCATION:-}
+
+      # Google Gemini
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+
+      # AWS Bedrock
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_REGION_NAME=${AWS_REGION_NAME:-}
+
+      # Groq
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+
+      # Cohere
+      - COHERE_API_KEY=${COHERE_API_KEY:-}
+
+      # Anyscale
+      - ANYSCALE_API_KEY=${ANYSCALE_API_KEY:-}
+
+      # Ollama
+      - OLLAMA_API_BASE=${OLLAMA_API_BASE:-http://host.docker.internal:11434}
+
+
+      # LM Studio
+      - LM_STUDIO_API_BASE=${LM_STUDIO_API_BASE:-http://host.docker.internal:1234}
+
+      # Huggingface
+      - HUGGINGFACE_API_BASE=${HUGGINGFACE_API_BASE:-http://host.docker.internal:8080}
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
+
+      # Unstructured
+      - UNSTRUCTURED_API_KEY=${UNSTRUCTURED_API_KEY:-}
+      - UNSTRUCTURED_API_URL=${UNSTRUCTURED_API_URL:-https://api.unstructured.io/general/v0/general}
+      - UNSTRUCTURED_SERVICE_URL=${UNSTRUCTURED_SERVICE_URL:-http://unstructured:7275}
+      - UNSTRUCTURED_NUM_WORKERS=${UNSTRUCTURED_NUM_WORKERS:-10}
+
+      # Graphologic
+      - CLUSTERING_SERVICE_URL=http://graph_clustering:7276
+
+      # OAuth Credentials
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - GITHUB_REDIRECT_URI=${GITHUB_REDIRECT_URI}
+
+
+    networks:
+      - fuse-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${FUSE_PORT:-7272}/v3/health"]
+      interval: 6s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    volumes:
+      - ${FUSE_CONFIG_PATH:-/}:${FUSE_CONFIG_PATH:-/app/config}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
+  fuse-dashboard:
+    image: emrgntcmplxty/fuse-dashboard:latest
+    environment:
+      - NEXT_PUBLIC_FUSE_DEPLOYMENT_URL=${FUSE_DEPLOYMENT_URL:-http://localhost:7272}
+    networks:
+      - fuse-network
+    ports:
+      - "${FUSE_DASHBOARD_PORT:-7273}:3000"
