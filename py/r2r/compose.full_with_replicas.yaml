@@ -348,6 +348,7 @@ services:
 
       # LM Studio
       - LM_STUDIO_API_BASE=${LM_STUDIO_API_BASE:-http://host.docker.internal:1234}
+      - LM_STUDIO_API_KEY=${LM_STUDIO_API_KEY:-1234}
 
       # Huggingface
       - HUGGINGFACE_API_BASE=${HUGGINGFACE_API_BASE:-http://host.docker.internal:8080}
