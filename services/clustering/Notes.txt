@@ -1,5 +1,5 @@
 # Build the docker container with the following command
-docker build -t meltingrock/ask-api-clustering:latest -f Dcokerfile.clustering .
+docker build -t meltingrock/ask-api-clustering:latest -f Dockerfile.clustering .
 
 # Push to docker hub
 docker push meltingrock/ask-api-clustering:latest
