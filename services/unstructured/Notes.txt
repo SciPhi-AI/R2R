@@ -1,0 +1,5 @@
+# Build the docker container with the following command
+docker build -t meltingrock/ask-api-unstructured:latest -f Dockerfile.unstructured .
+
+# Push to docker hub
+docker push meltingrock/ask-api-unstructured:latest

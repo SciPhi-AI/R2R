@@ -1,0 +1,56 @@
+#############################################
+# FUSE environment variables
+#############################################
+FUSE_POSTGRES_USER=postgres
+FUSE_POSTGRES_PASSWORD=difficultPassw0rd
+FUSE_POSTGRES_HOST=pg.local.pincident.com
+FUSE_POSTGRES_PORT=5555
+FUSE_POSTGRES_DBNAME=dev_r2r_matt
+FUSE_PROJECT_NAME=dev_r2r_matt
+
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=difficultPassw0rd
+POSTGRES_HOST=pg.local.pincident.com
+POSTGRES_PORT=5555
+POSTGRES_MAX_CONNECTIONS=2048
+PGPORT=5555
+
+# Hatchet environment variables
+HATCHET_POSTGRES_USER=postgres
+HATCHET_POSTGRES_PASSWORD=difficultPassw0rd
+HATCHET_POSTGRES_DBNAME=hatchet
+
+# Volumes
+#VOLUME_HATCHET_CERTS=/data/askfrankly/r2r/docker_volumes/hatchet/certs
+#VOLUME_HATCHET_CONFIG=/data/askfrankly/r2r/docker_volumes/hatchet/config
+#VOLUME_HATCHET_API_KEY=/data/askfrankly/r2r/docker_volumes/hatchet/api_key
+#VOLUME_HATCHET_RABBITMQ_DATA=/data/askfrankly/r2r/docker_volumes/rabbitmq/data
+#VOLUME_HATCHET_RABBITMQ_CONF=/data/askfrankly/r2r/docker_volumes/rabbitmq/conf
+#VOLUME_HATCHET_POSTGRES_DATA=/data/askfrankly/r2r/docker_volumes/hatchet/postgres/data
+#VOLUME_POSTGRES_DATA=/data/askfrankly/r2r/docker_volumes/postgres/data
+#
+FUSE_ACCESS_LIFE_IN_MINUTES=60
+FUSE_REFRESH_LIFE_IN_DAYS=7
+FUSE_SECRET_KEY=your_secret_key
+
+# FUSE_CONFIG_PATH=/data/askfrankly/r2r/workspaces/matt_legal_case/configs/r2r_riaan.toml
+# FUSE_CONFIG_NAME=r2r_riaan.toml
+
+#OPENAI_API_KEY=your_openai_api_key
+#SUPABASE_URL=https://your-supabase-url.com
+#SUPABASE_KEY=your_supabase_key
+
+#SENDGRID_API_KEY=your_sendgrid_api_key
+#FUSE_SMTP_SERVER=smtp.example.com
+#FUSE_SMTP_PORT=587
+#FUSE_SMTP_USERNAME=smtp_user
+#FUSE_SMTP_PASSWORD=smtp_password
+#FUSE_FROM_EMAIL=no-reply@example.com
+
+FUSE_FRONTEND_URL=http://192.168.100.12:7273
+
+UNSTRUCTURED_API_KEY=your_unstructured_api_key
+UNSTRUCTURED_API_URL=https://unstructured.local.askfrankly.com/general/v0/general
+
+# HUGGINGFACE_API_BASE=https://huggingface.co/api
+# OLLAMA_API_BASE=http://192.168.100.12:11434

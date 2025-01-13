@@ -5,72 +5,117 @@ networks:
     labels:
       - "com.docker.compose.recreate=always"
 
+#volumes:
+  #  hatchet_certs:
+  #    name: ${VOLUME_HATCHET_CERTS:-hatchet_certs}
+  #hatchet_config:
+  #  name: ${VOLUME_HATCHET_CONFIG:-hatchet_config}
+  #hatchet_api_key:
+  #  name: ${VOLUME_HATCHET_API_KEY:-hatchet_api_key}
+  #postgres_data:
+  #  name: ${VOLUME_POSTGRES_DATA:-postgres_data}
+  #hatchet_rabbitmq_data:
+  #  name: ${VOLUME_HATCHET_RABBITMQ_DATA:-hatchet_rabbitmq_data}
+  #hatchet_rabbitmq_conf:
+  #  name: ${VOLUME_HATCHET_RABBITMQ_CONF:-hatchet_rabbitmq_conf}
+  #hatchet_postgres_data:
+  #  name: ${VOLUME_HATCHET_POSTGRES_DATA:-hatchet_postgres_data}
+
 volumes:
   hatchet_certs:
-    name: ${VOLUME_HATCHET_CERTS:-hatchet_certs}
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/askfrankly/fuse/workspaces/matt_legal_case/hatchet_certs
+      o: bind
   hatchet_config:
-    name: ${VOLUME_HATCHET_CONFIG:-hatchet_config}
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/askfrankly/fuse/workspaces/matt_legal_case/hatchet_config
+      o: bind
   hatchet_api_key:
-    name: ${VOLUME_HATCHET_API_KEY:-hatchet_api_key}
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/askfrankly/fuse/workspaces/matt_legal_case/hatchet_api_key
+      o: bind
   postgres_data:
-    name: ${VOLUME_POSTGRES_DATA:-postgres_data}
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/askfrankly/fuse/workspaces/matt_legal_case/postgres_data
+      o: bind
   hatchet_rabbitmq_data:
-    name: ${VOLUME_HATCHET_RABBITMQ_DATA:-hatchet_rabbitmq_data}
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/askfrankly/fuse/workspaces/matt_legal_case/hatchet_rabbitmq_data
+      o: bind
   hatchet_rabbitmq_conf:
-    name: ${VOLUME_HATCHET_RABBITMQ_CONF:-hatchet_rabbitmq_conf}
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/askfrankly/fuse/workspaces/matt_legal_case/hatchet_rabbitmq_conf
+      o: bind
   hatchet_postgres_data:
-    name: ${VOLUME_HATCHET_POSTGRES_DATA:-hatchet_postgres_data}
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/askfrankly/fuse/workspaces/matt_legal_case/
+      o: bind
+
 
 services:
-  postgres:
-    image: pgvector/pgvector:pg16
-    profiles: [postgres]
-    environment:
-      - POSTGRES_USER=${FUSE_POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${FUSE_POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_HOST=${FUSE_POSTGRES_HOST:-postgres}
-      - POSTGRES_PORT=${FUSE_POSTGRES_PORT:-5432}
-      - POSTGRES_MAX_CONNECTIONS=${FUSE_POSTGRES_MAX_CONNECTIONS:-1024}
-      - PGPORT=${FUSE_POSTGRES_PORT:-5432}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - fuse-network
-    ports:
-      - "${FUSE_POSTGRES_PORT:-5432}:${FUSE_POSTGRES_PORT:-5432}"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${FUSE_POSTGRES_USER:-postgres}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: on-failure
-    command: >
-      postgres
-      -c max_connections=${FUSE_POSTGRES_MAX_CONNECTIONS:-1024}
+#  postgres:
+#    image: pgvector/pgvector:pg16
+#    profiles: [postgres]
+#    environment:
+#      - POSTGRES_USER=${R2R_POSTGRES_USER:-postgres}
+#      - POSTGRES_PASSWORD=${R2R_POSTGRES_PASSWORD:-postgres}
+#      - POSTGRES_HOST=${R2R_POSTGRES_HOST:-postgres}
+#      - POSTGRES_PORT=${R2R_POSTGRES_PORT:-${POSTGRES_PORT}}
+#      - POSTGRES_MAX_CONNECTIONS=${R2R_POSTGRES_MAX_CONNECTIONS:-1024}
+#      - PGPORT=${R2R_POSTGRES_PORT:-${POSTGRES_PORT}}
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
+#    networks:
+#      - fuse-network
+#    ports:
+#      - "${R2R_POSTGRES_PORT:-${POSTGRES_PORT}}:${R2R_POSTGRES_PORT:-${POSTGRES_PORT}}"
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U ${R2R_POSTGRES_USER:-postgres}"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#    restart: on-failure
+#    command: >
+#      postgres
+#      -c max_connections=${R2R_POSTGRES_MAX_CONNECTIONS:-1024}
 
-  hatchet-postgres:
-    image: postgres:latest
-    environment:
-      POSTGRES_DB: ${HATCHET_POSTGRES_DBNAME:-hatchet}
-      POSTGRES_USER: ${HATCHET_POSTGRES_USER:-hatchet_user}
-      POSTGRES_PASSWORD: ${HATCHET_POSTGRES_PASSWORD:-hatchet_password}
-    volumes:
-      - hatchet_postgres_data:/var/lib/postgresql/data
-    networks:
-      - fuse-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${HATCHET_POSTGRES_USER:-hatchet_user} -d ${HATCHET_POSTGRES_DBNAME:-hatchet}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+#  ${POSTGRES_HOST}:
+#    image: postgres:latest
+#    environment:
+#      POSTGRES_DB: ${HATCHET_POSTGRES_DBNAME:-hatchet}
+#      POSTGRES_USER: ${HATCHET_POSTGRES_USER:-hatchet_user}
+#      POSTGRES_PASSWORD: ${HATCHET_POSTGRES_PASSWORD:-hatchet_password}
+#    volumes:
+#      - hatchet_postgres_data:/var/lib/postgresql/data
+#    networks:
+#      - fuse-network
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U ${HATCHET_POSTGRES_USER:-hatchet_user} -d ${HATCHET_POSTGRES_DBNAME:-hatchet}"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
 
 
   hatchet-rabbitmq:
     image: "rabbitmq:3-management"
     hostname: "hatchet-rabbitmq"
     ports:
-      - "${FUSE_RABBITMQ_PORT:-5673}:5672"
-      - "${FUSE_RABBITMQ_MGMT_PORT:-15673}:15672"
+      - "${R2R_RABBITMQ_PORT:-5673}:5672"
+      - "${R2R_RABBITMQ_MGMT_PORT:-15673}:15672"
     environment:
       RABBITMQ_DEFAULT_USER: "user"
       RABBITMQ_DEFAULT_PASS: "password"
@@ -91,26 +136,27 @@ services:
       sh -c "
         set -e
         echo 'Waiting for PostgreSQL to be ready...'
-        while ! pg_isready -h hatchet-postgres -p 5432 -U ${HATCHET_POSTGRES_USER:-hatchet_user}; do
+        while ! pg_isready -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${HATCHET_POSTGRES_USER:-hatchet_user}; do
+          echo '${POSTGRES_HOST}:${POSTGRES_PORT} User: ${HATCHET_POSTGRES_USER}'
           sleep 1
         done
         echo 'PostgreSQL is ready, checking if database exists...'
-        if ! PGPASSWORD=${HATCHET_POSTGRES_PASSWORD:-hatchet_password} psql -h hatchet-postgres -p 5432 -U ${HATCHET_POSTGRES_USER:-hatchet_user} -lqt | grep -qw ${HATCHET_POSTGRES_DBNAME:-hatchet}; then
+        if ! PGPASSWORD=${HATCHET_POSTGRES_PASSWORD:-hatchet_password} psql -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${HATCHET_POSTGRES_USER:-hatchet_user} -lqt | grep -qw ${HATCHET_POSTGRES_DBNAME:-hatchet}; then
           echo 'Database does not exist, creating it...'
-          PGPASSWORD=${HATCHET_POSTGRES_PASSWORD:-hatchet_password} createdb -h hatchet-postgres -p 5432 -U ${HATCHET_POSTGRES_USER:-hatchet_user} -w ${HATCHET_POSTGRES_DBNAME:-hatchet}
+          PGPASSWORD=${HATCHET_POSTGRES_PASSWORD:-hatchet_password} createdb -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${HATCHET_POSTGRES_USER:-hatchet_user} -w ${HATCHET_POSTGRES_DBNAME:-hatchet}
         else
           echo 'Database already exists, skipping creation.'
         fi
       "
     environment:
-      DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
+      DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@${POSTGRES_HOST}:${POSTGRES_PORT}/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
     networks:
       - fuse-network
 
   hatchet-migration:
     image: ghcr.io/hatchet-dev/hatchet/hatchet-migrate:latest
     environment:
-      DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
+      DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@${POSTGRES_HOST}:${POSTGRES_PORT}/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
     depends_on:
       hatchet-create-db:
         condition: service_completed_successfully
@@ -121,20 +167,20 @@ services:
     image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:latest
     command: /hatchet/hatchet-admin quickstart --skip certs --generated-config-dir /hatchet/config --overwrite=false
     environment:
-      DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
+      DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@${POSTGRES_HOST}:${POSTGRES_PORT}/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
 
       HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH: "${HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH:-134217728}"
       HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH: "${HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH:-134217728}"
 
-      DATABASE_POSTGRES_PORT: "5432"
-      DATABASE_POSTGRES_HOST: hatchet-postgres
+      DATABASE_POSTGRES_PORT: "${POSTGRES_PORT}"
+      DATABASE_POSTGRES_HOST: ${POSTGRES_HOST}
       DATABASE_POSTGRES_USERNAME: "${HATCHET_POSTGRES_USER:-hatchet_user}"
       DATABASE_POSTGRES_PASSWORD: "${HATCHET_POSTGRES_PASSWORD:-hatchet_password}"
       HATCHET_DATABASE_POSTGRES_DB_NAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
 
       SERVER_TASKQUEUE_RABBITMQ_URL: amqp://user:password@hatchet-rabbitmq:5672/
-      SERVER_AUTH_COOKIE_DOMAIN: "http://host.docker.internal:${FUSE_HATCHET_DASHBOARD_PORT:-7274}"
-      SERVER_URL: "http://host.docker.internal:${FUSE_HATCHET_DASHBOARD_PORT:-7274}"
+      SERVER_AUTH_COOKIE_DOMAIN: "http://host.docker.internal:${R2R_HATCHET_DASHBOARD_PORT:-7274}"
+      SERVER_URL: "http://host.docker.internal:${R2R_HATCHET_DASHBOARD_PORT:-7274}"
       SERVER_AUTH_COOKIE_INSECURE: "t"
       SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
       SERVER_GRPC_INSECURE: "t"
@@ -159,9 +205,9 @@ services:
       hatchet-setup-config:
         condition: service_completed_successfully
     ports:
-      - "${FUSE_HATCHET_ENGINE_PORT:-7077}:7077"
+      - "${R2R_HATCHET_ENGINE_PORT:-7077}:7077"
     environment:
-      DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
+      DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@${POSTGRES_HOST}:${POSTGRES_PORT}/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
       SERVER_GRPC_BROADCAST_ADDRESS: "hatchet-engine:7077"
       SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
       SERVER_GRPC_PORT: "7077"
@@ -186,20 +232,20 @@ services:
       hatchet-setup-config:
         condition: service_completed_successfully
     environment:
-      DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
+      DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@${POSTGRES_HOST}:${POSTGRES_PORT}/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
     volumes:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
     networks:
       - fuse-network
     ports:
-      - "${FUSE_HATCHET_DASHBOARD_PORT:-7274}:80"
+      - "${R2R_HATCHET_DASHBOARD_PORT:-7274}:80"
 
   setup-token:
     image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:latest
     command: >
       sh -c "
-        set -e
+        set -xe
         echo 'Starting token creation process...'
 
         # Attempt to create token and capture both stdout and stderr
@@ -259,7 +305,7 @@ services:
         condition: service_completed_successfully
 
   unstructured:
-    image: ${UNSTRUCTURED_IMAGE:-meltingrock/fuse/unst-prod}
+    image: ${UNSTRUCTURED_IMAGE:-meltingrock/ask-api-unstructured:latest}
     networks:
       - fuse-network
     healthcheck:
@@ -269,9 +315,9 @@ services:
       retries: 5
 
   graph_clustering:
-    image: ${GRAPH_CLUSTERING_IMAGE:-meltingrock/fuse/cluster-prod}
+    image: ${GRAPH_CLUSTERING_IMAGE:-meltingrock/ask-api-clustering:latest}
     ports:
-      - "${FUSE_GRAPH_CLUSTERING_PORT:-7276}:7276"
+      - "${R2R_GRAPH_CLUSTERING_PORT:-7276}:7276"
     networks:
       - fuse-network
     healthcheck:
@@ -280,36 +326,35 @@ services:
       timeout: 5s
       retries: 5
 
-  fuse:
-    image: ${FUSE_IMAGE:-meltingrock/ask-api-fuse:latest}
+  ask-api-fuse:
+    image: ${R2R_IMAGE:-meltingrock/ask-api-fuse:latest}
     build:
-      context: .
+      context: ../
       args:
-        PORT: ${FUSE_PORT:-7272}
-        FUSE_PORT: ${FUSE_PORT:-7272}
-        HOST: ${FUSE_HOST:-0.0.0.0}
-        FUSE_HOST: ${FUSE_HOST:-0.0.0.0}
+        PORT: ${R2R_PORT:-7272}
+        R2R_PORT: ${R2R_PORT:-7272}
+        HOST: ${R2R_HOST:-0.0.0.0}
+        R2R_HOST: ${R2R_HOST:-0.0.0.0}
     ports:
-      - "${FUSE_PORT:-7272}:${FUSE_PORT:-7272}"
+      - "${R2R_PORT:-7272}:${R2R_PORT:-7272}"
     environment:
       - PYTHONUNBUFFERED=1
-      - FUSE_PORT=${FUSE_PORT:-7272}
-      - FUSE_HOST=${FUSE_HOST:-0.0.0.0}
+      - R2R_PORT=${R2R_PORT:-7272}
+      - R2R_HOST=${R2R_HOST:-0.0.0.0}
 
-      # FUSE
-      - FUSE_CONFIG_NAME=${FUSE_CONFIG_NAME:-}
-      - FUSE_CONFIG_PATH=${FUSE_CONFIG_PATH:-}
-      - FUSE_PROJECT_NAME=${FUSE_PROJECT_NAME:-fuse_default}
-      - FUSE_SECRET_KEY=${FUSE_SECRET_KEY:-}
+      # R2R
+      - R2R_CONFIG_NAME=${R2R_CONFIG_NAME:-}
+      - R2R_CONFIG_PATH=${R2R_CONFIG_PATH:-}
+      - R2R_PROJECT_NAME=${R2R_PROJECT_NAME:-fuse_default}
 
       # Postgres
-      - FUSE_POSTGRES_USER=${FUSE_POSTGRES_USER:-postgres}
-      - FUSE_POSTGRES_PASSWORD=${FUSE_POSTGRES_PASSWORD:-postgres}
-      - FUSE_POSTGRES_HOST=${FUSE_POSTGRES_HOST:-postgres}
-      - FUSE_POSTGRES_PORT=${FUSE_POSTGRES_PORT:-5432}
-      - FUSE_POSTGRES_DBNAME=${FUSE_POSTGRES_DBNAME:-postgres}
-      - FUSE_POSTGRES_MAX_CONNECTIONS=${FUSE_POSTGRES_MAX_CONNECTIONS:-1024}
-      - FUSE_POSTGRES_STATEMENT_CACHE_SIZE=${FUSE_POSTGRES_STATEMENT_CACHE_SIZE:-100}
+      - R2R_POSTGRES_USER=${R2R_POSTGRES_USER:-postgres}
+      - R2R_POSTGRES_PASSWORD=${R2R_POSTGRES_PASSWORD:-postgres}
+      - R2R_POSTGRES_HOST=${R2R_POSTGRES_HOST:-postgres}
+      - R2R_POSTGRES_PORT=${R2R_POSTGRES_PORT:-${POSTGRES_PORT}}
+      - R2R_POSTGRES_DBNAME=${R2R_POSTGRES_DBNAME:-postgres}
+      - R2R_POSTGRES_MAX_CONNECTIONS=${R2R_POSTGRES_MAX_CONNECTIONS:-1024}
+      - R2R_POSTGRES_STATEMENT_CACHE_SIZE=${R2R_POSTGRES_STATEMENT_CACHE_SIZE:-100}
 
       # OpenAI
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
@@ -328,9 +373,6 @@ services:
       - VERTEX_PROJECT=${VERTEX_PROJECT:-}
       - VERTEX_LOCATION=${VERTEX_LOCATION:-}
 
-      # Google Gemini
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-
       # AWS Bedrock
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
@@ -347,9 +389,6 @@ services:
 
       # Ollama
       - OLLAMA_API_BASE=${OLLAMA_API_BASE:-http://host.docker.internal:11434}
-
-      # LM Studio
-      - LM_STUDIO_API_BASE=${LM_STUDIO_API_BASE:-http://host.docker.internal:1234}
 
       # Huggingface
       - HUGGINGFACE_API_BASE=${HUGGINGFACE_API_BASE:-http://host.docker.internal:8080}
@@ -374,18 +413,18 @@ services:
         if [ -z "$${HATCHET_CLIENT_TOKEN}" ]; then
           export HATCHET_CLIENT_TOKEN=$$(cat /hatchet_api_key/api_key.txt)
         fi
-        exec uvicorn core.main.app_entry:app --host $${FUSE_HOST} --port $${FUSE_PORT}
+        exec uvicorn core.main.app_entry:app --host $${R2R_HOST} --port $${R2R_PORT}
       '
     networks:
       - fuse-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${FUSE_PORT:-7272}/v3/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${R2R_PORT:-7272}/v3/health"]
       interval: 6s
       timeout: 5s
       retries: 5
     restart: on-failure
     volumes:
-      - ${FUSE_CONFIG_PATH:-/}:${FUSE_CONFIG_PATH:-/app/config}
+      - ${R2R_CONFIG_PATH:-/}:${R2R_CONFIG_PATH:-/app/config}
       - hatchet_api_key:/hatchet_api_key:ro
     extra_hosts:
       - host.docker.internal:host-gateway
@@ -394,15 +433,13 @@ services:
         condition: service_completed_successfully
       unstructured:
         condition: service_healthy
-      graph_clustering:
-        condition: service_healthy
 
   fuse-dashboard:
-    image: emrgntcmplxty/fuse-dashboard:latest
+    image: emrgntcmplxty/r2r-dashboard:latest
     environment:
-      - NEXT_PUBLIC_FUSE_DEPLOYMENT_URL=${FUSE_DEPLOYMENT_URL:-http://localhost:7272}
-      - NEXT_PUBLIC_HATCHET_DASHBOARD_URL=${HATCHET_DASHBOARD_URL:-http://localhost:${FUSE_HATCHET_DASHBOARD_PORT:-7274}}
+      - NEXT_PUBLIC_R2R_DEPLOYMENT_URL=${R2R_DEPLOYMENT_URL:-http://localhost:7272}
+      - NEXT_PUBLIC_HATCHET_DASHBOARD_URL=${HATCHET_DASHBOARD_URL:-http://localhost:${R2R_HATCHET_DASHBOARD_PORT:-7274}}
     networks:
       - fuse-network
     ports:
-      - "${FUSE_DASHBOARD_PORT:-7273}:3000"
+      - "${R2R_DASHBOARD_PORT:-7273}:3000"
