@@ -535,7 +535,7 @@ class DocumentsRouter(BaseRouterV3):
                 file_data["content_type"],
             )
 
-            self.services.ingestion.ingest_file_ingress(
+            await self.services.ingestion.ingest_file_ingress(
                 file_data=workflow_input["file_data"],
                 user=auth_user,
                 document_id=workflow_input["document_id"],
