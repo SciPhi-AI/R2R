@@ -156,7 +156,7 @@ async def serve(
 
     if config_name in ["local_llm", "full_local_llm"]:
         click.secho(
-            "WARNING: The `local_llm` and `full_local_llm` configurations are deprecated and will be removed in a future release. Please use `ollama`, `full_ollama`, `lm_sudio`, or `full_lm_studio` as your configruation file instead.",
+            "WARNING: The `local_llm` and `full_local_llm` configurations are deprecated and will be removed in a future release. Please use `ollama`, `full_ollama`, `lm_sudio`, or `full_lm_studio` as your configuration file instead.",
             fg="yellow",
         )
 
