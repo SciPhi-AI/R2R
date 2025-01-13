@@ -1,5 +1,5 @@
 name: 'Setup Docker'
-description: 'Sets up Docker for running R2R'
+description: 'Sets up Docker for running FUSE'
 runs:
   using: "composite"
   steps:

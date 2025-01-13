@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY_BASE: ragtoriches
+  REGISTRY_BASE: meltingrock
 
 jobs:
   build:

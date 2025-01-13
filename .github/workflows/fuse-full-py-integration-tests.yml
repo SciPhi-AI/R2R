@@ -1,41 +1,20 @@
-name: R2R Light Python Integration Test (ubuntu)
+name: FUSE Full Python Integration Test (ubuntu)
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'py/**'
-      - '.github/workflows/**'
-      - 'tests/**'
-  pull_request:
-    branches:
-      - dev
-      - dev-minor
-      - main
-    paths:
-      - 'py/**'
-      - '.github/workflows/**'
-      - 'tests/**'
   workflow_dispatch:
 
 jobs:
   integration-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     env:
+      TELEMETRY_ENABLED: 'false'
+      FUSE_PROJECT_NAME: fuse_default
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
       AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
       AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
-      TELEMETRY_ENABLED: 'false'
-      R2R_POSTGRES_HOST: localhost
-      R2R_POSTGRES_DBNAME: postgres
-      R2R_POSTGRES_PORT: '5432'
-      R2R_POSTGRES_PASSWORD: postgres
-      R2R_POSTGRES_USER: postgres
-      R2R_PROJECT_NAME: r2r_default
       PYTHONUNBUFFERED: '1'
       PYTEST_ADDOPTS: '--color=yes'
 
@@ -45,32 +24,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Poppler
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y poppler-utils
-
       - name: Set up Python and install dependencies
-        uses: ./.github/actions/setup-python-light
+        uses: ./.github/actions/setup-python-full
         with:
           os: ubuntu-latest
           python-version: '3.12'
           poetry-version: '1.7.1'
-          r2r-version: 'latest'
+          fuse-version: 'latest'
 
-      - name: Setup and start PostgreSQL
-        uses: ./.github/actions/setup-postgres-ext
+      - name: Setup and start Docker
+        uses: ./.github/actions/setup-docker
+        id: docker-setup
+
+      - name: Login Docker
+        uses: ./.github/actions/login-docker
         with:
-          os: ubuntu-latest
+          docker_username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
+          docker_password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
 
-      - name: Verify PostgreSQL and Vector Extension
-        run: |
-          pg_isready -h localhost -p 5432
-          sudo -u postgres psql -c "\dx vector;"
-
-      - name: Start R2R Light server
-        uses: ./.github/actions/start-r2r-light
-        id: start-server
+      - name: Start FUSE Full server
+        uses: ./.github/actions/start-fuse-full
 
       - name: Wait for server to be ready
         run: |
@@ -85,7 +58,7 @@ jobs:
             timeout=$((timeout - 5))
           done
 
-      - name: Run R2R Light Python Integration Test
+      - name: Run FUSE Full Python Integration Test
         run: |
           cd py && poetry run pytest tests/unit \
             --verbose \
@@ -93,7 +66,7 @@ jobs:
             --log-cli-level=INFO \
             --junit-xml=test-results/junit.xml \
             --html=test-results/report.html
-      - name: Run R2R Full Python Integration Test
+      - name: Run FUSE Full Python Integration Test
         run: |
           cd py && poetry run pytest tests/integration \
             --verbose \
@@ -116,3 +89,14 @@ jobs:
         run: |
           echo "::error::Integration tests failed. Check the test results artifact for details."
           exit 1
+
+    services:
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5

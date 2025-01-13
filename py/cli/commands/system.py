@@ -174,8 +174,8 @@ async def serve(
     if not image and docker:
         fuse_version = get_version("fuse")
 
-        version_specific_image = f"ragtoriches/{image_env}:{fuse_version}"
-        latest_image = f"ragtoriches/{image_env}:latest"
+        version_specific_image = f"meltingrock/{image_env}:{fuse_version}"
+        latest_image = f"meltingrock/{image_env}:latest"
 
         def image_exists(img):
             try:
@@ -199,7 +199,7 @@ async def serve(
             image = latest_image
         else:
             click.echo(
-                f"Neither {version_specific_image} nor {latest_image} found in remote registry. Confirm the sanity of your output for `docker manifest inspect ragtoriches/{version_specific_image}` and  `docker manifest inspect ragtoriches/{latest_image}`."
+                f"Neither {version_specific_image} nor {latest_image} found in remote registry. Confirm the sanity of your output for `docker manifest inspect meltingrock/{version_specific_image}` and  `docker manifest inspect meltingrock/{latest_image}`."
             )
             click.echo(
                 "Please pull the required image or build it using the --build flag."

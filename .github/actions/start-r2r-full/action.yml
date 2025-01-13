@@ -1,15 +1,15 @@
-name: 'Start R2R Server'
-description: 'Starts the R2R server'
+name: 'Start FUSE Server'
+description: 'Starts the FUSE server'
 runs:
   using: "composite"
   steps:
   - name: Inspect Docker image manifests
     shell: bash
     run: |
-      docker manifest inspect ragtoriches/prod:latest
+      docker manifest inspect meltingrock/prod:latest
 
-  - name: Start R2R Server
+  - name: Start FUSE Server
     shell: bash
     run: |
       cd py
-      poetry run r2r serve --docker --full --config-name=full_azure --build --image=r2r-local
+      poetry run fuse serve --docker --full --config-name=full_azure --build --image=fuse-local

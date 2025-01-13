@@ -1,5 +1,5 @@
-name: 'Setup Python for R2R Full'
-description: 'Sets up Python and installs R2R dependencies for full installation'
+name: 'Setup Python for FUSE Full'
+description: 'Sets up Python and installs FUSE dependencies for full installation'
 
 inputs:
   os:
@@ -13,8 +13,8 @@ inputs:
     description: 'Poetry version to install'
     required: false
     default: '1.7.1'
-  r2r-version:
-    description: 'R2R CLI & SDK version to install'
+  fuse-version:
+    description: 'FUSE CLI & SDK version to install'
     required: false
     default: 'latest'
 
@@ -27,13 +27,13 @@ runs:
         python-version: ${{ inputs.python-version }}
         cache: 'pip'
 
-    - name: Install R2R CLI & Python SDK
+    - name: Install FUSE CLI & Python SDK
       shell: bash
       run: |
-        if [ "${{ inputs.r2r-version }}" = "latest" ]; then
-          pip install r2r
+        if [ "${{ inputs.fuse-version }}" = "latest" ]; then
+          pip install fuse
         else
-          pip install r2r==${{ inputs.r2r-version }}
+          pip install fuse==${{ inputs.fuse-version }}
         fi
 
     - name: Install Poetry
@@ -76,5 +76,5 @@ runs:
     - name: Verify installation
       shell: bash
       run: |
-        python -c "import r2r; print(f'R2R version: {r2r.__version__}')"
+        python -c "import fuse; print(f'FUSE version: {fuse.__version__}')"
         poetry --version

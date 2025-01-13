@@ -1,4 +1,4 @@
-name: 'Setup Python for R2R Light'
+name: 'Setup Python for FUSE Light'
 description: 'Sets up Python environment and installs dependencies using Poetry'
 
 inputs:

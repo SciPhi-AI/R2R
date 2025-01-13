@@ -58,11 +58,11 @@ echo "=== Step 1: Replacing 'R2R' -> 'FUSE' and 'r2r' -> 'fuse' in file contents
 if [[ "$(uname -s)" == "Darwin" ]]; then
   # macOS (BSD sed requires a backup extension with -i)
   find "$TARGET_DIR" -type f -not -path '*/.git/*' \
-    -exec sed -i '' 's/R2R/FUSE/g; s/r2r/fuse/g' {} +
+    -exec sed -i '' 's/R2R/FUSE/g; s/r2r/fuse/g; s/ragtoriches/meltingrock/g' {} +
 else
   # Linux (GNU sed typically)
   find "$TARGET_DIR" -type f -not -path '*/.git/*' \
-    -exec sed -i 's/R2R/FUSE/g; s/r2r/fuse/g' {} +
+    -exec sed -i 's/R2R/FUSE/g; s/r2r/fuse/g; s/ragtoriches/meltingrock/g' {} +
 fi
 
 echo
@@ -88,5 +88,7 @@ find "$TARGET_DIR" -type f -not -path '*/.git/*' -name "*r2r*" \
   ' _ {} +
 
 echo
+
+
 echo "All done! Please review changes (e.g., 'git diff' if this is a Git repo) to ensure they look correct."
 

@@ -37,7 +37,7 @@ services:
       -c max_connections=${FUSE_POSTGRES_MAX_CONNECTIONS:-1024}
 
   fuse:
-    image: ${FUSE_IMAGE:-ragtoriches/prod:latest}
+    image: ${FUSE_IMAGE:-meltingrock/prod:latest}
     build:
       context: .
       args:

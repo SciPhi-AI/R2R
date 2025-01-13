@@ -1,12 +1,12 @@
-name: 'Start R2R Server'
-description: 'Starts the R2R server'
+name: 'Start FUSE Server'
+description: 'Starts the FUSE server'
 runs:
   using: "composite"
   steps:
-    - name: Start R2R server
+    - name: Start FUSE server
       shell: bash
       run: |
         cd py
-        poetry run r2r serve --config-name=r2r_azure_with_test_limits &
+        poetry run fuse serve --config-name=fuse_azure_with_test_limits &
         echo "Waiting for services to start..."
         sleep 30

@@ -1,4 +1,4 @@
-name: R2R JS SDK Integration CI
+name: FUSE JS SDK Integration CI
 
 on:
   push:

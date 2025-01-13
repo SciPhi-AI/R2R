@@ -1,4 +1,4 @@
-name: R2R JS SDK Integration Tests
+name: FUSE JS SDK Integration Tests
 
 on:
   push:
@@ -18,8 +18,8 @@ jobs:
         uses: ./.github/actions/setup-postgres-ext
         with:
           os: ubuntu-latest
-      - name: Start R2R Light server
-        uses: ./.github/actions/start-r2r-light
+      - name: Start FUSE Light server
+        uses: ./.github/actions/start-fuse-light
       - name: Use Node.js
         uses: actions/setup-node@v2
         with:
@@ -32,7 +32,7 @@ jobs:
       - name: Install JS SDK dependencies
         working-directory: ./js/sdk
         run: pnpm install
-      - name: Check if R2R server is running
+      - name: Check if FUSE server is running
         run: |
           curl http://localhost:7272/v2/health || echo "Server not responding"
 
@@ -60,12 +60,12 @@ jobs:
       AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
       AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
       TELEMETRY_ENABLED: 'false'
-      R2R_POSTGRES_HOST: localhost
-      R2R_POSTGRES_DBNAME: postgres
-      R2R_POSTGRES_PORT: '5432'
-      R2R_POSTGRES_PASSWORD: postgres
-      R2R_POSTGRES_USER: postgres
-      R2R_PROJECT_NAME: r2r_default
+      FUSE_POSTGRES_HOST: localhost
+      FUSE_POSTGRES_DBNAME: postgres
+      FUSE_POSTGRES_PORT: '5432'
+      FUSE_POSTGRES_PASSWORD: postgres
+      FUSE_POSTGRES_USER: postgres
+      FUSE_PROJECT_NAME: fuse_default
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python and install dependencies
@@ -76,8 +76,8 @@ jobs:
         uses: ./.github/actions/setup-postgres-ext
         with:
           os: ubuntu-latest
-      - name: Start R2R Light server
-        uses: ./.github/actions/start-r2r-light
+      - name: Start FUSE Light server
+        uses: ./.github/actions/start-fuse-light
       - name: Use Node.js
         uses: actions/setup-node@v2
         with:
