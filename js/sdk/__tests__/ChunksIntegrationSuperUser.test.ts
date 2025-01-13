@@ -31,6 +31,21 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     });
   });
 
+  test("Create a document from chunks with an id", async () => {
+    const response = await client.documents.create({
+      id: "1fb70f3b-37eb-4325-8c83-694a03144a67",
+      chunks: ["Hallo, Welt!"],
+    });
+
+    expect(response.results.documentId).toBe(
+      "1fb70f3b-37eb-4325-8c83-694a03144a67",
+    );
+    expect(response.results.message).toBe(
+      "Document created and ingested successfully.",
+    );
+    expect(response.results.taskId).toBeNull();
+  });
+
   test("Retrieve document's chunks", async () => {
     const response = await client.documents.listChunks({
       id: documentId,
@@ -93,6 +108,13 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   test("Delete a chunk", async () => {
     const response = await client.chunks.delete({
       id: chunkId,
+    });
+    expect(response.results.success).toBe(true);
+  });
+
+  test("Delete a document", async () => {
+    const response = await client.documents.delete({
+      id: "1fb70f3b-37eb-4325-8c83-694a03144a67",
     });
     expect(response.results.success).toBe(true);
   });
