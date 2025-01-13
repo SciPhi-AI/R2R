@@ -284,6 +284,7 @@ services:
     image: ${FUSE_IMAGE:-meltingrock/prod:latest}
     build:
       context: .
+      dockerfile: Dockerfile_fuse
       args:
         PORT: ${FUSE_PORT:-7272}
         FUSE_PORT: ${FUSE_PORT:-7272}
