@@ -42,7 +42,7 @@ metadata:
   name: r2r
   namespace: r2r-dev
 spec:
-  replicas: 2
+  replicas: 4
   selector:
     matchLabels:
       app: r2r
