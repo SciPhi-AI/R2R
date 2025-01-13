@@ -15,7 +15,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN mkdir -p /app/py
 WORKDIR /app/py
-COPY pyproject.toml /app/py/pyproject.toml
+COPY py/pyproject.toml /app/py/pyproject.toml
 
 # Install dependencies
 RUN poetry config virtualenvs.create false \
@@ -49,13 +49,13 @@ ARG FUSE_HOST=0.0.0.0
 ENV FUSE_PORT=$FUSE_PORT FUSE_HOST=$FUSE_HOST
 EXPOSE $FUSE_PORT
 
-COPY . /app
+COPY py /app
 # Copy the application and config
-COPY core /app/core
-COPY fuse /app/fuse
-COPY shared /app/shared
-COPY fuse/fuse.toml /app/fuse.toml
-COPY pyproject.toml /app/pyproject.toml
+COPY py/core /app/core
+COPY py/fuse /app/fuse
+COPY py/shared /app/shared
+COPY py/fuse/fuse.toml /app/fuse.toml
+COPY py/pyproject.toml /app/pyproject.toml
 
 # Run the application
 CMD ["sh", "-c", "uvicorn core.main.app_entry:app --host $FUSE_HOST --port $FUSE_PORT"]
