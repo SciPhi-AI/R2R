@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import math
+import re
 import time
 import xml.etree.ElementTree as ET
 from typing import Any, AsyncGenerator, Optional
@@ -793,15 +794,57 @@ class GraphService(Service):
                         400,
                     )
 
+                def sanitize_xml(response_str: str) -> str:
+                    """Attempts to sanitize the XML response string by"""
+                    # Strip any markdown
+                    response_str = re.sub(r"```xml|```", "", response_str)
+
+                    # Remove any XML processing instructions or style tags
+                    response_str = re.sub(r"<\?.*?\?>", "", response_str)
+                    response_str = re.sub(
+                        r"<userStyle>.*?</userStyle>", "", response_str
+                    )
+
+                    # Only replace & if it's not already part of an escape sequence
+                    response_str = re.sub(
+                        r"&(?!amp;|quot;|apos;|lt;|gt;)", "&amp;", response_str
+                    )
+
+                    # Remove any root tags since we'll add them in parse_fn
+                    response_str = response_str.replace("<root>", "").replace(
+                        "</root>", ""
+                    )
+
+                    # Find and track all opening/closing tags
+                    opened_tags = []
+                    for match in re.finditer(
+                        r"<(\w+)(?:\s+[^>]*)?>", response_str
+                    ):
+                        tag = match.group(1)
+                        if tag != "root":  # Don't track root tag
+                            opened_tags.append(tag)
+
+                    for match in re.finditer(r"</(\w+)>", response_str):
+                        tag = match.group(1)
+                        if tag in opened_tags:
+                            opened_tags.remove(tag)
+
+                    # Close any unclosed tags
+                    for tag in reversed(opened_tags):
+                        response_str += f"</{tag}>"
+
+                    return response_str.strip()
+
                 async def parse_fn(response_str: str) -> Any:
                     # Wrap the response in a root element to ensure it is valid XML
-                    wrapped_xml = f"<root>{response_str}</root>"
+                    cleaned_xml = sanitize_xml(response_str)
+                    wrapped_xml = f"<root>{cleaned_xml}</root>"
 
                     try:
                         root = ET.fromstring(wrapped_xml)
                     except ET.ParseError as e:
                         raise R2RException(
-                            f"Failed to parse XML response: {e}. Response: {response_str}",
+                            f"Failed to parse XML response: {e}. Response: {wrapped_xml}",
                             400,
                         )
 
