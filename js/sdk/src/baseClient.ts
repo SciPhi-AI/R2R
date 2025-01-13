@@ -42,11 +42,22 @@ export abstract class BaseClient {
   protected refreshToken: string | null;
   protected anonymousTelemetry: boolean;
 
-  constructor(baseURL: string, prefix: string = "", anonymousTelemetry = true) {
+  // NEW: declare enableAutoRefresh
+  protected enableAutoRefresh: boolean;
+
+  constructor(
+    baseURL: string,
+    prefix: string = "",
+    anonymousTelemetry = true,
+    enableAutoRefresh = false
+  ) {
     this.baseUrl = `${baseURL}${prefix}`;
     this.accessToken = null;
     this.refreshToken = null;
     this.anonymousTelemetry = anonymousTelemetry;
+
+    // Add this assignment
+    this.enableAutoRefresh = enableAutoRefresh;
 
     this.axiosInstance = axios.create({
       baseURL: this.baseUrl,
@@ -60,7 +71,7 @@ export abstract class BaseClient {
     method: Method,
     endpoint: string,
     options: any = {},
-    version: "v3" = "v3",
+    version: "v3" = "v3"
   ): Promise<T> {
     const url = `/${version}/${endpoint}`;
     const config: AxiosRequestConfig = {
@@ -81,11 +92,13 @@ export abstract class BaseClient {
             if (Array.isArray(value)) {
               return value
                 .map(
-                  (v) => `${encodeURIComponent(key)}=${encodeURIComponent(v)}`,
+                  (v) => `${encodeURIComponent(key)}=${encodeURIComponent(v)}`
                 )
                 .join("&");
             }
-            return `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`;
+            return `${encodeURIComponent(key)}=${encodeURIComponent(
+              String(value)
+            )}`;
           })
           .join("&");
       };
@@ -102,7 +115,9 @@ export abstract class BaseClient {
           config.data = Object.keys(options.data)
             .map(
               (key) =>
-                `${encodeURIComponent(key)}=${encodeURIComponent(options.data[key])}`,
+                `${encodeURIComponent(key)}=${encodeURIComponent(
+                  options.data[key]
+                )}`
             )
             .join("&");
         } else {
@@ -144,7 +159,7 @@ export abstract class BaseClient {
         throw new Error(
           `HTTP error! status: ${response.status}: ${
             ensureCamelCase(errorData).message || "Unknown error"
-          }`,
+          }`
         );
       }
 
