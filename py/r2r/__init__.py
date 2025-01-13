@@ -23,7 +23,7 @@ try:
     __all__ += core.__all__
 except ImportError as e:
     logger.warning(
-        f"Warning: encountered ImportError: `{e}`, likely due to core dependencies not being installed. This will not affect you use of SDK, but use of `serve` method will not be available."
+        f"Warning: encountered ImportError: `{e}`, likely due to core dependencies not being installed. This will not affect your use of SDK, but use of `r2r serve` may not be available."
     )
 
 

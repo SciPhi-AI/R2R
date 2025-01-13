@@ -5,6 +5,49 @@ default_max_documents_per_user = 10_000
 default_max_chunks_per_user = 10_000_000
 default_max_collections_per_user = 5_000
 
+# Set the default max upload size to 2 GB for local testing
+default_max_upload_size = 2147483648  # 2 GB for anything not explicitly listed
+
+  [app.max_upload_size_by_type]
+    # Common text-based formats
+    txt   = 2147483648  # 2 GB
+    md    = 2147483648
+    tsv   = 2147483648
+    csv   = 2147483648
+    xml   = 2147483648
+    html  = 2147483648
+
+    # Office docs
+    doc   = 2147483648
+    docx  = 2147483648
+    ppt   = 2147483648
+    pptx  = 2147483648
+    xls   = 2147483648
+    xlsx  = 2147483648
+    odt   = 2147483648
+
+    # PDFs
+    pdf   = 2147483648
+
+    # E-mail
+    eml   = 2147483648
+    msg   = 2147483648
+    p7s   = 2147483648
+
+    # Images
+    bmp   = 2147483648
+    heic  = 2147483648
+    jpeg  = 2147483648
+    jpg   = 2147483648
+    png   = 2147483648
+    tiff  = 2147483648
+
+    # E-books and other formats
+    epub  = 2147483648
+    rtf   = 2147483648
+    rst   = 2147483648
+    org   = 2147483648
+
 [agent]
 system_instruction_name = "rag_agent"
 # tool_names = ["local_search", "web_search"] # uncomment to enable web search
@@ -15,7 +58,7 @@ tool_names = ["local_search"]
 
 [auth]
 provider = "r2r"
-access_token_lifetime_in_minutes = 60
+access_token_lifetime_in_minutes = 60000 # set a very high default value, for easier testing
 refresh_token_lifetime_in_days = 7
 require_authentication = false
 require_email_verification = false
