@@ -35,3 +35,11 @@ go.work
 go.work.sum
 
 .vscode/
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+LICENSE.md
+llms.txt
+MANIFEST.md
+README.md
+js/
+py/README.md
