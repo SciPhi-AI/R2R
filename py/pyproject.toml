@@ -3,16 +3,16 @@ requires = ["poetry-core", "setuptools", "wheel"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "r2r"
+name = "fuse"
 readme = "README.md"
 version = "3.3.27"
 
-description = "SciPhi R2R"
+description = "SciPhi FUSE"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
 license = "MIT"
 
 packages = [
-    { include = "r2r", from = "." },
+    { include = "fuse", from = "." },
     { include = "sdk", from = "." },
     { include = "shared", from = "." },
     { include = "core", from = "." },
@@ -21,8 +21,8 @@ packages = [
 include = [
     { path = "migrations/**/*", format = ["sdist", "wheel"] },
     { path = "pyproject.toml", format = ["sdist", "wheel"] },
-    { path = "r2r/**/*.yaml", format = ["sdist", "wheel"] },
-    { path = "r2r/**/*.toml", format = ["sdist", "wheel"] }
+    { path = "fuse/**/*.yaml", format = ["sdist", "wheel"] },
+    { path = "fuse/**/*.toml", format = ["sdist", "wheel"] }
 ]
 
 [tool.poetry.dependencies]
@@ -78,7 +78,7 @@ unstructured-client = { version = "0.25.5", optional = true }
 uvicorn = { version = "^0.27.0.post1", optional = true }
 vecs = { version = "^0.4.0", optional = true }
 
-# R2R Ingestion
+# FUSE Ingestion
 aioshutil = { version = "^1.5", optional = true }
 beautifulsoup4 = { version = "^4.12.3", optional = true }
 bs4 = { version = "^0.0.2", optional = true }
@@ -208,11 +208,11 @@ module = "yaml"
 ignore_missing_imports = true
 
 [tool.poetry.scripts]
-r2r = "cli.main:main"
+fuse = "cli.main:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-addopts = "--cov=r2r --cov-report=term-missing --cov-report=xml --cache-clear"
+addopts = "--cov=fuse --cov-report=term-missing --cov-report=xml --cache-clear"
 testpaths = [
     "tests",
 ]

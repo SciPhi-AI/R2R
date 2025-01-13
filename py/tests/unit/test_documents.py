@@ -9,7 +9,7 @@ from core.base import (
     DocumentType,
     IngestionStatus,
     KGExtractionStatus,
-    R2RException,
+    FUSEException,
     SearchSettings,
 )
 

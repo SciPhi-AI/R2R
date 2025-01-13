@@ -5,7 +5,7 @@ from typing import Optional
 import psutil
 from fastapi import Depends, Query
 
-from core.base import R2RException
+from core.base import FUSEException
 from core.base.api.models import (
     GenericMessageResponse,
     WrappedGenericMessageResponse,
@@ -14,15 +14,15 @@ from core.base.api.models import (
     WrappedSettingsResponse,
 )
 
-from ...abstractions import R2RProviders, R2RServices
+from ...abstractions import FUSEProviders, FUSEServices
 from .base_router import BaseRouterV3
 
 
 class SystemRouter(BaseRouterV3):
     def __init__(
         self,
-        providers: R2RProviders,
-        services: R2RServices,
+        providers: FUSEProviders,
+        services: FUSEServices,
     ):
         super().__init__(providers, services)
         self.start_time = datetime.now(timezone.utc)
@@ -37,9 +37,9 @@ class SystemRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.system.health()
@@ -50,9 +50,9 @@ class SystemRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.system.health();
@@ -66,7 +66,7 @@ class SystemRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r health
+                            fuse health
                             """
                         ),
                     },
@@ -96,9 +96,9 @@ class SystemRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.system.settings()
@@ -109,9 +109,9 @@ class SystemRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.system.settings();
@@ -125,7 +125,7 @@ class SystemRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r system settings
+                            fuse system settings
                             """
                         ),
                     },
@@ -147,7 +147,7 @@ class SystemRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedSettingsResponse:
             if not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "Only a superuser can call the `system/settings` endpoint.",
                     403,
                 )
@@ -162,9 +162,9 @@ class SystemRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.system.status()
@@ -175,9 +175,9 @@ class SystemRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.system.status();
@@ -191,7 +191,7 @@ class SystemRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r system status
+                            fuse system status
                             """
                         ),
                     },
@@ -213,7 +213,7 @@ class SystemRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedServerStatsResponse:
             if not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "Only an authorized user can call the `system/status` endpoint.",
                     403,
                 )

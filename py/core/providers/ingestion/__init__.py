@@ -1,13 +1,13 @@
 # type: ignore
-from .r2r.base import R2RIngestionConfig, R2RIngestionProvider
+from .fuse.base import FUSEIngestionConfig, FUSEIngestionProvider
 from .unstructured.base import (
     UnstructuredIngestionConfig,
     UnstructuredIngestionProvider,
 )
 
 __all__ = [
-    "R2RIngestionConfig",
-    "R2RIngestionProvider",
+    "FUSEIngestionConfig",
+    "FUSEIngestionProvider",
     "UnstructuredIngestionProvider",
     "UnstructuredIngestionConfig",
 ]

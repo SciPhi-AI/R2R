@@ -14,7 +14,7 @@ class SystemSDK:
 
     async def health(self) -> WrappedGenericMessageResponse:
         """
-        Check the health of the R2R server.
+        Check the health of the FUSE server.
         """
         return await self.client._make_request("GET", "health", version="v3")
 
@@ -50,7 +50,7 @@ class SystemSDK:
 
     async def settings(self) -> WrappedSettingsResponse:
         """
-        Get the configuration settings for the R2R server.
+        Get the configuration settings for the FUSE server.
 
         Returns:
             dict: The server settings.

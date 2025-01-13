@@ -207,7 +207,7 @@ class PostgresConnectionManager(DatabaseConnectionManager):
                 Your database provider does not support statement caching.
 
                 To fix this, either:
-                • Set R2R_POSTGRES_STATEMENT_CACHE_SIZE=0 in your environment
+                • Set FUSE_POSTGRES_STATEMENT_CACHE_SIZE=0 in your environment
                 • Add statement_cache_size = 0 to your database configuration:
 
                     [database.postgres_configuration_settings]

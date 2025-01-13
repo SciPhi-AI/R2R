@@ -15,15 +15,15 @@ from core.base import (
     KGEnrichmentStatus,
     Message,
     Prompt,
-    R2RException,
+    FUSEException,
     RunManager,
     StoreType,
     User,
 )
 from core.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
-from ..config import R2RConfig
+from ..abstractions import FUSEAgents, FUSEPipelines, FUSEPipes, FUSEProviders
+from ..config import FUSEConfig
 from .base import Service
 
 logger = logging.getLogger()
@@ -32,11 +32,11 @@ logger = logging.getLogger()
 class ManagementService(Service):
     def __init__(
         self,
-        config: R2RConfig,
-        providers: R2RProviders,
-        pipes: R2RPipes,
-        pipelines: R2RPipelines,
-        agents: R2RAgents,
+        config: FUSEConfig,
+        providers: FUSEProviders,
+        pipes: FUSEPipes,
+        pipelines: FUSEPipelines,
+        agents: FUSEAgents,
         run_manager: RunManager,
     ):
         super().__init__(
@@ -58,8 +58,8 @@ class ManagementService(Service):
         return {
             "config": config_dict,
             "prompts": prompts,
-            "r2r_project_name": os.environ["R2R_PROJECT_NAME"],
-            # "r2r_version": get_version("r2r"),
+            "fuse_project_name": os.environ["FUSE_PROJECT_NAME"],
+            # "fuse_version": get_version("fuse"),
         }
 
     @telemetry_event("UsersOverview")
@@ -185,14 +185,14 @@ class ManagementService(Service):
                 offset=0, limit=1, filter_document_ids=[doc_id]
             )
             if not documents_overview_response["results"]:
-                raise R2RException(
+                raise FUSEException(
                     status_code=404, message="Document not found"
                 )
 
             document = documents_overview_response["results"][0]
 
             if owner_id and str(document.owner_id) != owner_id:
-                raise R2RException(
+                raise FUSEException(
                     status_code=404,
                     message="Document not found or insufficient permissions",
                 )
@@ -706,7 +706,7 @@ class ManagementService(Service):
             )
             return f"Prompt '{name}' added successfully."  # type: ignore
         except ValueError as e:
-            raise R2RException(status_code=400, message=str(e))
+            raise FUSEException(status_code=400, message=str(e))
 
     @telemetry_event("GetPrompt")
     async def get_cached_prompt(
@@ -726,7 +726,7 @@ class ManagementService(Service):
                 )
             }
         except ValueError as e:
-            raise R2RException(status_code=404, message=str(e))
+            raise FUSEException(status_code=404, message=str(e))
 
     @telemetry_event("GetPrompt")
     async def get_prompt(
@@ -742,7 +742,7 @@ class ManagementService(Service):
                 prompt_override=prompt_override,
             )
         except ValueError as e:
-            raise R2RException(status_code=404, message=str(e))
+            raise FUSEException(status_code=404, message=str(e))
 
     @telemetry_event("GetAllPrompts")
     async def get_all_prompts(self) -> dict[str, Prompt]:
@@ -761,7 +761,7 @@ class ManagementService(Service):
             )
             return f"Prompt '{name}' updated successfully."  # type: ignore
         except ValueError as e:
-            raise R2RException(status_code=404, message=str(e))
+            raise FUSEException(status_code=404, message=str(e))
 
     @telemetry_event("DeletePrompt")
     async def delete_prompt(self, name: str) -> dict:
@@ -769,7 +769,7 @@ class ManagementService(Service):
             await self.providers.database.prompts_handler.delete_prompt(name)
             return {"message": f"Prompt '{name}' deleted successfully."}
         except ValueError as e:
-            raise R2RException(status_code=404, message=str(e))
+            raise FUSEException(status_code=404, message=str(e))
 
     @telemetry_event("GetConversation")
     async def get_conversation(

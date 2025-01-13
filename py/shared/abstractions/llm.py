@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Optional
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from pydantic import BaseModel, Field
 
-from .base import R2RSerializable
+from .base import FUSESerializable
 
 if TYPE_CHECKING:
     from .search import AggregateSearchResult
@@ -30,7 +30,7 @@ class RAGCompletion:
         self.search_results = search_results
 
 
-class GenerationConfig(R2RSerializable):
+class GenerationConfig(FUSESerializable):
     _defaults: ClassVar[dict] = {
         "model": "openai/gpt-4o",
         "temperature": 0.1,
@@ -137,7 +137,7 @@ class MessageType(Enum):
         return self.value
 
 
-class Message(R2RSerializable):
+class Message(FUSESerializable):
     role: MessageType | str
     content: Optional[str] = None
     name: Optional[str] = None

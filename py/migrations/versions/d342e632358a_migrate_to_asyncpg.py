@@ -22,7 +22,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
-project_name = os.getenv("R2R_PROJECT_NAME") or "r2r_default"
+project_name = os.getenv("FUSE_PROJECT_NAME") or "fuse_default"
 
 new_vector_table_name = "vectors"
 old_vector_table_name = project_name

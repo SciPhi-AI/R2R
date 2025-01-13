@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from shared.abstractions.document import DocumentResponse
 from shared.abstractions.llm import Message
 from shared.abstractions.user import User
-from shared.api.models.base import PaginatedR2RResult, R2RResults
+from shared.api.models.base import PaginatedFUSEResult, FUSEResults
 
 
 class PromptResponse(BaseModel):
@@ -47,8 +47,8 @@ class AnalyticsResponse(BaseModel):
 class SettingsResponse(BaseModel):
     config: dict[str, Any]
     prompts: dict[str, Any]
-    r2r_project_name: str
-    # r2r_version: str
+    fuse_project_name: str
+    # fuse_version: str
 
 
 class ChunkResponse(BaseModel):
@@ -115,41 +115,41 @@ class ApiKeyNoPriv(BaseModel):
 
 
 # Chunk Responses
-WrappedChunkResponse = R2RResults[ChunkResponse]
-WrappedChunksResponse = PaginatedR2RResult[list[ChunkResponse]]
+WrappedChunkResponse = FUSEResults[ChunkResponse]
+WrappedChunksResponse = PaginatedFUSEResult[list[ChunkResponse]]
 
 # Collection Responses
-WrappedCollectionResponse = R2RResults[CollectionResponse]
-WrappedCollectionsResponse = PaginatedR2RResult[list[CollectionResponse]]
+WrappedCollectionResponse = FUSEResults[CollectionResponse]
+WrappedCollectionsResponse = PaginatedFUSEResult[list[CollectionResponse]]
 
 
 # Conversation Responses
-WrappedConversationMessagesResponse = R2RResults[list[MessageResponse]]
-WrappedConversationResponse = R2RResults[ConversationResponse]
-WrappedConversationsResponse = PaginatedR2RResult[list[ConversationResponse]]
-WrappedMessageResponse = R2RResults[MessageResponse]
-WrappedMessagesResponse = PaginatedR2RResult[list[MessageResponse]]
+WrappedConversationMessagesResponse = FUSEResults[list[MessageResponse]]
+WrappedConversationResponse = FUSEResults[ConversationResponse]
+WrappedConversationsResponse = PaginatedFUSEResult[list[ConversationResponse]]
+WrappedMessageResponse = FUSEResults[MessageResponse]
+WrappedMessagesResponse = PaginatedFUSEResult[list[MessageResponse]]
 
 # Document Responses
-WrappedDocumentResponse = R2RResults[DocumentResponse]
-WrappedDocumentsResponse = PaginatedR2RResult[list[DocumentResponse]]
+WrappedDocumentResponse = FUSEResults[DocumentResponse]
+WrappedDocumentsResponse = PaginatedFUSEResult[list[DocumentResponse]]
 
 # Prompt Responses
-WrappedPromptResponse = R2RResults[PromptResponse]
-WrappedPromptsResponse = PaginatedR2RResult[list[PromptResponse]]
+WrappedPromptResponse = FUSEResults[PromptResponse]
+WrappedPromptsResponse = PaginatedFUSEResult[list[PromptResponse]]
 
 # System Responses
-WrappedSettingsResponse = R2RResults[SettingsResponse]
-WrappedServerStatsResponse = R2RResults[ServerStats]
+WrappedSettingsResponse = FUSEResults[SettingsResponse]
+WrappedServerStatsResponse = FUSEResults[ServerStats]
 
 # User Responses
-WrappedUserResponse = R2RResults[User]
-WrappedUsersResponse = PaginatedR2RResult[list[User]]
-WrappedAPIKeyResponse = R2RResults[ApiKey]
-WrappedAPIKeysResponse = PaginatedR2RResult[list[ApiKeyNoPriv]]
+WrappedUserResponse = FUSEResults[User]
+WrappedUsersResponse = PaginatedFUSEResult[list[User]]
+WrappedAPIKeyResponse = FUSEResults[ApiKey]
+WrappedAPIKeysResponse = PaginatedFUSEResult[list[ApiKeyNoPriv]]
 
 # TODO: anything below this hasn't been reviewed
-WrappedLogsResponse = R2RResults[list[LogResponse]]
-WrappedAnalyticsResponse = R2RResults[AnalyticsResponse]
-WrappedVerificationResult = R2RResults[VerificationResult]
-WrappedResetDataResult = R2RResults[ResetDataResult]
+WrappedLogsResponse = FUSEResults[list[LogResponse]]
+WrappedAnalyticsResponse = FUSEResults[AnalyticsResponse]
+WrappedVerificationResult = FUSEResults[VerificationResult]
+WrappedResetDataResult = FUSEResults[ResetDataResult]

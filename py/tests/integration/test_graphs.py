@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from r2r import R2RClient, R2RException
+from fuse import FUSEClient, FUSEException
 
 
 @pytest.fixture(scope="session")
@@ -18,7 +18,7 @@ def config():
 @pytest.fixture(scope="session")
 def client(config):
     """Create a client instance and possibly log in as a superuser."""
-    client = R2RClient(config.base_url)
+    client = FUSEClient(config.base_url)
     client.users.login(config.superuser_email, config.superuser_password)
     return client
 
@@ -242,7 +242,7 @@ def test_pull_operation(client, test_collection):
 def test_error_handling(client):
     # Test retrieving a graph with invalid ID
     invalid_id = "not-a-uuid"
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.graphs.retrieve(collection_id=invalid_id)
     # Expecting a 422 or 404 error. Adjust as per your API's expected response.
     assert exc_info.value.status_code in [

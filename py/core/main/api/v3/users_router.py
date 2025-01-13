@@ -15,7 +15,7 @@ from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
 from pydantic import EmailStr
 
-from core.base import R2RException
+from core.base import FUSEException
 from core.base.api.models import (
     GenericBooleanResponse,
     GenericMessageResponse,
@@ -30,14 +30,14 @@ from core.base.api.models import (
 )
 from core.base.providers.database import LimitSettings
 
-from ...abstractions import R2RProviders, R2RServices
+from ...abstractions import FUSEProviders, FUSEServices
 from .base_router import BaseRouterV3
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 class UsersRouter(BaseRouterV3):
-    def __init__(self, providers: R2RProviders, services: R2RServices):
+    def __init__(self, providers: FUSEProviders, services: FUSEServices):
         super().__init__(providers, services)
         self.google_client_id = os.environ.get("GOOGLE_CLIENT_ID")
         self.google_client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
@@ -58,9 +58,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             new_user = client.users.create(
                                 email="jane.doe@example.com",
                                 password="secure_password123"
@@ -71,9 +71,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.create({
@@ -90,7 +90,7 @@ class UsersRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r users create jane.doe@example.com secure_password123
+                            fuse users create jane.doe@example.com secure_password123
                             """
                         ),
                     },
@@ -141,7 +141,7 @@ class UsersRouter(BaseRouterV3):
                 return True
 
             # if not validate_password(password):
-            #     raise R2RException(
+            #     raise FUSEException(
             #         f"Password must be at least 10 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character from '!@#$%^&*'.",
             #         400,
             #     )
@@ -166,9 +166,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = FUSEClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
                             response = client.users.export(
@@ -183,9 +183,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new fuseClient("http://localhost:7272");
 
                             function main() {
                                 await client.users.export({
@@ -241,7 +241,7 @@ class UsersRouter(BaseRouterV3):
             """
 
             if not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     status_code=403,
                     message="Only a superuser can export data.",
                 )
@@ -272,9 +272,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             tokens = client.users.verify_email(
                                 email="jane.doe@example.com",
                                 verification_code="1lklwal!awdclm"
@@ -285,9 +285,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.verifyEmail({
@@ -327,7 +327,7 @@ class UsersRouter(BaseRouterV3):
                 )
             )
             if user and user.is_verified:
-                raise R2RException(
+                raise FUSEException(
                     status_code=400,
                     message="This email is already verified. Please log in.",
                 )
@@ -349,9 +349,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             tokens = client.users.send_verification_email(
                                 email="jane.doe@example.com",
                             )"""
@@ -361,9 +361,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.sendVerificationEmail({
@@ -399,7 +399,7 @@ class UsersRouter(BaseRouterV3):
                 )
             )
             if user and user.is_verified:
-                raise R2RException(
+                raise FUSEException(
                     status_code=400,
                     message="This email is already verified. Please log in.",
                 )
@@ -417,9 +417,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             tokens = client.users.login(
                                 email="jane.doe@example.com",
                                 password="secure_password123"
@@ -431,9 +431,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.login({
@@ -475,9 +475,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # client.login(...)
                             result = client.users.logout()
                             """
@@ -487,9 +487,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.logout();
@@ -529,9 +529,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # client.login(...)
 
                             new_tokens = client.users.refresh_token()
@@ -542,9 +542,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.refreshAccessToken();
@@ -588,9 +588,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # client.login(...)
 
                             result = client.users.change_password(
@@ -603,9 +603,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.changePassword({
@@ -658,9 +658,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             result = client.users.request_password_reset(
                                 email="jane.doe@example.com"
                             )"""
@@ -670,9 +670,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.requestPasswordReset({
@@ -718,9 +718,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             result = client.users.reset_password(
                                 reset_token="reset_token_received_via_email",
                                 new_password="new_secure_password789"
@@ -731,9 +731,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.resetPassword({
@@ -782,9 +782,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # client.login(...)
 
                             # List users with filters
@@ -799,9 +799,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.list();
@@ -815,7 +815,7 @@ class UsersRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r users list
+                            fuse users list
                             """
                         ),
                     },
@@ -863,7 +863,7 @@ class UsersRouter(BaseRouterV3):
             """
 
             if not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     status_code=403,
                     message="Only a superuser can call the `users_overview` endpoint.",
                 )
@@ -889,9 +889,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # client.login(...)
 
                             # Get user details
@@ -903,9 +903,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.retrieve();
@@ -919,7 +919,7 @@ class UsersRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r users me
+                            fuse users me
                             """
                         ),
                     },
@@ -954,9 +954,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # client.login(...)
 
                             # Get user details
@@ -970,9 +970,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.retrieve({
@@ -988,7 +988,7 @@ class UsersRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r users retrieve b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
+                            fuse users retrieve b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -1016,7 +1016,7 @@ class UsersRouter(BaseRouterV3):
             Users can only access their own information unless they are superusers.
             """
             if not auth_user.is_superuser and auth_user.id != id:
-                raise R2RException(
+                raise FUSEException(
                     "Only a superuser can call the get `user` endpoint for other users.",
                     403,
                 )
@@ -1041,9 +1041,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                        from r2r import R2RClient
+                        from fuse import FUSEClient
 
-                        client = R2RClient()
+                        client = FUSEClient()
                         # client.login(...)
 
                         # Delete user
@@ -1055,9 +1055,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                        const { r2rClient } = require("r2r-js");
+                        const { fuseClient } = require("fuse-js");
 
-                        const client = new r2rClient();
+                        const client = new fuseClient();
 
                         function main() {
                             const response = await client.users.delete({
@@ -1092,7 +1092,7 @@ class UsersRouter(BaseRouterV3):
             Users can only delete their own account unless they are superusers.
             """
             if not auth_user.is_superuser and auth_user.id != id:
-                raise R2RException(
+                raise FUSEException(
                     "Only a superuser can delete other users.",
                     403,
                 )
@@ -1115,9 +1115,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # client.login(...)
 
                             # Get user collections
@@ -1133,9 +1133,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.listCollections({
@@ -1153,7 +1153,7 @@ class UsersRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r users list-collections 550e8400-e29b-41d4-a716-446655440000
+                            fuse users list-collections 550e8400-e29b-41d4-a716-446655440000
                             """
                         ),
                     },
@@ -1192,7 +1192,7 @@ class UsersRouter(BaseRouterV3):
             Users can only access their own collections unless they are superusers.
             """
             if auth_user.id != id and not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "The currently authenticated user does not have access to the specified collection.",
                     403,
                 )
@@ -1218,9 +1218,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # client.login(...)
 
                             # Add user to collection
@@ -1235,9 +1235,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.addToCollection({
@@ -1254,7 +1254,7 @@ class UsersRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r users add-to-collection 550e8400-e29b-41d4-a716-446655440000 750e8400-e29b-41d4-a716-446655440000
+                            fuse users add-to-collection 550e8400-e29b-41d4-a716-446655440000 750e8400-e29b-41d4-a716-446655440000
                             """
                         ),
                     },
@@ -1281,7 +1281,7 @@ class UsersRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             if auth_user.id != id and not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "The currently authenticated user does not have access to the specified collection.",
                     403,
                 )
@@ -1302,9 +1302,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # client.login(...)
 
                             # Remove user from collection
@@ -1319,9 +1319,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.removeFromCollection({
@@ -1338,7 +1338,7 @@ class UsersRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r users remove-from-collection 550e8400-e29b-41d4-a716-446655440000 750e8400-e29b-41d4-a716-446655440000
+                            fuse users remove-from-collection 550e8400-e29b-41d4-a716-446655440000 750e8400-e29b-41d4-a716-446655440000
                             """
                         ),
                     },
@@ -1369,7 +1369,7 @@ class UsersRouter(BaseRouterV3):
             Requires either superuser status or access to the collection.
             """
             if auth_user.id != id and not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "The currently authenticated user does not have access to the specified collection.",
                     403,
                 )
@@ -1390,9 +1390,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # client.login(...)
 
                             # Update user
@@ -1407,9 +1407,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.users.update({
@@ -1468,19 +1468,19 @@ class UsersRouter(BaseRouterV3):
             """
 
             if is_superuser is not None and not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "Only superusers can update the superuser status of a user",
                     403,
                 )
 
             if not auth_user.is_superuser and auth_user.id != id:
-                raise R2RException(
+                raise FUSEException(
                     "Only superusers can update other users' information",
                     403,
                 )
 
             if not auth_user.is_superuser and limits_overrides is not None:
-                raise R2RException(
+                raise FUSEException(
                     "Only superusers can update other users' limits overrides",
                     403,
                 )
@@ -1509,9 +1509,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # client.login(...)
 
                             result = client.users.create_api_key(
@@ -1554,7 +1554,7 @@ class UsersRouter(BaseRouterV3):
             Only superusers or the user themselves may create an API key.
             """
             if auth_user.id != id and not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "Only the user themselves or a superuser can create API keys for this user.",
                     403,
                 )
@@ -1574,9 +1574,9 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # client.login(...)
 
                             keys = client.users.list_api_keys(
@@ -1609,7 +1609,7 @@ class UsersRouter(BaseRouterV3):
             Only superusers or the user themselves may list the API keys.
             """
             if auth_user.id != id and not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "Only the user themselves or a superuser can list API keys for this user.",
                     403,
                 )
@@ -1631,10 +1631,10 @@ class UsersRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
                             from uuid import UUID
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # client.login(...)
 
                             response = client.users.delete_api_key(
@@ -1669,7 +1669,7 @@ class UsersRouter(BaseRouterV3):
             Only superusers or the user themselves may delete the API key.
             """
             if auth_user.id != id and not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "Only the user themselves or a superuser can delete this API key.",
                     403,
                 )
@@ -1680,7 +1680,7 @@ class UsersRouter(BaseRouterV3):
                 )
             )
             if not success:
-                raise R2RException(
+                raise FUSEException(
                     "API key not found or could not be deleted", 400
                 )
             return {"success": True}  # type: ignore
@@ -1702,9 +1702,9 @@ class UsersRouter(BaseRouterV3):
                     {
                         "lang": "Python",
                         "source": """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # client.login(...)
 
                             user_limits = client.users.get_limits("550e8400-e29b-41d4-a716-446655440000")
@@ -1713,9 +1713,9 @@ class UsersRouter(BaseRouterV3):
                     {
                         "lang": "JavaScript",
                         "source": """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
                             // await client.users.login(...)
 
                             async function main() {
@@ -1752,7 +1752,7 @@ class UsersRouter(BaseRouterV3):
             Only superusers or the user themself may fetch these values.
             """
             if (auth_user.id != id) and (not auth_user.is_superuser):
-                raise R2RException(
+                raise FUSEException(
                     "Only the user themselves or a superuser can view these limits.",
                     status_code=403,
                 )
@@ -1830,7 +1830,7 @@ class UsersRouter(BaseRouterV3):
             email = id_info.get("email")
             email = email or f"{google_id}@google_oauth.fake"
 
-            # 3. Now call our R2RAuthProvider method that handles "oauth-based" user creation or login
+            # 3. Now call our FUSEAuthProvider method that handles "oauth-based" user creation or login
             token_response = await self.providers.auth.oauth_callback_handler(
                 provider="google",
                 oauth_id=google_id,

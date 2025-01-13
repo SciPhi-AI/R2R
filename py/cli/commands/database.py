@@ -17,7 +17,7 @@ def db():
 
 @db.command()
 @click.option(
-    "--schema", help="Schema name to operate on (defaults to R2R_PROJECT_NAME)"
+    "--schema", help="Schema name to operate on (defaults to FUSE_PROJECT_NAME)"
 )
 async def history(schema):
     """Show database migration history for a specific schema."""
@@ -41,7 +41,7 @@ async def history(schema):
 
 @db.command()
 @click.option(
-    "--schema", help="Schema name to operate on (defaults to R2R_PROJECT_NAME)"
+    "--schema", help="Schema name to operate on (defaults to FUSE_PROJECT_NAME)"
 )
 async def current(schema):
     """Show current database revision for a specific schema."""
@@ -65,7 +65,7 @@ async def current(schema):
 
 @db.command()
 @click.option(
-    "--schema", help="Schema name to operate on (defaults to R2R_PROJECT_NAME)"
+    "--schema", help="Schema name to operate on (defaults to FUSE_PROJECT_NAME)"
 )
 @click.option("--revision", help="Upgrade to a specific revision")
 async def upgrade(schema, revision):
@@ -98,7 +98,7 @@ async def upgrade(schema, revision):
 
 @db.command()
 @click.option(
-    "--schema", help="Schema name to operate on (defaults to R2R_PROJECT_NAME)"
+    "--schema", help="Schema name to operate on (defaults to FUSE_PROJECT_NAME)"
 )
 @click.option("--revision", help="Downgrade to a specific revision")
 async def downgrade(schema, revision):

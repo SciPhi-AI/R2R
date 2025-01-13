@@ -19,7 +19,7 @@ from cli.commands import (
     users,
 )
 from cli.utils.telemetry import posthog, telemetry
-from r2r import R2RAsyncClient
+from fuse import FUSEAsyncClient
 
 from .command_group import CONFIG_DIR, CONFIG_FILE, load_config
 
@@ -69,27 +69,27 @@ def main():
 
 
 def _ensure_config_dir_exists() -> None:
-    """Ensure that the ~/.r2r/ directory exists."""
+    """Ensure that the ~/.fuse/ directory exists."""
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def save_config(config_data: dict[str, Any]) -> None:
     """
-    Persist the given config data to ~/.r2r/config.json.
+    Persist the given config data to ~/.fuse/config.json.
     """
     _ensure_config_dir_exists()
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
         json.dump(config_data, f, indent=2)
 
 
-@cli.command("set-api-key", short_help="Set your R2R API key")
+@cli.command("set-api-key", short_help="Set your FUSE API key")
 @click.argument("api_key", required=True, type=str)
 @click.pass_context
 async def set_api_key(ctx, api_key: str):
     """
-    Store your R2R API key locally so you don’t have to pass it on every command.
+    Store your FUSE API key locally so you don’t have to pass it on every command.
     Example usage:
-      r2r set-api sk-1234abcd
+      fuse set-api sk-1234abcd
     """
     try:
         # 1) Load existing config
@@ -108,14 +108,14 @@ async def set_api_key(ctx, api_key: str):
 
 # Commands for Setting / Retrieving Base URL
 #
-@cli.command("set-api-base", short_help="Set your R2R API base URL")
+@cli.command("set-api-base", short_help="Set your FUSE API base URL")
 @click.argument("base_url", required=True, type=str)
 @click.pass_context
 async def set_api_base(ctx, base_url: str):
     """
-    Store your R2R API base URL locally so you don’t have to pass it on every command.
+    Store your FUSE API base URL locally so you don’t have to pass it on every command.
     Example usage:
-      r2r set-api-base https://api.example.com
+      fuse set-api-base https://api.example.com
     """
     try:
         config = load_config()
@@ -126,13 +126,13 @@ async def set_api_base(ctx, base_url: str):
         console.print("[red]Failed to set API base:[/red]", str(e))
 
 
-@cli.command("get-api", short_help="Get your stored R2R API key")
+@cli.command("get-api", short_help="Get your stored FUSE API key")
 @click.pass_context
 async def get_api(ctx):
     """
-    Display your stored R2R API key.
+    Display your stored FUSE API key.
     Example usage:
-      r2r get-api
+      fuse get-api
     """
     try:
         config = load_config()
@@ -142,7 +142,7 @@ async def get_api(ctx):
             console.print(f"API Key: {api_key}")
         else:
             console.print(
-                "[yellow]No API key found. Set one using 'r2r set-api <key>'[/yellow]"
+                "[yellow]No API key found. Set one using 'fuse set-api <key>'[/yellow]"
             )
     except Exception as e:
         console.print("[red]Failed to retrieve API key:[/red]", str(e))

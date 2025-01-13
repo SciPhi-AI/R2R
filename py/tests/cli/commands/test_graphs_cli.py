@@ -45,7 +45,7 @@ from cli.commands.graphs import (
     update,
     update_community,
 )
-from r2r import R2RAsyncClient
+from fuse import FUSEAsyncClient
 from tests.cli.async_invoke import async_invoke
 
 
@@ -68,7 +68,7 @@ def extract_json_block(output: str) -> dict:
 
 
 async def create_test_collection(
-    runner: CliRunner, client: R2RAsyncClient
+    runner: CliRunner, client: FUSEAsyncClient
 ) -> str:
     """Helper function to create a test collection and return its ID."""
     collection_name = f"test-collection-{uuid.uuid4()}"
@@ -82,7 +82,7 @@ async def create_test_collection(
 @pytest.mark.asyncio
 async def test_graph_basic_operations():
     """Test basic graph operations: retrieve, reset, update."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     collection_id = await create_test_collection(runner, client)
@@ -124,7 +124,7 @@ async def test_graph_basic_operations():
 @pytest.mark.asyncio
 async def test_graph_entity_operations():
     """Test entity-related operations in a graph."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     collection_id = await create_test_collection(runner, client)
@@ -168,7 +168,7 @@ async def test_graph_entity_operations():
 @pytest.mark.asyncio
 async def test_graph_relationship_operations():
     """Test relationship-related operations in a graph."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     collection_id = await create_test_collection(runner, client)
@@ -212,7 +212,7 @@ async def test_graph_relationship_operations():
 @pytest.mark.asyncio
 async def test_graph_community_operations():
     """Test community-related operations in a graph."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     collection_id = await create_test_collection(runner, client)
@@ -256,7 +256,7 @@ async def test_graph_community_operations():
 @pytest.mark.asyncio
 async def test_graph_build_and_pull():
     """Test graph building and document pull operations."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     collection_id = await create_test_collection(runner, client)
@@ -299,7 +299,7 @@ async def test_graph_build_and_pull():
 @pytest.mark.asyncio
 async def test_list_graphs():
     """Test listing graphs."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     try:

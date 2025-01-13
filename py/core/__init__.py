@@ -36,11 +36,11 @@ logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 __all__ = [
     ## AGENT
     # Base
-    "R2RAgent",
-    "R2RStreamingAgent",
+    "FUSEAgent",
+    "FUSEStreamingAgent",
     # RAG Agents
-    "R2RRAGAgent",
-    "R2RStreamingRAGAgent",
+    "FUSERAGAgent",
+    "FUSEStreamingRAGAgent",
     ## BASE
     # Base abstractions
     "AsyncSyncMeta",
@@ -59,8 +59,8 @@ __all__ = [
     "EmbeddingPurpose",
     "default_embedding_prefixes",
     # Exception abstractions
-    "R2RDocumentProcessingError",
-    "R2RException",
+    "FUSEDocumentProcessingError",
+    "FUSEException",
     # KG abstractions
     "Entity",
     "KGExtraction",
@@ -149,26 +149,26 @@ __all__ = [
     "increment_version",
     "validate_uuid",
     ## MAIN
-    ## R2R ABSTRACTIONS
-    "R2RProviders",
-    "R2RPipes",
-    "R2RPipelines",
-    "R2RAgents",
-    ## R2R APP
-    "R2RApp",
-    ## R2R APP ENTRY
-    # "r2r_app",
-    ## R2R ASSEMBLY
+    ## FUSE ABSTRACTIONS
+    "FUSEProviders",
+    "FUSEPipes",
+    "FUSEPipelines",
+    "FUSEAgents",
+    ## FUSE APP
+    "FUSEApp",
+    ## FUSE APP ENTRY
+    # "fuse_app",
+    ## FUSE ASSEMBLY
     # Builder
-    "R2RBuilder",
+    "FUSEBuilder",
     # Config
-    "R2RConfig",
+    "FUSEConfig",
     # Factory
-    "R2RProviderFactory",
-    "R2RPipeFactory",
-    "R2RPipelineFactory",
-    "R2RAgentFactory",
-    ## R2R SERVICES
+    "FUSEProviderFactory",
+    "FUSEPipeFactory",
+    "FUSEPipelineFactory",
+    "FUSEAgentFactory",
+    ## FUSE SERVICES
     "AuthService",
     "IngestionService",
     "ManagementService",
@@ -224,7 +224,7 @@ __all__ = [
     ## PROVIDERS
     # Auth
     "SupabaseAuthProvider",
-    "R2RAuthProvider",
+    "FUSEAuthProvider",
     # Crypto
     "BCryptCryptoProvider",
     "BcryptCryptoConfig",
@@ -241,6 +241,6 @@ __all__ = [
     "LiteLLMCompletionProvider",
     # Ingestion
     "UnstructuredIngestionProvider",
-    "R2RIngestionProvider",
+    "FUSEIngestionProvider",
     "ChunkingStrategy",
 ]

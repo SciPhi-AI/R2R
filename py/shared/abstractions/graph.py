@@ -7,10 +7,10 @@ from uuid import UUID
 
 from pydantic import Field
 
-from .base import R2RSerializable
+from .base import FUSESerializable
 
 
-class Entity(R2RSerializable):
+class Entity(FUSESerializable):
     """An entity extracted from a document."""
 
     name: str
@@ -35,7 +35,7 @@ class Entity(R2RSerializable):
                 self.metadata = self.metadata
 
 
-class Relationship(R2RSerializable):
+class Relationship(FUSESerializable):
     """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
 
     id: Optional[UUID] = None
@@ -62,7 +62,7 @@ class Relationship(R2RSerializable):
 
 
 @dataclass
-class Community(R2RSerializable):
+class Community(FUSESerializable):
     name: str = ""
     summary: str = ""
 
@@ -101,14 +101,14 @@ class Community(R2RSerializable):
         return cls(**parsed_data)
 
 
-class KGExtraction(R2RSerializable):
+class KGExtraction(FUSESerializable):
     """A protocol for a knowledge graph extraction."""
 
     entities: list[Entity]
     relationships: list[Relationship]
 
 
-class Graph(R2RSerializable):
+class Graph(FUSESerializable):
     id: UUID | None = Field()
     name: str
     description: Optional[str] = None

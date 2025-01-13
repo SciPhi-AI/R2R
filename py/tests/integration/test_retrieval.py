@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from r2r import Message, R2RClient, R2RException, SearchMode
+from fuse import Message, FUSEClient, FUSEException, SearchMode
 
 
 @pytest.fixture(scope="session")
@@ -18,7 +18,7 @@ def config():
 @pytest.fixture(scope="session")
 def client(config):
     """Create a client instance and log in as a superuser."""
-    client = R2RClient(config.base_url)
+    client = FUSEClient(config.base_url)
     client.users.login(config.superuser_email, config.superuser_password)
     return client
 
@@ -154,7 +154,7 @@ def test_embedding(client):
 
 def test_error_handling(client):
     # Missing query should raise an error
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.retrieval.search(query=None)  # type: ignore
     assert exc_info.value.status_code in [
         400,
@@ -375,7 +375,7 @@ def test_complex_nested_filters(client, test_collection):
 
 def test_invalid_operator(client):
     filters = {"metadata.category": {"$like": "%ancient%"}}
-    with pytest.raises(R2RException):
+    with pytest.raises(FUSEException):
         client.retrieval.search(
             query="abc",
             search_mode="custom",

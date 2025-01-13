@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from r2r import R2RClient, R2RException
+from fuse import FUSEClient, FUSEException
 
 
 @pytest.fixture(scope="session")
@@ -17,7 +17,7 @@ def test_document_2(client):
     # Cleanup: Try deleting the document if it still exists
     try:
         client.documents.delete(id=doc_id)
-    except R2RException:
+    except FUSEException:
         pass
 
 
@@ -123,7 +123,7 @@ def test_remove_non_member_user_from_collection(mutable_client):
     mutable_client.users.login(user_email, password)
 
     # Attempt to remove the other user (who was never added)
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         mutable_client.collections.remove_user(collection_id, another_user_id)
 
     assert exc_info.value.status_code in [
@@ -142,7 +142,7 @@ def test_delete_collection(client):
     client.collections.delete(coll_id)
 
     # Verify retrieval fails
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.collections.retrieve(coll_id)
     assert (
         exc_info.value.status_code == 404
@@ -161,7 +161,7 @@ def test_add_user_to_non_existent_collection(mutable_client):
     # Re-login as superuser to try adding user to a non-existent collection
     # (Assumes superuser credentials are already in the client fixture)
     fake_collection_id = str(uuid.uuid4())  # Non-existent collection ID
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         result = mutable_client.collections.add_user(
             fake_collection_id, user_id
         )
@@ -193,7 +193,7 @@ def test_add_user_to_non_existent_collection(mutable_client):
 #     client.users.login(owner_email, owner_password)
 
 #     # Attempt to remove non-member
-#     with pytest.raises(R2RException) as exc_info:
+#     with pytest.raises(FUSEException) as exc_info:
 #         client.collections.remove_user(collection_id, other_user_id)
 #     assert exc_info.value.status_code in [400, 404], "Wrong error code for removing non-member user"
 
@@ -203,7 +203,7 @@ def test_add_user_to_non_existent_collection(mutable_client):
 
 def test_create_collection_without_name(client):
     # Attempt to create a collection without a name
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.collections.create(name="", description="No name")
     # TODO - Error should be a 400 or 422, not 409
     assert exc_info.value.status_code in [
@@ -244,7 +244,7 @@ def test_remove_document_not_in_collection(client, test_document):
     coll_id = resp["id"]
 
     # Try removing the test_document that was never added
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.collections.remove_document(coll_id, test_document)
     # Expect 404 or 400 since doc not in collection
     assert exc_info.value.status_code in [
@@ -261,7 +261,7 @@ def test_add_non_existent_document_to_collection(client):
 
     # Try adding a non-existent document
     fake_doc_id = str(uuid.uuid4())
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.collections.add_document(coll_id, fake_doc_id)
     assert exc_info.value.status_code in [
         400,
@@ -273,7 +273,7 @@ def test_add_non_existent_document_to_collection(client):
 def test_delete_non_existent_collection(client):
     # Try deleting a collection that doesn't exist
     fake_collection_id = str(uuid.uuid4())
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.collections.delete(fake_collection_id)
     assert (
         exc_info.value.status_code == 404

@@ -18,7 +18,7 @@ from core.base import (
     IngestionStatus,
     KGEnrichmentStatus,
     KGExtractionStatus,
-    R2RException,
+    FUSEException,
     SearchSettings,
 )
 
@@ -311,7 +311,7 @@ class PostgresDocumentsHandler(Handler):
         elif status_type in {"graph_cluster_status", "graph_sync_status"}:
             return KGEnrichmentStatus
         else:
-            raise R2RException(
+            raise FUSEException(
                 status_code=400, message=f"Invalid status type: {status_type}"
             )
 

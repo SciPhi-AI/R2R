@@ -9,7 +9,7 @@ from fastapi import Body, Depends, Path, Query
 from core.base import (
     ChunkResponse,
     GraphSearchSettings,
-    R2RException,
+    FUSEException,
     SearchSettings,
     UpdateChunk,
     select_search_filters,
@@ -26,7 +26,7 @@ from core.providers import (
     SimpleOrchestrationProvider,
 )
 
-from ...abstractions import R2RProviders, R2RServices
+from ...abstractions import FUSEProviders, FUSEServices
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -37,8 +37,8 @@ MAX_CHUNKS_PER_REQUEST = 1024 * 100
 class ChunksRouter(BaseRouterV3):
     def __init__(
         self,
-        providers: R2RProviders,
-        services: R2RServices,
+        providers: FUSEProviders,
+        services: FUSEServices,
     ):
         super().__init__(providers, services)
 
@@ -53,9 +53,9 @@ class ChunksRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             response = client.chunks.search(
                                 query="search query",
                                 search_settings={
@@ -108,9 +108,9 @@ class ChunksRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             response = client.chunks.retrieve(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
@@ -121,9 +121,9 @@ class ChunksRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.chunks.retrieve({
@@ -151,7 +151,7 @@ class ChunksRouter(BaseRouterV3):
             """
             chunk = await self.services.ingestion.get_chunk(id)
             if not chunk:
-                raise R2RException("Chunk not found", 404)
+                raise FUSEException("Chunk not found", 404)
 
             # # Check access rights
             # document = await self.services.management.get_document(chunk.document_id)
@@ -159,7 +159,7 @@ class ChunksRouter(BaseRouterV3):
             if not auth_user.is_superuser and str(auth_user.id) != str(
                 chunk["owner_id"]
             ):
-                raise R2RException("Not authorized to access this chunk", 403)
+                raise FUSEException("Not authorized to access this chunk", 403)
 
             return ChunkResponse(  # type: ignore
                 id=chunk["id"],
@@ -181,9 +181,9 @@ class ChunksRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             response = client.chunks.update(
                                 {
                                     "id": "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
@@ -198,9 +198,9 @@ class ChunksRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.chunks.update({
@@ -235,7 +235,7 @@ class ChunksRouter(BaseRouterV3):
                 chunk_update.id
             )
             if existing_chunk is None:
-                raise R2RException(f"Chunk {chunk_update.id} not found", 404)
+                raise FUSEException(f"Chunk {chunk_update.id} not found", 404)
 
             workflow_input = {
                 "document_id": str(existing_chunk["document_id"]),
@@ -274,9 +274,9 @@ class ChunksRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             response = client.chunks.delete(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
@@ -287,9 +287,9 @@ class ChunksRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.chunks.delete({
@@ -320,7 +320,7 @@ class ChunksRouter(BaseRouterV3):
             existing_chunk = await self.services.ingestion.get_chunk(id)
 
             if existing_chunk is None:
-                raise R2RException(
+                raise FUSEException(
                     message=f"Chunk {id} not found", status_code=404
                 )
 
@@ -345,9 +345,9 @@ class ChunksRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             response = client.chunks.list(
                                 metadata_filter={"key": "value"},
                                 include_vectors=False,
@@ -361,9 +361,9 @@ class ChunksRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.chunks.list({

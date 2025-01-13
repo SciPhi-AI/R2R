@@ -27,8 +27,8 @@ __all__ = [
     "EmbeddingPurpose",
     "default_embedding_prefixes",
     # Exception abstractions
-    "R2RDocumentProcessingError",
-    "R2RException",
+    "FUSEDocumentProcessingError",
+    "FUSEException",
     # KG abstractions
     "Entity",
     "KGExtraction",

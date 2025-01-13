@@ -1,13 +1,13 @@
-from r2r import R2RClient
+from fuse import FUSEClient
 
-client = R2RClient()
+client = FUSEClient()
 
 with open("test.txt", "w") as file:
     file.write("John is a person that works at Google.")
 
 client.ingest_files(file_paths=["test.txt"])
 
-# Call RAG directly on an R2R object
+# Call RAG directly on an FUSE object
 rag_response = client.rag(
     query="Who is john",
     rag_generation_config={"model": "gpt-4o-mini", "temperature": 0.0},

@@ -4,7 +4,7 @@ from uuid import UUID
 
 import pytest
 
-from core.base import Message, R2RException
+from core.base import Message, FUSEException
 from shared.api.models.management.responses import (
     ConversationResponse,
     MessageResponse,
@@ -125,7 +125,7 @@ async def test_delete_conversation(conversations_handler):
 
     await conversations_handler.delete_conversation(conv_id)
 
-    with pytest.raises(R2RException) as exc:
+    with pytest.raises(FUSEException) as exc:
         await conversations_handler.get_conversation(conv_id)
     assert (
         exc.value.status_code == 404

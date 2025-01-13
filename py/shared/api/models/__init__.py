@@ -5,8 +5,8 @@ from shared.api.models.auth.responses import (
 from shared.api.models.base import (
     GenericBooleanResponse,
     GenericMessageResponse,
-    PaginatedR2RResult,
-    R2RResults,
+    PaginatedFUSEResult,
+    FUSEResults,
     WrappedBooleanResponse,
     WrappedGenericMessageResponse,
 )
@@ -111,8 +111,8 @@ __all__ = [
     "WrappedAPIKeysResponse",
     "WrappedUsersResponse",
     # Base Responses
-    "PaginatedR2RResult",
-    "R2RResults",
+    "PaginatedFUSEResult",
+    "FUSEResults",
     "GenericBooleanResponse",
     "GenericMessageResponse",
     "WrappedBooleanResponse",

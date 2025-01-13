@@ -21,7 +21,7 @@ from core.base import (
     DocumentType,
     RecursiveCharacterTextSplitter,
 )
-from core.base.abstractions import R2RSerializable
+from core.base.abstractions import FUSESerializable
 from core.base.providers.ingestion import IngestionConfig, IngestionProvider
 from core.utils import generate_extraction_id
 
@@ -31,7 +31,7 @@ from ...llm import LiteLLMCompletionProvider, OpenAICompletionProvider
 logger = logging.getLogger()
 
 
-class FallbackElement(R2RSerializable):
+class FallbackElement(FUSESerializable):
     text: str
     metadata: dict[str, Any]
 
@@ -80,7 +80,7 @@ class UnstructuredIngestionConfig(IngestionConfig):
 
 
 class UnstructuredIngestionProvider(IngestionProvider):
-    R2R_FALLBACK_PARSERS = {
+    FUSE_FALLBACK_PARSERS = {
         DocumentType.GIF: [parsers.ImageParser],  # type: ignore
         DocumentType.JPEG: [parsers.ImageParser],  # type: ignore
         DocumentType.JPG: [parsers.ImageParser],  # type: ignore
@@ -163,7 +163,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
         self._initialize_parsers()
 
     def _initialize_parsers(self):
-        for doc_type, parsers in self.R2R_FALLBACK_PARSERS.items():
+        for doc_type, parsers in self.FUSE_FALLBACK_PARSERS.items():
             for parser in parsers:
                 if (
                     doc_type not in self.config.excluded_parsers
@@ -175,7 +175,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
                         database_provider=self.database_provider,
                         llm_provider=self.llm_provider,
                     )
-        # TODO - Reduce code duplication between Unstructured & R2R
+        # TODO - Reduce code duplication between Unstructured & FUSE
         for doc_type, doc_parser_name in self.config.extra_parsers.items():
             self.parsers[
                 f"{doc_parser_name}_{str(doc_type)}"
@@ -237,7 +237,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
         elements = []
 
         # TODO - Cleanup this approach to be less hardcoded
-        # TODO - Remove code duplication between Unstructured & R2R
+        # TODO - Remove code duplication between Unstructured & FUSE
         if document.document_type.value in parser_overrides:
             logger.info(
                 f"Using parser_override for {document.document_type} with input value {parser_overrides[document.document_type.value]}"
@@ -249,7 +249,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
             ):
                 elements.append(element)
 
-        elif document.document_type in self.R2R_FALLBACK_PARSERS.keys():
+        elif document.document_type in self.FUSE_FALLBACK_PARSERS.keys():
             logger.info(
                 f"Parsing {document.document_type}: {document.id} with fallback parser"
             )

@@ -22,7 +22,7 @@ target_metadata = None
 
 def get_schema_name():
     """Get the schema name from environment or config."""
-    return os.environ.get("R2R_PROJECT_NAME", "r2r_default")
+    return os.environ.get("FUSE_PROJECT_NAME", "fuse_default")
 
 
 def include_object(object, name, type_, reflected, compare_to):

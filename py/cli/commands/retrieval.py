@@ -5,7 +5,7 @@ from asyncclick import pass_context
 
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
-from r2r import R2RAsyncClient, R2RException
+from fuse import FUSEAsyncClient, FUSEException
 
 
 @click.group()
@@ -77,7 +77,7 @@ async def search(ctx: click.Context, query, **kwargs):
     if chunk_search_enabled != None:
         search_settings["chunk_settings"] = {"enabled": chunk_search_enabled}
 
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -102,7 +102,7 @@ async def search(ctx: click.Context, query, **kwargs):
                 click.echo("KG search results:")
                 for result in results["graph_search_results"]:  # type: ignore
                     click.echo(json.dumps(result, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -179,7 +179,7 @@ async def rag(ctx: click.Context, query, **kwargs):
     if chunk_search_enabled != None:
         search_settings["chunk_settings"] = {"enabled": chunk_search_enabled}
 
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -195,7 +195,7 @@ async def rag(ctx: click.Context, query, **kwargs):
                 click.echo()
             else:
                 click.echo(json.dumps(response["results"]["completion"], indent=2))  # type: ignore
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)

@@ -6,12 +6,12 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from core import R2RStreamingRAGAgent
+from core import FUSEStreamingRAGAgent
 from core.base import (
     DocumentResponse,
     GenerationConfig,
     Message,
-    R2RException,
+    FUSEException,
     RunManager,
     SearchSettings,
     manage_run,
@@ -21,8 +21,8 @@ from core.base.api.models import CombinedSearchResponse, RAGResponse, User
 from core.telemetry.telemetry_decorator import telemetry_event
 from shared.api.models.management.responses import MessageResponse
 
-from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
-from ..config import R2RConfig
+from ..abstractions import FUSEAgents, FUSEPipelines, FUSEPipes, FUSEProviders
+from ..config import FUSEConfig
 from .base import Service
 
 logger = logging.getLogger()
@@ -67,11 +67,11 @@ def num_tokens_from_messages(messages, model="gpt-4o"):
 class RetrievalService(Service):
     def __init__(
         self,
-        config: R2RConfig,
-        providers: R2RProviders,
-        pipes: R2RPipes,
-        pipelines: R2RPipelines,
-        agents: R2RAgents,
+        config: FUSEConfig,
+        providers: FUSEProviders,
+        pipes: FUSEPipes,
+        pipelines: FUSEPipelines,
+        agents: FUSEAgents,
         run_manager: RunManager,
     ):
         super().__init__(
@@ -98,7 +98,7 @@ class RetrievalService(Service):
                 search_settings.use_semantic_search
                 and self.config.database.provider is None
             ):
-                raise R2RException(
+                raise FUSEException(
                     status_code=400,
                     message="Vector search is not enabled in the configuration.",
                 )
@@ -110,7 +110,7 @@ class RetrievalService(Service):
                 )
                 or search_settings.use_hybrid_search
             ) and not search_settings.hybrid_settings:
-                raise R2RException(
+                raise FUSEException(
                     status_code=400,
                     message="Hybrid search settings must be specified in the input configuration.",
                 )
@@ -216,7 +216,7 @@ class RetrievalService(Service):
                 )
 
                 if len(results) == 0:
-                    raise R2RException(
+                    raise FUSEException(
                         status_code=404, message="No results found"
                     )
                 if len(results) > 1:
@@ -281,13 +281,13 @@ class RetrievalService(Service):
         async with manage_run(self.run_manager) as run_id:
             try:
                 if message and messages:
-                    raise R2RException(
+                    raise FUSEException(
                         status_code=400,
                         message="Only one of message or messages should be provided",
                     )
 
                 if not message and not messages:
-                    raise R2RException(
+                    raise FUSEException(
                         status_code=400,
                         message="Either message or messages should be provided",
                     )
@@ -297,7 +297,7 @@ class RetrievalService(Service):
                     if isinstance(message, dict):
                         message = Message.from_dict(message)
                     else:
-                        raise R2RException(
+                        raise FUSEException(
                             status_code=400,
                             message="""
                                 Invalid message format. The expected format contains:
@@ -369,7 +369,7 @@ class RetrievalService(Service):
                     messages.append(message)
 
                 if not messages:
-                    raise R2RException(
+                    raise FUSEException(
                         status_code=400,
                         message="No messages to process",
                     )
@@ -397,7 +397,7 @@ class RetrievalService(Service):
                             async with manage_run(
                                 self.run_manager, "rag_agent"
                             ):
-                                agent = R2RStreamingRAGAgent(
+                                agent = FUSEStreamingRAGAgent(
                                     database_provider=self.providers.database,
                                     llm_provider=self.providers.llm,
                                     config=self.config.agent,

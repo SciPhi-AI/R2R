@@ -3,7 +3,7 @@ import uuid
 import pytest
 
 from core.database.postgres import PostgresUserHandler
-from r2r import R2RClient, R2RException
+from fuse import FUSEClient, FUSEException
 from shared.abstractions import User
 
 
@@ -20,7 +20,7 @@ def config():
 
 # @pytest.fixture(scope="session")
 def client(config):
-    client = R2RClient(config.base_url)
+    client = FUSEClient(config.base_url)
     # Optionally, log in as superuser here if needed globally
     # client.users.login(config.superuser_email, config.superuser_password)
     return client
@@ -52,7 +52,7 @@ def test_register_user(client):
     client.users.logout()
 
 
-# COMMENTED OUT SINCE AUTH IS NOT REQUIRED BY DEFAULT IN R2R.TOML
+# COMMENTED OUT SINCE AUTH IS NOT REQUIRED BY DEFAULT IN FUSE.TOML
 # def test_user_login_logout(client):
 #     random_email = f"{uuid.uuid4()}@example.com"
 #     password = "test_password123"
@@ -67,7 +67,7 @@ def test_register_user(client):
 #     assert "message" in logout_resp, "Logout failed."
 
 #     # After logout, token should be invalid
-#     with pytest.raises(R2RException) as exc_info:
+#     with pytest.raises(FUSEException) as exc_info:
 #         client.users.me()
 #     assert exc_info.value.status_code == 401, "Expected 401 after logout."
 
@@ -99,7 +99,7 @@ def test_change_password(client):
 
     # Check old password no longer works
     client.users.logout()
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.users.login(random_email, old_password)
     assert (
         exc_info.value.status_code == 401
@@ -227,7 +227,7 @@ def test_delete_user(client):
     del_resp = client.users.delete(user_id, password)["results"]
     assert del_resp["success"], "User deletion failed."
 
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         # result = client.users.retrieve(user_id)
         client.users.login(random_email, password)
 
@@ -248,7 +248,7 @@ def test_delete_user(client):
 #     client.users.login(random_email, password)
 
 #     # Non-superuser listing users should fail
-#     with pytest.raises(R2RException) as exc_info:
+#     with pytest.raises(FUSEException) as exc_info:
 #         client.users.list()
 #     assert (
 #         exc_info.value.status_code == 403
@@ -262,7 +262,7 @@ def test_delete_user(client):
 #     )
 
 #     # Non-superuser updating another user should fail
-#     with pytest.raises(R2RException) as exc_info:
+#     with pytest.raises(FUSEException) as exc_info:
 #         client.users.update(another_user_id, name="Nope")
 #     assert (
 #         exc_info.value.status_code == 403
@@ -301,7 +301,7 @@ def test_superuser_downgrade_permissions(client, superuser_login, config):
     # Now login as downgraded user and verify no superuser access
     client.users.logout()
     client.users.login(user_email, user_password)
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.users.list()
     assert (
         exc_info.value.status_code == 403
@@ -334,7 +334,7 @@ def test_non_owner_delete_collection(client):
 
     # Non-owner tries to delete collection
     client.users.login(non_owner_email, non_owner_password)
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         result = client.collections.delete(coll_id)
     assert (
         exc_info.value.status_code == 403
@@ -354,7 +354,7 @@ def test_update_user_with_invalid_email(client, superuser_login):
     user_id = register_and_return_user_id(client, email, password)
 
     # Attempt to update to invalid email
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.users.update(user_id, email="not-an-email")
     # Expect a validation error (likely 422)
     assert exc_info.value.status_code in [
@@ -374,7 +374,7 @@ def test_update_user_email_already_exists(client, superuser_login):
     user2_id = register_and_return_user_id(client, email2, password)
 
     # Try updating user2's email to user1's email
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.users.update(user2_id, email=email1)
     # Expect a conflict (likely 409) or validation error
     # TODO - Error code should be in  [400, 409, 422], not 500
@@ -396,7 +396,7 @@ def test_delete_user_with_incorrect_password(client):
     user_id = client.users.me()["results"]["id"]
 
     # Attempt deletion with incorrect password
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.users.delete(user_id, "wrong_password")
     # TODO - Error code should be in [401, 403]
     assert exc_info.value.status_code in [
@@ -412,7 +412,7 @@ def test_login_with_incorrect_password(client):
     client.users.create(email, password)
 
     # Try incorrect password
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.users.login(email, "wrongpass")
     assert (
         exc_info.value.status_code == 401
@@ -439,7 +439,7 @@ def test_verification_with_invalid_code(client):
     password = "password"
     register_and_return_user_id(client, email, password)
     # Try verifying with invalid code
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.users.verify_email(email, "wrong_code")
     assert exc_info.value.status_code in [
         400,
@@ -460,7 +460,7 @@ def test_password_reset_with_invalid_token(client):
 
     # Assume request password reset done here if needed
     # Try resetting with invalid token
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.users.reset_password("invalid_token", "newpass123")
     assert exc_info.value.status_code in [
         400,
@@ -537,7 +537,7 @@ def test_api_key_authentication(client, user_with_api_key):
     user_id, api_key, _ = user_with_api_key
 
     # Create new client with API key
-    api_client = R2RClient(client.base_url)
+    api_client = FUSEClient(client.base_url)
     api_client.set_api_key(api_key)
 
     # Test API key authentication
@@ -550,11 +550,11 @@ def test_api_key_permissions(client, user_with_api_key):
     user_id, api_key, _ = user_with_api_key
 
     # Create new client with API key
-    api_client = R2RClient(client.base_url)
+    api_client = FUSEClient(client.base_url)
     api_client.set_api_key(api_key)
 
     # Should not be able to list all users (superuser only)
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         api_client.users.list()
     assert (
         exc_info.value.status_code == 403
@@ -563,10 +563,10 @@ def test_api_key_permissions(client, user_with_api_key):
 
 def test_invalid_api_key(client):
     """Test behavior with invalid API key"""
-    api_client = R2RClient(client.base_url)
+    api_client = FUSEClient(client.base_url)
     api_client.set_api_key("invalid.api.key")
 
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         api_client.users.me()
     assert (
         exc_info.value.status_code == 401
@@ -602,7 +602,7 @@ def test_multiple_api_keys(client):
     client.users.logout()
 
 
-def test_update_user_limits_overrides(client: R2RClient):
+def test_update_user_limits_overrides(client: FUSEClient):
     # 1) Create user
     user_email = f"test_{uuid.uuid4()}@example.com"
     client.users.create(user_email, "SomePassword123!")

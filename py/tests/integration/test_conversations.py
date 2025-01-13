@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from r2r import R2RClient, R2RException
+from fuse import FUSEClient, FUSEException
 
 
 @pytest.fixture
@@ -14,7 +14,7 @@ def test_conversation(client):
     # Cleanup: Try deleting the conversation if it still exists
     try:
         client.conversations.delete(id=conversation_id)
-    except R2RException:
+    except FUSEException:
         pass
 
 
@@ -50,7 +50,7 @@ def test_delete_conversation(client):
     client.conversations.delete(id=conv_id)
 
     # Verify retrieval fails
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.conversations.retrieve(id=conv_id)
     assert (
         exc_info.value.status_code == 404
@@ -75,7 +75,7 @@ def test_add_message(client, test_conversation):
 
 def test_retrieve_non_existent_conversation(client):
     bad_id = str(uuid.uuid4())
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.conversations.retrieve(id=bad_id)
     assert (
         exc_info.value.status_code == 404
@@ -84,7 +84,7 @@ def test_retrieve_non_existent_conversation(client):
 
 def test_delete_non_existent_conversation(client):
     bad_id = str(uuid.uuid4())
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         result = client.conversations.delete(id=bad_id)
     assert (
         exc_info.value.status_code == 404
@@ -93,7 +93,7 @@ def test_delete_non_existent_conversation(client):
 
 def test_add_message_to_non_existent_conversation(client):
     bad_id = str(uuid.uuid4())
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.conversations.add_message(
             id=bad_id,
             content="Hi",
@@ -141,7 +141,7 @@ def test_update_message(client, test_conversation):
 
 def test_update_non_existent_message(client, test_conversation):
     fake_msg_id = str(uuid.uuid4())
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.conversations.update_message(
             id=test_conversation, message_id=fake_msg_id, content="Should fail"
         )
@@ -151,7 +151,7 @@ def test_update_non_existent_message(client, test_conversation):
 
 
 def test_add_message_with_empty_content(client, test_conversation):
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.conversations.add_message(
             id=test_conversation,
             content="",  # empty content
@@ -164,7 +164,7 @@ def test_add_message_with_empty_content(client, test_conversation):
 
 
 def test_add_message_invalid_role(client, test_conversation):
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.conversations.add_message(
             id=test_conversation,
             content="Hello",
@@ -181,7 +181,7 @@ def test_add_message_to_deleted_conversation(client):
     client.conversations.delete(id=conv_id)
 
     # Try adding a message to the deleted conversation
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.conversations.add_message(
             id=conv_id,
             content="Should fail",

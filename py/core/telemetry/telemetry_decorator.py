@@ -15,7 +15,7 @@ logger = logging.getLogger()
 
 
 class ProductTelemetryClient:
-    USER_ID_PATH = str(Path.home() / ".cache" / "r2r" / "telemetry_user_id")
+    USER_ID_PATH = str(Path.home() / ".cache" / "fuse" / "telemetry_user_id")
     UNKNOWN_USER_ID = "UNKNOWN"
     _curr_user_id = None
     _version = None
@@ -24,7 +24,7 @@ class ProductTelemetryClient:
     def version(self) -> str:
         if self._version is None:
             try:
-                self._version = metadata.version("r2r")
+                self._version = metadata.version("fuse")
             except Exception as e:
                 logger.error(
                     f"Error reading version from pyproject.toml: {str(e)}"

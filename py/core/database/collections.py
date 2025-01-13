@@ -12,7 +12,7 @@ from core.base import (
     DatabaseConfig,
     Handler,
     KGExtractionStatus,
-    R2RException,
+    FUSEException,
     generate_default_user_collection_id,
 )
 from core.base.abstractions import (
@@ -98,7 +98,7 @@ class PostgresCollectionsHandler(Handler):
                 params=params,
             )
             if not result:
-                raise R2RException(
+                raise FUSEException(
                     status_code=404, message="Collection not found"
                 )
 
@@ -115,7 +115,7 @@ class PostgresCollectionsHandler(Handler):
                 document_count=0,
             )
         except UniqueViolationError:
-            raise R2RException(
+            raise FUSEException(
                 message="Collection with this ID already exists",
                 status_code=409,
             )
@@ -133,7 +133,7 @@ class PostgresCollectionsHandler(Handler):
     ) -> CollectionResponse:
         """Update an existing collection."""
         if not await self.collection_exists(collection_id):
-            raise R2RException(status_code=404, message="Collection not found")
+            raise FUSEException(status_code=404, message="Collection not found")
 
         update_fields = []
         params: list = []
@@ -150,7 +150,7 @@ class PostgresCollectionsHandler(Handler):
             param_index += 1
 
         if not update_fields:
-            raise R2RException(status_code=400, message="No fields to update")
+            raise FUSEException(status_code=400, message="No fields to update")
 
         update_fields.append("updated_at = NOW()")
         params.append(collection_id)
@@ -176,7 +176,7 @@ class PostgresCollectionsHandler(Handler):
                 query, params
             )
             if not result:
-                raise R2RException(
+                raise FUSEException(
                     status_code=404, message="Collection not found"
                 )
 
@@ -234,7 +234,7 @@ class PostgresCollectionsHandler(Handler):
         )
 
         if not deleted:
-            raise R2RException(status_code=404, message="Collection not found")
+            raise FUSEException(status_code=404, message="Collection not found")
 
     async def documents_in_collection(
         self, collection_id: UUID, offset: int, limit: int
@@ -248,10 +248,10 @@ class PostgresCollectionsHandler(Handler):
         Returns:
             List[DocumentResponse]: A list of DocumentResponse objects representing the documents in the collection.
         Raises:
-            R2RException: If the collection doesn't exist.
+            FUSEException: If the collection doesn't exist.
         """
         if not await self.collection_exists(collection_id):
-            raise R2RException(status_code=404, message="Collection not found")
+            raise FUSEException(status_code=404, message="Collection not found")
         query = f"""
             SELECT d.id, d.owner_id, d.type, d.metadata, d.title, d.version,
                 d.size_in_bytes, d.ingestion_status, d.extraction_status, d.created_at, d.updated_at, d.summary,
@@ -383,12 +383,12 @@ class PostgresCollectionsHandler(Handler):
             collection_id (UUID): The ID of the collection to assign the document to.
 
         Raises:
-            R2RException: If the collection doesn't exist, if the document is not found,
+            FUSEException: If the collection doesn't exist, if the document is not found,
                         or if there's a database error.
         """
         try:
             if not await self.collection_exists(collection_id):
-                raise R2RException(
+                raise FUSEException(
                     status_code=404, message="Collection not found"
                 )
 
@@ -402,7 +402,7 @@ class PostgresCollectionsHandler(Handler):
             )
 
             if not document_exists:
-                raise R2RException(
+                raise FUSEException(
                     status_code=404, message="Document not found"
                 )
 
@@ -419,7 +419,7 @@ class PostgresCollectionsHandler(Handler):
 
             if not result:
                 # Document exists but was already assigned to the collection
-                raise R2RException(
+                raise FUSEException(
                     status_code=409,
                     message="Document is already assigned to the collection",
                 )
@@ -435,8 +435,8 @@ class PostgresCollectionsHandler(Handler):
 
             return collection_id
 
-        except R2RException:
-            # Re-raise R2RExceptions as they are already handled
+        except FUSEException:
+            # Re-raise FUSEExceptions as they are already handled
             raise
         except Exception as e:
             raise HTTPException(
@@ -455,10 +455,10 @@ class PostgresCollectionsHandler(Handler):
             collection_id (UUID): The ID of the collection to remove the document from.
 
         Raises:
-            R2RException: If the collection doesn't exist or if the document is not in the collection.
+            FUSEException: If the collection doesn't exist or if the document is not in the collection.
         """
         if not await self.collection_exists(collection_id):
-            raise R2RException(status_code=404, message="Collection not found")
+            raise FUSEException(status_code=404, message="Collection not found")
 
         query = f"""
             UPDATE {self._get_table_name('documents')}
@@ -471,7 +471,7 @@ class PostgresCollectionsHandler(Handler):
         )
 
         if not result:
-            raise R2RException(
+            raise FUSEException(
                 status_code=404,
                 message="Document not found in the specified collection",
             )

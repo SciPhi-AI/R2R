@@ -2,7 +2,7 @@ from typing import Optional
 
 import pytest
 
-from r2r import R2RException
+from fuse import FUSEException
 
 
 class BaseTest:
@@ -16,5 +16,5 @@ class BaseTest:
         if resource_id:
             try:
                 await cleanup_func(id=resource_id)
-            except R2RException:
+            except FUSEException:
                 pass

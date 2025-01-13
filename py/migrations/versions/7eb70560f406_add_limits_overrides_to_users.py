@@ -19,7 +19,7 @@ down_revision: Union[str, None] = "c45a9cf6a8a4"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-project_name = os.getenv("R2R_PROJECT_NAME", "r2r_default")
+project_name = os.getenv("FUSE_PROJECT_NAME", "fuse_default")
 
 
 def check_if_upgrade_needed():

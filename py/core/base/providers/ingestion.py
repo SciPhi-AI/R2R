@@ -32,7 +32,7 @@ class IngestionMode(str, Enum):
 class IngestionConfig(ProviderConfig):
     _defaults: ClassVar[dict] = {
         "app": AppConfig(),
-        "provider": "r2r",
+        "provider": "fuse",
         "excluded_parsers": ["mp4"],
         "chunking_strategy": "recursive",
         "chunk_enrichment_settings": ChunkEnrichmentSettings(),
@@ -130,7 +130,7 @@ class IngestionConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["r2r", "unstructured_local", "unstructured_api"]
+        return ["fuse", "unstructured_local", "unstructured_api"]
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
@@ -147,7 +147,7 @@ class IngestionConfig(ProviderConfig):
     class Config:
         populate_by_name = True
         json_schema_extra = {
-            "provider": "r2r",
+            "provider": "fuse",
             "excluded_parsers": ["mp4"],
             "chunking_strategy": "recursive",
             "chunk_enrichment_settings": ChunkEnrichmentSettings(),

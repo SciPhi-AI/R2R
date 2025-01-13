@@ -7,12 +7,12 @@ from collections.abc import AsyncGenerator as AsyncGenType
 # from typing import Any, Callable, Coroutine, TypeVar
 from typing import Any, AsyncGenerator, Callable, Coroutine, Generator, TypeVar
 
-from .async_client import R2RAsyncClient
+from .async_client import FUSEAsyncClient
 
 T = TypeVar("T")
 
 
-class R2RClient(R2RAsyncClient):
+class FUSEClient(FUSEAsyncClient):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self._loop = asyncio.new_event_loop()

@@ -16,7 +16,7 @@ from rich.table import Table
 
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
-from r2r import R2RAsyncClient, R2RException
+from fuse import FUSEAsyncClient, FUSEException
 
 console = Console()
 
@@ -46,8 +46,8 @@ async def create(
     metadatas: Optional[Sequence[dict[str, Any]]] = None,
     run_without_orchestration: bool = False,
 ):
-    """Ingest files into R2R."""
-    client: R2RAsyncClient = ctx.obj
+    """Ingest files into FUSE."""
+    client: FUSEAsyncClient = ctx.obj
     run_with_orchestration = not run_without_orchestration
     responses: _list[dict[str, Any]] = []
 
@@ -71,7 +71,7 @@ async def create(
                 responses.append(response)  # type: ignore
                 click.echo(json.dumps(response, indent=2))
                 click.echo("-" * 40)
-            except R2RException as e:
+            except FUSEException as e:
                 click.echo(str(e), err=True)
             except Exception as e:
                 click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -100,7 +100,7 @@ async def list(
 ) -> None:
     """Get an overview of documents."""
     ids = list(ids) if ids else None
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -148,7 +148,7 @@ async def list(
             f"\n[dim]Showing {len(response['results'])} documents (offset: {offset}, limit: {limit})[/dim]"  # type: ignore
         )
 
-    except R2RException as e:
+    except FUSEException as e:
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
     except Exception as e:
         console.print(f"[bold red]Unexpected error:[/bold red] {str(e)}")
@@ -159,7 +159,7 @@ async def list(
 @pass_context
 async def retrieve(ctx: click.Context, id: UUID):
     """Retrieve a document by ID."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
     console = Console()
 
     try:
@@ -215,7 +215,7 @@ async def retrieve(ctx: click.Context, id: UUID):
         console.print(metadata_table)
         console.print("\n")
 
-    except R2RException as e:
+    except FUSEException as e:
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
     except Exception as e:
         console.print(f"[bold red]Unexpected error:[/bold red] {str(e)}")
@@ -226,13 +226,13 @@ async def retrieve(ctx: click.Context, id: UUID):
 @pass_context
 async def delete(ctx: click.Context, id):
     """Delete a document by ID."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
             response = await client.documents.delete(id=id)
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -253,7 +253,7 @@ async def delete(ctx: click.Context, id):
 @pass_context
 async def list_chunks(ctx: click.Context, id, offset, limit):
     """List chunks for a specific document."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
     console = Console()
 
     try:
@@ -294,7 +294,7 @@ async def list_chunks(ctx: click.Context, id, offset, limit):
             f"\n[dim]Showing {len(response['results'])} chunks (offset: {offset}, limit: {limit})[/dim]"  # type: ignore
         )
 
-    except R2RException as e:
+    except FUSEException as e:
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
     except Exception as e:
         console.print(f"[bold red]Unexpected error:[/bold red] {str(e)}")
@@ -315,7 +315,7 @@ async def list_chunks(ctx: click.Context, id, offset, limit):
 @pass_context
 async def list_collections(ctx: click.Context, id, offset, limit):
     """List collections for a specific document."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
     console = Console()
 
     try:
@@ -356,7 +356,7 @@ async def list_collections(ctx: click.Context, id, offset, limit):
             f"\n[dim]Showing {len(response['results'])} collections (offset: {offset}, limit: {limit})[/dim]"  # type: ignore
         )
 
-    except R2RException as e:
+    except FUSEException as e:
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
     except Exception as e:
         console.print(f"[bold red]Unexpected error:[/bold red] {str(e)}")
@@ -423,7 +423,7 @@ async def extract(
     ctx: click.Context, id, run_type, settings, run_without_orchestration
 ):
     """Extract entities and relationships from a document."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
     run_with_orchestration = not run_without_orchestration
 
     with timer():
@@ -459,7 +459,7 @@ async def list_entities(
     ctx: click.Context, id, offset, limit, include_embeddings
 ):
     """List entities extracted from a document."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -470,7 +470,7 @@ async def list_entities(
                 include_embeddings=include_embeddings,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -503,7 +503,7 @@ async def list_relationships(
     ctx: click.Context, id, offset, limit, entity_names, relationship_types
 ):
     """List relationships extracted from a document."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -517,7 +517,7 @@ async def list_relationships(
                 ),
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -526,9 +526,9 @@ async def list_relationships(
 @documents.command()
 @pass_context
 async def create_sample(ctx: click.Context) -> None:
-    """Ingest the first sample file into R2R."""
-    sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle.txt"
-    client: R2RAsyncClient = ctx.obj
+    """Ingest the first sample file into FUSE."""
+    sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/FUSE/main/py/core/examples/data/aristotle.txt"
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -536,7 +536,7 @@ async def create_sample(ctx: click.Context) -> None:
         click.echo(
             f"Sample file ingestion completed. Ingest files response:\n\n{response}"
         )
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -545,19 +545,19 @@ async def create_sample(ctx: click.Context) -> None:
 @documents.command()
 @pass_context
 async def create_samples(ctx: click.Context) -> None:
-    """Ingest multiple sample files into R2R."""
+    """Ingest multiple sample files into FUSE."""
     urls = [
-        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_3.html",
-        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_4.html",
-        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_5.html",
-        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/lyft_2021.pdf",
-        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/uber_2021.pdf",
-        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/got.txt",
-        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_1.html",
-        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/pg_essay_2.html",
-        "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle.txt",
+        "https://raw.githubusercontent.com/SciPhi-AI/FUSE/main/py/core/examples/data/pg_essay_3.html",
+        "https://raw.githubusercontent.com/SciPhi-AI/FUSE/main/py/core/examples/data/pg_essay_4.html",
+        "https://raw.githubusercontent.com/SciPhi-AI/FUSE/main/py/core/examples/data/pg_essay_5.html",
+        "https://raw.githubusercontent.com/SciPhi-AI/FUSE/main/py/core/examples/data/lyft_2021.pdf",
+        "https://raw.githubusercontent.com/SciPhi-AI/FUSE/main/py/core/examples/data/uber_2021.pdf",
+        "https://raw.githubusercontent.com/SciPhi-AI/FUSE/main/py/core/examples/data/got.txt",
+        "https://raw.githubusercontent.com/SciPhi-AI/FUSE/main/py/core/examples/data/pg_essay_1.html",
+        "https://raw.githubusercontent.com/SciPhi-AI/FUSE/main/py/core/examples/data/pg_essay_2.html",
+        "https://raw.githubusercontent.com/SciPhi-AI/FUSE/main/py/core/examples/data/aristotle.txt",
     ]
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -565,5 +565,5 @@ async def create_samples(ctx: click.Context) -> None:
         click.echo(
             f"Sample files ingestion completed. Ingest files response:\n\n{response}"
         )
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)

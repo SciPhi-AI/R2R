@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import R2RException
+from core.base import FUSEException
 from core.base.api.models import (
     GenericBooleanResponse,
     GenericMessageResponse,
@@ -13,15 +13,15 @@ from core.base.api.models import (
     WrappedPromptsResponse,
 )
 
-from ...abstractions import R2RProviders, R2RServices
+from ...abstractions import FUSEProviders, FUSEServices
 from .base_router import BaseRouterV3
 
 
 class PromptsRouter(BaseRouterV3):
     def __init__(
         self,
-        providers: R2RProviders,
-        services: R2RServices,
+        providers: FUSEProviders,
+        services: FUSEServices,
     ):
         super().__init__(providers, services)
 
@@ -36,9 +36,9 @@ class PromptsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.prompts.create(
@@ -53,9 +53,9 @@ class PromptsRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.prompts.create({
@@ -101,7 +101,7 @@ class PromptsRouter(BaseRouterV3):
             This endpoint allows superusers to create a new prompt with a specified name, template, and input types.
             """
             if not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "Only a superuser can create prompts.",
                     403,
                 )
@@ -120,9 +120,9 @@ class PromptsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.prompts.list()
@@ -133,9 +133,9 @@ class PromptsRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.prompts.list();
@@ -149,7 +149,7 @@ class PromptsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r prompts list
+                            fuse prompts list
                             """
                         ),
                     },
@@ -175,7 +175,7 @@ class PromptsRouter(BaseRouterV3):
             This endpoint retrieves a list of all prompts in the system. Only superusers can access this endpoint.
             """
             if not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "Only a superuser can list prompts.",
                     403,
                 )
@@ -200,9 +200,9 @@ class PromptsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.prompts.get(
@@ -217,9 +217,9 @@ class PromptsRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.prompts.retrieve({
@@ -237,7 +237,7 @@ class PromptsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r prompts retrieve greeting_prompt --inputs '{"name": "John"}' --prompt-override "Hi, {name}!"
+                            fuse prompts retrieve greeting_prompt --inputs '{"name": "John"}' --prompt-override "Hi, {name}!"
                             """
                         ),
                     },
@@ -271,7 +271,7 @@ class PromptsRouter(BaseRouterV3):
             Only superusers can access this endpoint.
             """
             if not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "Only a superuser can retrieve prompts.",
                     403,
                 )
@@ -290,9 +290,9 @@ class PromptsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.prompts.update(
@@ -307,9 +307,9 @@ class PromptsRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.prompts.update({
@@ -355,7 +355,7 @@ class PromptsRouter(BaseRouterV3):
             This endpoint allows superusers to update the template and input types of an existing prompt.
             """
             if not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "Only a superuser can update prompts.",
                     403,
                 )
@@ -374,9 +374,9 @@ class PromptsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.prompts.delete("greeting_prompt")
@@ -387,9 +387,9 @@ class PromptsRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.prompts.delete({
@@ -405,7 +405,7 @@ class PromptsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r prompts delete greeting_prompt
+                            fuse prompts delete greeting_prompt
                             """
                         ),
                     },
@@ -432,7 +432,7 @@ class PromptsRouter(BaseRouterV3):
             This endpoint allows superusers to delete an existing prompt.
             """
             if not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "Only a superuser can delete prompts.",
                     403,
                 )

@@ -35,7 +35,7 @@ def sync_wrapper(async_gen):
     return wrapper()
 
 
-class R2RAgent(Agent, metaclass=CombinedMeta):
+class FUSEAgent(Agent, metaclass=CombinedMeta):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._register_tools()
@@ -114,7 +114,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                 self._completed = True
 
 
-class R2RStreamingAgent(R2RAgent):
+class FUSEStreamingAgent(FUSEAgent):
     async def arun(  # type: ignore
         self,
         system_instruction: Optional[str] = None,

@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from r2r import R2RClient, R2RException
+from fuse import FUSEClient, FUSEException
 
 
 @pytest.fixture(scope="session")
@@ -18,7 +18,7 @@ def config():
 @pytest.fixture(scope="session")
 def client(config):
     """Create a client instance and log in as superuser."""
-    client = R2RClient(config.base_url)
+    client = FUSEClient(config.base_url)
     client.users.login(config.superuser_email, config.superuser_password)
     return client
 
@@ -80,7 +80,7 @@ def test_delete_index(client):
     assert "message" in delete_resp, "No message in delete response"
 
     # Verify deletion by attempting to retrieve the index
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.indices.retrieve(index_name=index_name, table_name="chunks")
     assert (
         "not found" in str(exc_info.value).lower()
@@ -89,7 +89,7 @@ def test_delete_index(client):
 
 def test_error_handling(client):
     # Try to get a non-existent index
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.indices.retrieve(
             index_name="nonexistent_index", table_name="chunks"
         )

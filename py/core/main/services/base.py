@@ -2,18 +2,18 @@ from abc import ABC
 
 from core.base import RunManager
 
-from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
-from ..config import R2RConfig
+from ..abstractions import FUSEAgents, FUSEPipelines, FUSEPipes, FUSEProviders
+from ..config import FUSEConfig
 
 
 class Service(ABC):
     def __init__(
         self,
-        config: R2RConfig,
-        providers: R2RProviders,
-        pipes: R2RPipes,
-        pipelines: R2RPipelines,
-        agents: R2RAgents,
+        config: FUSEConfig,
+        providers: FUSEProviders,
+        pipes: FUSEPipes,
+        pipelines: FUSEPipelines,
+        agents: FUSEAgents,
         run_manager: RunManager,
     ):
         self.config = config

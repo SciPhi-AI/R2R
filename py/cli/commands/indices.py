@@ -4,7 +4,7 @@ import asyncclick as click
 from asyncclick import pass_context
 
 from cli.utils.timer import timer
-from r2r import R2RAsyncClient, R2RException
+from fuse import FUSEAsyncClient, FUSEException
 
 
 @click.group()
@@ -27,7 +27,7 @@ def indices():
 @pass_context
 async def list(ctx: click.Context, offset, limit):
     """Get an overview of indices."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -38,7 +38,7 @@ async def list(ctx: click.Context, offset, limit):
 
         for user in response["results"]:  # type: ignore
             click.echo(json.dumps(user, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -50,7 +50,7 @@ async def list(ctx: click.Context, offset, limit):
 @pass_context
 async def retrieve(ctx: click.Context, index_name, table_name):
     """Retrieve an index by name."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -59,7 +59,7 @@ async def retrieve(ctx: click.Context, index_name, table_name):
                 table_name=table_name,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -71,7 +71,7 @@ async def retrieve(ctx: click.Context, index_name, table_name):
 @pass_context
 async def delete(ctx: click.Context, index_name, table_name):
     """Delete an index by name."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -81,7 +81,7 @@ async def delete(ctx: click.Context, index_name, table_name):
             )
 
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)

@@ -7,7 +7,7 @@ from fastapi import Body, Depends, Path, Query
 from fastapi.background import BackgroundTasks
 from fastapi.responses import FileResponse
 
-from core.base import Message, R2RException
+from core.base import Message, FUSEException
 from core.base.api.models import (
     GenericBooleanResponse,
     WrappedBooleanResponse,
@@ -17,7 +17,7 @@ from core.base.api.models import (
     WrappedMessageResponse,
 )
 
-from ...abstractions import R2RProviders, R2RServices
+from ...abstractions import FUSEProviders, FUSEServices
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -26,8 +26,8 @@ logger = logging.getLogger()
 class ConversationsRouter(BaseRouterV3):
     def __init__(
         self,
-        providers: R2RProviders,
-        services: R2RServices,
+        providers: FUSEProviders,
+        services: FUSEServices,
     ):
         super().__init__(providers, services)
 
@@ -42,9 +42,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.conversations.create()
@@ -55,9 +55,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.conversations.create();
@@ -71,7 +71,7 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r conversations create
+                            fuse conversations create
                             """
                         ),
                     },
@@ -116,9 +116,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.conversations.list(
@@ -132,9 +132,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.conversations.list();
@@ -148,7 +148,7 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r conversations list
+                            fuse conversations list
                             """
                         ),
                     },
@@ -218,9 +218,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = FUSEClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
                             response = client.conversations.export(
@@ -235,9 +235,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new fuseClient("http://localhost:7272");
 
                             function main() {
                                 await client.conversations.export({
@@ -293,7 +293,7 @@ class ConversationsRouter(BaseRouterV3):
             """
 
             if not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "Only a superuser can export data.",
                     403,
                 )
@@ -324,9 +324,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient("http://localhost:7272")
+                            client = FUSEClient("http://localhost:7272")
                             # when using auth, do client.login(...)
 
                             response = client.conversations.export_messages(
@@ -341,9 +341,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient("http://localhost:7272");
+                            const client = new fuseClient("http://localhost:7272");
 
                             function main() {
                                 await client.conversations.exportMessages({
@@ -399,7 +399,7 @@ class ConversationsRouter(BaseRouterV3):
             """
 
             if not auth_user.is_superuser:
-                raise R2RException(
+                raise FUSEException(
                     "Only a superuser can export data.",
                     403,
                 )
@@ -430,9 +430,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.conversations.get(
@@ -445,9 +445,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.conversations.retrieve({
@@ -463,7 +463,7 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r conversations retrieve 123e4567-e89b-12d3-a456-426614174000
+                            fuse conversations retrieve 123e4567-e89b-12d3-a456-426614174000
                             """
                         ),
                     },
@@ -511,9 +511,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.conversations.update("123e4567-e89b-12d3-a456-426614174000", "new_name")
@@ -524,9 +524,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.conversations.update({
@@ -543,7 +543,7 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r conversations delete 123e4567-e89b-12d3-a456-426614174000
+                            fuse conversations delete 123e4567-e89b-12d3-a456-426614174000
                             """
                         ),
                     },
@@ -594,9 +594,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.conversations.delete("123e4567-e89b-12d3-a456-426614174000")
@@ -607,9 +607,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.conversations.delete({
@@ -625,7 +625,7 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r conversations delete 123e4567-e89b-12d3-a456-426614174000
+                            fuse conversations delete 123e4567-e89b-12d3-a456-426614174000
                             """
                         ),
                     },
@@ -674,9 +674,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.conversations.add_message(
@@ -693,9 +693,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.conversations.addMessage({
@@ -749,9 +749,9 @@ class ConversationsRouter(BaseRouterV3):
             This endpoint adds a new message to an existing conversation.
             """
             if content == "":
-                raise R2RException("Content cannot be empty", status_code=400)
+                raise FUSEException("Content cannot be empty", status_code=400)
             if role not in ["user", "assistant", "system"]:
-                raise R2RException("Invalid role", status_code=400)
+                raise FUSEException("Invalid role", status_code=400)
             message = Message(role=role, content=content)
             return await self.services.management.add_message(
                 conversation_id=id,
@@ -770,9 +770,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.conversations.update_message(
@@ -787,9 +787,9 @@ class ConversationsRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.conversations.updateMessage({

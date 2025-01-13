@@ -12,7 +12,7 @@ from core.base import (
     DocumentType,
     IngestionConfig,
     IngestionProvider,
-    R2RDocumentProcessingError,
+    FUSEDocumentProcessingError,
     RecursiveCharacterTextSplitter,
     TextSplitter,
 )
@@ -25,7 +25,7 @@ from ...llm import LiteLLMCompletionProvider, OpenAICompletionProvider
 logger = logging.getLogger()
 
 
-class R2RIngestionConfig(IngestionConfig):
+class FUSEIngestionConfig(IngestionConfig):
     chunk_size: int = 1024
     chunk_overlap: int = 512
     chunking_strategy: ChunkingStrategy = ChunkingStrategy.RECURSIVE
@@ -33,7 +33,7 @@ class R2RIngestionConfig(IngestionConfig):
     separator: Optional[str] = None
 
 
-class R2RIngestionProvider(IngestionProvider):
+class FUSEIngestionProvider(IngestionProvider):
     DEFAULT_PARSERS = {
         DocumentType.BMP: parsers.BMPParser,
         DocumentType.CSV: parsers.CSVParser,
@@ -88,12 +88,12 @@ class R2RIngestionProvider(IngestionProvider):
 
     def __init__(
         self,
-        config: R2RIngestionConfig,
+        config: FUSEIngestionConfig,
         database_provider: PostgresDatabaseProvider,
         llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
     ):
         super().__init__(config, database_provider, llm_provider)
-        self.config: R2RIngestionConfig = config  # for type hinting
+        self.config: FUSEIngestionConfig = config  # for type hinting
         self.database_provider: PostgresDatabaseProvider = database_provider
         self.llm_provider: (
             LiteLLMCompletionProvider | OpenAICompletionProvider
@@ -103,7 +103,7 @@ class R2RIngestionProvider(IngestionProvider):
         self._initialize_parsers()
 
         logger.info(
-            f"R2RIngestionProvider initialized with config: {self.config}"
+            f"FUSEIngestionProvider initialized with config: {self.config}"
         )
 
     def _initialize_parsers(self):
@@ -118,7 +118,7 @@ class R2RIngestionProvider(IngestionProvider):
         for doc_type, doc_parser_name in self.config.extra_parsers.items():
             self.parsers[
                 f"{doc_parser_name}_{str(doc_type)}"
-            ] = R2RIngestionProvider.EXTRA_PARSERS[doc_type][doc_parser_name](
+            ] = FUSEIngestionProvider.EXTRA_PARSERS[doc_type][doc_parser_name](
                 config=self.config,
                 database_provider=self.database_provider,
                 llm_provider=self.llm_provider,
@@ -212,9 +212,9 @@ class R2RIngestionProvider(IngestionProvider):
         ingestion_config_override: dict,
     ) -> AsyncGenerator[DocumentChunk, None]:
         if document.document_type not in self.parsers:
-            raise R2RDocumentProcessingError(
+            raise FUSEDocumentProcessingError(
                 document_id=document.id,
-                error_message=f"Parser for {document.document_type} not found in `R2RIngestionProvider`.",
+                error_message=f"Parser for {document.document_type} not found in `FUSEIngestionProvider`.",
             )
         else:
             t0 = time.time()

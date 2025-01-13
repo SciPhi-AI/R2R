@@ -5,14 +5,14 @@ from typing import AsyncGenerator, Optional, Tuple
 
 import pytest
 
-from r2r import R2RAsyncClient, R2RException
+from fuse import FUSEAsyncClient, FUSEException
 
 
-class AsyncR2RTestClient:
+class AsyncFUSETestClient:
     """Wrapper to ensure async operations use the correct event loop"""
 
     def __init__(self, base_url: str = "http://localhost:7272"):
-        self.client = R2RAsyncClient(base_url)
+        self.client = FUSEAsyncClient(base_url)
 
     async def create_document(
         self, chunks: list[str], run_with_orchestration: bool = False
@@ -62,15 +62,15 @@ class AsyncR2RTestClient:
 
 
 @pytest.fixture
-async def test_client() -> AsyncGenerator[AsyncR2RTestClient, None]:
+async def test_client() -> AsyncGenerator[AsyncFUSETestClient, None]:
     """Create a test client."""
-    client = AsyncR2RTestClient()
+    client = AsyncFUSETestClient()
     yield client
 
 
 @pytest.fixture
 async def test_document(
-    test_client: AsyncR2RTestClient,
+    test_client: AsyncFUSETestClient,
 ) -> AsyncGenerator[Tuple[str, list[dict]], None]:
     """Create a test document with chunks."""
     doc_id, _ = await test_client.create_document(
@@ -81,14 +81,14 @@ async def test_document(
     yield doc_id, chunks
     try:
         await test_client.delete_document(doc_id)
-    except R2RException:
+    except FUSEException:
         pass
 
 
 class TestChunks:
     @pytest.mark.asyncio
     async def test_create_and_list_chunks(
-        self, test_client: AsyncR2RTestClient
+        self, test_client: AsyncFUSETestClient
     ):
         # Create document with chunks
         doc_id, _ = await test_client.create_document(
@@ -105,7 +105,7 @@ class TestChunks:
 
     @pytest.mark.asyncio
     async def test_retrieve_chunk(
-        self, test_client: AsyncR2RTestClient, test_document
+        self, test_client: AsyncFUSETestClient, test_document
     ):
         doc_id, chunks = test_document
         chunk_id = chunks[0]["id"]
@@ -116,7 +116,7 @@ class TestChunks:
 
     @pytest.mark.asyncio
     async def test_update_chunk(
-        self, test_client: AsyncR2RTestClient, test_document
+        self, test_client: AsyncFUSETestClient, test_document
     ):
         doc_id, chunks = test_document
         chunk_id = chunks[0]["id"]
@@ -130,7 +130,7 @@ class TestChunks:
 
     @pytest.mark.asyncio
     async def test_delete_chunk(
-        self, test_client: AsyncR2RTestClient, test_document
+        self, test_client: AsyncFUSETestClient, test_document
     ):
         doc_id, chunks = test_document
         chunk_id = chunks[0]["id"]
@@ -140,12 +140,12 @@ class TestChunks:
         assert result["success"], "Chunk deletion failed"
 
         # Verify deletion
-        with pytest.raises(R2RException) as exc_info:
+        with pytest.raises(FUSEException) as exc_info:
             await test_client.retrieve_chunk(chunk_id)
         assert exc_info.value.status_code == 404
 
     @pytest.mark.asyncio
-    async def test_search_chunks(self, test_client: AsyncR2RTestClient):
+    async def test_search_chunks(self, test_client: AsyncFUSETestClient):
         # Create searchable document
         doc_id, _ = await test_client.create_document(
             ["Aristotle reference", "Another piece of text"]
@@ -161,25 +161,25 @@ class TestChunks:
 
     @pytest.mark.asyncio
     async def test_unauthorized_chunk_access(
-        self, test_client: AsyncR2RTestClient, test_document
+        self, test_client: AsyncFUSETestClient, test_document
     ):
         doc_id, chunks = test_document
         chunk_id = chunks[0]["id"]
 
         # Create and login as different user
-        non_owner_client = AsyncR2RTestClient()
+        non_owner_client = AsyncFUSETestClient()
         email = f"test_{uuid.uuid4()}@example.com"
         await non_owner_client.register_user(email, "password123")
         await non_owner_client.login_user(email, "password123")
 
         # Attempt unauthorized access
-        with pytest.raises(R2RException) as exc_info:
+        with pytest.raises(FUSEException) as exc_info:
             await non_owner_client.retrieve_chunk(chunk_id)
         assert exc_info.value.status_code == 403
 
     @pytest.mark.asyncio
     async def test_list_chunks_with_filters(
-        self, test_client: AsyncR2RTestClient
+        self, test_client: AsyncFUSETestClient
     ):
         """Test listing chunks with owner_id filter."""
         # Create and login as temporary user
@@ -221,7 +221,7 @@ class TestChunks:
 
     @pytest.mark.asyncio
     async def test_list_chunks_pagination(
-        self, test_client: AsyncR2RTestClient
+        self, test_client: AsyncFUSETestClient
     ):
         """Test chunk listing with pagination."""
         # Create and login as temporary user
@@ -269,7 +269,7 @@ class TestChunks:
 
     @pytest.mark.asyncio
     async def test_list_chunks_with_multiple_documents(
-        self, test_client: AsyncR2RTestClient
+        self, test_client: AsyncFUSETestClient
     ):
         """Test listing chunks across multiple documents."""
         # Create and login as temporary user

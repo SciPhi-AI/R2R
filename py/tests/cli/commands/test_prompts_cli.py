@@ -12,7 +12,7 @@ import pytest
 from click.testing import CliRunner
 
 from cli.commands.prompts import list, retrieve
-from r2r import R2RAsyncClient
+from fuse import FUSEAsyncClient
 from tests.cli.async_invoke import async_invoke
 
 
@@ -37,7 +37,7 @@ def extract_json_block(output: str) -> dict:
 @pytest.mark.asyncio
 async def test_prompts_list():
     """Test listing prompts."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     # Test basic list
@@ -48,7 +48,7 @@ async def test_prompts_list():
 @pytest.mark.asyncio
 async def test_prompts_retrieve():
     """Test retrieving prompts with various parameters."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     # Test retrieve with just name
@@ -60,7 +60,7 @@ async def test_prompts_retrieve():
 @pytest.mark.asyncio
 async def test_nonexistent_prompt():
     """Test operations on a nonexistent prompt."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     nonexistent_name = f"nonexistent-{uuid.uuid4()}"
@@ -75,7 +75,7 @@ async def test_nonexistent_prompt():
 @pytest.mark.asyncio
 async def test_prompt_retrieve_with_all_options():
     """Test retrieving a prompt with all options combined."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     name = "example-prompt"

@@ -22,7 +22,7 @@ from core.base.abstractions import (
     KGCreationSettings,
     KGEnrichmentSettings,
     KGExtractionStatus,
-    R2RException,
+    FUSEException,
     Relationship,
     StoreType,
     VectorQuantizationType,
@@ -285,7 +285,7 @@ class PostgresEntitiesHandler(Handler):
             param_index += 1
 
         if not update_fields:
-            raise R2RException(status_code=400, message="No fields to update")
+            raise FUSEException(status_code=400, message="No fields to update")
 
         update_fields.append("updated_at = NOW()")
         params.append(entity_id)
@@ -336,7 +336,7 @@ class PostgresEntitiesHandler(Handler):
             list[UUID]: List of deleted entity IDs
 
         Raises:
-            R2RException: If specific entities were requested but not all found
+            FUSEException: If specific entities were requested but not all found
         """
         table_name = self._get_entity_table_for_store(store_type)
 
@@ -365,7 +365,7 @@ class PostgresEntitiesHandler(Handler):
             # Check if all requested entities were deleted
             deleted_ids = [row["id"] for row in results]
             if entity_ids and len(deleted_ids) != len(entity_ids):
-                raise R2RException(
+                raise FUSEException(
                     f"Some entities not found in {store_type} store or no permission to delete",
                     404,
                 )
@@ -801,7 +801,7 @@ class PostgresRelationshipsHandler(Handler):
             param_index += 1
 
         if not update_fields:
-            raise R2RException(status_code=400, message="No fields to update")
+            raise FUSEException(status_code=400, message="No fields to update")
 
         update_fields.append("updated_at = NOW()")
         params.append(relationship_id)
@@ -857,7 +857,7 @@ class PostgresRelationshipsHandler(Handler):
             List of deleted relationship IDs
 
         Raises:
-            R2RException: If specific relationships were requested but not all found
+            FUSEException: If specific relationships were requested but not all found
         """
         table_name = self._get_relationship_table_for_store(store_type)
 
@@ -882,7 +882,7 @@ class PostgresRelationshipsHandler(Handler):
 
             deleted_ids = [row["id"] for row in results]
             if relationship_ids and len(deleted_ids) != len(relationship_ids):
-                raise R2RException(
+                raise FUSEException(
                     f"Some relationships not found in {store_type} store or no permission to delete",
                     404,
                 )
@@ -1140,7 +1140,7 @@ class PostgresCommunitiesHandler(Handler):
             param_index += 1
 
         if not update_fields:
-            raise R2RException(status_code=400, message="No fields to update")
+            raise FUSEException(status_code=400, message="No fields to update")
 
         update_fields.append("updated_at = NOW()")
         params.append(community_id)
@@ -1504,7 +1504,7 @@ class PostgresGraphsHandler(Handler):
                 document_ids=result["document_ids"] or [],
             )
         except UniqueViolationError:
-            raise R2RException(
+            raise FUSEException(
                 message="Graph with this ID already exists",
                 status_code=409,
             )
@@ -1717,7 +1717,7 @@ class PostgresGraphsHandler(Handler):
             param_index += 1
 
         if not update_fields:
-            raise R2RException(status_code=400, message="No fields to update")
+            raise FUSEException(status_code=400, message="No fields to update")
 
         update_fields.append("updated_at = NOW()")
         params.append(collection_id)
@@ -1735,7 +1735,7 @@ class PostgresGraphsHandler(Handler):
             )
 
             if not result:
-                raise R2RException(status_code=404, message="Graph not found")
+                raise FUSEException(status_code=404, message="Graph not found")
 
             return GraphResponse(
                 id=result["id"],
@@ -2153,7 +2153,7 @@ class PostgresGraphsHandler(Handler):
             bool: True if document exists in graph, False otherwise
 
         Raises:
-            R2RException: If graph not found
+            FUSEException: If graph not found
         """
         QUERY = f"""
             SELECT EXISTS (
@@ -2170,7 +2170,7 @@ class PostgresGraphsHandler(Handler):
         )
 
         if result is None:
-            raise R2RException(f"Graph {graph_id} not found", 404)
+            raise FUSEException(f"Graph {graph_id} not found", 404)
 
         return result["exists"]
 
@@ -2272,7 +2272,7 @@ class PostgresGraphsHandler(Handler):
         graphs = await self.get(graph_id=collection_id, offset=0, limit=-1)
 
         if len(graphs["results"]) == 0:
-            raise R2RException(
+            raise FUSEException(
                 message=f"Graph not found for collection {collection_id}",
                 status_code=404,
             )

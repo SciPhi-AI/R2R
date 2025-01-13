@@ -4,7 +4,7 @@ import asyncclick as click
 from asyncclick import pass_context
 
 from cli.utils.timer import timer
-from r2r import R2RAsyncClient, R2RException
+from fuse import FUSEAsyncClient, FUSEException
 
 
 @click.group()
@@ -17,7 +17,7 @@ def prompts():
 @pass_context
 async def list(ctx: click.Context):
     """Get an overview of prompts."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -25,7 +25,7 @@ async def list(ctx: click.Context):
 
         for prompt in response["results"]:  # type: ignore
             click.echo(json.dumps(prompt, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -38,7 +38,7 @@ async def list(ctx: click.Context):
 @pass_context
 async def retrieve(ctx: click.Context, name, inputs, prompt_override):
     """Retrieve an prompts by name."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -48,7 +48,7 @@ async def retrieve(ctx: click.Context, name, inputs, prompt_override):
                 prompt_override=prompt_override,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -59,7 +59,7 @@ async def retrieve(ctx: click.Context, name, inputs, prompt_override):
 @pass_context
 async def delete(ctx: click.Context, name):
     """Delete a prompt by name."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -67,7 +67,7 @@ async def delete(ctx: click.Context, name):
                 name=name,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)

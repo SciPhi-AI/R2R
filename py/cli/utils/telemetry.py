@@ -11,7 +11,7 @@ import asyncclick as click
 from posthog import Posthog
 
 TELEMETRY_DISABLED = (
-    os.getenv("R2R_CLI_DISABLE_TELEMETRY", "false").lower() == "true"
+    os.getenv("FUSE_CLI_DISABLE_TELEMETRY", "false").lower() == "true"
 )
 
 posthog: Optional[Posthog] = None
@@ -64,7 +64,7 @@ def telemetry(command):
                         "status": "success",
                         "args": command_args,
                         "params": command_params,
-                        "version": version("r2r"),
+                        "version": version("fuse"),
                     },
                 )
 
@@ -81,7 +81,7 @@ def telemetry(command):
                         "error_message": str(e),
                         "args": command_args,
                         "params": command_params,
-                        "version": version("r2r"),
+                        "version": version("fuse"),
                     },
                 )
                 raise
@@ -118,7 +118,7 @@ def telemetry(command):
                             "status": "success",
                             "args": command_args,
                             "params": command_params,
-                            "version": version("r2r"),
+                            "version": version("fuse"),
                         },
                     ),
                     daemon=True,
@@ -140,7 +140,7 @@ def telemetry(command):
                             "error_message": str(e),
                             "args": command_args,
                             "params": command_params,
-                            "version": version("r2r"),
+                            "version": version("fuse"),
                         },
                     ),
                     daemon=True,

@@ -1,4 +1,4 @@
-# A config which overrides all instances of `openai` with `azure` in the `r2r.toml` config
+# A config which overrides all instances of `openai` with `azure` in the `fuse.toml` config
 [agent]
   [agent.generation_config]
   model = "azure/gpt-4o"
@@ -7,9 +7,6 @@
   [completion.generation_config]
   model = "azure/gpt-4o"
 
-
-
-[database]
 # KG settings
 batch_size = 256
 
@@ -22,28 +19,16 @@ batch_size = 256
   [database.graph_search_settings]
     generation_config = { model = "azure/gpt-4o-mini" }
 
-  [database.limits]
-  global_per_min = 10  # Small enough to test quickly
-  monthly_limit = 20  # Small enough to test in one run
-
-  [database.route_limits]
-  "/v3/retrieval/search" = { route_per_min = 5, monthly_limit = 10 }
-
-  [database.user_limits."47e53676-b478-5b3f-a409-234ca2164de5"]
-  global_per_min = 2
-  route_per_min = 1
-
-
 [embedding]
 provider = "litellm"
-base_model = "openai/text-embedding-3-small" # continue with `openai` for embeddings, due to server rate limit on azure
+base_model = "azure/text-embedding-3-small"
 base_dimension = 512
 
 [file]
 provider = "postgres"
 
 [ingestion]
-provider = "r2r"
+provider = "fuse"
 chunking_strategy = "recursive"
 chunk_size = 1_024
 chunk_overlap = 512
@@ -56,3 +41,10 @@ vision_pdf_model = "azure/gpt-4o"
 
   [ingestion.chunk_enrichment_settings]
     generation_config = { model = "azure/gpt-4o-mini" }
+
+
+[auth]
+provider = "fuse"
+access_token_lifetime_in_minutes = 1
+refresh_token_lifetime_in_days = 3
+require_authentication = false

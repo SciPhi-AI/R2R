@@ -7,10 +7,10 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-T = TypeVar("T", bound="R2RSerializable")
+T = TypeVar("T", bound="FUSESerializable")
 
 
-class R2RSerializable(BaseModel):
+class FUSESerializable(BaseModel):
     @classmethod
     def from_dict(cls: Type[T], data: dict[str, Any] | str) -> T:
         if isinstance(data, str):
@@ -38,11 +38,11 @@ class R2RSerializable(BaseModel):
     def _serialize_values(data: Any) -> Any:
         if isinstance(data, dict):
             return {
-                k: R2RSerializable._serialize_values(v)
+                k: FUSESerializable._serialize_values(v)
                 for k, v in data.items()
             }
         elif isinstance(data, list):
-            return [R2RSerializable._serialize_values(v) for v in data]
+            return [FUSESerializable._serialize_values(v) for v in data]
         elif isinstance(data, UUID):
             return str(data)
         elif isinstance(data, Enum):

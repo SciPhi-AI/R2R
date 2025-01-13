@@ -12,7 +12,7 @@ from click.testing import CliRunner
 
 from cli.commands.documents import create as create_document
 from cli.commands.retrieval import rag, search
-from r2r import R2RAsyncClient
+from fuse import FUSEAsyncClient
 from tests.cli.async_invoke import async_invoke
 
 
@@ -35,7 +35,7 @@ def extract_json_block(output: str) -> dict:
 
 
 async def create_test_document(
-    runner: CliRunner, client: R2RAsyncClient
+    runner: CliRunner, client: FUSEAsyncClient
 ) -> str:
     """Helper function to create a test document and return its ID."""
     with tempfile.NamedTemporaryFile(
@@ -57,7 +57,7 @@ async def create_test_document(
 @pytest.mark.asyncio
 async def test_basic_search():
     """Test basic search functionality."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     # Create test document first
@@ -85,7 +85,7 @@ async def test_basic_search():
 @pytest.mark.asyncio
 async def test_search_with_filters():
     """Test search with filters."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     document_id = await create_test_document(runner, client)
@@ -115,7 +115,7 @@ async def test_search_with_filters():
 @pytest.mark.asyncio
 async def test_search_with_advanced_options():
     """Test search with advanced options."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     document_id = await create_test_document(runner, client)
@@ -147,7 +147,7 @@ async def test_search_with_advanced_options():
 @pytest.mark.asyncio
 async def test_basic_rag():
     """Test basic RAG functionality."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     document_id = await create_test_document(runner, client)
@@ -169,7 +169,7 @@ async def test_basic_rag():
 @pytest.mark.asyncio
 async def test_rag_with_streaming():
     """Test RAG with streaming enabled."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     document_id = await create_test_document(runner, client)
@@ -192,7 +192,7 @@ async def test_rag_with_streaming():
 @pytest.mark.asyncio
 async def test_rag_with_model_specification():
     """Test RAG with specific model."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     document_id = await create_test_document(runner, client)

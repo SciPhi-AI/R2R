@@ -24,7 +24,7 @@ from cli.commands.users import (
     remove_from_collection,
     retrieve,
 )
-from r2r import R2RAsyncClient
+from fuse import FUSEAsyncClient
 from tests.cli.async_invoke import async_invoke
 
 
@@ -50,7 +50,7 @@ def extract_json_block(output: str) -> dict:
 @pytest.mark.asyncio
 async def test_user_lifecycle():
     """Test the complete lifecycle of a user: create, retrieve, list, collections."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     # Create test user with random email
@@ -106,7 +106,7 @@ async def test_user_lifecycle():
 # @pytest.mark.asyncio
 # async def test_retrieve_nonexistent_user():
 #     """Test retrieving a user that doesn't exist."""
-#     client = R2RAsyncClient(base_url="http://localhost:7272")
+#     client = FUSEAsyncClient(base_url="http://localhost:7272")
 #     runner = CliRunner(mix_stderr=False)
 
 #     nonexistent_id = str(uuid.uuid4())
@@ -121,7 +121,7 @@ async def test_user_lifecycle():
 # @pytest.mark.asyncio
 # async def test_create_duplicate_user():
 #     """Test creating a user with an email that already exists."""
-#     client = R2RAsyncClient(base_url="http://localhost:7272")
+#     client = FUSEAsyncClient(base_url="http://localhost:7272")
 #     runner = CliRunner(mix_stderr=False)
 
 #     test_email = f"test_{uuid.uuid4()}@example.com"

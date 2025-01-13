@@ -1,4 +1,4 @@
-from .base import AsyncSyncMeta, R2RSerializable, syncable
+from .base import AsyncSyncMeta, FUSESerializable, syncable
 from .document import (
     Document,
     DocumentChunk,
@@ -15,8 +15,8 @@ from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import (
     PDFParsingError,
     PopperNotFoundError,
-    R2RDocumentProcessingError,
-    R2RException,
+    FUSEDocumentProcessingError,
+    FUSEException,
 )
 from .graph import Community, Entity, KGExtraction, Relationship, StoreType
 from .kg import (
@@ -65,7 +65,7 @@ from .vector import (
 
 __all__ = [
     # Base abstractions
-    "R2RSerializable",
+    "FUSESerializable",
     "AsyncSyncMeta",
     "syncable",
     # Completion abstractions
@@ -84,8 +84,8 @@ __all__ = [
     "EmbeddingPurpose",
     "default_embedding_prefixes",
     # Exception abstractions
-    "R2RDocumentProcessingError",
-    "R2RException",
+    "FUSEDocumentProcessingError",
+    "FUSEException",
     "PDFParsingError",
     "PopperNotFoundError",
     # Graph abstractions

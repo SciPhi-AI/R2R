@@ -18,7 +18,7 @@ from openai import AsyncOpenAI
 from sqlalchemy import inspect
 from sqlalchemy.types import UserDefinedType
 
-from r2r import R2RAsyncClient
+from fuse import FUSEAsyncClient
 
 # revision identifiers, used by Alembic.
 revision: str = "2fac23e4d91b"
@@ -26,16 +26,16 @@ down_revision: Union[str, None] = "d342e632358a"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-project_name = os.getenv("R2R_PROJECT_NAME")
+project_name = os.getenv("FUSE_PROJECT_NAME")
 if not project_name:
     raise ValueError(
-        "Environment variable `R2R_PROJECT_NAME` must be provided migrate, it should be set equal to the value of `project_name` in your `r2r.toml`."
+        "Environment variable `FUSE_PROJECT_NAME` must be provided migrate, it should be set equal to the value of `project_name` in your `fuse.toml`."
     )
 
-dimension = os.getenv("R2R_EMBEDDING_DIMENSION")
+dimension = os.getenv("FUSE_EMBEDDING_DIMENSION")
 if not dimension:
     raise ValueError(
-        "Environment variable `R2R_EMBEDDING_DIMENSION` must be provided migrate, it must should be set equal to the value of `base_dimension` in your `r2r.toml`."
+        "Environment variable `FUSE_EMBEDDING_DIMENSION` must be provided migrate, it must should be set equal to the value of `base_dimension` in your `fuse.toml`."
     )
 
 
@@ -53,23 +53,23 @@ def run_async(coroutine):
 async def async_generate_all_summaries():
     """Asynchronous function to generate summaries"""
 
-    base_url = os.getenv("R2R_BASE_URL")
+    base_url = os.getenv("FUSE_BASE_URL")
     if not base_url:
         raise ValueError(
-            "Environment variable `R2R_BASE_URL` must be provided, it must point at the R2R deployment you wish to migrate, e.g. `http://localhost:7272`."
+            "Environment variable `FUSE_BASE_URL` must be provided, it must point at the FUSE deployment you wish to migrate, e.g. `http://localhost:7272`."
         )
 
-    print(f"Using R2R Base URL: {base_url})")
+    print(f"Using FUSE Base URL: {base_url})")
 
-    base_model = os.getenv("R2R_BASE_MODEL")
+    base_model = os.getenv("FUSE_BASE_MODEL")
     if not base_model:
         raise ValueError(
-            "Environment variable `R2R_BASE_MODEL` must be provided, e.g. `openai/gpt-4o-mini`, it will be used for generating document summaries during migration."
+            "Environment variable `FUSE_BASE_MODEL` must be provided, e.g. `openai/gpt-4o-mini`, it will be used for generating document summaries during migration."
         )
 
-    print(f"Using R2R Base Model: {base_model}")
+    print(f"Using FUSE Base Model: {base_model}")
 
-    client = R2RAsyncClient(base_url)
+    client = FUSEAsyncClient(base_url)
 
     offset = 0
     limit = 1_000

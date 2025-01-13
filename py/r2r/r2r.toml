@@ -1,6 +1,6 @@
 [app]
-# app settings are global available like `r2r_config.agent.app`
-# project_name = "r2r_default" # optional, can also set with `R2R_PROJECT_NAME` env var
+# app settings are global available like `fuse_config.agent.app`
+# project_name = "fuse_default" # optional, can also set with `FUSE_PROJECT_NAME` env var
 default_max_documents_per_user = 10_000
 default_max_chunks_per_user = 10_000_000
 default_max_collections_per_user = 5_000
@@ -57,7 +57,7 @@ tool_names = ["local_search"]
   model = "openai/gpt-4o"
 
 [auth]
-provider = "r2r"
+provider = "fuse"
 access_token_lifetime_in_minutes = 60000 # set a very high default value, for easier testing
 refresh_token_lifetime_in_days = 7
 require_authentication = false
@@ -140,7 +140,7 @@ quantization_settings = { quantization_type = "FP32" }
 provider = "postgres"
 
 [ingestion]
-provider = "r2r"
+provider = "fuse"
 chunking_strategy = "recursive"
 chunk_size = 1_024
 chunk_overlap = 512
@@ -168,7 +168,7 @@ vision_pdf_model = "openai/gpt-4o"
     pdf = "zerox"
 
 [logging]
-provider = "r2r"
+provider = "fuse"
 log_table = "logs"
 log_info_table = "log_info"
 
@@ -177,7 +177,7 @@ provider = "simple"
 
 
 [prompt]
-provider = "r2r"
+provider = "fuse"
 
 [email]
 provider = "console_mock"

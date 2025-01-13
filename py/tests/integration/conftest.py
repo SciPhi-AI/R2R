@@ -5,7 +5,7 @@ from typing import AsyncGenerator, Generator
 
 import pytest
 
-from r2r import R2RAsyncClient, R2RClient
+from fuse import FUSEAsyncClient, FUSEClient
 
 
 class TestConfig:
@@ -24,33 +24,33 @@ def config() -> TestConfig:
 
 
 @pytest.fixture(scope="session")
-async def client(config) -> AsyncGenerator[R2RClient, None]:
+async def client(config) -> AsyncGenerator[FUSEClient, None]:
     """Create a shared client instance for the test session."""
-    client = R2RClient(config.base_url)
+    client = FUSEClient(config.base_url)
     yield client
     # Session cleanup if needed
 
 
 @pytest.fixture  # scope="session")
-def mutable_client(config) -> R2RClient:
+def mutable_client(config) -> FUSEClient:
     """Create a shared client instance for the test session."""
-    client = R2RClient(config.base_url)
+    client = FUSEClient(config.base_url)
     return client  # a client for logging in and what-not
     # Session cleanup if needed
 
 
 @pytest.fixture  # (scope="session")
-async def aclient(config) -> AsyncGenerator[R2RClient, None]:
+async def aclient(config) -> AsyncGenerator[FUSEClient, None]:
     """Create a shared client instance for the test session."""
-    client = R2RAsyncClient(config.base_url)
+    client = FUSEAsyncClient(config.base_url)
     yield client
     # Session cleanup if needed
 
 
 @pytest.fixture
 async def superuser_client(
-    client: R2RClient, config: TestConfig
-) -> AsyncGenerator[R2RClient, None]:
+    client: FUSEClient, config: TestConfig
+) -> AsyncGenerator[FUSEClient, None]:
     """Creates a superuser client for tests requiring elevated privileges."""
     await client.users.login(config.superuser_email, config.superuser_password)
     yield client
@@ -61,7 +61,7 @@ import uuid
 
 import pytest
 
-from r2r import Message, R2RClient, R2RException, SearchMode
+from fuse import Message, FUSEClient, FUSEException, SearchMode
 
 
 @pytest.fixture(scope="session")
@@ -77,7 +77,7 @@ def config():
 @pytest.fixture(scope="session")
 def client(config):
     """Create a client instance and log in as a superuser."""
-    client = R2RClient(config.base_url)
+    client = FUSEClient(config.base_url)
     client.users.login(config.superuser_email, config.superuser_password)
     return client
 
@@ -97,7 +97,7 @@ def test_document(client):
     # Cleanup: Try deleting the document if it still exists
     try:
         client.documents.delete(id=doc_id)
-    except R2RException:
+    except FUSEException:
         pass
 
 
@@ -162,12 +162,12 @@ def test_collection(client, test_document):
         for doc_id in doc_ids:
             try:
                 client.documents.delete(id=doc_id)
-            except R2RException:
+            except FUSEException:
                 pass
         # Delete the collection
         try:
             client.collections.delete(collection_id)
-        except R2RException:
+        except FUSEException:
             pass
     except Exception as e:
         print(f"Error during test_collection cleanup: {e}")

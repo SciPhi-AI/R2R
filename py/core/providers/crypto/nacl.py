@@ -58,7 +58,7 @@ class NaClCryptoProvider(CryptoProvider):
         # Priority: config.secret_key > environment variable > default
         self.secret_key = (
             config.secret_key
-            or os.getenv("R2R_SECRET_KEY")
+            or os.getenv("FUSE_SECRET_KEY")
             or DEFAULT_NACL_SECRET_KEY
         )
 

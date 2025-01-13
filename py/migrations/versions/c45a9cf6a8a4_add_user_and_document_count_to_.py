@@ -19,10 +19,10 @@ down_revision: Union[str, None] = "8077140e1e99"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-project_name = os.getenv("R2R_PROJECT_NAME")
+project_name = os.getenv("FUSE_PROJECT_NAME")
 if not project_name:
     raise ValueError(
-        "Environment variable `R2R_PROJECT_NAME` must be provided migrate, it should be set equal to the value of `project_name` in your `r2r.toml`."
+        "Environment variable `FUSE_PROJECT_NAME` must be provided migrate, it should be set equal to the value of `project_name` in your `fuse.toml`."
     )
 
 

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 
-from core.base import R2RException
+from core.base import FUSEException
 from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
@@ -20,13 +20,13 @@ from .api.v3.prompts_router import PromptsRouter
 from .api.v3.retrieval_router import RetrievalRouterV3
 from .api.v3.system_router import SystemRouter
 from .api.v3.users_router import UsersRouter
-from .config import R2RConfig
+from .config import FUSEConfig
 
 
-class R2RApp:
+class FUSEApp:
     def __init__(
         self,
-        config: R2RConfig,
+        config: FUSEConfig,
         orchestration_provider: (
             HatchetOrchestrationProvider | SimpleOrchestrationProvider
         ),
@@ -58,8 +58,8 @@ class R2RApp:
 
         self.app = FastAPI()
 
-        @self.app.exception_handler(R2RException)
-        async def r2r_exception_handler(request: Request, exc: R2RException):
+        @self.app.exception_handler(FUSEException)
+        async def fuse_exception_handler(request: Request, exc: FUSEException):
             return JSONResponse(
                 status_code=exc.status_code,
                 content={
@@ -87,7 +87,7 @@ class R2RApp:
         @self.app.get("/openapi_spec", include_in_schema=False)
         async def openapi_spec():
             return get_openapi(
-                title="R2R Application API",
+                title="FUSE Application API",
                 version="1.0.0",
                 routes=self.app.routes,
             )

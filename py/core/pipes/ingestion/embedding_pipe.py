@@ -6,7 +6,7 @@ from core.base import (
     AsyncState,
     DocumentChunk,
     EmbeddingProvider,
-    R2RDocumentProcessingError,
+    FUSEDocumentProcessingError,
     Vector,
     VectorEntry,
 )
@@ -113,7 +113,7 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
 
     async def _process_extraction(
         self, extraction: DocumentChunk
-    ) -> VectorEntry | R2RDocumentProcessingError:
+    ) -> VectorEntry | FUSEDocumentProcessingError:
         try:
             if isinstance(extraction.data, bytes):
                 raise ValueError(
@@ -136,7 +136,7 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
             )
         except Exception as e:
             logger.error(f"Error processing extraction: {e}")
-            return R2RDocumentProcessingError(
+            return FUSEDocumentProcessingError(
                 error_message=str(e),
                 document_id=extraction.document_id,
             )

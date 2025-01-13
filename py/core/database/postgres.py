@@ -35,7 +35,7 @@ logger = logging.getLogger()
 
 
 class PostgresDatabaseProvider(DatabaseProvider):
-    # R2R configuration settings
+    # FUSE configuration settings
     config: DatabaseConfig
     project_name: str
 
@@ -81,11 +81,11 @@ class PostgresDatabaseProvider(DatabaseProvider):
         super().__init__(config)
 
         env_vars = [
-            ("user", "R2R_POSTGRES_USER"),
-            ("password", "R2R_POSTGRES_PASSWORD"),
-            ("host", "R2R_POSTGRES_HOST"),
-            ("port", "R2R_POSTGRES_PORT"),
-            ("db_name", "R2R_POSTGRES_DBNAME"),
+            ("user", "FUSE_POSTGRES_USER"),
+            ("password", "FUSE_POSTGRES_PASSWORD"),
+            ("host", "FUSE_POSTGRES_HOST"),
+            ("port", "FUSE_POSTGRES_PORT"),
+            ("db_name", "FUSE_POSTGRES_DBNAME"),
         ]
 
         for attr, env_var in env_vars:
@@ -93,20 +93,20 @@ class PostgresDatabaseProvider(DatabaseProvider):
                 setattr(self, attr, value)
             else:
                 raise ValueError(
-                    f"Error, please set a valid {env_var} environment variable or set a '{attr}' in the 'database' settings of your `r2r.toml`."
+                    f"Error, please set a valid {env_var} environment variable or set a '{attr}' in the 'database' settings of your `fuse.toml`."
                 )
 
         self.port = int(self.port)
 
         self.project_name = (
             config.app.project_name
-            or os.getenv("R2R_PROJECT_NAME")
-            or "r2r_default"
+            or os.getenv("FUSE_PROJECT_NAME")
+            or "fuse_default"
         )
 
         if not self.project_name:
             raise ValueError(
-                "Error, please set a valid R2R_PROJECT_NAME environment variable or set a 'project_name' in the 'database' settings of your `r2r.toml`."
+                "Error, please set a valid FUSE_PROJECT_NAME environment variable or set a 'project_name' in the 'database' settings of your `fuse.toml`."
             )
 
         # Check if it's a Unix socket connection
@@ -234,24 +234,24 @@ class PostgresDatabaseProvider(DatabaseProvider):
         settings = PostgresConfigurationSettings()
 
         env_mapping = {
-            "checkpoint_completion_target": "R2R_POSTGRES_CHECKPOINT_COMPLETION_TARGET",
-            "default_statistics_target": "R2R_POSTGRES_DEFAULT_STATISTICS_TARGET",
-            "effective_cache_size": "R2R_POSTGRES_EFFECTIVE_CACHE_SIZE",
-            "effective_io_concurrency": "R2R_POSTGRES_EFFECTIVE_IO_CONCURRENCY",
-            "huge_pages": "R2R_POSTGRES_HUGE_PAGES",
-            "maintenance_work_mem": "R2R_POSTGRES_MAINTENANCE_WORK_MEM",
-            "min_wal_size": "R2R_POSTGRES_MIN_WAL_SIZE",
-            "max_connections": "R2R_POSTGRES_MAX_CONNECTIONS",
-            "max_parallel_workers_per_gather": "R2R_POSTGRES_MAX_PARALLEL_WORKERS_PER_GATHER",
-            "max_parallel_workers": "R2R_POSTGRES_MAX_PARALLEL_WORKERS",
-            "max_parallel_maintenance_workers": "R2R_POSTGRES_MAX_PARALLEL_MAINTENANCE_WORKERS",
-            "max_wal_size": "R2R_POSTGRES_MAX_WAL_SIZE",
-            "max_worker_processes": "R2R_POSTGRES_MAX_WORKER_PROCESSES",
-            "random_page_cost": "R2R_POSTGRES_RANDOM_PAGE_COST",
-            "statement_cache_size": "R2R_POSTGRES_STATEMENT_CACHE_SIZE",
-            "shared_buffers": "R2R_POSTGRES_SHARED_BUFFERS",
-            "wal_buffers": "R2R_POSTGRES_WAL_BUFFERS",
-            "work_mem": "R2R_POSTGRES_WORK_MEM",
+            "checkpoint_completion_target": "FUSE_POSTGRES_CHECKPOINT_COMPLETION_TARGET",
+            "default_statistics_target": "FUSE_POSTGRES_DEFAULT_STATISTICS_TARGET",
+            "effective_cache_size": "FUSE_POSTGRES_EFFECTIVE_CACHE_SIZE",
+            "effective_io_concurrency": "FUSE_POSTGRES_EFFECTIVE_IO_CONCURRENCY",
+            "huge_pages": "FUSE_POSTGRES_HUGE_PAGES",
+            "maintenance_work_mem": "FUSE_POSTGRES_MAINTENANCE_WORK_MEM",
+            "min_wal_size": "FUSE_POSTGRES_MIN_WAL_SIZE",
+            "max_connections": "FUSE_POSTGRES_MAX_CONNECTIONS",
+            "max_parallel_workers_per_gather": "FUSE_POSTGRES_MAX_PARALLEL_WORKERS_PER_GATHER",
+            "max_parallel_workers": "FUSE_POSTGRES_MAX_PARALLEL_WORKERS",
+            "max_parallel_maintenance_workers": "FUSE_POSTGRES_MAX_PARALLEL_MAINTENANCE_WORKERS",
+            "max_wal_size": "FUSE_POSTGRES_MAX_WAL_SIZE",
+            "max_worker_processes": "FUSE_POSTGRES_MAX_WORKER_PROCESSES",
+            "random_page_cost": "FUSE_POSTGRES_RANDOM_PAGE_COST",
+            "statement_cache_size": "FUSE_POSTGRES_STATEMENT_CACHE_SIZE",
+            "shared_buffers": "FUSE_POSTGRES_SHARED_BUFFERS",
+            "wal_buffers": "FUSE_POSTGRES_WAL_BUFFERS",
+            "work_mem": "FUSE_POSTGRES_WORK_MEM",
         }
 
         for setting, env_var in env_mapping.items():

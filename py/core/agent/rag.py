@@ -1,4 +1,4 @@
-from core.agent import R2RAgent, R2RStreamingAgent
+from core.agent import FUSEAgent, FUSEStreamingAgent
 from core.base import (
     format_search_results_for_llm,
     format_search_results_for_stream,
@@ -77,7 +77,7 @@ class RAGAgentMixin:
     def local_search(self) -> Tool:
         return Tool(
             name="local_search",
-            description="Search your local knowledgebase using the R2R AI system",
+            description="Search your local knowledgebase using the FUSE AI system",
             results_function=self._local_search,
             llm_format_function=RAGAgentMixin.format_search_results_for_llm,
             stream_function=RAGAgentMixin.format_search_results_for_stream,
@@ -120,7 +120,7 @@ class RAGAgentMixin:
         return format_search_results_for_llm(results)
 
 
-class R2RRAGAgent(RAGAgentMixin, R2RAgent):
+class FUSERAGAgent(RAGAgentMixin, FUSEAgent):
     def __init__(
         self,
         database_provider: DatabaseProvider,
@@ -136,7 +136,7 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
         )
 
 
-class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
+class FUSEStreamingRAGAgent(RAGAgentMixin, FUSEStreamingAgent):
     def __init__(
         self,
         database_provider: DatabaseProvider,

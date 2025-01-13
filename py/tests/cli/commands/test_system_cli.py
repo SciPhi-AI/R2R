@@ -19,7 +19,7 @@ import pytest
 from click.testing import CliRunner
 
 from cli.commands.system import health, settings, status, version
-from r2r import R2RAsyncClient
+from fuse import FUSEAsyncClient
 from tests.cli.async_invoke import async_invoke
 
 
@@ -27,7 +27,7 @@ from tests.cli.async_invoke import async_invoke
 async def test_health_against_server():
     """Test health check against a real server."""
     # Create real client
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
 
     # Run command
     runner = CliRunner(mix_stderr=False)
@@ -48,7 +48,7 @@ async def test_health_against_server():
 @pytest.mark.asyncio
 async def test_health_server_down():
     """Test health check when server is unreachable."""
-    client = R2RAsyncClient(base_url="http://localhost:54321")  # Invalid port
+    client = FUSEAsyncClient(base_url="http://localhost:54321")  # Invalid port
     runner = CliRunner(mix_stderr=False)
 
     result = await async_invoke(runner, health, obj=client)
@@ -62,7 +62,7 @@ async def test_health_server_down():
 @pytest.mark.asyncio
 async def test_health_invalid_url():
     """Test health check with invalid URL."""
-    client = R2RAsyncClient(base_url="http://invalid.localhost")
+    client = FUSEAsyncClient(base_url="http://invalid.localhost")
     runner = CliRunner(mix_stderr=False)
 
     result = await async_invoke(runner, health, obj=client)
@@ -73,7 +73,7 @@ async def test_health_invalid_url():
 @pytest.mark.asyncio
 async def test_settings_against_server():
     """Test settings retrieval against a real server."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     result = await async_invoke(runner, settings, obj=client)
@@ -101,7 +101,7 @@ async def test_settings_against_server():
 @pytest.mark.asyncio
 async def test_settings_server_down():
     """Test settings retrieval when server is unreachable."""
-    client = R2RAsyncClient(base_url="http://localhost:54321")  # Invalid port
+    client = FUSEAsyncClient(base_url="http://localhost:54321")  # Invalid port
     runner = CliRunner(mix_stderr=False)
 
     result = await async_invoke(runner, settings, obj=client)
@@ -115,7 +115,7 @@ async def test_settings_server_down():
 @pytest.mark.asyncio
 async def test_settings_invalid_url():
     """Test settings retrieval with invalid URL."""
-    client = R2RAsyncClient(base_url="http://invalid.localhost")
+    client = FUSEAsyncClient(base_url="http://invalid.localhost")
     runner = CliRunner(mix_stderr=False)
 
     result = await async_invoke(runner, settings, obj=client)
@@ -126,7 +126,7 @@ async def test_settings_invalid_url():
 @pytest.mark.asyncio
 async def test_settings_response_structure():
     """Test detailed structure of settings response."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     result = await async_invoke(runner, settings, obj=client)
@@ -155,7 +155,7 @@ async def test_settings_response_structure():
 @pytest.mark.asyncio
 async def test_settings_config_validation():
     """Test specific configuration values in settings response."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     result = await async_invoke(runner, settings, obj=client)
@@ -183,7 +183,7 @@ async def test_settings_config_validation():
 @pytest.mark.asyncio
 async def test_status_against_server():
     """Test status check against a real server."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     result = await async_invoke(runner, status, obj=client)
@@ -214,7 +214,7 @@ async def test_status_against_server():
 @pytest.mark.asyncio
 async def test_status_server_down():
     """Test status check when server is unreachable."""
-    client = R2RAsyncClient(base_url="http://localhost:54321")  # Invalid port
+    client = FUSEAsyncClient(base_url="http://localhost:54321")  # Invalid port
     runner = CliRunner(mix_stderr=False)
 
     result = await async_invoke(runner, status, obj=client)
@@ -228,7 +228,7 @@ async def test_status_server_down():
 @pytest.mark.asyncio
 async def test_status_invalid_url():
     """Test status check with invalid URL."""
-    client = R2RAsyncClient(base_url="http://invalid.localhost")
+    client = FUSEAsyncClient(base_url="http://invalid.localhost")
     runner = CliRunner(mix_stderr=False)
 
     result = await async_invoke(runner, status, obj=client)
@@ -239,7 +239,7 @@ async def test_status_invalid_url():
 @pytest.mark.asyncio
 async def test_status_value_ranges():
     """Test that status values are within expected ranges."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     result = await async_invoke(runner, status, obj=client)
@@ -264,7 +264,7 @@ async def test_status_value_ranges():
 @pytest.mark.asyncio
 async def test_status_start_time_format():
     """Test that start_time is in correct ISO format."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     result = await async_invoke(runner, status, obj=client)
@@ -294,7 +294,7 @@ async def test_version_command():
     assert result.exit_code == 0
 
     # Verify output is valid JSON and matches actual package version
-    expected_version = get_version("r2r")
+    expected_version = get_version("fuse")
     actual_version = json.loads(result.stdout_bytes.decode())
     assert actual_version == expected_version
 

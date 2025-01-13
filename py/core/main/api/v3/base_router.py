@@ -6,15 +6,15 @@ from typing import Callable
 from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from fastapi.responses import FileResponse, StreamingResponse
 
-from core.base import R2RException, manage_run
+from core.base import FUSEException, manage_run
 
-from ...abstractions import R2RProviders, R2RServices
+from ...abstractions import FUSEProviders, FUSEServices
 
 logger = logging.getLogger()
 
 
 class BaseRouterV3:
-    def __init__(self, providers: R2RProviders, services: R2RServices):
+    def __init__(self, providers: FUSEProviders, services: FUSEServices):
         """
         :param providers: Typically includes auth, database, etc.
         :param services: Additional service references (ingestion, run_manager, etc).
@@ -68,7 +68,7 @@ class BaseRouterV3:
                         return results
                     return {"results": results, **outer_kwargs}
 
-                except R2RException:
+                except FUSEException:
                     raise
                 except Exception as e:
                     logger.error(

@@ -3,7 +3,7 @@ import logging
 import math
 import uuid
 
-from core import GenerationConfig, R2RException
+from core import GenerationConfig, FUSEException
 from core.base.abstractions import KGEnrichmentStatus
 
 from ...services import GraphService
@@ -108,7 +108,7 @@ def simple_kg_factory(service: GraphService):
             status_type="graph_cluster_status",
         )
         if workflow_status == KGEnrichmentStatus.SUCCESS:
-            raise R2RException(
+            raise FUSEException(
                 "Communities have already been built for this collection. To build communities again, first submit a POST request to `graphs/{collection_id}/reset` to erase the previously built communities.",
                 400,
             )
@@ -124,7 +124,7 @@ def simple_kg_factory(service: GraphService):
             # make it a configurable parameter at runtime & add server-side defaults
 
             if num_communities == 0:
-                raise R2RException("No communities found", 400)
+                raise FUSEException("No communities found", 400)
 
             parallel_communities = min(100, num_communities[0])
 

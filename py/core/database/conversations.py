@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 
-from core.base import Handler, Message, R2RException
+from core.base import Handler, Message, FUSEException
 from shared.api.models.management.responses import (
     ConversationResponse,
     MessageResponse,
@@ -166,7 +166,7 @@ class PostgresConversationsHandler(Handler):
             conv_check_query, [conversation_id]
         )
         if not conv_row:
-            raise R2RException(
+            raise FUSEException(
                 status_code=404,
                 message=f"Conversation {conversation_id} not found.",
             )
@@ -181,7 +181,7 @@ class PostgresConversationsHandler(Handler):
                 parent_check_query, [parent_id, conversation_id]
             )
             if not parent_row:
-                raise R2RException(
+                raise FUSEException(
                     status_code=404,
                     message=f"Parent message {parent_id} not found in conversation {conversation_id}.",
                 )
@@ -207,7 +207,7 @@ class PostgresConversationsHandler(Handler):
             ],
         )
         if not inserted:
-            raise R2RException(
+            raise FUSEException(
                 status_code=500, message="Failed to insert message."
             )
 
@@ -227,7 +227,7 @@ class PostgresConversationsHandler(Handler):
         """
         row = await self.connection_manager.fetchrow_query(query, [message_id])
         if not row:
-            raise R2RException(
+            raise FUSEException(
                 status_code=404,
                 message=f"Message {message_id} not found.",
             )
@@ -279,7 +279,7 @@ class PostgresConversationsHandler(Handler):
             ],
         )
         if not updated:
-            raise R2RException(
+            raise FUSEException(
                 status_code=500, message="Failed to update message."
             )
 
@@ -303,7 +303,7 @@ class PostgresConversationsHandler(Handler):
         """
         row = await self.connection_manager.fetchrow_query(query, [message_id])
         if not row:
-            raise R2RException(
+            raise FUSEException(
                 status_code=404, message=f"Message {message_id} not found."
             )
 
@@ -348,7 +348,7 @@ class PostgresConversationsHandler(Handler):
 
         conv_row = await self.connection_manager.fetchrow_query(query, params)
         if not conv_row:
-            raise R2RException(
+            raise FUSEException(
                 status_code=404,
                 message=f"Conversation {conversation_id} not found.",
             )
@@ -383,7 +383,7 @@ class PostgresConversationsHandler(Handler):
                 conv_query, [conversation_id]
             )
             if not conv_row:
-                raise R2RException(
+                raise FUSEException(
                     status_code=404,
                     message=f"Conversation {conversation_id} not found.",
                 )
@@ -438,7 +438,7 @@ class PostgresConversationsHandler(Handler):
             conv_query, params
         )
         if not conv_row:
-            raise R2RException(
+            raise FUSEException(
                 status_code=404,
                 message=f"Conversation {conversation_id} not found.",
             )

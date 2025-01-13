@@ -9,7 +9,7 @@ from zipfile import ZipFile
 import asyncpg
 from fastapi import HTTPException
 
-from core.base import Handler, R2RException
+from core.base import Handler, FUSEException
 
 from .base import PostgresConnectionManager
 
@@ -138,7 +138,7 @@ class PostgresFilesHandler(Handler):
             query, [document_id]
         )
         if not result:
-            raise R2RException(
+            raise FUSEException(
                 status_code=404,
                 message=f"File for document {document_id} not found",
             )
@@ -185,7 +185,7 @@ class PostgresFilesHandler(Handler):
         results = await self.connection_manager.fetch_query(query, params)
 
         if not results:
-            raise R2RException(
+            raise FUSEException(
                 status_code=404,
                 message="No files found matching the specified criteria",
             )
@@ -221,7 +221,7 @@ class PostgresFilesHandler(Handler):
                     oid,
                 )
                 if not lo_exists:
-                    raise R2RException(
+                    raise FUSEException(
                         status_code=404,
                         message=f"Large object {oid} not found.",
                     )
@@ -231,7 +231,7 @@ class PostgresFilesHandler(Handler):
                 )
 
                 if lobject is None:
-                    raise R2RException(
+                    raise FUSEException(
                         status_code=404,
                         message=f"Failed to open large object {oid}.",
                     )
@@ -244,7 +244,7 @@ class PostgresFilesHandler(Handler):
                         break
                     file_data.write(chunk)
             except asyncpg.exceptions.UndefinedObjectError as e:
-                raise R2RException(
+                raise FUSEException(
                     status_code=404,
                     message=f"Failed to read large object {oid}: {e}",
                 )
@@ -264,7 +264,7 @@ class PostgresFilesHandler(Handler):
             async with conn.transaction():
                 oid = await conn.fetchval(query, document_id)
                 if not oid:
-                    raise R2RException(
+                    raise FUSEException(
                         status_code=404,
                         message=f"File for document {document_id} not found",
                     )
@@ -315,7 +315,7 @@ class PostgresFilesHandler(Handler):
         results = await self.connection_manager.fetch_query(query, params)
 
         if not results:
-            raise R2RException(
+            raise FUSEException(
                 status_code=404,
                 message="No files found with the given filters",
             )

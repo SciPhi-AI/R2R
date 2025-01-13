@@ -8,7 +8,7 @@ from typing import Optional
 
 from fastapi import Body, Depends, Path, Query
 
-from core.base import IndexConfig, R2RException
+from core.base import IndexConfig, FUSEException
 from core.base.abstractions import VectorTableName
 from core.base.api.models import (
     GenericMessageResponse,
@@ -16,7 +16,7 @@ from core.base.api.models import (
     WrappedListVectorIndicesResponse,
 )
 
-from ...abstractions import R2RProviders, R2RServices
+from ...abstractions import FUSEProviders, FUSEServices
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -25,8 +25,8 @@ logger = logging.getLogger()
 class IndicesRouter(BaseRouterV3):
     def __init__(
         self,
-        providers: R2RProviders,
-        services: R2RServices,
+        providers: FUSEProviders,
+        services: FUSEServices,
     ):
         super().__init__(providers, services)
 
@@ -42,9 +42,9 @@ class IndicesRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             # Create an HNSW index for efficient similarity search
@@ -87,9 +87,9 @@ class IndicesRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.indicies.create({
@@ -242,9 +242,9 @@ class IndicesRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
 
                             # List all indices
                             indices = client.indices.list(
@@ -258,9 +258,9 @@ class IndicesRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.indicies.list({
@@ -277,7 +277,7 @@ class IndicesRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r indices list
+                            fuse indices list
                             """
                         ),
                     },
@@ -346,9 +346,9 @@ class IndicesRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
 
                             # Get detailed information about a specific index
                             index = client.indices.retrieve("index_1")
@@ -359,9 +359,9 @@ class IndicesRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.indicies.retrieve({
@@ -380,7 +380,7 @@ class IndicesRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r indices retrieve index_1 vectors
+                            fuse indices retrieve index_1 vectors
                             """
                         ),
                     },
@@ -436,7 +436,7 @@ class IndicesRouter(BaseRouterV3):
                 )
             )
             if len(indices["indices"]) != 1:
-                raise R2RException(
+                raise FUSEException(
                     f"Index '{index_name}' not found", status_code=404
                 )
             return {"index": indices["indices"][0]}
@@ -450,9 +450,9 @@ class IndicesRouter(BaseRouterV3):
         #                     {
         #                         "lang": "Python",
         #                         "source": """
-        # from r2r import R2RClient
+        # from fuse import FUSEClient
 
-        # client = R2RClient()
+        # client = FUSEClient()
 
         # # Update HNSW index parameters
         # result = client.indices.update(
@@ -510,9 +510,9 @@ class IndicesRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
 
                             # Delete an index with orchestration for cleanup
                             result = client.indices.delete(
@@ -527,9 +527,9 @@ class IndicesRouter(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.indicies.delete({
@@ -548,7 +548,7 @@ class IndicesRouter(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r indices delete index_1 vectors
+                            fuse indices delete index_1 vectors
                             """
                         ),
                     },

@@ -62,7 +62,7 @@ class BCryptCryptoProvider(CryptoProvider, ABC):
         # No fallback defaults: fail if not provided
         self.secret_key = (
             config.secret_key
-            or os.getenv("R2R_SECRET_KEY")
+            or os.getenv("FUSE_SECRET_KEY")
             or DEFAULT_BCRYPT_SECRET_KEY
         )
         if not self.secret_key:

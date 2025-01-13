@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from r2r import R2RException
+from fuse import FUSEException
 
 
 @pytest.fixture
@@ -48,12 +48,12 @@ def setup_docs_with_collections(client):
     for d_id in [doc1, doc2, doc3, doc4]:
         try:
             client.documents.delete(id=d_id)
-        except R2RException:
+        except FUSEException:
             pass
     for c_id in coll_ids:
         try:
             client.collections.delete(c_id)
-        except R2RException:
+        except FUSEException:
             pass
 
 
@@ -174,7 +174,7 @@ def test_delete_by_collection_id_eq(client, setup_docs_with_collections):
 
     # doc1 and doc2 should be deleted, doc3 and doc4 remain
     for d_id in [doc1, doc2]:
-        with pytest.raises(R2RException) as exc:
+        with pytest.raises(FUSEException) as exc:
             client.documents.retrieve(d_id)
         assert exc.value.status_code == 404, f"Doc {d_id} still exists!"
     # Check doc3 and doc4 still exist

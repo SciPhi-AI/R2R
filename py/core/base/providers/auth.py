@@ -10,7 +10,7 @@ from fastapi.security import (
     HTTPBearer,
 )
 
-from ..abstractions import R2RException, Token, TokenData
+from ..abstractions import FUSEException, Token, TokenData
 from ..api.models import User
 from .base import Provider, ProviderConfig
 from .crypto import CryptoProvider
@@ -37,7 +37,7 @@ class AuthConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["r2r"]
+        return ["fuse"]
 
     def validate_config(self) -> None:
         pass
@@ -139,12 +139,12 @@ class AuthProvider(Provider, ABC):
             ):
                 return await self._get_default_admin_user()
             if not auth and not api_key:
-                raise R2RException(
-                    message="No credentials provided. Create an account at https://app.sciphi.ai and set your API key using `r2r configure key` OR change your base URL to a custom deployment.",
+                raise FUSEException(
+                    message="No credentials provided. Create an account at https://app.sciphi.ai and set your API key using `fuse configure key` OR change your base URL to a custom deployment.",
                     status_code=401,
                 )
             if auth and api_key:
-                raise R2RException(
+                raise FUSEException(
                     message="Cannot have both Bearer token and API key",
                     status_code=400,
                 )
@@ -158,7 +158,7 @@ class AuthProvider(Provider, ABC):
                     )
                     if user is not None:
                         return user
-                except R2RException:
+                except FUSEException:
                     # JWT decoding failed for logical reasons (invalid token)
                     pass
                 except Exception as e:
@@ -201,7 +201,7 @@ class AuthProvider(Provider, ABC):
                             return user
 
             # If we reach here, both JWT and API key auth failed
-            raise R2RException(
+            raise FUSEException(
                 message="Invalid token or API key",
                 status_code=401,
             )

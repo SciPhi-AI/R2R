@@ -2,12 +2,12 @@ import uuid
 
 import pytest
 
-from r2r import R2RClient, R2RException
+from fuse import FUSEClient, FUSEException
 
 # @pytest.fixture  # (scope="session")
 # def client(config):
 #     """A client logged in as a superuser."""
-#     client = R2RClient(config.base_url)
+#     client = FUSEClient(config.base_url)
 #     client.users.login(config.superuser_email, config.superuser_password)
 #     yield client
 
@@ -15,7 +15,7 @@ from r2r import R2RClient, R2RException
 @pytest.fixture
 def normal_user_client(mutable_client):
     """Create a normal user and log in with that user."""
-    # client = R2RClient(config.base_url)
+    # client = FUSEClient(config.base_url)
 
     email = f"normal_{uuid.uuid4()}@test.com"
     password = "normal_password"
@@ -30,14 +30,14 @@ def normal_user_client(mutable_client):
         mutable_client.users.delete(
             mutable_client.users.me()["results"]["id"], password
         )
-    except R2RException:
+    except FUSEException:
         pass
 
 
 @pytest.fixture
 def another_normal_user_client(config):
     """Create another normal user and log in with that user."""
-    client = R2RClient(config.base_url)
+    client = FUSEClient(config.base_url)
 
     email = f"another_{uuid.uuid4()}@test.com"
     password = "another_password"
@@ -49,7 +49,7 @@ def another_normal_user_client(config):
     try:
         client.users.login(email, password)
         client.users.delete(client.users.me()["results"]["id"], password)
-    except R2RException:
+    except FUSEException:
         pass
 
 
@@ -65,7 +65,7 @@ def user_owned_collection(normal_user_client):
     # Cleanup
     try:
         normal_user_client.collections.delete(coll_id)
-    except R2RException:
+    except FUSEException:
         pass
 
 
@@ -81,7 +81,7 @@ def superuser_owned_collection(client):
     # Cleanup
     try:
         client.collections.delete(coll_id)
-    except R2RException:
+    except FUSEException:
         pass
 
 
@@ -90,7 +90,7 @@ def test_non_member_cannot_view_collection(
 ):
     """A normal user (not a member of a superuser-owned collection) tries to view it."""
     # The normal user is not added to the superuser collection, should fail
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         normal_user_client.collections.retrieve(superuser_owned_collection)
     assert (
         exc_info.value.status_code == 403
@@ -121,7 +121,7 @@ def test_collection_member_can_view_collection(
     normal_user_email = normal_user_client.users.me()["results"]["email"]
 
     # Create a new user and log in as them
-    member_client = R2RClient(normal_user_client.base_url)
+    member_client = FUSEClient(normal_user_client.base_url)
     member_client.users.create(new_user_email, new_user_password)
     member_client.users.login(new_user_email, new_user_password)
     member_id = member_client.users.me()["results"]["id"]
@@ -148,7 +148,7 @@ def test_non_owner_member_cannot_edit_collection(
     )
 
     # Another normal user tries to update collection
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         another_normal_user_client.collections.update(
             user_owned_collection, name="Malicious Update"
         )
@@ -168,7 +168,7 @@ def test_non_owner_member_cannot_delete_collection(
     )
 
     # Another user tries to delete
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         another_normal_user_client.collections.delete(user_owned_collection)
     assert (
         exc_info.value.status_code == 403
@@ -203,7 +203,7 @@ def test_non_owner_member_cannot_add_other_users(
     )
 
     # Now, another_normal_user_client tries to add the third user
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         another_normal_user_client.collections.add_user(
             user_owned_collection, third_user_id
         )
@@ -229,7 +229,7 @@ def test_owner_can_remove_member_from_collection(
     assert remove_resp["success"], "Owner could not remove member."
 
     # The removed user should no longer have access
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         another_normal_user_client.collections.retrieve(user_owned_collection)
     assert (
         exc_info.value.status_code == 403
@@ -257,12 +257,12 @@ def test_unauthenticated_cannot_access_collections(
     config, user_owned_collection
 ):
     """An unauthenticated (no login) client should not access protected endpoints."""
-    unauth_client = R2RClient(config.base_url)
+    unauth_client = FUSEClient(config.base_url)
     # we must CREATE + LOGIN as superuser is default user for unauth in basic config
     user_name = f"unauth_user_{uuid.uuid4()}@email.com"
     unauth_client.users.create(user_name, "unauth_password")
     unauth_client.users.login(user_name, "unauth_password")
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         unauth_client.collections.retrieve(user_owned_collection)
     assert (
         exc_info.value.status_code == 403
@@ -283,7 +283,7 @@ def test_user_cannot_add_document_to_collection_they_cannot_edit(
     second_email = f"second_{uuid.uuid4()}@test.com"
     second_password = "pwd"
     client.users.logout()
-    second_client = R2RClient(normal_user_client.base_url)
+    second_client = FUSEClient(normal_user_client.base_url)
     second_client.users.create(second_email, second_password)
     second_client.users.login(second_email, second_password)
     second_id = second_client.users.me()["results"]["id"]
@@ -310,7 +310,7 @@ def test_user_cannot_add_document_to_collection_they_cannot_edit(
     doc2_id = doc2_resp["results"]["document_id"]
 
     # Second user tries to add their doc2_id to the owner’s collection
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         second_client.collections.add_document(coll_id, doc2_id)
     assert (
         exc_info.value.status_code == 403
@@ -340,7 +340,7 @@ def test_user_cannot_remove_document_from_collection_they_cannot_edit(
     # Create another user and add as member
     another_email = f"amember_{uuid.uuid4()}@test.com"
     another_password = "memberpwd"
-    member_client = R2RClient(normal_user_client.base_url)
+    member_client = FUSEClient(normal_user_client.base_url)
     member_client.users.create(another_email, another_password)
     member_client.users.login(another_email, another_password)
     member_id = member_client.users.me()["results"]["id"]
@@ -352,7 +352,7 @@ def test_user_cannot_remove_document_from_collection_they_cannot_edit(
     normal_user_client.collections.add_user(coll_id, member_id)
 
     # Member tries to remove the document
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         member_client.collections.remove_document(coll_id, doc_id)
     assert (
         exc_info.value.status_code == 403
@@ -371,7 +371,7 @@ def test_normal_user_cannot_make_another_user_superuser(normal_user_client):
     new_user_id = new_user_resp["results"]["id"]
 
     # Try updating their superuser status
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         normal_user_client.users.update(new_user_id, is_superuser=True)
     assert (
         exc_info.value.status_code == 403
@@ -382,7 +382,7 @@ def test_normal_user_cannot_view_other_users_if_not_superuser(
     normal_user_client,
 ):
     """A normal user tries to list all users, should fail."""
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         normal_user_client.users.list()
     assert (
         exc_info.value.status_code == 403
@@ -397,14 +397,14 @@ def test_normal_user_cannot_update_other_users_details(
     email = f"other_normal_{uuid.uuid4()}@test.com"
     password = "pwd123"
     client.users.logout()
-    another_client = R2RClient(normal_user_client.base_url)
+    another_client = FUSEClient(normal_user_client.base_url)
     another_client.users.create(email, password)
     another_client.users.login(email, password)
     another_user_id = another_client.users.me()["results"]["id"]
     another_client.users.logout()
 
     # Try to update as first normal user (not superuser, not same user)
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         normal_user_client.users.update(another_user_id, name="Hacked Name")
     assert (
         exc_info.value.status_code == 403
@@ -428,7 +428,7 @@ def test_owner_cannot_promote_member_to_superuser_via_collection(
     )
 
     # Try to update the member's superuser status
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         normal_user_client.users.update(another_user_id, is_superuser=True)
     assert (
         exc_info.value.status_code == 403
@@ -450,7 +450,7 @@ def test_member_cannot_view_other_users_info(
 
     # As another_normal_user_client (a member), try to retrieve owner user details
     owner_id = normal_user_client.users.me()["results"]["id"]
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         another_normal_user_client.users.retrieve(owner_id)
     assert (
         exc_info.value.status_code == 403
@@ -463,14 +463,14 @@ def test_unauthenticated_user_cannot_join_collection(
     """
     An unauthenticated user should not be able to join or view collections.
     """
-    unauth_client = R2RClient(config.base_url)
+    unauth_client = FUSEClient(config.base_url)
     # we must CREATE + LOGIN as superuser is default user for unauth in basic config
     user_name = f"unauth_user_{uuid.uuid4()}@email.com"
     unauth_client.users.create(user_name, "unauth_password")
     unauth_client.users.login(user_name, "unauth_password")
 
     # No login performed here, client is unauthenticated
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         unauth_client.collections.retrieve(user_owned_collection)
     assert exc_info.value.status_code in [
         401,
@@ -491,7 +491,7 @@ def test_non_owner_cannot_remove_users_they_did_not_add(
     )
 
     # Now try removing that user as another_normal_user_client
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         another_normal_user_client.collections.remove_user(
             user_owned_collection, another_user_id
         )
@@ -522,7 +522,7 @@ def test_owner_cannot_access_deleted_member_info_after_removal(
     # if there's an endpoint that filters by user, to ensure no special access remains.
     # If no such endpoint exists, this test can be adapted to try another relevant action.
     # For demonstration, we might attempt to retrieve user details as owner:
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         normal_user_client.users.retrieve(another_user_id)
     # We expect a 403 because normal_user_client is not superuser and not that user.
     assert (
@@ -539,7 +539,7 @@ def test_member_cannot_add_document_to_non_existent_collection(
     fake_coll_id = str(uuid.uuid4())
     doc_resp = normal_user_client.documents.create(raw_text="Test Doc")
     doc_id = doc_resp["results"]["document_id"]
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         normal_user_client.collections.add_document(fake_coll_id, doc_id)
     assert exc_info.value.status_code in [
         400,

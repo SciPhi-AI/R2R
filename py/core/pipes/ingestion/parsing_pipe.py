@@ -3,7 +3,7 @@ from typing import AsyncGenerator, Optional
 from uuid import UUID
 
 from core.base import AsyncState, DatabaseProvider, Document, DocumentChunk
-from core.base.abstractions import R2RDocumentProcessingError
+from core.base.abstractions import FUSEDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers.ingestion import IngestionProvider
 from core.utils import generate_extraction_id
@@ -66,13 +66,13 @@ class ParsingPipe(AsyncPipe):
                 extraction.metadata["version"] = version
                 yield extraction
         except (PopperNotFoundError, PDFParsingError) as e:
-            raise R2RDocumentProcessingError(
+            raise FUSEDocumentProcessingError(
                 error_message=e.message,
                 document_id=document.id,
                 status_code=e.status_code,
             )
         except Exception as e:
-            raise R2RDocumentProcessingError(
+            raise FUSEDocumentProcessingError(
                 document_id=document.id,
                 error_message=f"Error parsing document: {str(e)}",
             )

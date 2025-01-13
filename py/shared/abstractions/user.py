@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from shared.abstractions import R2RSerializable
+from shared.abstractions import FUSESerializable
 
 from ..utils import generate_default_user_collection_id
 
@@ -41,7 +41,7 @@ class TokenData(BaseModel):
     exp: Optional[datetime] = None
 
 
-class User(R2RSerializable):
+class User(FUSESerializable):
     id: UUID
     email: str
     is_active: bool = True

@@ -31,7 +31,7 @@ from cli.commands.documents import (
     list_collections,
     retrieve,
 )
-from r2r import R2RAsyncClient
+from fuse import FUSEAsyncClient
 from tests.cli.async_invoke import async_invoke
 
 
@@ -93,7 +93,7 @@ def extract_json_block(output: str) -> dict:
 @pytest.mark.asyncio
 async def test_document_lifecycle(temp_text_file):
     """Test the complete lifecycle of a document: create, retrieve, delete."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     # Create document
@@ -147,7 +147,7 @@ async def test_document_lifecycle(temp_text_file):
 @pytest.mark.asyncio
 async def test_create_multiple_documents(temp_text_file, temp_json_file):
     """Test creating multiple documents with metadata."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     metadatas = json.dumps(
@@ -231,7 +231,7 @@ async def test_create_multiple_documents(temp_text_file, temp_json_file):
 @pytest.mark.asyncio
 async def test_create_with_custom_id():
     """Test creating a document with a custom ID."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     custom_id = str(uuid.uuid4())
@@ -263,7 +263,7 @@ async def test_create_with_custom_id():
 @pytest.mark.asyncio
 async def test_retrieve_nonexistent_document():
     """Test retrieving a document that doesn't exist."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     nonexistent_id = str(uuid.uuid4())
@@ -279,7 +279,7 @@ async def test_retrieve_nonexistent_document():
 @pytest.mark.asyncio
 async def test_list_chunks_nonexistent_document():
     """Test listing chunks for a document that doesn't exist."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     nonexistent_id = str(uuid.uuid4())
@@ -299,7 +299,7 @@ async def test_list_chunks_nonexistent_document():
 # @pytest.mark.asyncio
 # async def test_list_collections_nonexistent_document():
 #     """Test listing collections for a document that doesn't exist."""
-#     client = R2RAsyncClient(base_url="http://localhost:7272")
+#     client = FUSEAsyncClient(base_url="http://localhost:7272")
 #     runner = CliRunner(mix_stderr=False)
 
 #     nonexistent_id = str(uuid.uuid4())
@@ -317,7 +317,7 @@ async def test_list_chunks_nonexistent_document():
 @pytest.mark.asyncio
 async def test_delete_nonexistent_document():
     """Test deleting a document that doesn't exist."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     nonexistent_id = str(uuid.uuid4())

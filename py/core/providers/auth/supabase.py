@@ -14,7 +14,7 @@ from core.base import (
     CryptoProvider,
     DatabaseProvider,
     EmailProvider,
-    R2RException,
+    FUSEException,
     Token,
     TokenData,
 )
@@ -83,7 +83,7 @@ class SupabaseAuthProvider(AuthProvider):
         # Use Supabase client to create a new user
 
         if user := self.supabase.auth.sign_up(email=email, password=password):
-            raise R2RException(
+            raise FUSEException(
                 status_code=400,
                 message="Supabase provider implementation is still under construction",
             )
@@ -97,7 +97,7 @@ class SupabaseAuthProvider(AuthProvider):
             #     is_verified=False,
             # )
         else:
-            raise R2RException(
+            raise FUSEException(
                 status_code=400, message="User registration failed"
             )
 
@@ -117,7 +117,7 @@ class SupabaseAuthProvider(AuthProvider):
         ):
             return {"message": "Email verified successfully"}
         else:
-            raise R2RException(
+            raise FUSEException(
                 status_code=400, message="Invalid or expired verification code"
             )
 
@@ -135,7 +135,7 @@ class SupabaseAuthProvider(AuthProvider):
                 ),
             }
         else:
-            raise R2RException(
+            raise FUSEException(
                 status_code=401, message="Invalid email or password"
             )
 
@@ -155,7 +155,7 @@ class SupabaseAuthProvider(AuthProvider):
                 ),
             }
         else:
-            raise R2RException(
+            raise FUSEException(
                 status_code=401, message="Invalid refresh token"
             )
 
@@ -175,14 +175,14 @@ class SupabaseAuthProvider(AuthProvider):
             )
 
         else:
-            raise R2RException(status_code=401, message="Invalid token")
+            raise FUSEException(status_code=401, message="Invalid token")
 
     def get_current_active_user(
         self, current_user: User = Depends(user)
     ) -> User:
         # Check if user is active
         if not current_user.is_active:
-            raise R2RException(status_code=400, message="Inactive user")
+            raise FUSEException(status_code=400, message="Inactive user")
         return current_user
 
     async def change_password(
@@ -194,7 +194,7 @@ class SupabaseAuthProvider(AuthProvider):
         ):
             return {"message": "Password changed successfully"}
         else:
-            raise R2RException(
+            raise FUSEException(
                 status_code=400, message="Failed to change password"
             )
 
@@ -205,7 +205,7 @@ class SupabaseAuthProvider(AuthProvider):
                 "message": "If the email exists, a reset link has been sent"
             }
         else:
-            raise R2RException(
+            raise FUSEException(
                 status_code=400, message="Failed to send password reset email"
             )
 
@@ -218,7 +218,7 @@ class SupabaseAuthProvider(AuthProvider):
         ):
             return {"message": "Password reset successfully"}
         else:
-            raise R2RException(
+            raise FUSEException(
                 status_code=400, message="Invalid or expired reset token"
             )
 

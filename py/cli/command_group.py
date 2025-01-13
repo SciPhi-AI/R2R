@@ -13,17 +13,17 @@ from rich.console import Console
 from rich.table import Table
 from typing_extensions import Never
 
-from sdk import R2RAsyncClient
+from sdk import FUSEAsyncClient
 
 console = Console()
 
-CONFIG_DIR = Path.home() / ".r2r"
+CONFIG_DIR = Path.home() / ".fuse"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
 
 def load_config() -> dict[str, Any]:
     """
-    Load the CLI config from ~/.r2r/config.json.
+    Load the CLI config from ~/.fuse/config.json.
     Returns an empty dict if the file doesn't exist or is invalid.
     """
     if not CONFIG_FILE.is_file():
@@ -114,12 +114,12 @@ def custom_help_formatter(commands):
 
 class CustomGroup(click.Group):
     def format_help(self, ctx, formatter):
-        console.print("\n[bold blue]R2R Command Line Interface[/bold blue]")
+        console.print("\n[bold blue]FUSE Command Line Interface[/bold blue]")
         console.print("The most advanced AI retrieval system\n")
 
         if self.get_help_option(ctx) is not None:
             console.print("[bold cyan]Usage:[/bold cyan]")
-            console.print("  r2r [OPTIONS] COMMAND [ARGS]...\n")
+            console.print("  fuse [OPTIONS] COMMAND [ARGS]...\n")
 
         console.print("[bold cyan]Options:[/bold cyan]")
         console.print(
@@ -130,7 +130,7 @@ class CustomGroup(click.Group):
         console.print("[bold cyan]Commands:[/bold cyan]")
         console.print(custom_help_formatter(self.commands))
         console.print(
-            "\nFor more details on a specific command, run: [bold]r2r COMMAND --help[/bold]\n"
+            "\nFor more details on a specific command, run: [bold]fuse COMMAND --help[/bold]\n"
         )
 
 
@@ -144,14 +144,14 @@ class CustomContext(click.Context):
         raise SystemExit(code)
 
 
-def initialize_client() -> R2RAsyncClient:
-    """Initialize R2R client with API key from config if available."""
-    client = R2RAsyncClient()
+def initialize_client() -> FUSEAsyncClient:
+    """Initialize FUSE client with API key from config if available."""
+    client = FUSEAsyncClient()
 
     try:
         config = load_config()
 
-        env_api_base = os.getenv("R2R_API_BASE")
+        env_api_base = os.getenv("FUSE_API_BASE")
         config_api_base = config.get("api_base")
         if env_api_base:
             api_base = env_api_base
@@ -161,7 +161,7 @@ def initialize_client() -> R2RAsyncClient:
             api_base = "https://cloud.sciphi.ai"
         client.set_base_url(api_base)
 
-        env_api_key = os.getenv("R2R_API_KEY")
+        env_api_key = os.getenv("FUSE_API_KEY")
         config_api_key = config.get("api_key")
         if env_api_key:
             api_key = env_api_key
@@ -183,5 +183,5 @@ def initialize_client() -> R2RAsyncClient:
 @click.group(cls=CustomGroup)
 @pass_context
 async def cli(ctx: click.Context) -> None:
-    """R2R CLI for all core operations."""
+    """FUSE CLI for all core operations."""
     ctx.obj = initialize_client()

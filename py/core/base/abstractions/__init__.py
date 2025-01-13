@@ -1,4 +1,4 @@
-from shared.abstractions.base import AsyncSyncMeta, R2RSerializable, syncable
+from shared.abstractions.base import AsyncSyncMeta, FUSESerializable, syncable
 from shared.abstractions.document import (
     Document,
     DocumentChunk,
@@ -16,8 +16,8 @@ from shared.abstractions.embedding import (
     default_embedding_prefixes,
 )
 from shared.abstractions.exception import (
-    R2RDocumentProcessingError,
-    R2RException,
+    FUSEDocumentProcessingError,
+    FUSEException,
 )
 from shared.abstractions.graph import (
     Community,
@@ -80,7 +80,7 @@ from shared.abstractions.vector import (
 
 __all__ = [
     # Base abstractions
-    "R2RSerializable",
+    "FUSESerializable",
     "AsyncSyncMeta",
     "syncable",
     # Completion abstractions
@@ -100,8 +100,8 @@ __all__ = [
     "EmbeddingPurpose",
     "default_embedding_prefixes",
     # Exception abstractions
-    "R2RDocumentProcessingError",
-    "R2RException",
+    "FUSEDocumentProcessingError",
+    "FUSEException",
     # Graph abstractions
     "Entity",
     "Community",

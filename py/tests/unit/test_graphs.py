@@ -428,7 +428,7 @@ async def test_error_handling_invalid_graph_id(graphs_handler):
     # Attempt to delete a non-existent graph
     with pytest.raises(Exception) as exc_info:
         await graphs_handler.delete(collection_id=non_existent_id)
-    # Expect an R2RException or HTTPException (depending on your code)
+    # Expect an FUSEException or HTTPException (depending on your code)
     # Check the message or type if needed
 
 

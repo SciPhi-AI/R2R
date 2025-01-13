@@ -4,7 +4,7 @@ import os
 from functools import wraps
 from typing import Optional
 
-from shared.abstractions import R2RException
+from shared.abstractions import FUSEException
 
 
 def sync_wrapper(async_func):
@@ -45,11 +45,11 @@ class BaseClient:
         self.access_token: Optional[str] = None
         self._refresh_token: Optional[str] = None
         self._user_id: Optional[str] = None
-        self.api_key: Optional[str] = os.getenv("R2R_API_KEY", None)
+        self.api_key: Optional[str] = os.getenv("FUSE_API_KEY", None)
 
     def _get_auth_header(self) -> dict[str, str]:
         if self.access_token and self.api_key:
-            raise R2RException(
+            raise FUSEException(
                 status_code=400,
                 message="Cannot have both access token and api key.",
             )
@@ -62,7 +62,7 @@ class BaseClient:
 
     def _ensure_authenticated(self):
         if not self.access_token:
-            raise R2RException(
+            raise FUSEException(
                 status_code=401,
                 message="Not authenticated. Please login first.",
             )

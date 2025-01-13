@@ -17,29 +17,29 @@ class AsyncSMTPEmailProvider(EmailProvider):
 
     def __init__(self, config: EmailConfig):
         super().__init__(config)
-        self.smtp_server = config.smtp_server or os.getenv("R2R_SMTP_SERVER")
+        self.smtp_server = config.smtp_server or os.getenv("FUSE_SMTP_SERVER")
         if not self.smtp_server:
             raise ValueError("SMTP server is required")
 
-        self.smtp_port = config.smtp_port or os.getenv("R2R_SMTP_PORT")
+        self.smtp_port = config.smtp_port or os.getenv("FUSE_SMTP_PORT")
         if not self.smtp_port:
             raise ValueError("SMTP port is required")
 
         self.smtp_username = config.smtp_username or os.getenv(
-            "R2R_SMTP_USERNAME"
+            "FUSE_SMTP_USERNAME"
         )
         if not self.smtp_username:
             raise ValueError("SMTP username is required")
 
         self.smtp_password = config.smtp_password or os.getenv(
-            "R2R_SMTP_PASSWORD"
+            "FUSE_SMTP_PASSWORD"
         )
         if not self.smtp_password:
             raise ValueError("SMTP password is required")
 
         self.from_email: Optional[str] = (
             config.from_email
-            or os.getenv("R2R_FROM_EMAIL")
+            or os.getenv("FUSE_FROM_EMAIL")
             or self.smtp_username
         )
         self.ssl_context = ssl.create_default_context()

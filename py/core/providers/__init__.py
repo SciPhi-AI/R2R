@@ -1,4 +1,4 @@
-from .auth import R2RAuthProvider, SupabaseAuthProvider
+from .auth import FUSEAuthProvider, SupabaseAuthProvider
 from .crypto import (
     BcryptCryptoConfig,
     BCryptCryptoProvider,
@@ -16,8 +16,8 @@ from .embeddings import (
     OpenAIEmbeddingProvider,
 )
 from .ingestion import (  # type: ignore
-    R2RIngestionConfig,
-    R2RIngestionProvider,
+    FUSEIngestionConfig,
+    FUSEIngestionProvider,
     UnstructuredIngestionConfig,
     UnstructuredIngestionProvider,
 )
@@ -29,11 +29,11 @@ from .orchestration import (
 
 __all__ = [
     # Auth
-    "R2RAuthProvider",
+    "FUSEAuthProvider",
     "SupabaseAuthProvider",
     # Ingestion
-    "R2RIngestionProvider",
-    "R2RIngestionConfig",
+    "FUSEIngestionProvider",
+    "FUSEIngestionConfig",
     "UnstructuredIngestionProvider",
     "UnstructuredIngestionConfig",
     # Crypto

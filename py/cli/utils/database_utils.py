@@ -14,12 +14,12 @@ from sqlalchemy.exc import OperationalError
 def get_default_db_vars() -> dict[str, str]:
     """Get default database environment variables."""
     return {
-        "R2R_POSTGRES_HOST": "localhost",
-        "R2R_POSTGRES_PORT": "5432",
-        "R2R_POSTGRES_DBNAME": "postgres",
-        "R2R_POSTGRES_USER": "postgres",
-        "R2R_POSTGRES_PASSWORD": "postgres",
-        "R2R_PROJECT_NAME": "r2r_default",
+        "FUSE_POSTGRES_HOST": "localhost",
+        "FUSE_POSTGRES_PORT": "5432",
+        "FUSE_POSTGRES_DBNAME": "postgres",
+        "FUSE_POSTGRES_USER": "postgres",
+        "FUSE_POSTGRES_PASSWORD": "postgres",
+        "FUSE_PROJECT_NAME": "fuse_default",
     }
 
 
@@ -42,9 +42,9 @@ def get_database_url_from_env(log: bool = True) -> str:
             )
 
     return (
-        f"postgresql://{env_vars['R2R_POSTGRES_USER']}:{env_vars['R2R_POSTGRES_PASSWORD']}"
-        f"@{env_vars['R2R_POSTGRES_HOST']}:{env_vars['R2R_POSTGRES_PORT']}"
-        f"/{env_vars['R2R_POSTGRES_DBNAME']}"
+        f"postgresql://{env_vars['FUSE_POSTGRES_USER']}:{env_vars['FUSE_POSTGRES_PASSWORD']}"
+        f"@{env_vars['FUSE_POSTGRES_HOST']}:{env_vars['FUSE_POSTGRES_PORT']}"
+        f"/{env_vars['FUSE_POSTGRES_DBNAME']}"
     )
 
 
@@ -178,7 +178,7 @@ async def run_alembic_command(
             project_root = Path(__file__).parent.parent.parent
 
         if schema_name is None:
-            schema_name = os.environ.get("R2R_PROJECT_NAME", "r2r_default")
+            schema_name = os.environ.get("FUSE_PROJECT_NAME", "fuse_default")
 
         # Set up logging
         setup_alembic_logging()

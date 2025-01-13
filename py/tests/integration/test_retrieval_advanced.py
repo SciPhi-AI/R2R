@@ -1,6 +1,6 @@
 import pytest
 
-from r2r import Message, R2RException, SearchMode
+from fuse import Message, FUSEException, SearchMode
 
 
 # Semantic Search Tests
@@ -201,7 +201,7 @@ def test_rag_context_window_limits(client):
 #     ]
 
 #     for invalid_filter in invalid_filters:
-#         with pytest.raises(R2RException) as exc_info:
+#         with pytest.raises(FUSEException) as exc_info:
 #             client.retrieval.search(
 #                 query="test", search_settings={"filters": invalid_filter}
 #             )

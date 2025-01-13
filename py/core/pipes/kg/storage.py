@@ -3,7 +3,7 @@ import logging
 from typing import Any, AsyncGenerator
 from uuid import UUID
 
-from core.base import AsyncState, KGExtraction, R2RDocumentProcessingError
+from core.base import AsyncState, KGExtraction, FUSEDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
 from core.database import PostgresDatabaseProvider
 
@@ -90,7 +90,7 @@ class GraphStoragePipe(AsyncPipe):
         run_id: UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[list[R2RDocumentProcessingError], None]:
+    ) -> AsyncGenerator[list[FUSEDocumentProcessingError], None]:
         """
         Executes the async knowledge graph storage pipe: storing knowledge graph extractions in the graph database.
         """
@@ -100,7 +100,7 @@ class GraphStoragePipe(AsyncPipe):
         errors = []
 
         async for kg_extraction in input.message:
-            if isinstance(kg_extraction, R2RDocumentProcessingError):
+            if isinstance(kg_extraction, FUSEDocumentProcessingError):
                 errors.append(kg_extraction)
                 continue
 

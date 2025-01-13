@@ -8,7 +8,7 @@ from uuid import UUID
 from fastapi import HTTPException
 
 from core.base import CryptoProvider, Handler
-from core.base.abstractions import R2RException
+from core.base.abstractions import FUSEException
 from core.utils import generate_user_id
 from shared.abstractions import User
 
@@ -170,7 +170,7 @@ class PostgresUserHandler(Handler):
         result = await self.connection_manager.fetchrow_query(query, [id])
 
         if not result:
-            raise R2RException(status_code=404, message="User not found")
+            raise FUSEException(status_code=404, message="User not found")
 
         return User(
             id=result["id"],
@@ -221,7 +221,7 @@ class PostgresUserHandler(Handler):
         )
         result = await self.connection_manager.fetchrow_query(query, [email])
         if not result:
-            raise R2RException(status_code=404, message="User not found")
+            raise FUSEException(status_code=404, message="User not found")
 
         return User(
             id=result["id"],
@@ -260,18 +260,18 @@ class PostgresUserHandler(Handler):
         try:
             existing = await self.get_user_by_email(email)
             if existing:
-                raise R2RException(
+                raise FUSEException(
                     status_code=400,
                     message="User with this email already exists",
                 )
-        except R2RException as e:
+        except FUSEException as e:
             if e.status_code != 404:
                 raise e
         # 2) If google_id is provided, ensure no user already has it
         if google_id:
             existing_google_user = await self.get_user_by_google_id(google_id)
             if existing_google_user:
-                raise R2RException(
+                raise FUSEException(
                     status_code=400,
                     message="User with this Google account already exists",
                 )
@@ -280,7 +280,7 @@ class PostgresUserHandler(Handler):
         if github_id:
             existing_github_user = await self.get_user_by_github_id(github_id)
             if existing_github_user:
-                raise R2RException(
+                raise FUSEException(
                     status_code=400,
                     message="User with this GitHub account already exists",
                 )
@@ -288,7 +288,7 @@ class PostgresUserHandler(Handler):
         hashed_password = None
         if account_type == "password":
             if password is None:
-                raise R2RException(
+                raise FUSEException(
                     status_code=400,
                     message="Password is required for a 'password' account_type",
                 )
@@ -338,7 +338,7 @@ class PostgresUserHandler(Handler):
 
         result = await self.connection_manager.fetchrow_query(query, params)
         if not result:
-            raise R2RException(
+            raise FUSEException(
                 status_code=500,
                 message="Failed to create user",
             )
@@ -385,14 +385,14 @@ class PostgresUserHandler(Handler):
         current_user = None
         try:
             current_user = await self.get_user_by_id(user.id)
-        except R2RException:
-            raise R2RException(status_code=404, message="User not found")
+        except FUSEException:
+            raise FUSEException(status_code=404, message="User not found")
 
         # If the new user.google_id != current_user.google_id, check for duplicates
         if user.email and (user.email != current_user.email):
             existing_email_user = await self.get_user_by_email(user.email)
             if existing_email_user and existing_email_user.id != user.id:
-                raise R2RException(
+                raise FUSEException(
                     status_code=400,
                     message="That email account is already associated with another user.",
                 )
@@ -403,7 +403,7 @@ class PostgresUserHandler(Handler):
                 user.google_id
             )
             if existing_google_user and existing_google_user.id != user.id:
-                raise R2RException(
+                raise FUSEException(
                     status_code=400,
                     message="That Google account is already associated with another user.",
                 )
@@ -414,7 +414,7 @@ class PostgresUserHandler(Handler):
                 user.github_id
             )
             if existing_github_user and existing_github_user.id != user.id:
-                raise R2RException(
+                raise FUSEException(
                     status_code=400,
                     message="That GitHub account is already associated with another user.",
                 )
@@ -517,7 +517,7 @@ class PostgresUserHandler(Handler):
         )
 
         if not collection_result:
-            raise R2RException(status_code=404, message="User not found")
+            raise FUSEException(status_code=404, message="User not found")
 
         # Update documents query
         doc_update_query, doc_params = (
@@ -543,7 +543,7 @@ class PostgresUserHandler(Handler):
         )
 
         if not result:
-            raise R2RException(status_code=404, message="User not found")
+            raise FUSEException(status_code=404, message="User not found")
 
     async def update_user_password(self, id: UUID, new_hashed_password: str):
         query = f"""
@@ -633,7 +633,7 @@ class PostgresUserHandler(Handler):
         )
 
         if not result:
-            raise R2RException(
+            raise FUSEException(
                 status_code=400, message="Invalid or expired verification code"
             )
 
@@ -698,11 +698,11 @@ class PostgresUserHandler(Handler):
     ) -> bool:
         # Check if the user exists
         if not await self.get_user_by_id(id):
-            raise R2RException(status_code=404, message="User not found")
+            raise FUSEException(status_code=404, message="User not found")
 
         # Check if the collection exists
         if not await self._collection_exists(collection_id):
-            raise R2RException(status_code=404, message="Collection not found")
+            raise FUSEException(status_code=404, message="Collection not found")
 
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
@@ -714,7 +714,7 @@ class PostgresUserHandler(Handler):
             query, [collection_id, id]
         )
         if not result:
-            raise R2RException(
+            raise FUSEException(
                 status_code=400, message="User already in collection"
             )
 
@@ -734,7 +734,7 @@ class PostgresUserHandler(Handler):
         self, id: UUID, collection_id: UUID
     ) -> bool:
         if not await self.get_user_by_id(id):
-            raise R2RException(status_code=404, message="User not found")
+            raise FUSEException(status_code=404, message="User not found")
 
         query = f"""
             UPDATE {self._get_table_name(PostgresUserHandler.TABLE_NAME)}
@@ -746,7 +746,7 @@ class PostgresUserHandler(Handler):
             query, [collection_id, id]
         )
         if not result:
-            raise R2RException(
+            raise FUSEException(
                 status_code=400,
                 message="User is not a member of the specified collection",
             )
@@ -757,7 +757,7 @@ class PostgresUserHandler(Handler):
     ) -> dict[str, list[User] | int]:
         """Get all users in a specific collection with pagination."""
         if not await self._collection_exists(collection_id):
-            raise R2RException(status_code=404, message="Collection not found")
+            raise FUSEException(status_code=404, message="Collection not found")
 
         query, params = (
             QueryBuilder(self._get_table_name(self.TABLE_NAME))
@@ -843,7 +843,7 @@ class PostgresUserHandler(Handler):
         )
 
         if not result:
-            raise R2RException(
+            raise FUSEException(
                 status_code=400, message="Invalid or expired verification code"
             )
 
@@ -919,7 +919,7 @@ class PostgresUserHandler(Handler):
 
         results = await self.connection_manager.fetch_query(query, params)
         if not results:
-            raise R2RException(status_code=404, message="No users found")
+            raise FUSEException(status_code=404, message="No users found")
 
         users_list = []
         for row in results:
@@ -980,7 +980,7 @@ class PostgresUserHandler(Handler):
         result = await self.connection_manager.fetchrow_query(query, [user_id])
 
         if not result:
-            raise R2RException(status_code=404, message="User not found")
+            raise FUSEException(status_code=404, message="User not found")
 
         return {
             "verification_data": {
@@ -1021,7 +1021,7 @@ class PostgresUserHandler(Handler):
             query, [user_id, key_id, hashed_key, name or "", description or ""]
         )
         if not result:
-            raise R2RException(
+            raise FUSEException(
                 status_code=500, message="Failed to store API key"
             )
         return result["id"]
@@ -1076,7 +1076,7 @@ class PostgresUserHandler(Handler):
             query, [key_id, user_id]
         )
         if result is None:
-            raise R2RException(status_code=404, message="API key not found")
+            raise FUSEException(status_code=404, message="API key not found")
 
         return {
             "key_id": str(result["id"]),
@@ -1099,7 +1099,7 @@ class PostgresUserHandler(Handler):
             query, [name, key_id, user_id]
         )
         if result is None:
-            raise R2RException(status_code=404, message="API key not found")
+            raise FUSEException(status_code=404, message="API key not found")
         return True
 
     async def export_to_csv(

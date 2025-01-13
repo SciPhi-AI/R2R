@@ -11,7 +11,7 @@ console = Console()
 
 def get_config_dir():
     """Create and return the config directory path."""
-    config_dir = Path.home() / ".r2r"
+    config_dir = Path.home() / ".fuse"
     config_dir.mkdir(exist_ok=True)
     return config_dir
 
@@ -96,15 +96,15 @@ async def key(api_key):
 @configure.command()
 @click.option(
     "--base-url",
-    prompt="R2R Base URL",
+    prompt="FUSE Base URL",
     default="https://api.cloud.sciphi.ai",
     hide_input=False,
-    help="Host URL for R2R",
+    help="Host URL for FUSE",
 )
 async def host(host):
-    """Configure R2R host URL."""
-    Config.set_credentials("Host", {"R2R_HOST": host})
-    console.print("[green]Successfully configured R2R host URL[/green]")
+    """Configure FUSE host URL."""
+    Config.set_credentials("Host", {"FUSE_HOST": host})
+    console.print("[green]Successfully configured FUSE host URL[/green]")
 
 
 @configure.command()
@@ -113,7 +113,7 @@ async def view():
     Config.load()
 
     table = Table(
-        title="[bold blue]R2R Settings[/bold blue]",
+        title="[bold blue]FUSE Settings[/bold blue]",
         show_header=True,
         header_style="bold white on blue",
         border_style="blue",

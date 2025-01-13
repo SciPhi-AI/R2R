@@ -1,20 +1,20 @@
-from ..config import R2RConfig
-from .builder import R2RBuilder
+from ..config import FUSEConfig
+from .builder import FUSEBuilder
 from .factory import (
-    R2RAgentFactory,
-    R2RPipeFactory,
-    R2RPipelineFactory,
-    R2RProviderFactory,
+    FUSEAgentFactory,
+    FUSEPipeFactory,
+    FUSEPipelineFactory,
+    FUSEProviderFactory,
 )
 
 __all__ = [
     # Builder
-    "R2RBuilder",
+    "FUSEBuilder",
     # Config
-    "R2RConfig",
+    "FUSEConfig",
     # Factory
-    "R2RProviderFactory",
-    "R2RPipeFactory",
-    "R2RPipelineFactory",
-    "R2RAgentFactory",
+    "FUSEProviderFactory",
+    "FUSEPipeFactory",
+    "FUSEPipelineFactory",
+    "FUSEAgentFactory",
 ]

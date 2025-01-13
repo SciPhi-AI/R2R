@@ -3,13 +3,13 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from core.base import R2RException, RunManager, Token
+from core.base import FUSEException, RunManager, Token
 from core.base.api.models import User
 from core.telemetry.telemetry_decorator import telemetry_event
 from core.utils import generate_default_user_collection_id
 
-from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
-from ..config import R2RConfig
+from ..abstractions import FUSEAgents, FUSEPipelines, FUSEPipes, FUSEProviders
+from ..config import FUSEConfig
 from .base import Service
 
 logger = logging.getLogger()
@@ -18,11 +18,11 @@ logger = logging.getLogger()
 class AuthService(Service):
     def __init__(
         self,
-        config: R2RConfig,
-        providers: R2RProviders,
-        pipes: R2RPipes,
-        pipelines: R2RPipelines,
-        agents: R2RAgents,
+        config: FUSEConfig,
+        providers: FUSEProviders,
+        pipes: FUSEPipes,
+        pipelines: FUSEPipelines,
+        agents: FUSEAgents,
         run_manager: RunManager,
     ):
         super().__init__(
@@ -62,7 +62,7 @@ class AuthService(Service):
         self, email: str, verification_code: str
     ) -> dict[str, str]:
         if not self.config.auth.require_email_verification:
-            raise R2RException(
+            raise FUSEException(
                 status_code=400, message="Email verification is not required"
             )
 
@@ -73,7 +73,7 @@ class AuthService(Service):
             user_id
         )
         if not user or user.email != email:
-            raise R2RException(
+            raise FUSEException(
                 status_code=400, message="Invalid or expired verification code"
             )
 
@@ -93,14 +93,14 @@ class AuthService(Service):
     async def user(self, token: str) -> User:
         token_data = await self.providers.auth.decode_token(token)
         if not token_data.email:
-            raise R2RException(
+            raise FUSEException(
                 status_code=401, message="Invalid authentication credentials"
             )
         user = await self.providers.database.users_handler.get_user_by_email(
             token_data.email
         )
         if user is None:
-            raise R2RException(
+            raise FUSEException(
                 status_code=401, message="Invalid authentication credentials"
             )
         return user
@@ -116,7 +116,7 @@ class AuthService(Service):
         self, user: User, current_password: str, new_password: str
     ) -> dict[str, str]:
         if not user:
-            raise R2RException(status_code=404, message="User not found")
+            raise FUSEException(status_code=404, message="User not found")
         return await self.providers.auth.change_password(
             user, current_password, new_password
         )
@@ -154,7 +154,7 @@ class AuthService(Service):
             await self.providers.database.users_handler.get_user_by_id(user_id)
         )
         if not user:
-            raise R2RException(status_code=404, message="User not found")
+            raise FUSEException(status_code=404, message="User not found")
         if email is not None:
             user.email = email
         if is_superuser is not None:
@@ -183,9 +183,9 @@ class AuthService(Service):
             user_id
         )
         if not user:
-            raise R2RException(status_code=404, message="User not found")
+            raise FUSEException(status_code=404, message="User not found")
         if not is_superuser and not password:
-            raise R2RException(
+            raise FUSEException(
                 status_code=422, message="Password is required for deletion"
             )
         if not (
@@ -197,7 +197,7 @@ class AuthService(Service):
                 )
             )
         ):
-            raise R2RException(status_code=400, message="Incorrect password")
+            raise FUSEException(status_code=400, message="Incorrect password")
         await self.providers.database.users_handler.delete_user_relational(
             user_id
         )

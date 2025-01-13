@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
-from core.agent import R2RRAGAgent, R2RStreamingRAGAgent
+from core.agent import FUSERAGAgent, FUSEStreamingRAGAgent
 from core.database import PostgresDatabaseProvider
 from core.pipelines import RAGPipeline, SearchPipeline
 from core.pipes import (
@@ -28,8 +28,8 @@ from core.providers import (
     OllamaEmbeddingProvider,
     OpenAICompletionProvider,
     OpenAIEmbeddingProvider,
-    R2RAuthProvider,
-    R2RIngestionProvider,
+    FUSEAuthProvider,
+    FUSEIngestionProvider,
     SendGridEmailProvider,
     SimpleOrchestrationProvider,
     SupabaseAuthProvider,
@@ -44,10 +44,10 @@ if TYPE_CHECKING:
     from core.main.services.retrieval_service import RetrievalService
 
 
-class R2RProviders(BaseModel):
-    auth: R2RAuthProvider | SupabaseAuthProvider
+class FUSEProviders(BaseModel):
+    auth: FUSEAuthProvider | SupabaseAuthProvider
     database: PostgresDatabaseProvider
-    ingestion: R2RIngestionProvider | UnstructuredIngestionProvider
+    ingestion: FUSEIngestionProvider | UnstructuredIngestionProvider
     embedding: (
         LiteLLMEmbeddingProvider
         | OpenAIEmbeddingProvider
@@ -65,7 +65,7 @@ class R2RProviders(BaseModel):
         arbitrary_types_allowed = True
 
 
-class R2RPipes(BaseModel):
+class FUSEPipes(BaseModel):
     parsing_pipe: ParsingPipe
     embedding_pipe: EmbeddingPipe
     graph_search_pipe: GraphSearchSearchPipe
@@ -82,7 +82,7 @@ class R2RPipes(BaseModel):
         arbitrary_types_allowed = True
 
 
-class R2RPipelines(BaseModel):
+class FUSEPipelines(BaseModel):
     search_pipeline: SearchPipeline
     rag_pipeline: RAGPipeline
     streaming_rag_pipeline: RAGPipeline
@@ -91,16 +91,16 @@ class R2RPipelines(BaseModel):
         arbitrary_types_allowed = True
 
 
-class R2RAgents(BaseModel):
-    rag_agent: R2RRAGAgent
-    streaming_rag_agent: R2RStreamingRAGAgent
+class FUSEAgents(BaseModel):
+    rag_agent: FUSERAGAgent
+    streaming_rag_agent: FUSEStreamingRAGAgent
 
     class Config:
         arbitrary_types_allowed = True
 
 
 @dataclass
-class R2RServices:
+class FUSEServices:
     auth: "AuthService"
     ingestion: "IngestionService"
     management: "ManagementService"

@@ -8,15 +8,15 @@ from fastapi import Depends, WebSocket
 from fastapi.requests import Request
 from fastapi.templating import Jinja2Templates
 
-from ...abstractions import R2RProviders, R2RServices
+from ...abstractions import FUSEProviders, FUSEServices
 from .base_router import BaseRouterV3
 
 
 class LogsRouter(BaseRouterV3):
     def __init__(
         self,
-        providers: R2RProviders,
-        services: R2RServices,
+        providers: FUSEProviders,
+        services: FUSEServices,
     ):
         super().__init__(providers, services)
         CURRENT_DIR = Path(__file__).resolve().parent

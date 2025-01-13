@@ -3,7 +3,7 @@ import uuid
 
 import pytest
 
-from r2r import R2RClient, R2RException
+from fuse import FUSEClient, FUSEException
 
 
 @pytest.fixture
@@ -20,7 +20,7 @@ def cleanup_documents(client):
     for doc_id in doc_ids:
         try:
             client.documents.delete(id=doc_id)
-        except R2RException:
+        except FUSEException:
             pass
 
 
@@ -112,7 +112,7 @@ def test_delete_document(client):
     del_resp = client.documents.delete(id=doc_id)["results"]
     assert del_resp["success"], "Failed to delete document"
     # Verify it's gone
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.documents.retrieve(id=doc_id)
     assert exc_info.value.status_code == 404, "Expected 404 after deletion"
 
@@ -130,7 +130,7 @@ def test_delete_document_by_filter(client):
     del_resp = client.documents.delete_by_filter(filters)["results"]
     assert del_resp["success"], "Failed to delete documents by filter"
     # Verify deletion
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.documents.retrieve(id=doc_id)
     assert (
         exc_info.value.status_code == 404
@@ -165,7 +165,7 @@ def test_list_entities(client, test_document):
     try:
         entities = client.documents.list_entities(id=test_document)["results"]
         assert isinstance(entities, list), "Entities response not a list"
-    except R2RException as e:
+    except FUSEException as e:
         # Possibly no entities extracted yet
         pytest.skip(f"No entities extracted yet: {str(e)}")
 
@@ -179,7 +179,7 @@ def test_list_relationships(client, test_document):
         assert isinstance(
             relationships, list
         ), "Relationships response not a list"
-    except R2RException as e:
+    except FUSEException as e:
         pytest.skip(f"No relationships extracted yet: {str(e)}")
 
 
@@ -232,14 +232,14 @@ def test_search_documents_extended(client, cleanup_documents):
 
 def test_retrieve_document_not_found(client):
     bad_id = str(uuid.uuid4())
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.documents.retrieve(id=bad_id)
     assert exc_info.value.status_code == 404, "Wrong error code for not found"
 
 
 def test_delete_document_non_existent(client):
     bad_id = str(uuid.uuid4())
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.documents.delete(id=bad_id)
     assert (
         exc_info.value.status_code == 404
@@ -249,13 +249,13 @@ def test_delete_document_non_existent(client):
 # @pytest.mark.skip(reason="If your API restricts this endpoint to superusers")
 def test_get_document_collections_non_superuser(client):
     # Create a non-superuser client
-    non_super_client = R2RClient(client.base_url)
+    non_super_client = FUSEClient(client.base_url)
     random_string = str(uuid.uuid4())
     non_super_client.users.create(f"{random_string}@me.com", "password")
     non_super_client.users.login(f"{random_string}@me.com", "password")
 
     document_id = str(uuid.uuid4())  # Some doc ID
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         non_super_client.documents.list_collections(id=document_id)
     assert (
         exc_info.value.status_code == 403
@@ -271,12 +271,12 @@ def test_access_document_not_owned(client, cleanup_documents):
     )
 
     # Now try to access with a non-superuser
-    non_super_client = R2RClient(client.base_url)
+    non_super_client = FUSEClient(client.base_url)
     random_string = str(uuid.uuid4())
     non_super_client.users.create(f"{random_string}@me.com", "password")
     non_super_client.users.login(f"{random_string}@me.com", "password")
 
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         non_super_client.documents.download(id=doc_id)
     assert (
         exc_info.value.status_code == 403
@@ -302,7 +302,7 @@ def test_list_documents_with_pagination(mutable_client, cleanup_documents):
 
 def test_ingest_invalid_chunks(client):
     invalid_chunks = ["Valid chunk", 12345, {"not": "a string"}]
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.documents.create(
             chunks=invalid_chunks, run_with_orchestration=False
         )
@@ -314,7 +314,7 @@ def test_ingest_invalid_chunks(client):
 
 def test_ingest_too_many_chunks(client):
     excessive_chunks = ["Chunk"] * (1024 * 100 + 1)  # Just over the limit
-    with pytest.raises(R2RException) as exc_info:
+    with pytest.raises(FUSEException) as exc_info:
         client.documents.create(
             chunks=excessive_chunks, run_with_orchestration=False
         )
@@ -345,7 +345,7 @@ def test_delete_by_complex_filter(client, cleanup_documents):
 
     # Verify both documents are deleted
     for d_id in [doc1, doc2]:
-        with pytest.raises(R2RException) as exc_info:
+        with pytest.raises(FUSEException) as exc_info:
             client.documents.retrieve(d_id)
         assert (
             exc_info.value.status_code == 404
@@ -378,7 +378,7 @@ from datetime import datetime
 
 import pytest
 
-from r2r import R2RException
+from fuse import FUSEException
 
 
 def test_delete_by_workflow_metadata(client, cleanup_documents):
@@ -448,7 +448,7 @@ def test_delete_by_workflow_metadata(client, cleanup_documents):
         assert response["success"]
 
         # Verify first draft is deleted
-        with pytest.raises(R2RException) as exc:
+        with pytest.raises(FUSEException) as exc:
             client.documents.retrieve(id=docs[0])
         assert exc.value.status_code == 404
 
@@ -508,7 +508,7 @@ def test_delete_by_classification_metadata(client, cleanup_documents):
         assert response["success"]
 
         # Verify confidential HR doc is deleted
-        with pytest.raises(R2RException) as exc:
+        with pytest.raises(FUSEException) as exc:
             client.documents.retrieve(id=docs[0])
         assert exc.value.status_code == 404
 
@@ -568,7 +568,7 @@ def test_delete_by_version_metadata(client, cleanup_documents):
         assert response["success"]
 
         # Verify deprecated doc is deleted
-        with pytest.raises(R2RException) as exc:
+        with pytest.raises(FUSEException) as exc:
             client.documents.retrieve(id=docs[0])
         assert exc.value.status_code == 404
 

@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from shared.api.models.base import PaginatedR2RResult, R2RResults
+from shared.api.models.base import PaginatedFUSEResult, FUSEResults
 
 T = TypeVar("T")
 
@@ -61,10 +61,10 @@ class ListVectorIndicesResponse(BaseModel):
     indices: list[dict[str, Any]]
 
 
-WrappedIngestionResponse = R2RResults[IngestionResponse]
-WrappedMetadataUpdateResponse = R2RResults[IngestionResponse]
-WrappedUpdateResponse = R2RResults[UpdateResponse]
+WrappedIngestionResponse = FUSEResults[IngestionResponse]
+WrappedMetadataUpdateResponse = FUSEResults[IngestionResponse]
+WrappedUpdateResponse = FUSEResults[UpdateResponse]
 
-WrappedListVectorIndicesResponse = PaginatedR2RResult[
+WrappedListVectorIndicesResponse = PaginatedFUSEResult[
     ListVectorIndicesResponse
 ]

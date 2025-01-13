@@ -20,7 +20,7 @@ from cli.commands.conversations import (
     list_users,
     retrieve,
 )
-from r2r import R2RAsyncClient
+from fuse import FUSEAsyncClient
 from tests.cli.async_invoke import async_invoke
 
 
@@ -45,7 +45,7 @@ def extract_json_block(output: str) -> dict:
 @pytest.mark.asyncio
 async def test_conversation_lifecycle():
     """Test the complete lifecycle of a conversation: create, retrieve, delete."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     # Create conversation
@@ -87,7 +87,7 @@ async def test_conversation_lifecycle():
 @pytest.mark.asyncio
 async def test_list_conversations():
     """Test listing conversations with various parameters."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     # Create test conversation first
@@ -114,7 +114,7 @@ async def test_list_conversations():
 @pytest.mark.asyncio
 async def test_nonexistent_conversation():
     """Test operations on a nonexistent conversation."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     nonexistent_id = str(uuid.uuid4())
@@ -135,7 +135,7 @@ async def test_nonexistent_conversation():
 @pytest.mark.asyncio
 async def test_list_conversations_pagination():
     """Test pagination functionality of list conversations."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     # Create multiple conversations

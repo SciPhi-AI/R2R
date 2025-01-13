@@ -16,7 +16,7 @@ from core.base import (
     generate_extraction_id,
     increment_version,
 )
-from core.base.abstractions import DocumentResponse, R2RException
+from core.base.abstractions import DocumentResponse, FUSEException
 from core.utils import (
     generate_default_user_collection_id,
     update_settings_from_dict,
@@ -261,7 +261,7 @@ def hatchet_ingestion_factory(
                 }
 
             except AuthenticationError as e:
-                raise R2RException(
+                raise FUSEException(
                     status_code=401,
                     message="Authentication error: Invalid API key or credentials.",
                 )
@@ -335,11 +335,11 @@ def hatchet_ingestion_factory(
             file_sizes_in_bytes = parsed_data["file_sizes_in_bytes"]
 
             if not file_datas:
-                raise R2RException(
+                raise FUSEException(
                     status_code=400, message="No files provided for update."
                 )
             if len(document_ids) != len(file_datas):
-                raise R2RException(
+                raise FUSEException(
                     status_code=400,
                     message="Number of ids does not match number of files.",
                 )
@@ -354,7 +354,7 @@ def hatchet_ingestion_factory(
             )["results"]
 
             if len(documents_overview) != len(document_ids):
-                raise R2RException(
+                raise FUSEException(
                     status_code=404,
                     message="One or more documents not found.",
                 )

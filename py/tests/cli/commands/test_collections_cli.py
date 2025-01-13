@@ -22,7 +22,7 @@ from cli.commands.collections import (
     list_users,
     retrieve,
 )
-from r2r import R2RAsyncClient
+from fuse import FUSEAsyncClient
 from tests.cli.async_invoke import async_invoke
 
 
@@ -47,7 +47,7 @@ def extract_json_block(output: str) -> dict:
 @pytest.mark.asyncio
 async def test_collection_lifecycle():
     """Test the complete lifecycle of a collection: create, retrieve, delete."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     collection_name = f"test-collection-{uuid.uuid4()}"
@@ -99,7 +99,7 @@ async def test_collection_lifecycle():
 @pytest.mark.asyncio
 async def test_list_collections():
     """Test listing collections with various parameters."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     # Create test collection first
@@ -128,7 +128,7 @@ async def test_list_collections():
 @pytest.mark.asyncio
 async def test_nonexistent_collection():
     """Test operations on a nonexistent collection."""
-    client = R2RAsyncClient(base_url="http://localhost:7272")
+    client = FUSEAsyncClient(base_url="http://localhost:7272")
     runner = CliRunner(mix_stderr=False)
 
     nonexistent_id = str(uuid.uuid4())

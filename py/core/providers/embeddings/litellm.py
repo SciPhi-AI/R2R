@@ -14,7 +14,7 @@ from core.base import (
     EmbeddingConfig,
     EmbeddingProvider,
     EmbeddingPurpose,
-    R2RException,
+    FUSEException,
 )
 
 logger = logging.getLogger()
@@ -52,7 +52,7 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
             url = os.getenv("HUGGINGFACE_API_BASE") or config.rerank_url
             if not url:
                 raise ValueError(
-                    "LiteLLMEmbeddingProvider requires a valid reranking API url to be set via `embedding.rerank_url` in the r2r.toml, or via the environment variable `HUGGINGFACE_API_BASE`."
+                    "LiteLLMEmbeddingProvider requires a valid reranking API url to be set via `embedding.rerank_url` in the fuse.toml, or via the environment variable `HUGGINGFACE_API_BASE`."
                 )
             self.rerank_url = url
 
@@ -93,7 +93,7 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
             error_msg = f"Error getting embeddings: {str(e)}"
             logger.error(error_msg)
 
-            raise R2RException(error_msg, 400)
+            raise FUSEException(error_msg, 400)
 
     def _execute_task_sync(self, task: dict[str, Any]) -> list[list[float]]:
         texts = task["texts"]
@@ -112,7 +112,7 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"
             logger.error(error_msg)
-            raise R2RException(error_msg, 400)
+            raise FUSEException(error_msg, 400)
 
     async def async_get_embedding(
         self,

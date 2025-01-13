@@ -3,7 +3,7 @@ from typing import Any, Optional
 from uuid import UUID
 
 
-class R2RException(Exception):
+class FUSEException(Exception):
     def __init__(
         self, message: str, status_code: int, detail: Optional[Any] = None
     ):
@@ -20,7 +20,7 @@ class R2RException(Exception):
         }
 
 
-class R2RDocumentProcessingError(R2RException):
+class FUSEDocumentProcessingError(FUSEException):
     def __init__(
         self, error_message: str, document_id: UUID, status_code: int = 500
     ):
@@ -36,7 +36,7 @@ class R2RDocumentProcessingError(R2RException):
         return result
 
 
-class PDFParsingError(R2RException):
+class PDFParsingError(FUSEException):
     """Custom exception for PDF parsing errors"""
 
     def __init__(

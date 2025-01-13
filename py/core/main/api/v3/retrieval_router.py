@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from core.base import (
     GenerationConfig,
     Message,
-    R2RException,
+    FUSEException,
     SearchMode,
     SearchSettings,
     select_search_filters,
@@ -20,7 +20,7 @@ from core.base.api.models import (
     WrappedSearchResponse,
 )
 
-from ...abstractions import R2RProviders, R2RServices
+from ...abstractions import FUSEProviders, FUSEServices
 from .base_router import BaseRouterV3
 
 
@@ -43,8 +43,8 @@ def merge_search_settings(
 class RetrievalRouterV3(BaseRouterV3):
     def __init__(
         self,
-        providers: R2RProviders,
-        services: R2RServices,
+        providers: FUSEProviders,
+        services: FUSEServices,
     ):
         super().__init__(providers, services)
 
@@ -85,16 +85,16 @@ class RetrievalRouterV3(BaseRouterV3):
         @self.router.post(
             "/retrieval/search",
             dependencies=[Depends(self.rate_limit_dependency)],
-            summary="Search R2R",
+            summary="Search FUSE",
             openapi_extra={
                 "x-codeSamples": [
                     {
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # if using auth, do client.login(...)
 
                             # Basic mode, no overrides
@@ -132,9 +132,9 @@ class RetrievalRouterV3(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.search({
@@ -161,7 +161,7 @@ class RetrievalRouterV3(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r retrieval search --query "Who is Aristotle?"
+                            fuse retrieval search --query "Who is Aristotle?"
                             """
                         ),
                     },
@@ -254,7 +254,7 @@ class RetrievalRouterV3(BaseRouterV3):
             Provide the entire `search_settings` to define your search exactly as you want it.
             """
             if query == "":
-                raise R2RException("Query cannot be empty", 400)
+                raise FUSEException("Query cannot be empty", 400)
             effective_settings = self._prepare_search_settings(
                 auth_user, search_mode, search_settings
             )
@@ -275,9 +275,9 @@ class RetrievalRouterV3(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             response =client.retrieval.rag(
@@ -306,9 +306,9 @@ class RetrievalRouterV3(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.retrieval.rag({
@@ -340,7 +340,7 @@ class RetrievalRouterV3(BaseRouterV3):
                         "lang": "CLI",
                         "source": textwrap.dedent(
                             """
-                            r2r retrieval search --query "Who is Aristotle?" --stream
+                            fuse retrieval search --query "Who is Aristotle?" --stream
                             """
                         ),
                     },
@@ -465,9 +465,9 @@ class RetrievalRouterV3(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                        from r2r import R2RClient
+                        from fuse import FUSEClient
 
-                        client = R2RClient()
+                        client = FUSEClient()
                         # when using auth, do client.login(...)
 
                         response =client.retrieval.agent(
@@ -501,9 +501,9 @@ class RetrievalRouterV3(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.retrieval.agent({
@@ -686,7 +686,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 else:
                     return response
             except Exception as e:
-                raise R2RException(str(e), 500)
+                raise FUSEException(str(e), 500)
 
         @self.router.post(
             "/retrieval/completion",
@@ -698,9 +698,9 @@ class RetrievalRouterV3(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             response =client.completion(
@@ -724,9 +724,9 @@ class RetrievalRouterV3(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.completion({
@@ -835,9 +835,9 @@ class RetrievalRouterV3(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
-                            from r2r import R2RClient
+                            from fuse import FUSEClient
 
-                            client = R2RClient()
+                            client = FUSEClient()
                             # when using auth, do client.login(...)
 
                             result = client.retrieval.embedding(
@@ -850,9 +850,9 @@ class RetrievalRouterV3(BaseRouterV3):
                         "lang": "JavaScript",
                         "source": textwrap.dedent(
                             """
-                            const { r2rClient } = require("r2r-js");
+                            const { fuseClient } = require("fuse-js");
 
-                            const client = new r2rClient();
+                            const client = new fuseClient();
 
                             function main() {
                                 const response = await client.retrieval.embedding({

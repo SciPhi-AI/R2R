@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from .base import R2RSerializable
+from .base import FUSESerializable
 
 
 class VectorType(str, Enum):
@@ -77,7 +77,7 @@ class IndexMeasure(str, Enum):
         }[self]
 
 
-class IndexArgsIVFFlat(R2RSerializable):
+class IndexArgsIVFFlat(FUSESerializable):
     """
     A class for arguments that can optionally be supplied to the index creation
     method when building an IVFFlat type index.
@@ -89,7 +89,7 @@ class IndexArgsIVFFlat(R2RSerializable):
     n_lists: int
 
 
-class IndexArgsHNSW(R2RSerializable):
+class IndexArgsHNSW(FUSESerializable):
     """
     A class for arguments that can optionally be supplied to the index creation
     method when building an HNSW type index.
@@ -155,13 +155,13 @@ class VectorQuantizationType(str, Enum):
         return db_type_mapping[self.value]
 
 
-class VectorQuantizationSettings(R2RSerializable):
+class VectorQuantizationSettings(FUSESerializable):
     quantization_type: VectorQuantizationType = Field(
         default=VectorQuantizationType.FP32
     )
 
 
-class Vector(R2RSerializable):
+class Vector(FUSESerializable):
     """A vector with the option to fix the number of elements."""
 
     data: list[float]
@@ -185,7 +185,7 @@ class Vector(R2RSerializable):
         )
 
 
-class VectorEntry(R2RSerializable):
+class VectorEntry(FUSESerializable):
     """A vector entry that can be stored directly in supported vector databases."""
 
     id: UUID
@@ -214,7 +214,7 @@ class VectorEntry(R2RSerializable):
         return self.__str__()
 
 
-class StorageResult(R2RSerializable):
+class StorageResult(FUSESerializable):
     """A result of a storage operation."""
 
     success: bool

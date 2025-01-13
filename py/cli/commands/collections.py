@@ -4,7 +4,7 @@ import asyncclick as click
 from asyncclick import pass_context
 
 from cli.utils.timer import timer
-from r2r import R2RAsyncClient, R2RException
+from fuse import FUSEAsyncClient, FUSEException
 
 
 @click.group()
@@ -19,7 +19,7 @@ def collections():
 @pass_context
 async def create(ctx: click.Context, name, description):
     """Create a collection."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -28,7 +28,7 @@ async def create(ctx: click.Context, name, description):
                 description=description,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -49,7 +49,7 @@ async def create(ctx: click.Context, name, description):
 @pass_context
 async def list(ctx: click.Context, ids, offset, limit):
     """Get an overview of collections."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
     ids = list(ids) if ids else None
 
     try:
@@ -60,7 +60,7 @@ async def list(ctx: click.Context, ids, offset, limit):
                 limit=limit,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -71,13 +71,13 @@ async def list(ctx: click.Context, ids, offset, limit):
 @pass_context
 async def retrieve(ctx: click.Context, id):
     """Retrieve a collection by ID."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
             response = await client.collections.retrieve(id=id)
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -88,13 +88,13 @@ async def retrieve(ctx: click.Context, id):
 @pass_context
 async def delete(ctx: click.Context, id):
     """Delete a collection by ID."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
             response = await client.collections.delete(id=id)
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -115,7 +115,7 @@ async def delete(ctx: click.Context, id):
 @pass_context
 async def list_documents(ctx: click.Context, id, offset, limit):
     """Get an overview of collections."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -127,7 +127,7 @@ async def list_documents(ctx: click.Context, id, offset, limit):
 
         for user in response["results"]:  # type: ignore
             click.echo(json.dumps(user, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -148,7 +148,7 @@ async def list_documents(ctx: click.Context, id, offset, limit):
 @pass_context
 async def list_users(ctx: click.Context, id, offset, limit):
     """Get an overview of collections."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -159,7 +159,7 @@ async def list_users(ctx: click.Context, id, offset, limit):
             )
         for user in response["results"]:  # type: ignore
             click.echo(json.dumps(user, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)

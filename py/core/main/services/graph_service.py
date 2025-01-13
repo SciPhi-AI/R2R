@@ -11,7 +11,7 @@ from core.base import (
     DocumentChunk,
     KGExtraction,
     KGExtractionStatus,
-    R2RDocumentProcessingError,
+    FUSEDocumentProcessingError,
     RunManager,
 )
 from core.base.abstractions import (
@@ -21,15 +21,15 @@ from core.base.abstractions import (
     KGCreationSettings,
     KGEnrichmentSettings,
     KGEnrichmentStatus,
-    R2RException,
+    FUSEException,
     Relationship,
     StoreType,
 )
 from core.base.api.models import GraphResponse
 from core.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
-from ..config import R2RConfig
+from ..abstractions import FUSEAgents, FUSEPipelines, FUSEPipes, FUSEProviders
+from ..config import FUSEConfig
 from .base import Service
 
 logger = logging.getLogger()
@@ -50,11 +50,11 @@ async def _collect_results(result_gen: AsyncGenerator) -> list[dict]:
 class GraphService(Service):
     def __init__(
         self,
-        config: R2RConfig,
-        providers: R2RProviders,
-        pipes: R2RPipes,
-        pipelines: R2RPipelines,
-        agents: R2RAgents,
+        config: FUSEConfig,
+        providers: FUSEProviders,
+        pipes: FUSEPipes,
+        pipelines: FUSEPipelines,
+        agents: FUSEAgents,
         run_manager: RunManager,
     ):
         super().__init__(
@@ -620,7 +620,7 @@ class GraphService(Service):
         total_tasks: Optional[int] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[KGExtraction | R2RDocumentProcessingError, None]:
+    ) -> AsyncGenerator[KGExtraction | FUSEDocumentProcessingError, None]:
         start_time = time.time()
 
         logger.info(
@@ -658,7 +658,7 @@ class GraphService(Service):
         logger.info(f"Found {len(chunks)} chunks for document {document_id}")
         if len(chunks) == 0:
             logger.info(f"No chunks found for document {document_id}")
-            raise R2RException(
+            raise FUSEException(
                 message="No chunks found for document",
                 status_code=404,
             )
@@ -730,7 +730,7 @@ class GraphService(Service):
                     )
             except Exception as e:
                 logger.error(f"Error in Extracting KG Relationships: {e}")
-                yield R2RDocumentProcessingError(
+                yield FUSEDocumentProcessingError(
                     document_id=document_id,
                     error_message=str(e),
                 )
@@ -788,7 +788,7 @@ class GraphService(Service):
                 kg_extraction = response.choices[0].message.content
 
                 if not kg_extraction:
-                    raise R2RException(
+                    raise FUSEException(
                         "No knowledge graph extraction found in the response string, the selected LLM likely failed to format it's response correctly.",
                         400,
                     )
@@ -800,7 +800,7 @@ class GraphService(Service):
                     try:
                         root = ET.fromstring(wrapped_xml)
                     except ET.ParseError as e:
-                        raise R2RException(
+                        raise FUSEException(
                             f"Failed to parse XML response: {e}. Response: {response_str}",
                             400,
                         )
@@ -811,7 +811,7 @@ class GraphService(Service):
                         > MIN_VALID_KG_EXTRACTION_RESPONSE_LENGTH
                         and len(entities) == 0
                     ):
-                        raise R2RException(
+                        raise FUSEException(
                             f"No entities found in the response string, the selected LLM likely failed to format it's response correctly. {response_str}",
                             400,
                         )
@@ -908,7 +908,7 @@ class GraphService(Service):
                 json.JSONDecodeError,
                 KeyError,
                 IndexError,
-                R2RException,
+                FUSEException,
             ) as e:
                 if attempt < retries - 1:
                     await asyncio.sleep(delay)

@@ -3,7 +3,7 @@ from uuid import UUID
 
 import pytest
 
-from core.base import R2RException
+from core.base import FUSEException
 from core.base.api.models import CollectionResponse
 
 
@@ -57,7 +57,7 @@ async def test_update_collection_no_fields(collections_handler):
         owner_id=owner_id, name="NoUpdate", description="No Update"
     )
 
-    with pytest.raises(R2RException) as exc:
+    with pytest.raises(FUSEException) as exc:
         await collections_handler.update_collection(collection_id=coll.id)
     assert exc.value.status_code == 400
 
@@ -200,7 +200,7 @@ async def test_remove_document_from_collection_relational(
 @pytest.mark.asyncio
 async def test_delete_nonexistent_collection(collections_handler):
     non_existent_id = uuid.uuid4()
-    with pytest.raises(R2RException) as exc:
+    with pytest.raises(FUSEException) as exc:
         await collections_handler.delete_collection_relational(non_existent_id)
     assert (
         exc.value.status_code == 404

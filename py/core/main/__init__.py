@@ -1,31 +1,31 @@
-from .abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
+from .abstractions import FUSEAgents, FUSEPipelines, FUSEPipes, FUSEProviders
 from .api import *
 from .app import *
 
-# from .app_entry import r2r_app
+# from .app_entry import fuse_app
 from .assembly import *
 from .orchestration import *
 from .services import *
 
 __all__ = [
-    ## R2R ABSTRACTIONS
-    "R2RProviders",
-    "R2RPipes",
-    "R2RPipelines",
-    "R2RAgents",
-    ## R2R API
-    "R2RApp",
-    ## R2R ASSEMBLY
+    ## FUSE ABSTRACTIONS
+    "FUSEProviders",
+    "FUSEPipes",
+    "FUSEPipelines",
+    "FUSEAgents",
+    ## FUSE API
+    "FUSEApp",
+    ## FUSE ASSEMBLY
     # Builder
-    "R2RBuilder",
+    "FUSEBuilder",
     # Config
-    "R2RConfig",
+    "FUSEConfig",
     # Factory
-    "R2RProviderFactory",
-    "R2RPipeFactory",
-    "R2RPipelineFactory",
-    "R2RAgentFactory",
-    ## R2R SERVICES
+    "FUSEProviderFactory",
+    "FUSEPipeFactory",
+    "FUSEPipelineFactory",
+    "FUSEAgentFactory",
+    ## FUSE SERVICES
     "AuthService",
     "IngestionService",
     "ManagementService",

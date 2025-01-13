@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Any, Optional
 
-from core.agent import R2RRAGAgent, R2RStreamingRAGAgent
+from core.agent import FUSERAGAgent, FUSEStreamingRAGAgent
 from core.base import (
     AsyncPipe,
     AuthConfig,
@@ -35,8 +35,8 @@ from core.pipes import (
 )
 from core.providers.email.sendgrid import SendGridEmailProvider
 
-from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
-from ..config import R2RConfig
+from ..abstractions import FUSEAgents, FUSEPipelines, FUSEPipes, FUSEProviders
+from ..config import FUSEConfig
 
 logger = logging.getLogger()
 from core.database import PostgresDatabaseProvider
@@ -53,9 +53,9 @@ from core.providers import (
     OllamaEmbeddingProvider,
     OpenAICompletionProvider,
     OpenAIEmbeddingProvider,
-    R2RAuthProvider,
-    R2RIngestionConfig,
-    R2RIngestionProvider,
+    FUSEAuthProvider,
+    FUSEIngestionConfig,
+    FUSEIngestionProvider,
     SimpleOrchestrationProvider,
     SupabaseAuthProvider,
     UnstructuredIngestionConfig,
@@ -63,8 +63,8 @@ from core.providers import (
 )
 
 
-class R2RProviderFactory:
-    def __init__(self, config: R2RConfig):
+class FUSEProviderFactory:
+    def __init__(self, config: FUSEConfig):
         self.config = config
 
     @staticmethod
@@ -79,13 +79,13 @@ class R2RProviderFactory:
         ),
         *args,
         **kwargs,
-    ) -> R2RAuthProvider | SupabaseAuthProvider:
-        if auth_config.provider == "r2r":
-            r2r_auth = R2RAuthProvider(
+    ) -> FUSEAuthProvider | SupabaseAuthProvider:
+        if auth_config.provider == "fuse":
+            fuse_auth = FUSEAuthProvider(
                 auth_config, crypto_provider, database_provider, email_provider
             )
-            await r2r_auth.initialize()
-            return r2r_auth
+            await fuse_auth.initialize()
+            return fuse_auth
         elif auth_config.provider == "supabase":
             return SupabaseAuthProvider(
                 auth_config, crypto_provider, database_provider, email_provider
@@ -119,7 +119,7 @@ class R2RProviderFactory:
         llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
         *args,
         **kwargs,
-    ) -> R2RIngestionProvider | UnstructuredIngestionProvider:
+    ) -> FUSEIngestionProvider | UnstructuredIngestionProvider:
         config_dict = (
             ingestion_config.model_dump()
             if isinstance(ingestion_config, IngestionConfig)
@@ -128,12 +128,12 @@ class R2RProviderFactory:
 
         extra_fields = config_dict.pop("extra_fields", {})
 
-        if config_dict["provider"] == "r2r":
-            r2r_ingestion_config = R2RIngestionConfig(
+        if config_dict["provider"] == "fuse":
+            fuse_ingestion_config = FUSEIngestionConfig(
                 **config_dict, **extra_fields
             )
-            return R2RIngestionProvider(
-                r2r_ingestion_config, database_provider, llm_provider
+            return FUSEIngestionProvider(
+                fuse_ingestion_config, database_provider, llm_provider
             )
         elif config_dict["provider"] in [
             "unstructured_local",
@@ -157,7 +157,7 @@ class R2RProviderFactory:
     ) -> HatchetOrchestrationProvider | SimpleOrchestrationProvider:
         if config.provider == "hatchet":
             orchestration_provider = HatchetOrchestrationProvider(config)
-            orchestration_provider.get_worker("r2r-worker")
+            orchestration_provider.get_worker("fuse-worker")
             return orchestration_provider
         elif config.provider == "simple":
             from core.providers import SimpleOrchestrationProvider
@@ -264,7 +264,7 @@ class R2RProviderFactory:
         """Creates an email provider based on configuration."""
         if not email_config:
             raise ValueError(
-                "No email configuration provided for email provider, please add `[email]` to your `r2r.toml`."
+                "No email configuration provided for email provider, please add `[email]` to your `fuse.toml`."
             )
 
         if email_config.provider == "smtp":
@@ -281,7 +281,7 @@ class R2RProviderFactory:
     async def create_providers(
         self,
         auth_provider_override: Optional[
-            R2RAuthProvider | SupabaseAuthProvider
+            FUSEAuthProvider | SupabaseAuthProvider
         ] = None,
         crypto_provider_override: Optional[
             BCryptCryptoProvider | NaClCryptoProvider
@@ -298,7 +298,7 @@ class R2RProviderFactory:
             | OllamaEmbeddingProvider
         ] = None,
         ingestion_provider_override: Optional[
-            R2RIngestionProvider | UnstructuredIngestionProvider
+            FUSEIngestionProvider | UnstructuredIngestionProvider
         ] = None,
         llm_provider_override: Optional[
             OpenAICompletionProvider | LiteLLMCompletionProvider
@@ -306,7 +306,7 @@ class R2RProviderFactory:
         orchestration_provider_override: Optional[Any] = None,
         *args,
         **kwargs,
-    ) -> R2RProviders:
+    ) -> FUSEProviders:
         embedding_provider = (
             embedding_provider_override
             or self.create_embedding_provider(
@@ -363,7 +363,7 @@ class R2RProviderFactory:
             or self.create_orchestration_provider(self.config.orchestration)
         )
 
-        return R2RProviders(
+        return FUSEProviders(
             auth=auth_provider,
             database=database_provider,
             embedding=embedding_provider,
@@ -374,8 +374,8 @@ class R2RProviderFactory:
         )
 
 
-class R2RPipeFactory:
-    def __init__(self, config: R2RConfig, providers: R2RProviders):
+class FUSEPipeFactory:
+    def __init__(self, config: FUSEConfig, providers: FUSEProviders):
         self.config = config
         self.providers = providers
 
@@ -396,8 +396,8 @@ class R2RPipeFactory:
         ] = None,
         *args,
         **kwargs,
-    ) -> R2RPipes:
-        return R2RPipes(
+    ) -> FUSEPipes:
+        return FUSEPipes(
             parsing_pipe=parsing_pipe_override
             or self.create_parsing_pipe(
                 self.config.ingestion.excluded_parsers,
@@ -608,9 +608,9 @@ class R2RPipeFactory:
         )
 
 
-class R2RPipelineFactory:
+class FUSEPipelineFactory:
     def __init__(
-        self, config: R2RConfig, providers: R2RProviders, pipes: R2RPipes
+        self, config: FUSEConfig, providers: FUSEProviders, pipes: FUSEPipes
     ):
         self.config = config
         self.providers = providers
@@ -657,11 +657,11 @@ class R2RPipelineFactory:
         streaming_rag_pipeline: Optional[RAGPipeline] = None,
         *args,
         **kwargs,
-    ) -> R2RPipelines:
+    ) -> FUSEPipelines:
         search_pipeline = search_pipeline or self.create_search_pipeline(
             *args, **kwargs
         )
-        return R2RPipelines(
+        return FUSEPipelines(
             search_pipeline=search_pipeline,
             rag_pipeline=rag_pipeline
             or self.create_rag_pipeline(
@@ -680,12 +680,12 @@ class R2RPipelineFactory:
         )
 
 
-class R2RAgentFactory:
+class FUSEAgentFactory:
     def __init__(
         self,
-        config: R2RConfig,
-        providers: R2RProviders,
-        pipelines: R2RPipelines,
+        config: FUSEConfig,
+        providers: FUSEProviders,
+        pipelines: FUSEPipelines,
     ):
         self.config = config
         self.providers = providers
@@ -693,12 +693,12 @@ class R2RAgentFactory:
 
     def create_agents(
         self,
-        rag_agent_override: Optional[R2RRAGAgent] = None,
-        stream_rag_agent_override: Optional[R2RStreamingRAGAgent] = None,
+        rag_agent_override: Optional[FUSERAGAgent] = None,
+        stream_rag_agent_override: Optional[FUSEStreamingRAGAgent] = None,
         *args,
         **kwargs,
-    ) -> R2RAgents:
-        return R2RAgents(
+    ) -> FUSEAgents:
+        return FUSEAgents(
             rag_agent=rag_agent_override
             or self.create_rag_agent(*args, **kwargs),
             streaming_rag_agent=stream_rag_agent_override
@@ -707,25 +707,25 @@ class R2RAgentFactory:
 
     def create_streaming_rag_agent(
         self, *args, **kwargs
-    ) -> R2RStreamingRAGAgent:
+    ) -> FUSEStreamingRAGAgent:
         if not self.providers.llm or not self.providers.database:
             raise ValueError(
                 "LLM and database providers are required for RAG Agent"
             )
 
-        return R2RStreamingRAGAgent(
+        return FUSEStreamingRAGAgent(
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             config=self.config.agent,
             search_pipeline=self.pipelines.search_pipeline,
         )
 
-    def create_rag_agent(self, *args, **kwargs) -> R2RRAGAgent:
+    def create_rag_agent(self, *args, **kwargs) -> FUSERAGAgent:
         if not self.providers.llm or not self.providers.database:
             raise ValueError(
                 "LLM and database providers are required for RAG Agent"
             )
-        return R2RRAGAgent(
+        return FUSERAGAgent(
             database_provider=self.providers.database,
             llm_provider=self.providers.llm,
             config=self.config.agent,

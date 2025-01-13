@@ -15,9 +15,9 @@ from requests.exceptions import RequestException
 
 def bring_down_docker_compose(project_name, volumes, remove_orphans):
     compose_files = get_compose_files()
-    if project_name == "r2r":
+    if project_name == "fuse":
         docker_command = f"docker compose -f {compose_files['base']}"
-    elif project_name == "r2r-full":
+    elif project_name == "fuse-full":
         docker_command = f"docker compose -f {compose_files['full']}"
     else:
         docker_command = f"docker compose  -f {compose_files['full']}"
@@ -39,7 +39,7 @@ def bring_down_docker_compose(project_name, volumes, remove_orphans):
     return os.system(docker_command)
 
 
-def remove_r2r_network():
+def remove_fuse_network():
     networks = (
         subprocess.check_output(
             ["docker", "network", "ls", "--format", "{{.Name}}"]
@@ -48,26 +48,26 @@ def remove_r2r_network():
         .split()
     )
 
-    r2r_network = next(
+    fuse_network = next(
         (
             network
             for network in networks
-            if network.startswith("r2r") and "network" in network
+            if network.startswith("fuse") and "network" in network
         ),
         None,
     )
 
-    if not r2r_network:
-        click.echo("Could not find the r2r network to remove.")
+    if not fuse_network:
+        click.echo("Could not find the fuse network to remove.")
         return
 
     for _ in range(2):  # Try twice
-        remove_command = f"docker network rm {r2r_network}"
+        remove_command = f"docker network rm {fuse_network}"
         if os.system(remove_command) == 0:
-            click.echo(f"Successfully removed network: {r2r_network}")
+            click.echo(f"Successfully removed network: {fuse_network}")
             return
         click.echo(
-            f"Failed to remove network: {r2r_network}. Retrying in 5 seconds..."
+            f"Failed to remove network: {fuse_network}. Retrying in 5 seconds..."
         )
         time.sleep(5)
 
@@ -75,7 +75,7 @@ def remove_r2r_network():
         "Failed to remove the network after multiple attempts. Please try the following steps:\n"
         "1. Run 'docker ps' to check for any running containers using this network.\n"
         "2. Stop any running containers with 'docker stop <container_id>'.\n"
-        f"3. Try removing the network manually with 'docker network rm {r2r_network}'.\n"
+        f"3. Try removing the network manually with 'docker network rm {fuse_network}'.\n"
         "4. If the above steps don't work, you may need to restart the Docker daemon."
     )
 
@@ -88,10 +88,10 @@ async def run_local_serve(
     full: bool = False,
 ) -> None:
     try:
-        from core import R2RBuilder, R2RConfig
+        from core import FUSEBuilder, FUSEConfig
     except ImportError as e:
         click.echo(
-            "Error: You must install the `r2r core` package to run the R2R server locally."
+            "Error: You must install the `fuse core` package to run the FUSE server locally."
         )
         raise e
 
@@ -100,12 +100,12 @@ async def run_local_serve(
     if not config_path and not config_name:
         config_name = "full" if full else "default"
 
-    r2r_instance = await R2RBuilder(
-        config=R2RConfig.load(config_name, config_path)
+    fuse_instance = await FUSEBuilder(
+        config=FUSEConfig.load(config_name, config_path)
     ).build()
 
     if config_name or config_path:
-        completion_config = r2r_instance.config.completion
+        completion_config = fuse_instance.config.completion
         llm_provider = completion_config.provider
         llm_model = completion_config.generation_config.model
         model_provider = llm_model.split("/")[0]
@@ -113,9 +113,9 @@ async def run_local_serve(
 
     available_port = find_available_port(port)
 
-    await r2r_instance.orchestration_provider.start_worker()
+    await fuse_instance.orchestration_provider.start_worker()
 
-    await r2r_instance.serve(host, available_port)
+    await fuse_instance.serve(host, available_port)
 
 
 def run_docker_serve(
@@ -245,32 +245,32 @@ def check_external_ollama(ollama_url="http://localhost:11434/api/version"):
 def check_set_docker_env_vars(
     project_name: str, exclude_postgres: bool = False
 ):
-    env_vars = {"R2R_PROJECT_NAME": "r2r_default"}
+    env_vars = {"FUSE_PROJECT_NAME": "fuse_default"}
     if project_name:
-        if os.environ.get("R2R_PROJECT_NAME"):
+        if os.environ.get("FUSE_PROJECT_NAME"):
             warning_text = click.style("Warning:", fg="red", bold=True)
-            prompt = f"{warning_text} You have set R2R_PROJECT_NAME in your environment. Do you want to override it with '{project_name}'?"
+            prompt = f"{warning_text} You have set FUSE_PROJECT_NAME in your environment. Do you want to override it with '{project_name}'?"
             if not click.confirm(prompt, default=False):
-                project_name = os.environ["R2R_PROJECT_NAME"]
+                project_name = os.environ["FUSE_PROJECT_NAME"]
         else:
-            env_vars["R2R_PROJECT_NAME"] = project_name
+            env_vars["FUSE_PROJECT_NAME"] = project_name
 
     if not exclude_postgres:
         env_vars |= {
-            "R2R_POSTGRES_HOST": "postgres",
-            "R2R_POSTGRES_PORT": "5432",
-            "R2R_POSTGRES_DBNAME": "postgres",
-            "R2R_POSTGRES_USER": "postgres",
-            "R2R_POSTGRES_PASSWORD": "postgres",
+            "FUSE_POSTGRES_HOST": "postgres",
+            "FUSE_POSTGRES_PORT": "5432",
+            "FUSE_POSTGRES_DBNAME": "postgres",
+            "FUSE_POSTGRES_USER": "postgres",
+            "FUSE_POSTGRES_PASSWORD": "postgres",
         }
 
     # Mapping of old variables to new variables
     old_to_new_vars = {
-        "POSTGRES_HOST": "R2R_POSTGRES_HOST",
-        "POSTGRES_PORT": "R2R_POSTGRES_PORT",
-        "POSTGRES_DBNAME": "R2R_POSTGRES_DBNAME",
-        "POSTGRES_USER": "R2R_POSTGRES_USER",
-        "POSTGRES_PASSWORD": "R2R_POSTGRES_PASSWORD",
+        "POSTGRES_HOST": "FUSE_POSTGRES_HOST",
+        "POSTGRES_PORT": "FUSE_POSTGRES_PORT",
+        "POSTGRES_DBNAME": "FUSE_POSTGRES_DBNAME",
+        "POSTGRES_USER": "FUSE_POSTGRES_USER",
+        "POSTGRES_PASSWORD": "FUSE_POSTGRES_PASSWORD",
     }
 
     # Check for old variables and warn if found
@@ -296,7 +296,7 @@ def check_set_docker_env_vars(
                     continue
 
                 prompt = (
-                    f"{warning_text} It's only necessary to set this environment variable when connecting to an instance not managed by R2R.\n"
+                    f"{warning_text} It's only necessary to set this environment variable when connecting to an instance not managed by FUSE.\n"
                     f"Environment variable {var} is set to '{value}'. Unset it?"
                 )
                 if click.confirm(prompt, default=True):
@@ -313,10 +313,10 @@ def get_compose_files():
         "..",
     )
     compose_files = {
-        "base": os.path.join(package_dir, "r2r", "compose.yaml"),
-        "full": os.path.join(package_dir, "r2r", "compose.full.yaml"),
+        "base": os.path.join(package_dir, "fuse", "compose.yaml"),
+        "full": os.path.join(package_dir, "fuse", "compose.full.yaml"),
         "full_scale": os.path.join(
-            package_dir, "r2r", "compose.full_with_replicas.yaml"
+            package_dir, "fuse", "compose.full_with_replicas.yaml"
         ),
     }
 
@@ -366,31 +366,31 @@ def build_docker_command(
             base_command = f"docker compose -f {compose_files['full_scale']}"
 
     base_command += (
-        f" --project-name {project_name or ('r2r-full' if full else 'r2r')}"
+        f" --project-name {project_name or ('fuse-full' if full else 'fuse')}"
     )
 
     # Find available ports
-    r2r_dashboard_port = port + 1
-    hatchet_dashboard_port = r2r_dashboard_port + 1
+    fuse_dashboard_port = port + 1
+    hatchet_dashboard_port = fuse_dashboard_port + 1
 
-    os.environ["R2R_DASHBOARD_PORT"] = str(r2r_dashboard_port)
+    os.environ["FUSE_DASHBOARD_PORT"] = str(fuse_dashboard_port)
     os.environ["HATCHET_DASHBOARD_PORT"] = str(hatchet_dashboard_port)
-    os.environ["R2R_IMAGE"] = image or ""
+    os.environ["FUSE_IMAGE"] = image or ""
 
     if config_name is not None:
-        os.environ["R2R_CONFIG_NAME"] = config_name
+        os.environ["FUSE_CONFIG_NAME"] = config_name
     elif config_path:
-        os.environ["R2R_CONFIG_PATH"] = (
+        os.environ["FUSE_CONFIG_PATH"] = (
             os.path.abspath(config_path) if config_path else ""
         )
     elif full:
-        os.environ["R2R_CONFIG_NAME"] = "full"
+        os.environ["FUSE_CONFIG_NAME"] = "full"
 
     if not exclude_postgres:
         pull_command = f"{base_command} --profile postgres pull"
         up_command = f"{base_command} --profile postgres up -d"
         if scale:
-            up_command += f" --scale r2r={scale}"
+            up_command += f" --scale fuse={scale}"
     else:
         pull_command = f"{base_command} pull"
         up_command = f"{base_command} up -d"
@@ -399,7 +399,7 @@ def build_docker_command(
 
 
 def check_subnet_conflict():
-    r2r_subnet = ipaddress.ip_network("172.28.0.0/16")
+    fuse_subnet = ipaddress.ip_network("172.28.0.0/16")
 
     try:
         networks_output = subprocess.check_output(
@@ -415,7 +415,7 @@ def check_subnet_conflict():
             network_id = network["ID"]
             network_name = network["Name"]
 
-            if network_name == "r2r-network":
+            if network_name == "fuse-network":
                 continue
 
             try:
@@ -442,7 +442,7 @@ def check_subnet_conflict():
                             existing_subnet = ipaddress.ip_network(
                                 config["Subnet"]
                             )
-                            if r2r_subnet.overlaps(existing_subnet):
+                            if fuse_subnet.overlaps(existing_subnet):
                                 return (
                                     False,
                                     f"Subnet conflict detected with network '{network_name}' using subnet {existing_subnet}",

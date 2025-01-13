@@ -1,11 +1,11 @@
-from .base import R2RAgent, R2RStreamingAgent
-from .rag import R2RRAGAgent, R2RStreamingRAGAgent
+from .base import FUSEAgent, FUSEStreamingAgent
+from .rag import FUSERAGAgent, FUSEStreamingRAGAgent
 
 __all__ = [
     # Base
-    "R2RAgent",
-    "R2RStreamingAgent",
+    "FUSEAgent",
+    "FUSEStreamingAgent",
     # RAG Agents
-    "R2RRAGAgent",
-    "R2RStreamingRAGAgent",
+    "FUSERAGAgent",
+    "FUSEStreamingRAGAgent",
 ]

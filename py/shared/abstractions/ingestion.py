@@ -4,7 +4,7 @@ from enum import Enum
 
 from pydantic import Field
 
-from .base import R2RSerializable
+from .base import FUSESerializable
 from .llm import GenerationConfig
 
 
@@ -16,7 +16,7 @@ class ChunkEnrichmentStrategy(str, Enum):
         return self.value
 
 
-class ChunkEnrichmentSettings(R2RSerializable):
+class ChunkEnrichmentSettings(FUSESerializable):
     """
     Settings for chunk enrichment.
     """

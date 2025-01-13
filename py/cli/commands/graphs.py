@@ -5,7 +5,7 @@ from asyncclick import pass_context
 
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
-from r2r import R2RAsyncClient, R2RException
+from fuse import FUSEAsyncClient, FUSEException
 
 
 @click.group()
@@ -32,7 +32,7 @@ def graphs():
 async def list(ctx: click.Context, collection_ids, offset, limit):
     """List available graphs."""
     collection_ids = list(collection_ids) if collection_ids else None
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -42,7 +42,7 @@ async def list(ctx: click.Context, collection_ids, offset, limit):
                 limit=limit,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -53,7 +53,7 @@ async def list(ctx: click.Context, collection_ids, offset, limit):
 @pass_context
 async def retrieve(ctx: click.Context, collection_id):
     """Retrieve a specific graph by collection ID."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -61,7 +61,7 @@ async def retrieve(ctx: click.Context, collection_id):
                 collection_id=collection_id
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -72,13 +72,13 @@ async def retrieve(ctx: click.Context, collection_id):
 @pass_context
 async def reset(ctx: click.Context, collection_id):
     """Reset a graph, removing all its data."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
             response = await client.graphs.reset(collection_id=collection_id)
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -91,7 +91,7 @@ async def reset(ctx: click.Context, collection_id):
 @pass_context
 async def update(ctx: click.Context, collection_id, name, description):
     """Update graph information."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -101,7 +101,7 @@ async def update(ctx: click.Context, collection_id, name, description):
                 description=description,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -122,7 +122,7 @@ async def update(ctx: click.Context, collection_id, name, description):
 @pass_context
 async def list_entities(ctx: click.Context, collection_id, offset, limit):
     """List entities in a graph."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -132,7 +132,7 @@ async def list_entities(ctx: click.Context, collection_id, offset, limit):
                 limit=limit,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -144,7 +144,7 @@ async def list_entities(ctx: click.Context, collection_id, offset, limit):
 @pass_context
 async def get_entity(ctx: click.Context, collection_id, entity_id):
     """Get entity information from a graph."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -153,7 +153,7 @@ async def get_entity(ctx: click.Context, collection_id, entity_id):
                 entity_id=entity_id,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -165,7 +165,7 @@ async def get_entity(ctx: click.Context, collection_id, entity_id):
 @pass_context
 async def remove_entity(ctx: click.Context, collection_id, entity_id):
     """Remove an entity from a graph."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -174,7 +174,7 @@ async def remove_entity(ctx: click.Context, collection_id, entity_id):
                 entity_id=entity_id,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -195,7 +195,7 @@ async def remove_entity(ctx: click.Context, collection_id, entity_id):
 @pass_context
 async def list_relationships(ctx: click.Context, collection_id, offset, limit):
     """List relationships in a graph."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
     try:
         with timer():
             response = await client.graphs.list_relationships(
@@ -204,7 +204,7 @@ async def list_relationships(ctx: click.Context, collection_id, offset, limit):
                 limit=limit,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -216,7 +216,7 @@ async def list_relationships(ctx: click.Context, collection_id, offset, limit):
 @pass_context
 async def get_relationship(ctx: click.Context, collection_id, relationship_id):
     """Get relationship information from a graph."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -225,7 +225,7 @@ async def get_relationship(ctx: click.Context, collection_id, relationship_id):
                 relationship_id=relationship_id,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -239,7 +239,7 @@ async def remove_relationship(
     ctx: click.Context, collection_id, relationship_id
 ):
     """Remove a relationship from a graph."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -249,7 +249,7 @@ async def remove_relationship(
             )
 
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -276,7 +276,7 @@ async def build(
 ):
     """Build a graph with specified settings."""
     run_with_orchestration = not run_without_orchestration
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -287,7 +287,7 @@ async def build(
                 run_with_orchestration=run_with_orchestration,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -308,7 +308,7 @@ async def build(
 @pass_context
 async def list_communities(ctx: click.Context, collection_id, offset, limit):
     """List communities in a graph."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -318,7 +318,7 @@ async def list_communities(ctx: click.Context, collection_id, offset, limit):
                 limit=limit,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -330,7 +330,7 @@ async def list_communities(ctx: click.Context, collection_id, offset, limit):
 @pass_context
 async def get_community(ctx: click.Context, collection_id, community_id):
     """Get community information from a graph."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -339,7 +339,7 @@ async def get_community(ctx: click.Context, collection_id, community_id):
                 community_id=community_id,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -377,7 +377,7 @@ async def update_community(
     attributes,
 ):
     """Update community information."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -393,7 +393,7 @@ async def update_community(
                 attributes=attributes,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -405,7 +405,7 @@ async def update_community(
 @pass_context
 async def delete_community(ctx: click.Context, collection_id, community_id):
     """Delete a community from a graph."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -414,7 +414,7 @@ async def delete_community(ctx: click.Context, collection_id, community_id):
                 community_id=community_id,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -425,13 +425,13 @@ async def delete_community(ctx: click.Context, collection_id, community_id):
 @pass_context
 async def pull(ctx: click.Context, collection_id):
     """Pull documents into a graph."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
             response = await client.graphs.pull(collection_id=collection_id)
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)
@@ -443,7 +443,7 @@ async def pull(ctx: click.Context, collection_id):
 @pass_context
 async def remove_document(ctx: click.Context, collection_id, document_id):
     """Remove a document from a graph."""
-    client: R2RAsyncClient = ctx.obj
+    client: FUSEAsyncClient = ctx.obj
 
     try:
         with timer():
@@ -452,7 +452,7 @@ async def remove_document(ctx: click.Context, collection_id, document_id):
                 document_id=document_id,
             )
         click.echo(json.dumps(response, indent=2))
-    except R2RException as e:
+    except FUSEException as e:
         click.echo(str(e), err=True)
     except Exception as e:
         click.echo(str(f"An unexpected error occurred: {e}"), err=True)

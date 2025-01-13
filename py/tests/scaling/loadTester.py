@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass
 from glob import glob
 
-from r2r import R2RAsyncClient
+from fuse import FUSEAsyncClient
 
 # Configuration
 NUM_USERS = 25
@@ -51,7 +51,7 @@ class LoadTester:
         self.users: list[dict] = []
         self.running = True
         print("making an async client...")
-        self.client = R2RAsyncClient(base_url)
+        self.client = FUSEAsyncClient(base_url)
 
     async def safe_call(self, coro, timeout, operation_desc="operation"):
         """Safely call an async function with a timeout and handle exceptions."""

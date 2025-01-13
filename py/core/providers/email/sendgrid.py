@@ -19,12 +19,12 @@ class SendGridEmailProvider(EmailProvider):
         if not self.api_key or not isinstance(self.api_key, str):
             raise ValueError("A valid SendGrid API key is required.")
 
-        self.from_email = config.from_email or os.getenv("R2R_FROM_EMAIL")
+        self.from_email = config.from_email or os.getenv("FUSE_FROM_EMAIL")
         if not self.from_email or not isinstance(self.from_email, str):
             raise ValueError("A valid from email is required.")
 
         self.frontend_url = config.frontend_url or os.getenv(
-            "R2R_FRONTEND_URL"
+            "FUSE_FRONTEND_URL"
         )
         if not self.frontend_url or not isinstance(self.frontend_url, str):
             raise ValueError("A valid frontend URL is required.")
@@ -136,18 +136,18 @@ class SendGridEmailProvider(EmailProvider):
                 )
             else:
                 # Fallback to basic email if no template ID is configured
-                subject = "Verify Your R2R Account"
+                subject = "Verify Your FUSE Account"
                 html_body = f"""
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h1>Welcome to R2R!</h1>
-                    <p>Please verify your email address to get started with R2R - the most advanced AI retrieval system.</p>
+                    <h1>Welcome to FUSE!</h1>
+                    <p>Please verify your email address to get started with FUSE - the most advanced AI retrieval system.</p>
                     <p>Click the link below to verify your email:</p>
                     <p><a href="{self.frontend_url}/verify-email?token={verification_code}&email={to_email}"
                           style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                         Verify Email
                     </a></p>
                     <p>Or enter this verification code: <strong>{verification_code}</strong></p>
-                    <p>If you didn't create an account with R2R, please ignore this email.</p>
+                    <p>If you didn't create an account with FUSE, please ignore this email.</p>
                 </div>
                 """
 
@@ -155,7 +155,7 @@ class SendGridEmailProvider(EmailProvider):
                     to_email=to_email,
                     subject=subject,
                     html_body=html_body,
-                    body=f"Welcome to R2R! Please verify your email using this code: {verification_code}",
+                    body=f"Welcome to FUSE! Please verify your email using this code: {verification_code}",
                 )
         except Exception as e:
             error_msg = (
@@ -185,11 +185,11 @@ class SendGridEmailProvider(EmailProvider):
                     dynamic_template_data=template_data,
                 )
             else:
-                subject = "Reset Your R2R Password"
+                subject = "Reset Your FUSE Password"
                 html_body = f"""
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <h1>Password Reset Request</h1>
-                    <p>You've requested to reset your R2R password.</p>
+                    <p>You've requested to reset your FUSE password.</p>
                     <p>Click the link below to reset your password:</p>
                     <p><a href="{self.frontend_url}/reset-password?token={reset_token}"
                           style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
@@ -204,7 +204,7 @@ class SendGridEmailProvider(EmailProvider):
                     to_email=to_email,
                     subject=subject,
                     html_body=html_body,
-                    body=f"Reset your R2R password using this token: {reset_token}",
+                    body=f"Reset your FUSE password using this token: {reset_token}",
                 )
         except Exception as e:
             error_msg = (

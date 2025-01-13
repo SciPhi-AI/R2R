@@ -7,10 +7,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from core.base import R2RException
+from core.base import FUSEException
 from core.utils.logging_config import configure_logging
 
-from .assembly import R2RBuilder, R2RConfig
+from .assembly import FUSEBuilder, FUSEConfig
 
 logger, log_file = configure_logging()
 
@@ -22,23 +22,23 @@ scheduler = AsyncIOScheduler()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    r2r_app = await create_r2r_app(
+    fuse_app = await create_fuse_app(
         config_name=config_name,
         config_path=config_path,
     )
 
-    # Copy all routes from r2r_app to app
-    app.router.routes = r2r_app.app.routes
+    # Copy all routes from fuse_app to app
+    app.router.routes = fuse_app.app.routes
 
     # Copy middleware and exception handlers
-    app.middleware = r2r_app.app.middleware  # type: ignore
-    app.exception_handlers = r2r_app.app.exception_handlers
+    app.middleware = fuse_app.app.middleware  # type: ignore
+    app.exception_handlers = fuse_app.app.exception_handlers
 
     # Start the scheduler
     scheduler.start()
 
     # Start the Hatchet worker
-    await r2r_app.orchestration_provider.start_worker()
+    await fuse_app.orchestration_provider.start_worker()
 
     yield
 
@@ -46,11 +46,11 @@ async def lifespan(app: FastAPI):
     scheduler.shutdown()
 
 
-async def create_r2r_app(
+async def create_fuse_app(
     config_name: Optional[str] = "default",
     config_path: Optional[str] = None,
 ):
-    config = R2RConfig.load(config_name=config_name, config_path=config_path)
+    config = FUSEConfig.load(config_name=config_name, config_path=config_path)
 
     if (
         config.embedding.provider == "openai"
@@ -60,37 +60,37 @@ async def create_r2r_app(
             "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
         )
 
-    # Build the R2RApp
-    builder = R2RBuilder(config=config)
+    # Build the FUSEApp
+    builder = FUSEBuilder(config=config)
     return await builder.build()
 
 
-config_name = os.getenv("R2R_CONFIG_NAME", None)
-config_path = os.getenv("R2R_CONFIG_PATH", None)
+config_name = os.getenv("FUSE_CONFIG_NAME", None)
+config_path = os.getenv("FUSE_CONFIG_PATH", None)
 
 if not config_path and not config_name:
     config_name = "default"
-host = os.getenv("R2R_HOST", os.getenv("HOST", "0.0.0.0"))
-port = int(os.getenv("R2R_PORT", "7272"))
+host = os.getenv("FUSE_HOST", os.getenv("HOST", "0.0.0.0"))
+port = int(os.getenv("FUSE_PORT", "7272"))
 
 logger.info(
-    f"Environment R2R_CONFIG_NAME: {'None' if config_name is None else config_name}"
+    f"Environment FUSE_CONFIG_NAME: {'None' if config_name is None else config_name}"
 )
 logger.info(
-    f"Environment R2R_CONFIG_PATH: {'None' if config_path is None else config_path}"
+    f"Environment FUSE_CONFIG_PATH: {'None' if config_path is None else config_path}"
 )
-logger.info(f"Environment R2R_PROJECT_NAME: {os.getenv('R2R_PROJECT_NAME')}")
+logger.info(f"Environment FUSE_PROJECT_NAME: {os.getenv('FUSE_PROJECT_NAME')}")
 
-logger.info(f"Environment R2R_POSTGRES_HOST: {os.getenv('R2R_POSTGRES_HOST')}")
+logger.info(f"Environment FUSE_POSTGRES_HOST: {os.getenv('FUSE_POSTGRES_HOST')}")
 logger.info(
-    f"Environment R2R_POSTGRES_DBNAME: {os.getenv('R2R_POSTGRES_DBNAME')}"
+    f"Environment FUSE_POSTGRES_DBNAME: {os.getenv('FUSE_POSTGRES_DBNAME')}"
 )
-logger.info(f"Environment R2R_POSTGRES_PORT: {os.getenv('R2R_POSTGRES_PORT')}")
+logger.info(f"Environment FUSE_POSTGRES_PORT: {os.getenv('FUSE_POSTGRES_PORT')}")
 logger.info(
-    f"Environment R2R_POSTGRES_PASSWORD: {os.getenv('R2R_POSTGRES_PASSWORD')}"
+    f"Environment FUSE_POSTGRES_PASSWORD: {os.getenv('FUSE_POSTGRES_PASSWORD')}"
 )
 logger.info(
-    f"Environment R2R_PROJECT_NAME: {os.getenv('R2R_PR2R_PROJECT_NAME')}"
+    f"Environment FUSE_PROJECT_NAME: {os.getenv('FUSE_PFUSE_PROJECT_NAME')}"
 )
 
 # Create the FastAPI app
@@ -100,8 +100,8 @@ app = FastAPI(
 )
 
 
-@app.exception_handler(R2RException)
-async def r2r_exception_handler(request: Request, exc: R2RException):
+@app.exception_handler(FUSEException)
+async def fuse_exception_handler(request: Request, exc: FUSEException):
     return JSONResponse(
         status_code=exc.status_code,
         content={

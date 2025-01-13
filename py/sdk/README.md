@@ -1,33 +1,33 @@
-# R2R Python SDK Documentation
+# FUSE Python SDK Documentation
 
-For the complete look at the R2R Python SDK, [visit our documentation.](https://r2r-docs.sciphi.ai/documentation/python-sdk/introduction)
+For the complete look at the FUSE Python SDK, [visit our documentation.](https://fuse-docs.sciphi.ai/documentation/python-sdk/introduction)
 
 ## Installation
 
-Before starting, make sure you have completed the [R2R installation](/documentation/installation).
+Before starting, make sure you have completed the [FUSE installation](/documentation/installation).
 
-Install the R2R Python SDK:
+Install the FUSE Python SDK:
 
 ```bash
-pip install r2r
+pip install fuse
 ```
 
 ## Getting Started
 
-1. Import the R2R client:
+1. Import the FUSE client:
 
 ```python
-from r2r import R2RClient
+from fuse import FUSEClient
 ```
 
 2. Initialize the client:
 
 ```python
-client = R2RClient("http://localhost:7272")
+client = FUSEClient("http://localhost:7272")
 ```
 
 
-3. Check if R2R is running correctly:
+3. Check if FUSE is running correctly:
 
 ```python
 health_response = client.health()

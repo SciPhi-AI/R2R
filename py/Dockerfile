@@ -44,17 +44,17 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Expose the port and set environment variables
-ARG R2R_PORT=8000 R2R_HOST=0.0.0.0
-ENV R2R_PORT=$R2R_PORT R2R_HOST=$R2R_HOST
-EXPOSE $R2R_PORT
+ARG FUSE_PORT=8000 FUSE_HOST=0.0.0.0
+ENV FUSE_PORT=$FUSE_PORT FUSE_HOST=$FUSE_HOST
+EXPOSE $FUSE_PORT
 
 COPY . /app
 # Copy the application and config
 COPY core /app/core
-COPY r2r /app/r2r
+COPY fuse /app/fuse
 COPY shared /app/shared
-COPY r2r/r2r.toml /app/r2r.toml
+COPY fuse/fuse.toml /app/fuse.toml
 COPY pyproject.toml /app/pyproject.toml
 
 # Run the application
-CMD ["sh", "-c", "uvicorn core.main.app_entry:app --host $R2R_HOST --port $R2R_PORT"]
+CMD ["sh", "-c", "uvicorn core.main.app_entry:app --host $FUSE_HOST --port $FUSE_PORT"]

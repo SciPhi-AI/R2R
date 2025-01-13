@@ -132,7 +132,7 @@ class UsersSDK:
         """
         if self.client.api_key:
             raise ValueError(
-                "Cannot log in after setting an API key, please unset your R2R_API_KEY variable or call client.set_api_key(None)"
+                "Cannot log in after setting an API key, please unset your FUSE_API_KEY variable or call client.set_api_key(None)"
             )
         data: dict[str, Any] = {"username": email, "password": password}
         response = await self.client._make_request(
