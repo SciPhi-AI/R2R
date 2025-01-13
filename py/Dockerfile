@@ -44,7 +44,8 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Expose the port and set environment variables
-ARG FUSE_PORT=8000 FUSE_HOST=0.0.0.0
+ARG FUSE_PORT=8000
+ARG FUSE_HOST=0.0.0.0
 ENV FUSE_PORT=$FUSE_PORT FUSE_HOST=$FUSE_HOST
 EXPOSE $FUSE_PORT
 
