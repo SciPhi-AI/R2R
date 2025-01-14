@@ -1,95 +1,95 @@
 ---
-apiVersion: v1
-kind: Secret
-metadata:
-  name: postgres-secret
-  namespace: r2r-dev
-  labels:
-    app: r2r
-data:
-  POSTGRES_USER: cG9zdGdyZXM=
-  POSTGRES_PASSWORD: cG9zdGdyZXM=
+#apiVersion: v1
+#kind: Secret
+#metadata:
+#  name: postgres-secret
+#  namespace: r2r-dev
+#  labels:
+#    app: r2r
+#data:
+#  POSTGRES_USER: cG9zdGdyZXM=
+#  POSTGRES_PASSWORD: cG9zdGdyZXM=
 
 ---
-apiVersion: v1
-data:
-  POSTGRES_HOST: postgres
-  POSTGRES_PORT: "5432"
-  POSTGRES_DBNAME: postgres
-  POSTGRES_MAX_CONNECTIONS: "1024"
-kind: ConfigMap
-metadata:
-  labels:
-    app: r2r
-  name: postgres-config
-  namespace: r2r-dev
+#apiVersion: v1
+#data:
+#  POSTGRES_HOST: postgres
+#  POSTGRES_PORT: "5432"
+#  POSTGRES_DBNAME: postgres
+#  POSTGRES_MAX_CONNECTIONS: "1024"
+#kind: ConfigMap
+#metadata:
+#  labels:
+#    app: r2r
+#  name: postgres-config
+#  namespace: r2r-dev
 
 # Deployment and Service for PostgreSQL
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: postgres
-  namespace: r2r-dev
-  labels:
-    app: r2r
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: postgres
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      labels:
-        app: postgres
-    spec:
-      containers:
-      - name: postgres
-        envFrom:
-          - configMapRef:
-              name: postgres-config
-          - secretRef:
-              name: postgres-secret
-#        command:
-#          - postgres
-#          - -c
-#          - max_connections=1024
-        image: pgvector/pgvector:pg16
-        ports:
-          - containerPort: 5432
-            protocol: TCP
-#        readinessProbe:
-#          exec:
-#            command: [ "pg_isready", "-U", "${R2R_POSTGRES_USER:-postgres}" ]
-#          initialDelaySeconds: 15
-#          timeoutSeconds: 2
-#        livenessProbe:
-#          exec:
-#            command: [ "pg_isready", "-U", "${R2R_POSTGRES_USER:-postgres}" ]
-#          initialDelaySeconds: 15
-#          timeoutSeconds: 2
-#          periodSeconds: 10
-        volumeMounts:
-          - mountPath: /data
-            name: postgres-volume-mount
-      restartPolicy: Always
-      volumes:
-        - name: postgres-volume-mount
-          persistentVolumeClaim:
-            claimName: postgres-pvc
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: postgres
+#  namespace: r2r-dev
+#  labels:
+#    app: r2r
+#spec:
+#  replicas: 1
+#  selector:
+#    matchLabels:
+#      app: postgres
+#  strategy:
+#    type: Recreate
+#  template:
+#    metadata:
+#      labels:
+#        app: postgres
+#    spec:
+#      containers:
+#      - name: postgres
+#        envFrom:
+#          - configMapRef:
+#              name: postgres-config
+#          - secretRef:
+#              name: postgres-secret
+##        command:
+##          - postgres
+##          - -c
+##          - max_connections=1024
+#        image: pgvector/pgvector:pg16
+#        ports:
+#          - containerPort: 5432
+#            protocol: TCP
+##        readinessProbe:
+##          exec:
+##            command: [ "pg_isready", "-U", "${R2R_POSTGRES_USER:-postgres}" ]
+##          initialDelaySeconds: 15
+##          timeoutSeconds: 2
+##        livenessProbe:
+##          exec:
+##            command: [ "pg_isready", "-U", "${R2R_POSTGRES_USER:-postgres}" ]
+##          initialDelaySeconds: 15
+##          timeoutSeconds: 2
+##          periodSeconds: 10
+#        volumeMounts:
+#          - mountPath: /data
+#            name: postgres-volume-mount
+#      restartPolicy: Always
+#      volumes:
+#        - name: postgres-volume-mount
+#          persistentVolumeClaim:
+#            claimName: postgres-pvc
 
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres
-  namespace: r2r-dev
-spec:
-  ports:
-  - protocol: TCP
-    port: 5432
-    targetPort: 5432
-  selector:
-    app: postgres
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: postgres
+#  namespace: r2r-dev
+#spec:
+#  ports:
+#  - protocol: TCP
+#    port: 5432
+#    targetPort: 5432
+#  selector:
+#    app: postgres
