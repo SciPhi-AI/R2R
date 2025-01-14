@@ -270,17 +270,24 @@ class GraphRouter(BaseRouterV3):
                 - Community detection algorithm parameters
                 - Summary generation prompt
             """
-            if not auth_user.is_superuser:
-                raise R2RException(
-                    "Only superusers can build communities", 403
+            collections_overview_response = (
+                await self.services.management.collections_overview(
+                    user_ids=[auth_user.id],
+                    collection_ids=[collection_id],
+                    offset=0,
+                    limit=1,
                 )
+            )["results"]
+            if len(collections_overview_response) == 0:
+                raise R2RException("Collection not found.", 404)
+
+            # Check user permissions for graph
             if (
-                # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                not auth_user.is_superuser
+                and collections_overview_response[0].owner_id != auth_user.id
             ):
                 raise R2RException(
-                    "The currently authenticated user does not have access to the collection associated with the given graph.",
+                    "Only superusers can `build communities` for a graph they do not own.",
                     403,
                 )
 
@@ -2046,8 +2053,23 @@ class GraphRouter(BaseRouterV3):
 
             The user must have access to both the graph and the documents being added.
             """
+
+            collections_overview_response = (
+                await self.services.management.collections_overview(
+                    user_ids=[auth_user.id],
+                    collection_ids=[collection_id],
+                    offset=0,
+                    limit=1,
+                )
+            )["results"]
+            if len(collections_overview_response) == 0:
+                raise R2RException("Collection not found.", 404)
+
             # Check user permissions for graph
-            if not auth_user.is_superuser:
+            if (
+                not auth_user.is_superuser
+                and collections_overview_response[0].owner_id != auth_user.id
+            ):
                 raise R2RException("Only superusers can `pull` a graph.", 403)
 
             if (
@@ -2087,16 +2109,6 @@ class GraphRouter(BaseRouterV3):
             success = False
 
             for document in documents:
-                # TODO - Add better checks for user permissions
-                if (
-                    not auth_user.is_superuser
-                    and document.id
-                    not in auth_user.document_ids  # TODO - extend to include checks on collections
-                ):
-                    raise R2RException(
-                        f"The currently authenticated user does not have access to document {document.id}",
-                        403,
-                    )
                 entities = (
                     await self.providers.database.graphs_handler.entities.get(
                         parent_id=document.id,

@@ -97,12 +97,15 @@ export class r2rClient extends BaseClient {
         const accessToken = tokenData?.accessToken || null;
         if (accessToken) {
           console.log(
-            `[r2rClient] Attaching access token to request: ${accessToken.slice(0, 15)}...`,
+            `[r2rClient] Attaching access token to request: ${accessToken.slice(
+              0,
+              15
+            )}...`
           );
           config.headers["Authorization"] = `Bearer ${accessToken}`;
         } else {
           console.log(
-            "[r2rClient] No access token found, sending request without Authorization header",
+            "[r2rClient] No access token found, sending request without Authorization header"
           );
         }
         return config;
@@ -121,35 +124,54 @@ export class r2rClient extends BaseClient {
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
-        // Some logs to see what's going on
-        console.warn(
-          "[r2rClient] Response interceptor caught an error:",
-          error,
-        );
+        console.warn("[r2rClient] Response interceptor caught an error:", error);
+
         const status = error.response?.status;
         const failingUrl = error.config?.url;
+        const errorData = error.response?.data as {
+          message?: string;
+          error_code?: string;
+        };
+
         console.warn(
           "[r2rClient] Failing request URL:",
           failingUrl,
           "status =",
-          status,
+          status
         );
         console.warn(
           "failingUrl?.includes('/v3/users/refresh-token') = ",
-          failingUrl?.includes("/v3/users/refresh-token"),
+          failingUrl?.includes("/v3/users/refresh-token")
         );
 
         // 1) If the refresh endpoint itself fails => don't try again
         if (failingUrl?.includes("/v3/users/refresh-token")) {
           console.error(
-            "[r2rClient] Refresh call itself returned 401/403 => logging out",
+            "[r2rClient] Refresh call itself returned 401/403 => logging out"
           );
           this.onRefreshFailedCallback?.();
           return Promise.reject(error);
         }
 
-        // 2) If normal request => attempt refresh if 401/403
-        if ((status === 401 || status === 403) && this.getTokensCallback) {
+        // 2) If normal request => attempt refresh IF it's really an invalid/expired token
+        // We'll check either an explicit "error_code" or text in "message"
+        // Adjust to match your server's structure!
+        const isTokenError =
+          !!errorData?.error_code &&
+          errorData.error_code.toUpperCase() === "TOKEN_EXPIRED";
+
+        // Or fallback to matching common phrases if no error_code is set:
+        const msg = (errorData?.message || "").toLowerCase();
+        const looksLikeTokenIssue =
+          msg.includes("invalid token") ||
+          msg.includes("token expired") ||
+          msg.includes("credentials");
+
+        // If either of those checks is true, we consider it an auth token error:
+        const isAuthError = isTokenError || looksLikeTokenIssue;
+
+        if ((status === 401 || status === 403) && this.getTokensCallback && isAuthError) {
+          // Check if we have a refresh token
           const { refreshToken } = this.getTokensCallback();
           if (!refreshToken) {
             console.error("[r2rClient] No refresh token found => logout");
@@ -164,10 +186,11 @@ export class r2rClient extends BaseClient {
               (await this.users.refreshAccessToken()) as RefreshTokenResponse;
             const newAccessToken = refreshResponse.results.accessToken;
             const newRefreshToken = refreshResponse.results.refreshToken;
+
             console.log(
               "[r2rClient] Refresh call succeeded; new access token:",
               newAccessToken.slice(0, 15),
-              "...",
+              "..."
             );
 
             // set new tokens
@@ -175,29 +198,28 @@ export class r2rClient extends BaseClient {
 
             // Re-try the original request
             if (error.config) {
-              error.config.headers["Authorization"] =
-                `Bearer ${newAccessToken}`;
+              error.config.headers["Authorization"] = `Bearer ${newAccessToken}`;
               console.log(
-                "[r2rClient] Retrying original request with new access token...",
+                "[r2rClient] Retrying original request with new access token..."
               );
               return this.axiosInstance.request(error.config);
             } else {
               console.warn(
-                "[r2rClient] No request config found to retry. Possibly manual re-fetch needed",
+                "[r2rClient] No request config found to retry. Possibly manual re-fetch needed"
               );
             }
           } catch (refreshError) {
             console.error(
               "[r2rClient] Refresh attempt failed => logging out. Error was:",
-              refreshError,
+              refreshError
             );
             this.onRefreshFailedCallback?.();
             return Promise.reject(refreshError);
           }
         }
 
-        // 3) If not a 401/403, or no refresh logic => just reject
-        console.log("[r2rClient] Non-401/403 error => rejecting request");
+        // 3) If not a 401/403 or it's a 401/403 that isn't token-related => just reject
+        console.log("[r2rClient] Non-auth error or non-token 401/403 => rejecting");
         return Promise.reject(error);
       },
     );
@@ -218,7 +240,7 @@ export class r2rClient extends BaseClient {
 
   public setTokens(
     accessToken: string | null,
-    refreshToken: string | null,
+    refreshToken: string | null
   ): void {
     // Optional: log the changes, but be careful not to log full tokens in prod
     console.log(
@@ -226,7 +248,7 @@ export class r2rClient extends BaseClient {
       accessToken?.slice(0, 15),
       "... refresh token:",
       refreshToken?.slice(0, 15),
-      "...",
+      "..."
     );
     super.setTokens(accessToken || "", refreshToken || "");
     this.setTokensCallback?.(accessToken, refreshToken);

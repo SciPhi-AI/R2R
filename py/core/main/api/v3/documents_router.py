@@ -1577,9 +1577,30 @@ class DocumentsRouter(BaseRouterV3):
             """
 
             settings = settings.dict() if settings else None  # type: ignore
-            if not auth_user.is_superuser:
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=(
+                        None if auth_user.is_superuser else [auth_user.id]
+                    ),
+                    collection_ids=(
+                        None
+                        if auth_user.is_superuser
+                        else auth_user.collection_ids
+                    ),
+                    document_ids=[id],
+                    offset=0,
+                    limit=1,
+                )
+            )["results"]
+            if len(documents_overview_response) == 0:
+                raise R2RException("Document not found.", 404)
+
+            if (
+                not auth_user.is_superuser
+                and auth_user.id != documents_overview_response[0].owner_id
+            ):
                 raise R2RException(
-                    "Only a superuser can extract entities and relationships from a document.",
+                    "Only a superuser can extract entities and relationships from a document they do not own.",
                     403,
                 )
 
