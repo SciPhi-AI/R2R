@@ -33,6 +33,7 @@ from core.base.utils import (
     _decorate_vector_type,
     _get_str_estimation_output,
     _get_vector_column_str,
+    generate_entity_document_id,
     llm_cost_per_million_tokens,
 )
 
@@ -374,7 +375,6 @@ class PostgresEntitiesHandler(Handler):
         self,
         parent_id: UUID,
         store_type: StoreType,
-        n_most_dissimilar: Optional[int] = 2,
     ) -> list[list[Entity]]:
         """
         Find all groups of entities that share identical names within the same parent.
@@ -391,48 +391,17 @@ class PostgresEntitiesHandler(Handler):
                 WHERE parent_id = $1
                 GROUP BY name
                 HAVING COUNT(*) > 1
-            ),
-            description_pairs AS (
-                SELECT
-                    e1.name,
-                    e1.id as id1,
-                    e1.description as desc1,
-                    e1.description_embedding as emb1,
-                    e2.id as id2,
-                    e2.description as desc2,
-                    e2.description_embedding as emb2,
-                    1 - (e1.description_embedding <=> e2.description_embedding) as similarity
-                FROM {self._get_table_name(table_name)} e1
-                JOIN {self._get_table_name(table_name)} e2
-                    ON e1.name = e2.name
-                    AND e1.id < e2.id
-                WHERE e1.parent_id = $1
-                AND e1.name IN (SELECT name FROM duplicates)
-                AND e1.description_embedding IS NOT NULL
-                AND e2.description_embedding IS NOT NULL
-            ),
-            ranked_pairs AS (
-                SELECT
-                    name,
-                    ARRAY[id1, id2] as entity_ids,
-                    ARRAY[desc1, desc2] as descriptions,
-                    similarity,
-                    ROW_NUMBER() OVER (PARTITION BY name ORDER BY similarity) as rank
-                FROM description_pairs
             )
             SELECT
                 e.id, e.name, e.category, e.description,
                 e.parent_id, e.chunk_ids, e.metadata
-            FROM ranked_pairs r
-            JOIN {self._get_table_name(table_name)} e
-                ON e.id = ANY(r.entity_ids)
-            WHERE r.rank <= $2
-            ORDER BY e.name, r.similarity DESC
+            FROM {self._get_table_name(table_name)} e
+            WHERE e.parent_id = $1
+            AND e.name IN (SELECT name FROM duplicates)
+            ORDER BY e.name;
         """
 
-        rows = await self.connection_manager.fetch_query(
-            query, [parent_id, n_most_dissimilar]
-        )
+        rows = await self.connection_manager.fetch_query(query, [parent_id])
 
         # Group entities by name
         name_groups: dict[str, list[Entity]] = {}
@@ -450,7 +419,9 @@ class PostgresEntitiesHandler(Handler):
         return list(name_groups.values())
 
     async def merge_duplicate_name_blocks(
-        self, parent_id: UUID, store_type: StoreType, dry_run: bool = True
+        self,
+        parent_id: UUID,
+        store_type: StoreType,
     ) -> list[tuple[list[Entity], Entity]]:
         """
         Merge entities that share identical names.
@@ -462,45 +433,31 @@ class PostgresEntitiesHandler(Handler):
         merged_results: list[tuple[list[Entity], Entity]] = []
 
         for block in duplicate_blocks:
-            # Create merged entity from block
+            # Create a new merged entity from the block
             merged_entity = await self._create_merged_entity(block)
             merged_results.append((block, merged_entity))
 
-            if dry_run:
-                print(
-                    f"\nFound {len(block)} entities with name: {block[0].name}"
+            table_name = self._get_entity_table_for_store(store_type)
+            async with self.connection_manager.transaction():
+                # Insert the merged entity
+                new_id = await self._insert_merged_entity(
+                    merged_entity, table_name
                 )
-                print("\nOriginal entities:")
-                for entity in block:
-                    print(f"\nID: {entity.id}")
-                    print(f"Category: {entity.category}")
-                    print(f"Description: {entity.description}")
-                    print("-" * 80)
 
-                print("\nProposed merged entity:")
-                print(f"Category: {merged_entity.category}")
-                print(f"Combined description: {merged_entity.description}")
-                print("=" * 80)
-            else:
-                table_name = self._get_entity_table_for_store(store_type)
-                async with self.connection_manager.transaction():
-                    # 1. Insert the new merged entity
-                    merged_id = await self._insert_merged_entity(
-                        merged_entity, table_name
-                    )
+                merged_entity.id = new_id
 
-                    # 2. Update any relationships pointing to the old entities
-                    await self._update_entity_relationships(block, merged_id)
+                # FIXME: Replace the original entities with the merged entity in relationships
+                # This is not working as current entity IDs do not match actual IDs
 
-                    # 3. Delete the original entities
-                    old_ids = [str(entity.id) for entity in block]
-                    delete_query = f"""
-                        DELETE FROM {self._get_table_name(table_name)}
-                        WHERE id = ANY($1::uuid[])
-                    """
-                    await self.connection_manager.execute_query(
-                        delete_query, [old_ids]
-                    )
+                # Delete the original entities
+                old_ids = [str(entity.id) for entity in block]
+                delete_query = f"""
+                    DELETE FROM {self._get_table_name(table_name)}
+                    WHERE id = ANY($1::uuid[])
+                """
+                await self.connection_manager.execute_query(
+                    delete_query, [old_ids]
+                )
 
         return merged_results
 
@@ -508,7 +465,7 @@ class PostgresEntitiesHandler(Handler):
         self, entity: Entity, table_name: str
     ) -> UUID:
         """Insert merged entity and return its new ID."""
-        new_id = generate_id()  # Assuming you have this utility function
+        new_id = generate_entity_document_id()
 
         query = f"""
             INSERT INTO {self._get_table_name(table_name)}
@@ -529,32 +486,6 @@ class PostgresEntitiesHandler(Handler):
 
         result = await self.connection_manager.fetch_query(query, values)
         return result[0]["id"]
-
-    async def _update_entity_relationships(
-        self, old_entities: list[Entity], new_entity_id: UUID
-    ):
-        """Update relationships to point to the new merged entity."""
-        old_ids = [str(entity.id) for entity in old_entities]
-
-        # Update source entity references
-        update_source_query = """
-            UPDATE entity_relationships
-            SET source_id = $1
-            WHERE source_id = ANY($2::uuid[])
-        """
-        await self.connection_manager.execute_query(
-            update_source_query, [str(new_entity_id), old_ids]
-        )
-
-        # Update target entity references
-        update_target_query = """
-            UPDATE entity_relationships
-            SET target_id = $1
-            WHERE target_id = ANY($2::uuid[])
-        """
-        await self.connection_manager.execute_query(
-            update_target_query, [str(new_entity_id), old_ids]
-        )
 
     async def _create_merged_entity(self, entities: list[Entity]) -> Entity:
         """

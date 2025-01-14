@@ -1691,7 +1691,7 @@ class DocumentsRouter(BaseRouterV3):
             Deduplicates entities from a document.
             """
 
-            settings = settings.dict() if settings else None  # type: ignore
+            settings = settings.model_dump() if settings else None  # type: ignore
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can extract entities and relationships from a document.",
