@@ -192,9 +192,9 @@ export abstract class BaseClient {
   }
 
   protected _ensureAuthenticated(): void {
-    // if (!this.accessToken) {
-    //   throw new Error("Not authenticated. Please login first.");
-    // }
+    if (!this.accessToken) {
+      throw new Error("Not authenticated. Please login first.");
+    }
   }
 
   setTokens(accessToken: string, refreshToken: string): void {
