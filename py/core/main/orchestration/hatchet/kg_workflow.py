@@ -267,6 +267,12 @@ def hatchet_kg_factory(
             document_id = input_data.get("document_id", None)
             collection_id = input_data.get("collection_id", None)
 
+            await self.kg_service.providers.database.documents_handler.set_workflow_status(
+                id=uuid.UUID(document_id),
+                status_type="extraction_status",
+                status=KGExtractionStatus.PROCESSING,
+            )
+
             if collection_id and not document_id:
                 document_ids = (
                     await self.kg_service.get_document_ids_for_create_graph(
