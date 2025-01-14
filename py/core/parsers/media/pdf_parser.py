@@ -1,23 +1,240 @@
 # type: ignore
 import asyncio
+import base64
 import logging
 import os
 import string
+import tempfile
 import unicodedata
+import uuid
 from io import BytesIO
 from typing import AsyncGenerator
 
-from core.base.abstractions import DataType
+import aiofiles
+from pdf2image import convert_from_path
+from pdf2image.exceptions import PDFInfoNotInstalledError
+
+from core.base.abstractions import GenerationConfig
 from core.base.parsers.base_parser import AsyncParser
+from core.base.providers import (
+    CompletionProvider,
+    DatabaseProvider,
+    IngestionConfig,
+)
+from shared.abstractions import PDFParsingError, PopperNotFoundError
 
 logger = logging.getLogger()
-ZEROX_DEFAULT_MODEL = "openai/gpt-4o-mini"
 
 
-class PDFParser(AsyncParser[DataType]):
+class VLMPDFParser(AsyncParser[str | bytes]):
+    """A parser for PDF documents using vision models for page processing."""
+
+    def __init__(
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+    ):
+        self.database_provider = database_provider
+        self.llm_provider = llm_provider
+        self.config = config
+        self.vision_prompt_text = None
+
+        try:
+            from litellm import supports_vision
+
+            self.supports_vision = supports_vision
+        except ImportError:
+            logger.error("Failed to import LiteLLM vision support")
+            raise ImportError(
+                "Please install the `litellm` package to use the VLMPDFParser."
+            )
+
+    def _create_temp_dir(self) -> str:
+        """Create a unique temporary directory for PDF processing."""
+        # Create a unique directory name using UUID
+        unique_id = str(uuid.uuid4())
+        temp_base = tempfile.gettempdir()
+        temp_dir = os.path.join(temp_base, f"pdf_images_{unique_id}")
+        os.makedirs(temp_dir, exist_ok=True)
+        return temp_dir
+
+    async def convert_pdf_to_images(
+        self, pdf_path: str, temp_dir: str
+    ) -> list[str]:
+        """Convert PDF pages to images asynchronously."""
+        options = {
+            "pdf_path": pdf_path,
+            "output_folder": temp_dir,
+            "dpi": 300,  # Configurable via config if needed
+            "fmt": "jpeg",
+            "thread_count": 4,
+            "paths_only": True,
+        }
+        try:
+            return await asyncio.to_thread(convert_from_path, **options)
+        except PDFInfoNotInstalledError:
+            raise PopperNotFoundError()
+        except Exception as err:
+            logger.error(
+                f"Error converting PDF to images: {err} type: {type(err)}"
+            )
+            raise PDFParsingError(f"Failed to process PDF: {str(err)}", err)
+
+    async def process_page(
+        self, image_path: str, page_num: int
+    ) -> dict[str, str]:
+        """Process a single PDF page using the vision model."""
+
+        try:
+            # Read and encode image
+            async with aiofiles.open(image_path, "rb") as image_file:
+                image_data = await image_file.read()
+                image_base64 = base64.b64encode(image_data).decode("utf-8")
+
+            # Verify model supports vision
+            if not self.supports_vision(model=self.config.vision_pdf_model):
+                raise ValueError(
+                    f"Model {self.config.vision_pdf_model} does not support vision"
+                )
+
+            # Configure generation parameters
+            generation_config = GenerationConfig(
+                model=self.config.vision_pdf_model,
+                stream=False,
+            )
+
+            # Prepare message with image
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": self.vision_prompt_text},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{image_base64}"
+                            },
+                        },
+                    ],
+                }
+            ]
+
+            # Get completion from LiteLLM provider
+            response = await self.llm_provider.aget_completion(
+                messages=messages, generation_config=generation_config
+            )
+
+            if response.choices and response.choices[0].message:
+                content = response.choices[0].message.content
+                if not content:
+                    raise ValueError("No content in response")
+                return {"page": str(page_num), "content": content}
+            else:
+                raise ValueError("No response content")
+
+        except Exception as e:
+            logger.error(
+                f"Error processing page {page_num} with vision model: {str(e)}"
+            )
+            raise
+
+    async def ingest(
+        self, data: str | bytes, maintain_order: bool = False, **kwargs
+    ) -> AsyncGenerator[dict[str, str], None]:
+        """
+        Ingest PDF data and yield descriptions for each page using vision model.
+
+        Args:
+            data: PDF file path or bytes
+            maintain_order: If True, yields results in page order. If False, yields as completed.
+            **kwargs: Additional arguments passed to the completion call
+
+        Yields:
+            Dict containing page number and content for each processed page
+        """
+        if not self.vision_prompt_text:
+            self.vision_prompt_text = await self.database_provider.prompts_handler.get_cached_prompt(  # type: ignore
+                prompt_name=self.config.vision_pdf_prompt_name
+            )
+
+        temp_dir = None
+        try:
+            # Create temporary directory for image processing
+            # temp_dir = os.path.join(os.getcwd(), "temp_pdf_images")
+            # os.makedirs(temp_dir, exist_ok=True)
+            temp_dir = self._create_temp_dir()
+
+            # Handle both file path and bytes input
+            if isinstance(data, bytes):
+                pdf_path = os.path.join(temp_dir, "temp.pdf")
+                async with aiofiles.open(pdf_path, "wb") as f:
+                    await f.write(data)
+            else:
+                pdf_path = data
+
+            # Convert PDF to images
+            image_paths = await self.convert_pdf_to_images(pdf_path, temp_dir)
+            # Create tasks for all pages
+            tasks = {
+                asyncio.create_task(
+                    self.process_page(image_path, page_num)
+                ): page_num
+                for page_num, image_path in enumerate(image_paths, 1)
+            }
+
+            if maintain_order:
+                # Store results in order
+                pending = set(tasks.keys())
+                results = {}
+                next_page = 1
+
+                while pending:
+                    # Get next completed task
+                    done, pending = await asyncio.wait(
+                        pending, return_when=asyncio.FIRST_COMPLETED
+                    )
+
+                    # Process completed tasks
+                    for task in done:
+                        result = await task
+                        page_num = int(result["page"])
+                        results[page_num] = result
+
+                        # Yield results in order
+                        while next_page in results:
+                            yield results.pop(next_page)["content"]
+                            next_page += 1
+            else:
+                # Yield results as they complete
+                for coro in asyncio.as_completed(tasks.keys()):
+                    result = await coro
+                    yield result["content"]
+
+        except Exception as e:
+            logger.error(f"Error processing PDF: {str(e)}")
+            raise
+
+        finally:
+            # Cleanup temporary files
+            if temp_dir and os.path.exists(temp_dir):
+                for file in os.listdir(temp_dir):
+                    os.remove(os.path.join(temp_dir, file))
+                os.rmdir(temp_dir)
+
+
+class BasicPDFParser(AsyncParser[str | bytes]):
     """A parser for PDF data."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+    ):
+        self.database_provider = database_provider
+        self.llm_provider = llm_provider
+        self.config = config
         try:
             from pypdf import PdfReader
 
@@ -28,7 +245,7 @@ class PDFParser(AsyncParser[DataType]):
             )
 
     async def ingest(
-        self, data: DataType, **kwargs
+        self, data: str | bytes, **kwargs
     ) -> AsyncGenerator[str, None]:
         """Ingest PDF data and yield text from each page."""
         if isinstance(data, str):
@@ -65,54 +282,16 @@ class PDFParser(AsyncParser[DataType]):
                 yield page_text
 
 
-class PDFParserSix(AsyncParser[DataType]):
-    """A parser for PDF data."""
-
-    def __init__(self):
-        try:
-            from pdfminer.high_level import extract_text_to_fp
-            from pdfminer.layout import LAParams
-
-            self.extract_text_to_fp = extract_text_to_fp
-            self.LAParams = LAParams
-        except ImportError:
-            raise ValueError(
-                "Error, `pdfminer.six` is required to run `PDFParser`. Please install it using `pip install pdfminer.six`."
-            )
-
-    async def ingest(self, data: bytes, **kwargs) -> AsyncGenerator[str, None]:
-        """Ingest PDF data and yield text from each page."""
-        if not isinstance(data, bytes):
-            raise ValueError("PDF data must be in bytes format.")
-
-        pdf_file = BytesIO(data)
-
-        async def process_page(page_number):
-            output = BytesIO()
-            await asyncio.to_thread(
-                self.extract_text_to_fp,
-                pdf_file,
-                output,
-                page_numbers=[page_number],
-                laparams=self.LAParams(),
-            )
-            page_text = output.getvalue().decode("utf-8")
-            return "".join(filter(lambda x: x in string.printable, page_text))
-
-        from pdfminer.pdfdocument import PDFDocument
-        from pdfminer.pdfparser import PDFParser as pdfminer_PDFParser
-
-        parser = pdfminer_PDFParser(pdf_file)
-        document = PDFDocument(parser)
-
-        for page_number in range(len(list(document.get_pages()))):
-            page_text = await process_page(page_number)
-            if page_text:
-                yield page_text
-
-
-class PDFParserUnstructured(AsyncParser[DataType]):
-    def __init__(self):
+class PDFParserUnstructured(AsyncParser[str | bytes]):
+    def __init__(
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+    ):
+        self.database_provider = database_provider
+        self.llm_provider = llm_provider
+        self.config = config
         try:
             from unstructured.partition.pdf import partition_pdf
 
@@ -129,7 +308,7 @@ class PDFParserUnstructured(AsyncParser[DataType]):
 
     async def ingest(
         self,
-        data: DataType,
+        data: str | bytes,
         partition_strategy: str = "hi_res",
         chunking_strategy="by_title",
     ) -> AsyncGenerator[str, None]:
@@ -141,79 +320,3 @@ class PDFParserUnstructured(AsyncParser[DataType]):
         )
         for element in elements:
             yield element.text
-
-
-class PDFParserMarker(AsyncParser[DataType]):
-    model_refs = None
-
-    def __init__(self):
-        try:
-            from marker.convert import convert_single_pdf
-            from marker.models import load_all_models
-
-            self.convert_single_pdf = convert_single_pdf
-            if PDFParserMarker.model_refs is None:
-                PDFParserMarker.model_refs = load_all_models()
-
-        except ImportError as e:
-            raise ValueError(
-                f"Error, marker is not installed {e}, please install using `pip install marker-pdf` "
-            )
-
-    async def ingest(
-        self, data: DataType, **kwargs
-    ) -> AsyncGenerator[str, None]:
-        if isinstance(data, str):
-            raise ValueError("PDF data must be in bytes format.")
-
-        text, _, _ = self.convert_single_pdf(
-            BytesIO(data), PDFParserMarker.model_refs
-        )
-        yield text
-
-
-class ZeroxPDFParser(AsyncParser[DataType]):
-    """An advanced PDF parser using zerox."""
-
-    def __init__(self):
-        """
-        Use the zerox library to parse PDF data.
-
-        Args:
-            cleanup (bool, optional): Whether to clean up temporary files after processing. Defaults to True.
-            concurrency (int, optional): The number of concurrent processes to run. Defaults to 10.
-            file_data (Optional[str], optional): The file data to process. Defaults to an empty string.
-            maintain_format (bool, optional): Whether to maintain the format from the previous page. Defaults to False.
-            model (str, optional): The model to use for generating completions. Defaults to "gpt-4o-mini". Refer to LiteLLM Providers for the correct model name, as it may differ depending on the provider.
-            temp_dir (str, optional): The directory to store temporary files, defaults to some named folder in system's temp directory. If already exists, the contents will be deleted before zerox uses it.
-            custom_system_prompt (str, optional): The system prompt to use for the model, this overrides the default system prompt of zerox.Generally it is not required unless you want some specific behaviour. When set, it will raise a friendly warning. Defaults to None.
-            kwargs (dict, optional): Additional keyword arguments to pass to the litellm.completion method. Refer to the LiteLLM Documentation and Completion Input for details.
-
-        """
-        try:
-            # from pyzerox import zerox
-            from .pyzerox import zerox
-
-            self.zerox = zerox
-
-        except ImportError as e:
-            raise ValueError(
-                f"Error, zerox installation failed with Error='{e}', please install through the R2R ingestion bundle with `pip install r2r -E ingestion-bundle` "
-            )
-
-    async def ingest(
-        self, data: DataType, **kwargs
-    ) -> AsyncGenerator[str, None]:
-        if isinstance(data, str):
-            raise ValueError("PDF data must be in bytes format.")
-
-        model = kwargs.get("zerox_parsing_model", ZEROX_DEFAULT_MODEL)
-        model = model.split("/")[-1]  # remove the provider prefix
-        result = await self.zerox(
-            file_data=data,
-            model=model,
-            verbose=True,
-        )
-
-        for page in result.pages:
-            yield page.content

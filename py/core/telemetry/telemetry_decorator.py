@@ -4,10 +4,9 @@ import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
+from importlib import metadata
 from pathlib import Path
 from typing import Optional
-
-import toml
 
 from core.telemetry.events import ErrorEvent, FeatureUsageEvent
 from core.telemetry.posthog import telemetry_client
@@ -25,11 +24,7 @@ class ProductTelemetryClient:
     def version(self) -> str:
         if self._version is None:
             try:
-                pyproject_path = (
-                    Path(__file__).parent.parent.parent / "pyproject.toml"
-                )
-                pyproject_data = toml.load(pyproject_path)
-                self._version = pyproject_data["tool"]["poetry"]["version"]
+                self._version = metadata.version("r2r")
             except Exception as e:
                 logger.error(
                     f"Error reading version from pyproject.toml: {str(e)}"
@@ -80,7 +75,6 @@ if os.getenv("TELEMETRY_ENABLED", "true").lower() in ("true", "1"):
 def telemetry_event(event_name):
     def decorator(func):
         def log_telemetry(event_type, user_id, metadata, error_message=None):
-
             if telemetry_thread_pool is None:
                 return
 

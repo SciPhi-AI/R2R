@@ -1,14 +1,27 @@
 # type: ignore
-from typing import IO, AsyncGenerator, Optional, Union
+from typing import IO, AsyncGenerator, Optional
 
-from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
+from core.base.providers import (
+    CompletionProvider,
+    DatabaseProvider,
+    IngestionConfig,
+)
 
 
-class CSVParser(AsyncParser[DataType]):
+class CSVParser(AsyncParser[str | bytes]):
     """A parser for CSV data."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+    ):
+        self.database_provider = database_provider
+        self.llm_provider = llm_provider
+        self.config = config
+
         import csv
         from io import StringIO
 
@@ -16,7 +29,7 @@ class CSVParser(AsyncParser[DataType]):
         self.StringIO = StringIO
 
     async def ingest(
-        self, data: Union[str, bytes], *args, **kwargs
+        self, data: str | bytes, *args, **kwargs
     ) -> AsyncGenerator[str, None]:
         """Ingest CSV data and yield text from each row."""
         if isinstance(data, bytes):
@@ -26,10 +39,15 @@ class CSVParser(AsyncParser[DataType]):
             yield ", ".join(row)
 
 
-class CSVParserAdvanced(AsyncParser[DataType]):
+class CSVParserAdvanced(AsyncParser[str | bytes]):
     """A parser for CSV data."""
 
-    def __init__(self):
+    def __init__(
+        self, config: IngestionConfig, llm_provider: CompletionProvider
+    ):
+        self.llm_provider = llm_provider
+        self.config = config
+
         import csv
         from io import StringIO
 
@@ -54,7 +72,7 @@ class CSVParserAdvanced(AsyncParser[DataType]):
 
     async def ingest(
         self,
-        data: Union[str, bytes],
+        data: str | bytes,
         num_col_times_num_rows: int = 100,
         *args,
         **kwargs,

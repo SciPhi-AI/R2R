@@ -19,7 +19,7 @@ COPY pyproject.toml /app/py/pyproject.toml
 
 # Install dependencies
 RUN poetry config virtualenvs.create false \
-    && poetry install --extras "core ingestion-bundle" --no-dev --no-root \
+    && poetry install --extras "core ingestion-bundle" --no-root \
     && pip install --no-cache-dir gunicorn uvicorn
 
 # Create the final image
@@ -53,7 +53,7 @@ COPY . /app
 COPY core /app/core
 COPY r2r /app/r2r
 COPY shared /app/shared
-COPY r2r.toml /app/r2r.toml
+COPY r2r/r2r.toml /app/r2r.toml
 COPY pyproject.toml /app/pyproject.toml
 
 # Run the application

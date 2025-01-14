@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>R2R Log Viewer</title>
+        <style>
+            body {
+                margin: 20px;
+                font-family: monospace;
+                background: #f8f9fa;
+            }
+            #logs {
+                white-space: pre-wrap;
+                background: white;
+                padding: 20px;
+                border-radius: 4px;
+                height: 80vh;
+                overflow-y: auto;
+                border: 1px solid #e9ecef;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            }
+            .log-entry {
+                margin: 2px 0;
+                border-bottom: 1px solid #f0f0f0;
+            }
+            .status {
+                color: #666;
+                font-style: italic;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>R2R Log Viewer</h2>
+        <div id="logs"><span class="status">Connecting to log stream...</span></div>
+
+        <!-- Include ansi_up via a CDN -->
+        <script src="https://cdn.jsdelivr.net/npm/ansi_up@5.0.0/ansi_up.min.js"></script>
+        <script>
+            let ws = null;
+            let ansi_up = new AnsiUp();
+
+            function connect() {
+                if (ws) {
+                    ws.close();
+                }
+
+                ws = new WebSocket(`ws://${window.location.host}/v3/logs/stream`);
+
+                ws.onmessage = function(event) {
+                    const logsDiv = document.getElementById("logs");
+                    const newEntry = document.createElement('div');
+                    newEntry.className = 'log-entry';
+
+                    // Convert ANSI to HTML
+                    const htmlContent = ansi_up.ansi_to_html(event.data);
+                    newEntry.innerHTML = htmlContent;
+                    logsDiv.appendChild(newEntry);
+
+                    // Keep only the last 1000 entries
+                    while (logsDiv.children.length > 1000) {
+                        logsDiv.removeChild(logsDiv.firstChild);
+                    }
+
+                    logsDiv.scrollTop = logsDiv.scrollHeight;
+                };
+
+                ws.onclose = function() {
+                    const logsDiv = document.getElementById("logs");
+                    const msg = document.createElement('div');
+                    msg.className = 'status';
+                    msg.textContent = 'Connection lost. Reconnecting...';
+                    logsDiv.appendChild(msg);
+                    setTimeout(connect, 1000);
+                };
+
+                ws.onerror = function(err) {
+                    console.error('WebSocket error:', err);
+                };
+            }
+
+            connect();
+
+            window.onbeforeunload = function() {
+                if (ws) {
+                    ws.close();
+                }
+            };
+        </script>
+    </body>
+</html>

@@ -1,10 +1,16 @@
-import axios, {
-  AxiosInstance,
-  Method,
-  AxiosResponse,
-  AxiosRequestConfig,
-} from "axios";
-import FormData from "form-data";
+import axios, { Method, AxiosError } from "axios";
+import { BaseClient } from "./baseClient";
+
+import { ChunksClient } from "./v3/clients/chunks";
+import { CollectionsClient } from "./v3/clients/collections";
+import { ConversationsClient } from "./v3/clients/conversations";
+import { DocumentsClient } from "./v3/clients/documents";
+import { GraphsClient } from "./v3/clients/graphs";
+import { IndiciesClient } from "./v3/clients/indices";
+import { PromptsClient } from "./v3/clients/prompts";
+import { RetrievalClient } from "./v3/clients/retrieval";
+import { SystemClient } from "./v3/clients/system";
+import { UsersClient } from "./v3/clients/users";
 
 let fs: any;
 if (typeof window === "undefined") {
@@ -13,63 +19,63 @@ if (typeof window === "undefined") {
   });
 }
 
-import { feature, initializeTelemetry } from "./feature";
-import {
-  LoginResponse,
-  TokenInfo,
-  Message,
-  RefreshTokenResponse,
-  VectorSearchSettings,
-  KGSearchSettings,
-  GenerationConfig,
-  RawChunk,
-} from "./models";
+import { initializeTelemetry } from "./feature";
 
-function handleRequestError(response: AxiosResponse): void {
-  if (response.status < 400) {
-    return;
-  }
+type RefreshTokenResponse = {
+  results: {
+    accessToken: string;
+    refreshToken: string;
+  };
+};
 
-  let message: string;
-  const errorContent = response.data;
-
-  if (
-    typeof errorContent === "object" &&
-    errorContent !== null &&
-    "detail" in errorContent
-  ) {
-    const { detail } = errorContent;
-    if (typeof detail === "object" && detail !== null) {
-      message = (detail as { message?: string }).message || response.statusText;
-    } else {
-      message = String(detail);
-    }
-  } else {
-    message = String(errorContent);
-  }
-
-  throw new Error(`Status ${response.status}: ${message}`);
+interface R2RClientOptions {
+  enableAutoRefresh?: boolean;
+  getTokensCallback?: () => {
+    accessToken: string | null;
+    refreshToken: string | null;
+  };
+  setTokensCallback?: (
+    accessToken: string | null,
+    refreshToken: string | null,
+  ) => void;
+  onRefreshFailedCallback?: () => void;
 }
 
-export class r2rClient {
-  private axiosInstance: AxiosInstance;
-  private baseUrl: string;
-  private anonymousTelemetry: boolean;
+export class r2rClient extends BaseClient {
+  public readonly chunks: ChunksClient;
+  public readonly collections: CollectionsClient;
+  public readonly conversations: ConversationsClient;
+  public readonly documents: DocumentsClient;
+  public readonly graphs: GraphsClient;
+  public readonly indices: IndiciesClient;
+  public readonly prompts: PromptsClient;
+  public readonly retrieval: RetrievalClient;
+  public readonly system: SystemClient;
+  public readonly users: UsersClient;
 
-  // Authorization tokens
-  private accessToken: string | null;
-  private refreshToken: string | null;
+  private getTokensCallback?: R2RClientOptions["getTokensCallback"];
+  private setTokensCallback?: R2RClientOptions["setTokensCallback"];
+  private onRefreshFailedCallback?: R2RClientOptions["onRefreshFailedCallback"];
 
   constructor(
     baseURL: string,
-    prefix: string = "/v2",
     anonymousTelemetry = true,
+    options: R2RClientOptions = {},
   ) {
-    this.baseUrl = `${baseURL}${prefix}`;
-    this.anonymousTelemetry = anonymousTelemetry;
+    super(baseURL, "", anonymousTelemetry, options.enableAutoRefresh);
 
-    this.accessToken = null;
-    this.refreshToken = null;
+    console.log("[r2rClient] Creating new client with baseURL =", baseURL);
+
+    this.chunks = new ChunksClient(this);
+    this.collections = new CollectionsClient(this);
+    this.conversations = new ConversationsClient(this);
+    this.documents = new DocumentsClient(this);
+    this.graphs = new GraphsClient(this);
+    this.indices = new IndiciesClient(this);
+    this.prompts = new PromptsClient(this);
+    this.retrieval = new RetrievalClient(this);
+    this.system = new SystemClient(this);
+    this.users = new UsersClient(this);
 
     initializeTelemetry(this.anonymousTelemetry);
 
@@ -78,1498 +84,174 @@ export class r2rClient {
       headers: {
         "Content-Type": "application/json",
       },
-      paramsSerializer: (params) => {
-        const parts: string[] = [];
-        Object.entries(params).forEach(([key, value]) => {
-          if (Array.isArray(value)) {
-            value.forEach((v) =>
-              parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(v)}`),
-            );
-          } else {
-            parts.push(
-              `${encodeURIComponent(key)}=${encodeURIComponent(value)}`,
-            );
-          }
-        });
-        return parts.join("&");
-      },
-      transformRequest: [
-        (data) => {
-          if (typeof data === "string") {
-            return data;
-          }
-          return JSON.stringify(data);
-        },
-      ],
     });
+
+    this.getTokensCallback = options.getTokensCallback;
+    this.setTokensCallback = options.setTokensCallback;
+    this.onRefreshFailedCallback = options.onRefreshFailedCallback;
+
+    // 1) Request interceptor: attach current access token (if any)
+    this.axiosInstance.interceptors.request.use(
+      (config) => {
+        const tokenData = this.getTokensCallback?.();
+        const accessToken = tokenData?.accessToken || null;
+        if (accessToken) {
+          console.log(
+            `[r2rClient] Attaching access token to request: ${accessToken.slice(
+              0,
+              15
+            )}...`
+          );
+          config.headers["Authorization"] = `Bearer ${accessToken}`;
+        } else {
+          console.log(
+            "[r2rClient] No access token found, sending request without Authorization header"
+          );
+        }
+        return config;
+      },
+      (error) => {
+        console.error("[r2rClient] Request interceptor error:", error);
+        return Promise.reject(error);
+      },
+    );
+
+    // 2) Response interceptor: see if we got 401/403 => attempt to refresh
+    this.setupResponseInterceptor();
   }
 
-  setTokens(accessToken: string, refreshToken: string): void {
-    this.accessToken = accessToken;
-    this.refreshToken = refreshToken;
+  private setupResponseInterceptor() {
+    this.axiosInstance.interceptors.response.use(
+      (response) => response,
+      async (error: AxiosError) => {
+        console.warn("[r2rClient] Response interceptor caught an error:", error);
+
+        const status = error.response?.status;
+        const failingUrl = error.config?.url;
+        const errorData = error.response?.data as {
+          message?: string;
+          error_code?: string;
+        };
+
+        console.warn(
+          "[r2rClient] Failing request URL:",
+          failingUrl,
+          "status =",
+          status
+        );
+        console.warn(
+          "failingUrl?.includes('/v3/users/refresh-token') = ",
+          failingUrl?.includes("/v3/users/refresh-token")
+        );
+
+        // 1) If the refresh endpoint itself fails => don't try again
+        if (failingUrl?.includes("/v3/users/refresh-token")) {
+          console.error(
+            "[r2rClient] Refresh call itself returned 401/403 => logging out"
+          );
+          this.onRefreshFailedCallback?.();
+          return Promise.reject(error);
+        }
+
+        // 2) If normal request => attempt refresh IF it's really an invalid/expired token
+        // We'll check either an explicit "error_code" or text in "message"
+        // Adjust to match your server's structure!
+        const isTokenError =
+          !!errorData?.error_code &&
+          errorData.error_code.toUpperCase() === "TOKEN_EXPIRED";
+
+        // Or fallback to matching common phrases if no error_code is set:
+        const msg = (errorData?.message || "").toLowerCase();
+        const looksLikeTokenIssue =
+          msg.includes("invalid token") ||
+          msg.includes("token expired") ||
+          msg.includes("credentials");
+
+        // If either of those checks is true, we consider it an auth token error:
+        const isAuthError = isTokenError || looksLikeTokenIssue;
+
+        if ((status === 401 || status === 403) && this.getTokensCallback && isAuthError) {
+          // Check if we have a refresh token
+          const { refreshToken } = this.getTokensCallback();
+          if (!refreshToken) {
+            console.error("[r2rClient] No refresh token found => logout");
+            this.onRefreshFailedCallback?.();
+            return Promise.reject(error);
+          }
+
+          // Attempt refresh
+          try {
+            console.log("[r2rClient] Attempting token refresh...");
+            const refreshResponse =
+              (await this.users.refreshAccessToken()) as RefreshTokenResponse;
+            const newAccessToken = refreshResponse.results.accessToken;
+            const newRefreshToken = refreshResponse.results.refreshToken;
+
+            console.log(
+              "[r2rClient] Refresh call succeeded; new access token:",
+              newAccessToken.slice(0, 15),
+              "..."
+            );
+
+            // set new tokens
+            this.setTokens(newAccessToken, newRefreshToken);
+
+            // Re-try the original request
+            if (error.config) {
+              error.config.headers["Authorization"] = `Bearer ${newAccessToken}`;
+              console.log(
+                "[r2rClient] Retrying original request with new access token..."
+              );
+              return this.axiosInstance.request(error.config);
+            } else {
+              console.warn(
+                "[r2rClient] No request config found to retry. Possibly manual re-fetch needed"
+              );
+            }
+          } catch (refreshError) {
+            console.error(
+              "[r2rClient] Refresh attempt failed => logging out. Error was:",
+              refreshError
+            );
+            this.onRefreshFailedCallback?.();
+            return Promise.reject(refreshError);
+          }
+        }
+
+        // 3) If not a 401/403 or it's a 401/403 that isn't token-related => just reject
+        console.log("[r2rClient] Non-auth error or non-token 401/403 => rejecting");
+        return Promise.reject(error);
+      },
+    );
   }
 
-  private async _makeRequest<T = any>(
+  public makeRequest<T = any>(
     method: Method,
     endpoint: string,
     options: any = {},
   ): Promise<T> {
-    const url = `${endpoint}`;
-    const config: AxiosRequestConfig = {
-      method,
-      url,
-      headers: { ...options.headers },
-      params: options.params,
-      ...options,
-      responseType: options.responseType || "json",
-    };
-
-    config.headers = config.headers || {};
-
-    if (options.params) {
-      config.paramsSerializer = (params) => {
-        return Object.entries(params)
-          .map(([key, value]) => {
-            if (Array.isArray(value)) {
-              return value
-                .map(
-                  (v) => `${encodeURIComponent(key)}=${encodeURIComponent(v)}`,
-                )
-                .join("&");
-            }
-            return `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`;
-          })
-          .join("&");
-      };
-    }
-
-    if (options.data) {
-      if (typeof FormData !== "undefined" && options.data instanceof FormData) {
-        config.data = options.data;
-        delete config.headers["Content-Type"];
-      } else if (typeof options.data === "object") {
-        if (
-          config.headers["Content-Type"] === "application/x-www-form-urlencoded"
-        ) {
-          config.data = Object.keys(options.data)
-            .map(
-              (key) =>
-                `${encodeURIComponent(key)}=${encodeURIComponent(options.data[key])}`,
-            )
-            .join("&");
-        } else {
-          config.data = JSON.stringify(options.data);
-          if (method !== "DELETE") {
-            config.headers["Content-Type"] = "application/json";
-          } else {
-            config.headers["Content-Type"] = "application/json";
-            config.data = JSON.stringify(options.data);
-          }
-        }
-      } else {
-        config.data = options.data;
-      }
-    }
-
-    if (
-      this.accessToken &&
-      !["register", "login", "verify_email", "health"].includes(endpoint)
-    ) {
-      config.headers.Authorization = `Bearer ${this.accessToken}`;
-    }
-
-    if (options.responseType === "stream") {
-      const fetchHeaders: Record<string, string> = {};
-      Object.entries(config.headers).forEach(([key, value]) => {
-        if (typeof value === "string") {
-          fetchHeaders[key] = value;
-        }
-      });
-      const response = await fetch(`${this.baseUrl}/${endpoint}`, {
-        method,
-        headers: fetchHeaders,
-        body: config.data,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return response.body as unknown as T;
-    }
-
-    try {
-      const response = await this.axiosInstance.request(config);
-      return options.returnFullResponse
-        ? (response as any as T)
-        : response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        handleRequestError(error.response);
-      }
-      throw error;
-    }
+    console.log(`[r2rClient] makeRequest: ${method.toUpperCase()} ${endpoint}`);
+    return this._makeRequest(method, endpoint, options, "v3");
   }
 
-  private _ensureAuthenticated(): void {
-    // if (!this.accessToken) {
-    //   throw new Error("Not authenticated. Please login first.");
-    // }
+  public getRefreshToken(): string | null {
+    return this.refreshToken;
   }
 
-  // -----------------------------------------------------------------------------
-  //
-  // Auth
-  //
-  // -----------------------------------------------------------------------------
-  /**
-   * Registers a new user with the given email and password.
-   * @param email The email of the user to register.
-   * @param password The password of the user to register.
-   * @returns A promise that resolves to the response from the server.
-   */
-
-  @feature("register")
-  async register(email: string, password: string): Promise<any> {
-    return await this._makeRequest("POST", "register", {
-      data: { email, password },
-    });
-  }
-
-  /**
-   * Verifies the email of a user with the given verification code.
-   * @param verification_code The verification code to verify the email with.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("verifyEmail")
-  async verifyEmail(verification_code: string): Promise<any> {
-    return await this._makeRequest("POST", "verify_email", {
-      data: { verification_code },
-    });
-  }
-
-  /**
-   * Attempts to log in a user with the given email and password.
-   * @param email The email of the user to log in.
-   * @param password The password of the user to log in.
-   * @returns A promise that resolves to the response from the server containing the access and refresh tokens.
-   */
-  @feature("login")
-  async login(
-    email: string,
-    password: string,
-  ): Promise<{ access_token: TokenInfo; refresh_token: TokenInfo }> {
-    const data = {
-      username: email,
-      password: password,
-    };
-
-    const response = await this._makeRequest<LoginResponse>("POST", "login", {
-      data: data,
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
-
-    if (response && response.results) {
-      this.accessToken = response.results.access_token.token;
-      this.refreshToken = response.results.refresh_token.token;
-    } else {
-      throw new Error("Invalid response structure");
-    }
-
-    return response.results;
-  }
-
-  @feature("loginWithToken")
-  async loginWithToken(
-    accessToken: string,
-  ): Promise<{ access_token: TokenInfo }> {
-    this.accessToken = accessToken;
-
-    try {
-      await this._makeRequest("GET", "user");
-
-      return {
-        access_token: {
-          token: accessToken,
-          token_type: "access_token",
-        },
-      };
-    } catch (error) {
-      this.accessToken = null;
-      throw new Error("Invalid token provided");
-    }
-  }
-
-  /**
-   * Logs out the currently authenticated user.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("logout")
-  async logout(): Promise<any> {
-    this._ensureAuthenticated();
-
-    const response = await this._makeRequest("POST", "logout");
-    this.accessToken = null;
-    this.refreshToken = null;
-    return response;
-  }
-
-  /**
-   * Retrieves the user information for the currently authenticated user.
-   * @returns A promise that resolves to the response from the server containing the user information.
-   */
-  @feature("user")
-  async user(): Promise<any> {
-    this._ensureAuthenticated();
-    return await this._makeRequest("GET", "user");
-  }
-
-  /**
-   * Updates the profile information for the currently authenticated user.
-   * @param email The updated email for the user.
-   * @param name The updated name for the user.
-   * @param bio  The updated bio for the user.
-   * @param profilePicture The updated profile picture URL for the user.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("updateUser")
-  async updateUser(
-    userId: string,
-    email?: string,
-    isSuperuser?: boolean,
-    name?: string,
-    bio?: string,
-    profilePicture?: string,
-  ): Promise<any> {
-    this._ensureAuthenticated();
-
-    let data: Record<string, any> = { user_id: userId };
-    if (email !== undefined) {
-      data.email = email;
-    }
-    if (isSuperuser !== undefined) {
-      data.is_superuser = isSuperuser;
-    }
-    if (name !== undefined) {
-      data.name = name;
-    }
-    if (bio !== undefined) {
-      data.bio = bio;
-    }
-    if (profilePicture !== undefined) {
-      data.profile_picture = profilePicture;
-    }
-
-    return await this._makeRequest("PUT", "user", { data });
-  }
-
-  /**
-   * Refreshes the access token for the currently authenticated user.
-   * @returns A promise that resolves to the response from the server containing the new access and refresh tokens.
-   */
-  async refreshAccessToken(): Promise<RefreshTokenResponse> {
-    if (!this.refreshToken) {
-      throw new Error("No refresh token available. Please login again.");
-    }
-
-    const response = await this._makeRequest<RefreshTokenResponse>(
-      "POST",
-      "refresh_access_token",
-      {
-        data: this.refreshToken,
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      },
+  public setTokens(
+    accessToken: string | null,
+    refreshToken: string | null
+  ): void {
+    // Optional: log the changes, but be careful not to log full tokens in prod
+    console.log(
+      "[r2rClient] Setting tokens. Access token:",
+      accessToken?.slice(0, 15),
+      "... refresh token:",
+      refreshToken?.slice(0, 15),
+      "..."
     );
-
-    if (response && response.results) {
-      this.accessToken = response.results.access_token.token;
-      this.refreshToken = response.results.refresh_token.token;
-    } else {
-      throw new Error("Invalid response structure");
-    }
-
-    return response;
-  }
-
-  /**
-   * Changes the password of the currently authenticated user.
-   * @param current_password The current password of the user.
-   * @param new_password The new password to set for the user.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("changePassword")
-  async changePassword(
-    current_password: string,
-    new_password: string,
-  ): Promise<any> {
-    this._ensureAuthenticated();
-
-    return this._makeRequest("POST", "change_password", {
-      data: {
-        current_password,
-        new_password,
-      },
-    });
-  }
-
-  /**
-   * Requests a password reset for the user with the given email.
-   * @param email The email of the user to request a password reset for.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("requestPasswordReset")
-  async requestPasswordReset(email: string): Promise<any> {
-    return this._makeRequest("POST", "request_password_reset", {
-      data: { email },
-    });
-  }
-
-  /**
-   * Confirms a password reset for the user with the given reset token.
-   * @param resetToken The reset token to confirm the password reset with.
-   * @param newPassword The new password to set for the user.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("confirmPasswordReset")
-  async confirmPasswordReset(
-    resetToken: string,
-    newPassword: string,
-  ): Promise<any> {
-    return this._makeRequest("POST", `reset_password/${resetToken}`, {
-      data: { new_password: newPassword },
-    });
-  }
-
-  /**
-   * Deletes the user with the given user ID.
-   * @param user_id The ID of the user to delete, defaults to the currently authenticated user.
-   * @param password The password of the user to delete.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("deleteUser")
-  async deleteUser(userId: string, password?: string): Promise<any> {
-    this._ensureAuthenticated();
-    return await this._makeRequest("DELETE", `user/${userId}`, {
-      data: { password },
-    });
-  }
-
-  // -----------------------------------------------------------------------------
-  //
-  // Ingestion
-  //
-  // -----------------------------------------------------------------------------
-
-  // TODO: Need to update to closer match the Python SDK.
-  /**
-   * Ingest files into your R2R deployment.
-   * @param files
-   * @param options
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("ingestFiles")
-  async ingestFiles(
-    files: (string | File | { path: string; name: string })[],
-    options: {
-      metadatas?: Record<string, any>[];
-      document_ids?: string[];
-      user_ids?: (string | null)[];
-      ingestion_config?: Record<string, any>;
-    } = {},
-  ): Promise<any> {
-    this._ensureAuthenticated();
-
-    const formData = new FormData();
-    const processedFiles: string[] = [];
-
-    const processPath = async (
-      path: string | File | { path: string; name: string },
-      index: number,
-    ): Promise<void> => {
-      const appendFile = (
-        file: File | NodeJS.ReadableStream,
-        filename: string,
-      ) => {
-        formData.append(`files`, file, filename);
-        processedFiles.push(filename);
-      };
-
-      if (typeof path === "string") {
-        if (typeof window === "undefined") {
-          const stat = await fs.promises.stat(path);
-          if (stat.isDirectory()) {
-            const files = await fs.promises.readdir(path, {
-              withFileTypes: true,
-            });
-            for (const file of files) {
-              await processPath(`${path}/${file.name}`, index);
-            }
-          } else {
-            appendFile(fs.createReadStream(path), path.split("/").pop() || "");
-          }
-        } else {
-          console.warn(
-            "File or folder path provided in browser environment. This is not supported.",
-          );
-        }
-      } else if (path instanceof File) {
-        appendFile(path, path.name);
-      } else if ("path" in path && "name" in path) {
-        if (typeof window === "undefined") {
-          appendFile(fs.createReadStream(path.path), path.name);
-        } else {
-          console.warn(
-            "File path provided in browser environment. This is not supported.",
-          );
-        }
-      }
-    };
-
-    for (let i = 0; i < files.length; i++) {
-      await processPath(files[i], i);
-    }
-
-    const data: Record<string, string | undefined> = {
-      metadatas: options.metadatas
-        ? JSON.stringify(options.metadatas)
-        : undefined,
-      document_ids: options.document_ids
-        ? JSON.stringify(options.document_ids)
-        : undefined,
-      user_ids: options.user_ids ? JSON.stringify(options.user_ids) : undefined,
-      ingestion_config: options.ingestion_config
-        ? JSON.stringify(options.ingestion_config)
-        : undefined,
-    };
-
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined) {
-        formData.append(key, value);
-      }
-    });
-
-    formData.append("file_names", JSON.stringify(processedFiles));
-
-    return await this._makeRequest("POST", "ingest_files", {
-      data: formData,
-      headers: formData.getHeaders?.() ?? {
-        "Content-Type": "multipart/form-data",
-      },
-      transformRequest: [
-        (data: any, headers: Record<string, string>) => {
-          delete headers["Content-Type"];
-          return data;
-        },
-      ],
-    });
-  }
-
-  /**
-   * Update existing files in your R2R deployment.
-   * @param files
-   * @param options
-   * @returns
-   */
-  @feature("updateFiles")
-  async updateFiles(
-    files: (File | { path: string; name: string })[],
-    options: {
-      document_ids: string[];
-      metadatas?: Record<string, any>[];
-      ingestion_config?: Record<string, any>;
-    },
-  ): Promise<any> {
-    this._ensureAuthenticated();
-
-    const formData = new FormData();
-    const processedFiles: string[] = [];
-
-    if (files.length !== options.document_ids.length) {
-      throw new Error("Each file must have a corresponding document ID.");
-    }
-
-    const processFile = (
-      file: File | { path: string; name: string },
-      index: number,
-    ) => {
-      if ("path" in file) {
-        if (typeof window === "undefined") {
-          formData.append("files", fs.createReadStream(file.path), file.name);
-          processedFiles.push(file.name);
-        } else {
-          console.warn(
-            "File path provided in browser environment. This is not supported.",
-          );
-        }
-      } else {
-        formData.append("files", file);
-        processedFiles.push(file.name);
-      }
-    };
-
-    files.forEach(processFile);
-
-    const data: Record<string, string | undefined> = {
-      document_ids: JSON.stringify(options.document_ids.map(String)),
-      metadatas: options.metadatas
-        ? JSON.stringify(options.metadatas)
-        : undefined,
-      ingestion_config: options.ingestion_config
-        ? JSON.stringify(options.ingestion_config)
-        : undefined,
-    };
-
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined) {
-        formData.append(key, value);
-      }
-    });
-
-    formData.append("file_names", JSON.stringify(processedFiles));
-
-    return await this._makeRequest("POST", "update_files", {
-      data: formData,
-      headers: formData.getHeaders?.() ?? {
-        "Content-Type": "multipart/form-data",
-      },
-      transformRequest: [
-        (data: any, headers: Record<string, string>) => {
-          delete headers["Content-Type"];
-          return data;
-        },
-      ],
-    });
-  }
-
-  @feature("ingestChunks")
-  async ingestChunks(
-    chunks: RawChunk[],
-    documentId?: string,
-    metadata?: Record<string, any>,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    return await this._makeRequest("POST", "ingest_chunks", {
-      data: {
-        chunks: chunks,
-        document_id: documentId,
-        metadata: metadata,
-      },
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-  }
-
-  // -----------------------------------------------------------------------------
-  //
-  // Management
-  //
-  // -----------------------------------------------------------------------------
-
-  /**
-   * Check the health of the R2R deployment.
-   * @returns A promise that resolves to the response from the server.
-   */
-  async health(): Promise<any> {
-    return await this._makeRequest("GET", "health");
-  }
-
-  /**
-   * Get statistics about the server, including the start time, uptime, CPU usage, and memory usage.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("serverStats")
-  async serverStats(): Promise<any> {
-    this._ensureAuthenticated();
-    return await this._makeRequest("GET", "server_stats");
-  }
-
-  /**
-   * Update a prompt in the database.
-   * @param name The name of the prompt to update.
-   * @param template The new template for the prompt.
-   * @param input_types The new input types for the prompt.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("updatePrompt")
-  async updatePrompt(
-    name: string = "default_system",
-    template?: string,
-    input_types?: Record<string, string>,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const data: Record<string, any> = { name };
-    if (template !== undefined) {
-      data.template = template;
-    }
-    if (input_types !== undefined) {
-      data.input_types = input_types;
-    }
-
-    return await this._makeRequest("POST", "update_prompt", {
-      data,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-  }
-
-  /**
-   * Get analytics data from the server.
-   * @param filter_criteria The filter criteria to use.
-   * @param analysis_types The types of analysis to perform.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("analytics")
-  async analytics(
-    filter_criteria?: Record<string, any> | string,
-    analysis_types?: Record<string, any> | string,
-  ): Promise<any> {
-    this._ensureAuthenticated();
-
-    const params: Record<string, string> = {};
-
-    if (filter_criteria) {
-      params.filter_criteria =
-        typeof filter_criteria === "string"
-          ? filter_criteria
-          : JSON.stringify(filter_criteria);
-    }
-
-    if (analysis_types) {
-      params.analysis_types =
-        typeof analysis_types === "string"
-          ? analysis_types
-          : JSON.stringify(analysis_types);
-    }
-
-    return this._makeRequest("GET", "analytics", { params });
-  }
-
-  /**
-   * Get logs from the server.
-   * @param run_type_filter The run type to filter by.
-   * @param max_runs Specifies the maximum number of runs to return. Values outside the range of 1 to 1000 will be adjusted to the nearest valid value with a default of 100.
-   * @returns
-   */
-  @feature("logs")
-  async logs(run_type_filter?: string, max_runs?: number): Promise<any> {
-    this._ensureAuthenticated();
-
-    const params: Record<string, string | number> = {};
-
-    if (run_type_filter !== undefined) {
-      params.run_type_filter = run_type_filter;
-    }
-
-    if (max_runs !== undefined) {
-      params.max_runs = max_runs;
-    }
-
-    return this._makeRequest("GET", "logs", { params });
-  }
-
-  /**
-   * Get the configuration settings for the app.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("appSettings")
-  async appSettings(): Promise<any> {
-    this._ensureAuthenticated();
-
-    return this._makeRequest("GET", "app_settings");
-  }
-
-  /**
-   * An overview of the users in the R2R deployment.
-   * @param user_ids List of user IDs to get an overview for.
-   * * @param offset The offset to start listing users from.
-   * @param limit The maximum number of users to return.
-   * @returns
-   */
-  @feature("usersOverview")
-  async usersOverview(
-    user_ids?: string[],
-    offset?: number,
-    limit?: number,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    let params: Record<string, any> = {};
-    if (user_ids && user_ids.length > 0) {
-      params.user_ids = user_ids;
-    }
-    if (offset !== undefined) {
-      params.offset = offset;
-    }
-    if (limit !== undefined) {
-      params.limit = limit;
-    }
-
-    if (user_ids && user_ids.length > 0) {
-      params.user_ids = user_ids;
-    }
-
-    return this._makeRequest("GET", "users_overview", { params });
-  }
-
-  /**
-   * Delete data from the database given a set of filters.
-   * @param filters The filters to delete by.
-   * @returns The results of the deletion.
-   */
-  @feature("delete")
-  async delete(filters: { [key: string]: any }): Promise<any> {
-    this._ensureAuthenticated();
-
-    const params = {
-      filters: JSON.stringify(filters),
-    };
-
-    return this._makeRequest("DELETE", "delete", { params }) || { results: {} };
-  }
-
-  /**
-   * Download the raw file associated with a document.
-   * @param documentId The ID of the document to retrieve.
-   * @returns A promise that resolves to a Blob representing the PDF.
-   */
-  @feature("downloadFile")
-  async downloadFile(documentId: string): Promise<Blob> {
-    return await this._makeRequest<Blob>("GET", `download_file/${documentId}`, {
-      responseType: "blob",
-    });
-  }
-
-  /**
-   * Get an overview of documents in the R2R deployment.
-   * @param document_ids List of document IDs to get an overview for.
-   * @param offset The offset to start listing documents from.
-   * @param limit The maximum number of documents to return.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("documentsOverview")
-  async documentsOverview(
-    document_ids?: string[],
-    offset?: number,
-    limit?: number,
-  ): Promise<any> {
-    this._ensureAuthenticated();
-
-    let params: Record<string, any> = {};
-    if (document_ids && document_ids.length > 0) {
-      params.document_ids = document_ids;
-    }
-    if (offset !== undefined) {
-      params.offset = offset;
-    }
-    if (limit !== undefined) {
-      params.limit = limit;
-    }
-
-    return this._makeRequest("GET", "documents_overview", { params });
-  }
-
-  /**
-   * Get the chunks for a document.
-   * @param document_id The ID of the document to get the chunks for.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("documentChunks")
-  async documentChunks(
-    document_id: string,
-    offset?: number,
-    limit?: number,
-  ): Promise<any> {
-    this._ensureAuthenticated();
-
-    const params: Record<string, number> = {};
-    if (offset !== undefined) {
-      params.offset = offset;
-    }
-    if (limit !== undefined) {
-      params.limit = limit;
-    }
-
-    return this._makeRequest("GET", `document_chunks/${document_id}`, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      params,
-    });
-  }
-
-  // /**
-  //  * Inspect the knowledge graph associated with your R2R deployment.
-  //  * @param limit The maximum number of nodes to return. Defaults to 100.
-  //  * @returns A promise that resolves to the response from the server.
-  //  */
-  // @feature("inspectKnowledgeGraph")
-  // async inspectKnowledgeGraph(
-  //   offset?: number,
-  //   limit?: number,
-  // ): Promise<Record<string, any>> {
-  //   this._ensureAuthenticated();
-
-  //   const params: Record<string, number> = {};
-  //   if (offset !== undefined) {
-  //     params.offset = offset;
-  //   }
-  //   if (limit !== undefined) {
-  //     params.limit = limit;
-  //   }
-
-  //   return this._makeRequest("GET", "inspect_knowledge_graph", { params });
-  // }
-
-  /**
-   * Get an overview of existing collections.
-   * @param collectionIds List of collection IDs to get an overview for.
-   * @param limit The maximum number of collections to return.
-   * @param offset The offset to start listing collections from.
-   * @returns
-   */
-  @feature("collectionsOverview")
-  async collectionsOverview(
-    collectionIds?: string[],
-    offset?: number,
-    limit?: number,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const params: Record<string, string | number | string[]> = {};
-    if (collectionIds && collectionIds.length > 0) {
-      params.collection_ids = collectionIds;
-    }
-    if (limit !== undefined) {
-      params.limit = limit;
-    }
-    if (offset !== undefined) {
-      params.offset = offset;
-    }
-
-    return this._makeRequest("GET", "collections_overview", { params });
-  }
-
-  /**
-   * Create a new collection.
-   * @param name The name of the collection.
-   * @param description The description of the collection.
-   * @returns
-   */
-  @feature("createCollection")
-  async createCollection(
-    name: string,
-    description?: string,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const data: { name: string; description?: string } = { name };
-    if (description !== undefined) {
-      data.description = description;
-    }
-
-    return this._makeRequest("POST", "create_collection", { data });
-  }
-
-  /**
-   * Get a collection by its ID.
-   * @param collectionId The ID of the collection to get.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("getCollection")
-  async getCollection(collectionId: string): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    return this._makeRequest(
-      "GET",
-      `get_collection/${encodeURIComponent(collectionId)}`,
-    );
-  }
-
-  /**
-   * Updates the name and description of a collection.
-   * @param collectionId The ID of the collection to update.
-   * @param name The new name for the collection.
-   * @param description The new description of the collection.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("updateCollection")
-  async updateCollection(
-    collectionId: string,
-    name?: string,
-    description?: string,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const data: { collection_id: string; name?: string; description?: string } =
-      {
-        collection_id: collectionId,
-      };
-    if (name !== undefined) {
-      data.name = name;
-    }
-    if (description !== undefined) {
-      data.description = description;
-    }
-
-    return this._makeRequest("PUT", "update_collection", { data });
-  }
-
-  /**
-   * Delete a collection by its ID.
-   * @param collectionId The ID of the collection to delete.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("deleteCollection")
-  async deleteCollection(collectionId: string): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    return this._makeRequest(
-      "DELETE",
-      `delete_collection/${encodeURIComponent(collectionId)}`,
-    );
-  }
-
-  /**
-   * List all collections in the R2R deployment.
-   * @param offset The offset to start listing collections from.
-   * @param limit The maximum numberof collections to return.
-   * @returns
-   */
-  @feature("listCollections")
-  async listCollections(
-    offset?: number,
-    limit?: number,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const params: Record<string, number> = {};
-    if (offset !== undefined) {
-      params.offset = offset;
-    }
-    if (limit !== undefined) {
-      params.limit = limit;
-    }
-
-    return this._makeRequest("GET", "list_collections", { params });
-  }
-
-  /**
-   * Add a user to a collection.
-   * @param userId The ID of the user to add.
-   * @param collectionId The ID of the collection to add the user to.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("addUserToCollection")
-  async addUserToCollection(
-    userId: string,
-    collectionId: string,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    return this._makeRequest("POST", "add_user_to_collection", {
-      data: { user_id: userId, collection_id: collectionId },
-    });
-  }
-
-  /**
-   * Remove a user from a collection.
-   * @param userId The ID of the user to remove.
-   * @param collectionId The ID of the collection to remove the user from.
-   * @returns
-   */
-  @feature("removeUserFromCollection")
-  async removeUserFromCollection(
-    userId: string,
-    collectionId: string,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    return this._makeRequest("POST", "remove_user_from_collection", {
-      data: { user_id: userId, collection_id: collectionId },
-    });
-  }
-
-  /**
-   * Get all users in a collection.
-   * @param collectionId The ID of the collection to get users for.
-   * @param offset The offset to start listing users from.
-   * @param limit The maximum number of users to return.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("getUsersInCollection")
-  async getUsersInCollection(
-    collectionId: string,
-    offset?: number,
-    limit?: number,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const params: Record<string, string | number> = {};
-    if (offset !== undefined) {
-      params.offset = offset;
-    }
-    if (limit !== undefined) {
-      params.limit = limit;
-    }
-
-    return this._makeRequest(
-      "GET",
-      `get_users_in_collection/${encodeURIComponent(collectionId)}`,
-      { params },
-    );
-  }
-
-  /**
-   * Get all collections that a user is a member of.
-   * @param userId The ID of the user to get collections for.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("getCollectionsForUser")
-  async getCollectionsForUser(
-    userId: string,
-    offset?: number,
-    limit?: number,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const params: Record<string, string | number> = {};
-    if (offset !== undefined) {
-      params.offset = offset;
-    }
-    if (limit !== undefined) {
-      params.limit = limit;
-    }
-
-    return this._makeRequest(
-      "GET",
-      `user_collections/${encodeURIComponent(userId)}`,
-      { params },
-    );
-  }
-
-  /**
-   * Assign a document to a collection.
-   * @param document_id The ID of the document to assign.
-   * @param collection_id The ID of the collection to assign the document to.
-   * @returns
-   */
-  @feature("assignDocumentToCollection")
-  async assignDocumentToCollection(
-    document_id: string,
-    collection_id: string,
-  ): Promise<any> {
-    this._ensureAuthenticated();
-
-    return this._makeRequest("POST", "assign_document_to_collection", {
-      data: { document_id, collection_id },
-    });
-  }
-
-  /**
-   * Remove a document from a collection.
-   * @param document_id The ID of the document to remove.
-   * @param collection_id The ID of the collection to remove the document from.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("removeDocumentFromCollection")
-  async removeDocumentFromCollection(
-    document_id: string,
-    collection_id: string,
-  ): Promise<any> {
-    this._ensureAuthenticated();
-
-    return this._makeRequest("POST", "remove_document_from_collection", {
-      data: { document_id, collection_id },
-    });
-  }
-
-  /**
-   * Get all collections that a document is assigned to.
-   * @param documentId The ID of the document to get collections for.
-   * @returns
-   */
-  @feature("getDocumentCollections")
-  async getDocumentCollections(
-    documentId: string,
-    offset?: number,
-    limit?: number,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const params: Record<string, string | number> = {};
-    if (offset !== undefined) {
-      params.offset = offset;
-    }
-    if (limit !== undefined) {
-      params.limit = limit;
-    }
-
-    return this._makeRequest(
-      "GET",
-      `get_document_collections/${encodeURIComponent(documentId)}`,
-      { params },
-    );
-  }
-
-  /**
-   * Get all documents in a collection.
-   * @param collectionId The ID of the collection to get documents for.
-   * @param offset The offset to start listing documents from.
-   * @param limit The maximum number of documents to return.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("getDocumentsInCollection")
-  async getDocumentsInCollection(
-    collectionId: string,
-    offset?: number,
-    limit?: number,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    const params: Record<string, number> = {};
-    if (offset !== undefined) {
-      params.offset = offset;
-    }
-    if (limit !== undefined) {
-      params.limit = limit;
-    }
-
-    return this._makeRequest(
-      "GET",
-      `collection/${encodeURIComponent(collectionId)}/documents`,
-      { params },
-    );
-  }
-
-  /**
-   * Get an overview of existing conversations.
-   * @param limit The maximum number of conversations to return.
-   * @param offset The offset to start listing conversations from.
-   * @returns
-   */
-  @feature("conversationsOverview")
-  async conversationsOverview(
-    conversation_ids?: string[],
-    offset?: number,
-    limit?: number,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-
-    let params: Record<string, any> = {};
-    if (conversation_ids && conversation_ids.length > 0) {
-      params.conversation_ids = conversation_ids;
-    }
-    if (offset !== undefined) {
-      params.offset = offset;
-    }
-    if (limit !== undefined) {
-      params.limit = limit;
-    }
-
-    return this._makeRequest("GET", "conversations_overview", { params });
-  }
-
-  /**
-   * Get a conversation by its ID.
-   * @param conversationId The ID of the conversation to get.
-   * @param branchId The ID of the branch (optional).
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("getConversation")
-  async getConversation(
-    conversationId: string,
-    branchId?: string,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    const queryParams = branchId ? `?branch_id=${branchId}` : "";
-    return this._makeRequest(
-      "GET",
-      `get_conversation/${conversationId}${queryParams}`,
-    );
-  }
-
-  /**
-   * Create a new conversation.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("createConversation")
-  async createConversation(): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    return this._makeRequest("POST", "create_conversation");
-  }
-
-  /**
-   * Add a message to an existing conversation.
-   * @param conversationId
-   * @param message
-   * @returns
-   */
-  @feature("addMessage")
-  async addMessage(
-    conversationId: string,
-    message: Message,
-    parent_id?: string,
-    metadata?: Record<string, any>,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    const data: any = { message }; // Nest message under 'message' key
-    if (parent_id !== undefined) {
-      data.parent_id = parent_id;
-    }
-    if (metadata !== undefined) {
-      data.metadata = metadata;
-    }
-    return this._makeRequest("POST", `add_message/${conversationId}`, { data });
-  }
-
-  /**
-   * Update a message in an existing conversation.
-   * @param message_id The ID of the message to update.
-   * @param message The updated message.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("updateMessage")
-  async updateMessage(
-    message_id: string,
-    message: Message,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    return this._makeRequest("PUT", `update_message/${message_id}`, {
-      data: message,
-    });
-  }
-
-  /**
-   * Get an overview of branches in a conversation.
-   * @param conversationId The ID of the conversation to get branches for.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("branchesOverview")
-  async branchesOverview(conversationId: string): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    return this._makeRequest("GET", `branches_overview/${conversationId}`);
-  }
-
-  // TODO: Publish these methods once more testing is done
-  // /**
-  //  * Get the next branch in a conversation.
-  //  * @param branchId The ID of the branch to get the next branch for.
-  //  * @returns A promise that resolves to the response from the server.
-  //  */
-  // @feature("getNextBranch")
-  // async getNextBranch(branchId: string): Promise<Record<string, any>> {
-  //   this._ensureAuthenticated();
-  //   return this._makeRequest("GET", `get_next_branch/${branchId}`);
-  // }
-
-  // /**
-  //  * Get the previous branch in a conversation.
-  //  * @param branchId The ID of the branch to get the previous branch for.
-  //  * @returns A promise that resolves to the response from the server.
-  //  */
-  // @feature("getPreviousBranch")
-  // async getPreviousBranch(branchId: string): Promise<Record<string, any>> {
-  //   this._ensureAuthenticated();
-  //   return this._makeRequest("GET", `get_previous_branch/${branchId}`);
-  // }
-
-  // /**
-  //  * Branch at a specific message in a conversation.
-  //  * @param conversationId The ID of the conversation to branch.
-  //  * @param message_id The ID of the message to branch at.
-  //  * @returns A promise that resolves to the response from the server.
-  //  */
-  // @feature("branchAtMessage")
-  // async branchAtMessage(
-  //   conversationId: string,
-  //   message_id: string,
-  // ): Promise<Record<string, any>> {
-  //   this._ensureAuthenticated();
-  //   return this._makeRequest(
-  //     "POST",
-  //     `branch_at_message/${conversationId}/${message_id}`,
-  //   );
-  // }
-
-  /**
-   * Delete a conversation by its ID.
-   * @param conversationId The ID of the conversation to delete.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("deleteConversation")
-  async deleteConversation(
-    conversationId: string,
-  ): Promise<Record<string, any>> {
-    this._ensureAuthenticated();
-    return this._makeRequest("DELETE", `delete_conversation/${conversationId}`);
-  }
-
-  // -----------------------------------------------------------------------------
-  //
-  // Restructure
-  //
-  // -----------------------------------------------------------------------------
-
-  /**
-   * Perform graph enrichment over the entire graph.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("enrichGraph")
-  async enrichGraph(): Promise<any> {
-    this._ensureAuthenticated();
-    return await this._makeRequest("POST", "enrich_graph");
-  }
-
-  // -----------------------------------------------------------------------------
-  //
-  // Retrieval
-  //
-  // -----------------------------------------------------------------------------
-
-  /**
-   * Conduct a vector and/or KG search.
-   * @param query The query to search for.
-   * @param vector_search_settings Vector search settings.
-   * @param kg_search_settings KG search settings.
-   * @returns
-   */
-  @feature("search")
-  async search(
-    query: string,
-    vector_search_settings?: VectorSearchSettings | Record<string, any>,
-    kg_search_settings?: KGSearchSettings | Record<string, any>,
-  ): Promise<any> {
-    this._ensureAuthenticated();
-
-    const json_data: Record<string, any> = {
-      query,
-      vector_search_settings,
-      kg_search_settings,
-    };
-
-    Object.keys(json_data).forEach(
-      (key) => json_data[key] === undefined && delete json_data[key],
-    );
-
-    return await this._makeRequest("POST", "search", { data: json_data });
-  }
-
-  /**
-   * Conducts a Retrieval Augmented Generation (RAG) search with the given query.
-   * @param query The query to search for.
-   * @param vector_search_settings Vector search settings.
-   * @param kg_search_settings KG search settings.
-   * @param rag_generation_config RAG generation configuration.
-   * @param task_prompt_override Task prompt override.
-   * @param include_title_if_available Include title if available.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("rag")
-  async rag(
-    query: string,
-    vector_search_settings?: VectorSearchSettings | Record<string, any>,
-    kg_search_settings?: KGSearchSettings | Record<string, any>,
-    rag_generation_config?: GenerationConfig | Record<string, any>,
-    task_prompt_override?: string,
-    include_title_if_available?: boolean,
-  ): Promise<any | AsyncGenerator<string, void, unknown>> {
-    this._ensureAuthenticated();
-
-    const json_data: Record<string, any> = {
-      query,
-      vector_search_settings,
-      kg_search_settings,
-      rag_generation_config,
-      task_prompt_override,
-      include_title_if_available,
-    };
-
-    Object.keys(json_data).forEach(
-      (key) => json_data[key] === undefined && delete json_data[key],
-    );
-
-    if (rag_generation_config && rag_generation_config.stream) {
-      return this.streamRag(json_data);
-    } else {
-      return await this._makeRequest("POST", "rag", { data: json_data });
-    }
-  }
-
-  // TODO: can we remove this and pull this into rag?
-  @feature("streamingRag")
-  private async streamRag(
-    rag_data: Record<string, any>,
-  ): Promise<ReadableStream<Uint8Array>> {
-    this._ensureAuthenticated();
-
-    return this._makeRequest<ReadableStream<Uint8Array>>("POST", "rag", {
-      data: rag_data,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      responseType: "stream",
-    });
-  }
-
-  /**
-   * Performs a single turn in a conversation with a RAG agent.
-   * @param messages The messages to send to the agent.
-   * @param vector_search_settings Vector search settings.
-   * @param kg_search_settings KG search settings.
-   * @param rag_generation_config RAG generation configuration.
-   * @param task_prompt_override Task prompt override.
-   * @param include_title_if_available Include title if available.
-   * @returns A promise that resolves to the response from the server.
-   */
-  @feature("agent")
-  async agent(
-    messages: Message[],
-    vector_search_settings?: VectorSearchSettings | Record<string, any>,
-    kg_search_settings?: KGSearchSettings | Record<string, any>,
-    rag_generation_config?: GenerationConfig | Record<string, any>,
-    task_prompt_override?: string,
-    include_title_if_available?: boolean,
-  ): Promise<any | AsyncGenerator<string, void, unknown>> {
-    this._ensureAuthenticated();
-
-    const json_data: Record<string, any> = {
-      messages,
-      vector_search_settings,
-      kg_search_settings,
-      rag_generation_config,
-      task_prompt_override,
-      include_title_if_available,
-    };
-
-    Object.keys(json_data).forEach(
-      (key) => json_data[key] === undefined && delete json_data[key],
-    );
-
-    if (rag_generation_config && rag_generation_config.stream) {
-      return this.streamAgent(json_data);
-    } else {
-      return await this._makeRequest("POST", "agent", { data: json_data });
-    }
-  }
-
-  // TODO: can we remove this and pull this into agent?
-  @feature("streamingAgent")
-  private async streamAgent(
-    agent_data: Record<string, any>,
-  ): Promise<ReadableStream<Uint8Array>> {
-    this._ensureAuthenticated();
-
-    return this._makeRequest<ReadableStream<Uint8Array>>("POST", "agent", {
-      data: agent_data,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      responseType: "stream",
-    });
+    super.setTokens(accessToken || "", refreshToken || "");
+    this.setTokensCallback?.(accessToken, refreshToken);
   }
 }
 

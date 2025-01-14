@@ -2,14 +2,26 @@
 from io import BytesIO
 from typing import AsyncGenerator
 
-from core.base.abstractions import DataType
 from core.base.parsers.base_parser import AsyncParser
+from core.base.providers import (
+    CompletionProvider,
+    DatabaseProvider,
+    IngestionConfig,
+)
 
 
-class XLSXParser(AsyncParser[DataType]):
+class XLSXParser(AsyncParser[str | bytes]):
     """A parser for XLSX data."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+    ):
+        self.database_provider = database_provider
+        self.llm_provider = llm_provider
+        self.config = config
         try:
             from openpyxl import load_workbook
 
@@ -32,11 +44,15 @@ class XLSXParser(AsyncParser[DataType]):
                 yield ", ".join(map(str, row))
 
 
-class XLSXParserAdvanced(AsyncParser[DataType]):
+class XLSXParserAdvanced(AsyncParser[str | bytes]):
     """A parser for XLSX data."""
 
     # identifies connected components in the excel graph and extracts data from each component
-    def __init__(self):
+    def __init__(
+        self, config: IngestionConfig, llm_provider: CompletionProvider
+    ):
+        self.llm_provider = llm_provider
+        self.config = config
         try:
             import networkx as nx
             import numpy as np

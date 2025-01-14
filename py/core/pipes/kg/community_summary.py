@@ -1,43 +1,38 @@
-import random
 import asyncio
-import json
 import logging
+import random
+import re
 import time
-from typing import Any, AsyncGenerator, Optional
-from uuid import UUID
+import xml.etree.ElementTree as ET
+from typing import Any, AsyncGenerator
+from uuid import UUID, uuid4
 
 from core.base import (
     AsyncPipe,
     AsyncState,
-    CommunityReport,
+    Community,
     CompletionProvider,
     EmbeddingProvider,
     GenerationConfig,
-    KGProvider,
-    PipeType,
-    PromptProvider,
-    R2RLoggingProvider,
 )
+from core.base.abstractions import Entity, Relationship
 
-from shared.abstractions.graph import Entity, Triple
+from ...database.postgres import PostgresDatabaseProvider
 
 logger = logging.getLogger()
 
 
-class KGCommunitySummaryPipe(AsyncPipe):
+class GraphCommunitySummaryPipe(AsyncPipe):
     """
-    Clusters entities and triples into communities within the knowledge graph using hierarchical Leiden algorithm.
+    Clusters entities and relationships into communities within the knowledge graph using hierarchical Leiden algorithm.
     """
 
     def __init__(
         self,
-        kg_provider: KGProvider,
+        database_provider: PostgresDatabaseProvider,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
-        type: PipeType = PipeType.OTHER,
         *args,
         **kwargs,
     ):
@@ -45,41 +40,39 @@ class KGCommunitySummaryPipe(AsyncPipe):
         Initializes the KG clustering pipe with necessary components and configurations.
         """
         super().__init__(
-            pipe_logger=pipe_logger,
-            type=type,
             config=config
-            or AsyncPipe.PipeConfig(name="kg_community_summary_pipe"),
+            or AsyncPipe.PipeConfig(name="graph_community_summary_pipe"),
         )
-        self.kg_provider = kg_provider
+        self.database_provider = database_provider
         self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
     async def community_summary_prompt(
         self,
         entities: list[Entity],
-        triples: list[Triple],
+        relationships: list[Relationship],
         max_summary_input_length: int,
     ):
-
         entity_map: dict[str, dict[str, list[Any]]] = {}
         for entity in entities:
             if not entity.name in entity_map:
-                entity_map[entity.name] = {"entities": [], "triples": []}
-            entity_map[entity.name]["entities"].append(entity)
+                entity_map[entity.name] = {"entities": [], "relationships": []}  # type: ignore
+            entity_map[entity.name]["entities"].append(entity)  # type: ignore
 
-        for triple in triples:
-            if not triple.subject in entity_map:
-                entity_map[triple.subject] = {
+        for relationship in relationships:
+            if not relationship.subject in entity_map:
+                entity_map[relationship.subject] = {  # type: ignore
                     "entities": [],
-                    "triples": [],
+                    "relationships": [],
                 }
-            entity_map[triple.subject]["triples"].append(triple)
+            entity_map[relationship.subject]["relationships"].append(  # type: ignore
+                relationship
+            )
 
-        # sort in descending order of triple count
+        # sort in descending order of relationship count
         sorted_entity_map = sorted(
             entity_map.items(),
-            key=lambda x: len(x[1]["triples"]),
+            key=lambda x: len(x[1]["relationships"]),
             reverse=True,
         )
 
@@ -97,15 +90,17 @@ class KGCommunitySummaryPipe(AsyncPipe):
                 for entity in sampled_entities
             )
 
-        async def _get_triples_string(triples: list, max_count: int = 100):
-            sampled_triples = (
-                random.sample(triples, max_count)
-                if len(triples) > max_count
-                else triples
+        async def _get_relationships_string(
+            relationships: list, max_count: int = 100
+        ):
+            sampled_relationships = (
+                random.sample(relationships, max_count)
+                if len(relationships) > max_count
+                else relationships
             )
             return "\n".join(
-                f"{triple.id},{triple.subject},{triple.object},{triple.predicate},{triple.description}"
-                for triple in sampled_triples
+                f"{relationship.id},{relationship.subject},{relationship.object},{relationship.predicate},{relationship.description}"
+                for relationship in sampled_relationships
             )
 
         prompt = ""
@@ -113,14 +108,16 @@ class KGCommunitySummaryPipe(AsyncPipe):
             entity_descriptions = await _get_entity_descriptions_string(
                 entity_data["entities"]
             )
-            triples = await _get_triples_string(entity_data["triples"])
+            relationships = await _get_relationships_string(
+                entity_data["relationships"]
+            )
 
             prompt += f"""
             Entity: {entity_name}
             Descriptions:
                 {entity_descriptions}
-            Triples:
-                {triples}
+            Relationships:
+                {relationships}
             """
 
             if len(prompt) > max_summary_input_length:
@@ -135,96 +132,129 @@ class KGCommunitySummaryPipe(AsyncPipe):
 
     async def process_community(
         self,
-        community_number: int,
+        community_id: UUID,
         max_summary_input_length: int,
         generation_config: GenerationConfig,
         collection_id: UUID,
+        nodes: list[str],
+        all_entities: list[Entity],
+        all_relationships: list[Relationship],
     ) -> dict:
         """
         Process a community by summarizing it and creating a summary embedding and storing it to a database.
         """
 
-        community_level, entities, triples = (
-            await self.kg_provider.get_community_details(
-                community_number=community_number
-            )
+        response = await self.database_provider.collections_handler.get_collections_overview(
+            offset=0,
+            limit=1,
+            filter_collection_ids=[collection_id],
+        )
+        collection_description = (
+            response["results"][0].description if response["results"] else None
         )
 
-        if entities == [] and triples == []:
+        entities = [entity for entity in all_entities if entity.name in nodes]
+        relationships = [
+            relationship
+            for relationship in all_relationships
+            if relationship.subject in nodes and relationship.object in nodes
+        ]
+
+        if not entities and not relationships:
             raise ValueError(
-                f"Community {community_number} has no entities or triples."
+                f"Community {community_id} has no entities or relationships."
             )
+
+        input_text = await self.community_summary_prompt(
+            entities,
+            relationships,
+            max_summary_input_length,
+        )
 
         for attempt in range(3):
-
-            description = (
-                (
-                    await self.llm_provider.aget_completion(
-                        messages=await self.prompt_provider._get_message_payload(
-                            task_prompt_name=self.kg_provider.config.kg_enrichment_settings.community_reports_prompt,
-                            task_inputs={
-                                "input_text": (
-                                    await self.community_summary_prompt(
-                                        entities,
-                                        triples,
-                                        max_summary_input_length,
-                                    )
-                                ),
-                            },
-                        ),
-                        generation_config=generation_config,
-                    )
-                )
-                .choices[0]
-                .message.content
-            )
-
             try:
-                if description and description.startswith("```json"):
-                    description = (
-                        description.strip("```json").strip("```").strip()
+                description = (
+                    (
+                        await self.llm_provider.aget_completion(
+                            messages=await self.database_provider.prompts_handler.get_message_payload(
+                                task_prompt_name=self.database_provider.config.graph_enrichment_settings.graphrag_communities,
+                                task_inputs={
+                                    "collection_description": collection_description,
+                                    "input_text": input_text,
+                                },
+                            ),
+                            generation_config=generation_config,
+                        )
                     )
-                else:
+                    .choices[0]
+                    .message.content
+                )
+
+                # Extract XML content
+                match = re.search(
+                    r"<community>.*?</community>", description, re.DOTALL
+                )
+                if not match:
                     raise ValueError(
-                        f"Failed to generate a summary for community {community_number} at level {community_level}."
+                        "Could not find community XML tags in response"
                     )
 
-                description_dict = json.loads(description)
-                name = description_dict["name"]
-                summary = description_dict["summary"]
-                findings = description_dict["findings"]
-                rating = description_dict["rating"]
-                rating_explanation = description_dict["rating_explanation"]
-                break
+                xml_content = match.group(0)
+                root = ET.fromstring(xml_content)
+
+                # Extract available fields, defaulting to None if not found
+                name = root.find("name")
+                summary = root.find("summary")
+                rating = root.find("rating")
+                rating_explanation = root.find("rating_explanation")
+                findings_elem = root.find("findings")
+
+                community = Community(
+                    community_id=community_id,
+                    collection_id=collection_id,
+                    name=name.text if name is not None else "",
+                    summary=summary.text if summary is not None else "",
+                    rating=float(rating.text) if rating is not None else None,
+                    rating_explanation=(
+                        rating_explanation.text
+                        if rating_explanation is not None
+                        else None
+                    ),
+                    findings=(
+                        [f.text for f in findings_elem.findall("finding")]
+                        if findings_elem is not None
+                        else []
+                    ),
+                    description_embedding=await self.embedding_provider.async_get_embedding(
+                        "Summary:\n"
+                        + (summary.text if summary is not None else "")
+                        + "\n\nFindings:\n"
+                        + "\n".join(
+                            [f.text for f in findings_elem.findall("finding")]
+                            if findings_elem is not None
+                            else []
+                        )
+                    ),
+                )
+
+                await self.database_provider.graphs_handler.add_community(
+                    community
+                )
+                return {
+                    "community_id": community.community_id,
+                    "name": community.name,
+                }
+
             except Exception as e:
                 if attempt == 2:
-                    raise ValueError(
-                        f"Failed to generate a summary for community {community_number} at level {community_level}."
-                    ) from e
-
-        community_report = CommunityReport(
-            community_number=community_number,
-            collection_id=collection_id,
-            level=community_level,
-            name=name,
-            summary=summary,
-            rating=rating,
-            rating_explanation=rating_explanation,
-            findings=findings,
-            embedding=await self.embedding_provider.async_get_embedding(
-                "Summary:\n"
-                + summary
-                + "\n\nFindings:\n"
-                + "\n".join(findings)
-            ),
-        )
-
-        await self.kg_provider.add_community_report(community_report)
-
-        return {
-            "community_number": community_report.community_number,
-            "name": community_report.name,
-        }
+                    logger.error(
+                        f"GraphCommunitySummaryPipe: Error generating community summary for community {community_id}: {e}"
+                    )
+                    return {
+                        "community_id": community_id,
+                        "error": str(e),
+                    }
+                await asyncio.sleep(1)
 
     async def _run_logic(  # type: ignore
         self,
@@ -244,40 +274,97 @@ class KGCommunitySummaryPipe(AsyncPipe):
         limit = input.message["limit"]
         generation_config = input.message["generation_config"]
         max_summary_input_length = input.message["max_summary_input_length"]
-        collection_id = input.message["collection_id"]
+        collection_id = input.message.get("collection_id", None)
+        clustering_mode = input.message.get("clustering_mode", None)
         community_summary_jobs = []
         logger = input.message.get("logger", logging.getLogger())
 
         # check which community summaries exist and don't run them again
         logger.info(
-            f"KGCommunitySummaryPipe: Checking if community summaries exist for communities {offset} to {offset + limit}"
+            f"GraphCommunitySummaryPipe: Checking if community summaries exist for communities {offset} to {offset + limit}"
         )
-        community_numbers_exist = (
-            await self.kg_provider.check_community_reports_exist(
-                collection_id=collection_id, offset=offset, limit=limit
+
+        (
+            all_entities,
+            _,
+        ) = await self.database_provider.graphs_handler.get_entities(
+            parent_id=collection_id,
+            offset=0,
+            limit=-1,
+            include_embeddings=False,
+        )
+
+        (
+            all_relationships,
+            _,
+        ) = await self.database_provider.graphs_handler.get_relationships(
+            parent_id=collection_id,
+            offset=0,
+            limit=-1,
+            include_embeddings=False,
+        )
+
+        # Perform clustering
+        leiden_params = input.message.get("leiden_params", {})
+        (
+            _,
+            community_clusters,
+        ) = await self.database_provider.graphs_handler._cluster_and_add_community_info(
+            relationships=all_relationships,
+            leiden_params=leiden_params,
+            collection_id=collection_id,
+            clustering_mode=clustering_mode,
+        )
+
+        # Organize clusters
+        clusters: dict[Any, Any] = {}
+        for item in community_clusters:
+            cluster_id = (
+                item["cluster"]
+                if clustering_mode == "remote"
+                else item.cluster
             )
-        )
+            if cluster_id not in clusters:
+                clusters[cluster_id] = []
+            clusters[cluster_id].append(
+                item["node"] if clustering_mode == "remote" else item.node
+            )
 
-        logger.info(
-            f"KGCommunitySummaryPipe: Community summaries exist for communities {len(community_numbers_exist)}"
-        )
-
-        for community_number in range(offset, offset + limit):
-            if community_number not in community_numbers_exist:
-                community_summary_jobs.append(
-                    self.process_community(
-                        community_number=community_number,
-                        max_summary_input_length=max_summary_input_length,
-                        generation_config=generation_config,
-                        collection_id=collection_id,
-                    )
+        # Now, process the clusters
+        for _, nodes in clusters.items():
+            community_summary_jobs.append(
+                self.process_community(
+                    community_id=uuid4(),
+                    nodes=nodes,
+                    all_entities=all_entities,
+                    all_relationships=all_relationships,
+                    max_summary_input_length=max_summary_input_length,
+                    generation_config=generation_config,
+                    collection_id=collection_id,
                 )
+            )
 
+        total_jobs = len(community_summary_jobs)
+        total_errors = 0
         completed_community_summary_jobs = 0
         for community_summary in asyncio.as_completed(community_summary_jobs):
+            summary = await community_summary
             completed_community_summary_jobs += 1
             if completed_community_summary_jobs % 50 == 0:
                 logger.info(
-                    f"KGCommunitySummaryPipe: {completed_community_summary_jobs}/{len(community_summary_jobs)} community summaries completed, elapsed time: {time.time() - start_time:.2f} seconds"
+                    f"GraphCommunitySummaryPipe: {completed_community_summary_jobs}/{total_jobs} community summaries completed, elapsed time: {time.time() - start_time:.2f} seconds"
                 )
-            yield await community_summary
+
+            if "error" in summary:
+                logger.error(
+                    f"GraphCommunitySummaryPipe: Error generating community summary for community {summary['community_id']}: {summary['error']}"
+                )
+                total_errors += 1
+                continue
+
+            yield summary
+
+        if total_errors > 0:
+            raise ValueError(
+                f"GraphCommunitySummaryPipe: Failed to generate community summaries for {total_errors} out of {total_jobs} communities. Please rerun the job if there are too many failures."
+            )

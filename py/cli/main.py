@@ -1,74 +1,151 @@
+import json
+from typing import Any
+
+import asyncclick as click
+from rich.console import Console
+
 from cli.command_group import cli
 from cli.commands import (
-    auth,
-    ingestion,
-    kg,
-    management,
+    collections,
+    config,
+    conversations,
+    database,
+    documents,
+    graphs,
+    indices,
+    prompts,
     retrieval,
-    server,
-    templates,
+    system,
+    users,
 )
 from cli.utils.telemetry import posthog, telemetry
+from r2r import R2RAsyncClient
+
+from .command_group import CONFIG_DIR, CONFIG_FILE, load_config
+
+console = Console()
 
 
 def add_command_with_telemetry(command):
     cli.add_command(telemetry(command))
 
 
-# Auth
-add_command_with_telemetry(auth.generate_private_key)
+# Chunks
+add_command_with_telemetry(collections.collections)
+add_command_with_telemetry(conversations.conversations)
+add_command_with_telemetry(documents.documents)
+add_command_with_telemetry(graphs.graphs)
 
-# Ingestion
-add_command_with_telemetry(ingestion.ingest_files)
-add_command_with_telemetry(ingestion.update_files)
-add_command_with_telemetry(ingestion.ingest_sample_file)
-add_command_with_telemetry(ingestion.ingest_sample_files)
-add_command_with_telemetry(ingestion.ingest_sample_files_from_unstructured)
+# Graph
+add_command_with_telemetry(indices.indices)
+add_command_with_telemetry(prompts.prompts)
+add_command_with_telemetry(retrieval.retrieval)
+add_command_with_telemetry(users.users)
+add_command_with_telemetry(system.system)
 
-# Management
-add_command_with_telemetry(management.analytics)
-add_command_with_telemetry(management.app_settings)
-add_command_with_telemetry(management.users_overview)
-add_command_with_telemetry(management.documents_overview)
-add_command_with_telemetry(management.document_chunks)
 
-# Restructure
-add_command_with_telemetry(kg.create_graph)
-add_command_with_telemetry(kg.enrich_graph)
+# Database
+add_command_with_telemetry(database.db)
+add_command_with_telemetry(database.upgrade)
+add_command_with_telemetry(database.downgrade)
+add_command_with_telemetry(database.current)
+add_command_with_telemetry(database.history)
 
-# Retrieval
-add_command_with_telemetry(retrieval.search)
-add_command_with_telemetry(retrieval.rag)
-
-# Server
-add_command_with_telemetry(server.health)
-add_command_with_telemetry(server.server_stats)
-add_command_with_telemetry(server.logs)
-add_command_with_telemetry(server.docker_down)
-add_command_with_telemetry(server.generate_report)
-add_command_with_telemetry(server.serve)
-add_command_with_telemetry(server.update)
-add_command_with_telemetry(server.version)
-
-# Templates
-add_command_with_telemetry(templates.clone)
+add_command_with_telemetry(config.configure)
 
 
 def main():
     try:
-        cli(_anyio_backend="asyncio")
+        cli()
     except SystemExit:
-        # Silently exit without printing the traceback
         pass
     except Exception as e:
-        # Handle other exceptions if needed
-        print("CLI error: An error occurred")
-        raise e
+        console.print("[red]CLI error: An error occurred[/red]")
+        console.print_exception()
     finally:
-        # Ensure all events are flushed before exiting
         if posthog:
             posthog.flush()
             posthog.shutdown()
+
+
+def _ensure_config_dir_exists() -> None:
+    """Ensure that the ~/.r2r/ directory exists."""
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def save_config(config_data: dict[str, Any]) -> None:
+    """
+    Persist the given config data to ~/.r2r/config.json.
+    """
+    _ensure_config_dir_exists()
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(config_data, f, indent=2)
+
+
+@cli.command("set-api-key", short_help="Set your R2R API key")
+@click.argument("api_key", required=True, type=str)
+@click.pass_context
+async def set_api_key(ctx, api_key: str):
+    """
+    Store your R2R API key locally so you don’t have to pass it on every command.
+    Example usage:
+      r2r set-api sk-1234abcd
+    """
+    try:
+        # 1) Load existing config
+        config = load_config()
+
+        # 2) Overwrite or add the API key
+        config["api_key"] = api_key
+
+        # 3) Save changes
+        save_config(config)
+
+        console.print("[green]API key set successfully![/green]")
+    except Exception as e:
+        console.print("[red]Failed to set API key:[/red]", str(e))
+
+
+# Commands for Setting / Retrieving Base URL
+#
+@cli.command("set-api-base", short_help="Set your R2R API base URL")
+@click.argument("base_url", required=True, type=str)
+@click.pass_context
+async def set_api_base(ctx, base_url: str):
+    """
+    Store your R2R API base URL locally so you don’t have to pass it on every command.
+    Example usage:
+      r2r set-api-base https://api.example.com
+    """
+    try:
+        config = load_config()
+        config["api_base"] = base_url
+        save_config(config)
+        console.print("[green]API base URL set successfully![/green]")
+    except Exception as e:
+        console.print("[red]Failed to set API base:[/red]", str(e))
+
+
+@cli.command("get-api", short_help="Get your stored R2R API key")
+@click.pass_context
+async def get_api(ctx):
+    """
+    Display your stored R2R API key.
+    Example usage:
+      r2r get-api
+    """
+    try:
+        config = load_config()
+        api_key = config.get("api_key")
+
+        if api_key:
+            console.print(f"API Key: {api_key}")
+        else:
+            console.print(
+                "[yellow]No API key found. Set one using 'r2r set-api <key>'[/yellow]"
+            )
+    except Exception as e:
+        console.print("[red]Failed to retrieve API key:[/red]", str(e))
 
 
 if __name__ == "__main__":

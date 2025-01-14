@@ -1,34 +1,25 @@
 import asyncio
 import logging
-from typing import Any, AsyncGenerator, List, Optional
+from typing import Any, AsyncGenerator
 from uuid import UUID
 
-from core.base import (
-    AsyncState,
-    EmbeddingProvider,
-    KGExtraction,
-    PipeType,
-    R2RDocumentProcessingError,
-    R2RLoggingProvider,
-)
+from core.base import AsyncState, KGExtraction, R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
-from core.base.providers import KGProvider
+from core.database import PostgresDatabaseProvider
 
 logger = logging.getLogger()
 
 
-class KGStoragePipe(AsyncPipe):
+class GraphStoragePipe(AsyncPipe):
     # TODO - Apply correct type hints to storage messages
     class Input(AsyncPipe.Input):
-        message: AsyncGenerator[List[Any], None]
+        message: AsyncGenerator[list[Any], None]
 
     def __init__(
         self,
-        kg_provider: KGProvider,
+        database_provider: PostgresDatabaseProvider,
         config: AsyncPipe.PipeConfig,
         storage_batch_size: int = 1,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
-        type: PipeType = PipeType.INGESTOR,
         *args,
         **kwargs,
     ):
@@ -36,33 +27,61 @@ class KGStoragePipe(AsyncPipe):
         Initializes the async knowledge graph storage pipe with necessary components and configurations.
         """
         logger.info(
-            f"Initializing an `KGStoragePipe` to store knowledge graph extractions in a graph database."
+            f"Initializing an `GraphStoragePipe` to store knowledge graph extractions in a graph database."
         )
 
         super().__init__(
             config,
-            type,
-            pipe_logger,
             *args,
             **kwargs,
         )
-        self.kg_provider = kg_provider
+        self.database_provider = database_provider
         self.storage_batch_size = storage_batch_size
 
     async def store(
         self,
         kg_extractions: list[KGExtraction],
-    ) -> None:
+    ):
         """
         Stores a batch of knowledge graph extractions in the graph database.
         """
-        try:
-            await self.kg_provider.add_kg_extractions(kg_extractions)
-            return
-        except Exception as e:
-            error_message = f"Failed to store knowledge graph extractions in the database: {e}"
-            logger.error(error_message)
-            raise ValueError(error_message)
+
+        total_entities, total_relationships = 0, 0
+
+        for extraction in kg_extractions:
+            total_entities, total_relationships = (
+                total_entities + len(extraction.entities),
+                total_relationships + len(extraction.relationships),
+            )
+
+            if extraction.entities:
+                if not extraction.entities[0].chunk_ids:
+                    for i in range(len(extraction.entities)):
+                        extraction.entities[i].chunk_ids = extraction.chunk_ids
+                        extraction.entities[i].parent_id = (
+                            extraction.document_id
+                        )
+
+                for entity in extraction.entities:
+                    await self.database_provider.graphs_handler.entities.create(
+                        **entity.to_dict()
+                    )
+
+            if extraction.relationships:
+                if not extraction.relationships[0].chunk_ids:
+                    for i in range(len(extraction.relationships)):
+                        extraction.relationships[i].chunk_ids = (
+                            extraction.chunk_ids
+                        )
+                    extraction.relationships[i].document_id = (
+                        extraction.document_id
+                    )
+
+                await self.database_provider.graphs_handler.relationships.create(
+                    extraction.relationships,
+                )
+
+            return (total_entities, total_relationships)
 
     async def _run_logic(  # type: ignore
         self,
@@ -71,7 +90,7 @@ class KGStoragePipe(AsyncPipe):
         run_id: UUID,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[List[R2RDocumentProcessingError], None]:
+    ) -> AsyncGenerator[list[R2RDocumentProcessingError], None]:
         """
         Executes the async knowledge graph storage pipe: storing knowledge graph extractions in the graph database.
         """

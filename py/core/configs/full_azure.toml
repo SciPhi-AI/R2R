@@ -1,0 +1,54 @@
+# A config which overrides all instances of `openai` with `azure` in the `r2r.toml` config
+[completion]
+provider = "litellm"
+concurrent_request_limit = 128
+
+  [completion.generation_config]
+  model = "azure/gpt-4o"
+
+[agent]
+  [agent.generation_config]
+  model = "azure/gpt-4o"
+
+[database]
+  [database.graph_creation_settings]
+    clustering_mode = "remote"
+    generation_config = { model = "azure/gpt-4o-mini" }
+
+  [database.graph_enrichment_settings]
+    generation_config = { model = "azure/gpt-4o-mini" }
+
+  [database.graph_search_settings]
+    generation_config = { model = "azure/gpt-4o-mini" }
+
+[embedding]
+provider = "litellm"
+base_model = "azure/text-embedding-3-small"
+base_dimension = 512
+
+[file]
+provider = "postgres"
+
+[ingestion]
+provider = "unstructured_local"
+strategy = "auto"
+chunking_strategy = "by_title"
+new_after_n_chars = 2_048
+max_characters = 4_096
+combine_under_n_chars = 1_024
+overlap = 1_024
+document_summary_model = "azure/gpt-4o-mini"
+vision_img_model = "azure/gpt-4o"
+vision_pdf_model = "azure/gpt-4o"
+
+  [ingestion.extra_parsers]
+    pdf = "zerox"
+
+  [ingestion.chunk_enrichment_settings]
+    generation_config = { model = "azure/gpt-4o-mini" }
+
+[orchestration]
+provider = "hatchet"
+kg_creation_concurrency_limit = 32
+ingestion_concurrency_limit = 4
+kg_concurrency_limit = 8

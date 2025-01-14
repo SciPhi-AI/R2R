@@ -1,7 +1,6 @@
 import logging
 import os
 from enum import Enum
-from pathlib import Path
 from typing import Any, Optional
 
 import toml
@@ -9,18 +8,16 @@ from pydantic import BaseModel
 
 from ..base.abstractions import GenerationConfig
 from ..base.agent.agent import AgentConfig
-from ..base.logging.r2r_logger import LoggingConfig
 from ..base.providers import AppConfig
 from ..base.providers.auth import AuthConfig
 from ..base.providers.crypto import CryptoConfig
 from ..base.providers.database import DatabaseConfig
+from ..base.providers.email import EmailConfig
 from ..base.providers.embedding import EmbeddingConfig
-from ..base.providers.file import FileConfig
 from ..base.providers.ingestion import IngestionConfig
-from ..base.providers.kg import KGConfig
 from ..base.providers.llm import CompletionConfig
 from ..base.providers.orchestration import OrchestrationConfig
-from ..base.providers.prompt import PromptConfig
+from ..base.utils import deep_update
 
 logger = logging.getLogger()
 
@@ -29,7 +26,7 @@ class R2RConfig:
     current_file_path = os.path.dirname(__file__)
     config_dir_root = os.path.join(current_file_path, "..", "configs")
     default_config_path = os.path.join(
-        current_file_path, "..", "..", "r2r.toml"
+        current_file_path, "..", "..", "r2r", "r2r.toml"
     )
 
     CONFIG_OPTIONS: dict[str, Optional[str]] = {}
@@ -44,6 +41,7 @@ class R2RConfig:
         "app": [],
         "completion": ["provider"],
         "crypto": ["provider"],
+        "email": ["provider"],
         "auth": ["provider"],
         "embedding": [
             "provider",
@@ -52,17 +50,11 @@ class R2RConfig:
             "batch_size",
             "add_title_as_prefix",
         ],
+        # TODO - deprecated, remove
         "ingestion": ["provider"],
-        "kg": [
-            "provider",
-            "batch_size",
-            "kg_enrichment_settings",
-        ],
         "logging": ["provider", "log_table"],
-        "prompt": ["provider"],
         "database": ["provider"],
         "agent": ["generation_config"],
-        "file": ["provider"],
         "orchestration": ["provider"],
     }
 
@@ -72,17 +64,12 @@ class R2RConfig:
     crypto: CryptoConfig
     database: DatabaseConfig
     embedding: EmbeddingConfig
+    email: EmailConfig
     ingestion: IngestionConfig
-    kg: KGConfig
-    logging: LoggingConfig
-    prompt: PromptConfig
     agent: AgentConfig
-    file: FileConfig
     orchestration: OrchestrationConfig
 
-    def __init__(
-        self, config_data: dict[str, Any], base_path: Optional[Path] = None
-    ):
+    def __init__(self, config_data: dict[str, Any]):
         """
         :param config_data: dictionary of configuration parameters
         :param base_path: base path when a relative path is specified for the prompts directory
@@ -91,49 +78,44 @@ class R2RConfig:
         default_config = self.load_default_config()
 
         # Override the default configuration with the passed configuration
-        for key in config_data:
-            if key in default_config:
-                default_config[key].update(config_data[key])
-            else:
-                default_config[key] = config_data[key]
+        default_config = deep_update(default_config, config_data)
 
         # Validate and set the configuration
         for section, keys in R2RConfig.REQUIRED_KEYS.items():
             # Check the keys when provider is set
-            # TODO - Clean up robust null checks
+            # TODO - remove after deprecation
+            if section in ["kg", "file"] and section not in default_config:
+                continue
             if "provider" in default_config[section] and (
                 default_config[section]["provider"] is not None
                 and default_config[section]["provider"] != "None"
                 and default_config[section]["provider"] != "null"
             ):
                 self._validate_config_section(default_config, section, keys)
-                if (
-                    section == "prompt"
-                    and "file_path" in default_config[section]
-                    and not Path(
-                        default_config[section]["file_path"]
-                    ).is_absolute()
-                    and base_path
-                ):
-                    # Make file_path absolute and relative to the base path
-                    default_config[section]["file_path"] = str(
-                        base_path / default_config[section]["file_path"]
-                    )
             setattr(self, section, default_config[section])
 
+        # TODO - deprecated, remove
+        try:
+            if self.kg.keys() != []:  # type: ignore
+                logger.warning(
+                    "The 'kg' section is deprecated. Please move your arguments to the 'database' section instead."
+                )
+                self.database.update(self.kg)  # type: ignore
+        except:
+            pass
         self.app = AppConfig.create(**self.app)  # type: ignore
         self.auth = AuthConfig.create(**self.auth, app=self.app)  # type: ignore
         self.completion = CompletionConfig.create(**self.completion, app=self.app)  # type: ignore
         self.crypto = CryptoConfig.create(**self.crypto, app=self.app)  # type: ignore
+        self.email = EmailConfig.create(**self.email, app=self.app)  # type: ignore
         self.database = DatabaseConfig.create(**self.database, app=self.app)  # type: ignore
         self.embedding = EmbeddingConfig.create(**self.embedding, app=self.app)  # type: ignore
         self.ingestion = IngestionConfig.create(**self.ingestion, app=self.app)  # type: ignore
-        self.kg = KGConfig.create(**self.kg, app=self.app)  # type: ignore
-        self.logging = LoggingConfig.create(**self.logging, app=self.app)  # type: ignore
-        self.prompt = PromptConfig.create(**self.prompt, app=self.app)  # type: ignore
         self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore
-        self.file = FileConfig.create(**self.file, app=self.app)  # type: ignore
         self.orchestration = OrchestrationConfig.create(**self.orchestration, app=self.app)  # type: ignore
+
+        IngestionConfig.set_default(**self.ingestion.dict())
+
         # override GenerationConfig defaults
         GenerationConfig.set_default(
             **self.completion.generation_config.dict()
@@ -160,13 +142,16 @@ class R2RConfig:
         with open(config_path) as f:
             config_data = toml.load(f)
 
-        return cls(config_data, base_path=Path(config_path).parent)
+        return cls(config_data)
 
     def to_toml(self):
-        config_data = {
-            section: self._serialize_config(getattr(self, section))
-            for section in R2RConfig.REQUIRED_KEYS.keys()
-        }
+        config_data = {}
+        for section in R2RConfig.REQUIRED_KEYS.keys():
+            section_data = self._serialize_config(getattr(self, section))
+            if isinstance(section_data, dict):
+                # Remove app from nested configs before serializing
+                section_data.pop("app", None)
+            config_data[section] = section_data
         return toml.dumps(config_data)
 
     @classmethod
@@ -176,21 +161,23 @@ class R2RConfig:
 
     @staticmethod
     def _serialize_config(config_section: Any) -> dict:
+        """Serialize config section while excluding internal state"""
         if isinstance(config_section, dict):
             return {
                 R2RConfig._serialize_key(k): R2RConfig._serialize_config(v)
                 for k, v in config_section.items()
+                if k != "app"  # Exclude app from serialization
             }
         elif isinstance(config_section, (list, tuple)):
-            return [  # type: ignore
+            return [
                 R2RConfig._serialize_config(item) for item in config_section
             ]
         elif isinstance(config_section, Enum):
             return config_section.value
         elif isinstance(config_section, BaseModel):
-            return R2RConfig._serialize_config(
-                config_section.model_dump(exclude_none=True)
-            )
+            data = config_section.model_dump(exclude_none=True)
+            data.pop("app", None)  # Remove app from the serialized data
+            return R2RConfig._serialize_config(data)
         else:
             return config_section
 
@@ -205,22 +192,14 @@ class R2RConfig:
         config_path: Optional[str] = None,
     ) -> "R2RConfig":
         if config_path and config_name:
-            raise ValueError("Cannot specify both config_path and config_name")
+            raise ValueError(
+                f"Cannot specify both config_path and config_name. Got: {config_path}, {config_name}"
+            )
 
-        # TODO: Remove CONFIG_PATH and CONFIG_NAME in a future release
-        if (
-            config_path := os.getenv("R2R_CONFIG_PATH")
-            or os.getenv("CONFIG_PATH")
-            or config_path
-        ):
+        if config_path := os.getenv("R2R_CONFIG_PATH") or config_path:
             return cls.from_toml(config_path)
 
-        config_name = (
-            os.getenv("R2R_CONFIG_NAME")
-            or os.getenv("CONFIG_NAME")
-            or config_name
-            or "default"
-        )
+        config_name = os.getenv("R2R_CONFIG_NAME") or config_name or "default"
         if config_name not in R2RConfig.CONFIG_OPTIONS:
             raise ValueError(f"Invalid config name: {config_name}")
         return cls.from_toml(R2RConfig.CONFIG_OPTIONS[config_name])

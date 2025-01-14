@@ -14,13 +14,6 @@ __all__ = [
     "R2RPipelines",
     "R2RAgents",
     ## R2R API
-    # Routes
-    "AuthRouter",
-    "IngestionRouter",
-    "ManagementRouter",
-    "RetrievalRouter",
-    "KGRouter",
-    ## R2R APP
     "R2RApp",
     ## R2R ASSEMBLY
     # Builder
@@ -37,5 +30,5 @@ __all__ = [
     "IngestionService",
     "ManagementService",
     "RetrievalService",
-    "KgService",
+    "GraphService",
 ]

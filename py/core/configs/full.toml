@@ -1,16 +1,25 @@
+[completion]
+provider = "litellm"
+concurrent_request_limit = 128
+
+[database]
+  [database.graph_creation_settings]
+    clustering_mode = "remote"
+
 [ingestion]
 provider = "unstructured_local"
 strategy = "auto"
 chunking_strategy = "by_title"
-new_after_n_chars = 512
-max_characters = 1_024
-combine_under_n_chars = 128
-overlap = 256
+new_after_n_chars = 2_048
+max_characters = 4_096
+combine_under_n_chars = 1_024
+overlap = 1_024
+
     [ingestion.extra_parsers]
-        pdf = "zerox"
+    pdf = "zerox"
 
 [orchestration]
 provider = "hatchet"
 kg_creation_concurrency_limit = 32
-ingestion_concurrency_limit = 128
-kg_enrichment_concurrency_limit = 8
+ingestion_concurrency_limit = 16
+kg_concurrency_limit = 8

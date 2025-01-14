@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from .base import R2RSerializable
 
@@ -44,9 +44,12 @@ class IndexMeasure(str, Enum):
         max_inner_product (str): The maximum inner product measure for indexing.
     """
 
-    cosine_distance = "cosine_distance"
     l2_distance = "l2_distance"
     max_inner_product = "max_inner_product"
+    cosine_distance = "cosine_distance"
+    l1_distance = "l1_distance"
+    hamming_distance = "hamming_distance"
+    jaccard_distance = "jaccard_distance"
 
     def __str__(self) -> str:
         return self.value
@@ -54,9 +57,23 @@ class IndexMeasure(str, Enum):
     @property
     def ops(self) -> str:
         return {
-            IndexMeasure.cosine_distance: "_cosine_ops",
             IndexMeasure.l2_distance: "_l2_ops",
             IndexMeasure.max_inner_product: "_ip_ops",
+            IndexMeasure.cosine_distance: "_cosine_ops",
+            IndexMeasure.l1_distance: "_l1_ops",
+            IndexMeasure.hamming_distance: "_hamming_ops",
+            IndexMeasure.jaccard_distance: "_jaccard_ops",
+        }[self]
+
+    @property
+    def pgvector_repr(self) -> str:
+        return {
+            IndexMeasure.l2_distance: "<->",
+            IndexMeasure.max_inner_product: "<#>",
+            IndexMeasure.cosine_distance: "<=>",
+            IndexMeasure.l1_distance: "<+>",
+            IndexMeasure.hamming_distance: "<~>",
+            IndexMeasure.jaccard_distance: "<%>",
         }[self]
 
 
@@ -92,26 +109,17 @@ class IndexArgsHNSW(R2RSerializable):
     ef_construction: Optional[int] = 64
 
 
-INDEX_MEASURE_TO_SQLA_ACC = {
-    IndexMeasure.cosine_distance: lambda x: x.cosine_distance,
-    IndexMeasure.l2_distance: lambda x: x.l2_distance,
-    IndexMeasure.max_inner_product: lambda x: x.max_inner_product,
-}
-
-
 class VectorTableName(str, Enum):
     """
     This enum represents the different tables where we store vectors.
-
-    # TODO: change the table name of the chunks table. Right now it is called
-    # {r2r_project_name}.{r2r_project_name} due to a bug in the vector class.
     """
 
     CHUNKS = "chunks"
-    ENTITIES = "entity_embedding"
-    # TODO: Add support for triples
-    # TRIPLES = "triple_raw"
-    COMMUNITIES = "community_report"
+    ENTITIES_DOCUMENT = "documents_entities"
+    GRAPHS_ENTITIES = "graphs_entities"
+    # TODO: Add support for relationships
+    # TRIPLES = "relationship"
+    COMMUNITIES = "graphs_communities"
 
     def __str__(self) -> str:
         return self.value
@@ -180,9 +188,9 @@ class Vector(R2RSerializable):
 class VectorEntry(R2RSerializable):
     """A vector entry that can be stored directly in supported vector databases."""
 
-    extraction_id: UUID
+    id: UUID
     document_id: UUID
-    user_id: UUID
+    owner_id: UUID
     collection_ids: list[UUID]
     vector: Vector
     text: str
@@ -192,9 +200,9 @@ class VectorEntry(R2RSerializable):
         """Return a string representation of the VectorEntry."""
         return (
             f"VectorEntry("
-            f"extraction_id={self.extraction_id}, "
+            f"chunk_id={self.id}, "
             f"document_id={self.document_id}, "
-            f"user_id={self.user_id}, "
+            f"owner_id={self.owner_id}, "
             f"collection_ids={self.collection_ids}, "
             f"vector={self.vector}, "
             f"text={self.text}, "
@@ -221,3 +229,16 @@ class StorageResult(R2RSerializable):
     def __repr__(self) -> str:
         """Return an unambiguous string representation of the StorageResult."""
         return self.__str__()
+
+
+class IndexConfig(BaseModel):
+    name: Optional[str] = Field(default=None)
+    table_name: Optional[str] = Field(default=VectorTableName.CHUNKS)
+    index_method: Optional[str] = Field(default=IndexMethod.hnsw)
+    index_measure: Optional[str] = Field(default=IndexMeasure.cosine_distance)
+    index_arguments: Optional[IndexArgsIVFFlat | IndexArgsHNSW] = Field(
+        default=None
+    )
+    index_name: Optional[str] = Field(default=None)
+    index_column: Optional[str] = Field(default=None)
+    concurrently: Optional[bool] = Field(default=True)

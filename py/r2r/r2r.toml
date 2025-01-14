@@ -1,0 +1,184 @@
+[app]
+# app settings are global available like `r2r_config.agent.app`
+# project_name = "r2r_default" # optional, can also set with `R2R_PROJECT_NAME` env var
+default_max_documents_per_user = 10_000
+default_max_chunks_per_user = 10_000_000
+default_max_collections_per_user = 5_000
+
+# Set the default max upload size to 2 GB for local testing
+default_max_upload_size = 2147483648  # 2 GB for anything not explicitly listed
+
+  [app.max_upload_size_by_type]
+    # Common text-based formats
+    txt   = 2147483648  # 2 GB
+    md    = 2147483648
+    tsv   = 2147483648
+    csv   = 2147483648
+    xml   = 2147483648
+    html  = 2147483648
+
+    # Office docs
+    doc   = 2147483648
+    docx  = 2147483648
+    ppt   = 2147483648
+    pptx  = 2147483648
+    xls   = 2147483648
+    xlsx  = 2147483648
+    odt   = 2147483648
+
+    # PDFs
+    pdf   = 2147483648
+
+    # E-mail
+    eml   = 2147483648
+    msg   = 2147483648
+    p7s   = 2147483648
+
+    # Images
+    bmp   = 2147483648
+    heic  = 2147483648
+    jpeg  = 2147483648
+    jpg   = 2147483648
+    png   = 2147483648
+    tiff  = 2147483648
+
+    # E-books and other formats
+    epub  = 2147483648
+    rtf   = 2147483648
+    rst   = 2147483648
+    org   = 2147483648
+
+[agent]
+system_instruction_name = "rag_agent"
+# tool_names = ["local_search", "web_search"] # uncomment to enable web search
+tool_names = ["local_search"]
+
+  [agent.generation_config]
+  model = "openai/gpt-4o"
+
+[auth]
+provider = "r2r"
+access_token_lifetime_in_minutes = 60000 # set a very high default value, for easier testing
+refresh_token_lifetime_in_days = 7
+require_authentication = false
+require_email_verification = false
+default_admin_email = "admin@example.com"
+default_admin_password = "change_me_immediately"
+
+[completion]
+provider = "litellm"
+concurrent_request_limit = 64
+
+  [completion.generation_config]
+  model = "openai/gpt-4o"
+  temperature = 0.1
+  top_p = 1
+  max_tokens_to_sample = 1_024
+  stream = false
+  add_generation_kwargs = { }
+
+[crypto]
+provider = "bcrypt"
+
+[database]
+provider = "postgres"
+default_collection_name = "Default"
+default_collection_description = "Your default collection."
+# collection_summary_system_prompt = 'default_system'
+# collection_summary_task_prompt = 'default_collection_summary'
+
+# KG settings
+batch_size = 256
+
+  [database.graph_creation_settings]
+    clustering_mode = "local"
+    graph_entity_description_prompt = "graphrag_entity_description"
+    entity_types = [] # if empty, all entities are extracted
+    relation_types = [] # if empty, all relations are extracted
+    fragment_merge_count = 1 # number of fragments to merge into a single extraction
+    max_knowledge_relationships = 100
+    max_description_input_length = 65536
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for relationshipt extraction
+
+  [database.graph_enrichment_settings]
+    community_reports_prompt = "graphrag_community_reports"
+    max_summary_input_length = 65536
+    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for node description and graph clustering
+    leiden_params = {}
+
+  [database.graph_search_settings]
+    generation_config = { model = "openai/gpt-4o-mini" }
+
+  [database.limits]
+    # Default fallback limits if no route or user-level overrides are found
+    global_per_min = 300
+    monthly_limit = 10000
+
+  [database.route_limits]
+    # Set the `v3/retrieval/search` route to have a maximum of 5 requests per minute
+    "/v3/retrieval/search" = { route_per_min = 120 }
+    "/v3/retrieval/rag" = { route_per_min = 30 }
+
+[embedding]
+provider = "litellm"
+
+# For basic applications, use `openai/text-embedding-3-small` with `base_dimension = 512`
+
+# RECOMMENDED - For advanced applications,
+# use `openai/text-embedding-3-large` with `base_dimension = 3072` and binary quantization
+base_model = "openai/text-embedding-3-small"
+base_dimension = 512
+
+# rerank_model = "huggingface/mixedbread-ai/mxbai-rerank-large-v1" # reranking model
+
+batch_size = 128
+add_title_as_prefix = false
+concurrent_request_limit = 256
+quantization_settings = { quantization_type = "FP32" }
+
+[file]
+provider = "postgres"
+
+[ingestion]
+provider = "r2r"
+chunking_strategy = "recursive"
+chunk_size = 1_024
+chunk_overlap = 512
+excluded_parsers = ["mp4"]
+
+# Ingestion-time document summary parameters
+# skip_document_summary = False
+# document_summary_system_prompt = 'default_system'
+# document_summary_task_prompt = 'default_summary'
+# chunks_for_document_summary = 128
+document_summary_model = "openai/gpt-4o-mini"
+vision_img_model = "openai/gpt-4o"
+vision_pdf_model = "openai/gpt-4o"
+automatic_extraction = true # enable automatic extraction of entities and relations
+
+  [ingestion.chunk_enrichment_settings]
+    enable_chunk_enrichment = false # disabled by default
+    strategies = ["semantic", "neighborhood"]
+    forward_chunks = 3
+    backward_chunks = 3
+    semantic_neighbors = 10
+    semantic_similarity_threshold = 0.7
+    generation_config = { model = "openai/gpt-4o-mini" }
+
+  [ingestion.extra_parsers]
+    pdf = "zerox"
+
+[logging]
+provider = "r2r"
+log_table = "logs"
+log_info_table = "log_info"
+
+[orchestration]
+provider = "simple"
+
+
+[prompt]
+provider = "r2r"
+
+[email]
+provider = "console_mock"

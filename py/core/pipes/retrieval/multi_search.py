@@ -1,13 +1,13 @@
 from copy import copy, deepcopy
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
 from core.base.abstractions import (
+    ChunkSearchResult,
     GenerationConfig,
-    VectorSearchResult,
-    VectorSearchSettings,
+    SearchSettings,
 )
-from core.base.pipes.base_pipe import AsyncPipe, PipeType
+from core.base.pipes.base_pipe import AsyncPipe
 
 from ..abstractions.search_pipe import SearchPipe
 from .query_transform_pipe import QueryTransformPipe
@@ -37,7 +37,6 @@ class MultiSearchPipe(AsyncPipe):
         )
         super().__init__(
             config,
-            PipeType.SEARCH,
             *args,
             **kwargs,
         )
@@ -52,15 +51,15 @@ class MultiSearchPipe(AsyncPipe):
         input: Any,
         state: Any,
         run_id: UUID,
-        vector_search_settings: VectorSearchSettings,
+        search_settings: SearchSettings,
         query_transform_generation_config: Optional[GenerationConfig] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[VectorSearchResult, None]:
+    ) -> AsyncGenerator[ChunkSearchResult, None]:
         query_transform_generation_config = (
             query_transform_generation_config
             or copy(kwargs.get("rag_generation_config", None))
-            or GenerationConfig(model="gpt-4o")
+            or GenerationConfig(model="azure/gpt-4o")
         )
         query_transform_generation_config.stream = False
 
@@ -74,22 +73,21 @@ class MultiSearchPipe(AsyncPipe):
         )
 
         if self.config.use_rrf:
-            vector_search_settings.search_limit = (
-                self.config.expansion_factor
-                * vector_search_settings.search_limit
+            search_settings.limit = (
+                self.config.expansion_factor * search_settings.limit
             )
             results = []
             async for search_result in await self.vector_search_pipe.run(
                 self.vector_search_pipe.Input(message=query_generator),
                 state,
-                vector_search_settings=vector_search_settings,
+                search_settings=search_settings,
                 *args,
                 **kwargs,
             ):
                 results.append(search_result)
 
             # Collection results by their associated queries
-            grouped_results: dict[str, list[VectorSearchResult]] = {}
+            grouped_results: dict[str, list[ChunkSearchResult]] = {}
             for result in results:
                 query = result.metadata["associated_query"]
                 if query not in grouped_results:
@@ -97,27 +95,27 @@ class MultiSearchPipe(AsyncPipe):
                 grouped_results[query].append(result)
 
             fused_results = self.reciprocal_rank_fusion(grouped_results)
-            for result in fused_results[: vector_search_settings.search_limit]:
+            for result in fused_results[: search_settings.limit]:
                 yield result
         else:
             async for search_result in await self.vector_search_pipe.run(
                 self.vector_search_pipe.Input(message=query_generator),
                 state,
-                vector_search_settings=vector_search_settings,
+                search_settings=search_settings,
                 *args,
                 **kwargs,
             ):
                 yield search_result
 
     def reciprocal_rank_fusion(
-        self, all_results: Dict[str, List[VectorSearchResult]]
-    ) -> List[VectorSearchResult]:
+        self, all_results: dict[str, list[ChunkSearchResult]]
+    ) -> list[ChunkSearchResult]:
         document_scores: dict[UUID, float] = {}
-        document_results: dict[UUID, VectorSearchResult] = {}
+        document_results: dict[UUID, ChunkSearchResult] = {}
         document_queries: dict[UUID, set[str]] = {}
         for query, results in all_results.items():
             for rank, result in enumerate(results, 1):
-                doc_id = result.extraction_id
+                doc_id = result.chunk_id
                 if doc_id not in document_scores:
                     document_scores[doc_id] = 0
                     document_results[doc_id] = result
@@ -131,7 +129,7 @@ class MultiSearchPipe(AsyncPipe):
             document_scores.items(), key=lambda x: x[1], reverse=True
         )
 
-        # Reconstruct VectorSearchResults with new ranking, RRF score, and associated queries
+        # Reconstruct ChunkSearchResults with new ranking, RRF score, and associated queries
         fused_results = []
         for doc_id, rrf_score in sorted_docs:
             result = deepcopy(document_results[doc_id])

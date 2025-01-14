@@ -3,35 +3,33 @@ from .abstractions.search_pipe import SearchPipe
 from .ingestion.embedding_pipe import EmbeddingPipe
 from .ingestion.parsing_pipe import ParsingPipe
 from .ingestion.vector_storage_pipe import VectorStoragePipe
-from .kg.clustering import KGClusteringPipe
-from .kg.community_summary import KGCommunitySummaryPipe
-from .kg.entity_description import KGEntityDescriptionPipe
-from .kg.storage import KGStoragePipe
-from .kg.triples_extraction import KGTriplesExtractionPipe
-from .retrieval.kg_search_pipe import KGSearchSearchPipe
+from .kg.clustering import GraphClusteringPipe
+from .kg.community_summary import GraphCommunitySummaryPipe
+from .kg.description import GraphDescriptionPipe
+from .kg.storage import GraphStoragePipe
+from .retrieval.chunk_search_pipe import VectorSearchPipe
+from .retrieval.graph_search_pipe import GraphSearchSearchPipe
 from .retrieval.multi_search import MultiSearchPipe
 from .retrieval.query_transform_pipe import QueryTransformPipe
 from .retrieval.routing_search_pipe import RoutingSearchPipe
-from .retrieval.search_rag_pipe import SearchRAGPipe
-from .retrieval.streaming_rag_pipe import StreamingSearchRAGPipe
-from .retrieval.vector_search_pipe import VectorSearchPipe
+from .retrieval.search_rag_pipe import RAGPipe
+from .retrieval.streaming_rag_pipe import StreamingRAGPipe
 
 __all__ = [
     "SearchPipe",
     "GeneratorPipe",
     "EmbeddingPipe",
-    "KGTriplesExtractionPipe",
-    "KGSearchSearchPipe",
-    "KGEntityDescriptionPipe",
+    "GraphSearchSearchPipe",
+    "GraphDescriptionPipe",
     "ParsingPipe",
     "QueryTransformPipe",
-    "SearchRAGPipe",
-    "StreamingSearchRAGPipe",
+    "RAGPipe",
+    "StreamingRAGPipe",
     "VectorSearchPipe",
     "VectorStoragePipe",
-    "KGStoragePipe",
-    "KGClusteringPipe",
+    "GraphStoragePipe",
+    "GraphClusteringPipe",
     "MultiSearchPipe",
-    "KGCommunitySummaryPipe",
+    "GraphCommunitySummaryPipe",
     "RoutingSearchPipe",
 ]

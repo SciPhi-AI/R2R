@@ -1,0 +1,74 @@
+graphrag_communities:
+  template: |
+      You are an AI assistant that helps a human analyst perform general information discovery. Information discovery is the process of identifying and assessing relevant information associated with certain entities (e.g., organizations and individuals) within a network.
+
+      Context Overview:
+      {collection_description}
+
+      Your Task:
+      Write a comprehensive report of a community as a single XML document. The report must follow this exact structure:
+
+      <community>
+          <name>A specific, concise community name representing its key entities</name>
+          <summary>An executive summary that contextualizes the community</summary>
+          <rating>A float score (0-10) representing impact severity</rating>
+          <rating_explanation>A single sentence explaining the rating</rating_explanation>
+          <findings>
+              <finding>First key insight about the community</finding>
+              <finding>Second key insight about the community</finding>
+              <!-- Include 5-10 findings total -->
+          </findings>
+      </community>
+
+      Data Reference Format:
+      Include data references in findings like this:
+      "Example sentence [Data: <dataset name> (record ids); <dataset name> (record ids)]"
+      Use no more than 5 record IDs per reference. Add "+more" to indicate additional records.
+
+      Example Input:
+      -----------
+      Text:
+
+      Entity: OpenAI
+      descriptions:
+        101,OpenAI is an AI research and deployment company.
+      relationships:
+        201,OpenAI,Stripe,OpenAI partnered with Stripe to integrate payment solutions.
+        203,Airbnb,OpenAI,Airbnb utilizes OpenAI's AI tools for customer service.
+        204,Stripe,OpenAI,Stripe invested in OpenAI's latest funding round.
+      Entity: Stripe
+      descriptions:
+        102,Stripe is a technology company that builds economic infrastructure for the internet.
+      relationships:
+        201,OpenAI,Stripe,OpenAI partnered with Stripe to integrate payment solutions.
+        202,Stripe,Airbnb,Stripe provides payment processing services to Airbnb.
+        204,Stripe,OpenAI,Stripe invested in OpenAI's latest funding round.
+        205,Airbnb,Stripe,Airbnb and Stripe collaborate on expanding global payment options.
+      Entity: Airbnb
+      descriptions:
+        103,Airbnb is an online marketplace for lodging and tourism experiences.
+      relationships:
+        203,Airbnb,OpenAI,Airbnb utilizes OpenAI's AI tools for customer service.
+        205,Airbnb,Stripe,Airbnb and Stripe collaborate on expanding global payment options.
+
+      Example Output:
+      <community>
+          <name>OpenAI-Stripe-Airbnb Community</name>
+          <summary>The OpenAI-Stripe-Airbnb Community is a network of companies that collaborate on AI research, payment solutions, and customer service.</summary>
+          <rating>8.5</rating>
+          <rating_explanation>The OpenAI-Stripe-Airbnb Community has a high impact on the collection due to its significant contributions to AI research, payment solutions, and customer service.</rating_explanation>
+          <findings>
+              <finding>OpenAI and Stripe have a partnership to integrate payment solutions [Data: Relationships (201)].</finding>
+              <finding>OpenAI and Airbnb collaborate on AI tools for customer service [Data: Relationships (203)].</finding>
+              <finding>Stripe provides payment processing services to Airbnb [Data: Relationships (202)].</finding>
+              <finding>Stripe invested in OpenAI's latest funding round [Data: Relationships (204)].</finding>
+              <finding>Airbnb and Stripe collaborate on expanding global payment options [Data: Relationships (205)].</finding>
+          </findings>
+      </community>
+
+      Entity Data:
+      {input_text}
+
+  input_types:
+    collection_description: str
+    input_text: str
