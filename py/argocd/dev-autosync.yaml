@@ -6,8 +6,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/thoughtswinsystems/R2R.git
-    targetRevision: k8s-deployment-release
+    repoURL: https://github.com/SciPhi-AI/R2R.git
+    targetRevision: k8s-deployment
     path: py/k8s/dev/azure
     directory:
       recurse: true

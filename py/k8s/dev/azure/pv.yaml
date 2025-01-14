@@ -1,29 +1,29 @@
 ---
-#apiVersion: v1
-#kind: PersistentVolumeClaim
-#metadata:
-#  name: postgres-pvc
-#  namespace: r2r-dev
-#  labels:
-#    app: r2r
-#spec:
-#  accessModes:
-#    - ReadWriteOnce
-#  resources:
-#    requests:
-#      storage: 256Gi
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: r2r-dev
+  labels:
+    app: r2r
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 256Gi
 
 ---
-#kind: PersistentVolumeClaim
-#apiVersion: v1
-#metadata:
-#  name: pvc-r2r-config-blob
-#  namespace: r2r-dev
-#spec:
-#  accessModes:
-#    - ReadWriteMany
-#  resources:
-#    requests:
-#      storage: 256Mi
-#  volumeName: pv-r2r-config-blob
-#  storageClassName: azureblob-nfs-premium
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-r2r-config-blob
+  namespace: r2r-dev
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 256Mi
+  volumeName: pv-r2r-config-blob
+  storageClassName: azureblob-nfs-premium

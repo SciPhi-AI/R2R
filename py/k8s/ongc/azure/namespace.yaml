@@ -1,7 +1,0 @@
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: r2r-dev
-  labels:
-    name: r2r-dev
