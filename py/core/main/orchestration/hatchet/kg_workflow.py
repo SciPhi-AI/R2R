@@ -268,7 +268,7 @@ def hatchet_kg_factory(
             collection_id = input_data.get("collection_id", None)
 
             await self.kg_service.providers.database.documents_handler.set_workflow_status(
-                id=uuid.UUID(document_id),
+                id=document_id,
                 status_type="extraction_status",
                 status=KGExtractionStatus.PROCESSING,
             )
