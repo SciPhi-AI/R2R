@@ -349,6 +349,22 @@ def hatchet_kg_factory(
                 f"Successfully ran kg entity description for document {document_id}"
             )
 
+            if (
+                service.providers.database.config.graph_creation_settings.automatic_deduplication
+            ):
+                extract_input = {
+                    "document_id": str(document_id),
+                }
+
+                extract_result = (
+                    await context.aio.spawn_workflow(
+                        "deduplicate-document-entities",
+                        {"request": extract_input},
+                    )
+                ).result()
+
+                await asyncio.gather(extract_result)
+
             return {
                 "result": f"successfully ran kg entity description for document {document_id}"
             }
@@ -593,8 +609,6 @@ def hatchet_kg_factory(
             self, context: Context
         ) -> dict:
             start_time = time.time()
-
-            logger.info
 
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]

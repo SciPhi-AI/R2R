@@ -102,6 +102,13 @@ def simple_kg_factory(service: GraphService):
                     **input_data["graph_creation_settings"],
                 )
 
+                if (
+                    service.providers.database.config.graph_creation_settings.automatic_deduplication
+                ):
+                    logger.warning(
+                        "Automatic deduplication is not yet implemented for `simple` workflows."
+                    )
+
             except Exception as e:
                 logger.error(
                     f"Error in creating graph for document {document_id}: {e}"
