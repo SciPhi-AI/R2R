@@ -404,7 +404,7 @@ class DocumentsRouter(BaseRouterV3):
                     )
 
                 document_id = id or generate_document_id(
-                    file_data["filename"], auth_user.id
+                    "".join(chunks), auth_user.id
                 )
 
                 # FIXME: Metadata doesn't seem to be getting passed through
