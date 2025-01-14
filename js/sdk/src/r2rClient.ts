@@ -12,6 +12,13 @@ import { RetrievalClient } from "./v3/clients/retrieval";
 import { SystemClient } from "./v3/clients/system";
 import { UsersClient } from "./v3/clients/users";
 
+let fs: any;
+if (typeof window === "undefined") {
+  import("fs").then((module) => {
+    fs = module;
+  });
+}
+
 import { initializeTelemetry } from "./feature";
 
 type RefreshTokenResponse = {
