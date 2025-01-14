@@ -2,19 +2,12 @@ import logging
 from typing import AsyncGenerator, Optional
 from uuid import UUID
 
-from core.base import (
-    AsyncState,
-    Document,
-    DocumentExtraction,
-    FileProvider,
-    IngestionConfig,
-    PipeType,
-    R2RLoggingProvider,
-)
+from core.base import AsyncState, DatabaseProvider, Document, DocumentChunk
 from core.base.abstractions import R2RDocumentProcessingError
 from core.base.pipes.base_pipe import AsyncPipe
 from core.base.providers.ingestion import IngestionProvider
 from core.utils import generate_extraction_id
+from shared.abstractions import PDFParsingError, PopperNotFoundError
 
 logger = logging.getLogger()
 
@@ -25,23 +18,19 @@ class ParsingPipe(AsyncPipe):
 
     def __init__(
         self,
+        database_provider: DatabaseProvider,
         ingestion_provider: IngestionProvider,
-        file_provider: FileProvider,
         config: AsyncPipe.PipeConfig,
-        type: PipeType = PipeType.INGESTOR,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
             config,
-            type,
-            pipe_logger,
             *args,
             **kwargs,
         )
+        self.database_provider = database_provider
         self.ingestion_provider = ingestion_provider
-        self.file_provider = file_provider
 
     async def _parse(
         self,
@@ -49,7 +38,7 @@ class ParsingPipe(AsyncPipe):
         run_id: UUID,
         version: str,
         ingestion_config_override: Optional[dict],
-    ) -> AsyncGenerator[DocumentExtraction, None]:
+    ) -> AsyncGenerator[DocumentChunk, None]:
         try:
             ingestion_config_override = ingestion_config_override or {}
             override_provider = ingestion_config_override.pop("provider", None)
@@ -61,7 +50,9 @@ class ParsingPipe(AsyncPipe):
                 raise ValueError(
                     f"Provider '{override_provider}' does not match ingestion provider '{self.ingestion_provider.config.provider}'."
                 )
-            if result := await self.file_provider.retrieve_file(document.id):
+            if result := await self.database_provider.files_handler.retrieve_file(
+                document.id
+            ):
                 file_name, file_wrapper, file_size = result
 
             with file_wrapper as file_content_stream:
@@ -74,6 +65,12 @@ class ParsingPipe(AsyncPipe):
                 extraction.id = id
                 extraction.metadata["version"] = version
                 yield extraction
+        except (PopperNotFoundError, PDFParsingError) as e:
+            raise R2RDocumentProcessingError(
+                error_message=e.message,
+                document_id=document.id,
+                status_code=e.status_code,
+            )
         except Exception as e:
             raise R2RDocumentProcessingError(
                 document_id=document.id,
@@ -87,7 +84,7 @@ class ParsingPipe(AsyncPipe):
         run_id: UUID,
         *args,
         **kwargs,
-    ) -> AsyncGenerator[DocumentExtraction, None]:
+    ) -> AsyncGenerator[DocumentChunk, None]:
         ingestion_config = kwargs.get("ingestion_config")
 
         async for result in self._parse(

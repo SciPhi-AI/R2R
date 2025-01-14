@@ -1,14 +1,12 @@
 import asyncio
 import logging
-from typing import Any, AsyncGenerator, Optional, Union
+from typing import Any, AsyncGenerator
 
 from core.base import (
     AsyncState,
-    DocumentExtraction,
+    DocumentChunk,
     EmbeddingProvider,
-    PipeType,
     R2RDocumentProcessingError,
-    R2RLoggingProvider,
     Vector,
     VectorEntry,
 )
@@ -23,43 +21,35 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
     """
 
     class Input(AsyncPipe.Input):
-        message: list[DocumentExtraction]
+        message: list[DocumentChunk]
 
     def __init__(
         self,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
         embedding_batch_size: int = 1,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
-        type: PipeType = PipeType.INGESTOR,
         *args,
         **kwargs,
     ):
-        super().__init__(
-            config,
-            type,
-            pipe_logger,
-        )
+        super().__init__(config)
         self.embedding_provider = embedding_provider
         self.embedding_batch_size = embedding_batch_size
 
-    async def embed(
-        self, extractions: list[DocumentExtraction]
-    ) -> list[float]:
+    async def embed(self, extractions: list[DocumentChunk]) -> list[float]:
         return await self.embedding_provider.async_get_embeddings(
             [extraction.data for extraction in extractions],  # type: ignore
             EmbeddingProvider.PipeStage.BASE,
         )
 
     async def _process_batch(
-        self, extraction_batch: list[DocumentExtraction]
+        self, extraction_batch: list[DocumentChunk]
     ) -> list[VectorEntry]:
         vectors = await self.embed(extraction_batch)
         return [
             VectorEntry(
-                extraction_id=extraction.id,
+                id=extraction.id,
                 document_id=extraction.document_id,
-                user_id=extraction.user_id,
+                owner_id=extraction.owner_id,
                 collection_ids=extraction.collection_ids,
                 vector=Vector(data=raw_vector),
                 text=extraction.data,  # type: ignore
@@ -120,21 +110,10 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
             # Ensure all tasks are completed
             if tasks:
                 await asyncio.gather(*tasks, return_exceptions=True)
-            # Cancel the log worker task
-            if self.log_worker_task and not self.log_worker_task.done():
-                self.log_worker_task.cancel()
-                try:
-                    await self.log_worker_task
-                except asyncio.CancelledError:
-                    pass
-            # Ensure the log queue is empty
-            while not self.log_queue.empty():
-                await self.log_queue.get()
-                self.log_queue.task_done()
 
     async def _process_extraction(
-        self, extraction: DocumentExtraction
-    ) -> Union[VectorEntry, R2RDocumentProcessingError]:
+        self, extraction: DocumentChunk
+    ) -> VectorEntry | R2RDocumentProcessingError:
         try:
             if isinstance(extraction.data, bytes):
                 raise ValueError(
@@ -147,9 +126,9 @@ class EmbeddingPipe(AsyncPipe[VectorEntry]):
             )
 
             return VectorEntry(
-                extraction_id=extraction.id,
+                id=extraction.id,
                 document_id=extraction.document_id,
-                user_id=extraction.user_id,
+                owner_id=extraction.owner_id,
                 collection_ids=extraction.collection_ids,
                 vector=Vector(data=vectors[0]),
                 text=extraction.data,

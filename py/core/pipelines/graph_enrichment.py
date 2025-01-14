@@ -1,8 +1,7 @@
 import logging
 from typing import Optional
 
-from ..base.logging.r2r_logger import R2RLoggingProvider
-from ..base.logging.run_manager import RunManager
+from ..base.logger.run_manager import RunManager
 from ..base.pipeline.base_pipeline import AsyncPipeline
 from ..base.pipes.base_pipe import AsyncPipe
 
@@ -10,16 +9,15 @@ logger = logging.getLogger()
 
 
 class KGEnrichmentPipeline(AsyncPipeline):
-    """A pipeline for enhancing the graph with communities, connnected components etc."""
+    """A pipeline for enhancing the graph with communities, connected components etc."""
 
     pipeline_type: str = "other"
 
     def __init__(
         self,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
         run_manager: Optional[RunManager] = None,
     ):
-        super().__init__(pipe_logger, run_manager)
+        super().__init__(run_manager)
 
     def add_pipe(
         self,

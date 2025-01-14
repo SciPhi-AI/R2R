@@ -1,9 +1,9 @@
-from typing import Optional, TypeVar
+from typing import Any, Optional, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from shared.api.models.base import ResultsWrapper
+from shared.api.models.base import PaginatedR2RResult, R2RResults
 
 T = TypeVar("T")
 
@@ -56,13 +56,15 @@ class UpdateResponse(BaseModel):
         }
 
 
-class CreateVectorIndexResponse(BaseModel):
-    message: str = Field(
-        ...,
-        description="Vector index creation queued successfully.",
-    )
+# TODO: This can probably be cleaner
+class ListVectorIndicesResponse(BaseModel):
+    indices: list[dict[str, Any]]
 
 
-WrappedIngestionResponse = ResultsWrapper[list[IngestionResponse]]
-WrappedUpdateResponse = ResultsWrapper[UpdateResponse]
-WrappedCreateVectorIndexResponse = ResultsWrapper[CreateVectorIndexResponse]
+WrappedIngestionResponse = R2RResults[IngestionResponse]
+WrappedMetadataUpdateResponse = R2RResults[IngestionResponse]
+WrappedUpdateResponse = R2RResults[UpdateResponse]
+
+WrappedListVectorIndicesResponse = PaginatedR2RResult[
+    ListVectorIndicesResponse
+]

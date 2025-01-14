@@ -1,0 +1,25 @@
+FROM python:3.12-slim AS builder
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc g++ musl-dev curl libffi-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+RUN pip install --no-cache-dir poetry
+
+# Add Rust to PATH
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Install graspologic and other dependencies
+RUN pip install --no-cache-dir fastapi uvicorn networkx "graspologic[leiden]" future pydantic==2.8.2
+
+COPY main.py .
+
+EXPOSE 7276
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7276"]

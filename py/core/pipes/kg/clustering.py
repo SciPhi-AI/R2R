@@ -1,5 +1,5 @@
 import logging
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator
 from uuid import UUID
 
 from core.base import (
@@ -7,29 +7,25 @@ from core.base import (
     AsyncState,
     CompletionProvider,
     EmbeddingProvider,
-    KGProvider,
-    PipeType,
-    PromptProvider,
-    R2RLoggingProvider,
 )
+
+# from ...database.postgres import PostgresDatabaseProvider
+from core.database import PostgresDatabaseProvider
 
 logger = logging.getLogger()
 
 
-class KGClusteringPipe(AsyncPipe):
+class GraphClusteringPipe(AsyncPipe):
     """
-    Clusters entities and triples into communities within the knowledge graph using hierarchical Leiden algorithm.
+    Clusters entities and relationships into communities within the knowledge graph using hierarchical Leiden algorithm.
     """
 
     def __init__(
         self,
-        kg_provider: KGProvider,
+        database_provider: PostgresDatabaseProvider,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
         embedding_provider: EmbeddingProvider,
         config: AsyncPipe.PipeConfig,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
-        type: PipeType = PipeType.OTHER,
         *args,
         **kwargs,
     ):
@@ -37,31 +33,26 @@ class KGClusteringPipe(AsyncPipe):
         Initializes the KG clustering pipe with necessary components and configurations.
         """
         super().__init__(
-            pipe_logger=pipe_logger,
-            type=type,
             config=config or AsyncPipe.PipeConfig(name="kg_cluster_pipe"),
         )
-        self.kg_provider = kg_provider
+        self.database_provider = database_provider
         self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
         self.embedding_provider = embedding_provider
 
     async def cluster_kg(
         self,
         collection_id: UUID,
         leiden_params: dict,
+        clustering_mode: str,
     ):
         """
-        Clusters the knowledge graph triples into communities using hierarchical Leiden algorithm. Uses graspologic library.
+        Clusters the knowledge graph relationships into communities using hierarchical Leiden algorithm. Uses graspologic library.
         """
 
-        num_communities = await self.kg_provider.perform_graph_clustering(
-            collection_id,
-            leiden_params,
-        )  # type: ignore
-
-        logger.info(
-            f"Clustering completed. Generated {num_communities} communities."
+        num_communities = await self.database_provider.graphs_handler.perform_graph_clustering(
+            collection_id=collection_id,
+            leiden_params=leiden_params,
+            clustering_mode=clustering_mode,
         )
 
         return {
@@ -77,10 +68,15 @@ class KGClusteringPipe(AsyncPipe):
         **kwargs: Any,
     ) -> AsyncGenerator[dict, None]:
         """
-        Executes the KG clustering pipe: clustering entities and triples into communities.
+        Executes the KG clustering pipe: clustering entities and relationships into communities.
         """
 
-        collection_id = input.message["collection_id"]
+        collection_id = input.message.get("collection_id", None)
         leiden_params = input.message["leiden_params"]
+        clustering_mode = input.message["clustering_mode"]
 
-        yield await self.cluster_kg(collection_id, leiden_params)
+        yield await self.cluster_kg(
+            collection_id=collection_id,
+            leiden_params=leiden_params,
+            clustering_mode=clustering_mode,
+        )

@@ -1,0 +1,101 @@
+graphrag_relationships_extraction_few_shot:
+  template: >
+    # Context
+    {document_summary}
+
+    # Goal
+    Given both a document summary and full text, identify all entities and their entity types, along with all relationships among the identified entities.
+    Extract up to {max_knowledge_relationships} entity-relation relationships using both the summary context and full text.
+
+    # Steps
+    1. Identify all entities given the full text, grounding and contextualizing them based on the summary. For each identified entity, extract:
+      - entit: Name of the entity, capitalized
+      - entity_type: Type of the entity (constrained to {entity_types} if provided, otherwise all types)
+      - entity_description: Comprehensive description incorporating context from both summary and full text
+
+    Format each Entity in XML tags as follows: <entity name="entity"><type>entity_type</type><description>entity_description</description></entity>
+
+    Note: Generate additional entities from descriptions if they contain named entities for relationship mapping.
+
+    2. From the identified entities, identify all related entity pairs, using both summary and full text context:
+      - source_entity: name of the source entity
+      - target_entity: name of the target entity
+      - relation: relationship type (constrained to {relation_types} if provided)
+      - relationship_description: justification based on both summary and full text context
+      - relationship_weight: strength score 0-10
+
+    Format each relationship in XML tags as follows: <relationship><source>source_entity</source><target>target_entity</target><type>relation</type><description>relationship_description</description><weight>relationship_weight</weight></relationship>
+
+    3. Coverage Requirements:
+    - Each entity must have at least one relationship
+    - Create intermediate entities if needed to establish relationships
+    - Verify relationships against both summary and full text
+    - Resolve any discrepancies between sources
+
+    Example 1:
+    If the list is empty, extract all entities and relations.
+    Entity_types:
+    Relation_types:
+    Text:
+    San Francisco is a city in California. It is known for the Golden Gate Bridge, cable cars, and steep hills. The city is surrounded by the Pacific Ocean and the San Francisco Bay.
+    ######################
+    Output:
+    <entity name="San Francisco"><type>City</type><description>San Francisco is a city in California known for the Golden Gate Bridge, cable cars, and steep hills. It is surrounded by the Pacific Ocean and the San Francisco Bay.</description></entity>
+    <entity name="California"><type>State</type><description>California is a state in the United States.</description></entity>
+    <entity name="Golden Gate Bridge"><type>Landmark</type><description>The Golden Gate Bridge is a famous bridge in San Francisco.</description></entity>
+    <entity name="Pacific Ocean"><type>Body of Water</type><description>The Pacific Ocean is a large body of water that surrounds San Francisco.</description></entity>
+    <entity name="San Francisco Bay"><type>Body of Water</type><description>The San Francisco Bay is a body of water that surrounds San Francisco.</description></entity>
+    <relationship><source>San Francisco</source><target>California</target><type>Located In</type><description>San Francisco is a city located in California.</description><weight>8</weight></relationship>
+    <relationship><source>San Francisco</source><target>Golden Gate Bridge</target><type>Features</type><description>San Francisco features the Golden Gate Bridge.</description><weight>9</weight></relationship>
+    <relationship><source>San Francisco</source><target>Pacific Ocean</target><type>Surrounded By</type><description>San Francisco is surrounded by the Pacific Ocean.</description><weight>7</weight></relationship>
+    <relationship><source>San Francisco</source><target>San Francisco Bay</target><type>Surrounded By</type><description>San Francisco is surrounded by the San Francisco Bay.</description><weight>7</weight></relationship>
+    <relationship><source>California</source><target>San Francisco</target><type>Contains</type><description>California contains the city of San Francisco.</description><weight>8</weight></relationship>
+    <relationship><source>Golden Gate Bridge</source><target>San Francisco</target><type>Located In</type><description>The Golden Gate Bridge is located in San Francisco.</description><weight>8</weight></relationship>
+    <relationship><source>Pacific Ocean</source><target>San Francisco</target><type>Surrounds</type><description>The Pacific Ocean surrounds San Francisco.</description><weight>7</weight></relationship>
+    <relationship><source>San Francisco Bay</source><target>San Francisco</target><type>Surrounds</type><description>The San Francisco Bay surrounds San Francisco.</description><weight>7</weight></relationship>
+
+    ######################
+    Example 2:
+    If the list is empty, extract all entities and relations.
+    Entity_types: Organization, Person
+    Relation_types: Located In, Features
+
+    Text:
+    The Green Bay Packers are a professional American football team based in Green Bay, Wisconsin. The team was established in 1919 by Earl "Curly" Lambeau and George Calhoun. The Packers are the third-oldest franchise in the NFL and have won 13 league championships, including four Super Bowls. The team's home games are played at Lambeau Field, which is named after Curly Lambeau.
+    ######################
+    Output:
+    <entity name="Green Bay Packers"><type>Organization</type><description>The Green Bay Packers are a professional American football team based in Green Bay, Wisconsin. The team was established in 1919 by Earl "Curly" Lambeau and George Calhoun. The Packers are the third-oldest franchise in the NFL and have won 13 league championships, including four Super Bowls. The team's home games are played at Lambeau Field, which is named after Curly Lambeau.</description></entity>
+    <entity name="Green Bay"><type>City</type><description>Green Bay is a city in Wisconsin.</description></entity>
+    <entity name="Wisconsin"><type>State</type><description>Wisconsin is a state in the United States.</description></entity>
+    <entity name="Earl "Curly" Lambeau"><type>Person</type><description>Earl "Curly" Lambeau was a co-founder of the Green Bay Packers.</description></entity>
+    <entity name="George Calhoun"><type>Person</type><description>George Calhoun was a co-founder of the Green Bay Packers.</description></entity>
+    <entity name="NFL"><type>Organization</type><description>The NFL is the National Football League.</description></entity>
+    <entity name="Super Bowl"><type>Event</type><description>The Super Bowl is the championship game of the NFL.</description></entity>
+    <entity name="Lambeau Field"><type>Stadium</type><description>Lambeau Field is the home stadium of the Green Bay Packers.</description></entity>
+    <relationship><source>Green Bay Packers</source><target>Green Bay</target><type>Located In</type><description>The Green Bay Packers are based in Green Bay, Wisconsin.</description><weight>8</weight></relationship>
+    <relationship><source>Green Bay</source><target>Wisconsin</target><type>Located In</type><description>Green Bay is located in Wisconsin.</description><weight>8</weight></relationship>
+    <relationship><source>Green Bay Packers</source><target>Earl "Curly" Lambeau</target><type>Founded By</type><description>The Green Bay Packers were established by Earl "Curly" Lambeau.</description><weight>9</weight></relationship>
+    <relationship><source>Green Bay Packers</source><target>George Calhoun</target><type>Founded By</type><description>The Green Bay Packers were established by George Calhoun.</description><weight>9</weight></relationship>
+    <relationship><source>Green Bay Packers</source><target>NFL</target><type>League</type><description>The Green Bay Packers are a franchise in the NFL.</description><weight>8</weight></relationship>
+    <relationship><source>Green Bay Packers</source><target>Super Bowl</target><type>Championships</type><description>The Green Bay Packers have won four Super Bowls.</description><weight>9</weight></relationship>
+
+    -Real Data-
+    ######################
+    If the list is empty, extract all entities and relations.
+    Entity_types: {entity_types}
+    Relation_types: {relation_types}
+
+    Document Summary:
+    {document_summary}
+
+    Full Text:
+    {input}
+    ######################
+    Output:
+  input_types:
+    document_summary: str
+    max_knowledge_relationships: int
+    input: str
+    entity_types: list[str]
+    relation_types: list[str]
+  overwrite_on_diff: true

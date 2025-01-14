@@ -1,15 +1,15 @@
 from shared.abstractions.base import AsyncSyncMeta, R2RSerializable, syncable
-from shared.abstractions.completion import CompletionRecord, MessageType
 from shared.abstractions.document import (
-    DataType,
     Document,
-    DocumentExtraction,
-    DocumentInfo,
+    DocumentChunk,
+    DocumentResponse,
     DocumentType,
     IngestionStatus,
     KGEnrichmentStatus,
     KGExtractionStatus,
     RawChunk,
+    UnprocessedChunk,
+    UpdateChunk,
 )
 from shared.abstractions.embedding import (
     EmbeddingPurpose,
@@ -21,14 +21,18 @@ from shared.abstractions.exception import (
 )
 from shared.abstractions.graph import (
     Community,
-    CommunityReport,
     Entity,
-    EntityType,
+    Graph,
     KGExtraction,
-    RelationshipType,
-    Triple,
+    Relationship,
+    StoreType,
+)
+from shared.abstractions.ingestion import (
+    ChunkEnrichmentSettings,
+    ChunkEnrichmentStrategy,
 )
 from shared.abstractions.kg import (
+    GraphCommunitySettings,
     KGCreationSettings,
     KGEnrichmentSettings,
     KGRunType,
@@ -38,28 +42,39 @@ from shared.abstractions.llm import (
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
+    MessageType,
     RAGCompletion,
 )
 from shared.abstractions.prompt import Prompt
 from shared.abstractions.search import (
     AggregateSearchResult,
+    ChunkSearchResult,
+    ChunkSearchSettings,
+    GraphSearchResult,
+    GraphSearchSettings,
     HybridSearchSettings,
     KGCommunityResult,
     KGEntityResult,
-    KGGlobalResult,
     KGRelationshipResult,
-    KGSearchMethod,
-    KGSearchResult,
     KGSearchResultType,
-    KGSearchSettings,
-    VectorSearchResult,
-    VectorSearchSettings,
+    SearchMode,
+    SearchSettings,
+    WebSearchResponse,
+    select_search_filters,
 )
-from shared.abstractions.user import Token, TokenData, UserStats
+from shared.abstractions.user import Token, TokenData, User
 from shared.abstractions.vector import (
+    IndexArgsHNSW,
+    IndexArgsIVFFlat,
+    IndexConfig,
+    IndexMeasure,
+    IndexMethod,
     StorageResult,
     Vector,
     VectorEntry,
+    VectorQuantizationSettings,
+    VectorQuantizationType,
+    VectorTableName,
     VectorType,
 )
 
@@ -69,18 +84,18 @@ __all__ = [
     "AsyncSyncMeta",
     "syncable",
     # Completion abstractions
-    "CompletionRecord",
     "MessageType",
     # Document abstractions
-    "DataType",
     "Document",
-    "DocumentExtraction",
-    "DocumentInfo",
+    "DocumentChunk",
+    "DocumentResponse",
     "DocumentType",
     "IngestionStatus",
     "KGExtractionStatus",
     "KGEnrichmentStatus",
     "RawChunk",
+    "UnprocessedChunk",
+    "UpdateChunk",
     # Embedding abstractions
     "EmbeddingPurpose",
     "default_embedding_prefixes",
@@ -89,12 +104,12 @@ __all__ = [
     "R2RException",
     # Graph abstractions
     "Entity",
-    "EntityType",
-    "RelationshipType",
     "Community",
-    "CommunityReport",
+    "StoreType",
     "KGExtraction",
-    "Triple",
+    "Relationship",
+    # Index abstractions
+    "IndexConfig",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",
@@ -104,29 +119,41 @@ __all__ = [
     # Prompt abstractions
     "Prompt",
     # Search abstractions
+    "WebSearchResponse",
     "AggregateSearchResult",
-    "KGSearchResult",
-    "KGSearchMethod",
+    "GraphSearchResult",
     "KGSearchResultType",
     "KGEntityResult",
     "KGRelationshipResult",
     "KGCommunityResult",
-    "KGGlobalResult",
-    "KGSearchSettings",
-    "VectorSearchResult",
-    "VectorSearchSettings",
+    "GraphSearchSettings",
+    "ChunkSearchSettings",
+    "ChunkSearchResult",
+    "SearchSettings",
+    "select_search_filters",
+    "SearchMode",
     "HybridSearchSettings",
-    # Restructure abstractions
+    # KG abstractions
     "KGCreationSettings",
     "KGEnrichmentSettings",
+    "GraphCommunitySettings",
     "KGRunType",
     # User abstractions
     "Token",
     "TokenData",
-    "UserStats",
+    "User",
     # Vector abstractions
     "Vector",
     "VectorEntry",
     "VectorType",
+    "IndexMeasure",
+    "IndexMethod",
+    "VectorTableName",
+    "IndexArgsHNSW",
+    "IndexArgsIVFFlat",
+    "VectorQuantizationSettings",
+    "VectorQuantizationType",
     "StorageResult",
+    "ChunkEnrichmentSettings",
+    "ChunkEnrichmentStrategy",
 ]

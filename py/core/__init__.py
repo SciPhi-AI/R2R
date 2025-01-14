@@ -1,9 +1,9 @@
 import logging
 
 # Keep '*' imports for enhanced development velocity
-# corresponding flake8 error codes are F403, F405
 from .agent import *
 from .base import *
+from .database import *
 from .main import *
 from .parsers import *
 from .pipelines import *
@@ -46,13 +46,11 @@ __all__ = [
     "AsyncSyncMeta",
     "syncable",
     # Completion abstractions
-    "CompletionRecord",
     "MessageType",
     # Document abstractions
-    "DataType",
     "Document",
-    "DocumentExtraction",
-    "DocumentInfo",
+    "DocumentChunk",
+    "DocumentResponse",
     "IngestionStatus",
     "KGExtractionStatus",
     "KGEnrichmentStatus",
@@ -66,7 +64,7 @@ __all__ = [
     # KG abstractions
     "Entity",
     "KGExtraction",
-    "Triple",
+    "Relationship",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",
@@ -76,18 +74,23 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
-    "KGSearchResult",
-    "KGSearchSettings",
-    "VectorSearchResult",
-    "VectorSearchSettings",
+    "WebSearchResponse",
+    "GraphSearchResult",
+    "ChunkSearchSettings",
+    "GraphSearchSettings",
+    "ChunkSearchResult",
+    "SearchSettings",
+    "select_search_filters",
+    "SearchMode",
+    "HybridSearchSettings",
     # User abstractions
     "Token",
     "TokenData",
-    "UserStats",
     # Vector abstractions
     "Vector",
     "VectorEntry",
     "VectorType",
+    "IndexConfig",
     ## AGENT
     # Agent abstractions
     "Agent",
@@ -98,21 +101,9 @@ __all__ = [
     "ToolResult",
     ## API
     # Auth Responses
-    "GenericMessageResponse",
     "TokenResponse",
-    "UserResponse",
+    "User",
     ## LOGGING
-    # Basic types
-    "RunType",
-    "AnalysisTypes",
-    "LogAnalytics",
-    "LogAnalyticsConfig",
-    "LogFilterCriteria",
-    "LogProcessor",
-    # Logging Providers
-    "SqlitePersistentLoggingProvider",
-    "LoggingConfig",
-    "R2RLoggingProvider",
     # Run Manager
     "RunManager",
     "manage_run",
@@ -125,7 +116,6 @@ __all__ = [
     ## PIPES
     "AsyncPipe",
     "AsyncState",
-    "PipeType",
     ## PROVIDERS
     # Base provider classes
     "AppConfig",
@@ -137,34 +127,26 @@ __all__ = [
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",
+    # Email provider
+    "EmailConfig",
+    "EmailProvider",
     # Database providers
+    "LimitSettings",
     "DatabaseConfig",
     "DatabaseProvider",
-    "RelationalDBProvider",
-    "VectorDBProvider",
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",
-    # Knowledge Graph provider
-    "KGConfig",
-    "KGProvider",
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",
-    # Prompt provider
-    "PromptConfig",
-    "PromptProvider",
     ## UTILS
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
     "run_pipeline",
     "to_async_generator",
-    "generate_run_id",
+    "generate_id",
     "increment_version",
-    "EntityType",
-    "RelationshipType",
-    "format_entity_types",
-    "format_relations",
     "validate_uuid",
     ## MAIN
     ## R2R ABSTRACTIONS
@@ -186,31 +168,39 @@ __all__ = [
     "R2RPipeFactory",
     "R2RPipelineFactory",
     "R2RAgentFactory",
-    # R2R Routers
-    "AuthRouter",
-    "IngestionRouter",
-    "ManagementRouter",
-    "RetrievalRouter",
-    "KGRouter",
     ## R2R SERVICES
     "AuthService",
     "IngestionService",
     "ManagementService",
     "RetrievalService",
-    "KgService",
+    "GraphService",
     ## PARSERS
     # Media parsers
     "AudioParser",
+    "BMPParser",
+    "DOCParser",
     "DOCXParser",
     "ImageParser",
-    "PDFParser",
+    "ODTParser",
+    "VLMPDFParser",
+    "BasicPDFParser",
     "PDFParserUnstructured",
-    "PDFParserMarker",
     "PPTParser",
+    "PPTXParser",
+    "RTFParser",
     # Structured parsers
     "CSVParser",
     "CSVParserAdvanced",
+    "EMLParser",
+    "EPUBParser",
     "JSONParser",
+    "MSGParser",
+    "ORGParser",
+    "P7SParser",
+    "RSTParser",
+    "TIFFParser",
+    "TSVParser",
+    "XLSParser",
     "XLSXParser",
     "XLSXParserAdvanced",
     # Text parsers
@@ -223,36 +213,34 @@ __all__ = [
     ## PIPES
     "SearchPipe",
     "EmbeddingPipe",
-    "KGTriplesExtractionPipe",
     "ParsingPipe",
     "QueryTransformPipe",
-    "SearchRAGPipe",
-    "StreamingSearchRAGPipe",
+    "RAGPipe",
+    "StreamingRAGPipe",
     "VectorSearchPipe",
     "VectorStoragePipe",
-    "KGStoragePipe",
+    "GraphStoragePipe",
     "MultiSearchPipe",
     ## PROVIDERS
     # Auth
     "SupabaseAuthProvider",
     "R2RAuthProvider",
     # Crypto
-    "BCryptProvider",
-    "BCryptConfig",
+    "BCryptCryptoProvider",
+    "BcryptCryptoConfig",
+    "NaClCryptoConfig",
+    "NaClCryptoProvider",
     # Database
-    "PostgresDBProvider",
+    "PostgresDatabaseProvider",
     # Embeddings
     "LiteLLMEmbeddingProvider",
     "OpenAIEmbeddingProvider",
-    # KG
-    "PostgresKGProvider",
+    "OllamaEmbeddingProvider",
     # LLM
     "OpenAICompletionProvider",
-    "LiteCompletionProvider",
+    "LiteLLMCompletionProvider",
     # Ingestion
     "UnstructuredIngestionProvider",
     "R2RIngestionProvider",
     "ChunkingStrategy",
-    # Prompts
-    "R2RPromptProvider",
 ]

@@ -1,22 +1,25 @@
 import logging
+import os
 from collections import defaultdict
-from typing import Any, BinaryIO, Dict, Optional, Tuple
+from datetime import datetime, timedelta, timezone
+from typing import IO, Any, BinaryIO, Optional, Tuple
 from uuid import UUID
 
 import toml
 
 from core.base import (
-    AnalysisTypes,
-    LogFilterCriteria,
-    LogProcessor,
+    CollectionResponse,
+    ConversationResponse,
+    DocumentResponse,
+    GenerationConfig,
+    KGEnrichmentStatus,
     Message,
     Prompt,
     R2RException,
-    R2RLoggingProvider,
     RunManager,
-    RunType,
+    StoreType,
+    User,
 )
-from core.base.utils import validate_uuid
 from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
@@ -35,7 +38,6 @@ class ManagementService(Service):
         pipelines: R2RPipelines,
         agents: R2RAgents,
         run_manager: RunManager,
-        logging_connection: R2RLoggingProvider,
     ):
         super().__init__(
             config,
@@ -44,378 +46,429 @@ class ManagementService(Service):
             pipelines,
             agents,
             run_manager,
-            logging_connection,
         )
-
-    @telemetry_event("Logs")
-    async def logs(
-        self,
-        offset: int = 0,
-        limit: int = 100,
-        run_type_filter: Optional[RunType] = None,
-    ):
-        if self.logging_connection is None:
-            raise R2RException(
-                status_code=404, message="Logging provider not found."
-            )
-
-        run_info = await self.logging_connection.get_info_logs(
-            offset=offset,
-            limit=limit,
-            run_type_filter=run_type_filter,
-        )
-        run_ids = [run.run_id for run in run_info]
-        if not run_ids:
-            return []
-        logs = await self.logging_connection.get_logs(run_ids)
-
-        aggregated_logs = []
-
-        for run in run_info:
-            run_logs = [log for log in logs if log["run_id"] == run.run_id]
-            entries = [
-                {
-                    "key": log["key"],
-                    "value": log["value"],
-                    "timestamp": log["timestamp"],
-                }
-                for log in run_logs
-            ][
-                ::-1
-            ]  # Reverse order so that earliest logged values appear first.
-
-            log_entry = {
-                "run_id": str(run.run_id),
-                "run_type": run.run_type,
-                "entries": entries,
-            }
-
-            if run.timestamp:
-                log_entry["timestamp"] = run.timestamp.isoformat()
-
-            if hasattr(run, "user_id") and run.user_id is not None:
-                log_entry["user_id"] = str(run.user_id)
-
-            aggregated_logs.append(log_entry)
-
-        return aggregated_logs
-
-    @telemetry_event("Analytics")
-    async def analytics(
-        self,
-        filter_criteria: LogFilterCriteria,
-        analysis_types: AnalysisTypes,
-        *args,
-        **kwargs,
-    ):
-        run_info = await self.logging_connection.get_info_logs(limit=100)
-        run_ids = [info.run_id for info in run_info]
-
-        if not run_ids:
-            return {
-                "analytics_data": "No logs found.",
-                "filtered_logs": {},
-            }
-        logs = await self.logging_connection.get_logs(run_ids=run_ids)
-
-        filters = {}
-        if filter_criteria.filters:
-            for key, value in filter_criteria.filters.items():
-                filters[key] = lambda log, value=value: (
-                    any(
-                        entry.get("key") == value
-                        for entry in log.get("entries", [])
-                    )
-                    if "entries" in log
-                    else log.get("key") == value
-                )
-
-        log_processor = LogProcessor(filters)  # type: ignore
-        for log in logs:
-            if "entries" in log and isinstance(log["entries"], list):
-                log_processor.process_log(log)
-            elif "key" in log:
-                log_processor.process_log(log)
-            else:
-                logger.warning(
-                    f"Skipping log due to missing or malformed 'entries': {log}"
-                )
-
-        filtered_logs = dict(log_processor.populations.items())
-
-        analytics_data = {}
-        if analysis_types and analysis_types.analysis_types:
-            for (
-                filter_key,
-                analysis_config,
-            ) in analysis_types.analysis_types.items():
-                if filter_key in filtered_logs:
-                    analysis_type = analysis_config[0]
-                    if analysis_type == "bar_chart":
-                        extract_key = analysis_config[1]
-                        analytics_data[filter_key] = (
-                            AnalysisTypes.generate_bar_chart_data(
-                                filtered_logs[filter_key], extract_key
-                            )
-                        )
-                    elif analysis_type == "basic_statistics":
-                        extract_key = analysis_config[1]
-                        analytics_data[filter_key] = (
-                            AnalysisTypes.calculate_basic_statistics(
-                                filtered_logs[filter_key], extract_key
-                            )
-                        )
-                    elif analysis_type == "percentile":
-                        extract_key = analysis_config[1]
-                        percentile = int(analysis_config[2])
-                        analytics_data[filter_key] = (
-                            AnalysisTypes.calculate_percentile(
-                                filtered_logs[filter_key],
-                                extract_key,
-                                percentile,
-                            )
-                        )
-                    else:
-                        logger.warning(
-                            f"Unknown analysis type for filter key '{filter_key}': {analysis_type}"
-                        )
-
-        return {
-            "analytics_data": analytics_data or None,
-            "filtered_logs": filtered_logs,
-        }
 
     @telemetry_event("AppSettings")
-    async def app_settings(self, *args: Any, **kwargs: Any):
-        prompts = self.providers.prompt.get_all_prompts()
+    async def app_settings(self):
+        prompts = (
+            await self.providers.database.prompts_handler.get_all_prompts()
+        )
         config_toml = self.config.to_toml()
         config_dict = toml.loads(config_toml)
         return {
             "config": config_dict,
             "prompts": prompts,
+            "r2r_project_name": os.environ["R2R_PROJECT_NAME"],
+            # "r2r_version": get_version("r2r"),
         }
 
     @telemetry_event("UsersOverview")
     async def users_overview(
         self,
+        offset: int,
+        limit: int,
         user_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = 100,
-        *args,
-        **kwargs,
     ):
-        return await self.providers.database.relational.get_users_overview(
-            [str(ele) for ele in user_ids] if user_ids else None,
+        return await self.providers.database.users_handler.get_users_overview(
             offset=offset,
             limit=limit,
+            user_ids=user_ids,
         )
 
-    @telemetry_event("Delete")
-    async def delete(
+    async def delete_documents_and_chunks_by_filter(
         self,
         filters: dict[str, Any],
-        *args,
-        **kwargs,
     ):
         """
-        Takes a list of filters like
-        "{key: {operator: value}, key: {operator: value}, ...}"
-        and deletes entries matching the given filters from both vector and relational databases.
+        Delete chunks matching the given filters. If any documents are now empty
+        (i.e., have no remaining chunks), delete those documents as well.
 
-        NOTE: This method is not atomic and may result in orphaned entries in the documents overview table.
-        NOTE: This method assumes that filters delete entire contents of any touched documents.
+        Args:
+            filters (dict[str, Any]): Filters specifying which chunks to delete.
+            chunks_handler (PostgresChunksHandler): The handler for chunk operations.
+            documents_handler (PostgresDocumentsHandler): The handler for document operations.
+            graphs_handler: Handler for entity and relationship operations in the KG.
+
+        Returns:
+            dict: A summary of what was deleted.
         """
 
-        def validate_filters(filters: dict[str, Any]) -> None:
-            ALLOWED_FILTERS = {"document_id", "user_id", "collection_ids"}
+        def transform_chunk_id_to_id(
+            filters: dict[str, Any]
+        ) -> dict[str, Any]:
+            """
+            Example transformation function if your filters use `chunk_id` instead of `id`.
+            Recursively transform `chunk_id` to `id`.
+            """
+            if isinstance(filters, dict):
+                transformed = {}
+                for key, value in filters.items():
+                    if key == "chunk_id":
+                        transformed["id"] = value
+                    elif key in ["$and", "$or"]:
+                        transformed[key] = [
+                            transform_chunk_id_to_id(item) for item in value
+                        ]
+                    else:
+                        transformed[key] = transform_chunk_id_to_id(value)
+                return transformed
+            return filters
 
-            if not filters:
+        # Transform filters if needed.
+        transformed_filters = transform_chunk_id_to_id(filters)
+
+        # Find chunks that match the filters before deleting
+        interim_results = (
+            await self.providers.database.chunks_handler.list_chunks(
+                filters=transformed_filters,
+                offset=0,
+                limit=1_000,
+                include_vectors=False,
+            )
+        )
+
+        results = interim_results["results"]
+        while interim_results["page_info"]["total_entries"] == 1_000:
+            # If we hit the limit, we need to paginate to get all results
+
+            interim_results = (
+                await self.providers.database.chunks_handler.list_chunks(
+                    filters=transformed_filters,
+                    offset=interim_results["offset"] + 1_000,
+                    limit=1_000,
+                    include_vectors=False,
+                )
+            )
+            results.extend(interim_results["results"])
+
+        document_ids = set()
+        owner_id = None
+
+        if "$and" in filters:
+            for condition in filters["$and"]:
+                if "owner_id" in condition and "$eq" in condition["owner_id"]:
+                    owner_id = condition["owner_id"]["$eq"]
+                elif (
+                    "document_id" in condition
+                    and "$eq" in condition["document_id"]
+                ):
+                    document_ids.add(UUID(condition["document_id"]["$eq"]))
+        elif "document_id" in filters:
+            doc_id = filters["document_id"]
+            if isinstance(doc_id, str):
+                document_ids.add(UUID(doc_id))
+            elif isinstance(doc_id, UUID):
+                document_ids.add(doc_id)
+            elif isinstance(doc_id, dict) and "$eq" in doc_id:
+                value = doc_id["$eq"]
+                document_ids.add(
+                    UUID(value) if isinstance(value, str) else value
+                )
+
+        # Delete matching chunks from the database
+        delete_results = await self.providers.database.chunks_handler.delete(
+            transformed_filters
+        )
+
+        # Extract the document_ids that were affected.
+        affected_doc_ids = {
+            UUID(info["document_id"])
+            for info in delete_results.values()
+            if info.get("document_id")
+        }
+        document_ids.update(affected_doc_ids)
+
+        # Check if the document still has any chunks left
+        docs_to_delete = []
+        for doc_id in document_ids:
+            documents_overview_response = await self.providers.database.documents_handler.get_documents_overview(
+                offset=0, limit=1, filter_document_ids=[doc_id]
+            )
+            if not documents_overview_response["results"]:
                 raise R2RException(
-                    status_code=422, message="No filters provided"
+                    status_code=404, message="Document not found"
                 )
 
-            for field in filters:
-                if field not in ALLOWED_FILTERS:
-                    raise R2RException(
-                        status_code=422,
-                        message=f"Invalid filter field: {field}",
-                    )
+            document = documents_overview_response["results"][0]
 
-            for field in ["document_id", "user_id"]:
-                if field in filters:
-                    op = next(iter(filters[field].keys()))
-                    try:
-                        validate_uuid(filters[field][op])
-                    except ValueError:
-                        raise R2RException(
-                            status_code=422,
-                            message=f"Invalid UUID: {filters[field][op]}",
-                        )
+            if owner_id and str(document.owner_id) != owner_id:
+                raise R2RException(
+                    status_code=404,
+                    message="Document not found or insufficient permissions",
+                )
+            docs_to_delete.append(doc_id)
 
-            if "collection_ids" in filters:
-                op = next(iter(filters["collection_ids"].keys()))
-                for id_str in filters["collection_ids"][op]:
-                    try:
-                        validate_uuid(id_str)
-                    except ValueError:
-                        raise R2RException(
-                            status_code=422, message=f"Invalid UUID: {id_str}"
-                        )
-
-        validate_filters(filters)
-
-        logger.info(f"Deleting entries with filters: {filters}")
-
-        try:
-            vector_delete_results = self.providers.database.vector.delete(
-                filters
+        # Delete documents that no longer have associated chunks
+        for doc_id in docs_to_delete:
+            # Delete related entities & relationships if needed:
+            await self.providers.database.graphs_handler.entities.delete(
+                parent_id=doc_id,
+                store_type=StoreType.DOCUMENTS,
             )
-        except Exception as e:
-            logger.error(f"Error deleting from vector database: {e}")
-            vector_delete_results = {}
-
-        document_ids_to_purge: set[UUID] = set()
-        if vector_delete_results:
-            document_ids_to_purge.update(
-                doc_id
-                for doc_id in (
-                    result.get("document_id")
-                    for result in vector_delete_results.values()
-                )
-                if doc_id
+            await self.providers.database.graphs_handler.relationships.delete(
+                parent_id=doc_id,
+                store_type=StoreType.DOCUMENTS,
             )
 
-        relational_filters = {}
-        if "document_id" in filters:
-            relational_filters["filter_document_ids"] = [
-                filters["document_id"]["$eq"]
-            ]
-        if "user_id" in filters:
-            relational_filters["filter_user_ids"] = [filters["user_id"]["$eq"]]
-        if "collection_ids" in filters:
-            relational_filters["filter_collection_ids"] = list(
-                filters["collection_ids"]["$in"]
+            # Finally, delete the document from documents_overview:
+            await self.providers.database.documents_handler.delete(
+                document_id=doc_id
             )
 
-        try:
-            documents_overview = (
-                await self.providers.database.relational.get_documents_overview(
-                    **relational_filters
-                )
-            )["results"]
-        except Exception as e:
-            logger.error(
-                f"Error fetching documents from relational database: {e}"
-            )
-            documents_overview = []
-
-        if documents_overview:
-            document_ids_to_purge.update(doc.id for doc in documents_overview)
-
-        if not document_ids_to_purge:
-            raise R2RException(
-                status_code=404, message="No entries found for deletion."
-            )
-
-        for document_id in document_ids_to_purge:
-            try:
-                await self.providers.database.relational.delete_from_documents_overview(
-                    str(document_id)
-                )
-                logger.info(
-                    f"Deleted document ID {document_id} from documents_overview."
-                )
-            except Exception as e:
-                logger.error(
-                    f"Error deleting document ID {document_id} from documents_overview: {e}"
-                )
-
-        return None
+        return {
+            "success": True,
+            "deleted_chunks_count": len(delete_results),
+            "deleted_documents_count": len(docs_to_delete),
+            "deleted_document_ids": [str(d) for d in docs_to_delete],
+        }
 
     @telemetry_event("DownloadFile")
     async def download_file(
         self, document_id: UUID
     ) -> Optional[Tuple[str, BinaryIO, int]]:
-        if result := await self.providers.file.retrieve_file(document_id):
+        if result := await self.providers.database.files_handler.retrieve_file(
+            document_id
+        ):
             return result
         return None
+
+    @telemetry_event("ExportFiles")
+    async def export_files(
+        self,
+        document_ids: Optional[list[UUID]] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+    ) -> tuple[str, BinaryIO, int]:
+        return (
+            await self.providers.database.files_handler.retrieve_files_as_zip(
+                document_ids=document_ids,
+                start_date=start_date,
+                end_date=end_date,
+            )
+        )
+
+    @telemetry_event("ExportCollections")
+    async def export_collections(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.collections_handler.export_to_csv(
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportDocuments")
+    async def export_documents(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.documents_handler.export_to_csv(
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportDocumentEntities")
+    async def export_document_entities(
+        self,
+        id: UUID,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.graphs_handler.entities.export_to_csv(
+            parent_id=id,
+            store_type=StoreType.DOCUMENTS,
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportDocumentRelationships")
+    async def export_document_relationships(
+        self,
+        id: UUID,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.graphs_handler.relationships.export_to_csv(
+            parent_id=id,
+            store_type=StoreType.DOCUMENTS,
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportConversations")
+    async def export_conversations(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.conversations_handler.export_conversations_to_csv(
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportGraphEntities")
+    async def export_graph_entities(
+        self,
+        id: UUID,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.graphs_handler.entities.export_to_csv(
+            parent_id=id,
+            store_type=StoreType.GRAPHS,
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportGraphRelationships")
+    async def export_graph_relationships(
+        self,
+        id: UUID,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.graphs_handler.relationships.export_to_csv(
+            parent_id=id,
+            store_type=StoreType.GRAPHS,
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportGraphCommunities")
+    async def export_graph_communities(
+        self,
+        id: UUID,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.graphs_handler.communities.export_to_csv(
+            parent_id=id,
+            store_type=StoreType.GRAPHS,
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportMessages")
+    async def export_messages(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.conversations_handler.export_messages_to_csv(
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
+
+    @telemetry_event("ExportUsers")
+    async def export_users(
+        self,
+        columns: Optional[list[str]] = None,
+        filters: Optional[dict] = None,
+        include_header: bool = True,
+    ) -> tuple[str, IO]:
+        return await self.providers.database.users_handler.export_to_csv(
+            columns=columns,
+            filters=filters,
+            include_header=include_header,
+        )
 
     @telemetry_event("DocumentsOverview")
     async def documents_overview(
         self,
+        offset: int,
+        limit: int,
         user_ids: Optional[list[UUID]] = None,
         collection_ids: Optional[list[UUID]] = None,
         document_ids: Optional[list[UUID]] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        *args: Any,
-        **kwargs: Any,
     ):
-        return await self.providers.database.relational.get_documents_overview(
+        return await self.providers.database.documents_handler.get_documents_overview(
+            offset=offset,
+            limit=limit,
             filter_document_ids=document_ids,
             filter_user_ids=user_ids,
             filter_collection_ids=collection_ids,
-            offset=offset,
-            limit=limit,
         )
 
     @telemetry_event("DocumentChunks")
-    async def document_chunks(
+    async def list_document_chunks(
         self,
         document_id: UUID,
-        offset: int = 0,
-        limit: int = 100,
+        offset: int,
+        limit: int,
         include_vectors: bool = False,
-        *args,
-        **kwargs,
     ):
-        return self.providers.database.vector.get_document_chunks(
-            document_id,
-            offset=offset,
-            limit=limit,
-            include_vectors=include_vectors,
+        return (
+            await self.providers.database.chunks_handler.list_document_chunks(
+                document_id=document_id,
+                offset=offset,
+                limit=limit,
+                include_vectors=include_vectors,
+            )
         )
 
     @telemetry_event("AssignDocumentToCollection")
     async def assign_document_to_collection(
-        self, document_id: str, collection_id: UUID
+        self, document_id: UUID, collection_id: UUID
     ):
-        await self.providers.database.relational.assign_document_to_collection(
+        await self.providers.database.chunks_handler.assign_document_chunks_to_collection(
             document_id, collection_id
         )
-        self.providers.database.vector.assign_document_to_collection(
+        await self.providers.database.collections_handler.assign_document_to_collection_relational(
             document_id, collection_id
         )
+        await self.providers.database.documents_handler.set_workflow_status(
+            id=collection_id,
+            status_type="graph_sync_status",
+            status=KGEnrichmentStatus.OUTDATED,
+        )
+        await self.providers.database.documents_handler.set_workflow_status(
+            id=collection_id,
+            status_type="graph_cluster_status",
+            status=KGEnrichmentStatus.OUTDATED,
+        )
+
         return {"message": "Document assigned to collection successfully"}
 
     @telemetry_event("RemoveDocumentFromCollection")
     async def remove_document_from_collection(
         self, document_id: UUID, collection_id: UUID
     ):
-        await self.providers.database.relational.remove_document_from_collection(
+        await self.providers.database.collections_handler.remove_document_from_collection_relational(
             document_id, collection_id
         )
-        self.providers.database.vector.remove_document_from_collection(
+        await self.providers.database.chunks_handler.remove_document_from_collection_vector(
             document_id, collection_id
         )
-        await self.providers.kg.delete_node_via_document_id(
-            document_id, collection_id
-        )
+        # await self.providers.database.graphs_handler.delete_node_via_document_id(
+        #     document_id, collection_id
+        # )
         return None
-
-    @telemetry_event("DocumentCollections")
-    async def document_collections(
-        self, document_id: str, offset: int = 0, limit: int = 100
-    ):
-        return await self.providers.database.relational.document_collections(
-            document_id, offset=offset, limit=limit
-        )
 
     def _process_relationships(
         self, relationships: list[Tuple[str, str, str]]
-    ) -> Tuple[Dict[str, list[str]], Dict[str, Dict[str, list[str]]]]:
+    ) -> Tuple[dict[str, list[str]], dict[str, dict[str, list[str]]]]:
         graph = defaultdict(list)
-        grouped: Dict[str, Dict[str, list[str]]] = defaultdict(
+        grouped: dict[str, dict[str, list[str]]] = defaultdict(
             lambda: defaultdict(list)
         )
         for subject, relation, obj in relationships:
@@ -427,9 +480,9 @@ class ManagementService(Service):
 
     def generate_output(
         self,
-        grouped_relationships: Dict[str, Dict[str, list[str]]],
-        graph: Dict[str, list[str]],
-        descriptions_dict: Dict[str, str],
+        grouped_relationships: dict[str, dict[str, list[str]]],
+        graph: dict[str, list[str]],
+        descriptions_dict: dict[str, str],
         print_descriptions: bool = True,
     ) -> list[str]:
         output = []
@@ -471,7 +524,7 @@ class ManagementService(Service):
 
         return output
 
-    def _count_connected_components(self, graph: Dict[str, list[str]]) -> int:
+    def _count_connected_components(self, graph: dict[str, list[str]]) -> int:
         visited = set()
         components = 0
 
@@ -489,7 +542,7 @@ class ManagementService(Service):
         return components
 
     def _get_central_nodes(
-        self, graph: Dict[str, list[str]]
+        self, graph: dict[str, list[str]]
     ) -> list[Tuple[str, float]]:
         degree = {node: len(neighbors) for node, neighbors in graph.items()}
         total_nodes = len(graph)
@@ -500,17 +553,22 @@ class ManagementService(Service):
 
     @telemetry_event("CreateCollection")
     async def create_collection(
-        self, name: str, description: str = ""
-    ) -> UUID:
-        return await self.providers.database.relational.create_collection(
-            name, description
+        self,
+        owner_id: UUID,
+        name: Optional[str] = None,
+        description: str = "",
+    ) -> CollectionResponse:
+        result = await self.providers.database.collections_handler.create_collection(
+            owner_id=owner_id,
+            name=name,
+            description=description,
         )
-
-    @telemetry_event("GetCollection")
-    async def get_collection(self, collection_id: UUID) -> Optional[dict]:
-        return await self.providers.database.relational.get_collection(
-            collection_id
+        graph_result = await self.providers.database.graphs_handler.create(
+            collection_id=result.id,
+            name=name,
+            description=description,
         )
+        return result
 
     @telemetry_event("UpdateCollection")
     async def update_collection(
@@ -518,103 +576,157 @@ class ManagementService(Service):
         collection_id: UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
-    ) -> bool:
-        return await self.providers.database.relational.update_collection(
-            collection_id, name, description
+        generate_description: bool = False,
+    ) -> CollectionResponse:
+        if generate_description:
+            description = await self.summarize_collection(
+                id=collection_id, offset=0, limit=100
+            )
+        return await self.providers.database.collections_handler.update_collection(
+            collection_id=collection_id,
+            name=name,
+            description=description,
         )
 
     @telemetry_event("DeleteCollection")
     async def delete_collection(self, collection_id: UUID) -> bool:
-        await self.providers.database.relational.delete_collection(
+        await self.providers.database.collections_handler.delete_collection_relational(
             collection_id
         )
-        self.providers.database.vector.delete_collection(collection_id)
+        await self.providers.database.chunks_handler.delete_collection_vector(
+            collection_id
+        )
+        try:
+            await self.providers.database.graphs_handler.delete(
+                collection_id=collection_id,
+            )
+        except Exception as e:
+            logger.warning(
+                f"Error deleting graph for collection {collection_id}: {e}"
+            )
         return True
 
     @telemetry_event("ListCollections")
-    async def list_collections(
-        self, offset: int = 0, limit: int = 100
-    ) -> list[dict]:
-        return await self.providers.database.relational.list_collections(
-            offset=offset, limit=limit
+    async def collections_overview(
+        self,
+        offset: int,
+        limit: int,
+        user_ids: Optional[list[UUID]] = None,
+        document_ids: Optional[list[UUID]] = None,
+        collection_ids: Optional[list[UUID]] = None,
+    ) -> dict[str, list[CollectionResponse] | int]:
+        return await self.providers.database.collections_handler.get_collections_overview(
+            offset=offset,
+            limit=limit,
+            filter_user_ids=user_ids,
+            filter_document_ids=document_ids,
+            filter_collection_ids=collection_ids,
         )
 
     @telemetry_event("AddUserToCollection")
     async def add_user_to_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
-        return await self.providers.database.relational.add_user_to_collection(
-            user_id, collection_id
+        return (
+            await self.providers.database.users_handler.add_user_to_collection(
+                user_id, collection_id
+            )
         )
 
     @telemetry_event("RemoveUserFromCollection")
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
-        return await self.providers.database.relational.remove_user_from_collection(
+        return await self.providers.database.users_handler.remove_user_from_collection(
             user_id, collection_id
         )
 
     @telemetry_event("GetUsersInCollection")
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
-    ) -> list[dict]:
-        return (
-            await self.providers.database.relational.get_users_in_collection(
-                collection_id, offset=offset, limit=limit
-            )
-        )
-
-    @telemetry_event("GetCollectionsForUser")
-    async def get_collections_for_user(
-        self, user_id: UUID, offset: int = 0, limit: int = 100
-    ) -> list[dict]:
-        return (
-            await self.providers.database.relational.get_collections_for_user(
-                user_id, offset, limit
-            )
-        )
-
-    @telemetry_event("CollectionsOverview")
-    async def collections_overview(
-        self,
-        collection_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = 100,
-        *args,
-        **kwargs,
-    ):
-        return (
-            await self.providers.database.relational.get_collections_overview(
-                (
-                    [str(ele) for ele in collection_ids]
-                    if collection_ids
-                    else None
-                ),
-                offset=offset,
-                limit=limit,
-            )
+    ) -> dict[str, list[User] | int]:
+        return await self.providers.database.users_handler.get_users_in_collection(
+            collection_id, offset=offset, limit=limit
         )
 
     @telemetry_event("GetDocumentsInCollection")
     async def documents_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
-    ) -> list[dict]:
-        return (
-            await self.providers.database.relational.documents_in_collection(
-                collection_id, offset=offset, limit=limit
-            )
+    ) -> dict[str, list[DocumentResponse] | int]:
+        return await self.providers.database.collections_handler.documents_in_collection(
+            collection_id, offset=offset, limit=limit
         )
+
+    @telemetry_event("SummarizeCollection")
+    async def summarize_collection(
+        self, id: UUID, offset: int, limit: int
+    ) -> str:
+        documents_in_collection_response = await self.documents_in_collection(
+            collection_id=id,
+            offset=offset,
+            limit=limit,
+        )
+
+        document_summaries = [
+            document.summary
+            for document in documents_in_collection_response["results"]
+        ]
+
+        logger.info(
+            f"Summarizing collection {id} with {len(document_summaries)} of {documents_in_collection_response['total_entries']} documents."
+        )
+
+        formatted_summaries = "\n\n".join(document_summaries)
+
+        messages = await self.providers.database.prompts_handler.get_message_payload(
+            system_prompt_name=self.config.database.collection_summary_system_prompt,
+            task_prompt_name=self.config.database.collection_summary_task_prompt,
+            task_inputs={"document_summaries": formatted_summaries},
+        )
+
+        response = await self.providers.llm.aget_completion(
+            messages=messages,
+            generation_config=GenerationConfig(
+                model=self.config.ingestion.document_summary_model
+            ),
+        )
+
+        if collection_summary := response.choices[0].message.content:
+            return collection_summary
+        else:
+            raise ValueError("Expected a generated response.")
 
     @telemetry_event("AddPrompt")
     async def add_prompt(
         self, name: str, template: str, input_types: dict[str, str]
     ) -> dict:
         try:
-            await self.providers.prompt.add_prompt(name, template, input_types)
-            return {"message": f"Prompt '{name}' added successfully."}
+            await self.providers.database.prompts_handler.add_prompt(
+                name, template, input_types
+            )
+            return f"Prompt '{name}' added successfully."  # type: ignore
         except ValueError as e:
             raise R2RException(status_code=400, message=str(e))
+
+    @telemetry_event("GetPrompt")
+    async def get_cached_prompt(
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        prompt_override: Optional[str] = None,
+    ) -> dict:
+        try:
+            return {
+                "message": (
+                    await self.providers.database.prompts_handler.get_cached_prompt(
+                        prompt_name=prompt_name,
+                        inputs=inputs,
+                        prompt_override=prompt_override,
+                    )
+                )
+            }
+        except ValueError as e:
+            raise R2RException(status_code=404, message=str(e))
 
     @telemetry_event("GetPrompt")
     async def get_prompt(
@@ -624,19 +736,17 @@ class ManagementService(Service):
         prompt_override: Optional[str] = None,
     ) -> dict:
         try:
-            return {
-                "message": (
-                    await self.providers.prompt.get_prompt(
-                        prompt_name, inputs, prompt_override
-                    )
-                )
-            }
+            return await self.providers.database.prompts_handler.get_prompt(  # type: ignore
+                name=prompt_name,
+                inputs=inputs,
+                prompt_override=prompt_override,
+            )
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))
 
     @telemetry_event("GetAllPrompts")
     async def get_all_prompts(self) -> dict[str, Prompt]:
-        return self.providers.prompt.get_all_prompts()
+        return await self.providers.database.prompts_handler.get_all_prompts()
 
     @telemetry_event("UpdatePrompt")
     async def update_prompt(
@@ -646,17 +756,17 @@ class ManagementService(Service):
         input_types: Optional[dict[str, str]] = None,
     ) -> dict:
         try:
-            await self.providers.prompt.update_prompt(
+            await self.providers.database.prompts_handler.update_prompt(
                 name, template, input_types
             )
-            return {"message": f"Prompt '{name}' updated successfully."}
+            return f"Prompt '{name}' updated successfully."  # type: ignore
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))
 
     @telemetry_event("DeletePrompt")
     async def delete_prompt(self, name: str) -> dict:
         try:
-            await self.providers.prompt.delete_prompt(name)
+            await self.providers.database.prompts_handler.delete_prompt(name)
             return {"message": f"Prompt '{name}' deleted successfully."}
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e))
@@ -664,77 +774,327 @@ class ManagementService(Service):
     @telemetry_event("GetConversation")
     async def get_conversation(
         self,
-        conversation_id: str,
-        branch_id: Optional[str] = None,
-        auth_user=None,
-    ) -> list[dict]:
-        return await self.logging_connection.get_conversation(
-            conversation_id, branch_id
+        conversation_id: UUID,
+        user_ids: Optional[list[UUID]] = None,
+    ) -> Tuple[str, list[Message], list[dict]]:
+        return await self.providers.database.conversations_handler.get_conversation(
+            conversation_id=conversation_id,
+            filter_user_ids=user_ids,
         )
 
     @telemetry_event("CreateConversation")
-    async def create_conversation(self, auth_user=None) -> str:
-        return await self.logging_connection.create_conversation()
+    async def create_conversation(
+        self,
+        user_id: Optional[UUID] = None,
+        name: Optional[str] = None,
+    ) -> ConversationResponse:
+        return await self.providers.database.conversations_handler.create_conversation(
+            user_id=user_id,
+            name=name,
+        )
 
     @telemetry_event("ConversationsOverview")
     async def conversations_overview(
         self,
+        offset: int,
+        limit: int,
         conversation_ids: Optional[list[UUID]] = None,
-        offset: int = 0,
-        limit: int = 100,
-        auth_user=None,
-    ) -> list[Dict]:
-        return await self.logging_connection.get_conversations_overview(
-            conversation_ids=conversation_ids,
+        user_ids: Optional[list[UUID]] = None,
+    ) -> dict[str, list[dict] | int]:
+        return await self.providers.database.conversations_handler.get_conversations_overview(
             offset=offset,
             limit=limit,
+            filter_user_ids=user_ids,
+            conversation_ids=conversation_ids,
         )
 
     @telemetry_event("AddMessage")
     async def add_message(
         self,
-        conversation_id: str,
+        conversation_id: UUID,
         content: Message,
-        parent_id: Optional[str] = None,
+        parent_id: Optional[UUID] = None,
         metadata: Optional[dict] = None,
-        auth_user=None,
     ) -> str:
-        return await self.logging_connection.add_message(
-            conversation_id, content, parent_id, metadata
+        return await self.providers.database.conversations_handler.add_message(
+            conversation_id=conversation_id,
+            content=content,
+            parent_id=parent_id,
+            metadata=metadata,
         )
 
     @telemetry_event("EditMessage")
     async def edit_message(
-        self, message_id: str, new_content: str, auth_user=None
-    ) -> Tuple[str, str]:
-        return await self.logging_connection.edit_message(
-            message_id, new_content
+        self,
+        message_id: UUID,
+        new_content: Optional[str] = None,
+        additional_metadata: Optional[dict] = None,
+    ) -> dict[str, Any]:
+        return (
+            await self.providers.database.conversations_handler.edit_message(
+                message_id=message_id,
+                new_content=new_content,
+                additional_metadata=additional_metadata or {},
+            )
         )
 
-    @telemetry_event("BranchesOverview")
-    async def branches_overview(
-        self, conversation_id: str, auth_user=None
-    ) -> list[Dict]:
-        return await self.logging_connection.get_branches_overview(
-            conversation_id
+    @telemetry_event("UpdateConversation")
+    async def update_conversation(
+        self, conversation_id: UUID, name: str
+    ) -> ConversationResponse:
+        return await self.providers.database.conversations_handler.update_conversation(
+            conversation_id=conversation_id, name=name
         )
-
-    @telemetry_event("GetNextBranch")
-    async def get_next_branch(
-        self, current_branch_id: str, auth_user=None
-    ) -> Optional[str]:
-        return await self.logging_connection.get_next_branch(current_branch_id)
-
-    @telemetry_event("GetPrevBranch")
-    async def get_prev_branch(
-        self, current_branch_id: str, auth_user=None
-    ) -> Optional[str]:
-        return await self.logging_connection.get_prev_branch(current_branch_id)
-
-    @telemetry_event("BranchAtMessage")
-    async def branch_at_message(self, message_id: str, auth_user=None) -> str:
-        return await self.logging_connection.branch_at_message(message_id)
 
     @telemetry_event("DeleteConversation")
-    async def delete_conversation(self, conversation_id: str, auth_user=None):
-        await self.logging_connection.delete_conversation(conversation_id)
+    async def delete_conversation(
+        self,
+        conversation_id: UUID,
+        user_ids: Optional[list[UUID]] = None,
+    ) -> None:
+        await self.providers.database.conversations_handler.delete_conversation(
+            conversation_id=conversation_id,
+            filter_user_ids=user_ids,
+        )
+
+    async def get_user_max_documents(self, user_id: UUID) -> int | None:
+        # Fetch the user to see if they have any overrides stored
+        user = await self.providers.database.users_handler.get_user_by_id(
+            user_id
+        )
+        if user.limits_overrides and "max_documents" in user.limits_overrides:
+            return user.limits_overrides["max_documents"]
+        return self.config.app.default_max_documents_per_user
+
+    async def get_user_max_chunks(self, user_id: UUID) -> int | None:
+        user = await self.providers.database.users_handler.get_user_by_id(
+            user_id
+        )
+        if user.limits_overrides and "max_chunks" in user.limits_overrides:
+            return user.limits_overrides["max_chunks"]
+        return self.config.app.default_max_chunks_per_user
+
+    async def get_user_max_collections(self, user_id: UUID) -> int | None:
+        user = await self.providers.database.users_handler.get_user_by_id(
+            user_id
+        )
+        if (
+            user.limits_overrides
+            and "max_collections" in user.limits_overrides
+        ):
+            return user.limits_overrides["max_collections"]
+        return self.config.app.default_max_collections_per_user
+
+    async def get_max_upload_size_by_type(
+        self, user_id: UUID, file_type_or_ext: str
+    ) -> int:
+        """
+        Return the maximum allowed upload size (in bytes) for the given user's file type/extension.
+        Respects user-level overrides if present, falling back to the system config.
+
+        ```json
+        {
+            "limits_overrides": {
+                "max_file_size": 20_000_000,
+                "max_file_size_by_type":
+                {
+                "pdf": 50_000_000,
+                "docx": 30_000_000
+                },
+                ...
+            }
+        }
+        ```
+
+        """
+        # 1. Normalize extension
+        ext = file_type_or_ext.lower().lstrip(".")
+
+        # 2. Fetch user from DB to see if we have any overrides
+        user = await self.providers.database.users_handler.get_user_by_id(
+            user_id
+        )
+        user_overrides = user.limits_overrides or {}
+
+        # 3. Check if there's a user-level override for "max_file_size_by_type"
+        user_file_type_limits = user_overrides.get("max_file_size_by_type", {})
+        if ext in user_file_type_limits:
+            return user_file_type_limits[ext]
+
+        # 4. If not, check if there's a user-level fallback "max_file_size"
+        if "max_file_size" in user_overrides:
+            return user_overrides["max_file_size"]
+
+        # 5. If none exist at user level, use system config
+        #    Example config paths:
+        system_type_limits = self.config.app.max_upload_size_by_type
+        if ext in system_type_limits:
+            return system_type_limits[ext]
+
+        # 6. Otherwise, return the global default
+        return self.config.app.default_max_upload_size
+
+    async def get_all_user_limits(self, user_id: UUID) -> dict[str, Any]:
+        """
+        Return a dictionary containing:
+        - The system default limits (from self.config.limits)
+        - The user's overrides (from user.limits_overrides)
+        - The final 'effective' set of limits after merging (overall)
+        - The usage for each relevant limit (per-route usage, etc.)
+        """
+        # 1) Fetch the user
+        user = await self.providers.database.users_handler.get_user_by_id(
+            user_id
+        )
+        user_overrides = user.limits_overrides or {}
+
+        # 2) Grab system defaults
+        system_defaults = {
+            "global_per_min": self.config.database.limits.global_per_min,
+            "route_per_min": self.config.database.limits.route_per_min,
+            "monthly_limit": self.config.database.limits.monthly_limit,
+            # Add additional fields if your LimitSettings has them
+        }
+
+        # 3) Build the overall (global) "effective limits" ignoring any specific route
+        overall_effective = (
+            self.providers.database.limits_handler.determine_effective_limits(
+                user, route=""
+            )
+        )
+
+        # 4) Build usage data. We'll do top-level usage for global_per_min/monthly,
+        #    then do route-by-route usage in a loop.
+        usage: dict[str, Any] = {}
+        now = datetime.now(timezone.utc)
+        one_min_ago = now - timedelta(minutes=1)
+
+        # (a) Global usage (per-minute)
+        global_per_min_used = (
+            await self.providers.database.limits_handler._count_requests(
+                user_id, route=None, since=one_min_ago
+            )
+        )
+        # (a2) Global usage (monthly) - i.e. usage across ALL routes
+        global_monthly_used = await self.providers.database.limits_handler._count_monthly_requests(
+            user_id, route=None
+        )
+
+        usage["global_per_min"] = {
+            "used": global_per_min_used,
+            "limit": overall_effective.global_per_min,
+            "remaining": (
+                overall_effective.global_per_min - global_per_min_used
+                if overall_effective.global_per_min is not None
+                else None
+            ),
+        }
+        usage["monthly_limit"] = {
+            "used": global_monthly_used,
+            "limit": overall_effective.monthly_limit,
+            "remaining": (
+                overall_effective.monthly_limit - global_monthly_used
+                if overall_effective.monthly_limit is not None
+                else None
+            ),
+        }
+
+        # (b) Route-level usage. We'll gather all routes from system + user overrides
+        system_route_limits = (
+            self.config.database.route_limits
+        )  # dict[str, LimitSettings]
+        user_route_overrides = user_overrides.get("route_overrides", {})
+        route_keys = set(system_route_limits.keys()) | set(
+            user_route_overrides.keys()
+        )
+
+        usage["routes"] = {}
+        for route in route_keys:
+            # 1) Get the final merged limits for this specific route
+            route_effective = self.providers.database.limits_handler.determine_effective_limits(
+                user, route
+            )
+
+            # 2) Count requests for the last minute on this route
+            route_per_min_used = (
+                await self.providers.database.limits_handler._count_requests(
+                    user_id, route, one_min_ago
+                )
+            )
+
+            # 3) Count route-specific monthly usage
+            route_monthly_used = await self.providers.database.limits_handler._count_monthly_requests(
+                user_id, route
+            )
+
+            usage["routes"][route] = {
+                "route_per_min": {
+                    "used": route_per_min_used,
+                    "limit": route_effective.route_per_min,
+                    "remaining": (
+                        route_effective.route_per_min - route_per_min_used
+                        if route_effective.route_per_min is not None
+                        else None
+                    ),
+                },
+                "monthly_limit": {
+                    "used": route_monthly_used,
+                    "limit": route_effective.monthly_limit,
+                    "remaining": (
+                        route_effective.monthly_limit - route_monthly_used
+                        if route_effective.monthly_limit is not None
+                        else None
+                    ),
+                },
+            }
+
+        max_documents = await self.get_user_max_documents(user_id)
+        used_documents = (
+            await self.providers.database.documents_handler.get_documents_overview(
+                limit=1, offset=0, filter_user_ids=[user_id]
+            )
+        )["total_entries"]
+        max_chunks = await self.get_user_max_chunks(user_id)
+        used_chunks = (
+            await self.providers.database.chunks_handler.list_chunks(
+                limit=1, offset=0, filters={"owner_id": user_id}
+            )
+        )["page_info"]["total_entries"]
+
+        max_collections = await self.get_user_max_collections(user_id)
+        used_collections = (
+            await self.providers.database.collections_handler.get_collections_overview(
+                limit=1, offset=0, filter_user_ids=[user_id]
+            )
+        )["total_entries"]
+
+        storage_limits = {
+            "chunks": {
+                "limit": max_chunks,
+                "used": used_chunks,
+                "remaining": max_chunks - used_chunks,
+            },
+            "documents": {
+                "limit": max_documents,
+                "used": used_documents,
+                "remaining": max_documents - used_documents,
+            },
+            "collections": {
+                "limit": max_collections,
+                "used": used_collections,
+                "remaining": max_collections - used_collections,
+            },
+        }
+        # 5) Return a structured response
+        result = {
+            "storage_limits": storage_limits,
+            "system_defaults": system_defaults,
+            "user_overrides": user_overrides,
+            "effective_limits": {
+                "global_per_min": overall_effective.global_per_min,
+                "route_per_min": overall_effective.route_per_min,
+                "monthly_limit": overall_effective.monthly_limit,
+            },
+            "usage": usage,
+        }
+        return result

@@ -2,7 +2,7 @@ import asyncio
 import json
 from datetime import datetime
 from enum import Enum
-from typing import Any, Type, TypeVar, Union
+from typing import Any, Type, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -12,10 +12,15 @@ T = TypeVar("T", bound="R2RSerializable")
 
 class R2RSerializable(BaseModel):
     @classmethod
-    def from_dict(cls: Type[T], data: Union[dict[str, Any], str]) -> T:
+    def from_dict(cls: Type[T], data: dict[str, Any] | str) -> T:
         if isinstance(data, str):
-            data = json.loads(data)
-        return cls(**data)
+            try:
+                data_dict = json.loads(data)
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Invalid JSON string: {e}") from e
+        else:
+            data_dict = data
+        return cls(**data_dict)
 
     def to_dict(self) -> dict[str, Any]:
         data = self.model_dump(exclude_unset=True)
@@ -50,6 +55,7 @@ class R2RSerializable(BaseModel):
     class Config:
         arbitrary_types_allowed = True
         json_encoders = {
+            UUID: str,
             bytes: lambda v: v.decode("utf-8", errors="ignore"),
         }
 

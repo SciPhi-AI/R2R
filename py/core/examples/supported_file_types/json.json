@@ -1,0 +1,58 @@
+{
+    "dashboard": {
+        "name": "Product Performance Dashboard",
+        "lastUpdated": "2024-12-16T10:30:00Z",
+        "metrics": {
+            "activeUsers": {
+                "current": 1234,
+                "previousPeriod": 1156,
+                "percentChange": 6.75
+            },
+            "revenue": {
+                "current": 45678.90,
+                "previousPeriod": 41234.56,
+                "percentChange": 10.78,
+                "currency": "USD"
+            },
+            "conversionRate": {
+                "current": 2.34,
+                "previousPeriod": 2.12,
+                "percentChange": 10.38,
+                "unit": "percent"
+            }
+        },
+        "recentActivity": [
+            {
+                "type": "deployment",
+                "title": "Enhanced search",
+                "description": "New feature deployed: Enhanced search functionality",
+                "timestamp": "2024-12-15T15:45:00Z",
+                "status": "successful"
+            },
+            {
+                "type": "bugfix",
+                "title": "Mobile navigation",
+                "description": "Bug fix: Mobile navigation issue resolved",
+                "timestamp": "2024-12-14T09:20:00Z",
+                "status": "successful"
+            },
+            {
+                "type": "performance",
+                "title": "Cache optimization",
+                "description": "Performance improvement: Cache optimization completed",
+                "timestamp": "2024-12-13T11:15:00Z",
+                "status": "successful"
+            }
+        ],
+        "settings": {
+            "refreshInterval": 300,
+            "timezone": "UTC",
+            "theme": "light",
+            "notifications": {
+                "email": true,
+                "slack": true,
+                "inApp": true
+            }
+        }
+    }
+}

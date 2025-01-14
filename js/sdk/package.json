@@ -1,6 +1,6 @@
 {
   "name": "r2r-js",
-  "version": "0.3.8",
+  "version": "0.4.16",
   "description": "",
   "main": "dist/index.js",
   "browser": "dist/index.browser.js",
@@ -26,21 +26,22 @@
   "dependencies": {
     "@jest/globals": "^29.7.0",
     "@rrweb/types": "2.0.0-alpha.17",
-    "axios": "^1.7.7",
+    "axios": "^1.7.9",
     "form-data": "^4.0.1",
-    "posthog-js": "^1.174.2",
-    "posthog-node": "^4.2.1",
+    "posthog-js": "^1.194.3",
+    "posthog-node": "^4.3.1",
     "rrweb-snapshot": "2.0.0-alpha.4",
     "uuid": "^10.0.0"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.13",
-    "@types/node": "^20.16.12",
+    "@rrweb/record": "2.0.0-alpha.17",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.17.9",
     "@types/uuid": "^10.0.0",
     "jest": "^29.7.0",
-    "prettier": "^3.3.3",
+    "prettier": "^3.4.2",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.7.2"
   }
 }

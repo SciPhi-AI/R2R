@@ -5,10 +5,22 @@ from pydantic import BaseModel
 T = TypeVar("T")
 
 
-class ResultsWrapper(BaseModel, Generic[T]):
+class R2RResults(BaseModel, Generic[T]):
     results: T
 
 
-class PaginatedResultsWrapper(BaseModel, Generic[T]):
+class PaginatedR2RResult(BaseModel, Generic[T]):
     results: T
     total_entries: int
+
+
+class GenericBooleanResponse(BaseModel):
+    success: bool
+
+
+class GenericMessageResponse(BaseModel):
+    message: str
+
+
+WrappedBooleanResponse = R2RResults[GenericBooleanResponse]
+WrappedGenericMessageResponse = R2RResults[GenericMessageResponse]

@@ -6,8 +6,7 @@ from core.base import (
     AsyncPipe,
     AsyncState,
     CompletionProvider,
-    PipeType,
-    PromptProvider,
+    DatabaseProvider,
 )
 from core.base.abstractions import GenerationConfig
 
@@ -28,18 +27,16 @@ class QueryTransformPipe(GeneratorPipe):
     def __init__(
         self,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
+        database_provider: DatabaseProvider,
         config: QueryTransformConfig,
-        type: PipeType = PipeType.TRANSFORM,
         *args,
         **kwargs,
     ):
         logger.info(f"Initalizing an `QueryTransformPipe` pipe.")
         super().__init__(
             llm_provider,
-            prompt_provider,
+            database_provider,
             config,
-            type,
             *args,
             **kwargs,
         )
@@ -64,15 +61,13 @@ class QueryTransformPipe(GeneratorPipe):
                 f"Transforming query: {query} into {num_query_xf_outputs} outputs with {self.config.task_prompt}."
             )
 
-            query_transform_request = (
-                await self.prompt_provider._get_message_payload(
-                    system_prompt_name=self.config.system_prompt,
-                    task_prompt_name=self.config.task_prompt,
-                    task_inputs={
-                        "message": query,
-                        "num_outputs": num_query_xf_outputs,
-                    },
-                )
+            query_transform_request = await self.database_provider.prompts_handler.get_message_payload(
+                system_prompt_name=self.config.system_prompt,
+                task_prompt_name=self.config.task_prompt,
+                task_inputs={
+                    "message": query,
+                    "num_outputs": num_query_xf_outputs,
+                },
             )
 
             response = await self.llm_provider.aget_completion(

@@ -1,0 +1,40 @@
+graphrag_entity_description:
+  template: |
+    Given the following information about an entity:
+
+    Document Summary:
+    {document_summary}
+
+    Entity Information:
+    {entity_info}
+
+    Relationship Data:
+    {relationships_txt}
+
+    Generate a comprehensive entity description that:
+
+    1. Opens with a clear definition statement identifying the entity's primary classification and core function
+    2. Incorporates key data points from both the document summary and relationship information
+    3. Emphasizes the entity's role within its broader context or system
+    4. Highlights critical relationships, particularly those that:
+      - Demonstrate hierarchical connections
+      - Show functional dependencies
+      - Indicate primary use cases or applications
+
+    Format Requirements:
+    - Length: 2-3 sentences
+    - Style: Technical and precise
+    - Structure: Definition + Context + Key Relationships
+    - Tone: Objective and authoritative
+
+    Integration Guidelines:
+    - Prioritize information that appears in multiple sources
+    - Resolve any conflicting information by favoring the most specific source
+    - Include temporal context if relevant to the entity's current state or evolution
+
+    Output should reflect the entity's complete nature while maintaining concision and clarity.
+  input_types:
+    document_summary: str
+    entity_info: str
+    relationships_txt: str
+  overwrite_on_diff: true

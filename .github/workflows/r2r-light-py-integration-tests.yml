@@ -1,36 +1,34 @@
-# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-
 name: R2R Light Python Integration Test (ubuntu)
 
 on:
   push:
     branches:
-      - dev
-      - dev-minor
+      - main
+    paths:
+      - 'py/**'
+      - '.github/workflows/**'
+      - 'tests/**'
   pull_request:
     branches:
       - dev
       - dev-minor
+      - main
+    paths:
+      - 'py/**'
+      - '.github/workflows/**'
+      - 'tests/**'
   workflow_dispatch:
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
+  integration-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        test_category:
-          - cli-ingestion
-          - cli-retrieval
-          - cli-graphrag
-          - sdk-ingestion
-          - sdk-retrieval
-          - sdk-auth
-          - sdk-collections
-          - sdk-graphrag
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
+      AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
+      AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
       TELEMETRY_ENABLED: 'false'
       R2R_POSTGRES_HOST: localhost
       R2R_POSTGRES_DBNAME: postgres
@@ -38,52 +36,83 @@ jobs:
       R2R_POSTGRES_PASSWORD: postgres
       R2R_POSTGRES_USER: postgres
       R2R_PROJECT_NAME: r2r_default
+      PYTHONUNBUFFERED: '1'
+      PYTEST_ADDOPTS: '--color=yes'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Poppler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
 
       - name: Set up Python and install dependencies
         uses: ./.github/actions/setup-python-light
         with:
-          os: ${{ matrix.os }}
+          os: ubuntu-latest
+          python-version: '3.12'
+          poetry-version: '1.7.1'
+          r2r-version: 'latest'
 
       - name: Setup and start PostgreSQL
         uses: ./.github/actions/setup-postgres-ext
         with:
-          os: ${{ matrix.os }}
+          os: ubuntu-latest
+
+      - name: Verify PostgreSQL and Vector Extension
+        run: |
+          pg_isready -h localhost -p 5432
+          sudo -u postgres psql -c "\dx vector;"
 
       - name: Start R2R Light server
         uses: ./.github/actions/start-r2r-light
+        id: start-server
 
-      - name: Run CLI Ingestion Tests
-        if: matrix.test_category == 'cli-ingestion'
-        uses: ./.github/actions/run-cli-ingestion-tests
+      - name: Wait for server to be ready
+        run: |
+          timeout=300  # 5 minutes timeout
+          while ! curl -s http://localhost:7272/health > /dev/null; do
+            if [ $timeout -le 0 ]; then
+              echo "Server failed to start within timeout"
+              exit 1
+            fi
+            echo "Waiting for server to be ready..."
+            sleep 5
+            timeout=$((timeout - 5))
+          done
 
-      - name: Run CLI Retrieval Tests
-        if: matrix.test_category == 'cli-retrieval'
-        uses: ./.github/actions/run-cli-retrieval-tests
+      - name: Run R2R Light Python Integration Test
+        run: |
+          cd py && poetry run pytest tests/unit \
+            --verbose \
+            --capture=no \
+            --log-cli-level=INFO \
+            --junit-xml=test-results/junit.xml \
+            --html=test-results/report.html
+      - name: Run R2R Full Python Integration Test
+        run: |
+          cd py && poetry run pytest tests/integration \
+            --verbose \
+            --capture=no \
+            --log-cli-level=INFO \
+            --junit-xml=test-results/junit.xml \
+            --html=test-results/report.html
 
-      - name: Run CLI GraphRAG Tests
-        if: matrix.test_category == 'cli-graphrag'
-        uses: ./.github/actions/run-cli-graphrag-tests
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: |
+            test-results/
+            pytest-logs/
 
-      - name: Run SDK Ingestion Tests
-        if: matrix.test_category == 'sdk-ingestion'
-        uses: ./.github/actions/run-sdk-ingestion-tests
-
-      - name: Run SDK Retrieval Tests
-        if: matrix.test_category == 'sdk-retrieval'
-        uses: ./.github/actions/run-sdk-retrieval-tests
-
-      - name: Run SDK Auth Tests
-        if: matrix.test_category == 'sdk-auth'
-        uses: ./.github/actions/run-sdk-auth-tests
-
-      - name: Run SDK Collections Tests
-        if: matrix.test_category == 'sdk-collections'
-        uses: ./.github/actions/run-sdk-collections-tests
-
-      - name: Run SDK GraphRAG Tests
-        if: matrix.test_category == 'sdk-graphrag'
-        uses: ./.github/actions/run-cli-graphrag-tests
+      - name: Check for test failures
+        if: failure()
+        run: |
+          echo "::error::Integration tests failed. Check the test results artifact for details."
+          exit 1

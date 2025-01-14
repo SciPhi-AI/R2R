@@ -2,14 +2,7 @@ from abc import abstractmethod
 from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
-from core.base import (
-    AsyncState,
-    CompletionProvider,
-    CompletionRecord,
-    PipeType,
-    PromptProvider,
-    R2RLoggingProvider,
-)
+from core.base import AsyncState, CompletionProvider, DatabaseProvider
 from core.base.abstractions import GenerationConfig
 from core.base.pipes.base_pipe import AsyncPipe
 
@@ -23,22 +16,18 @@ class GeneratorPipe(AsyncPipe):
     def __init__(
         self,
         llm_provider: CompletionProvider,
-        prompt_provider: PromptProvider,
+        database_provider: DatabaseProvider,
         config: AsyncPipe.PipeConfig,
-        type: PipeType = PipeType.GENERATOR,
-        pipe_logger: Optional[R2RLoggingProvider] = None,
         *args,
         **kwargs,
     ):
         super().__init__(
             config,
-            type,
-            pipe_logger,
             *args,
             **kwargs,
         )
         self.llm_provider = llm_provider
-        self.prompt_provider = prompt_provider
+        self.database_provider = database_provider
 
     @abstractmethod
     async def _run_logic(

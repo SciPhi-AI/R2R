@@ -1,16 +1,19 @@
-import logging
 import os
-import warnings
 from contextlib import asynccontextmanager
 from typing import Optional
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from core.base import R2RException
+from core.utils.logging_config import configure_logging
 
 from .assembly import R2RBuilder, R2RConfig
 
-logger = logging.getLogger()
+logger, log_file = configure_logging()
+
 
 # Global scheduler
 scheduler = AsyncIOScheduler()
@@ -47,7 +50,7 @@ async def create_r2r_app(
     config_name: Optional[str] = "default",
     config_path: Optional[str] = None,
 ):
-    config = R2RConfig.load(config_name, config_path)
+    config = R2RConfig.load(config_name=config_name, config_path=config_path)
 
     if (
         config.embedding.provider == "openai"
@@ -62,37 +65,13 @@ async def create_r2r_app(
     return await builder.build()
 
 
-logging.basicConfig(level=logging.INFO)
-
-config_name = os.getenv("R2R_CONFIG_NAME", os.getenv("CONFIG_NAME", None))
-config_path = os.getenv("R2R_CONFIG_PATH", os.getenv("CONFIG_PATH", None))
-
-# TODO: Remove this check in a future release
-# Check if the user is setting deprecated environment variables of CONFIG_NAME and CONFIG_PATH
-if os.getenv("CONFIG_NAME"):
-    warnings.warn(
-        "Environment variable CONFIG_NAME is deprecated and support for it will be removed in release 3.5.0. Please use R2R_CONFIG_NAME instead."
-    )
-if os.getenv("CONFIG_PATH"):
-    warnings.warn(
-        "Environment variable CONFIG_PATH is deprecated and support for it will be removed in release 3.5.0. Please use R2R_CONFIG_PATH instead."
-    )
+config_name = os.getenv("R2R_CONFIG_NAME", None)
+config_path = os.getenv("R2R_CONFIG_PATH", None)
 
 if not config_path and not config_name:
     config_name = "default"
 host = os.getenv("R2R_HOST", os.getenv("HOST", "0.0.0.0"))
-port = int(os.getenv("R2R_PORT", (os.getenv("PORT", "7272"))))
-
-# TODO: Remove this check in a future release
-# Check if the user is setting deprecated environment variables of HOST and PORT
-if os.getenv("HOST"):
-    warnings.warn(
-        "Environment variable HOST is deprecated and support for it will be removed in release 3.5.0. Please use R2R_HOST instead."
-    )
-if os.getenv("PORT"):
-    warnings.warn(
-        "Environment variable PORT is deprecated and support for it will be removed in release 3.5.0. Please use R2R_PORT instead."
-    )
+port = int(os.getenv("R2R_PORT", "7272"))
 
 logger.info(
     f"Environment R2R_CONFIG_NAME: {'None' if config_name is None else config_name}"
@@ -100,9 +79,37 @@ logger.info(
 logger.info(
     f"Environment R2R_CONFIG_PATH: {'None' if config_path is None else config_path}"
 )
+logger.info(f"Environment R2R_PROJECT_NAME: {os.getenv('R2R_PROJECT_NAME')}")
+
+logger.info(f"Environment R2R_POSTGRES_HOST: {os.getenv('R2R_POSTGRES_HOST')}")
+logger.info(
+    f"Environment R2R_POSTGRES_DBNAME: {os.getenv('R2R_POSTGRES_DBNAME')}"
+)
+logger.info(f"Environment R2R_POSTGRES_PORT: {os.getenv('R2R_POSTGRES_PORT')}")
+logger.info(
+    f"Environment R2R_POSTGRES_PASSWORD: {os.getenv('R2R_POSTGRES_PASSWORD')}"
+)
+logger.info(
+    f"Environment R2R_PROJECT_NAME: {os.getenv('R2R_PR2R_PROJECT_NAME')}"
+)
 
 # Create the FastAPI app
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    log_config=None,
+)
+
+
+@app.exception_handler(R2RException)
+async def r2r_exception_handler(request: Request, exc: R2RException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "message": exc.message,
+            "error_type": type(exc).__name__,
+        },
+    )
+
 
 # Add CORS middleware
 app.add_middleware(

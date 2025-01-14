@@ -1,17 +1,29 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional
+from datetime import datetime
+from typing import TYPE_CHECKING, Optional
 
 from fastapi import Security
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import (
+    APIKeyHeader,
+    HTTPAuthorizationCredentials,
+    HTTPBearer,
+)
 
-from ...utils import generate_user_id
 from ..abstractions import R2RException, Token, TokenData
-from ..api.models import UserResponse
+from ..api.models import User
 from .base import Provider, ProviderConfig
 from .crypto import CryptoProvider
 
+# from .database import DatabaseProvider
+from .email import EmailProvider
+
 logger = logging.getLogger()
+
+if TYPE_CHECKING:
+    from core.database import PostgresDatabaseProvider
+
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 class AuthConfig(ProviderConfig):
@@ -33,8 +45,17 @@ class AuthConfig(ProviderConfig):
 
 class AuthProvider(Provider, ABC):
     security = HTTPBearer(auto_error=False)
+    crypto_provider: CryptoProvider
+    email_provider: EmailProvider
+    database_provider: "PostgresDatabaseProvider"
 
-    def __init__(self, config: AuthConfig, crypto_provider: CryptoProvider):
+    def __init__(
+        self,
+        config: AuthConfig,
+        crypto_provider: CryptoProvider,
+        database_provider: "PostgresDatabaseProvider",
+        email_provider: EmailProvider,
+    ):
         if not isinstance(config, AuthConfig):
             raise ValueError(
                 "AuthProvider must be initialized with an AuthConfig"
@@ -43,19 +64,15 @@ class AuthProvider(Provider, ABC):
         self.admin_email = config.default_admin_email
         self.admin_password = config.default_admin_password
         self.crypto_provider = crypto_provider
+        self.database_provider = database_provider
+        self.email_provider = email_provider
         super().__init__(config)
-        self.config: AuthConfig = config  # for type hinting
+        self.config: AuthConfig = config
+        self.database_provider: "PostgresDatabaseProvider" = database_provider
 
-    def _get_default_admin_user(self) -> UserResponse:
-        return UserResponse(
-            id=generate_user_id(self.admin_email),
-            email=self.admin_email,
-            hashed_password=self.crypto_provider.get_password_hash(
-                self.admin_password
-            ),
-            is_superuser=True,
-            is_active=True,
-            is_verified=True,
+    async def _get_default_admin_user(self) -> User:
+        return await self.database_provider.users_handler.get_user_by_email(
+            self.admin_email
         )
 
     @abstractmethod
@@ -71,17 +88,21 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    async def user(self, token: str) -> UserResponse:
+    async def user(self, token: str) -> User:
         pass
 
     @abstractmethod
-    def get_current_active_user(
-        self, current_user: UserResponse
-    ) -> UserResponse:
+    def get_current_active_user(self, current_user: User) -> User:
         pass
 
     @abstractmethod
-    async def register(self, email: str, password: str) -> dict[str, str]:
+    async def register(self, email: str, password: str) -> User:
+        pass
+
+    @abstractmethod
+    async def send_verification_email(
+        self, email: str, user: Optional[User] = None
+    ) -> tuple[str, datetime]:
         pass
 
     @abstractmethod
@@ -100,29 +121,96 @@ class AuthProvider(Provider, ABC):
     ) -> dict[str, Token]:
         pass
 
-    async def auth_wrapper(
-        self, auth: Optional[HTTPAuthorizationCredentials] = Security(security)
-    ) -> UserResponse:
-        if not self.config.require_authentication and auth is None:
-            return self._get_default_admin_user()
+    def auth_wrapper(
+        self,
+        public: bool = False,
+    ):
+        async def _auth_wrapper(
+            auth: Optional[HTTPAuthorizationCredentials] = Security(
+                self.security
+            ),
+            api_key: Optional[str] = Security(api_key_header),
+        ) -> User:
+            # If authentication is not required and no credentials are provided, return the default admin user
+            if (
+                ((not self.config.require_authentication) or public)
+                and auth is None
+                and api_key is None
+            ):
+                return await self._get_default_admin_user()
+            if not auth and not api_key:
+                raise R2RException(
+                    message="No credentials provided. Create an account at https://app.sciphi.ai and set your API key using `r2r configure key` OR change your base URL to a custom deployment.",
+                    status_code=401,
+                )
+            if auth and api_key:
+                raise R2RException(
+                    message="Cannot have both Bearer token and API key",
+                    status_code=400,
+                )
+            # 1. Try JWT if `auth` is present (Bearer token)
+            if auth is not None:
+                credentials = auth.credentials
+                try:
+                    token_data = await self.decode_token(credentials)
+                    user = await self.database_provider.users_handler.get_user_by_email(
+                        token_data.email
+                    )
+                    if user is not None:
+                        return user
+                except R2RException:
+                    # JWT decoding failed for logical reasons (invalid token)
+                    pass
+                except Exception as e:
+                    # JWT decoding failed unexpectedly, log and continue
+                    logger.debug(f"JWT verification failed: {e}")
 
-        if auth is None:
+                # 2. If JWT failed, try API key from Bearer token
+                # Expected format: key_id.raw_api_key
+                if "." in credentials:
+                    key_id, raw_api_key = credentials.split(".", 1)
+                    api_key_record = await self.database_provider.users_handler.get_api_key_record(
+                        key_id
+                    )
+                    if api_key_record is not None:
+                        hashed_key = api_key_record["hashed_key"]
+                        if self.crypto_provider.verify_api_key(
+                            raw_api_key, hashed_key
+                        ):
+                            user = await self.database_provider.users_handler.get_user_by_id(
+                                api_key_record["user_id"]
+                            )
+                            if user is not None and user.is_active:
+                                return user
+
+            # 3. If no Bearer token worked, try the X-API-Key header
+            if api_key is not None and "." in api_key:
+                key_id, raw_api_key = api_key.split(".", 1)
+                api_key_record = await self.database_provider.users_handler.get_api_key_record(
+                    key_id
+                )
+                if api_key_record is not None:
+                    hashed_key = api_key_record["hashed_key"]
+                    if self.crypto_provider.verify_api_key(
+                        raw_api_key, hashed_key
+                    ):
+                        user = await self.database_provider.users_handler.get_user_by_id(
+                            api_key_record["user_id"]
+                        )
+                        if user is not None and user.is_active:
+                            return user
+
+            # If we reach here, both JWT and API key auth failed
             raise R2RException(
-                message="Authentication required.",
+                message="Invalid token or API key",
                 status_code=401,
             )
 
-        try:
-            return await self.user(auth.credentials)
-        except Exception as e:
-            raise R2RException(
-                message=f"Error '{e}' occurred during authentication.",
-                status_code=401,
-            )
+        return _auth_wrapper
 
     @abstractmethod
     async def change_password(
-        self, user: UserResponse, current_password: str, new_password: str
+        self, user: User, current_password: str, new_password: str
     ) -> dict[str, str]:
         pass
 
@@ -138,4 +226,8 @@ class AuthProvider(Provider, ABC):
 
     @abstractmethod
     async def logout(self, token: str) -> dict[str, str]:
+        pass
+
+    @abstractmethod
+    async def send_reset_email(self, email: str) -> dict[str, str]:
         pass

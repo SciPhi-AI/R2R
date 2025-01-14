@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 import time
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
@@ -22,7 +23,7 @@ class CompletionConfig(ProviderConfig):
     provider: Optional[str] = None
     generation_config: GenerationConfig = GenerationConfig()
     concurrent_request_limit: int = 256
-    max_retries: int = 8
+    max_retries: int = 3
     initial_backoff: float = 1.0
     max_backoff: float = 64.0
 
@@ -67,7 +68,7 @@ class CompletionProvider(Provider):
                 retries += 1
                 if retries == self.config.max_retries:
                     raise
-                await asyncio.sleep(backoff)
+                await asyncio.sleep(random.uniform(0, backoff))
                 backoff = min(backoff * 2, self.config.max_backoff)
 
     async def _execute_with_backoff_async_stream(
@@ -90,7 +91,7 @@ class CompletionProvider(Provider):
                 retries += 1
                 if retries == self.config.max_retries:
                     raise
-                await asyncio.sleep(backoff)
+                await asyncio.sleep(random.uniform(0, backoff))
                 backoff = min(backoff * 2, self.config.max_backoff)
 
     def _execute_with_backoff_sync(self, task: dict[str, Any]):
@@ -106,7 +107,7 @@ class CompletionProvider(Provider):
                 retries += 1
                 if retries == self.config.max_retries:
                     raise
-                time.sleep(backoff)
+                time.sleep(random.uniform(0, backoff))
                 backoff = min(backoff * 2, self.config.max_backoff)
 
     def _execute_with_backoff_sync_stream(
@@ -125,7 +126,7 @@ class CompletionProvider(Provider):
                 retries += 1
                 if retries == self.config.max_retries:
                     raise
-                time.sleep(backoff)
+                time.sleep(random.uniform(0, backoff))
                 backoff = min(backoff * 2, self.config.max_backoff)
 
     @abstractmethod
@@ -147,6 +148,8 @@ class CompletionProvider(Provider):
             "generation_config": generation_config,
             "kwargs": kwargs,
         }
+        if modalities := kwargs.get("modalities"):
+            task["modalities"] = modalities
         response = await self._execute_with_backoff_async(task)
         return LLMChatCompletion(**response.dict())
 

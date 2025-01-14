@@ -1,0 +1,48 @@
+# A config which overrides all instances of `openai` with `azure` in the `r2r.toml` config
+[agent]
+  [agent.generation_config]
+  model = "azure/gpt-4o"
+
+[completion]
+  [completion.generation_config]
+  model = "azure/gpt-4o"
+
+# KG settings
+batch_size = 256
+
+  [database.graph_creation_settings]
+    generation_config = { model = "azure/gpt-4o-mini" }
+
+  [database.graph_enrichment_settings]
+    generation_config = { model = "azure/gpt-4o-mini" }
+
+  [database.graph_search_settings]
+    generation_config = { model = "azure/gpt-4o-mini" }
+
+[embedding]
+provider = "litellm"
+base_model = "azure/text-embedding-3-small"
+base_dimension = 512
+
+[file]
+provider = "postgres"
+
+[ingestion]
+provider = "r2r"
+chunking_strategy = "recursive"
+chunk_size = 1_024
+chunk_overlap = 512
+excluded_parsers = ["mp4"]
+
+audio_transcription_model="azure/whisper-1"
+document_summary_model = "azure/gpt-4o-mini"
+vision_img_model = "azure/gpt-4o"
+vision_pdf_model = "azure/gpt-4o"
+
+  [ingestion.chunk_enrichment_settings]
+    generation_config = { model = "azure/gpt-4o-mini" }
+
+
+[auth]
+provider = "r2r"
+require_authentication = false

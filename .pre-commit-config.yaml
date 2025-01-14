@@ -10,9 +10,28 @@ repos:
 
   - repo: local
     hooks:
+      - id: check-typing-imports
+        name: Check for Dict, List, or Union usage
+        entry: bash -c 'echo "Checking for typing imports..." && find . -name "*.py" | grep -v "/migrations/" | xargs grep -n "from typing.*import.*[^d]Dict\\|from typing.*import.*List\\|from typing.*import.*Union" || exit 0 && echo "⚠️  Please import dict instead of Dict, list instead of List, and the logical OR operator" && exit 1'
+        language: system
+        types: [python]
+        pass_filenames: false
+        exclude: ^py/migrations/
+
+  - repo: local
+    hooks:
+      - id: check-print-statements
+        name: Check for print statements
+        entry: bash -c 'echo "Checking for print statements..." && find . -name "*.py" ! -path "./py/cli/*" ! -path "./py/core/examples/*" ! -path "./py/migrations/*" ! -path "./py/tests/*" | xargs grep -n "print(" || exit 0 && echo "Found print statements!" && exit 1'
+        language: system
+        types: [python]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
       - id: isort
         name: isort
-        entry: bash -c 'cd py && poetry run isort $(git diff --cached --name-only --diff-filter=ACM | grep ".py$" | xargs -I {} echo ../{}) || true'
+        entry: bash -c 'cd py && poetry run isort .'
         language: system
         types: [python]
         pass_filenames: false

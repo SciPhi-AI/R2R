@@ -4,17 +4,24 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from shared.abstractions import R2RSerializable
+
 from ..utils import generate_default_user_collection_id
 
 
 class Collection(BaseModel):
-    id: UUID = Field(default=None)
+    id: UUID
     name: str
     description: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow,
+    )
+    updated_at: datetime = Field(
+        default_factory=datetime.utcnow,
+    )
 
     class Config:
+        populate_by_name = True
         from_attributes = True
 
     def __init__(self, **data):
@@ -34,15 +41,29 @@ class TokenData(BaseModel):
     exp: Optional[datetime] = None
 
 
-class UserStats(BaseModel):
-    user_id: UUID
+class User(R2RSerializable):
+    id: UUID
     email: str
-    is_superuser: bool
-    is_active: bool
-    is_verified: bool
-    created_at: datetime
-    updated_at: datetime
-    collection_ids: list[UUID]
-    num_files: int
-    total_size_in_bytes: int
-    document_ids: list[UUID]
+    is_active: bool = True
+    is_superuser: bool = False
+    created_at: datetime = datetime.now()
+    updated_at: datetime = datetime.now()
+    is_verified: bool = False
+    collection_ids: list[UUID] = []
+    graph_ids: list[UUID] = []
+    document_ids: list[UUID] = []
+
+    # Optional fields (to update or set at creation)
+    limits_overrides: Optional[dict] = None
+    metadata: Optional[dict] = None
+    verification_code_expiry: Optional[datetime] = None
+    name: Optional[str] = None
+    bio: Optional[str] = None
+    profile_picture: Optional[str] = None
+    total_size_in_bytes: Optional[int] = None
+    num_files: Optional[int] = None
+
+    account_type: str = "password"
+    hashed_password: Optional[str] = None
+    google_id: Optional[str] = None
+    github_id: Optional[str] = None
