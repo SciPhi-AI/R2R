@@ -2231,6 +2231,33 @@ class DocumentsRouter(BaseRouterV3):
             Export documents as a downloadable CSV file.
             """
 
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=(
+                        None if auth_user.is_superuser else [auth_user.id]
+                    ),
+                    collection_ids=(
+                        None
+                        if auth_user.is_superuser
+                        else auth_user.collection_ids
+                    ),
+                    document_ids=[id],
+                    offset=0,
+                    limit=1,
+                )
+            )["results"]
+            if len(documents_overview_response) == 0:
+                raise R2RException("Document not found.", 404)
+
+            if (
+                not auth_user.is_superuser
+                and auth_user.id != documents_overview_response[0].owner_id
+            ):
+                raise R2RException(
+                    "Only a superuser can run deduplication on a document they do not own.",
+                    403,
+                )
+
             if not auth_user.is_superuser:
                 raise R2RException(
                     "Only a superuser can export data.",
