@@ -33,6 +33,7 @@ from core.base.utils import (
     _decorate_vector_type,
     _get_str_estimation_output,
     _get_vector_column_str,
+    generate_entity_document_id,
     llm_cost_per_million_tokens,
 )
 
@@ -369,6 +370,167 @@ class PostgresEntitiesHandler(Handler):
                     f"Some entities not found in {store_type} store or no permission to delete",
                     404,
                 )
+
+    async def get_duplicate_name_blocks(
+        self,
+        parent_id: UUID,
+        store_type: StoreType,
+    ) -> list[list[Entity]]:
+        """
+        Find all groups of entities that share identical names within the same parent.
+        Returns a list of entity groups, where each group contains entities with the same name.
+        For each group, includes the n most dissimilar descriptions based on cosine similarity.
+        """
+        table_name = self._get_entity_table_for_store(store_type)
+
+        # First get the duplicate names and their descriptions with embeddings
+        query = f"""
+            WITH duplicates AS (
+                SELECT name
+                FROM {self._get_table_name(table_name)}
+                WHERE parent_id = $1
+                GROUP BY name
+                HAVING COUNT(*) > 1
+            )
+            SELECT
+                e.id, e.name, e.category, e.description,
+                e.parent_id, e.chunk_ids, e.metadata
+            FROM {self._get_table_name(table_name)} e
+            WHERE e.parent_id = $1
+            AND e.name IN (SELECT name FROM duplicates)
+            ORDER BY e.name;
+        """
+
+        rows = await self.connection_manager.fetch_query(query, [parent_id])
+
+        # Group entities by name
+        name_groups: dict[str, list[Entity]] = {}
+        for row in rows:
+            entity_dict = dict(row)
+            if isinstance(entity_dict["metadata"], str):
+                with contextlib.suppress(json.JSONDecodeError):
+                    entity_dict["metadata"] = json.loads(
+                        entity_dict["metadata"]
+                    )
+
+            entity = Entity(**entity_dict)
+            name_groups.setdefault(entity.name, []).append(entity)
+
+        return list(name_groups.values())
+
+    async def merge_duplicate_name_blocks(
+        self,
+        parent_id: UUID,
+        store_type: StoreType,
+    ) -> list[tuple[list[Entity], Entity]]:
+        """
+        Merge entities that share identical names.
+        Returns list of tuples: (original_entities, merged_entity)
+        """
+        duplicate_blocks = await self.get_duplicate_name_blocks(
+            parent_id, store_type
+        )
+        merged_results: list[tuple[list[Entity], Entity]] = []
+
+        for block in duplicate_blocks:
+            # Create a new merged entity from the block
+            merged_entity = await self._create_merged_entity(block)
+            merged_results.append((block, merged_entity))
+
+            table_name = self._get_entity_table_for_store(store_type)
+            async with self.connection_manager.transaction():
+                # Insert the merged entity
+                new_id = await self._insert_merged_entity(
+                    merged_entity, table_name
+                )
+
+                merged_entity.id = new_id
+
+                # FIXME: Replace the original entities with the merged entity in relationships
+                # This is not working as current entity IDs do not match actual IDs
+
+                # Delete the original entities
+                old_ids = [str(entity.id) for entity in block]
+                delete_query = f"""
+                    DELETE FROM {self._get_table_name(table_name)}
+                    WHERE id = ANY($1::uuid[])
+                """
+                await self.connection_manager.execute_query(
+                    delete_query, [old_ids]
+                )
+
+        return merged_results
+
+    async def _insert_merged_entity(
+        self, entity: Entity, table_name: str
+    ) -> UUID:
+        """Insert merged entity and return its new ID."""
+        new_id = generate_entity_document_id()
+
+        query = f"""
+            INSERT INTO {self._get_table_name(table_name)}
+            (id, name, category, description, parent_id, chunk_ids, metadata)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id
+        """
+
+        values = [
+            new_id,
+            entity.name,
+            entity.category,
+            entity.description,
+            entity.parent_id,
+            entity.chunk_ids,
+            json.dumps(entity.metadata) if entity.metadata else None,
+        ]
+
+        result = await self.connection_manager.fetch_query(query, values)
+        return result[0]["id"]
+
+    async def _create_merged_entity(self, entities: list[Entity]) -> Entity:
+        """
+        Create a merged entity from a list of duplicate entities.
+        Uses various strategies to combine fields.
+        """
+        if not entities:
+            raise ValueError("Cannot merge empty list of entities")
+
+        # Take the first non-None category, or None if all are None
+        category = next(
+            (e.category for e in entities if e.category is not None), None
+        )
+
+        # Combine descriptions with newlines if they differ
+        descriptions = {e.description for e in entities if e.description}
+        description = "\n\n".join(descriptions) if descriptions else None
+
+        # Combine chunk_ids, removing duplicates
+        chunk_ids = list(
+            {
+                chunk_id
+                for entity in entities
+                for chunk_id in (entity.chunk_ids or [])
+            }
+        )
+
+        # Merge metadata dictionaries
+        merged_metadata = {}
+        for entity in entities:
+            if entity.metadata:
+                merged_metadata |= entity.metadata
+
+        # Create new merged entity (without actually inserting to DB)
+        return Entity(
+            id=UUID(
+                "00000000-0000-0000-0000-000000000000"
+            ),  # Placeholder UUID
+            name=entities[0].name,  # All entities in block have same name
+            category=category,
+            description=description,
+            parent_id=entities[0].parent_id,
+            chunk_ids=chunk_ids or None,
+            metadata=merged_metadata or None,
+        )
 
     async def export_to_csv(
         self,

@@ -99,13 +99,13 @@ export class r2rClient extends BaseClient {
           console.log(
             `[r2rClient] Attaching access token to request: ${accessToken.slice(
               0,
-              15
-            )}...`
+              15,
+            )}...`,
           );
           config.headers["Authorization"] = `Bearer ${accessToken}`;
         } else {
           console.log(
-            "[r2rClient] No access token found, sending request without Authorization header"
+            "[r2rClient] No access token found, sending request without Authorization header",
           );
         }
         return config;
@@ -124,7 +124,10 @@ export class r2rClient extends BaseClient {
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
-        console.warn("[r2rClient] Response interceptor caught an error:", error);
+        console.warn(
+          "[r2rClient] Response interceptor caught an error:",
+          error,
+        );
 
         const status = error.response?.status;
         const failingUrl = error.config?.url;
@@ -137,17 +140,17 @@ export class r2rClient extends BaseClient {
           "[r2rClient] Failing request URL:",
           failingUrl,
           "status =",
-          status
+          status,
         );
         console.warn(
           "failingUrl?.includes('/v3/users/refresh-token') = ",
-          failingUrl?.includes("/v3/users/refresh-token")
+          failingUrl?.includes("/v3/users/refresh-token"),
         );
 
         // 1) If the refresh endpoint itself fails => don't try again
         if (failingUrl?.includes("/v3/users/refresh-token")) {
           console.error(
-            "[r2rClient] Refresh call itself returned 401/403 => logging out"
+            "[r2rClient] Refresh call itself returned 401/403 => logging out",
           );
           this.onRefreshFailedCallback?.();
           return Promise.reject(error);
@@ -170,7 +173,11 @@ export class r2rClient extends BaseClient {
         // If either of those checks is true, we consider it an auth token error:
         const isAuthError = isTokenError || looksLikeTokenIssue;
 
-        if ((status === 401 || status === 403) && this.getTokensCallback && isAuthError) {
+        if (
+          (status === 401 || status === 403) &&
+          this.getTokensCallback &&
+          isAuthError
+        ) {
           // Check if we have a refresh token
           const { refreshToken } = this.getTokensCallback();
           if (!refreshToken) {
@@ -190,7 +197,7 @@ export class r2rClient extends BaseClient {
             console.log(
               "[r2rClient] Refresh call succeeded; new access token:",
               newAccessToken.slice(0, 15),
-              "..."
+              "...",
             );
 
             // set new tokens
@@ -198,20 +205,21 @@ export class r2rClient extends BaseClient {
 
             // Re-try the original request
             if (error.config) {
-              error.config.headers["Authorization"] = `Bearer ${newAccessToken}`;
+              error.config.headers["Authorization"] =
+                `Bearer ${newAccessToken}`;
               console.log(
-                "[r2rClient] Retrying original request with new access token..."
+                "[r2rClient] Retrying original request with new access token...",
               );
               return this.axiosInstance.request(error.config);
             } else {
               console.warn(
-                "[r2rClient] No request config found to retry. Possibly manual re-fetch needed"
+                "[r2rClient] No request config found to retry. Possibly manual re-fetch needed",
               );
             }
           } catch (refreshError) {
             console.error(
               "[r2rClient] Refresh attempt failed => logging out. Error was:",
-              refreshError
+              refreshError,
             );
             this.onRefreshFailedCallback?.();
             return Promise.reject(refreshError);
@@ -219,7 +227,9 @@ export class r2rClient extends BaseClient {
         }
 
         // 3) If not a 401/403 or it's a 401/403 that isn't token-related => just reject
-        console.log("[r2rClient] Non-auth error or non-token 401/403 => rejecting");
+        console.log(
+          "[r2rClient] Non-auth error or non-token 401/403 => rejecting",
+        );
         return Promise.reject(error);
       },
     );
@@ -240,7 +250,7 @@ export class r2rClient extends BaseClient {
 
   public setTokens(
     accessToken: string | null,
-    refreshToken: string | null
+    refreshToken: string | null,
   ): void {
     // Optional: log the changes, but be careful not to log full tokens in prod
     console.log(
@@ -248,7 +258,7 @@ export class r2rClient extends BaseClient {
       accessToken?.slice(0, 15),
       "... refresh token:",
       refreshToken?.slice(0, 15),
-      "..."
+      "...",
     );
     super.setTokens(accessToken || "", refreshToken || "");
     this.setTokensCallback?.(accessToken, refreshToken);

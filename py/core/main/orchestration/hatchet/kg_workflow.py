@@ -349,6 +349,22 @@ def hatchet_kg_factory(
                 f"Successfully ran kg entity description for document {document_id}"
             )
 
+            if (
+                service.providers.database.config.graph_creation_settings.automatic_deduplication
+            ):
+                extract_input = {
+                    "document_id": str(document_id),
+                }
+
+                extract_result = (
+                    await context.aio.spawn_workflow(
+                        "deduplicate-document-entities",
+                        {"request": extract_input},
+                    )
+                ).result()
+
+                await asyncio.gather(extract_result)
+
             return {
                 "result": f"successfully ran kg entity description for document {document_id}"
             }
@@ -570,9 +586,52 @@ def hatchet_kg_factory(
                 "result": f"successfully ran kg community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)}"
             }
 
+    @orchestration_provider.workflow(
+        name="deduplicate-document-entities", timeout="360m"
+    )
+    class DeduplicateDocumentEntitiesWorkflow:
+        def __init__(self, kg_service: GraphService):
+            self.kg_service = kg_service
+
+        @orchestration_provider.concurrency(  # type: ignore
+            max_runs=orchestration_provider.config.kg_concurrency_limit,  # type: ignore
+            limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
+        )
+        def concurrency(self, context: Context) -> str:
+            # TODO: Possible bug in hatchet, the job can't find context.workflow_input() when rerun
+            try:
+                return str(context.workflow_input()["request"]["document_id"])
+            except Exception as e:
+                return str(uuid.uuid4())
+
+        @orchestration_provider.step(retries=1, timeout="360m")
+        async def deduplicate_document_entities(
+            self, context: Context
+        ) -> dict:
+            start_time = time.time()
+
+            input_data = get_input_data_dict(
+                context.workflow_input()["request"]
+            )
+
+            document_id = input_data.get("document_id", None)
+
+            await service.deduplicate_document_entities(
+                document_id=document_id,
+            )
+            logger.info(
+                f"Successfully ran deduplication for document {document_id} in {time.time() - start_time:.2f} seconds "
+            )
+            return {
+                "result": f"Successfully ran deduplication for document {document_id}"
+            }
+
     return {
         "kg-extract": KGExtractDescribeEmbedWorkflow(service),
         "extract-triples": CreateGraphWorkflow(service),
         "build-communities": EnrichGraphWorkflow(service),
         "kg-community-summary": KGCommunitySummaryWorkflow(service),
+        "deduplicate-document-entities": DeduplicateDocumentEntitiesWorkflow(
+            service
+        ),
     }

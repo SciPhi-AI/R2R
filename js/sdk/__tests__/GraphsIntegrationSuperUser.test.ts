@@ -116,6 +116,16 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
     expect(response.results).toBeDefined();
   }, 60000);
 
+  test("Deduplicate entities in the document", async () => {
+    const response = await client.documents.deduplicate({
+      id: documentId,
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 30000));
+
+    expect(response.results).toBeDefined();
+  }, 60000);
+
   test("Export document entities to CSV with default options", async () => {
     const outputPath = path.join(
       TEST_OUTPUT_DIR,
