@@ -255,6 +255,20 @@ def hatchet_ingestion_factory(
                         status=IngestionStatus.ENRICHED,
                     )
 
+                    if service.providers.ingestion.config.automatic_extraction:
+                        extract_input = {
+                            "document_id": str(document_info.id),
+                            "graph_creation_settings": self.ingestion_service.providers.database.config.graph_creation_settings.model_dump_json(),
+                            "user": parsed_data["user"],
+                        }
+
+                        extract_result = (
+                            await context.aio.spawn_workflow(
+                                "extract-triples",
+                                {"request": extract_input},
+                            )
+                        ).result()
+
                 return {
                     "status": "Successfully finalized ingestion",
                     "document_info": document_info.to_dict(),
