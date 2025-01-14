@@ -352,9 +352,6 @@ class PostgresPromptsHandler(CacheablePromptHandler):
                         overwrite_on_diff = prompt_data.get(
                             "overwrite_on_diff", default_overwrite_on_diff
                         )
-                        if overwrite_on_diff:
-                            print("prompt_data = ", prompt_data)
-
                         # Some logic to determine if we *should* modify
                         # For instance, preserve only if it has never been updated
                         # (i.e., created_at == updated_at).
