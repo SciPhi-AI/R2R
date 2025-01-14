@@ -9,6 +9,7 @@ import {
   WrappedEntitiesResponse,
   WrappedIngestionResponse,
   WrappedRelationshipsResponse,
+  WrappedGenericMessageResponse,
 } from "../../types";
 import { feature } from "../../feature";
 import { downloadBlob } from "../../utils";
@@ -578,7 +579,7 @@ export class DocumentsClient {
     id: string;
     runType?: string;
     runWithOrchestration?: boolean;
-  }): Promise<any> {
+  }): Promise<WrappedGenericMessageResponse> {
     const data: Record<string, any> = {};
 
     if (options.runType) {
@@ -665,6 +666,42 @@ export class DocumentsClient {
       `documents/${options.id}/relationships`,
       {
         params,
+      },
+    );
+  }
+
+  /**
+   * Deduplicates entities from a document.
+   * @param id Document ID to deduplicate entities for
+   * @param runType Optional deduplication run type
+   * @param settings Optional deduplication settings
+   * @param runWithOrchestration Optional flag to run with orchestration
+   * @returns WrappedGenericMessageResponse
+   */
+  @feature("documents.deduplicate")
+  async deduplicate(options: {
+    id: string;
+    runType?: string;
+    settings?: Record<string, any>;
+    runWithOrchestration?: boolean;
+  }): Promise<WrappedGenericMessageResponse> {
+    const data: Record<string, any> = {};
+
+    if (options.runType) {
+      data.runType = options.runType;
+    }
+    if (options.settings) {
+      data.settings = options.settings;
+    }
+    if (options.runWithOrchestration !== undefined) {
+      data.runWithOrchestration = options.runWithOrchestration;
+    }
+
+    return this.client.makeRequest(
+      "POST",
+      `documents/${options.id}/deduplicate`,
+      {
+        data,
       },
     );
   }

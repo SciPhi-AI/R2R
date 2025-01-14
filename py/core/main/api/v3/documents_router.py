@@ -1661,6 +1661,36 @@ class DocumentsRouter(BaseRouterV3):
                         "lang": "Python",
                         "source": textwrap.dedent(
                             """
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+
+                            response = client.documents.deduplicate(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+                            )
+                            """
+                        ),
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient();
+
+                            function main() {
+                                const response = await client.documents.deduplicate({
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/deduplicate"  \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
                             """
                         ),
                     },
