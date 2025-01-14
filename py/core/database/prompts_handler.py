@@ -140,8 +140,8 @@ class CacheablePromptHandler(Handler):
         prompt_override: Optional[str] = None,
         bypass_cache: bool = False,
     ) -> str:
-        """Get a prompt with caching support"""
         if prompt_override:
+            # If the user gave us a direct override, use it.
             if inputs:
                 try:
                     return prompt_override.format(**inputs)
@@ -151,13 +151,20 @@ class CacheablePromptHandler(Handler):
 
         cache_key = self._cache_key(prompt_name, inputs)
 
+        # If not bypassing, try returning from the prompt-level cache
         if not bypass_cache:
             cached = self._prompt_cache.get(cache_key)
             if cached is not None:
-                logger.debug(f"Cache hit for prompt: {cache_key}")
+                logger.debug(f"Prompt cache hit: {cache_key}")
                 return cached
 
-        result = await self._get_prompt_impl(prompt_name, inputs)
+        logger.debug(
+            f"Prompt cache miss or bypass. Retrieving from DB or template cache."
+        )
+        # Notice the new parameter `bypass_template_cache` below
+        result = await self._get_prompt_impl(
+            prompt_name, inputs, bypass_template_cache=bypass_cache
+        )
         self._prompt_cache.set(cache_key, result)
         return result
 
@@ -190,12 +197,21 @@ class CacheablePromptHandler(Handler):
             "updated_at": result["updated_at"],
         }
 
-    @abstractmethod
-    async def _get_prompt_impl(
-        self, prompt_name: str, inputs: Optional[dict[str, Any]] = None
+    def _format_prompt(
+        self,
+        template: str,
+        inputs: Optional[dict[str, Any]],
+        input_types: dict[str, str],
     ) -> str:
-        """Implementation of prompt retrieval logic"""
-        pass
+        if inputs:
+            # optional input validation if needed
+            for k, v in inputs.items():
+                if k not in input_types:
+                    raise ValueError(
+                        f"Unexpected input '{k}' for prompt with input types {input_types}"
+                    )
+            return template.format(**inputs)
+        return template
 
     async def update_prompt(
         self,
@@ -373,30 +389,49 @@ class PostgresPromptsHandler(CacheablePromptHandler):
 
     # Implementation of abstract methods from CacheablePromptHandler
     async def _get_prompt_impl(
-        self, prompt_name: str, inputs: Optional[dict[str, Any]] = None
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        bypass_template_cache: bool = False,
     ) -> str:
         """Implementation of database prompt retrieval"""
-        template_info = await self._get_template_info(prompt_name)
+        # If we're bypassing the template cache, skip the cache lookup
+        if not bypass_template_cache:
+            template_info = self._template_cache.get(prompt_name)
+            if template_info is not None:
+                logger.debug(f"Template cache hit: {prompt_name}")
+                # use that
+                return self._format_prompt(
+                    template_info["template"],
+                    inputs,
+                    template_info["input_types"],
+                )
 
-        if not template_info:
-            raise ValueError(f"Prompt template '{prompt_name}' not found")
-
-        template, input_types = (
-            template_info["template"],
-            template_info["input_types"],
+        # If we get here, either no cache was found or bypass_cache is True
+        query = f"""
+        SELECT template, input_types
+        FROM {self._get_table_name("prompts")}
+        WHERE name = $1;
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [prompt_name]
         )
 
-        if inputs:
-            # Validate input types
-            for key, value in inputs.items():
-                expected_type = input_types.get(key)
-                if not expected_type:
-                    raise ValueError(
-                        f"Unexpected input key: {key} expected input types: {input_types}"
-                    )
-            return template.format(**inputs)
+        if not result:
+            raise ValueError(f"Prompt template '{prompt_name}' not found")
 
-        return template
+        template = result["template"]
+        input_types = result["input_types"]
+        if isinstance(input_types, str):
+            input_types = json.loads(input_types)
+
+        # Update template cache if not bypassing it
+        if not bypass_template_cache:
+            self._template_cache.set(
+                prompt_name, {"template": template, "input_types": input_types}
+            )
+
+        return self._format_prompt(template, inputs, input_types)
 
     async def _get_template_info(self, prompt_name: str) -> Optional[dict]:  # type: ignore
         """Get template info with caching"""
