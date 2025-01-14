@@ -261,7 +261,6 @@ def hatchet_ingestion_factory(
                         "graph_creation_settings": self.ingestion_service.providers.database.config.graph_creation_settings.model_dump_json(),
                         "user": input_data["user"],
                     }
-                    context.log(f"extract_input = ${extract_input}")
 
                     extract_result = (
                         await context.aio.spawn_workflow(
