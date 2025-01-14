@@ -1,5 +1,4 @@
 import base64
-import json
 import logging
 import mimetypes
 import textwrap
@@ -403,8 +402,9 @@ class DocumentsRouter(BaseRouterV3):
                         f"Maximum of {MAX_CHUNKS_PER_REQUEST} chunks per request",
                         400,
                     )
-                document_id = generate_document_id(
-                    json.dumps(chunks), auth_user.id
+
+                document_id = id or generate_document_id(
+                    "".join(chunks), auth_user.id
                 )
 
                 # FIXME: Metadata doesn't seem to be getting passed through
@@ -535,7 +535,7 @@ class DocumentsRouter(BaseRouterV3):
                 file_data["content_type"],
             )
 
-            self.services.ingestion.ingest_file_ingress(
+            await self.services.ingestion.ingest_file_ingress(
                 file_data=workflow_input["file_data"],
                 user=auth_user,
                 document_id=workflow_input["document_id"],

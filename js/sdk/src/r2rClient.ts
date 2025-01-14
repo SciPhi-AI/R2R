@@ -12,6 +12,13 @@ import { RetrievalClient } from "./v3/clients/retrieval";
 import { SystemClient } from "./v3/clients/system";
 import { UsersClient } from "./v3/clients/users";
 
+let fs: any;
+if (typeof window === "undefined") {
+  import("fs").then((module) => {
+    fs = module;
+  });
+}
+
 import { initializeTelemetry } from "./feature";
 
 type RefreshTokenResponse = {
@@ -27,7 +34,10 @@ interface R2RClientOptions {
     accessToken: string | null;
     refreshToken: string | null;
   };
-  setTokensCallback?: (accessToken: string | null, refreshToken: string | null) => void;
+  setTokensCallback?: (
+    accessToken: string | null,
+    refreshToken: string | null,
+  ) => void;
   onRefreshFailedCallback?: () => void;
 }
 
@@ -50,7 +60,7 @@ export class r2rClient extends BaseClient {
   constructor(
     baseURL: string,
     anonymousTelemetry = true,
-    options: R2RClientOptions = {}
+    options: R2RClientOptions = {},
   ) {
     super(baseURL, "", anonymousTelemetry, options.enableAutoRefresh);
 
@@ -103,7 +113,7 @@ export class r2rClient extends BaseClient {
       (error) => {
         console.error("[r2rClient] Request interceptor error:", error);
         return Promise.reject(error);
-      }
+      },
     );
 
     // 2) Response interceptor: see if we got 401/403 => attempt to refresh
@@ -211,14 +221,14 @@ export class r2rClient extends BaseClient {
         // 3) If not a 401/403 or it's a 401/403 that isn't token-related => just reject
         console.log("[r2rClient] Non-auth error or non-token 401/403 => rejecting");
         return Promise.reject(error);
-      }
+      },
     );
   }
 
   public makeRequest<T = any>(
     method: Method,
     endpoint: string,
-    options: any = {}
+    options: any = {},
   ): Promise<T> {
     console.log(`[r2rClient] makeRequest: ${method.toUpperCase()} ${endpoint}`);
     return this._makeRequest(method, endpoint, options, "v3");

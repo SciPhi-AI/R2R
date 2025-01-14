@@ -1,6 +1,5 @@
 import { r2rClient } from "../src/index";
 import { describe, test, beforeAll, expect, afterAll } from "@jest/globals";
-import { assert } from "console";
 import fs from "fs";
 import path from "path";
 
@@ -8,7 +7,7 @@ const baseUrl = "http://localhost:7272";
 const TEST_OUTPUT_DIR = path.join(__dirname, "test-output");
 
 /**
- * marmeladov.txt will have an id of 83ef5342-4275-5b75-92d6-692fa32f8523
+ * marmeladov.txt will have an id of 649d1072-7054-4e17-bd51-1af5f467d617
  * The untitled document will have an id of 5556836e-a51c-57c7-916a-de76c79df2b6
  * The default collection id is 122fdf6a-e116-546b-a8f6-e4cb2e2c0a09
  */
@@ -38,9 +37,12 @@ describe("r2rClient V3 Documents Integration Tests", () => {
     const response = await client.documents.create({
       file: { path: "examples/data/marmeladov.txt", name: "marmeladov.txt" },
       metadata: { title: "marmeladov.txt", numericId: 123 },
+      id: "649d1072-7054-4e17-bd51-1af5f467d617",
     });
 
-    expect(response.results.documentId).toBeDefined();
+    expect(response.results.documentId).toBe(
+      "649d1072-7054-4e17-bd51-1af5f467d617",
+    );
     documentId = response.results.documentId;
   }, 10000);
 
@@ -303,7 +305,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
   test("Delete marmeladov.txt", async () => {
     const response = await client.documents.delete({
-      id: "83ef5342-4275-5b75-92d6-692fa32f8523",
+      id: "649d1072-7054-4e17-bd51-1af5f467d617",
     });
 
     expect(response.results).toBeDefined();
