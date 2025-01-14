@@ -301,8 +301,15 @@ class PostgresPromptsHandler(CacheablePromptHandler):
             logger.error(f"Failed to load prompts from database: {e}")
             raise
 
-    async def _load_prompts_from_yaml_directory(self) -> None:
-        """Load prompts from YAML files in the specified directory."""
+    async def _load_prompts_from_yaml_directory(
+        self, default_overwrite_on_diff: bool = False
+    ) -> None:
+        """
+        Load prompts from YAML files in the specified directory.
+
+        :param default_overwrite_on_diff: If a YAML prompt does not specify
+                                        'overwrite_on_diff', we use this default.
+        """
         if not self.prompt_directory.is_dir():
             logger.warning(
                 f"Prompt directory not found: {self.prompt_directory}"
@@ -313,7 +320,7 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         for yaml_file in self.prompt_directory.glob("*.yaml"):
             logger.debug(f"Processing {yaml_file}")
             try:
-                with open(yaml_file, "r") as file:
+                with open(yaml_file, "r", encoding="utf-8") as file:
                     data = yaml.safe_load(file)
                     if not isinstance(data, dict):
                         raise ValueError(
@@ -321,23 +328,41 @@ class PostgresPromptsHandler(CacheablePromptHandler):
                         )
 
                     for name, prompt_data in data.items():
+                        # Attempt to parse the relevant prompt fields
+                        template = prompt_data.get("template")
+                        input_types = prompt_data.get("input_types", {})
+
+                        # Decide on per-prompt overwrite behavior (or fallback)
+                        overwrite_on_diff = prompt_data.get(
+                            "overwrite_on_diff", default_overwrite_on_diff
+                        )
+
+                        # Some logic to determine if we *should* modify
+                        # For instance, preserve only if it has never been updated
+                        # (i.e., created_at == updated_at).
                         should_modify = True
                         if name in self.prompts:
-                            # Only modify if the prompt hasn't been updated since creation
                             existing = self.prompts[name]
                             should_modify = (
                                 existing["created_at"]
                                 == existing["updated_at"]
                             )
 
-                        if should_modify:
-                            logger.info(f"Loading default prompt: {name}")
-                            await self.add_prompt(
-                                name=name,
-                                template=prompt_data["template"],
-                                input_types=prompt_data.get("input_types", {}),
-                                preserve_existing=(not should_modify),
-                            )
+                        # If should_modify is True, the default logic is
+                        #   preserve_existing = False,
+                        # so we can pass that in. Otherwise, preserve_existing=True
+                        # effectively means we skip the update.
+                        logger.info(
+                            f"Loading default prompt: {name} from {yaml_file}."
+                        )
+
+                        await self.add_prompt(
+                            name=name,
+                            template=template,
+                            input_types=input_types,
+                            preserve_existing=(not should_modify),
+                            overwrite_on_diff=overwrite_on_diff,
+                        )
             except Exception as e:
                 logger.error(f"Error loading {yaml_file}: {e}")
                 continue
@@ -502,12 +527,47 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         template: str,
         input_types: dict[str, str],
         preserve_existing: bool = False,
+        overwrite_on_diff: bool = False,  # <-- new param
     ) -> None:
-        """Add or update a prompt."""
-        if preserve_existing and name in self.prompts:
+        """
+        Add or update a prompt.
+
+        If `preserve_existing` is True and prompt already exists, we skip updating.
+
+        If `overwrite_on_diff` is True and an existing prompt differs from what is provided,
+        we overwrite and log a warning. Otherwise, we skip if the prompt differs.
+        """
+        # Check if prompt is in-memory
+        existing_prompt = self.prompts.get(name)
+
+        # If preserving existing and it already exists, skip entirely
+        if preserve_existing and existing_prompt:
+            logger.debug(
+                f"Preserving existing prompt: {name}, skipping update."
+            )
             return
 
-        id = generate_default_prompt_id(name)
+        # If an existing prompt is found, check for diffs
+        if existing_prompt:
+            existing_template = existing_prompt["template"]
+            existing_input_types = existing_prompt["input_types"]
+
+            # If there's a difference in template or input_types, decide to overwrite or skip
+            if (
+                existing_template != template
+                or existing_input_types != input_types
+            ):
+                if overwrite_on_diff:
+                    logger.warning(
+                        f"Overwriting existing prompt '{name}' due to detected diff."
+                    )
+                else:
+                    logger.info(
+                        f"Prompt '{name}' differs from existing but overwrite_on_diff=False. Skipping update."
+                    )
+                    return
+
+        prompt_id = generate_default_prompt_id(name)
 
         # Ensure input_types is properly serialized
         input_types_json = (
@@ -516,6 +576,7 @@ class PostgresPromptsHandler(CacheablePromptHandler):
             else input_types
         )
 
+        # Upsert logic
         query = f"""
         INSERT INTO {self._get_table_name("prompts")} (id, name, template, input_types)
         VALUES ($1, $2, $3, $4)
@@ -527,7 +588,7 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         """
 
         result = await self.connection_manager.fetchrow_query(
-            query, [id, name, template, input_types_json]
+            query, [prompt_id, name, template, input_types_json]
         )
 
         self.prompts[name] = {
@@ -542,10 +603,10 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         self._template_cache.set(
             name,
             {
-                "id": id,
+                "id": prompt_id,
                 "template": template,
                 "input_types": input_types,
-            },  # Store as dict in cache
+            },
         )
 
         # Invalidate any cached formatted prompts

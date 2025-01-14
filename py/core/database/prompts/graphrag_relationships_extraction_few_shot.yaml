@@ -98,3 +98,4 @@ graphrag_relationships_extraction_few_shot:
     input: str
     entity_types: list[str]
     relation_types: list[str]
+  overwrite_on_diff: true

@@ -14,6 +14,7 @@ from core.database.postgres import (
     PostgresDocumentsHandler,
     PostgresGraphsHandler,
     PostgresLimitsHandler,
+    PostgresPromptsHandler,
 )
 from core.database.users import (  # Make sure this import is correct
     PostgresUserHandler,
@@ -176,6 +177,27 @@ async def users_handler(db_provider, crypto_provider):
         f"TRUNCATE {handler._get_table_name('users_api_keys')} CASCADE;"
     )
 
+    return handler
+
+
+@pytest.fixture
+async def prompt_handler(db_provider):
+    """
+    Returns an instance of PostgresPromptsHandler, creating the necessary tables first.
+    """
+    # from core.database.postgres_prompts import PostgresPromptsHandler
+
+    project_name = db_provider.project_name
+    connection_manager = db_provider.connection_manager
+
+    handler = PostgresPromptsHandler(
+        project_name=project_name,
+        connection_manager=connection_manager,
+        # You can specify a local prompt directory if desired
+        prompt_directory=None,
+    )
+    # Create necessary tables and do initial prompt load
+    await handler.create_tables()
     return handler
 
 
