@@ -18,8 +18,6 @@ from cli.utils.param_types import JSON
 from cli.utils.timer import timer
 from r2r import R2RAsyncClient, R2RException
 
-console = Console()
-
 
 @click.group()
 def documents():
@@ -101,6 +99,7 @@ async def list(
     """Get an overview of documents."""
     ids = list(ids) if ids else None
     client: R2RAsyncClient = ctx.obj
+    console = Console()
 
     try:
         with timer():
@@ -141,7 +140,6 @@ async def list(
                 document.get("created_at", "")[:19],
             )
 
-        console = Console()
         console.print("\n")
         console.print(table)
         console.print(

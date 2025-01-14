@@ -4,7 +4,7 @@ import math
 import uuid
 
 from core import GenerationConfig, R2RException
-from core.base.abstractions import KGEnrichmentStatus
+from core.base.abstractions import KGEnrichmentStatus, KGExtractionStatus
 
 from ...services import GraphService
 
@@ -79,6 +79,13 @@ def simple_kg_factory(service: GraphService):
         )
 
         for _, document_id in enumerate(document_ids):
+
+            await service.providers.database.documents_handler.set_workflow_status(
+                id=document_id,
+                status_type="extraction_status",
+                status=KGExtractionStatus.PROCESSING,
+            )
+
             # Extract relationships from the document
             try:
                 extractions = []

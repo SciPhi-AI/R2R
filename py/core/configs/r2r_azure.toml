@@ -45,6 +45,4 @@ vision_pdf_model = "azure/gpt-4o"
 
 [auth]
 provider = "r2r"
-access_token_lifetime_in_minutes = 1
-refresh_token_lifetime_in_days = 3
 require_authentication = false

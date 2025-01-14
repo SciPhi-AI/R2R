@@ -403,17 +403,12 @@ class GraphService(Service):
     async def get_document_ids_for_create_graph(
         self,
         collection_id: UUID,
-        force_kg_creation: bool = False,
         **kwargs,
     ):
         document_status_filter = [
             KGExtractionStatus.PENDING,
             KGExtractionStatus.FAILED,
         ]
-        if force_kg_creation:
-            document_status_filter += [
-                KGExtractionStatus.PROCESSING,
-            ]
 
         return await self.providers.database.documents_handler.get_document_ids_by_status(
             status_type="extraction_status",
