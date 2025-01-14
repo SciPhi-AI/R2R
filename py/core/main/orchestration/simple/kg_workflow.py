@@ -174,8 +174,15 @@ def simple_kg_factory(service: GraphService):
             **input_data["graph_enrichment_settings"],
         )
 
+    async def deduplicate_document_entities(input_data):
+        input_data = get_input_data_dict(input_data)
+        await service.deduplicate_document_entities(
+            document_id=input_data.get("document_id", None),
+        )
+
     return {
         "extract-triples": extract_triples,
         "build-communities": enrich_graph,
         "kg-community-summary": kg_community_summary,
+        "deduplicate-document-entities": deduplicate_document_entities,
     }

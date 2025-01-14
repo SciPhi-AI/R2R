@@ -1630,6 +1630,111 @@ class DocumentsRouter(BaseRouterV3):
                     "task_id": None,
                 }
 
+        @self.router.post(
+            "/documents/{id}/deduplicate",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            summary="Deduplicate entities",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def deduplicate(
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to extract entities and relationships from.",
+            ),
+            run_type: KGRunType = Body(
+                default=KGRunType.RUN,
+                description="Whether to return an estimate of the creation cost or to actually extract the document.",
+            ),
+            settings: Optional[KGCreationSettings] = Body(
+                default=None,
+                description="Settings for the entities and relationships extraction process.",
+            ),
+            run_with_orchestration: Optional[bool] = Body(
+                default=True,
+                description="Whether to run the entities and relationships extraction process with orchestration.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> WrappedGenericMessageResponse:
+            """
+            Deduplicates entities from a document.
+            """
+
+            settings = settings.dict() if settings else None  # type: ignore
+            if not auth_user.is_superuser:
+                raise R2RException(
+                    "Only a superuser can extract entities and relationships from a document.",
+                    403,
+                )
+
+            # If no run type is provided, default to estimate
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
+
+            # Apply runtime settings overrides
+            server_graph_creation_settings = (
+                self.providers.database.config.graph_creation_settings
+            )
+
+            if settings:
+                server_graph_creation_settings = update_settings_from_dict(
+                    server_settings=server_graph_creation_settings,
+                    settings_dict=settings,  # type: ignore
+                )
+
+            if run_type is KGRunType.ESTIMATE:
+                return {  # type: ignore
+                    "message": "Estimate retrieved successfully",
+                    "task_id": None,
+                    "id": id,
+                    "estimate": await self.services.graph.get_creation_estimate(
+                        document_id=id,
+                        graph_creation_settings=server_graph_creation_settings,
+                    ),
+                }
+
+            if run_with_orchestration:
+                workflow_input = {
+                    "document_id": str(id),
+                }
+
+                return await self.providers.orchestration.run_workflow(  # type: ignore
+                    "deduplicate-document-entities",
+                    {"request": workflow_input},
+                    {},
+                )
+            else:
+                from core.main.orchestration import simple_kg_factory
+
+                logger.info(
+                    "Running deduplicate-document-entities without orchestration."
+                )
+                simple_kg = simple_kg_factory(self.services.graph)
+                await simple_kg["deduplicate-document-entities"](
+                    workflow_input
+                )
+                return {  # type: ignore
+                    "message": "Graph created successfully.",
+                    "task_id": None,
+                }
+
+        @self.router.post("/documents/test")
+        @self.base_endpoint
+        async def test_endpoint(
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ):
+            return {"message": "Test endpoint works"}
+
         @self.router.get(
             "/documents/{id}/entities",
             dependencies=[Depends(self.rate_limit_dependency)],

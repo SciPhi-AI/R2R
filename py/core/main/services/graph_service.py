@@ -1007,3 +1007,17 @@ class GraphService(Service):
                         metadata=relationship.metadata,
                         store_type=StoreType.DOCUMENTS,
                     )
+
+    @telemetry_event("deduplicate_document_entities")
+    async def deduplicate_document_entities(
+        self,
+        document_id: UUID,
+    ):
+        """
+        Deduplicate entities in a document.
+        """
+        await self.providers.database.entities_handler.merge_duplicate_name_blocks(
+            parent_id=document_id,
+            store_type=StoreType.DOCUMENTS,
+            dry_run=True,
+        )
