@@ -49,6 +49,7 @@ class IngestionConfig(ProviderConfig):
         "document_summary_model": "openai/gpt-4o-mini",
         "parser_overrides": {},
         "extra_fields": {},
+        "automatic_extraction": False,
     }
 
     provider: str = Field(
@@ -116,6 +117,11 @@ class IngestionConfig(ProviderConfig):
     )
     parser_overrides: dict[str, str] = Field(
         default_factory=lambda: IngestionConfig._defaults["parser_overrides"]
+    )
+    automatic_extraction: bool = Field(
+        default_factory=lambda: IngestionConfig._defaults[
+            "automatic_extraction"
+        ]
     )
 
     @classmethod
