@@ -152,6 +152,13 @@ def simple_ingestion_factory(service: IngestionService):
                             status_type="graph_cluster_status",
                             status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                         )
+                        if (
+                            service.providers.ingestion.config.automatic_extraction
+                        ):
+                            raise R2RException(
+                                status_code=501,
+                                message="Automatic extraction not yet implemented for `simple` ingestion workflows.",
+                            )
 
             except Exception as e:
                 logger.error(
@@ -254,6 +261,11 @@ def simple_ingestion_factory(service: IngestionService):
             results.append(result)
 
         await asyncio.gather(*results)
+        if service.providers.ingestion.config.automatic_extraction:
+            raise R2RException(
+                status_code=501,
+                message="Automatic extraction not yet implemented for `simple` ingestion workflows.",
+            )
 
     async def ingest_chunks(input_data):
         document_info = None
@@ -375,6 +387,12 @@ def simple_ingestion_factory(service: IngestionService):
                             id=collection_id,
                             status_type="graph_cluster_status",
                             status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                        )
+
+                    if service.providers.ingestion.config.automatic_extraction:
+                        raise R2RException(
+                            status_code=501,
+                            message="Automatic extraction not yet implemented for `simple` ingestion workflows.",
                         )
 
             except Exception as e:
