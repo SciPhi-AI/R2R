@@ -337,11 +337,14 @@ class RetrievalService(Service):
                         search_settings.filters[filter_key] = str(value)
 
                 ids = []
-
+                needs_conversation_name = False
                 if conversation_id:  # Fetch the existing conversation
                     try:
                         conversation_messages = await self.providers.database.conversations_handler.get_conversation(
                             conversation_id=conversation_id,
+                        )
+                        needs_conversation_name = (
+                            len(conversation_messages) == 0
                         )
                     except Exception as e:
                         logger.error(f"Error fetching conversation: {str(e)}")
@@ -364,6 +367,7 @@ class RetrievalService(Service):
                         await self.providers.database.conversations_handler.create_conversation()
                     )
                     conversation_id = conversation_response.id
+                    needs_conversation_name = True
 
                 if message:
                     messages.append(message)
@@ -432,6 +436,30 @@ class RetrievalService(Service):
                                     "output_tokens": output_tokens,
                                 },
                             )
+                            # TODO  - no copy pasta!
+                            if needs_conversation_name:
+                                prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
+                                conversation_name = (
+                                    (
+                                        await self.providers.llm.aget_completion(
+                                            [
+                                                {
+                                                    "role": "system",
+                                                    "content": prompt,
+                                                }
+                                            ],
+                                            GenerationConfig(
+                                                model=self.providers.llm.config.fast_llm
+                                            ),
+                                        )
+                                    )
+                                    .choices[0]
+                                    .message.content
+                                )
+                                await self.providers.database.conversations_handler.update_conversation(
+                                    conversation_id=conversation_id,
+                                    name=conversation_name,
+                                )
 
                     return stream_response()
 
@@ -465,6 +493,24 @@ class RetrievalService(Service):
                         "output_tokens": output_tokens,
                     },
                 )
+                if needs_conversation_name:
+                    prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
+                    conversation_name = (
+                        (
+                            await self.providers.llm.aget_completion(
+                                [{"role": "system", "content": prompt}],
+                                GenerationConfig(
+                                    model=self.providers.llm.config.fast_llm
+                                ),
+                            )
+                        )
+                        .choices[0]
+                        .message.content
+                    )
+                    await self.providers.database.conversations_handler.update_conversation(
+                        conversation_id=conversation_id,
+                        name=conversation_name,
+                    )
 
                 return {
                     "messages": results,

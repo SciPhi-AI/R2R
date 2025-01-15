@@ -315,6 +315,7 @@ class DocumentsRouter(BaseRouterV3):
             The ingestion process runs asynchronously and its progress can be tracked using the returned
             task_id.
             """
+            print("ingestion_mode = ", ingestion_mode)
             if not auth_user.is_superuser:
                 user_document_count = (
                     await self.services.management.documents_overview(

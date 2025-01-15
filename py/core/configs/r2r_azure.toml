@@ -4,6 +4,7 @@
   model = "azure/gpt-4o"
 
 [completion]
+fast_llm = "azure/gpt-4o-mini"
   [completion.generation_config]
   model = "azure/gpt-4o"
 
@@ -38,6 +39,7 @@ audio_transcription_model="azure/whisper-1"
 document_summary_model = "azure/gpt-4o-mini"
 vision_img_model = "azure/gpt-4o"
 vision_pdf_model = "azure/gpt-4o"
+automatic_extraction = true # enable automatic extraction of entities and relations
 
   [ingestion.chunk_enrichment_settings]
     generation_config = { model = "azure/gpt-4o-mini" }
