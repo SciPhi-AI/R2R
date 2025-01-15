@@ -236,6 +236,28 @@ describe("r2rClient V3 System Integration Tests User", () => {
     expect(response2.results).toBeDefined();
   });
 
+  // test("User 1's collection should have 2 documents", async () => {
+  //   const response = await user1Client.collections.retrieve({
+  //     id: user1CollectionId,
+  //   });
+
+  //   console.log(response);
+
+  //   expect(response.results).toBeDefined();
+  //   expect(response.results.documentCount).toBe(2);
+  // });
+
+  // test("User 2's collection should have 2 documents", async () => {
+  //   const response = await user2Client.collections.retrieve({
+  //     id: user2CollectionId,
+  //   });
+
+  //   console.log(response);
+
+  //   expect(response.results).toBeDefined();
+  //   expect(response.results.documentCount).toBe(1);
+  // });
+
   test("Delete document as user 1", async () => {
     const response = await user1Client.documents.delete({
       id: user1DocumentId,
@@ -249,6 +271,28 @@ describe("r2rClient V3 System Integration Tests User", () => {
     });
     expect(response.results).toBeDefined();
   });
+
+  // test("User 1's collection should have 0 documents after deletion", async () => {
+  //   const response = await user1Client.collections.retrieve({
+  //     id: user1CollectionId,
+  //   });
+
+  //   console.log(response);
+
+  //   expect(response.results).toBeDefined();
+  //   expect(response.results.documentCount).toBe(0);
+  // });
+
+  // test("User 2's collection should have 0 documents after deletion", async () => {
+  //   const response = await user2Client.collections.retrieve({
+  //     id: user2CollectionId,
+  //   });
+
+  //   console.log(response);
+
+  //   expect(response.results).toBeDefined();
+  //   expect(response.results.documentCount).toBe(0);
+  // });
 
   test("Delete user 1", async () => {
     const response = await client.users.delete({

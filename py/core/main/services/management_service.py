@@ -191,6 +191,11 @@ class ManagementService(Service):
 
             document = documents_overview_response["results"][0]
 
+            for collection_id in document.collection_ids:
+                await self.providers.database.collections_handler.decrement_collection_document_count(
+                    collection_id=collection_id
+                )
+
             if owner_id and str(document.owner_id) != owner_id:
                 raise R2RException(
                     status_code=404,

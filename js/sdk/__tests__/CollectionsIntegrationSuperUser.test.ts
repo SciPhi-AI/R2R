@@ -64,6 +64,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
 
   test("Retrieve updated collection", async () => {
     const response = await client.collections.retrieve({ id: collectionId });
+
     expect(response.results).toBeDefined();
     expect(response.results.id).toBe(collectionId);
     expect(response.results.name).toBe("Updated Test Collection");
@@ -190,6 +191,16 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     });
 
     expect(response.results).toBeDefined();
+  });
+
+  test("Retrieve a collection with no documents", async () => {
+    const response = await client.collections.retrieve({ id: collectionId });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(collectionId);
+    expect(response.results.name).toBe("Updated Test Collection");
+    expect(response.results.description).toBeDefined();
+    expect(response.results.documentCount).toBe(0);
   });
 
   test("Delete zametov.txt", async () => {

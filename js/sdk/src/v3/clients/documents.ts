@@ -197,8 +197,6 @@ export class DocumentsClient {
    */
   @feature("documents.download")
   async download(options: { id: string }): Promise<Blob> {
-    console.log("Starting download request...");
-
     const response = await this.client.makeRequest(
       "GET",
       `documents/${options.id}/download`,
@@ -220,7 +218,6 @@ export class DocumentsClient {
     }
 
     if (response.data instanceof ArrayBuffer) {
-      console.log("Creating Blob from ArrayBuffer");
       return new Blob([response.data], { type: contentType });
     }
 
