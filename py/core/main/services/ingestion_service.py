@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import uuid
 from datetime import datetime
 from typing import Any, AsyncGenerator, Optional, Sequence
 from uuid import UUID
@@ -23,10 +22,10 @@ from core.base import (
     VectorEntry,
     VectorType,
     decrement_version,
+    generate_id,
 )
 from core.base.abstractions import (
     ChunkEnrichmentSettings,
-    ChunkEnrichmentStrategy,
     IndexMeasure,
     IndexMethod,
     VectorTableName,
@@ -39,10 +38,7 @@ from ..config import R2RConfig
 from .base import Service
 
 logger = logging.getLogger()
-MB_CONVERSION_FACTOR = 1024 * 1024
 STARTING_VERSION = "v0"
-MAX_FILES_PER_INGESTION = 100
-OVERVIEW_FETCH_PAGE_SIZE = 1_000
 
 
 class IngestionService(Service):
@@ -461,70 +457,30 @@ class IngestionService(Service):
         chunk_idx: int,
         chunk: dict,
         document_id: UUID,
+        document_summary: str | None,
         chunk_enrichment_settings: ChunkEnrichmentSettings,
         list_document_chunks: list[dict],
-        document_chunks_dict: dict,
     ) -> VectorEntry:
-        # get chunks in context
-        context_chunk_ids: list[UUID] = []
-        for enrichment_strategy in chunk_enrichment_settings.strategies:
-            if enrichment_strategy == ChunkEnrichmentStrategy.NEIGHBORHOOD:
-                context_chunk_ids.extend(
-                    list_document_chunks[chunk_idx - prev]["chunk_id"]
-                    for prev in range(
-                        1, chunk_enrichment_settings.backward_chunks + 1
-                    )
-                    if chunk_idx - prev >= 0
-                )
-                context_chunk_ids.extend(
-                    list_document_chunks[chunk_idx + next]["chunk_id"]
-                    for next in range(
-                        1, chunk_enrichment_settings.forward_chunks + 1
-                    )
-                    if chunk_idx + next < len(list_document_chunks)
-                )
-            elif enrichment_strategy == ChunkEnrichmentStrategy.SEMANTIC:
-                semantic_neighbors = await self.providers.database.chunks_handler.get_semantic_neighbors(
-                    offset=0,
-                    limit=chunk_enrichment_settings.semantic_neighbors,
-                    document_id=document_id,
-                    chunk_id=chunk["chunk_id"],
-                    similarity_threshold=chunk_enrichment_settings.semantic_similarity_threshold,
-                )
-                context_chunk_ids.extend(
-                    neighbor["chunk_id"] for neighbor in semantic_neighbors
-                )
 
-        # weird behavior, sometimes we get UUIDs
-        # FIXME: figure out why
-        context_chunk_ids_str = list(
-            set(
-                [
-                    str(context_chunk_id)
-                    for context_chunk_id in context_chunk_ids
-                ]
+        preceding_chunks = [
+            list_document_chunks[idx]["text"]
+            for idx in range(
+                max(0, chunk_idx - chunk_enrichment_settings.n_chunks),
+                chunk_idx,
             )
-        )
-
-        context_chunk_ids_uuid = [
-            UUID(context_chunk_id)
-            for context_chunk_id in context_chunk_ids_str
         ]
 
-        context_chunk_texts = [
-            (
-                document_chunks_dict[context_chunk_id]["text"],
-                document_chunks_dict[context_chunk_id]["metadata"][
-                    "chunk_order"
-                ],
+        succeeding_chunks = [
+            list_document_chunks[idx]["text"]
+            for idx in range(
+                chunk_idx + 1,
+                min(
+                    len(list_document_chunks),
+                    chunk_idx + chunk_enrichment_settings.n_chunks + 1,
+                ),
             )
-            for context_chunk_id in context_chunk_ids_uuid
         ]
 
-        # sort by chunk_order
-        context_chunk_texts.sort(key=lambda x: x[1])
-
-        # enrich chunk
         try:
             updated_chunk_text = (
                 (
@@ -532,10 +488,20 @@ class IngestionService(Service):
                         messages=await self.providers.database.prompts_handler.get_message_payload(
                             task_prompt_name="chunk_enrichment",
                             task_inputs={
-                                "context_chunks": "\n".join(
-                                    text for text, _ in context_chunk_texts
-                                ),
+                                "document_summary": document_summary or "None",
                                 "chunk": chunk["text"],
+                                "preceding_chunks": (
+                                    "\n".join(preceding_chunks)
+                                    if preceding_chunks
+                                    else "None"
+                                ),
+                                "succeeding_chunks": (
+                                    "\n".join(succeeding_chunks)
+                                    if succeeding_chunks
+                                    else "None"
+                                ),
+                                "chunk_size": self.config.ingestion.chunk_size
+                                or 1024,
                             },
                         ),
                         generation_config=chunk_enrichment_settings.generation_config,
@@ -562,7 +528,7 @@ class IngestionService(Service):
         chunk["metadata"]["original_text"] = chunk["text"]
 
         return VectorEntry(
-            id=uuid.uuid5(uuid.NAMESPACE_DNS, str(chunk["chunk_id"])),
+            id=generate_id(str(chunk["id"])),
             vector=Vector(data=data, type=VectorType.FIXED, length=len(data)),
             document_id=document_id,
             owner_id=chunk["owner_id"],
@@ -574,39 +540,35 @@ class IngestionService(Service):
     async def chunk_enrichment(
         self,
         document_id: UUID,
+        document_summary: str | None,
         chunk_enrichment_settings: ChunkEnrichmentSettings,
     ) -> int:
-        # just call the pipe on every chunk of the document
 
-        # TODO: Why is the config not recognized as an ingestionconfig but as a providerconfig?
         chunk_enrichment_settings = (
             self.providers.ingestion.config.chunk_enrichment_settings  # type: ignore
         )
-        # get all list_document_chunks
+
         list_document_chunks = (
-            await self.providers.database.chunks_handler.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+            await self.providers.database.chunks_handler.list_document_chunks(
                 document_id=document_id,
                 offset=0,
-                limit=100,
+                limit=-1,
             )
         )["results"]
 
         new_vector_entries = []
-        document_chunks_dict = {
-            chunk["chunk_id"]: chunk for chunk in list_document_chunks
-        }
 
         tasks = []
         total_completed = 0
         for chunk_idx, chunk in enumerate(list_document_chunks):
             tasks.append(
                 self._get_enriched_chunk_text(
-                    chunk_idx,
-                    chunk,
-                    document_id,
-                    chunk_enrichment_settings,
-                    list_document_chunks,
-                    document_chunks_dict,
+                    chunk_idx=chunk_idx,
+                    chunk=chunk,
+                    document_id=document_id,
+                    document_summary=document_summary,
+                    chunk_enrichment_settings=chunk_enrichment_settings,
+                    list_document_chunks=list_document_chunks,
                 )
             )
 

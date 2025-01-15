@@ -275,7 +275,6 @@ class GraphsSDK:
         self,
         collection_id: str | UUID,
         settings: Optional[dict] = None,
-        run_type: str = "estimate",
         run_with_orchestration: bool = True,
     ) -> WrappedBooleanResponse:
         """
@@ -284,14 +283,12 @@ class GraphsSDK:
         Args:
             collection_id (str | UUID): The collection ID corresponding to the graph
             settings (dict): Settings for the build
-            run_type (str, optional): Type of build to run. Defaults to "estimate".
             run_with_orchestration (bool, optional): Whether to run with orchestration. Defaults to True.
 
         Returns:
             dict: Success message
         """
         data: dict[str, Any] = {
-            "run_type": run_type,
             "run_with_orchestration": run_with_orchestration,
         }
         if settings:

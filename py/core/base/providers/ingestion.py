@@ -35,6 +35,7 @@ class IngestionConfig(ProviderConfig):
         "provider": "r2r",
         "excluded_parsers": ["mp4"],
         "chunking_strategy": "recursive",
+        "chunk_size": 1024,
         "chunk_enrichment_settings": ChunkEnrichmentSettings(),
         "extra_parsers": {},
         "audio_transcription_model": "openai/whisper-1",
@@ -60,6 +61,9 @@ class IngestionConfig(ProviderConfig):
     )
     chunking_strategy: str | ChunkingStrategy = Field(
         default_factory=lambda: IngestionConfig._defaults["chunking_strategy"]
+    )
+    chunk_size: int = Field(
+        default_factory=lambda: IngestionConfig._defaults["chunk_size"]
     )
     chunk_enrichment_settings: ChunkEnrichmentSettings = Field(
         default_factory=lambda: IngestionConfig._defaults[
@@ -149,27 +153,6 @@ class IngestionConfig(ProviderConfig):
             return cls(app=app, parser_overrides={"pdf": "zerox"})
         else:
             return cls(app=app)
-
-    class Config:
-        populate_by_name = True
-        json_schema_extra = {
-            "provider": "r2r",
-            "excluded_parsers": ["mp4"],
-            "chunking_strategy": "recursive",
-            "chunk_enrichment_settings": ChunkEnrichmentSettings(),
-            "extra_parsers": {},
-            "audio_transcription_model": "openai/whisper-1",
-            "vision_img_prompt_name": "vision_img",
-            "vision_img_model": "openai/gpt-4o",
-            "vision_pdf_prompt_name": "vision_pdf",
-            "vision_pdf_model": "openai/gpt-4o",
-            "skip_document_summary": False,
-            "document_summary_system_prompt": "default_system",
-            "document_summary_task_prompt": "default_summary",
-            "chunks_for_document_summary": 128,
-            "document_summary_model": "openai/gpt-4o-mini",
-            "parser_overrides": {},
-        }
 
 
 class IngestionProvider(Provider, ABC):

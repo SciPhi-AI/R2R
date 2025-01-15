@@ -14,6 +14,7 @@ from core.base import (
 from core.utils import (
     generate_default_user_collection_id,
     generate_extraction_id,
+    update_settings_from_dict,
 )
 
 from ...services import IngestionService
@@ -152,17 +153,56 @@ def simple_ingestion_factory(service: IngestionService):
                             status_type="graph_cluster_status",
                             status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                         )
-                        if (
-                            service.providers.ingestion.config.automatic_extraction
-                        ):
-                            raise R2RException(
-                                status_code=501,
-                                message="Automatic extraction not yet implemented for `simple` ingestion workflows.",
-                            )
-
             except Exception as e:
                 logger.error(
                     f"Error during assigning document to collection: {str(e)}"
+                )
+
+            # Chunk enrichment
+            if server_chunk_enrichment_settings := getattr(
+                service.providers.ingestion.config,
+                "chunk_enrichment_settings",
+                None,
+            ):
+                chunk_enrichment_settings = update_settings_from_dict(
+                    server_chunk_enrichment_settings,
+                    ingestion_config.get("chunk_enrichment_settings", {})
+                    or {},
+                )
+
+                if chunk_enrichment_settings.enable_chunk_enrichment:
+                    logger.info("Enriching document with contextual chunks")
+
+                    # Get updated document info with collection IDs
+                    document_info = (
+                        await service.providers.database.documents_handler.get_documents_overview(
+                            offset=0,
+                            limit=100,
+                            filter_user_ids=[document_info.owner_id],
+                            filter_document_ids=[document_info.id],
+                        )
+                    )["results"][0]
+
+                    await service.update_document_status(
+                        document_info,
+                        status=IngestionStatus.ENRICHING,
+                    )
+
+                    await service.chunk_enrichment(
+                        document_id=document_info.id,
+                        document_summary=document_info.summary,
+                        chunk_enrichment_settings=chunk_enrichment_settings,
+                    )
+
+                    await service.update_document_status(
+                        document_info,
+                        status=IngestionStatus.SUCCESS,
+                    )
+
+            # Automatic extraction
+            if service.providers.ingestion.config.automatic_extraction:
+                logger.warning(
+                    "Automatic extraction not yet implemented for `simple` ingestion workflows."
                 )
 
         except AuthenticationError as e:

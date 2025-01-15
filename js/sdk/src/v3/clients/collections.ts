@@ -253,13 +253,11 @@ export class CollectionsClient {
   @feature("collections.extract")
   async extract(options: {
     collectionId: string;
-    runType?: string;
     settings?: Record<string, any>;
     runWithOrchestration?: boolean;
   }): Promise<WrappedBooleanResponse> {
     const data = {
       ...(options.settings && { settings: options.settings }),
-      ...(options.runType && { run_type: options.runType }),
       ...(options.runWithOrchestration && {
         run_with_orchestration: options.runWithOrchestration,
       }),

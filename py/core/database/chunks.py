@@ -1063,49 +1063,6 @@ class PostgresChunksHandler(Handler):
         except Exception as e:
             raise Exception(f"Failed to delete index: {e}")
 
-    async def get_semantic_neighbors(
-        self,
-        offset: int,
-        limit: int,
-        document_id: UUID,
-        id: UUID,
-        similarity_threshold: float = 0.5,
-    ) -> list[dict[str, Any]]:
-        table_name = self._get_table_name(PostgresChunksHandler.TABLE_NAME)
-        vector_dim = (
-            "" if math.isnan(self.dimension) else f"({self.dimension})"
-        )
-
-        query = f"""
-        WITH target_vector AS (
-            SELECT vec::vector{vector_dim} FROM {table_name}
-            WHERE document_id = $1 AND id = $2
-        )
-        SELECT t.id, t.text, t.metadata, t.document_id, (t.vec::vector{vector_dim} <=> tv.vec) AS similarity
-        FROM {table_name} t, target_vector tv
-        WHERE (t.vec::vector{vector_dim} <=> tv.vec) >= $3
-            AND t.document_id = $1
-            AND t.id != $2
-        ORDER BY similarity ASC
-        LIMIT $4
-        """
-
-        results = await self.connection_manager.fetch_query(
-            query,
-            (str(document_id), str(id), similarity_threshold, limit),
-        )
-
-        return [
-            {
-                "id": str(r["id"]),
-                "text": r["text"],
-                "metadata": json.loads(r["metadata"]),
-                "document_id": str(r["document_id"]),
-                "similarity": float(r["similarity"]),
-            }
-            for r in results
-        ]
-
     async def list_chunks(
         self,
         offset: int,
