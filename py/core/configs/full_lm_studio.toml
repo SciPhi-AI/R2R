@@ -31,6 +31,7 @@ provider = "postgres"
     max_knowledge_relationships = 100
     max_description_input_length = 65536
     generation_config = { model = "lm_studio/llama-3.2-3b-instruct" } # and other params, model used for relationshipt extraction
+    automatic_deduplication = false
 
   [database.graph_enrichment_settings]
     community_reports_prompt = "graphrag_community_reports"
@@ -60,6 +61,7 @@ combine_under_n_chars = 128
 overlap = 20
 chunks_for_document_summary = 16
 document_summary_model = "lm_studio/llama-3.2-3b-instruct"
+automatic_extraction = false
 
 [orchestration]
 provider = "hatchet"
