@@ -50,12 +50,18 @@ class GraphRouter(BaseRouterV3):
             workflow_messages["build-communities"] = (
                 "Graph enrichment task queued successfully."
             )
+            workflow_messages["deduplicate-document-entities"] = (
+                "Entity deduplication task queued successfully."
+            )
         else:
             workflow_messages["extract-triples"] = (
                 "Document entities and relationships extracted successfully."
             )
             workflow_messages["build-communities"] = (
                 "Graph communities created successfully."
+            )
+            workflow_messages["deduplicate-document-entities"] = (
+                "Entity deduplication completed successfully."
             )
 
         self.providers.orchestration.register_workflows(

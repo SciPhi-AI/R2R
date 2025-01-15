@@ -476,6 +476,29 @@ class PostgresCollectionsHandler(Handler):
                 message="Document not found in the specified collection",
             )
 
+        await self.decrement_collection_document_count(
+            collection_id=collection_id
+        )
+
+    async def decrement_collection_document_count(
+        self, collection_id: UUID, decrement_by: int = 1
+    ) -> None:
+        """
+        Decrement the document count for a collection.
+
+        Args:
+            collection_id (UUID): The ID of the collection to update
+            decrement_by (int): Number to decrease the count by (default: 1)
+        """
+        collection_query = f"""
+            UPDATE {self._get_table_name('collections')}
+            SET document_count = document_count - $1
+            WHERE id = $2
+        """
+        await self.connection_manager.execute_query(
+            collection_query, [decrement_by, collection_id]
+        )
+
     async def export_to_csv(
         self,
         columns: Optional[list[str]] = None,

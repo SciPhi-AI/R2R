@@ -68,7 +68,14 @@ class LogsRouter(BaseRouterV3):
             "/logs/stream",
             dependencies=[Depends(self.websocket_rate_limit_dependency)],
         )
-        async def stream_logs(websocket: WebSocket):
+        async def stream_logs(
+            websocket: WebSocket,
+            auth_user=Depends(
+                self.providers.auth.websocket_auth_wrapper(superuser_only=True)
+            ),
+        ):
+            if not auth_user:
+                return
             await websocket.accept()
             try:
                 # Send the entire file content upon initial connection

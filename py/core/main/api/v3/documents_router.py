@@ -1651,6 +1651,162 @@ class DocumentsRouter(BaseRouterV3):
                     "task_id": None,
                 }
 
+        @self.router.post(
+            "/documents/{id}/deduplicate",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            summary="Deduplicate entities",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+
+                            response = client.documents.deduplicate(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+                            )
+                            """
+                        ),
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient();
+
+                            function main() {
+                                const response = await client.documents.deduplicate({
+                                    id: "b4ac4dd6-5f27-596e-a55b-7cf242ca30aa",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                        "lang": "cURL",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/deduplicate"  \\
+                            -H "Authorization: Bearer YOUR_API_KEY"
+                            """
+                        ),
+                    },
+                ],
+            },
+        )
+        @self.base_endpoint
+        async def deduplicate(
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to extract entities and relationships from.",
+            ),
+            run_type: KGRunType = Body(
+                default=KGRunType.RUN,
+                description="Whether to return an estimate of the creation cost or to actually extract the document.",
+            ),
+            settings: Optional[KGCreationSettings] = Body(
+                default=None,
+                description="Settings for the entities and relationships extraction process.",
+            ),
+            run_with_orchestration: Optional[bool] = Body(
+                default=True,
+                description="Whether to run the entities and relationships extraction process with orchestration.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> WrappedGenericMessageResponse:
+            """
+            Deduplicates entities from a document.
+            """
+
+            settings = settings.model_dump() if settings else None  # type: ignore
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=(
+                        None if auth_user.is_superuser else [auth_user.id]
+                    ),
+                    collection_ids=(
+                        None
+                        if auth_user.is_superuser
+                        else auth_user.collection_ids
+                    ),
+                    document_ids=[id],
+                    offset=0,
+                    limit=1,
+                )
+            )["results"]
+            if len(documents_overview_response) == 0:
+                raise R2RException("Document not found.", 404)
+
+            if (
+                not auth_user.is_superuser
+                and auth_user.id != documents_overview_response[0].owner_id
+            ):
+                raise R2RException(
+                    "Only a superuser can run deduplication on a document they do not own.",
+                    403,
+                )
+
+            # If no run type is provided, default to estimate
+            if not run_type:
+                run_type = KGRunType.ESTIMATE
+
+            # Apply runtime settings overrides
+            server_graph_creation_settings = (
+                self.providers.database.config.graph_creation_settings
+            )
+
+            if settings:
+                server_graph_creation_settings = update_settings_from_dict(
+                    server_settings=server_graph_creation_settings,
+                    settings_dict=settings,  # type: ignore
+                )
+
+            if run_type is KGRunType.ESTIMATE:
+                return {  # type: ignore
+                    "message": "Estimate retrieved successfully",
+                    "task_id": None,
+                    "id": id,
+                    "estimate": await self.services.graph.get_creation_estimate(
+                        document_id=id,
+                        graph_creation_settings=server_graph_creation_settings,
+                    ),
+                }
+
+            if run_with_orchestration:
+                workflow_input = {
+                    "document_id": str(id),
+                }
+
+                return await self.providers.orchestration.run_workflow(  # type: ignore
+                    "deduplicate-document-entities",
+                    {"request": workflow_input},
+                    {},
+                )
+            else:
+                from core.main.orchestration import simple_kg_factory
+
+                logger.info(
+                    "Running deduplicate-document-entities without orchestration."
+                )
+                simple_kg = simple_kg_factory(self.services.graph)
+                await simple_kg["deduplicate-document-entities"](
+                    workflow_input
+                )
+                return {  # type: ignore
+                    "message": "Graph created successfully.",
+                    "task_id": None,
+                }
+
+        @self.router.post("/documents/test")
+        @self.base_endpoint
+        async def test_endpoint(
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ):
+            return {"message": "Test endpoint works"}
+
         @self.router.get(
             "/documents/{id}/entities",
             dependencies=[Depends(self.rate_limit_dependency)],

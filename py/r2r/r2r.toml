@@ -100,6 +100,7 @@ batch_size = 256
     max_knowledge_relationships = 100
     max_description_input_length = 65536
     generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for relationshipt extraction
+    automatic_deduplication = true # enable automatic deduplication of entities
 
   [database.graph_enrichment_settings]
     community_reports_prompt = "graphrag_community_reports"

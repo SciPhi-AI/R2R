@@ -342,22 +342,6 @@ class GraphService(Service):
             include_embeddings=include_embeddings,
         )
 
-    # @telemetry_event("create_new_graph")
-    # async def create_new_graph(
-    #     self,
-    #     collection_id: UUID,
-    #     user_id: UUID,
-    #     name: Optional[str],
-    #     description: str = "",
-    # ) -> GraphResponse:
-    #     return await self.providers.database.graphs_handler.create(
-    #         collection_id=collection_id,
-    #         user_id=user_id,
-    #         name=name,
-    #         description=description,
-    #         graph_id=collection_id,
-    #     )
-
     async def list_graphs(
         self,
         offset: int,
@@ -1002,3 +986,67 @@ class GraphService(Service):
                         metadata=relationship.metadata,
                         store_type=StoreType.DOCUMENTS,
                     )
+
+    @telemetry_event("deduplicate_document_entities")
+    async def deduplicate_document_entities(
+        self,
+        document_id: UUID,
+    ):
+        """
+        Deduplicate entities in a document.
+        """
+
+        merged_results = await self.providers.database.entities_handler.merge_duplicate_name_blocks(
+            parent_id=document_id,
+            store_type=StoreType.DOCUMENTS,
+        )
+
+        response = await self.providers.database.documents_handler.get_documents_overview(
+            offset=0,
+            limit=1,
+            filter_document_ids=[document_id],
+        )
+        document_summary = (
+            response["results"][0].summary if response["results"] else None
+        )
+
+        for original_entities, merged_entity in merged_results:
+            # Generate new consolidated description using the LLM
+            messages = await self.providers.database.prompts_handler.get_message_payload(
+                task_prompt_name=self.providers.database.config.graph_creation_settings.graph_entity_description_prompt,
+                task_inputs={
+                    "document_summary": document_summary,
+                    "entity_info": f"{merged_entity.name}\n".join(
+                        [
+                            desc
+                            for desc in {
+                                e.description for e in original_entities
+                            }
+                            if desc is not None
+                        ]
+                    ),
+                    "relationships_txt": "",
+                },
+            )
+
+            generation_config = (
+                self.config.database.graph_creation_settings.generation_config
+            )
+            response = await self.providers.llm.aget_completion(
+                messages,
+                generation_config=generation_config,
+            )
+            new_description = response.choices[0].message.content
+
+            # Generate new embedding for the consolidated description
+            new_embedding = await self.providers.embedding.async_get_embedding(
+                new_description
+            )
+
+            # Update the entity with new description and embedding
+            await self.providers.database.graphs_handler.entities.update(
+                entity_id=merged_entity.id,
+                store_type=StoreType.DOCUMENTS,
+                description=new_description,
+                description_embedding=str(new_embedding),
+            )

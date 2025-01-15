@@ -9,6 +9,7 @@ from .base_utils import (
     generate_default_prompt_id,
     generate_default_user_collection_id,
     generate_document_id,
+    generate_entity_document_id,
     generate_extraction_id,
     generate_id,
     generate_user_id,
@@ -30,6 +31,7 @@ __all__ = [
     "generate_default_user_collection_id",
     "generate_user_id",
     "generate_default_prompt_id",
+    "generate_entity_document_id",
     # Other
     "increment_version",
     "decrement_version",

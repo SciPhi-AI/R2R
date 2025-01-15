@@ -608,3 +608,37 @@ class DocumentsSDK:
             json=data,
             version="v3",
         )
+
+    async def deduplicate(
+        self,
+        id: str | UUID,
+        run_type: Optional[str] = None,
+        settings: Optional[dict] = None,
+        run_with_orchestration: Optional[bool] = True,
+    ):
+        """
+        Deduplicate entities and relationships from a document.
+
+        Args:
+            id (str, UUID): ID of document to extract from
+            run_type (Optional[str]): Whether to return an estimate or run extraction
+            settings (Optional[dict]): Settings for extraction process
+            run_with_orchestration (Optional[bool]): Whether to run with orchestration
+
+        Returns:
+            dict: Extraction results or cost estimate
+        """
+        data: dict[str, Any] = {}
+        if run_type:
+            data["run_type"] = run_type
+        if settings:
+            data["settings"] = json.dumps(settings)
+        if run_with_orchestration is not None:
+            data["run_with_orchestration"] = str(run_with_orchestration)
+
+        return await self.client._make_request(
+            "POST",
+            f"documents/{str(id)}/deduplicate",
+            params=data,
+            version="v3",
+        )
