@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from fastapi import Security
+from fastapi import Security, WebSocket
 from fastapi.security import (
     APIKeyHeader,
     HTTPAuthorizationCredentials,
@@ -207,6 +207,63 @@ class AuthProvider(Provider, ABC):
             )
 
         return _auth_wrapper
+
+    def websocket_auth_wrapper(
+        self, superuser_only: bool = False, public: bool = False
+    ):
+        async def _websocket_auth_wrapper(websocket: WebSocket) -> User:
+            try:
+                # If authentication is not required and no credentials are provided, return the default admin user
+                auth_header = websocket.headers.get("authorization")
+                if (
+                    (not self.config.require_authentication) or public
+                ) and not auth_header:
+                    return await self._get_default_admin_user()
+
+                # Get authorization header
+                if not auth_header or not auth_header.startswith("Bearer "):
+                    await websocket.close(
+                        code=4001, reason="Missing or invalid authorization"
+                    )
+                    return None
+
+                token = auth_header.split(" ")[1]
+
+                # Try to decode the token and get user
+                try:
+                    token_data = await self.decode_token(token)
+                    user = await self.database_provider.users_handler.get_user_by_email(
+                        token_data.email
+                    )
+                    if user is None:
+                        await websocket.close(
+                            code=4002, reason="User not found"
+                        )
+                        return None
+
+                    if superuser_only and not user.is_superuser:
+                        await websocket.close(
+                            code=4003, reason="Superuser access required"
+                        )
+                        return None
+
+                    return user
+
+                except Exception as e:
+                    logger.debug(f"WebSocket auth failed: {e}")
+                    await websocket.close(
+                        code=4002, reason="Authentication failed"
+                    )
+                    return None
+
+            except Exception as e:
+                logger.error(f"WebSocket error during auth: {e}")
+                await websocket.close(
+                    code=4002, reason="Authentication failed"
+                )
+                return None
+
+        return _websocket_auth_wrapper
 
     @abstractmethod
     async def change_password(
