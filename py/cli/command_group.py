@@ -158,7 +158,7 @@ def initialize_client() -> R2RAsyncClient:
         elif config_api_base:
             api_base = config_api_base
         else:
-            api_base = "https://cloud.sciphi.ai"
+            api_base = "https://api.cloud.sciphi.ai"
         client.set_base_url(api_base)
 
         env_api_key = os.getenv("R2R_API_KEY")

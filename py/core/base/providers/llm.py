@@ -23,6 +23,7 @@ class CompletionConfig(ProviderConfig):
     provider: Optional[str] = None
     generation_config: GenerationConfig = GenerationConfig()
     concurrent_request_limit: int = 256
+    fast_llm: str = "openai/gpt-4o"
     max_retries: int = 3
     initial_backoff: float = 1.0
     max_backoff: float = 64.0
@@ -150,6 +151,7 @@ class CompletionProvider(Provider):
         }
         if modalities := kwargs.get("modalities"):
             task["modalities"] = modalities
+        print("generation config", generation_config)
         response = await self._execute_with_backoff_async(task)
         return LLMChatCompletion(**response.dict())
 

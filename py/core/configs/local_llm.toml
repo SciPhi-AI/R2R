@@ -8,6 +8,7 @@ tool_names = ["local_search"]
 [completion]
 provider = "litellm"
 concurrent_request_limit = 1
+fast_llm = "ollama/llama3.1" # used inside R2R for `fast` completions, like document summaries
 
   [completion.generation_config]
   model = "ollama/llama3.1"
