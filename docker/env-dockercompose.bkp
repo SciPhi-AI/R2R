@@ -7,6 +7,7 @@ FUSE_POSTGRES_HOST=pg.local.pincident.com
 FUSE_POSTGRES_PORT=5555
 FUSE_POSTGRES_DBNAME=dev_r2r_matt
 FUSE_PROJECT_NAME=dev_r2r_matt
+FUSE_PORT=7272
 
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=difficultPassw0rd
@@ -59,5 +60,7 @@ UNSTRUCTURED_API_URL=https://unstructured.local.askfrankly.com/general/v0/genera
 # FUSE Traefik environment variables
 #############################################
 LB_API_HOST=https://api.local.askfrankly.com
-LB_API_VERSION=/api/v1
+LB_API_VERSION=/api/v3
 LB_API_ROUTE=fuse
+LB_API_SERVICE_NAME=ask-api-fuse
+LB_FASTAPI_PORT=8000 # The port FastAPI is running inside the docker container

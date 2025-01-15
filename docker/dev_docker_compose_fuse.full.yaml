@@ -455,22 +455,22 @@ services:
       - "traefik.http.routers.http-catchall.middlewares=redirect-to-https@docker"
 
       # Define the entrypoint for the API router
-      - "traefik.http.routers.${FUSE_PROJECT_NAME}-router.entrypoints=websecure"
-      - "traefik.http.routers.${FUSE_PROJECT_NAME}-docs-router.entrypoints=websecure"
+      - "traefik.http.routers.${LB_API_SERVICE_NAME}-router.entrypoints=websecure"
+      - "traefik.http.routers.${LB_API_SERVICE_NAME}-docs-router.entrypoints=websecure"
 
       # Enable TLS for the API router
-      - "traefik.http.routers.${FUSE_PROJECT_NAME}-router.tls=true"
-      - "traefik.http.routers.${FUSE_PROJECT_NAME}-docs-router.tls=true"
-      - "traefik.http.routers.${FUSE_PROJECT_NAME}-router.tls.certresolver=lets-encr"
+      - "traefik.http.routers.${LB_API_SERVICE_NAME}-router.tls=true"
+      - "traefik.http.routers.${LB_API_SERVICE_NAME}-docs-router.tls=true"
+      - "traefik.http.routers.${LB_API_SERVICE_NAME}-router.tls.certresolver=lets-encr"
 
       # Define the service and the internal port
-      - "traefik.http.services.${FUSE_PROJECT_NAME}-service.loadbalancer.server.port=80"
+      - "traefik.http.services.${LB_API_SERVICE_NAME}-service.loadbalancer.server.port=7272"
 
       # Rewrite the URI to remove the ${LB_API_ROUTE} prefix
-      - "traefik.http.routers.${FUSE_PROJECT_NAME}-router.rule=Host(`${LB_API_HOST}`) && PathPrefix(`${LB_API_VERSION}/${LB_API_ROUTE}`)"
+      - "traefik.http.routers.${LB_API_SERVICE_NAME}-router.rule=Host(`${LB_API_HOST}`) && PathPrefix(`${LB_API_VERSION}/${LB_API_ROUTE}`)"
 
       # Docs URL without Auth
-      - "traefik.http.routers.${FUSE_PROJECT_NAME}-docs-router.rule=Host(`${LB_API_HOST}`) && PathPrefix(`${LB_API_VERSION}/${LB_API_ROUTE}/docs`)"
+      - "traefik.http.routers.${LB_API_SERVICE_NAME}-docs-router.rule=Host(`${LB_API_HOST}`) && PathPrefix(`${LB_API_VERSION}/${LB_API_ROUTE}/docs`)"
 
   fuse-dashboard:
     image: emrgntcmplxty/r2r-dashboard:latest
