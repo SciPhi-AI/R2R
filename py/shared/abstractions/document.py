@@ -275,14 +275,26 @@ class ChunkEnrichmentSettings(FUSESerializable):
     """
     Settings for chunk enrichment.
     """
+    model_config = {
+        "json_schema_extra": {
+            "examples": [{
+                "enable_chunk_enrichment": False,
+                "strategies": ["semantic"],
+                "forward_chunks": 3,
+                "backward_chunks": 3,
+                "semantic_neighbors": 10,
+                "semantic_similarity_threshold": 0.7
+            }]
+        }
+    }
 
     enable_chunk_enrichment: bool = Field(
         default=False,
         description="Whether to enable chunk enrichment or not",
     )
     strategies: list[ChunkEnrichmentStrategy] = Field(
-        default=[],
-        description="The strategies to use for chunk enrichment. List of chunks obtained from each strategy is used as context.",
+        default_factory=list,
+        description="The strategies to use for chunk enrichment.",
     )
     forward_chunks: int = Field(
         default=3,
@@ -293,18 +305,28 @@ class ChunkEnrichmentSettings(FUSESerializable):
         description="The number of chunks before the current chunk in the LLM context while enriching",
     )
     semantic_neighbors: int = Field(
-        default=10, description="The number of semantic neighbors to include"
+        default=10,
+        description="The number of semantic neighbors to include"
     )
     semantic_similarity_threshold: float = Field(
         default=0.7,
         description="The similarity threshold for semantic neighbors",
     )
     generation_config: GenerationConfig = Field(
-        default=GenerationConfig(),
+        default_factory=GenerationConfig,
         description="The generation config to use for chunk enrichment",
+        exclude=True,
     )
 
-
+    def __hash__(self):
+        return hash((
+            self.enable_chunk_enrichment,
+            tuple(self.strategies),
+            self.forward_chunks,
+            self.backward_chunks,
+            self.semantic_neighbors,
+            self.semantic_similarity_threshold
+        ))
 ## TODO - Move ingestion config
 
 

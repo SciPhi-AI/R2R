@@ -54,3 +54,10 @@ UNSTRUCTURED_API_URL=https://unstructured.local.askfrankly.com/general/v0/genera
 
 # HUGGINGFACE_API_BASE=https://huggingface.co/api
 # OLLAMA_API_BASE=http://192.168.100.12:11434
+
+#############################################
+# FUSE Traefik environment variables
+#############################################
+LB_API_HOST=https://api.local.askfrankly.com
+LB_API_VERSION=/api/v1
+LB_API_ROUTE=fuse

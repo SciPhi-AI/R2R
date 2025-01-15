@@ -56,7 +56,13 @@ class FUSEApp:
         self.system_router = system_router
         self.users_router = users_router
 
-        self.app = FastAPI()
+        self.app = FastAPI(
+            title="FUSE application API",
+            version="fuse",
+            openapi_url="/api/v3/fuse/openapi.json",
+            docs_url="/api/v3/fuse/docs",
+            root_path=""
+        )
 
         @self.app.exception_handler(FUSEException)
         async def fuse_exception_handler(request: Request, exc: FUSEException):
@@ -72,19 +78,19 @@ class FUSEApp:
         self._apply_cors()
 
     def _setup_routes(self):
-        self.app.include_router(self.chunks_router, prefix="/v3")
-        self.app.include_router(self.collections_router, prefix="/v3")
-        self.app.include_router(self.conversations_router, prefix="/v3")
-        self.app.include_router(self.documents_router, prefix="/v3")
-        self.app.include_router(self.graph_router, prefix="/v3")
-        self.app.include_router(self.indices_router, prefix="/v3")
-        self.app.include_router(self.logs_router, prefix="/v3")
-        self.app.include_router(self.prompts_router, prefix="/v3")
-        self.app.include_router(self.retrieval_router_v3, prefix="/v3")
-        self.app.include_router(self.system_router, prefix="/v3")
-        self.app.include_router(self.users_router, prefix="/v3")
+        self.app.include_router(self.chunks_router, prefix="/chunks", tags=["Chunks"])
+        self.app.include_router(self.collections_router, prefix="/collections", tags=["Collections"])
+        self.app.include_router(self.conversations_router, prefix="/conversations", tags=["Conversations"])
+        self.app.include_router(self.documents_router, prefix="/documents", include_in_schema=False)
+        self.app.include_router(self.graph_router, prefix="/graphs", tags=["Graph"])
+        self.app.include_router(self.indices_router, prefix="/indices", tags=["Indices"])
+        self.app.include_router(self.logs_router, prefix="/logs", tags=["Logs"])
+        self.app.include_router(self.prompts_router, prefix="/prompts", tags=["Prompts"])
+        self.app.include_router(self.retrieval_router_v3, prefix="/retrieval", tags=["Retrieval"])
+        self.app.include_router(self.system_router, prefix="/v3", tags=["System"])
+        self.app.include_router(self.users_router, prefix="/users", tags=["Users"])
 
-        @self.app.get("/openapi_spec", include_in_schema=False)
+        @self.app.get("/openapi_spec")
         async def openapi_spec():
             return get_openapi(
                 title="FUSE Application API",
@@ -102,7 +108,7 @@ class FUSEApp:
             allow_headers=["*"],
         )
 
-    async def serve(self, host: str = "0.0.0.0", port: int = 7272):
+    async def serve(self, host: str = "0.0.0.0", port: int = 7272, reload: bool = True):
         import uvicorn
 
         from core.utils.logging_config import configure_logging

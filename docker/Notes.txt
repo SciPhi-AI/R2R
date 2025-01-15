@@ -1,0 +1,5 @@
+# Build compose with verbose logs (Note progress=plain):
+/usr/bin/docker compose --env-file /data/askfrankly/ask-api-fuse/docker/env-dockercompose.bkp \
+        -f /data/askfrankly/ask-api-fuse/docker/docker_compose_fuse.full.yaml \
+        -p ask-api-fuse up --progress=plain --remove-orphans -d --build
+

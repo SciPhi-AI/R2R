@@ -330,7 +330,7 @@ services:
     image: ${FUSE_IMAGE:-meltingrock/ask-api-fuse:latest}
     build:
       context: ../
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile_dev
       args:
         PORT: ${FUSE_PORT:-7272}
         FUSE_PORT: ${FUSE_PORT:-7272}
@@ -339,6 +339,9 @@ services:
     ports:
       - "${FUSE_PORT:-7272}:${FUSE_PORT:-7272}"
     environment:
+      # Added Riaan
+      - PYTHONPATH=/app/py:${PYTHONPATH}
+
       - PYTHONUNBUFFERED=1
       - FUSE_PORT=${FUSE_PORT:-7272}
       - FUSE_HOST=${FUSE_HOST:-0.0.0.0}
@@ -425,6 +428,10 @@ services:
       retries: 5
     restart: on-failure
     volumes:
+      - type: bind
+        source: ${PWD}/../py
+        target: /app/py
+        read_only: false
       - ${FUSE_CONFIG_PATH:-/}:${FUSE_CONFIG_PATH:-/app/config}
       - hatchet_api_key:/hatchet_api_key:ro
     extra_hosts:
@@ -434,6 +441,7 @@ services:
         condition: service_completed_successfully
       unstructured:
         condition: service_healthy
+
         
     labels:
       # Enable Traefik for this service
