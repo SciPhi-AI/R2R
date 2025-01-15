@@ -65,7 +65,7 @@ class LogsRouter(BaseRouterV3):
 
     def _setup_routes(self):
         @self.router.websocket(
-            "/logs/stream",
+            "/stream",
             dependencies=[Depends(self.websocket_rate_limit_dependency)],
         )
         async def stream_logs(websocket: WebSocket):
@@ -89,7 +89,7 @@ class LogsRouter(BaseRouterV3):
                     await websocket.close()
 
         @self.router.get(
-            "/logs/viewer",
+            "/viewer",
             dependencies=[Depends(self.rate_limit_dependency)],
         )
         async def get_log_viewer(request: Request):

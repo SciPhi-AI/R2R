@@ -33,7 +33,7 @@ class ConversationsRouter(BaseRouterV3):
 
     def _setup_routes(self):
         @self.router.post(
-            "/conversations",
+            "",
             summary="Create a new conversation",
             dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
@@ -107,7 +107,7 @@ class ConversationsRouter(BaseRouterV3):
             )
 
         @self.router.get(
-            "/conversations",
+            "",
             summary="List conversations",
             dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
@@ -209,7 +209,7 @@ class ConversationsRouter(BaseRouterV3):
             }
 
         @self.router.post(
-            "/conversations/export",
+            "/export",
             summary="Export conversations to CSV",
             dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
@@ -315,7 +315,7 @@ class ConversationsRouter(BaseRouterV3):
             )
 
         @self.router.post(
-            "/conversations/export_messages",
+            "/export_messages",
             summary="Export messages to CSV",
             dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
@@ -421,7 +421,7 @@ class ConversationsRouter(BaseRouterV3):
             )
 
         @self.router.get(
-            "/conversations/{id}",
+            "/by-id/{id}",
             summary="Get conversation details",
             dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
@@ -502,7 +502,7 @@ class ConversationsRouter(BaseRouterV3):
             return conversation
 
         @self.router.post(
-            "/conversations/{id}",
+            "/by-id/{id}",
             summary="Update conversation",
             dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
@@ -585,7 +585,7 @@ class ConversationsRouter(BaseRouterV3):
             )
 
         @self.router.delete(
-            "/conversations/{id}",
+            "/by-id/{id}",
             summary="Delete conversation",
             dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
@@ -665,7 +665,7 @@ class ConversationsRouter(BaseRouterV3):
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
-            "/conversations/{id}/messages",
+            "/by-id/{id}/messages",
             summary="Add message to conversation",
             dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
@@ -761,7 +761,7 @@ class ConversationsRouter(BaseRouterV3):
             )
 
         @self.router.post(
-            "/conversations/{id}/messages/{message_id}",
+            "/by-id/{id}/messages/{message_id}",
             summary="Update message in conversation",
             dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={

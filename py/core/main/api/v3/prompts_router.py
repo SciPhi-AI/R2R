@@ -27,7 +27,7 @@ class PromptsRouter(BaseRouterV3):
 
     def _setup_routes(self):
         @self.router.post(
-            "/prompts",
+            "",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Create a new prompt",
             openapi_extra={
@@ -111,7 +111,7 @@ class PromptsRouter(BaseRouterV3):
             return GenericMessageResponse(message=result)  # type: ignore
 
         @self.router.get(
-            "/prompts",
+            "",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="List all prompts",
             openapi_extra={
@@ -191,7 +191,7 @@ class PromptsRouter(BaseRouterV3):
             )
 
         @self.router.post(
-            "/prompts/{name}",
+            "/by-name/{name}",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Get a specific prompt",
             openapi_extra={
@@ -281,7 +281,7 @@ class PromptsRouter(BaseRouterV3):
             return result  # type: ignore
 
         @self.router.put(
-            "/prompts/{name}",
+            "/by-name/{name}",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Update an existing prompt",
             openapi_extra={
@@ -365,7 +365,7 @@ class PromptsRouter(BaseRouterV3):
             return GenericMessageResponse(message=result)  # type: ignore
 
         @self.router.delete(
-            "/prompts/{name}",
+            "/by-name/{name}",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Delete a prompt",
             openapi_extra={

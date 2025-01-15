@@ -46,7 +46,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Expose the port and set environment variables
 ARG FUSE_PORT=8000
 ARG FUSE_HOST=0.0.0.0
-ENV FUSE_PORT=$FUSE_PORT FUSE_HOST=$FUSE_HOST
+ENV FUSE_PORT=$FUSE_PORT
+ENV FUSE_HOST=$FUSE_HOST
 EXPOSE $FUSE_PORT
 
 COPY py /app

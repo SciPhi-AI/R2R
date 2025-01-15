@@ -83,7 +83,7 @@ class RetrievalRouterV3(BaseRouterV3):
 
     def _setup_routes(self):
         @self.router.post(
-            "/retrieval/search",
+            "/search",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Search FUSE",
             openapi_extra={
@@ -265,7 +265,7 @@ class RetrievalRouterV3(BaseRouterV3):
             return results
 
         @self.router.post(
-            "/retrieval/rag",
+            "/rag",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="RAG Query",
             response_model=None,
@@ -456,7 +456,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 return response
 
         @self.router.post(
-            "/retrieval/agent",
+            "/agent",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="RAG-powered Conversational Agent",
             openapi_extra={
@@ -689,7 +689,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 raise FUSEException(str(e), 500)
 
         @self.router.post(
-            "/retrieval/completion",
+            "/completion",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Generate Message Completions",
             openapi_extra={
@@ -826,7 +826,7 @@ class RetrievalRouterV3(BaseRouterV3):
             )
 
         @self.router.post(
-            "/retrieval/embedding",
+            "/embedding",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Generate Embeddings",
             openapi_extra={

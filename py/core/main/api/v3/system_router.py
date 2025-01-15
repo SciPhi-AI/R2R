@@ -88,7 +88,7 @@ class SystemRouter(BaseRouterV3):
             return GenericMessageResponse(message="ok")  # type: ignore
 
         @self.router.get(
-            "/system/settings",
+            "/settings",
             dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
@@ -154,7 +154,7 @@ class SystemRouter(BaseRouterV3):
             return await self.services.management.app_settings()
 
         @self.router.get(
-            "/system/status",
+            "/status",
             dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [

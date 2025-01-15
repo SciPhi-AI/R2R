@@ -1,0 +1,38 @@
+name: R2R JS SDK Integration CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'js/sdk/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'js/sdk/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./js/sdk
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "18"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm run build

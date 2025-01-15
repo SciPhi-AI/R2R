@@ -99,7 +99,7 @@ class ChunksRouter(BaseRouterV3):
             return results["chunk_search_results"]
 
         @self.router.get(
-            "/{id}",
+            "/by-id/{id}",
             summary="Retrieve Chunk",
             dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
@@ -172,7 +172,7 @@ class ChunksRouter(BaseRouterV3):
             )
 
         @self.router.post(
-            "/{id}",
+            "/by-id/{id}",
             summary="Update Chunk",
             dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
@@ -265,7 +265,7 @@ class ChunksRouter(BaseRouterV3):
             )
 
         @self.router.delete(
-            "/{id}",
+            "/by-id/{id}",
             summary="Delete Chunk",
             dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
@@ -336,7 +336,7 @@ class ChunksRouter(BaseRouterV3):
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.get(
-            "/chunks",
+            "",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="List Chunks",
             openapi_extra={
