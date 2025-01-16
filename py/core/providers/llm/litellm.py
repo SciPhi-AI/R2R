@@ -49,10 +49,8 @@ class LiteLLMCompletionProvider(CompletionProvider):
         messages = task["messages"]
         generation_config = task["generation_config"]
         kwargs = task["kwargs"]
-        print("generation_config = ", generation_config)
 
         args = self._get_base_args(generation_config)
-        print("args = ", args)
         args["messages"] = messages
         args = {**args, **kwargs}
 

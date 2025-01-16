@@ -2580,8 +2580,6 @@ class PostgresGraphsHandler(Handler):
             ORDER BY {embedding_type} <=> $1
             LIMIT $2;
         """
-        print("QUERY = ", QUERY)
-        print("params = ", params)
 
         results = await self.connection_manager.fetch_query(
             QUERY, tuple(params)

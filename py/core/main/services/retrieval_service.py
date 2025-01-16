@@ -278,7 +278,6 @@ class RetrievalService(Service):
         message: Optional[Message] = None,
         messages: Optional[list[Message]] = None,
     ):
-        print("rag_generation_config = ", rag_generation_config)
         async with manage_run(self.run_manager) as run_id:
             try:
                 if message and messages:
