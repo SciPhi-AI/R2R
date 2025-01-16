@@ -2591,7 +2591,7 @@ class PostgresGraphsHandler(Handler):
             }
             output["similarity_score"] = (
                 1 - float(result["similarity_score"])
-                if result.get("similarity_score") in result
+                if result.get("similarity_score")
                 else "n/a"
             )
             yield output
