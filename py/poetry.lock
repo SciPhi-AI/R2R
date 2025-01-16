@@ -6487,4 +6487,4 @@ ingestion-bundle = ["aioshutil", "beautifulsoup4", "bs4", "docutils", "epub", "e
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "257cdf8a3cee987389079cea25cb8950379d10d84477abd3ee82c85f932aec03"
+content-hash = "138330c45d87d23e796778d399453e33c437a2c7b8d36e458260ed69fd53e44c"
