@@ -60,6 +60,8 @@ class JwtAuthProvider(AuthProvider):
     async def decode_token(self, token: str) -> TokenData:
         # use JWT library to validate and decode JWT token
         jwtSecret = os.getenv("JWT_SECRET")
+        if jwtSecret is None:
+            raise R2RException(status_code=500, message="JWT_SECRET environment variable is not set")
         try: 
             user = jwt.decode(token, jwtSecret, algorithms=["HS256"])
         except Exception as e:
