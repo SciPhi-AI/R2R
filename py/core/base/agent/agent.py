@@ -156,11 +156,12 @@ class Agent(ABC):
                 ),
                 stream=stream,
             )
-        if (
-            "azure" in self.rag_generation_config.model
-            or "anthropic" in self.rag_generation_config.model
-            or "openai" in self.rag_generation_config.model
-        ):
+        # if (
+        #     "azure" in self.rag_generation_config.model
+        #     or "anthropic" in self.rag_generation_config.model
+        #     or "openai" in self.rag_generation_config.model
+        # ):
+        if (False):
             # return with tools
             return GenerationConfig(
                 **self.rag_generation_config.model_dump(
