@@ -23,6 +23,7 @@ from core.providers import (
     AsyncSMTPEmailProvider,
     ConsoleMockEmailProvider,
     HatchetOrchestrationProvider,
+    JwtAuthProvider,
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
     OllamaEmbeddingProvider,
@@ -45,7 +46,7 @@ if TYPE_CHECKING:
 
 
 class R2RProviders(BaseModel):
-    auth: R2RAuthProvider | SupabaseAuthProvider
+    auth: R2RAuthProvider | SupabaseAuthProvider | JwtAuthProvider
     database: PostgresDatabaseProvider
     ingestion: R2RIngestionProvider | UnstructuredIngestionProvider
     embedding: (

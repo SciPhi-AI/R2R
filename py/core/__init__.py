@@ -225,6 +225,8 @@ __all__ = [
     # Auth
     "SupabaseAuthProvider",
     "R2RAuthProvider",
+    "JwtAuthProvider",
+    # Email
     # Crypto
     "BCryptCryptoProvider",
     "BcryptCryptoConfig",
