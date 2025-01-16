@@ -47,7 +47,6 @@ automatic_extraction = true # enable automatic extraction of entities and relati
     pdf = "zerox"
 
   [ingestion.chunk_enrichment_settings]
-    enable_chunk_enrichment = true # disabled by default
     generation_config = { model = "azure/gpt-4o-mini" }
 
 [orchestration]
