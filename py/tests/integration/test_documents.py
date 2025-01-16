@@ -154,7 +154,7 @@ def test_list_document_collections(client, test_document):
 def test_extract_document(client, test_document):
     time.sleep(10)
     run_resp = client.documents.extract(
-        id=test_document, run_type="run", run_with_orchestration=False
+        id=test_document, run_with_orchestration=False
     )["results"]
     assert "message" in run_resp, "No message after extraction run"
 

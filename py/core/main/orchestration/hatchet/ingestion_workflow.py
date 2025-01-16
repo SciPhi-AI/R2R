@@ -211,14 +211,13 @@ def hatchet_ingestion_factory(
                             status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                             status=KGEnrichmentStatus.OUTDATED,
                         )
+
                 # get server chunk enrichment settings and override parts of it if provided in the ingestion config
-                server_chunk_enrichment_settings = getattr(
+                if server_chunk_enrichment_settings := getattr(
                     service.providers.ingestion.config,
                     "chunk_enrichment_settings",
                     None,
-                )
-
-                if server_chunk_enrichment_settings:
+                ):
                     chunk_enrichment_settings = update_settings_from_dict(
                         server_chunk_enrichment_settings,
                         ingestion_config.get("chunk_enrichment_settings", {})
@@ -228,13 +227,10 @@ def hatchet_ingestion_factory(
                 if chunk_enrichment_settings.enable_chunk_enrichment:
                     logger.info("Enriching document with contextual chunks")
 
-                    # TODO: the status updating doesn't work because document_info doesn't contain information about collection IDs
-                    # we don't update the document_info when we assign document_to_collection_relational and document_to_collection_vector
-                    # hack: get document_info again from DB
-                    document_info = (
-                        await self.ingestion_service.providers.database.documents_handler.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                    document_info: DocumentResponse = (
+                        await self.ingestion_service.providers.database.documents_handler.get_documents_overview(
                             offset=0,
-                            limit=100,
+                            limit=1,
                             filter_user_ids=[document_info.owner_id],
                             filter_document_ids=[document_info.id],
                         )
@@ -247,13 +243,15 @@ def hatchet_ingestion_factory(
 
                     await self.ingestion_service.chunk_enrichment(
                         document_id=document_info.id,
+                        document_summary=document_info.summary,
                         chunk_enrichment_settings=chunk_enrichment_settings,
                     )
 
                     await self.ingestion_service.update_document_status(
                         document_info,
-                        status=IngestionStatus.ENRICHED,
+                        status=IngestionStatus.SUCCESS,
                     )
+                # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
                 if service.providers.ingestion.config.automatic_extraction:
                     extract_input = {
@@ -316,10 +314,7 @@ def hatchet_ingestion_factory(
                 document_info = documents_overview[0]
 
                 # Update the document status to FAILED
-                if document_info.ingestion_status not in [
-                    IngestionStatus.SUCCESS,
-                    IngestionStatus.ENRICHED,
-                ]:
+                if document_info.ingestion_status != IngestionStatus.SUCCESS:
                     await self.ingestion_service.update_document_status(
                         document_info,
                         status=IngestionStatus.FAILED,

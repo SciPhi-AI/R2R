@@ -553,41 +553,6 @@ class GraphService(Service):
             collection_id=collection_id,
         )
 
-    @telemetry_event("get_creation_estimate")
-    async def get_creation_estimate(
-        self,
-        graph_creation_settings: KGCreationSettings,
-        document_id: Optional[UUID] = None,
-        collection_id: Optional[UUID] = None,
-        **kwargs,
-    ):
-        return (
-            await self.providers.database.graphs_handler.get_creation_estimate(
-                document_id=document_id,
-                collection_id=collection_id,
-                graph_creation_settings=graph_creation_settings,
-            )
-        )
-
-    @telemetry_event("get_enrichment_estimate")
-    async def get_enrichment_estimate(
-        self,
-        collection_id: Optional[UUID] = None,
-        graph_id: Optional[UUID] = None,
-        graph_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings(),
-        **kwargs,
-    ):
-        if graph_id is None and collection_id is None:
-            raise ValueError(
-                "Either graph_id or collection_id must be provided"
-            )
-
-        return await self.providers.database.graphs_handler.get_enrichment_estimate(
-            collection_id=collection_id,
-            graph_id=graph_id,
-            graph_enrichment_settings=graph_enrichment_settings,
-        )
-
     async def kg_extraction(  # type: ignore
         self,
         document_id: UUID,

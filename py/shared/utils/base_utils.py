@@ -239,38 +239,6 @@ def decrement_version(version: str) -> str:
     return f"{prefix}{max(0, suffix - 1)}"
 
 
-def llm_cost_per_million_tokens(
-    model: str, input_output_ratio: float = 2
-) -> float:
-    """
-    Returns the cost per million tokens for a given model and input/output ratio.
-
-    Input/Output ratio is the ratio of input tokens to output tokens.
-
-    """
-
-    # improving this to use provider in the future
-
-    model = model.split("/")[-1]  # simplifying assumption
-    cost_dict = {
-        "gpt-4o-mini": (0.15, 0.6),
-        "gpt-4o": (2.5, 10),
-    }
-
-    if model in cost_dict:
-        return (
-            cost_dict[model][0] * input_output_ratio * cost_dict[model][1]
-        ) / (1 + input_output_ratio)
-    else:
-        # use gpt-4o as default
-        logger.warning(f"Unknown model: {model}. Using gpt-4o as default.")
-        return (
-            cost_dict["gpt-4o"][0]
-            * input_output_ratio
-            * cost_dict["gpt-4o"][1]
-        ) / (1 + input_output_ratio)
-
-
 def validate_uuid(uuid_str: str) -> UUID:
     return UUID(uuid_str)
 
@@ -316,13 +284,6 @@ def _get_vector_column_str(
     else:
         vector_dim = f"({dimension})"
     return _decorate_vector_type(vector_dim, quantization_type)
-
-
-def _get_str_estimation_output(x: tuple[Any, Any]) -> str:
-    if isinstance(x[0], int) and isinstance(x[1], int):
-        return " - ".join(map(str, x))
-    else:
-        return " - ".join(f"{round(a, 2)}" for a in x)
 
 
 KeyType = TypeVar("KeyType")

@@ -36,7 +36,6 @@ __all__ = [
     "Community",
     "KGCreationSettings",
     "KGEnrichmentSettings",
-    "KGRunType",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",

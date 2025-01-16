@@ -160,11 +160,8 @@ def test_build_communities(client, test_collection):
     relationship_id = rel_resp["id"]
 
     # Build communities
-    # Adjust parameters as needed if `run_type` and `settings` differ.
-    # The router expects `run_type` and `graph_enrichment_settings`.
     resp = client.graphs.build(
         collection_id=collection_id,
-        run_type="run",
         # graph_enrichment_settings={"use_semantic_clustering": True},
         run_with_orchestration=False,
     )["results"]

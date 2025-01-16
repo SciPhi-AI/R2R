@@ -25,7 +25,7 @@ from core.base import (
     generate_id,
     select_search_filters,
 )
-from core.base.abstractions import KGCreationSettings, KGRunType, StoreType
+from core.base.abstractions import KGCreationSettings, StoreType
 from core.base.api.models import (
     GenericBooleanResponse,
     WrappedBooleanResponse,
@@ -1548,10 +1548,6 @@ class DocumentsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document to extract entities and relationships from.",
             ),
-            run_type: KGRunType = Body(
-                default=KGRunType.RUN,
-                description="Whether to return an estimate of the creation cost or to actually extract the document.",
-            ),
             settings: Optional[KGCreationSettings] = Body(
                 default=None,
                 description="Settings for the entities and relationships extraction process.",
@@ -1604,10 +1600,6 @@ class DocumentsRouter(BaseRouterV3):
                     403,
                 )
 
-            # If no run type is provided, default to estimate
-            if not run_type:
-                run_type = KGRunType.ESTIMATE
-
             # Apply runtime settings overrides
             server_graph_creation_settings = (
                 self.providers.database.config.graph_creation_settings
@@ -1618,17 +1610,6 @@ class DocumentsRouter(BaseRouterV3):
                     server_settings=server_graph_creation_settings,
                     settings_dict=settings,  # type: ignore
                 )
-
-            if run_type is KGRunType.ESTIMATE:
-                return {  # type: ignore
-                    "message": "Estimate retrieved successfully",
-                    "task_id": None,
-                    "id": id,
-                    "estimate": await self.services.graph.get_creation_estimate(
-                        document_id=id,
-                        graph_creation_settings=server_graph_creation_settings,
-                    ),
-                }
 
             if run_with_orchestration:
                 workflow_input = {
@@ -1703,10 +1684,6 @@ class DocumentsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document to extract entities and relationships from.",
             ),
-            run_type: KGRunType = Body(
-                default=KGRunType.RUN,
-                description="Whether to return an estimate of the creation cost or to actually extract the document.",
-            ),
             settings: Optional[KGCreationSettings] = Body(
                 default=None,
                 description="Settings for the entities and relationships extraction process.",
@@ -1749,10 +1726,6 @@ class DocumentsRouter(BaseRouterV3):
                     403,
                 )
 
-            # If no run type is provided, default to estimate
-            if not run_type:
-                run_type = KGRunType.ESTIMATE
-
             # Apply runtime settings overrides
             server_graph_creation_settings = (
                 self.providers.database.config.graph_creation_settings
@@ -1763,17 +1736,6 @@ class DocumentsRouter(BaseRouterV3):
                     server_settings=server_graph_creation_settings,
                     settings_dict=settings,  # type: ignore
                 )
-
-            if run_type is KGRunType.ESTIMATE:
-                return {  # type: ignore
-                    "message": "Estimate retrieved successfully",
-                    "task_id": None,
-                    "id": id,
-                    "estimate": await self.services.graph.get_creation_estimate(
-                        document_id=id,
-                        graph_creation_settings=server_graph_creation_settings,
-                    ),
-                }
 
             if run_with_orchestration:
                 workflow_input = {

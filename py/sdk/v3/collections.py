@@ -269,17 +269,15 @@ class CollectionsSDK:
         Returns:
             bool: True if removal was successful
         """
-        result = await self.client._make_request(
+        return await self.client._make_request(
             "DELETE",
             f"collections/{str(id)}/users/{str(user_id)}",
             version="v3",
         )
-        return result
 
     async def extract(
         self,
         id: str | UUID,
-        # run_type: Optional[str] = "RUN",
         settings: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
     ) -> dict:
@@ -288,8 +286,6 @@ class CollectionsSDK:
 
         Args:
             id (str | UUID): Collection ID to extract from
-            run_type (Optional[str]): Whether to return an estimate of the creation cost or to actually extract.
-                Defaults to "RUN"
             settings (Optional[dict]): Settings for the entities and relationships extraction process
             run_with_orchestration (Optional[bool]): Whether to run the extraction process with orchestration.
                 Defaults to True
@@ -299,10 +295,7 @@ class CollectionsSDK:
                 - For estimates: message, task_id, id, and estimate
                 - For runs: message and task_id
         """
-        params = {
-            # "run_type": run_type,
-            "run_with_orchestration": run_with_orchestration
-        }
+        params = {"run_with_orchestration": run_with_orchestration}
 
         data: dict[str, Any] = {}
         if settings is not None:

@@ -7,7 +7,7 @@ from fastapi import Body, Depends, Path, Query
 from fastapi.background import BackgroundTasks
 from fastapi.responses import FileResponse
 
-from core.base import KGCreationSettings, KGRunType, R2RException
+from core.base import KGCreationSettings, R2RException
 from core.base.api.models import (
     GenericBooleanResponse,
     WrappedBooleanResponse,
@@ -1210,10 +1210,6 @@ class CollectionsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document to extract entities and relationships from.",
             ),
-            run_type: KGRunType = Query(
-                default=KGRunType.RUN,
-                description="Whether to return an estimate of the creation cost or to actually extract the document.",
-            ),
             settings: Optional[KGCreationSettings] = Body(
                 default=None,
                 description="Settings for the entities and relationships extraction process.",
@@ -1237,10 +1233,6 @@ class CollectionsRouter(BaseRouterV3):
             settings = settings.dict() if settings else None  # type: ignore
             if not auth_user.is_superuser:
                 logger.warning("Implement permission checks here.")
-
-            # If no run type is provided, default to estimate
-            if not run_type:
-                run_type = KGRunType.ESTIMATE
 
             # Apply runtime settings overrides
             server_graph_creation_settings = (
