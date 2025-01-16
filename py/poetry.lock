@@ -2511,13 +2511,13 @@ regex = ["regex"]
 
 [[package]]
 name = "litellm"
-version = "1.58.0"
+version = "1.58.2"
 description = "Library to easily interface with LLM API providers"
 optional = true
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.58.0-py3-none-any.whl", hash = "sha256:1fc07646f6419f1d7b7d06fe2f5c72b3e6e3407423b50cbf45b58dc9740e7a03"},
-    {file = "litellm-1.58.0.tar.gz", hash = "sha256:db4512e987809e04e59d5b4240bdef3a4bfe575c332397f80cc6b4403c68120a"},
+    {file = "litellm-1.58.2-py3-none-any.whl", hash = "sha256:51b14b2f5e30d2d41a76fbf926d7d882f1fddbbfda8812358cb4bb27d0d27692"},
+    {file = "litellm-1.58.2.tar.gz", hash = "sha256:4e1b7191a86970bbacd30e5315d3b6a0f5fc75a99763c9164116de60c6ac0bf3"},
 ]
 
 [package.dependencies]
@@ -6472,4 +6472,4 @@ ingestion-bundle = ["aioshutil", "beautifulsoup4", "bs4", "docutils", "epub", "e
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "257cdf8a3cee987389079cea25cb8950379d10d84477abd3ee82c85f932aec03"
+content-hash = "138330c45d87d23e796778d399453e33c437a2c7b8d36e458260ed69fd53e44c"
