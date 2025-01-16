@@ -11,8 +11,9 @@ class LiteLLMCompletionProvider(CompletionProvider):
     def __init__(self, config: CompletionConfig, *args, **kwargs) -> None:
         super().__init__(config)
         try:
+            import litellm
             from litellm import acompletion, completion
-
+            litellm.set_verbose=True
             self.acompletion = acompletion
             self.completion = completion
             logger.debug("LiteLLM imported successfully")
@@ -38,7 +39,7 @@ class LiteLLMCompletionProvider(CompletionProvider):
             "api_base": generation_config.api_base,
         }
         if generation_config.functions is not None:
-            args["tools"] = generation_config.functions
+            args["functions"] = generation_config.functions
         if generation_config.tools is not None:
             args["tools"] = generation_config.tools
         if generation_config.response_format is not None:
