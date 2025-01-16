@@ -2,26 +2,41 @@ chunk_enrichment:
   template: >
     ## Task:
 
-    Enrich and refine the given chunk of text using information from the provided context chunks. The goal is to make the chunk more precise and self-contained.
+    Enrich and refine the given chunk of text while maintaining its independence and precision.
 
-    ## Context Chunks:
-    {context_chunks}
+    ## Context:
+    Document Summary: {document_summary}
+    Preceding Chunks: {preceding_chunks}
+    Succeeding Chunks: {succeeding_chunks}
 
-    ## Chunk to Enrich:
+    ## Input Chunk:
     {chunk}
 
-    ## Instructions:
-    1. Rewrite the chunk in third person.
-    2. Replace all common nouns with appropriate proper nouns. Use specific names, titles, or identifiers instead of general terms.
-    3. Use information from the context chunks to enhance the clarity and precision of the given chunk.
-    4. Ensure the enriched chunk remains independent and self-contained.
-    5. Do not incorporate specific information or details from other chunks into this one.
-    6. Focus on making the chunk more informative and precise within its own scope.
-    7. Maintain the original meaning and intent of the chunk while improving its clarity and usefulness.
-    8. Just output the enriched chunk. Do not include any other text.
+    ## Enrichment Requirements:
+    1. Maintain third-person perspective
+    2. Replace generic terms with specific identifiers
+    3. Resolve ambiguous references
+    4. Expand acronyms on first use
+    5. Add crucial missing context
+    6. Preserve original formatting and structure
+    7. Maintain technical accuracy
+    8. Ensure independence while preserving narrative flow
+
+    ## Size Constraints:
+    Maximum length: {chunk_size} characters
+    Priority order if size limit reached:
+    1. Essential technical information
+    2. Specific identifiers and references
+    3. Contextual clarity
+    4. Supporting details
+
+    Output the enriched chunk only, without additional text or formatting.
 
     ## Enriched Chunk:
 
   input_types:
+    document_summary: str
     chunk: str
-    context_chunks: str
+    preceding_chunks: str
+    succeeding_chunks: str
+    chunk_size: int

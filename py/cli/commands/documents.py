@@ -409,7 +409,6 @@ async def ingest_files_from_urls(client, urls):
 # Missing CLI Commands
 @documents.command()
 @click.argument("id", required=True, type=str)
-@click.option("--run-type", help="Extraction run type (estimate or run)")
 @click.option("--settings", type=JSON, help="Extraction settings as JSON")
 @click.option(
     "--run-without-orchestration",
@@ -417,9 +416,7 @@ async def ingest_files_from_urls(client, urls):
     help="Run without orchestration",
 )
 @pass_context
-async def extract(
-    ctx: click.Context, id, run_type, settings, run_without_orchestration
-):
+async def extract(ctx: click.Context, id, settings, run_without_orchestration):
     """Extract entities and relationships from a document."""
     client: R2RAsyncClient = ctx.obj
     run_with_orchestration = not run_without_orchestration
@@ -427,7 +424,6 @@ async def extract(
     with timer():
         response = await client.documents.extract(
             id=id,
-            run_type=run_type,
             settings=settings,
             run_with_orchestration=run_with_orchestration,
         )

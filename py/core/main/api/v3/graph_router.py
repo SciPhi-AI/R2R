@@ -8,7 +8,7 @@ from fastapi.background import BackgroundTasks
 from fastapi.responses import FileResponse
 
 from core.base import KGEnrichmentStatus, R2RException, Workflow
-from core.base.abstractions import KGRunType, StoreType
+from core.base.abstractions import StoreType
 from core.base.api.models import (
     GenericBooleanResponse,
     WrappedBooleanResponse,
@@ -246,10 +246,6 @@ class GraphRouter(BaseRouterV3):
             collection_id: UUID = Path(
                 ..., description="The unique identifier of the collection"
             ),
-            run_type: Optional[KGRunType] = Body(
-                default=KGRunType.ESTIMATE,
-                description="Run type for the graph enrichment process.",
-            ),
             graph_enrichment_settings: Optional[dict] = Body(
                 default=None,
                 description="Settings for the graph enrichment process.",
@@ -299,10 +295,6 @@ class GraphRouter(BaseRouterV3):
 
             # If no collection ID is provided, use the default user collection
             # id = generate_default_user_collection_id(auth_user.id)
-
-            # If no run type is provided, default to estimate
-            if not run_type:
-                run_type = KGRunType.ESTIMATE
 
             # Apply runtime settings overrides
             server_graph_enrichment_settings = (

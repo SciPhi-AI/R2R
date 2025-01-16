@@ -260,7 +260,6 @@ async def remove_relationship(
 @click.option(
     "--settings", required=True, type=JSON, help="Build settings as JSON"
 )
-@click.option("--run-type", default="estimate", help="Type of build to run")
 @click.option(
     "--run-without-orchestration",
     is_flag=True,
@@ -271,7 +270,6 @@ async def build(
     ctx: click.Context,
     collection_id,
     settings,
-    run_type,
     run_without_orchestration,
 ):
     """Build a graph with specified settings."""
@@ -283,7 +281,6 @@ async def build(
             response = await client.graphs.build(
                 collection_id=collection_id,
                 settings=settings,
-                run_type=run_type,
                 run_with_orchestration=run_with_orchestration,
             )
         click.echo(json.dumps(response, indent=2))

@@ -115,7 +115,6 @@ class IngestionStatus(str, Enum):
     AUGMENTING = "augmenting"
     STORING = "storing"
     ENRICHING = "enriching"
-    ENRICHED = "enriched"
 
     FAILED = "failed"
     SUCCESS = "success"
@@ -260,14 +259,6 @@ class IngestionMode(str, Enum):
     custom = "custom"
 
 
-class ChunkEnrichmentStrategy(str, Enum):
-    SEMANTIC = "semantic"
-    NEIGHBORHOOD = "neighborhood"
-
-    def __str__(self) -> str:
-        return self.value
-
-
 from .llm import GenerationConfig
 
 
@@ -280,24 +271,9 @@ class ChunkEnrichmentSettings(R2RSerializable):
         default=False,
         description="Whether to enable chunk enrichment or not",
     )
-    strategies: list[ChunkEnrichmentStrategy] = Field(
-        default=[],
-        description="The strategies to use for chunk enrichment. List of chunks obtained from each strategy is used as context.",
-    )
-    forward_chunks: int = Field(
-        default=3,
-        description="The number after the current chunk to include in the LLM context while enriching",
-    )
-    backward_chunks: int = Field(
-        default=3,
-        description="The number of chunks before the current chunk in the LLM context while enriching",
-    )
-    semantic_neighbors: int = Field(
-        default=10, description="The number of semantic neighbors to include"
-    )
-    semantic_similarity_threshold: float = Field(
-        default=0.7,
-        description="The similarity threshold for semantic neighbors",
+    n_chunks: int = Field(
+        default=2,
+        description="The number of preceding and succeeding chunks to include. Defaults to 2.",
     )
     generation_config: GenerationConfig = Field(
         default=GenerationConfig(),

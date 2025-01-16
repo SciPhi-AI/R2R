@@ -74,7 +74,6 @@ class R2RAsyncClient(BaseClient):
                 return BytesIO(response.content)
 
         except httpx.RequestError as e:
-            print("e = ", e)
             raise R2RException(
                 status_code=500,
                 message=f"Request failed: {str(e)}",

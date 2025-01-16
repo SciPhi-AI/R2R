@@ -1,22 +1,7 @@
-from enum import Enum
-
 from pydantic import Field
 
 from .base import R2RSerializable
 from .llm import GenerationConfig
-
-
-class KGRunType(str, Enum):
-    """Type of KG run."""
-
-    ESTIMATE = "estimate"
-    RUN = "run"  # deprecated
-
-    def __str__(self):
-        return self.value
-
-
-GraphRunType = KGRunType
 
 
 class KGCreationSettings(R2RSerializable):

@@ -1,5 +1,6 @@
 from shared.abstractions.base import AsyncSyncMeta, R2RSerializable, syncable
 from shared.abstractions.document import (
+    ChunkEnrichmentSettings,
     Document,
     DocumentChunk,
     DocumentResponse,
@@ -27,15 +28,10 @@ from shared.abstractions.graph import (
     Relationship,
     StoreType,
 )
-from shared.abstractions.ingestion import (
-    ChunkEnrichmentSettings,
-    ChunkEnrichmentStrategy,
-)
 from shared.abstractions.kg import (
     GraphCommunitySettings,
     KGCreationSettings,
     KGEnrichmentSettings,
-    KGRunType,
 )
 from shared.abstractions.llm import (
     GenerationConfig,
@@ -137,7 +133,6 @@ __all__ = [
     "KGCreationSettings",
     "KGEnrichmentSettings",
     "GraphCommunitySettings",
-    "KGRunType",
     # User abstractions
     "Token",
     "TokenData",
@@ -155,5 +150,4 @@ __all__ = [
     "VectorQuantizationType",
     "StorageResult",
     "ChunkEnrichmentSettings",
-    "ChunkEnrichmentStrategy",
 ]

@@ -23,7 +23,6 @@ from .kg import (
     GraphCommunitySettings,
     KGCreationSettings,
     KGEnrichmentSettings,
-    KGRunType,
 )
 from .llm import (
     GenerationConfig,
@@ -121,7 +120,6 @@ __all__ = [
     "KGCreationSettings",
     "KGEnrichmentSettings",
     "KGExtraction",
-    "KGRunType",
     "GraphCommunitySettings",
     # User abstractions
     "Token",
