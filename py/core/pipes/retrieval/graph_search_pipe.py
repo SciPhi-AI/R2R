@@ -174,6 +174,7 @@ class GraphSearchSearchPipe(GeneratorPipe):
                     # "chunk_ids",
                     # "document_ids",
                 ],
+                filters=search_settings.filters,
             ):
                 try:
                     # TODO - remove this nasty hack
