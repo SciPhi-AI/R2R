@@ -201,166 +201,26 @@ async def prompt_handler(db_provider):
     return handler
 
 
-# # tests/conftest.py
-# import pytest
-# import os
+@pytest.fixture
+async def graphs_handler(db_provider):
+    project_name = db_provider.project_name
+    connection_manager = db_provider.connection_manager
+    dimension = db_provider.dimension
+    quantization_type = db_provider.quantization_type
 
-# from core.database.postgres import (
-#     PostgresChunksHandler,
-#     PostgresConnectionManager,
-#     PostgresDatabaseProvider,
-#     PostgresCollectionsHandler,
-#     PostgresConversationsHandler,
-#     PostgresDocumentsHandler,
-#     PostgresGraphsHandler,
-#     PostgresLimitsHandler,
-#     PostgresUserHandler
-# )
-# from core.providers import NaClCryptoConfig, NaClCryptoProvider
-# from core.base import  DatabaseConfig, VectorQuantizationType
+    # Optionally ensure 'collection_ids' column exists on your table(s), e.g.:
+    create_col_sql = f"""
+        ALTER TABLE "{project_name}"."graphs_entities"
+        ADD COLUMN IF NOT EXISTS collection_ids UUID[] DEFAULT '{{}}';
+    """
+    await connection_manager.execute_query(create_col_sql)
 
-
-# TEST_DB_CONNECTION_STRING = os.environ.get(
-#     "TEST_DB_CONNECTION_STRING",
-#     "postgresql://postgres:postgres@localhost:5432/test_db",
-# )
-
-# @pytest.fixture
-# async def db_provider():
-#     # Example: a crypto provider needed by the database
-#     crypto_provider = NaClCryptoProvider(NaClCryptoConfig(app={}))
-
-#     db_config = DatabaseConfig(
-#         app={},
-#         provider="postgres",
-#         connection_string=TEST_DB_CONNECTION_STRING,
-#         # Set these values as appropriate
-#         postgres_configuration_settings={
-#             "max_connections": 10,
-#             "statement_cache_size": 100,
-#         },
-#     )
-
-#     dimension = 4
-#     quantization_type = VectorQuantizationType.FP32
-
-#     db_provider = PostgresDatabaseProvider(
-#         db_config, dimension, crypto_provider, quantization_type
-#     )
-#     await db_provider.initialize()
-#     yield db_provider
-
-#     # Teardown logic if needed: close pools, drop tables, etc.
-#     await db_provider.close()
-
-
-# @pytest.fixture
-# async def chunks_handler(db_provider):
-#     # Assuming project_name and dimension are retrieved from db_provider
-#     dimension = db_provider.dimension
-#     quantization_type = db_provider.quantization_type
-#     project_name = db_provider.project_name
-#     connection_manager = (
-#         db_provider.connection_manager
-#     )  # type: PostgresConnectionManager
-
-#     handler = PostgresChunksHandler(
-#         project_name=project_name,
-#         connection_manager=connection_manager,
-#         dimension=dimension,
-#         quantization_type=quantization_type,
-#     )
-#     await handler.create_tables()
-#     return handler
-
-
-# @pytest.fixture
-# async def collections_handler(db_provider):
-#     project_name = db_provider.project_name
-#     connection_manager = db_provider.connection_manager
-#     config = db_provider.config
-
-#     handler = PostgresCollectionsHandler(
-#         project_name=project_name,
-#         connection_manager=connection_manager,
-#         config=config
-#     )
-#     await handler.create_tables()
-#     return handler
-
-# @pytest.fixture
-# async def conversations_handler(db_provider):
-#     project_name = db_provider.project_name
-#     connection_manager = db_provider.connection_manager
-
-#     handler = PostgresConversationsHandler(project_name, connection_manager)
-#     await handler.create_tables()
-#     return handler
-
-# @pytest.fixture
-# async def documents_handler(db_provider):
-#     dimension = db_provider.dimension
-#     project_name = db_provider.project_name
-#     connection_manager = db_provider.connection_manager
-
-#     handler = PostgresDocumentsHandler(
-#         project_name=project_name,
-#         connection_manager=connection_manager,
-#         dimension=dimension,
-#     )
-#     await handler.create_tables()
-#     return handler
-
-# @pytest.fixture
-# async def graphs_handler(db_provider):
-#     project_name = db_provider.project_name
-#     connection_manager = db_provider.connection_manager
-#     dimension = db_provider.dimension
-#     quantization_type = db_provider.quantization_type
-
-#     # Constructing graphs handler with required args
-#     handler = PostgresGraphsHandler(
-#         project_name=project_name,
-#         connection_manager=connection_manager,
-#         dimension=dimension,
-#         quantization_type=quantization_type,
-#         collections_handler=None  # If needed, you can mock or create a collections_handler
-#     )
-#     await handler.create_tables()
-#     return handler
-
-# @pytest.fixture
-# async def limits_handler(db_provider):
-#     project_name = db_provider.project_name
-#     connection_manager = db_provider.connection_manager
-#     config = db_provider.config  # This has default limits
-
-#     handler = PostgresLimitsHandler(
-#         project_name=project_name,
-#         connection_manager=connection_manager,
-#         config=config,
-#     )
-#     await handler.create_tables()
-#     # Optionally truncate after creation to ensure clean state
-#     await connection_manager.execute_query(f"TRUNCATE {handler._get_table_name('request_log')};")
-
-#     return handler
-
-
-# @pytest.fixture
-# async def users_handler(db_provider, crypto_provider):
-#     project_name = db_provider.project_name
-#     connection_manager = db_provider.connection_manager
-
-#     handler = PostgresUserHandler(
-#         project_name=project_name,
-#         connection_manager=connection_manager,
-#         crypto_provider=crypto_provider,
-#     )
-#     await handler.create_tables()
-
-#     # Optionally clean up users table before each test
-#     await connection_manager.execute_query(f"TRUNCATE {handler._get_table_name('users')} CASCADE;")
-#     await connection_manager.execute_query(f"TRUNCATE {handler._get_table_name('users_api_keys')} CASCADE;")
-
-#     return handler
+    handler = PostgresGraphsHandler(
+        project_name=project_name,
+        connection_manager=connection_manager,
+        dimension=dimension,
+        quantization_type=quantization_type,
+        collections_handler=None,
+    )
+    await handler.create_tables()
+    return handler

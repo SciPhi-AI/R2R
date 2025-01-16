@@ -432,17 +432,132 @@ async def test_error_handling_invalid_graph_id(graphs_handler):
     # Check the message or type if needed
 
 
-# TODO - Fix code to pass this test.
-# @pytest.mark.asyncio
-# async def test_delete_graph_cascade(graphs_handler):
-#     coll_id = uuid.uuid4()
-#     graph_resp = await graphs_handler.create(collection_id=coll_id, name="CascadeGraph")
-#     graph_id = graph_resp.id
+@pytest.mark.asyncio
+async def test_filter_by_collection_ids_in_entities(graphs_handler):
+    # 1) Create a row in "graphs" so it can be referenced by entities
+    some_parent_id = uuid.uuid4()
+    some_collection_id = uuid.uuid4()
 
-#     # Add entities/relationships here if you have documents attached
-#     # This test would verify that cascade=True behavior is correct
-#     # For now, just call delete with cascade=True
-#     # Depending on your implementation, you might need documents associated with the collection to test fully.
-#     await graphs_handler.delete(collection_id=coll_id)
-#     overview = await graphs_handler.list_graphs(offset=0, limit=10, filter_graph_ids=[graph_id])
-#     assert overview["total_entries"] == 0
+    insert_graph_sql = f"""
+        INSERT INTO "{graphs_handler.project_name}"."graphs"
+        (id, collection_id, name, description, status)
+        VALUES ($1, $2, $3, $4, $5)
+    """
+    await graphs_handler.connection_manager.execute_query(
+        insert_graph_sql,
+        [
+            some_parent_id,
+            some_collection_id,
+            "MyTestGraph",
+            "Graph for unit test",
+            "pending",
+        ],
+    )
+
+    # 2) Insert a row in "graphs_entities" that references parent_id = some_parent_id
+    row_id = uuid.uuid4()
+    insert_entity_sql = f"""
+        INSERT INTO "{graphs_handler.project_name}"."graphs_entities"
+        (id, name, parent_id, metadata)
+        VALUES ($1, $2, $3, $4)
+    """
+    await graphs_handler.connection_manager.execute_query(
+        insert_entity_sql, [row_id, "TestEntity", some_parent_id, None]
+    )
+
+    # 3) Now run your actual test search
+    filter_dict = {"collection_ids": {"$in": [str(some_parent_id)]}}
+    results = []
+    async for row in graphs_handler.graph_search(
+        query="anything",
+        search_type="entities",
+        filters=filter_dict,
+        limit=10,
+        use_fulltext_search=False,
+        use_hybrid_search=False,
+        query_embedding=[0, 0, 0, 0],
+    ):
+        results.append(row)
+
+    assert len(results) == 1, f"Expected 1 matching entity, got {len(results)}"
+    assert results[0]["name"] == "TestEntity"
+
+    # 4) Cleanup if needed
+    delete_entity_sql = f"""
+        DELETE FROM "{graphs_handler.project_name}"."graphs_entities" WHERE id = $1
+    """
+    await graphs_handler.connection_manager.execute_query(
+        delete_entity_sql, [row_id]
+    )
+
+    delete_graph_sql = f"""
+        DELETE FROM "{graphs_handler.project_name}"."graphs" WHERE id = $1
+    """
+    await graphs_handler.connection_manager.execute_query(
+        delete_graph_sql, [some_parent_id]
+    )
+
+
+# # TODO - Fix code to pass this test.
+# # @pytest.mark.asyncio
+# # async def test_delete_graph_cascade(graphs_handler):
+# #     coll_id = uuid.uuid4()
+# #     graph_resp = await graphs_handler.create(collection_id=coll_id, name="CascadeGraph")
+# #     graph_id = graph_resp.id
+
+# #     # Add entities/relationships here if you have documents attached
+# #     # This test would verify that cascade=True behavior is correct
+# #     # For now, just call delete with cascade=True
+# #     # Depending on your implementation, you might need documents associated with the collection to test fully.
+# #     await graphs_handler.delete(collection_id=coll_id)
+# #     overview = await graphs_handler.list_graphs(offset=0, limit=10, filter_graph_ids=[graph_id])
+# #     assert overview["total_entries"] == 0
+
+# # tests/test_graph_filters.py
+# import pytest
+# import uuid
+# from core.database.postgres import PostgresGraphsHandler
+
+# @pytest.mark.asyncio
+# async def test_filter_by_collection_ids_in_entities(graphs_handler: PostgresGraphsHandler):
+#     # Suppose we want to test an entity row whose parent_id=some_uuid
+#     some_parent_id = uuid.uuid4()
+#     row_id = uuid.uuid4()
+
+#     # Insert an entity row manually for the test
+#     insert_sql = f"""
+#         INSERT INTO "{graphs_handler.project_name}"."graphs_entities"
+#         (id, name, parent_id, metadata)
+#         VALUES ($1, $2, $3, $4)
+#     """
+#     await graphs_handler.connection_manager.execute_query(
+#         insert_sql,
+#         [row_id, "TestEntity", some_parent_id, None]
+#     )
+
+#     # Now do a search with "collection_ids": { "$in": [some_parent_id] }
+#     filter_dict = {
+#         "collection_ids": { "$in": [str(some_parent_id)] }
+#     }
+
+#     # graph_search with search_type='entities' triggers the logic
+#     results = []
+#     async for row in graphs_handler.graph_search(
+#         query="anything",
+#         search_type="entities",
+#         filters=filter_dict,
+#         limit=10,
+#         use_fulltext_search=False,
+#         use_hybrid_search=False,
+#         query_embedding=[0.0,0.0,0.0,0.0],  # placeholder
+#     ):
+#         results.append(row)
+
+#     assert len(results) == 1, f"Expected 1 matching entity, got {len(results)}"
+#     assert results[0]["name"] == "TestEntity"
+
+#     # cleanup
+#     delete_sql = f"""
+#         DELETE FROM "{graphs_handler.project_name}"."graphs_entities" WHERE id = $1
+#     """
+#     await graphs_handler.connection_manager.execute_query(delete_sql, [row_id])

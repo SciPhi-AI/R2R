@@ -67,6 +67,7 @@ class SearchPipeline(AsyncPipeline):
                     **kwargs,
                 )
             )
+            print("passing search_settings = ", search_settings)
             kg_task = asyncio.create_task(
                 self._graph_search_pipeline.run(
                     dequeue_requests(kg_queue),

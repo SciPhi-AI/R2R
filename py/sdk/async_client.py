@@ -50,7 +50,11 @@ class R2RAsyncClient(BaseClient):
         self, method: str, endpoint: str, version: str = "v3", **kwargs
     ):
         url = self._get_full_url(endpoint, version)
-        if "https://api.cloud.sciphi.ai" in url:
+        if (
+            "https://api.cloud.sciphi.ai" in url
+            and ("login" not in endpoint)
+            and ("health" not in endpoint)
+        ):
             if not self.access_token and not self.api_key:
                 raise R2RException(
                     status_code=401,
@@ -70,7 +74,7 @@ class R2RAsyncClient(BaseClient):
                 return BytesIO(response.content)
 
         except httpx.RequestError as e:
-            print('e = ', e)
+            print("e = ", e)
             raise R2RException(
                 status_code=500,
                 message=f"Request failed: {str(e)}",
