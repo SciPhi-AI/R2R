@@ -5,6 +5,7 @@ from core.base import (
 )
 from core.base.abstractions import (
     AggregateSearchResult,
+    GenerationConfig,
     GraphSearchSettings,
     SearchSettings,
     WebSearchResponse,
@@ -27,11 +28,11 @@ class RAGAgentMixin:
     def _register_tools(self):
         if not self.config.tool_names:
             return
-        for tool_name in self.config.tool_names:
+        for tool_name in list(set(self.config.tool_names)):
             if tool_name == "local_search":
                 self._tools.append(self.local_search())
-            elif tool_name == "web_search":
-                self._tools.append(self.web_search())
+            # elif tool_name == "web_search":
+            #     self._tools.append(self.web_search())
             else:
                 raise ValueError(f"Unsupported tool name: {tool_name}")
 
@@ -127,12 +128,14 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
         llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
         search_pipeline: SearchPipeline,
         config: AgentConfig,
+        rag_generation_config: GenerationConfig,
     ):
         super().__init__(
             database_provider=database_provider,
             search_pipeline=search_pipeline,
             llm_provider=llm_provider,
             config=config,
+            rag_generation_config=rag_generation_config,
         )
 
 
@@ -143,6 +146,7 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
         llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
         search_pipeline: SearchPipeline,
         config: AgentConfig,
+        rag_generation_config: GenerationConfig,
     ):
         config.stream = True
         super().__init__(
@@ -150,4 +154,5 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
             search_pipeline=search_pipeline,
             llm_provider=llm_provider,
             config=config,
+            rag_generation_config=rag_generation_config,
         )

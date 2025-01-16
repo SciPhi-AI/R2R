@@ -161,6 +161,7 @@ class CompletionProvider(Provider):
         **kwargs,
     ) -> AsyncGenerator[LLMChatCompletionChunk, None]:
         generation_config.stream = True
+        print("in aget completion, generation_config = ", generation_config)
         task = {
             "messages": messages,
             "generation_config": generation_config,

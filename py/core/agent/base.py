@@ -38,7 +38,6 @@ def sync_wrapper(async_gen):
 class R2RAgent(Agent, metaclass=CombinedMeta):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._register_tools()
         self._reset()
 
     def _reset(self):
@@ -132,12 +131,12 @@ class R2RStreamingAgent(R2RAgent):
         while not self._completed:
             messages_list = await self.conversation.get_messages()
 
-            generation_config = self.get_generation_config(
-                messages_list[-1], stream=True
-            )
+            # generation_config = self.get_generation_config(
+            #     messages_list[-1], stream=True
+            # )
             stream = self.llm_provider.aget_completion_stream(
                 messages_list,
-                generation_config,
+                self.rag_generation_config,
             )
             async for proc_chunk in self.process_llm_response(
                 stream, *args, **kwargs

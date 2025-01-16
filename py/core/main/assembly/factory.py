@@ -13,6 +13,7 @@ from core.base import (
     EmailConfig,
     EmbeddingConfig,
     EmbeddingProvider,
+    GenerationConfig,
     IngestionConfig,
     OrchestrationConfig,
 )
@@ -718,6 +719,7 @@ class R2RAgentFactory:
             llm_provider=self.providers.llm,
             config=self.config.agent,
             search_pipeline=self.pipelines.search_pipeline,
+            rag_generation_config=GenerationConfig(),
         )
 
     def create_rag_agent(self, *args, **kwargs) -> R2RRAGAgent:
@@ -730,4 +732,5 @@ class R2RAgentFactory:
             llm_provider=self.providers.llm,
             config=self.config.agent,
             search_pipeline=self.pipelines.search_pipeline,
+            rag_generation_config=GenerationConfig(),
         )

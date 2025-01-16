@@ -38,7 +38,7 @@ class LiteLLMCompletionProvider(CompletionProvider):
             "api_base": generation_config.api_base,
         }
         if generation_config.functions is not None:
-            args["functions"] = generation_config.functions
+            args["tools"] = generation_config.functions
         if generation_config.tools is not None:
             args["tools"] = generation_config.tools
         if generation_config.response_format is not None:
@@ -49,8 +49,10 @@ class LiteLLMCompletionProvider(CompletionProvider):
         messages = task["messages"]
         generation_config = task["generation_config"]
         kwargs = task["kwargs"]
+        print("generation_config = ", generation_config)
 
         args = self._get_base_args(generation_config)
+        print("args = ", args)
         args["messages"] = messages
         args = {**args, **kwargs}
 
