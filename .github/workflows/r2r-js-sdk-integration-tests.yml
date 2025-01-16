@@ -9,7 +9,7 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up Python and install dependencies
         uses: ./.github/actions/setup-python-light
         with:
@@ -67,7 +67,7 @@ jobs:
       R2R_POSTGRES_USER: postgres
       R2R_PROJECT_NAME: r2r_default
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up Python and install dependencies
         uses: ./.github/actions/setup-python-light
         with:
