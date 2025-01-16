@@ -63,7 +63,7 @@ jobs:
       - name: Set matrix
         id: set-matrix
         run: |
-          echo "matrix={\"include\":[{\"platform\":\"amd64\",\"runner\":\"dockerarm2\"},{\"platform\":\"arm64\",\"runner\":\"dockerarm2\"}]}" >> $GITHUB_OUTPUT
+          echo "matrix={\"include\":[{\"platform\":\"arm64\",\"runner\":\"dockerarm2\"},{\"platform\":\"arm64\",\"runner\":\"arm64\"}]}" >> $GITHUB_OUTPUT
 
   build:
     needs: prepare
