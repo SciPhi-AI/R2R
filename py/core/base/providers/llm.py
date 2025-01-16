@@ -151,7 +151,6 @@ class CompletionProvider(Provider):
         }
         if modalities := kwargs.get("modalities"):
             task["modalities"] = modalities
-
         response = await self._execute_with_backoff_async(task)
         return LLMChatCompletion(**response.dict())
 

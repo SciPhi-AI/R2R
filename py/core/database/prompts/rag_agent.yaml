@@ -8,7 +8,7 @@ rag_agent:
 
     If no relevant results are found, then state that no results were found.
 
-    If no obvious question is present, then do not carry out a search, and instead ask for clarification.\
+    If no obvious question is present, then do not carry out a search, and instead ask for clarification.
 
     REMINDER - Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context.
   input_types: {}

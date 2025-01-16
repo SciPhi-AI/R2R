@@ -2589,7 +2589,11 @@ class PostgresGraphsHandler(Handler):
             output = {
                 prop: result[prop] for prop in property_names if prop in result
             }
-            output["similarity_score"] = 1 - float(result["similarity_score"])
+            output["similarity_score"] = (
+                1 - float(result["similarity_score"])
+                if result.get("similarity_score") in result
+                else "n/a"
+            )
             yield output
 
     def _build_filters(
@@ -2597,43 +2601,80 @@ class PostgresGraphsHandler(Handler):
     ) -> str:
         """
         Build a WHERE clause from a nested filter dictionary for the graph search.
-        For communities we use collection_id as primary key filter; for entities/relationships we use parent_id.
+
+        - If search_type == "communities", we normally filter by `collection_id`.
+        - Otherwise (entities/relationships), we normally filter by `parent_id`.
+        - If user provides `"collection_ids": {...}`, we interpret that as wanting
+        to filter by multiple collection IDs (i.e. 'parent_id IN (...)' or
+        'collection_id IN (...)').
         """
 
-        # Determine primary identifier column depending on search_type
-        # communities: use collection_id
-        # entities/relationships: use parent_id
+        # The usual "base" column used by your code
         base_id_column = (
             "collection_id" if search_type == "communities" else "parent_id"
         )
 
         def parse_condition(key: str, value: Any) -> str:
-            # This function returns a single condition (string) or empty if no valid condition.
-            # Supported keys:
-            # - base_id_column (collection_id or parent_id)
-            # - metadata fields: metadata.some_field
-            # Supported ops: $eq, $ne, $lt, $lte, $gt, $gte, $in, $contains
+            # ----------------------------------------------------------------------
+            # 1) If it's the normal base_id_column (like "parent_id" or "collection_id")
+            # ----------------------------------------------------------------------
             if key == base_id_column:
-                # e.g. {"collection_id": {"$eq": "<some-uuid>"}}
                 if isinstance(value, dict):
                     op, clause = next(iter(value.items()))
                     if op == "$eq":
+                        # single equality
                         parameters.append(str(clause))
                         return f"{base_id_column} = ${len(parameters)}::uuid"
-                    elif op == "$in":
-                        # $in expects a list of UUIDs
-                        parameters.append([str(x) for x in clause])
+                    elif op in ("$in", "$overlap"):
+                        # treat both $in/$overlap as "IN the set" for a single column
+                        array_val = [str(x) for x in clause]
+                        parameters.append(array_val)
                         return f"{base_id_column} = ANY(${len(parameters)}::uuid[])"
+                    # handle other operators as needed
                 else:
-                    # direct equality?
+                    # direct equality
                     parameters.append(str(value))
                     return f"{base_id_column} = ${len(parameters)}::uuid"
 
-            elif key.startswith("metadata."):
-                # Handle metadata filters
-                # Example: {"metadata.some_key": {"$eq": "value"}}
-                field = key.split("metadata.")[1]
+            # ----------------------------------------------------------------------
+            # 2) SPECIAL: if user specifically sets "collection_ids" in filters
+            #    We interpret that to mean "Look for rows whose parent_id (or collection_id)
+            #    is in the array of values" – i.e. we do the same logic but we forcibly
+            #    direct it to the same column: parent_id or collection_id.
+            # ----------------------------------------------------------------------
+            elif key == "collection_ids":
+                # If we are searching communities, the relevant field is `collection_id`.
+                # If searching entities/relationships, the relevant field is `parent_id`.
+                col_to_use = (
+                    "collection_id"
+                    if search_type == "communities"
+                    else "parent_id"
+                )
 
+                if isinstance(value, dict):
+                    op, clause = next(iter(value.items()))
+                    if op == "$eq":
+                        # single equality => col_to_use = clause
+                        parameters.append(str(clause))
+                        return f"{col_to_use} = ${len(parameters)}::uuid"
+                    elif op in ("$in", "$overlap"):
+                        # "col_to_use = ANY($param::uuid[])"
+                        array_val = [str(x) for x in clause]
+                        parameters.append(array_val)
+                        return (
+                            f"{col_to_use} = ANY(${len(parameters)}::uuid[])"
+                        )
+                    # add more if you want, e.g. $ne, $gt, etc.
+                else:
+                    # direct equality scenario: "collection_ids": "some-uuid"
+                    parameters.append(str(value))
+                    return f"{col_to_use} = ${len(parameters)}::uuid"
+
+            # ----------------------------------------------------------------------
+            # 3) If key starts with "metadata.", handle metadata-based filters
+            # ----------------------------------------------------------------------
+            elif key.startswith("metadata."):
+                field = key.split("metadata.")[1]
                 if isinstance(value, dict):
                     op, clause = next(iter(value.items()))
                     if op == "$eq":
@@ -2642,55 +2683,27 @@ class PostgresGraphsHandler(Handler):
                     elif op == "$ne":
                         parameters.append(clause)
                         return f"(metadata->>'{field}') != ${len(parameters)}"
-                    elif op == "$lt":
-                        parameters.append(clause)
-                        return f"(metadata->>'{field}')::float < ${len(parameters)}::float"
-                    elif op == "$lte":
-                        parameters.append(clause)
-                        return f"(metadata->>'{field}')::float <= ${len(parameters)}::float"
                     elif op == "$gt":
                         parameters.append(clause)
                         return f"(metadata->>'{field}')::float > ${len(parameters)}::float"
-                    elif op == "$gte":
-                        parameters.append(clause)
-                        return f"(metadata->>'{field}')::float >= ${len(parameters)}::float"
-                    elif op == "$in":
-                        # Ensure clause is a list
-                        if not isinstance(clause, list):
-                            raise Exception(
-                                "argument to $in filter must be a list"
-                            )
-                        # Append the Python list as a parameter; many drivers can convert Python lists to arrays
-                        parameters.append(clause)
-                        # Cast the parameter to a text array type
-                        return f"(metadata->>'{key}')::text = ANY(${len(parameters)}::text[])"
-
-                    # elif op == "$in":
-                    #     # For $in, we assume an array of values and check if the field is in that set.
-                    #     # Note: This is simplistic, adjust as needed.
-                    #     parameters.append(clause)
-                    #     # convert field to text and check membership
-                    #     return f"(metadata->>'{field}') = ANY(SELECT jsonb_array_elements_text(${len(parameters)}::jsonb))"
-                    elif op == "$contains":
-                        # $contains for metadata likely means metadata @> clause in JSON.
-                        # If clause is dict or list, we use json containment.
-                        parameters.append(json.dumps(clause))
-                        return f"metadata @> ${len(parameters)}::jsonb"
+                    # etc...
                 else:
-                    # direct equality
                     parameters.append(value)
                     return f"(metadata->>'{field}') = ${len(parameters)}"
 
-            # Add additional conditions for other columns if needed
-            # If key not recognized, return empty so it doesn't break query
+            # ----------------------------------------------------------------------
+            # 4) Not recognized => return empty so we skip it
+            # ----------------------------------------------------------------------
             return ""
 
+        # --------------------------------------------------------------------------
+        # 5) parse_filter() is the recursive walker that sees $and/$or or normal fields
+        # --------------------------------------------------------------------------
         def parse_filter(fd: dict) -> str:
             filter_conditions = []
             for k, v in fd.items():
                 if k == "$and":
                     and_parts = [parse_filter(sub) for sub in v if sub]
-                    # Remove empty strings
                     and_parts = [x for x in and_parts if x.strip()]
                     if and_parts:
                         filter_conditions.append(
@@ -2698,12 +2711,10 @@ class PostgresGraphsHandler(Handler):
                         )
                 elif k == "$or":
                     or_parts = [parse_filter(sub) for sub in v if sub]
-                    # Remove empty strings
                     or_parts = [x for x in or_parts if x.strip()]
                     if or_parts:
                         filter_conditions.append(f"({' OR '.join(or_parts)})")
                 else:
-                    # Regular condition
                     c = parse_condition(k, v)
                     if c and c.strip():
                         filter_conditions.append(c)
