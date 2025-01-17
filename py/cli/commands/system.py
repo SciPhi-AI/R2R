@@ -100,22 +100,11 @@ async def status(ctx: click.Context):
     default=None,
     help="Path to a custom R2R configuration file",
 )
-@click.option(
-    "--build",
-    is_flag=True,
-    default=False,
-    help="Run in debug mode. Only for development.",
-)
 @click.option("--image", help="Docker image to use")
 @click.option(
     "--image-env",
     default="prod",
     help="Which dev environment to pull the image from?",
-)
-@click.option(
-    "--scale",
-    default=None,
-    help="How many instances of the R2R service to run",
 )
 @click.option(
     "--exclude-postgres",
@@ -131,10 +120,8 @@ async def serve(
     project_name,
     config_name,
     config_path,
-    build,
     image,
     image_env,
-    scale,
     exclude_postgres,
 ):
     """Start the R2R server."""
@@ -167,11 +154,6 @@ async def serve(
     if config_name and os.path.isfile(config_name):
         click.echo(
             "Warning: `config-name` corresponds to an existing file. If you intended a custom config, use `config-path`."
-        )
-
-    if build:
-        click.echo(
-            "`build` flag detected. Building Docker image from local repository..."
         )
     if image and image_env:
         click.echo(
@@ -207,19 +189,10 @@ async def serve(
             click.echo(
                 f"Neither {version_specific_image} nor {latest_image} found in remote registry. Confirm the sanity of your output for `docker manifest inspect ragtoriches/{version_specific_image}` and  `docker manifest inspect ragtoriches/{latest_image}`."
             )
-            click.echo(
-                "Please pull the required image or build it using the --build flag."
-            )
             raise click.Abort()
 
     if docker:
         os.environ["R2R_IMAGE"] = image
-
-    if build:
-        subprocess.run(
-            ["docker", "build", "-t", image, "-f", "Dockerfile", "."],
-            check=True,
-        )
 
     if config_path:
         config_path = os.path.abspath(config_path)
@@ -241,7 +214,6 @@ async def serve(
             config_name,
             config_path,
             exclude_postgres,
-            scale,
         )
         if (
             "pytest" in sys.modules
