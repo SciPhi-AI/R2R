@@ -67,7 +67,6 @@ class SearchPipeline(AsyncPipeline):
                     **kwargs,
                 )
             )
-            print("passing search_settings = ", search_settings)
             kg_task = asyncio.create_task(
                 self._graph_search_pipeline.run(
                     dequeue_requests(kg_queue),
@@ -105,9 +104,7 @@ class SearchPipeline(AsyncPipeline):
             if not self._graph_search_pipeline:
                 self._graph_search_pipeline = AsyncPipeline()
             if not self._graph_search_pipeline:
-                raise ValueError(
-                    "KG search pipeline not found"
-                )  # for type hinting
+                raise ValueError("KG search pipeline not found")
 
             self._graph_search_pipeline.add_pipe(
                 pipe, add_upstream_outputs, *args, **kwargs
@@ -116,9 +113,7 @@ class SearchPipeline(AsyncPipeline):
             if not self._vector_search_pipeline:
                 self._vector_search_pipeline = AsyncPipeline()
             if not self._vector_search_pipeline:
-                raise ValueError(
-                    "Vector search pipeline not found"
-                )  # for type hinting
+                raise ValueError("Vector search pipeline not found")
 
             self._vector_search_pipeline.add_pipe(
                 pipe, add_upstream_outputs, *args, **kwargs

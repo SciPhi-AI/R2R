@@ -127,7 +127,6 @@ def run_docker_serve(
     config_name: Optional[str] = None,
     config_path: Optional[str] = None,
     exclude_postgres: bool = False,
-    scale: Optional[int] = None,
 ):
     check_docker_compose_version()
     check_set_docker_env_vars(project_name, exclude_postgres)
@@ -154,7 +153,6 @@ def run_docker_serve(
         config_name,
         config_path,
         exclude_postgres,
-        scale,
     )
 
     click.echo("Pulling Docker images...")
@@ -315,8 +313,8 @@ def get_compose_files():
     compose_files = {
         "base": os.path.join(package_dir, "r2r", "compose.yaml"),
         "full": os.path.join(package_dir, "r2r", "compose.full.yaml"),
-        "full_scale": os.path.join(
-            package_dir, "r2r", "compose.full_with_replicas.yaml"
+        "full_swarm": os.path.join(
+            package_dir, "r2r", "compose.full.swarm.yaml"
         ),
     }
 
@@ -355,15 +353,11 @@ def build_docker_command(
     config_name,
     config_path,
     exclude_postgres,
-    scale,
 ):
     if not full:
         base_command = f"docker compose -f {compose_files['base']}"
     else:
-        if not scale:
-            base_command = f"docker compose -f {compose_files['full']}"
-        else:
-            base_command = f"docker compose -f {compose_files['full_scale']}"
+        base_command = f"docker compose -f {compose_files['full']}"
 
     base_command += (
         f" --project-name {project_name or ('r2r-full' if full else 'r2r')}"
@@ -389,8 +383,6 @@ def build_docker_command(
     if not exclude_postgres:
         pull_command = f"{base_command} --profile postgres pull"
         up_command = f"{base_command} --profile postgres up -d"
-        if scale:
-            up_command += f" --scale r2r={scale}"
     else:
         pull_command = f"{base_command} pull"
         up_command = f"{base_command} up -d"

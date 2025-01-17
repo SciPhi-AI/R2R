@@ -22,7 +22,8 @@ include = [
     { path = "migrations/**/*", format = ["sdist", "wheel"] },
     { path = "pyproject.toml", format = ["sdist", "wheel"] },
     { path = "r2r/**/*.yaml", format = ["sdist", "wheel"] },
-    { path = "r2r/**/*.toml", format = ["sdist", "wheel"] }
+    { path = "r2r/**/*.toml", format = ["sdist", "wheel"] },
+    { path = "r2r/**/*.sh", format = ["sdist", "wheel"] }
 ]
 
 [tool.poetry.dependencies]
