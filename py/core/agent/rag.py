@@ -31,8 +31,8 @@ class RAGAgentMixin:
         for tool_name in list(set(self.config.tool_names)):
             if tool_name == "local_search":
                 self._tools.append(self.local_search())
-            # elif tool_name == "web_search":
-            #     self._tools.append(self.web_search())
+            elif tool_name == "web_search":
+                self._tools.append(self.web_search())
             else:
                 raise ValueError(f"Unsupported tool name: {tool_name}")
 

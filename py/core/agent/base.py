@@ -192,14 +192,11 @@ class R2RStreamingAgent(R2RAgent):
                 yield delta.content
             finish_reason = chunk.choices[0].finish_reason
             if finish_reason == "tool_calls":
-                print('current_tool_call_id = ', current_tool_call_id)
                 # We have the full name + arguments now, so let's "call" the tool
                 if current_tool_name:
                     yield "<tool_call>"
                     yield f"<name>{current_tool_name}</name>"
                     yield f"<arguments>{current_tool_arguments}</arguments>"
-                    print('args = ', args)
-                    print('kweargs = ', kwargs)
                     tool_result = await self.handle_function_or_tool_call(
                         current_tool_name,
                         current_tool_arguments,
@@ -229,8 +226,6 @@ class R2RStreamingAgent(R2RAgent):
                 yield "<function_call>"
                 yield f"<name>{function_name}</name>"
                 yield f"<arguments>{function_arguments}</arguments>"
-                print('args = ', args)
-                print('kweargs = ', kwargs)
 
                 tool_result = await self.handle_function_or_tool_call(
                     function_name, function_arguments, *args, **kwargs

@@ -156,33 +156,6 @@ class Agent(ABC):
                 ),
                 stream=stream,
             )
-        # return GenerationConfig(
-        #     **self.config.generation_config.model_dump(
-        #         exclude={"functions", "tools", "stream"}
-        #     ),
-        #     # FIXME: Use tools instead of functions
-        #     # TODO - Investigate why `tools` fails with OpenAI+LiteLLM
-        #     # tools=[
-        #     #     {
-        #     #         "function":{
-        #     #             "name": tool.name,
-        #     #             "description": tool.description,
-        #     #             "parameters": tool.parameters,
-        #     #         },
-        #     #         "type": "function"
-        #     #     }
-        #     #     for tool in self.tools
-        #     # ],
-        #     functions=[
-        #         {
-        #             "name": tool.name,
-        #             "description": tool.description,
-        #             "parameters": tool.parameters,
-        #         }
-        #         for tool in self.tools
-        #     ],
-        #     stream=stream,
-        # )
 
         if (
             "azure" in self.rag_generation_config.model
