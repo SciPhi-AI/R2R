@@ -251,9 +251,6 @@ class Agent(ABC):
                     if tool_id
                     else None
                 ))
-        print("function_name = ", function_name)
-        print("function_arguments = ", function_arguments)
-        print("tool_id = ", tool_id)
         await self.conversation.add_message(
             Message(
                 role="assistant",
@@ -302,7 +299,6 @@ class Agent(ABC):
                 llm_formatted_result=error_message,
             )
 
-        print('adding tool message....')
         await self.conversation.add_message(
             Message(
                 role="tool" if tool_id else "function",
