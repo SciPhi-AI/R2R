@@ -6,7 +6,7 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from core import R2RStreamingRAGAgent
+from core import R2RRAGAgent, R2RStreamingRAGAgent
 from core.base import (
     DocumentResponse,
     GenerationConfig,
@@ -42,6 +42,10 @@ def tokens_count_for_message(message, encoding):
         num_tokens += len(
             encoding.encode(message["function_call"]["arguments"])
         )
+    elif message.get("tool_calls"):
+        for tool_call in message["tool_calls"]:
+            num_tokens += len(encoding.encode(tool_call["function"]["name"]))
+            num_tokens += len(encoding.encode(tool_call["function"]["arguments"]))
     else:
         num_tokens += len(encoding.encode(message["content"]))
 
@@ -406,12 +410,12 @@ class RetrievalService(Service):
                                     llm_provider=self.providers.llm,
                                     config=self.config.agent,
                                     search_pipeline=self.pipelines.search_pipeline,
+                                    rag_generation_config=rag_generation_config,
                                 )
                                 async for chunk in agent.arun(
                                     messages=messages,
                                     system_instruction=task_prompt_override,
                                     search_settings=search_settings,
-                                    rag_generation_config=rag_generation_config,
                                     include_title_if_available=include_title_if_available,
                                 ):
                                     yield chunk
@@ -463,11 +467,18 @@ class RetrievalService(Service):
 
                     return stream_response()
 
-                results = await self.agents.rag_agent.arun(
+                agent = R2RRAGAgent(
+                    database_provider=self.providers.database,
+                    llm_provider=self.providers.llm,
+                    config=self.config.agent,
+                    search_pipeline=self.pipelines.search_pipeline,
+                    rag_generation_config=rag_generation_config,
+                )
+
+                results = await agent.arun(
                     messages=messages,
                     system_instruction=task_prompt_override,
                     search_settings=search_settings,
-                    rag_generation_config=rag_generation_config,
                     include_title_if_available=include_title_if_available,
                 )
 

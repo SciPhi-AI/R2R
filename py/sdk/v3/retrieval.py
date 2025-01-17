@@ -194,7 +194,6 @@ class RetrievalSDK:
                 Message(**message) if isinstance(message, dict) else message
             )
             data["message"] = cast_message.model_dump()
-
         if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
         ):

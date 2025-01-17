@@ -648,7 +648,6 @@ class RetrievalRouterV3(BaseRouterV3):
             The agent uses both vector search and knowledge graph capabilities to find and synthesize
             information, providing detailed, factual responses with proper attribution to source documents.
             """
-
             effective_settings = self._prepare_search_settings(
                 auth_user, search_mode, search_settings
             )

@@ -77,6 +77,7 @@ class Agent(ABC):
         llm_provider: CompletionProvider,
         database_provider: DatabaseProvider,
         config: AgentConfig,
+        rag_generation_config: GenerationConfig,
     ):
         self.llm_provider = llm_provider
         self.database_provider: DatabaseProvider = database_provider
@@ -84,6 +85,7 @@ class Agent(ABC):
         self.conversation = Conversation()
         self._completed = False
         self._tools: list[Tool] = []
+        self.rag_generation_config = rag_generation_config
         self._register_tools()
 
     @abstractmethod
@@ -149,38 +151,55 @@ class Agent(ABC):
             and last_message["content"] != ""
         ):
             return GenerationConfig(
-                **self.config.generation_config.model_dump(
+                **self.rag_generation_config.model_dump(
                     exclude={"functions", "tools", "stream"}
                 ),
                 stream=stream,
             )
-        return GenerationConfig(
-            **self.config.generation_config.model_dump(
-                exclude={"functions", "tools", "stream"}
-            ),
-            # FIXME: Use tools instead of functions
-            # TODO - Investigate why `tools` fails with OpenAI+LiteLLM
-            # tools=[
-            #     {
-            #         "function":{
-            #             "name": tool.name,
-            #             "description": tool.description,
-            #             "parameters": tool.parameters,
-            #         },
-            #         "type": "function"
-            #     }
-            #     for tool in self.tools
-            # ],
-            functions=[
-                {
-                    "name": tool.name,
-                    "description": tool.description,
-                    "parameters": tool.parameters,
-                }
-                for tool in self.tools
-            ],
-            stream=stream,
-        )
+
+        if (
+            "azure" in self.rag_generation_config.model
+            or "anthropic" in self.rag_generation_config.model
+            or "openai" in self.rag_generation_config.model
+        ):
+            # return with tools
+            return GenerationConfig(
+                **self.rag_generation_config.model_dump(
+                    exclude={"functions", "tools", "stream"}
+                ),
+                # FIXME: Use tools instead of functions
+                # TODO - Investigate why `tools` fails with OpenAI+LiteLLM
+                tools=[
+                    {
+                        "function": {
+                            "name": tool.name,
+                            "description": tool.description,
+                            "parameters": tool.parameters,
+                        },
+                        "type": "function",
+                        "name": tool.name,
+                    }
+                    for tool in self.tools
+                ],
+                stream=stream,
+            )
+        else:
+            return GenerationConfig(
+                **self.rag_generation_config.model_dump(
+                    exclude={"functions", "tools", "stream"}
+                ),
+                # FIXME: Use tools instead of functions
+                # TODO - Investigate why `tools` fails with ollama and the like
+                functions=[
+                    {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "parameters": tool.parameters,
+                    }
+                    for tool in self.tools
+                ],
+                stream=stream,
+            )
 
     async def handle_function_or_tool_call(
         self,
@@ -190,6 +209,21 @@ class Agent(ABC):
         *args,
         **kwargs,
     ) -> ToolResult:
+        print('adding message payload for tool calls = ', (
+                    [
+                        {
+                            "id": tool_id,
+                            "tool_call_id": tool_id,
+                            "type": "function",
+                            "function": {
+                                "name": function_name,
+                                "arguments": function_arguments,
+                            },
+                        }
+                    ]
+                    if tool_id
+                    else None
+                ))
         await self.conversation.add_message(
             Message(
                 role="assistant",
@@ -197,6 +231,8 @@ class Agent(ABC):
                     [
                         {
                             "id": tool_id,
+                            "tool_call_id": tool_id,
+                            "type": "function",
                             "function": {
                                 "name": function_name,
                                 "arguments": function_arguments,
@@ -241,6 +277,7 @@ class Agent(ABC):
                 role="tool" if tool_id else "function",
                 content=str(tool_result.llm_formatted_result),
                 name=function_name,
+                tool_call_id=tool_id,
             )
         )
 

@@ -38,7 +38,6 @@ def sync_wrapper(async_gen):
 class R2RAgent(Agent, metaclass=CombinedMeta):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._register_tools()
         self._reset()
 
     def _reset(self):
@@ -159,37 +158,27 @@ class R2RStreamingAgent(R2RAgent):
     ) -> AsyncGenerator[str, None]:
         function_name = None
         function_arguments = ""
+        current_tool_name = None
+        current_tool_arguments = ""
+        current_tool_call_id = None
         content_buffer = ""
 
         async for chunk in stream:
             delta = chunk.choices[0].delta
             if delta.tool_calls:
+                # It's possible to get multiple tool calls in the same chunk,
+                # but usually you'll see them one at a time. 
                 for tool_call in delta.tool_calls:
-                    if not tool_call.function:
-                        logger.info("Tool function not found in tool call.")
-                        continue
-                    name = tool_call.function.name
-                    if not name:
-                        logger.info("Tool name not found in tool call.")
-                        continue
-                    arguments = tool_call.function.arguments
-                    if not arguments:
-                        logger.info("Tool arguments not found in tool call.")
-                        continue
+                    # If tool_call.function.name is present, store/overwrite
+                    if tool_call.function.name:
+                        current_tool_name = tool_call.function.name
+                    # If tool_call.id is present, store
+                    if tool_call.id:
+                        current_tool_call_id = tool_call.id
+                    # If tool_call.function.arguments is present, append
+                    if tool_call.function.arguments:
+                        current_tool_arguments += tool_call.function.arguments
 
-                    results = await self.handle_function_or_tool_call(
-                        name,
-                        arguments,
-                        # FIXME: tool_call.id,
-                        *args,
-                        **kwargs,
-                    )
-
-                    yield "<tool_call>"
-                    yield f"<name>{name}</name>"
-                    yield f"<arguments>{arguments}</arguments>"
-                    yield f"<results>{results.llm_formatted_result}</results>"
-                    yield "</tool_call>"
 
             if delta.function_call:
                 if delta.function_call.name:
@@ -201,8 +190,35 @@ class R2RStreamingAgent(R2RAgent):
                     yield "<completion>"
                 content_buffer += delta.content
                 yield delta.content
+            finish_reason = chunk.choices[0].finish_reason
+            if finish_reason == "tool_calls":
+                # We have the full name + arguments now, so let's "call" the tool
+                if current_tool_name:
+                    yield "<tool_call>"
+                    yield f"<name>{current_tool_name}</name>"
+                    yield f"<arguments>{current_tool_arguments}</arguments>"
+                    tool_result = await self.handle_function_or_tool_call(
+                        current_tool_name,
+                        current_tool_arguments,
+                        tool_id=current_tool_call_id,
+                        *args, **kwargs,
+                    )
+                    if tool_result.stream_result:
+                        yield f"<results>{tool_result.stream_result}</results>"
+                    else:
+                        yield f"<results>{tool_result.llm_formatted_result}</results>"
 
-            if chunk.choices[0].finish_reason == "function_call":
+                    yield "</tool_call>"
+
+                    # Reset for next call
+                    current_tool_name = None
+                    current_tool_arguments = ""
+                    current_tool_call_id = None
+                else:
+                    logger.warning(
+                        "Got finish_reason=tool_calls but no tool name was ever set."
+                    )
+            elif finish_reason == "function_call":
                 if not function_name:
                     logger.info("Function name not found in function call.")
                     continue
@@ -210,6 +226,7 @@ class R2RStreamingAgent(R2RAgent):
                 yield "<function_call>"
                 yield f"<name>{function_name}</name>"
                 yield f"<arguments>{function_arguments}</arguments>"
+
                 tool_result = await self.handle_function_or_tool_call(
                     function_name, function_arguments, *args, **kwargs
                 )
