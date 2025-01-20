@@ -155,18 +155,12 @@ def generate_id(label: Optional[str] = None) -> UUID:
     return _generate_id_from_label(label if label != None else str(uuid4()))
 
 
-# def generate_id(label: Optional[str]= None) -> UUID:
-#     """
-#     Generates a unique run id
-#     """
-#     return _generate_id_from_label(str(uuid4(label)))
-
-
 def generate_document_id(filename: str, user_id: UUID) -> UUID:
     """
     Generates a unique document id from a given filename and user id
     """
-    return _generate_id_from_label(f'{filename.split("/")[-1]}-{str(user_id)}')
+    safe_filename = filename.replace("/", "_")
+    return _generate_id_from_label(f"{safe_filename}-{str(user_id)}")
 
 
 def generate_extraction_id(

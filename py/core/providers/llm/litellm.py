@@ -12,6 +12,7 @@ class LiteLLMCompletionProvider(CompletionProvider):
         super().__init__(config)
         try:
             from litellm import acompletion, completion
+
             self.acompletion = acompletion
             self.completion = completion
             logger.debug("LiteLLM imported successfully")
