@@ -209,21 +209,6 @@ class Agent(ABC):
         *args,
         **kwargs,
     ) -> ToolResult:
-        print('adding message payload for tool calls = ', (
-                    [
-                        {
-                            "id": tool_id,
-                            "tool_call_id": tool_id,
-                            "type": "function",
-                            "function": {
-                                "name": function_name,
-                                "arguments": function_arguments,
-                            },
-                        }
-                    ]
-                    if tool_id
-                    else None
-                ))
         await self.conversation.add_message(
             Message(
                 role="assistant",

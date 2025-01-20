@@ -45,7 +45,9 @@ def tokens_count_for_message(message, encoding):
     elif message.get("tool_calls"):
         for tool_call in message["tool_calls"]:
             num_tokens += len(encoding.encode(tool_call["function"]["name"]))
-            num_tokens += len(encoding.encode(tool_call["function"]["arguments"]))
+            num_tokens += len(
+                encoding.encode(tool_call["function"]["arguments"])
+            )
     else:
         num_tokens += len(encoding.encode(message["content"]))
 

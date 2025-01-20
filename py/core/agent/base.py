@@ -167,7 +167,7 @@ class R2RStreamingAgent(R2RAgent):
             delta = chunk.choices[0].delta
             if delta.tool_calls:
                 # It's possible to get multiple tool calls in the same chunk,
-                # but usually you'll see them one at a time. 
+                # but usually you'll see them one at a time.
                 for tool_call in delta.tool_calls:
                     # If tool_call.function.name is present, store/overwrite
                     if tool_call.function.name:
@@ -178,7 +178,6 @@ class R2RStreamingAgent(R2RAgent):
                     # If tool_call.function.arguments is present, append
                     if tool_call.function.arguments:
                         current_tool_arguments += tool_call.function.arguments
-
 
             if delta.function_call:
                 if delta.function_call.name:
@@ -201,7 +200,8 @@ class R2RStreamingAgent(R2RAgent):
                         current_tool_name,
                         current_tool_arguments,
                         tool_id=current_tool_call_id,
-                        *args, **kwargs,
+                        *args,
+                        **kwargs,
                     )
                     if tool_result.stream_result:
                         yield f"<results>{tool_result.stream_result}</results>"
