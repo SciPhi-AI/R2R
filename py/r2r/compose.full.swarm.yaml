@@ -324,7 +324,6 @@ services:
       # Ollama
       - OLLAMA_API_BASE=${OLLAMA_API_BASE:-http://host.docker.internal:11434}
 
-
       # LM Studio
       - LM_STUDIO_API_BASE=${LM_STUDIO_API_BASE:-http://host.docker.internal:1234}
       - LM_STUDIO_API_KEY=${LM_STUDIO_API_KEY:-1234}
@@ -338,6 +337,11 @@ services:
       - UNSTRUCTURED_API_URL=${UNSTRUCTURED_API_URL:-https://api.unstructured.io/general/v0/general}
       - UNSTRUCTURED_SERVICE_URL=${UNSTRUCTURED_SERVICE_URL:-http://unstructured:7275}
       - UNSTRUCTURED_NUM_WORKERS=${UNSTRUCTURED_NUM_WORKERS:-10}
+
+      # Hatchet
+      - HATCHET_CLIENT_TLS_STRATEGY=none
+      - HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH=${HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH:-134217728}
+      - HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH=${HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH:-134217728}
 
       # Graphologic
       - CLUSTERING_SERVICE_URL=http://graph_clustering:7276
@@ -354,7 +358,6 @@ services:
       # Other
       - SERPER_API_KEY=${SERPER_API_KEY}
       - SENDGRID_API_KEY=${SENDGRID_API_KEY}
-
 
     command: >
       sh -c '

@@ -21,7 +21,7 @@ def test_semantic_search_with_near_duplicates(client):
     resp = client.retrieval.search(
         query="Tell me about Aristotle's work in logic",
         search_mode="custom",
-        search_settings={"use_semantic_search": True, "limit": 5},
+        search_settings={"use_semantic_search": True, "limit": 25},
     )
     results = resp["results"]["chunk_search_results"]
 
