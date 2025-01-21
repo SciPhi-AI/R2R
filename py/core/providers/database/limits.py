@@ -6,7 +6,7 @@ from uuid import UUID
 from core.base import Handler
 from shared.abstractions import User
 
-from ..base.providers.database import DatabaseConfig, LimitSettings
+from ...base.providers.database import DatabaseConfig, LimitSettings
 from .base import PostgresConnectionManager
 
 logger = logging.getLogger(__name__)

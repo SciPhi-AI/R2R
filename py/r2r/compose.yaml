@@ -131,6 +131,9 @@ services:
       - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
       - GITHUB_REDIRECT_URI=${GITHUB_REDIRECT_URI}
 
+      # Other
+      - SERPER_API_KEY=${SERPER_API_KEY}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
 
     networks:
       - r2r-network

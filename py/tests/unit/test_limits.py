@@ -5,7 +5,7 @@ from uuid import UUID
 import pytest
 
 from core.base import LimitSettings
-from core.database.postgres import PostgresLimitsHandler
+from core.providers.database.postgres import PostgresLimitsHandler
 from shared.abstractions import User
 
 

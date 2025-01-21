@@ -49,7 +49,7 @@ def simple_ingestion_factory(service: IngestionService):
             )
 
             ingestion_config = parsed_data["ingestion_config"]
-            extractions_generator = await service.parse_file(
+            extractions_generator = service.parse_file(
                 document_info, ingestion_config
             )
             extractions = [
@@ -65,7 +65,7 @@ def simple_ingestion_factory(service: IngestionService):
             await service.update_document_status(
                 document_info, status=IngestionStatus.EMBEDDING
             )
-            embedding_generator = await service.embed_document(extractions)
+            embedding_generator = service.embed_document(extractions)
             embeddings = [
                 embedding.model_dump()
                 async for embedding in embedding_generator
@@ -74,7 +74,7 @@ def simple_ingestion_factory(service: IngestionService):
             await service.update_document_status(
                 document_info, status=IngestionStatus.STORING
             )
-            storage_generator = await service.store_embeddings(embeddings)
+            storage_generator = service.store_embeddings(embeddings)
             async for _ in storage_generator:
                 pass
 
@@ -340,7 +340,7 @@ def simple_ingestion_factory(service: IngestionService):
                 for i, chunk in enumerate(parsed_data["chunks"])
             ]
 
-            embedding_generator = await service.embed_document(extractions)
+            embedding_generator = service.embed_document(extractions)
             embeddings = [
                 embedding.model_dump()
                 async for embedding in embedding_generator
@@ -349,7 +349,7 @@ def simple_ingestion_factory(service: IngestionService):
             await service.update_document_status(
                 document_info, status=IngestionStatus.STORING
             )
-            storage_generator = await service.store_embeddings(embeddings)
+            storage_generator = service.store_embeddings(embeddings)
             async for _ in storage_generator:
                 pass
 
@@ -559,7 +559,6 @@ def simple_ingestion_factory(service: IngestionService):
 
     return {
         "ingest-files": ingest_files,
-        "update-files": update_files,
         "ingest-chunks": ingest_chunks,
         "update-chunk": update_chunk,
         "update-document-metadata": update_document_metadata,

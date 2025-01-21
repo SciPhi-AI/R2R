@@ -56,13 +56,13 @@ class ChunkSearchResult(R2RSerializable):
         }
 
 
-class KGSearchResultType(str, Enum):
+class GraphSearchResultType(str, Enum):
     ENTITY = "entity"
     RELATIONSHIP = "relationship"
     COMMUNITY = "community"
 
 
-class KGEntityResult(R2RSerializable):
+class GraphEntityResult(R2RSerializable):
     name: str
     description: str
     metadata: Optional[dict[str, Any]] = None
@@ -75,7 +75,7 @@ class KGEntityResult(R2RSerializable):
         }
 
 
-class KGRelationshipResult(R2RSerializable):
+class GraphRelationshipResult(R2RSerializable):
     # name: str
     subject: str
     predicate: str
@@ -94,7 +94,7 @@ class KGRelationshipResult(R2RSerializable):
         }
 
 
-class KGCommunityResult(R2RSerializable):
+class GraphCommunityResult(R2RSerializable):
     name: str
     summary: str
     rating: float
@@ -114,15 +114,15 @@ class KGCommunityResult(R2RSerializable):
 
 
 class GraphSearchResult(R2RSerializable):
-    content: KGEntityResult | KGRelationshipResult | KGCommunityResult
-    result_type: Optional[KGSearchResultType] = None
+    content: GraphEntityResult | GraphRelationshipResult | GraphCommunityResult
+    result_type: Optional[GraphSearchResultType] = None
     chunk_ids: Optional[list[UUID]] = None
     metadata: dict[str, Any] = {}
     score: Optional[float] = None
 
     class Config:
         json_schema_extra = {
-            "content": KGEntityResult.Config.json_schema_extra,
+            "content": GraphEntityResult.Config.json_schema_extra,
             "result_type": "entity",
             "chunk_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
             "metadata": {"associated_query": "What is the capital of France?"},

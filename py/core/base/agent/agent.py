@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Any, AsyncGenerator, Optional, Type
 
 from pydantic import BaseModel
@@ -93,18 +94,14 @@ class Agent(ABC):
         pass
 
     async def _setup(self, system_instruction: Optional[str] = None):
-        content = system_instruction or (
-            await self.database_provider.prompts_handler.get_cached_prompt(
-                self.config.system_instruction_name
-            )
-        )
         await self.conversation.add_message(
             Message(
                 role="system",
                 content=system_instruction
                 or (
                     await self.database_provider.prompts_handler.get_cached_prompt(
-                        self.config.system_instruction_name
+                        self.config.system_instruction_name,
+                        inputs={"date": str(datetime.now().isoformat())},
                     )
                 ),
             )
@@ -209,21 +206,6 @@ class Agent(ABC):
         *args,
         **kwargs,
     ) -> ToolResult:
-        print('adding message payload for tool calls = ', (
-                    [
-                        {
-                            "id": tool_id,
-                            "tool_call_id": tool_id,
-                            "type": "function",
-                            "function": {
-                                "name": function_name,
-                                "arguments": function_arguments,
-                            },
-                        }
-                    ]
-                    if tool_id
-                    else None
-                ))
         await self.conversation.add_message(
             Message(
                 role="assistant",
@@ -231,7 +213,6 @@ class Agent(ABC):
                     [
                         {
                             "id": tool_id,
-                            "tool_call_id": tool_id,
                             "type": "function",
                             "function": {
                                 "name": function_name,

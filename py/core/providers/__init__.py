@@ -5,6 +5,7 @@ from .crypto import (
     NaClCryptoConfig,
     NaClCryptoProvider,
 )
+from .database import PostgresDatabaseProvider
 from .email import (
     AsyncSMTPEmailProvider,
     ConsoleMockEmailProvider,
@@ -45,6 +46,8 @@ __all__ = [
     "LiteLLMEmbeddingProvider",
     "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",
+    # Database
+    "PostgresDatabaseProvider",
     # Email
     "AsyncSMTPEmailProvider",
     "ConsoleMockEmailProvider",

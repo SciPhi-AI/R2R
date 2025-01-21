@@ -16,13 +16,12 @@ from core.base import (
     Message,
     Prompt,
     R2RException,
-    RunManager,
     StoreType,
     User,
 )
 from core.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
+from ..abstractions import R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
@@ -34,18 +33,10 @@ class ManagementService(Service):
         self,
         config: R2RConfig,
         providers: R2RProviders,
-        pipes: R2RPipes,
-        pipelines: R2RPipelines,
-        agents: R2RAgents,
-        run_manager: RunManager,
     ):
         super().__init__(
             config,
             providers,
-            pipes,
-            pipelines,
-            agents,
-            run_manager,
         )
 
     @telemetry_event("AppSettings")

@@ -6,7 +6,7 @@ from typing import Callable
 from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from fastapi.responses import FileResponse, StreamingResponse
 
-from core.base import R2RException, manage_run
+from core.base import R2RException
 
 from ...abstractions import R2RProviders, R2RServices
 
@@ -17,7 +17,7 @@ class BaseRouterV3:
     def __init__(self, providers: R2RProviders, services: R2RServices):
         """
         :param providers: Typically includes auth, database, etc.
-        :param services: Additional service references (ingestion, run_manager, etc).
+        :param services: Additional service references (ingestion, etc).
         """
         self.providers = providers
         self.services = services
@@ -37,52 +37,38 @@ class BaseRouterV3:
     def base_endpoint(self, func: Callable):
         """
         A decorator to wrap endpoints in a standard pattern:
-         - manage_run context
          - error handling
          - response shaping
         """
 
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
-            async with manage_run(
-                self.services.ingestion.run_manager, func.__name__
-            ) as run_id:
-                auth_user = kwargs.get("auth_user")
-                if auth_user:
-                    # Optionally log run info with the user
-                    await self.services.ingestion.run_manager.log_run_info(
-                        user=auth_user,
-                    )
+            try:
+                func_result = await func(*args, **kwargs)
+                if isinstance(func_result, tuple) and len(func_result) == 2:
+                    results, outer_kwargs = func_result
+                else:
+                    results, outer_kwargs = func_result, {}
 
-                try:
-                    func_result = await func(*args, **kwargs)
-                    if (
-                        isinstance(func_result, tuple)
-                        and len(func_result) == 2
-                    ):
-                        results, outer_kwargs = func_result
-                    else:
-                        results, outer_kwargs = func_result, {}
+                if isinstance(results, (StreamingResponse, FileResponse)):
+                    return results
+                return {"results": results, **outer_kwargs}
 
-                    if isinstance(results, (StreamingResponse, FileResponse)):
-                        return results
-                    return {"results": results, **outer_kwargs}
-
-                except R2RException:
-                    raise
-                except Exception as e:
-                    logger.error(
-                        f"Error in base endpoint {func.__name__}() - {str(e)}",
-                        exc_info=True,
-                    )
-                    raise HTTPException(
-                        status_code=500,
-                        detail={
-                            "message": f"An error '{e}' occurred during {func.__name__}",
-                            "error": str(e),
-                            "error_type": type(e).__name__,
-                        },
-                    ) from e
+            except R2RException:
+                raise
+            except Exception as e:
+                logger.error(
+                    f"Error in base endpoint {func.__name__}() - {str(e)}",
+                    exc_info=True,
+                )
+                raise HTTPException(
+                    status_code=500,
+                    detail={
+                        "message": f"An error '{e}' occurred during {func.__name__}",
+                        "error": str(e),
+                        "error_type": type(e).__name__,
+                    },
+                ) from e
 
         return wrapper
 

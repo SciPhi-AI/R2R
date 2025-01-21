@@ -1,0 +1,5 @@
+default_system:
+  template: You are a helpful agent.     Todays date is {{date}}.
+  input_types: {
+    date: "date"
+  }

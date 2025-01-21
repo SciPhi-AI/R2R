@@ -19,7 +19,7 @@ from core.base import (
 )
 from core.base.api.models import User
 
-from ...database.postgres import PostgresDatabaseProvider
+from ..database import PostgresDatabaseProvider
 
 DEFAULT_ACCESS_LIFETIME_IN_MINUTES = 3600
 DEFAULT_REFRESH_LIFETIME_IN_DAYS = 7

@@ -393,6 +393,7 @@ class PostgresDocumentsHandler(Handler):
         filter_user_ids: Optional[list[UUID]] = None,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
+        include_summary_embedding: Optional[bool] = True,
     ) -> dict[str, Any]:
         conditions = []
         or_conditions = []
@@ -499,7 +500,9 @@ class PostgresDocumentsHandler(Handler):
                         created_at=row["created_at"],
                         updated_at=row["updated_at"],
                         summary=row["summary"] if "summary" in row else None,
-                        summary_embedding=embedding,
+                        summary_embedding=(
+                            embedding if include_summary_embedding else None
+                        ),
                     )
                 )
             return {"results": documents, "total_entries": total_entries}

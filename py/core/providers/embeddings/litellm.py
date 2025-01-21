@@ -117,11 +117,11 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
     async def async_get_embedding(
         self,
         text: str,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[float]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
+        if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
                 "LiteLLMEmbeddingProvider only supports search stage."
             )
@@ -137,11 +137,11 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
     def get_embedding(
         self,
         text: str,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[float]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
+        if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
                 "Error getting embeddings: LiteLLMEmbeddingProvider only supports search stage."
             )
@@ -157,11 +157,11 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
     async def async_get_embeddings(
         self,
         texts: list[str],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
+        if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
                 "LiteLLMEmbeddingProvider only supports search stage."
             )
@@ -177,11 +177,11 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
     def get_embeddings(
         self,
         texts: list[str],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
+        if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
                 "LiteLLMEmbeddingProvider only supports search stage."
             )
@@ -198,7 +198,7 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         self,
         query: str,
         results: list[ChunkSearchResult],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
+        stage: EmbeddingProvider.Step = EmbeddingProvider.Step.RERANK,
         limit: int = 10,
     ):
         if self.config.rerank_model is not None:
@@ -247,7 +247,7 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         self,
         query: str,
         results: list[ChunkSearchResult],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
+        stage: EmbeddingProvider.Step = EmbeddingProvider.Step.RERANK,
         limit: int = 10,
     ) -> list[ChunkSearchResult]:
         """
@@ -256,7 +256,6 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         Args:
             query: The search query string
             results: List of ChunkSearchResult objects to rerank
-            stage: The pipeline stage (must be RERANK)
             limit: Maximum number of results to return
 
         Returns:

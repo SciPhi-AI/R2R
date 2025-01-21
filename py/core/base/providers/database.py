@@ -179,27 +179,11 @@ class DatabaseConfig(ProviderConfig):
         for route_str, route_cfg in route_limits_data.items():
             instance.route_limits[route_str] = LimitSettings(**route_cfg)
 
-        # user_limits parsing if needed:
-        # user_limits_data = limits_data.get("users", {})
-        # for user_str, user_cfg in user_limits_data.items():
-        #     user_id = UUID(user_str)
-        #     instance.user_limits[user_id] = LimitSettings(**user_cfg)
-
         return instance
 
 
 class DatabaseProvider(Provider):
     connection_manager: DatabaseConnectionManager
-    # documents_handler: DocumentHandler
-    # collections_handler: CollectionsHandler
-    # token_handler: TokenHandler
-    # users_handler: UserHandler
-    # chunks_handler: ChunkHandler
-    # entity_handler: EntityHandler
-    # relationship_handler: RelationshipHandler
-    # graphs_handler: GraphHandler
-    # prompts_handler: PromptHandler
-    # files_handler: FileHandler
     config: DatabaseConfig
     project_name: str
 

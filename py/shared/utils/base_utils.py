@@ -16,9 +16,9 @@ from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.search import (
     AggregateSearchResult,
-    KGCommunityResult,
-    KGEntityResult,
-    KGRelationshipResult,
+    GraphCommunityResult,
+    GraphEntityResult,
+    GraphRelationshipResult,
 )
 from ..abstractions.vector import VectorQuantizationType
 
@@ -51,7 +51,7 @@ def format_search_results_for_llm(results: AggregateSearchResult) -> str:
                 #     )
                 # )
 
-            if isinstance(kg_result.content, KGCommunityResult):
+            if isinstance(kg_result.content, GraphCommunityResult):
                 formatted_results.extend(
                     (
                         f"Name: {kg_result.content.name}",
@@ -66,7 +66,7 @@ def format_search_results_for_llm(results: AggregateSearchResult) -> str:
                 # )
             elif isinstance(
                 kg_result.content,
-                KGEntityResult,
+                GraphEntityResult,
             ):
                 formatted_results.extend(
                     [
@@ -74,7 +74,7 @@ def format_search_results_for_llm(results: AggregateSearchResult) -> str:
                         f"Description: {kg_result.content.description}",
                     ]
                 )
-            elif isinstance(kg_result.content, KGRelationshipResult):
+            elif isinstance(kg_result.content, GraphRelationshipResult):
                 formatted_results.append(
                     f"Relationship: {kg_result.content.subject} - {kg_result.content.predicate} - {kg_result.content.object}",
                     # f"Description: {kg_result.content.description}"
@@ -140,10 +140,6 @@ def format_search_results_for_stream(result: AggregateSearchResult) -> str:
     return context
 
 
-if TYPE_CHECKING:
-    from ..pipeline.base_pipeline import AsyncPipeline
-
-
 def _generate_id_from_label(label) -> UUID:
     return uuid5(NAMESPACE_DNS, label)
 
@@ -153,13 +149,6 @@ def generate_id(label: Optional[str] = None) -> UUID:
     Generates a unique run id
     """
     return _generate_id_from_label(label if label != None else str(uuid4()))
-
-
-# def generate_id(label: Optional[str]= None) -> UUID:
-#     """
-#     Generates a unique run id
-#     """
-#     return _generate_id_from_label(str(uuid4(label)))
 
 
 def generate_document_id(filename: str, user_id: UUID) -> UUID:
@@ -212,19 +201,6 @@ async def to_async_generator(
 ) -> AsyncGenerator[Any, None]:
     for item in iterable:
         yield item
-
-
-def run_pipeline(pipeline: "AsyncPipeline", input: Any, *args, **kwargs):
-    if not isinstance(input, AsyncGenerator):
-        if not isinstance(input, list):
-            input = to_async_generator([input])
-        else:
-            input = to_async_generator(input)
-
-    async def _run_pipeline(input, *args, **kwargs):
-        return await pipeline.run(input, *args, **kwargs)
-
-    return asyncio.run(_run_pipeline(input, *args, **kwargs))
 
 
 def increment_version(version: str) -> str:

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from core.agent import R2RAgent, R2RStreamingAgent
 from core.base import (
     format_search_results_for_llm,
@@ -6,23 +8,18 @@ from core.base import (
 from core.base.abstractions import (
     AggregateSearchResult,
     GenerationConfig,
-    GraphSearchSettings,
     SearchSettings,
     WebSearchResponse,
 )
 from core.base.agent import AgentConfig, Tool
-from core.base.providers import CompletionProvider, DatabaseProvider
-from core.base.utils import to_async_generator
-from core.pipelines import SearchPipeline
-from core.providers import (  # PostgresDatabaseProvider,
-    LiteLLMCompletionProvider,
-    OpenAICompletionProvider,
-)
+from core.base.providers import DatabaseProvider
+from core.providers import LiteLLMCompletionProvider, OpenAICompletionProvider
 
 
 class RAGAgentMixin:
-    def __init__(self, search_pipeline: SearchPipeline, *args, **kwargs):
-        self.search_pipeline = search_pipeline
+    def __init__(self, *args, local_search_method=None, **kwargs):
+        # Add local_search_method as an instance variable
+        self.local_search_method = local_search_method
         super().__init__(*args, **kwargs)
 
     def _register_tools(self):
@@ -39,8 +36,8 @@ class RAGAgentMixin:
     def web_search(self) -> Tool:
         return Tool(
             name="web_search",
-            description="Search for information on the web.",
-            results_function=self._web_search,
+            description="Search for information on the web - use this tool when the user query needs LIVE or recent data.",
+            results_function=self._web_search_function,
             llm_format_function=RAGAgentMixin.format_search_results_for_llm,
             stream_function=RAGAgentMixin.format_search_results_for_stream,
             parameters={
@@ -55,31 +52,29 @@ class RAGAgentMixin:
             },
         )
 
-    async def _web_search(
+    async def _web_search_function(
         self,
         query: str,
         search_settings: SearchSettings,
         *args,
         **kwargs,
-    ) -> list[AggregateSearchResult]:
-        from .serper import SerperClient
+    ) -> AggregateSearchResult:
+        from ..utils.serper import SerperClient
 
         serper_client = SerperClient()
-        # TODO - make async!
-        # TODO - Move to search pipeline, make configurable.
         raw_results = serper_client.get_raw(query)
         web_response = WebSearchResponse.from_serper_results(raw_results)
         return AggregateSearchResult(
             chunk_search_results=None,
             graph_search_results=None,
-            web_search_results=web_response.organic_results,  # TODO - How do we feel about throwing away so much info?
+            web_search_results=web_response.organic_results,
         )
 
     def local_search(self) -> Tool:
         return Tool(
             name="local_search",
             description="Search your local knowledgebase using the R2R AI system",
-            results_function=self._local_search,
+            results_function=self._local_search_function,
             llm_format_function=RAGAgentMixin.format_search_results_for_llm,
             stream_function=RAGAgentMixin.format_search_results_for_stream,
             parameters={
@@ -94,19 +89,31 @@ class RAGAgentMixin:
             },
         )
 
-    async def _local_search(
+    async def _local_search_function(
         self,
         query: str,
         search_settings: SearchSettings,
         *args,
         **kwargs,
-    ) -> list[AggregateSearchResult]:
-        response = await self.search_pipeline.run(
-            to_async_generator([query]),
-            state=None,
+    ) -> AggregateSearchResult:
+        # Use the provided local search method instead of search pipeline
+        if not self.local_search_method:
+            raise ValueError("Local search method not provided")
+
+        response = await self.local_search_method(
+            query=query,
             search_settings=search_settings,
         )
-        return response
+
+        if isinstance(response, AggregateSearchResult):
+            return response
+
+        # If it's a dict, convert the response dict to AggregateSearchResult
+        return AggregateSearchResult(
+            chunk_search_results=response.get("chunk_search_results", []),
+            graph_search_results=response.get("graph_search_results", []),
+            web_search_results=None,
+        )
 
     @staticmethod
     def format_search_results_for_stream(
@@ -126,16 +133,26 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
         self,
         database_provider: DatabaseProvider,
         llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
-        search_pipeline: SearchPipeline,
         config: AgentConfig,
         rag_generation_config: GenerationConfig,
+        local_search_method: callable,
     ):
-        super().__init__(
+        # Initialize the R2RAgent first
+        R2RAgent.__init__(
+            self,
             database_provider=database_provider,
-            search_pipeline=search_pipeline,
             llm_provider=llm_provider,
             config=config,
             rag_generation_config=rag_generation_config,
+        )
+        # Then initialize the mixin with the local search method
+        RAGAgentMixin.__init__(
+            self,
+            database_provider=database_provider,
+            llm_provider=llm_provider,
+            config=config,
+            rag_generation_config=rag_generation_config,
+            local_search_method=local_search_method,
         )
 
 
@@ -144,15 +161,25 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
         self,
         database_provider: DatabaseProvider,
         llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
-        search_pipeline: SearchPipeline,
         config: AgentConfig,
         rag_generation_config: GenerationConfig,
+        local_search_method: callable,
     ):
         config.stream = True
-        super().__init__(
+        # Initialize the R2RStreamingAgent first
+        R2RStreamingAgent.__init__(
+            self,
             database_provider=database_provider,
-            search_pipeline=search_pipeline,
             llm_provider=llm_provider,
             config=config,
             rag_generation_config=rag_generation_config,
+        )
+        # Then initialize the mixin with the local search method
+        RAGAgentMixin.__init__(
+            self,
+            database_provider=database_provider,
+            llm_provider=llm_provider,
+            config=config,
+            rag_generation_config=rag_generation_config,
+            local_search_method=local_search_method,
         )

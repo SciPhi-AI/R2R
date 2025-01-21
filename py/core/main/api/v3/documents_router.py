@@ -448,9 +448,6 @@ class DocumentsRouter(BaseRouterV3):
                     return raw_message  # type: ignore
 
                 else:
-                    logger.info(
-                        "Running chunk ingestion without orchestration."
-                    )
                     from core.main.orchestration import (
                         simple_ingestion_factory,
                     )

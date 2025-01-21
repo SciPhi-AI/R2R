@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-# from core.database.postgres_prompts import PostgresPromptsHandler
+# from core.providers.database.postgres_prompts import PostgresPromptsHandler
 
 
 @pytest.mark.asyncio

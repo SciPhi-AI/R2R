@@ -51,7 +51,7 @@ class EmbeddingConfig(ProviderConfig):
 
 
 class EmbeddingProvider(Provider):
-    class PipeStage(Enum):
+    class Step(Enum):
         BASE = 1
         RERANK = 2
 
@@ -115,7 +115,7 @@ class EmbeddingProvider(Provider):
     async def async_get_embedding(
         self,
         text: str,
-        stage: PipeStage = PipeStage.BASE,
+        stage: Step = Step.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ):
         task = {
@@ -128,7 +128,7 @@ class EmbeddingProvider(Provider):
     def get_embedding(
         self,
         text: str,
-        stage: PipeStage = PipeStage.BASE,
+        stage: Step = Step.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ):
         task = {
@@ -141,7 +141,7 @@ class EmbeddingProvider(Provider):
     async def async_get_embeddings(
         self,
         texts: list[str],
-        stage: PipeStage = PipeStage.BASE,
+        stage: Step = Step.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ):
         task = {
@@ -154,7 +154,7 @@ class EmbeddingProvider(Provider):
     def get_embeddings(
         self,
         texts: list[str],
-        stage: PipeStage = PipeStage.BASE,
+        stage: Step = Step.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ) -> list[list[float]]:
         task = {
@@ -169,7 +169,7 @@ class EmbeddingProvider(Provider):
         self,
         query: str,
         results: list[ChunkSearchResult],
-        stage: PipeStage = PipeStage.RERANK,
+        stage: Step = Step.RERANK,
         limit: int = 10,
     ):
         pass
@@ -179,7 +179,7 @@ class EmbeddingProvider(Provider):
         self,
         query: str,
         results: list[ChunkSearchResult],
-        stage: PipeStage = PipeStage.RERANK,
+        stage: Step = Step.RERANK,
         limit: int = 10,
     ):
         pass

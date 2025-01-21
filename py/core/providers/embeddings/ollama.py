@@ -96,11 +96,11 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
     async def async_get_embedding(
         self,
         text: str,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[float]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
+        if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
                 "OllamaEmbeddingProvider only supports search stage."
             )
@@ -117,11 +117,11 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
     def get_embedding(
         self,
         text: str,
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[float]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
+        if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
                 "OllamaEmbeddingProvider only supports search stage."
             )
@@ -138,11 +138,11 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
     async def async_get_embeddings(
         self,
         texts: list[str],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
+        if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
                 "OllamaEmbeddingProvider only supports search stage."
             )
@@ -158,11 +158,11 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
     def get_embeddings(
         self,
         texts: list[str],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.BASE,
+        stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
         purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[list[float]]:
-        if stage != EmbeddingProvider.PipeStage.BASE:
+        if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
                 "OllamaEmbeddingProvider only supports search stage."
             )
@@ -179,7 +179,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self,
         query: str,
         results: list[ChunkSearchResult],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
+        stage: EmbeddingProvider.Step = EmbeddingProvider.Step.RERANK,
         limit: int = 10,
     ) -> list[ChunkSearchResult]:
         return results[:limit]
@@ -188,7 +188,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self,
         query: str,
         results: list[ChunkSearchResult],
-        stage: EmbeddingProvider.PipeStage = EmbeddingProvider.PipeStage.RERANK,
+        stage: EmbeddingProvider.Step = EmbeddingProvider.Step.RERANK,
         limit: int = 10,
     ):
         return results[:limit]

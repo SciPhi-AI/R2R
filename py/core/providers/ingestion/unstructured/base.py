@@ -25,7 +25,7 @@ from core.base.abstractions import R2RSerializable
 from core.base.providers.ingestion import IngestionConfig, IngestionProvider
 from core.utils import generate_extraction_id
 
-from ....database.postgres import PostgresDatabaseProvider
+from ...database import PostgresDatabaseProvider
 from ...llm import LiteLLMCompletionProvider, OpenAICompletionProvider
 
 logger = logging.getLogger()

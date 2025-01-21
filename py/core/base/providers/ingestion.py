@@ -13,7 +13,7 @@ from .llm import CompletionProvider
 logger = logging.getLogger()
 
 if TYPE_CHECKING:
-    from core.database import PostgresDatabaseProvider
+    from core.providers.database import PostgresDatabaseProvider
 
 
 class ChunkingStrategy(str, Enum):
