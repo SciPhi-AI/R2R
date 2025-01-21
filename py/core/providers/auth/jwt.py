@@ -1,26 +1,28 @@
-from datetime import datetime
 import logging
 import os
-from typing import Dict, Optional
+from datetime import datetime
+from typing import Optional
+
 import jwt
 from fastapi import Depends
 
 from core.base import (
-    AuthProvider,
     AuthConfig,
-    Token,
-    TokenData,
-    R2RException,
+    AuthProvider,
     CryptoProvider,
     DatabaseProvider,
     EmailProvider,
+    R2RException,
+    Token,
+    TokenData,
 )
 from core.base.api.models import User
 
 logger = logging.getLogger()
 
+
 class JwtAuthProvider(AuthProvider):
-    
+
     def __init__(
         self,
         config: AuthConfig,
@@ -32,10 +34,10 @@ class JwtAuthProvider(AuthProvider):
             config, crypto_provider, database_provider, email_provider
         )
 
-    async def login(self, email: str, password: str) -> Dict[str, Token]:
+    async def login(self, email: str, password: str) -> dict[str, Token]:
         raise R2RException(status_code=400, message="Not implemented")
 
-    async def oauth_callback(self, code: str) -> Dict[str, Token]:
+    async def oauth_callback(self, code: str) -> dict[str, Token]:
         raise R2RException(status_code=400, message="Not implemented")
 
     async def user(self, token: str) -> User:
@@ -61,25 +63,38 @@ class JwtAuthProvider(AuthProvider):
         # use JWT library to validate and decode JWT token
         jwtSecret = os.getenv("JWT_SECRET")
         if jwtSecret is None:
-            raise R2RException(status_code=500, message="JWT_SECRET environment variable is not set")
-        try: 
+            raise R2RException(
+                status_code=500,
+                message="JWT_SECRET environment variable is not set",
+            )
+        try:
             user = jwt.decode(token, jwtSecret, algorithms=["HS256"])
         except Exception as e:
             logger.info(f"JWT verification failed: {e}")
-            raise R2RException(status_code=401, message="Invalid JWT token", detail=e)
+            raise R2RException(
+                status_code=401, message="Invalid JWT token", detail=e
+            )
         if user:
             # Create user in database if not exists
             try:
-                existingUser = await self.database_provider.users_handler.get_user_by_email(user.get("email"))
+                existingUser = await self.database_provider.users_handler.get_user_by_email(
+                    user.get("email")
+                )
                 # TODO do we want to update user info here based on what's in the token?
             except Exception as e:
                 # user doesn't exist, create in db
                 logger.debug(f"Creating new user: {user.get('email')}")
                 try:
-                    await self.database_provider.users_handler.create_user(email=user.get("email"), account_type="external", name=user.get("name"))
+                    await self.database_provider.users_handler.create_user(
+                        email=user.get("email"),
+                        account_type="external",
+                        name=user.get("name"),
+                    )
                 except Exception as e:
                     logger.error(f"Error creating user: {e}")
-                    raise R2RException(status_code=500, message="Failed to create user")
+                    raise R2RException(
+                        status_code=500, message="Failed to create user"
+                    )
             tokenData = TokenData(
                 email=user.get("email"),
                 token_type="bearer",
@@ -118,10 +133,8 @@ class JwtAuthProvider(AuthProvider):
         self, email: str, verification_code: str
     ) -> dict[str, str]:
         raise R2RException(status_code=400, message="Not implemented")
-   
+
     async def send_verification_email(
         self, email: str, user: Optional[User] = None
     ) -> tuple[str, datetime]:
         raise R2RException(status_code=400, message="Not implemented")
-
-

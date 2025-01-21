@@ -1,4 +1,4 @@
-from .auth import R2RAuthProvider, SupabaseAuthProvider, JwtAuthProvider
+from .auth import JwtAuthProvider, R2RAuthProvider, SupabaseAuthProvider
 from .crypto import (
     BcryptCryptoConfig,
     BCryptCryptoProvider,

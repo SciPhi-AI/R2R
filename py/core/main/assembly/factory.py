@@ -50,10 +50,6 @@ from core.providers import (
     JwtAuthProvider,
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
-    OllamaEmbeddingProvider,
-    OpenAICompletionProvider,
-    LiteLLMCompletionProvider,
-    LiteLLMEmbeddingProvider,
     NaClCryptoConfig,
     NaClCryptoProvider,
     OllamaEmbeddingProvider,
@@ -97,7 +93,9 @@ class R2RProviderFactory:
                 auth_config, crypto_provider, database_provider, email_provider
             )
         elif auth_config.provider == "jwt":
-            return JwtAuthProvider(auth_config, crypto_provider, database_provider, email_provider)
+            return JwtAuthProvider(
+                auth_config, crypto_provider, database_provider, email_provider
+            )
         else:
             raise ValueError(
                 f"Auth provider {auth_config.provider} not supported."
