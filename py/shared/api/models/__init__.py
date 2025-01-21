@@ -52,7 +52,7 @@ from shared.api.models.management.responses import (
 )
 from shared.api.models.retrieval.responses import (
     AgentResponse,
-    CombinedSearchResponse,
+    AggregateSearchResult,
     RAGResponse,
     WrappedAgentResponse,
     WrappedDocumentSearchResponse,
@@ -119,10 +119,10 @@ __all__ = [
     "WrappedGenericMessageResponse",
     # TODO: Clean up the following responses
     # Retrieval Responses
-    "CombinedSearchResponse",
     "RAGResponse",
     "WrappedRAGResponse",
     "AgentResponse",
+    "AggregateSearchResult",
     "WrappedSearchResponse",
     "WrappedDocumentSearchResponse",
     "WrappedVectorSearchResponse",

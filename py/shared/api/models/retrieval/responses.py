@@ -2,32 +2,15 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
-from shared.abstractions import ChunkSearchResult, GraphSearchResult, Message
+from shared.abstractions import (
+    AggregateSearchResult,
+    ChunkSearchResult,
+    GraphSearchResult,
+    Message,
+    WebSearchResult,
+)
 from shared.abstractions.llm import LLMChatCompletion
 from shared.api.models.base import R2RResults
-
-
-class CombinedSearchResponse(BaseModel):
-    chunk_search_results: list[ChunkSearchResult] = Field(
-        ...,
-        description="List of vector search results",
-    )
-    graph_search_results: Optional[list[GraphSearchResult]] = Field(
-        None,
-        description="Knowledge graph search results, if applicable",
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "chunk_search_results": [
-                    ChunkSearchResult.Config.json_schema_extra,
-                ],
-                "graph_search_results": [
-                    GraphSearchResult.Config.json_schema_extra,
-                ],
-            }
-        }
 
 
 class RAGResponse(BaseModel):
@@ -35,7 +18,7 @@ class RAGResponse(BaseModel):
         ...,
         description="The generated completion from the RAG process",
     )
-    search_results: CombinedSearchResponse = Field(
+    search_results: AggregateSearchResult = Field(
         ...,
         description="The search results used for the RAG process",
     )
@@ -63,6 +46,9 @@ class RAGResponse(BaseModel):
                     ],
                     "graph_search_results": [
                         GraphSearchResult.Config.json_schema_extra,
+                    ],
+                    "web_search_results": [
+                        WebSearchResult.Config.json_schema_extra,
                     ],
                 },
             }
@@ -127,7 +113,7 @@ class DocumentSearchResult(BaseModel):
 WrappedCompletionResponse = R2RResults[LLMChatCompletion]
 # Create wrapped versions of the responses
 WrappedVectorSearchResponse = R2RResults[list[ChunkSearchResult]]
-WrappedSearchResponse = R2RResults[CombinedSearchResponse]
+WrappedSearchResponse = R2RResults[AggregateSearchResult]
 WrappedDocumentSearchResponse = R2RResults[list[DocumentSearchResult]]
 WrappedRAGResponse = R2RResults[RAGResponse]
 WrappedAgentResponse = R2RResults[AgentResponse]

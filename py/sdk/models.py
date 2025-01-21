@@ -1,4 +1,5 @@
 from shared.abstractions import (
+    AggregateSearchResult,
     ChunkSearchResult,
     GenerationConfig,
     GraphCommunityResult,
@@ -21,9 +22,10 @@ from shared.abstractions import (
     User,
     select_search_filters,
 )
-from shared.api.models import CombinedSearchResponse, RAGResponse
+from shared.api.models import RAGResponse
 
 __all__ = [
+    "AggregateSearchResult",
     "GenerationConfig",
     "HybridSearchSettings",
     "GraphCommunityResult",
@@ -44,6 +46,5 @@ __all__ = [
     "select_search_filters",
     "SearchMode",
     "RAGResponse",
-    "CombinedSearchResponse",
     "User",
 ]

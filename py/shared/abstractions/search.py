@@ -138,6 +138,21 @@ class WebSearchResult(R2RSerializable):
     date: Optional[str] = None
     sitelinks: Optional[list[dict]] = None
 
+    class Config:
+        json_schema_extra = {
+            "title": "Page Title",
+            "link": "https://example.com/page",
+            "snippet": "Page snippet",
+            "position": 1,
+            "date": "2021-01-01",
+            "sitelinks": [
+                {
+                    "title": "Sitelink Title",
+                    "link": "https://example.com/sitelink",
+                }
+            ],
+        }
+
 
 class RelatedSearchResult(R2RSerializable):
     query: str

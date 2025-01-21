@@ -583,8 +583,6 @@ class DocumentsSDK:
             query (str): The query to search for.
             search_settings (Optional[dict, SearchSettings]]): Vector search settings.
 
-        Returns:
-            CombinedSearchResponse: The search response.
         """
         # if search_mode and not isinstance(search_mode, str):
         #     search_mode = search_mode.value

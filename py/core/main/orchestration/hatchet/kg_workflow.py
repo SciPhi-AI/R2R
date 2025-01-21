@@ -467,10 +467,8 @@ def hatchet_kg_factory(
             ][0]["num_communities"]
 
             # Calculate batching
-            parallel_communities = min(100, num_communities[0])
-            total_workflows = math.ceil(
-                num_communities[0] / parallel_communities
-            )
+            parallel_communities = min(100, num_communities)
+            total_workflows = math.ceil(num_communities / parallel_communities)
             workflows = []
 
             logger.info(
@@ -480,7 +478,7 @@ def hatchet_kg_factory(
             # Spawn summary workflows
             for i in range(total_workflows):
                 offset = i * parallel_communities
-                limit = min(parallel_communities, num_communities[0] - offset)
+                limit = min(parallel_communities, num_communities - offset)
 
                 workflows.append(
                     (

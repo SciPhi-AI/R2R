@@ -46,6 +46,7 @@ from .search import (
     HybridSearchSettings,
     SearchMode,
     SearchSettings,
+    WebSearchResult,
     select_search_filters,
 )
 from .user import Token, TokenData, User
@@ -105,6 +106,7 @@ __all__ = [
     # Search abstractions
     "AggregateSearchResult",
     "GraphSearchResult",
+    "WebSearchResult",
     "GraphSearchResultType",
     "GraphEntityResult",
     "GraphRelationshipResult",

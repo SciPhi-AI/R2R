@@ -24,7 +24,7 @@ from core.base import (
     SearchSettings,
     to_async_generator,
 )
-from core.base.api.models import CombinedSearchResponse, RAGResponse, User
+from core.base.api.models import RAGResponse, User
 from core.telemetry.telemetry_decorator import telemetry_event
 from shared.api.models.management.responses import MessageResponse
 
@@ -95,7 +95,7 @@ class RetrievalService(Service):
         search_settings: SearchSettings = SearchSettings(),
         *args,
         **kwargs,
-    ) -> CombinedSearchResponse:
+    ) -> AggregateSearchResult:
         """
         Replaces your pipeline-based `SearchPipeline.run(...)` with a single method.
         Does parallel vector + graph search, returning an aggregated result.
@@ -448,58 +448,126 @@ class RetrievalService(Service):
         query: str,
         rag_generation_config: GenerationConfig,
         search_settings: SearchSettings = SearchSettings(),
+        system_prompt_name: Optional[str] = None,
+        task_prompt_name: Optional[str] = None,
         *args,
         **kwargs,
     ) -> RAGResponse:
-        try:
-            # TODO - Remove these transforms once we have a better way to handle this
-            for (
-                filter,
-                value,
-            ) in search_settings.filters.items():
-                if isinstance(value, UUID):
-                    search_settings.filters[filter] = str(value)
+        """
+        A simple RAG method that does:
+          • vector + KG search
+          • build a big 'context' string
+          • feed to your system + task prompts
+          • call LLM for final answer
+        No pipeline classes necessary.
+        """
 
+        # Convert any UUID filters to string
+        for f, val in list(search_settings.filters.items()):
+            if isinstance(val, UUID):
+                search_settings.filters[f] = str(val)
+
+        try:
             if rag_generation_config.stream:
+                # For streaming, handle separately
                 return await self.stream_rag_response(
                     query,
                     rag_generation_config,
                     search_settings,
-                    *args,
                     **kwargs,
                 )
 
-            merged_kwargs = {
-                "input": to_async_generator([query]),
-                "state": None,
-                "search_settings": search_settings,
-                "rag_generation_config": rag_generation_config,
-                **kwargs,
-            }
+            # 1) Do the search
+            search_results_dict = await self.search(query, search_settings)
+            aggregated = AggregateSearchResult.from_dict(search_results_dict)
 
-            results = await self.pipelines.rag_pipeline.run(
-                *args,
-                **merged_kwargs,
+            # 2) Build context from search results
+            #    (You can rename/adjust this as needed)
+            context_str = self._build_rag_context(query, aggregated)
+
+            # 3) Prepare your message payload
+            #    (Assuming you have some "prompts_handler" for system+task)
+            #    If you store your RAG prompt names in config, do something like:
+            system_prompt_name = system_prompt_name or "default_system"
+            task_prompt_name = task_prompt_name or "rag_context"
+            task_prompt_override = kwargs.get("task_prompt_override", None)
+
+            messages = await self.providers.database.prompts_handler.get_message_payload(
+                system_prompt_name=system_prompt_name,
+                task_prompt_name=task_prompt_name,
+                task_inputs={"query": query, "context": context_str},
+                task_prompt_override=task_prompt_override,
             )
 
-            if len(results) == 0:
-                raise R2RException(status_code=404, message="No results found")
-            if len(results) > 1:
-                logger.warning(f"Multiple results found for query: {query}")
+            # 4) LLM completion
+            response = await self.providers.llm.aget_completion(
+                messages=messages, generation_config=rag_generation_config
+            )
 
-            # unpack the first result
-            return results[0]
+            # 5) Build final RAGResponse
+            return RAGResponse(
+                completion=response.choices[0].message.content,
+                search_results=aggregated,  # let’s store the aggregated search info
+            )
 
         except Exception as e:
-            logger.error(f"Pipeline error: {str(e)}")
+            logger.error(f"Error in RAG: {e}")
             if "NoneType" in str(e):
                 raise HTTPException(
                     status_code=502,
-                    detail="Remote server not reachable or returned an invalid response",
-                ) from e
+                    detail="Server not reachable or returned an invalid response",
+                )
             raise HTTPException(
-                status_code=500, detail="Internal Server Error"
-            ) from e
+                status_code=500,
+                detail=f"Internal RAG Error - {str(e)}",
+            )
+
+    def _build_rag_context(
+        self,
+        query: str,
+        results: AggregateSearchResult,
+    ) -> str:
+        """
+        Equivalent to your old RAGPipe._collect_context or a simplified version.
+        Combines the chunk search results and graph search results into a single text.
+        """
+        context = f"Query:\n{query}\n\n"
+
+        # -- Vector/Chunk results
+        chunk_results = results.chunk_search_results or []
+        if chunk_results:
+            context += "Vector Search Results:\n"
+            i = 1
+            for c in chunk_results:
+                context += f"[{i}]: {c.text}\n\n"
+                i += 1
+
+        # -- Graph results
+        graph_results = results.graph_search_results or []
+        if graph_results:
+            context += "Knowledge Graph Results:\n"
+            j = 1
+            for g in graph_results:
+                if g.result_type == GraphSearchResultType.ENTITY:
+                    context += (
+                        f"[{j}]: ENTITY:\n"
+                        f"Name: {g.content.name}\n"
+                        f"Description: {g.content.description}\n\n"
+                    )
+                elif g.result_type == GraphSearchResultType.RELATIONSHIP:
+                    context += (
+                        f"[{j}]: RELATIONSHIP:\n"
+                        f"{g.content.subject} - {g.content.predicate} - {g.content.object}\n\n"
+                    )
+                elif g.result_type == GraphSearchResultType.COMMUNITY:
+                    context += (
+                        f"[{j}]: COMMUNITY:\n"
+                        f"Name: {g.content.name}\n"
+                        f"Summary: {g.content.summary}\n\n"
+                    )
+                j += 1
+
+        return context
 
     async def stream_rag_response(
         self,

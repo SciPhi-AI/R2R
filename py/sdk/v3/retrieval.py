@@ -1,7 +1,7 @@
 from typing import Any, AsyncGenerator, Optional
 
 from ..models import (
-    CombinedSearchResponse,
+    AggregateSearchResult,
     GenerationConfig,
     GraphSearchSettings,
     Message,
@@ -24,7 +24,7 @@ class RetrievalSDK:
         query: str,
         search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
-    ) -> CombinedSearchResponse:
+    ) -> AggregateSearchResult:
         """
         Conduct a vector and/or KG search.
 
@@ -33,7 +33,7 @@ class RetrievalSDK:
             search_settings (Optional[dict, SearchSettings]]): Vector search settings.
 
         Returns:
-            CombinedSearchResponse: The search response.
+            AggregateSearchResult: The search response.
         """
         if search_mode and not isinstance(search_mode, str):
             search_mode = search_mode.value
