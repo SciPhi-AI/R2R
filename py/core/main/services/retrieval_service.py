@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import time
+from datetime import datetime
 from typing import Any, Optional
 from uuid import UUID
 
@@ -604,6 +605,7 @@ class RetrievalService(Service):
         conversation_id: Optional[UUID] = None,
         message: Optional[Message] = None,
         messages: Optional[list[Message]] = None,
+        use_extended_prompt: bool = False,
     ):
         try:
             if message and messages:
@@ -714,6 +716,36 @@ class RetrievalService(Service):
                 message_response.id if message_response is not None else None
             )
 
+            # -- Step 1: parse the filter dict from search_settings
+            #    (assuming search_settings.filters is the dict you want to parse)
+            filter_user_ids, filter_document_ids, filter_collection_ids = (
+                self._parse_doc_coll_filters(search_settings.filters)
+            )
+
+            if use_extended_prompt and task_prompt_override:
+                raise R2RException(
+                    status_code=400,
+                    message="Both use_extended_prompt and task_prompt_override cannot be True at the same time",
+                )
+
+            # STEP 1: Determine the final system prompt content
+            if use_extended_prompt:
+                # Build the brand-new extended system prompt that includes doc/coll context
+                system_instruction = (
+                    await self._build_extended_system_instruction(
+                        filter_user_ids=filter_user_ids,
+                        filter_document_ids=filter_document_ids,
+                        filter_collection_ids=filter_collection_ids,
+                    )
+                )
+            else:
+                # If the user wants a normal rag_agent prompt or override
+                # your old logic might do something like:
+                system_instruction = task_prompt_override  # or None
+                # If None, your `_setup()` inside the agent code
+                # will fallback to your config’s default system prompt name
+                # e.g. "rag_agent"
+
             if rag_generation_config.stream:
 
                 async def stream_response():
@@ -727,7 +759,7 @@ class RetrievalService(Service):
                         )
                         async for chunk in agent.arun(
                             messages=messages,
-                            system_instruction=task_prompt_override,
+                            system_instruction=system_instruction,
                             search_settings=search_settings,
                             include_title_if_available=include_title_if_available,
                         ):
@@ -788,7 +820,7 @@ class RetrievalService(Service):
 
             results = await agent.arun(
                 messages=messages,
-                system_instruction=task_prompt_override,
+                system_instruction=system_instruction,
                 search_settings=search_settings,
                 include_title_if_available=include_title_if_available,
             )
@@ -867,6 +899,8 @@ class RetrievalService(Service):
         Args:
             filters: A dictionary describing the allowed filters
                      (owner_id, collection_ids, document_id).
+            options: A dictionary with extra options, e.g. include_summary_embedding
+                     or any custom flags for additional logic.
 
         Returns:
             A list of dicts, where each dict has:
@@ -875,28 +909,87 @@ class RetrievalService(Service):
                 "chunks": [ <chunk0>, <chunk1>, ... ]
               }
         """
-        # 1. Parse and validate filters
-        #    We only allow the top-level keys to be: owner_id, document_id, collection_ids
-        #    with operators "$eq" or "$in".
-        #    If you require "$overlap" for collection_ids, you can add it below.
+        # 1. Use our new helper to parse filter_user_ids, filter_document_ids, filter_collection_ids
+        filter_user_ids, filter_document_ids, filter_collection_ids = (
+            self._parse_doc_coll_filters(filters)
+        )
 
-        # Recognized top-level filter keys
+        # 2. Fetch matching documents
+        matching_docs = await self.providers.database.documents_handler.get_documents_overview(
+            offset=0,
+            limit=-1,
+            filter_user_ids=filter_user_ids,
+            filter_document_ids=filter_document_ids,
+            filter_collection_ids=filter_collection_ids,
+            include_summary_embedding=options.get(
+                "include_summary_embedding", False
+            ),
+        )
+
+        if not matching_docs["results"]:
+            return []
+
+        # 3. For each document, fetch associated chunks in ascending chunk order
+        results = []
+        for doc_response in matching_docs["results"]:
+            doc_id = doc_response.id
+            chunk_data = await self.providers.database.chunks_handler.list_document_chunks(
+                document_id=doc_id,
+                offset=0,
+                limit=-1,  # get all chunks
+                include_vectors=False,
+            )
+            chunks = chunk_data["results"]  # already sorted by chunk_order
+
+            # 4. Build a returned structure that includes doc + chunks
+            results.append(
+                {
+                    "document": doc_response.model_dump(),
+                    # or doc_response.dict() or doc_response.model_dump()
+                    "chunks": chunks,
+                }
+            )
+
+        return results
+
+    def _parse_doc_coll_filters(
+        self,
+        filters: dict[str, Any],
+    ) -> tuple[
+        Optional[list[UUID]],
+        Optional[list[UUID]],
+        Optional[list[UUID]],
+    ]:
+        """
+        Parse a dict of filters that may contain:
+          - owner_id
+          - document_id
+          - collection_ids
+        with operators like "$eq", "$in", or "$overlap",
+        returning three lists of UUIDs (or None).
+
+        Example of accepted structure:
+          {
+            "owner_id": {"$eq": "uuid-string-here"},
+            "document_id": {"$in": ["uuid1", "uuid2"]},
+            "collection_ids": {"$overlap": "uuid-of-some-collection"}
+          }
+        """
         ALLOWED_FILTERS = {"owner_id", "document_id", "collection_ids"}
-        # Recognized operators
         ALLOWED_OPERATORS = {"$eq", "$in", "$overlap"}
 
         filter_user_ids: Optional[list[UUID]] = None
         filter_document_ids: Optional[list[UUID]] = None
         filter_collection_ids: Optional[list[UUID]] = None
 
-        # We only support a simple top-level structure:
-        #   { "owner_id": {"$eq": <uuid>}, "document_id": {"$in": [<uuid>, ...] }, "collection_ids": {"$overlap": [<uuid>, ...] } }
-        # If you need more complex logic, you can expand or adapt this parsing.
         for field_key, op_dict in filters.items():
             if field_key not in ALLOWED_FILTERS:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Unsupported filter field: {field_key}. Allowed: {ALLOWED_FILTERS}",
+                    detail=(
+                        f"Unsupported filter field: {field_key}. "
+                        f"Allowed: {ALLOWED_FILTERS}"
+                    ),
                 )
             if not isinstance(op_dict, dict) or len(op_dict) != 1:
                 raise HTTPException(
@@ -919,16 +1012,16 @@ class RetrievalService(Service):
 
             # Convert value(s) to a list of UUIDs for uniform usage
             if operator in ("$eq", "$overlap"):
-                # Single value
+                # Single value expected
                 if isinstance(value, str):
                     # Make it a single-element list
                     value_list = [UUID(value)]
                 else:
-                    # We expected a single str/UUID, but got something else
                     raise HTTPException(
                         status_code=400,
                         detail=(
-                            f"Operator '{operator}' for '{field_key}' requires a single string UUID."
+                            f"Operator '{operator}' for '{field_key}' "
+                            "requires a single string UUID."
                         ),
                     )
             elif operator == "$in":
@@ -937,12 +1030,12 @@ class RetrievalService(Service):
                     raise HTTPException(
                         status_code=400,
                         detail=(
-                            f"Operator '$in' for '{field_key}' must be a list of UUID strings."
+                            "Operator '$in' for '{field_key}' "
+                            "must be a list of UUID strings."
                         ),
                     )
                 value_list = [UUID(v) for v in value]
             else:
-                # Just in case we missed something
                 raise HTTPException(
                     status_code=400,
                     detail=f"Operator '{operator}' not supported.",
@@ -950,55 +1043,117 @@ class RetrievalService(Service):
 
             # Map them to local filter variables
             if field_key == "owner_id":
-                # e.g. user wants { "owner_id": {"$eq": "123e4567-e89b-12d3-a456-426614174000"} }
                 filter_user_ids = value_list
             elif field_key == "document_id":
                 filter_document_ids = value_list
             elif field_key == "collection_ids":
                 filter_collection_ids = value_list
 
-        # 2. Fetch all matching documents. We set offset=0, limit=-1 to get all matches.
-        #    The PostgresDocumentsHandler.get_documents_overview method defaults
-        #    to ordering by created_at DESC. Adjust if you want a different order.
+        return filter_user_ids, filter_document_ids, filter_collection_ids
 
-        matching_docs = await self.providers.database.documents_handler.get_documents_overview(
+    async def _build_documents_context(
+        self,
+        filter_user_ids: Optional[list[UUID]] = None,
+        filter_document_ids: Optional[list[UUID]] = None,
+        filter_collection_ids: Optional[list[UUID]] = None,
+        limit: int = 5,
+    ) -> str:
+        """
+        Fetches documents matching the given filters and returns a formatted string
+        enumerating them.
+        """
+        # We only want up to `limit` documents for brevity
+        docs_data = await self.providers.database.documents_handler.get_documents_overview(
             offset=0,
-            limit=-1,
+            limit=limit,
             filter_user_ids=filter_user_ids,
             filter_document_ids=filter_document_ids,
             filter_collection_ids=filter_collection_ids,
-            include_summary_embedding=options.get(
-                "include_summary_embedding", False
-            ),
+            include_summary_embedding=False,  # up to you
         )
 
-        if not matching_docs["results"]:
-            return []
+        docs = docs_data["results"]
+        if not docs:
+            return "No documents found."
 
-        # 3. For each document, fetch all associated chunks in ascending chunk order
-        #    PostgresChunksHandler.list_document_chunks does:
-        #       ORDER BY (metadata->>'chunk_order')::integer
+        lines = []
+        for i, doc in enumerate(docs, start=1):
+            # Build a line referencing the doc
+            title = doc.title or "(Untitled Document)"
+            doc_id = str(doc.id)
+            lines.append(f"[{i}] Title: {title} (ID: {doc_id})")
+        return "\n".join(lines)
 
-        results = []
-        for doc_response in matching_docs["results"]:
-            doc_id = doc_response.id
-            chunk_data = await self.providers.database.chunks_handler.list_document_chunks(
-                document_id=doc_id,
-                offset=0,
-                limit=-1,  # get all chunks
-                include_vectors=False,
+    async def _build_collections_context(
+        self,
+        filter_user_ids: Optional[list[UUID]] = None,
+        filter_document_ids: Optional[list[UUID]] = None,
+        filter_collection_ids: Optional[list[UUID]] = None,
+        limit: int = 5,
+    ) -> str:
+        """
+        Fetches collections matching the given filters and returns a formatted string
+        enumerating them.
+        """
+        coll_data = await self.providers.database.collections_handler.get_collections_overview(
+            offset=0,
+            limit=limit,
+            filter_user_ids=filter_user_ids,
+            filter_document_ids=filter_document_ids,
+            filter_collection_ids=filter_collection_ids,
+        )
+        colls = coll_data["results"]
+        if not colls:
+            return "No collections found."
+
+        lines = []
+        for i, c in enumerate(colls, start=1):
+            name = c.name or "(Unnamed Collection)"
+            cid = str(c.id)
+            doc_count = c.document_count or 0
+            lines.append(f"[{i}] Name: {name} (ID: {cid}, docs: {doc_count})")
+        return "\n".join(lines)
+
+    async def _build_extended_system_instruction(
+        self,
+        filter_user_ids: Optional[list[UUID]] = None,
+        filter_document_ids: Optional[list[UUID]] = None,
+        filter_collection_ids: Optional[list[UUID]] = None,
+    ) -> str:
+        """
+        High-level method that:
+          1) builds the documents context
+          2) builds the collections context
+          3) loads the new `extended_rag_agent` prompt
+        """
+        date_str = str(datetime.now().isoformat())
+
+        doc_context_str = await self._build_documents_context(
+            filter_user_ids=filter_user_ids,
+            filter_document_ids=filter_document_ids,
+            filter_collection_ids=filter_collection_ids,
+        )
+
+        coll_context_str = await self._build_collections_context(
+            filter_user_ids=filter_user_ids,
+            filter_document_ids=filter_document_ids,
+            filter_collection_ids=filter_collection_ids,
+        )
+
+        # Now fetch the prompt from the database prompts handler
+        # This relies on your "rag_agent_extended" existing with
+        # placeholders: date, document_context, collection_context
+        system_prompt = (
+            await self.providers.database.prompts_handler.get_cached_prompt(
+                "extended_rag_agent",
+                inputs={
+                    "date": date_str,
+                    "document_context": doc_context_str,
+                    "collection_context": coll_context_str,
+                },
             )
-            chunks = chunk_data["results"]  # already in ascending chunk_order
-
-            # 4. Build a returned structure that includes doc + chunks
-            results.append(
-                {
-                    "document": doc_response.model_dump(),  # or doc_response.dict() if you prefer
-                    "chunks": chunks,
-                }
-            )
-
-        return results
+        )
+        return system_prompt
 
 
 class RetrievalServiceAdapter:

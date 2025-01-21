@@ -663,6 +663,7 @@ class RetrievalRouterV3(BaseRouterV3):
                     conversation_id=(
                         str(conversation_id) if conversation_id else None
                     ),
+                    use_extended_prompt=True,
                 )
 
                 if rag_generation_config.stream:

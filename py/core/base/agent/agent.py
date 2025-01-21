@@ -93,7 +93,9 @@ class Agent(ABC):
     def _register_tools(self):
         pass
 
-    async def _setup(self, system_instruction: Optional[str] = None):
+    async def _setup(
+        self, system_instruction: Optional[str] = None, *args, **kwargs
+    ):
         await self.conversation.add_message(
             Message(
                 role="system",
