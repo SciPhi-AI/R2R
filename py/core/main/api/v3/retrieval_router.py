@@ -61,7 +61,6 @@ class RetrievalRouterV3(BaseRouterV3):
         Prepare the effective search settings based on the provided search_mode,
         optional user-overrides in search_settings, and applied filters.
         """
-
         if search_mode != SearchMode.custom:
             # Start from mode defaults
             effective_settings = SearchSettings.get_default(search_mode.value)
@@ -78,7 +77,6 @@ class RetrievalRouterV3(BaseRouterV3):
         effective_settings.filters = select_search_filters(
             auth_user, effective_settings
         )
-
         return effective_settings
 
     def _setup_routes(self):
@@ -651,7 +649,6 @@ class RetrievalRouterV3(BaseRouterV3):
             effective_settings = self._prepare_search_settings(
                 auth_user, search_mode, search_settings
             )
-
             try:
                 response = await self.services.retrieval.agent(
                     message=message,

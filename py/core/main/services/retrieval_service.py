@@ -718,8 +718,10 @@ class RetrievalService(Service):
 
             # -- Step 1: parse the filter dict from search_settings
             #    (assuming search_settings.filters is the dict you want to parse)
-            filter_user_ids, filter_document_ids, filter_collection_ids = (
-                self._parse_doc_coll_filters(search_settings.filters)
+            filter_user_id, filter_collection_ids = (
+                self._parse_user_and_collection_filters(
+                    search_settings.filters
+                )
             )
 
             if use_extended_prompt and task_prompt_override:
@@ -733,8 +735,7 @@ class RetrievalService(Service):
                 # Build the brand-new extended system prompt that includes doc/coll context
                 system_instruction = (
                     await self._build_extended_system_instruction(
-                        filter_user_ids=filter_user_ids,
-                        filter_document_ids=filter_document_ids,
+                        filter_user_id=filter_user_id,
                         filter_collection_ids=filter_collection_ids,
                     )
                 )
@@ -909,18 +910,11 @@ class RetrievalService(Service):
                 "chunks": [ <chunk0>, <chunk1>, ... ]
               }
         """
-        # 1. Use our new helper to parse filter_user_ids, filter_document_ids, filter_collection_ids
-        filter_user_ids, filter_document_ids, filter_collection_ids = (
-            self._parse_doc_coll_filters(filters)
-        )
-
         # 2. Fetch matching documents
         matching_docs = await self.providers.database.documents_handler.get_documents_overview(
             offset=0,
             limit=-1,
-            filter_user_ids=filter_user_ids,
-            filter_document_ids=filter_document_ids,
-            filter_collection_ids=filter_collection_ids,
+            filters=filters,
             include_summary_embedding=options.get(
                 "include_summary_embedding", False
             ),
@@ -952,111 +946,51 @@ class RetrievalService(Service):
 
         return results
 
-    def _parse_doc_coll_filters(
+    def _parse_user_and_collection_filters(
         self,
         filters: dict[str, Any],
-    ) -> tuple[
-        Optional[list[UUID]],
-        Optional[list[UUID]],
-        Optional[list[UUID]],
-    ]:
-        """
-        Parse a dict of filters that may contain:
-          - owner_id
-          - document_id
-          - collection_ids
-        with operators like "$eq", "$in", or "$overlap",
-        returning three lists of UUIDs (or None).
+    ):
+        ### TODO - Come up with smarter way to extract owner / collection ids for non-admin
+        filter_starts_with_and = filters.get("$and", None)
+        filter_starts_with_or = filters.get("$or", None)
+        if filter_starts_with_and:
+            try:
+                filter_starts_with_and_then_or = filter_starts_with_and[0][
+                    "$or"
+                ]
 
-        Example of accepted structure:
-          {
-            "owner_id": {"$eq": "uuid-string-here"},
-            "document_id": {"$in": ["uuid1", "uuid2"]},
-            "collection_ids": {"$overlap": "uuid-of-some-collection"}
-          }
-        """
-        ALLOWED_FILTERS = {"owner_id", "document_id", "collection_ids"}
-        ALLOWED_OPERATORS = {"$eq", "$in", "$overlap"}
-
-        filter_user_ids: Optional[list[UUID]] = None
-        filter_document_ids: Optional[list[UUID]] = None
-        filter_collection_ids: Optional[list[UUID]] = None
-
-        for field_key, op_dict in filters.items():
-            if field_key not in ALLOWED_FILTERS:
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        f"Unsupported filter field: {field_key}. "
-                        f"Allowed: {ALLOWED_FILTERS}"
-                    ),
+                user_id = filter_starts_with_and_then_or[0]["owner_id"]["$eq"]
+                collection_ids = filter_starts_with_and_then_or[1][
+                    "collection_ids"
+                ]["$overlap"]
+                return user_id, [str(ele) for ele in collection_ids]
+            except Exception as e:
+                logger.error(
+                    f"Error: {e}.\n\n While"
+                    + """ parsing filters: expected format {'$or': [{'owner_id': {'$eq': 'uuid-string-here'}, 'collection_ids': {'$overlap': ['uuid-of-some-collection']}}]}, if you are a superuser then this error can be ignored."""
                 )
-            if not isinstance(op_dict, dict) or len(op_dict) != 1:
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        f"Filter for '{field_key}' must be a dict with exactly one operator "
-                        f"from {ALLOWED_OPERATORS}, e.g. {{'{field_key}': {{'$eq': <uuid>}}}}"
-                    ),
+                return None, []
+        elif filter_starts_with_or:
+            try:
+                user_id = filter_starts_with_or[0]["owner_id"]["$eq"]
+                collection_ids = filter_starts_with_or[1]["collection_ids"][
+                    "$overlap"
+                ]
+                return user_id, [str(ele) for ele in collection_ids]
+            except Exception as e:
+                logger.error(
+                    """Error parsing filters: expected format {'$or': [{'owner_id': {'$eq': 'uuid-string-here'}, 'collection_ids': {'$overlap': ['uuid-of-some-collection']}}]}, if you are a superuser then this error can be ignored."""
                 )
-
-            (operator, value) = next(iter(op_dict.items()))
-            if operator not in ALLOWED_OPERATORS:
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        f"Unsupported operator for '{field_key}': {operator}. "
-                        f"Allowed: {ALLOWED_OPERATORS}"
-                    ),
-                )
-
-            # Convert value(s) to a list of UUIDs for uniform usage
-            if operator in ("$eq", "$overlap"):
-                # Single value expected
-                if isinstance(value, str):
-                    # Make it a single-element list
-                    value_list = [UUID(value)]
-                else:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=(
-                            f"Operator '{operator}' for '{field_key}' "
-                            "requires a single string UUID."
-                        ),
-                    )
-            elif operator == "$in":
-                # Must be a list of string UUIDs
-                if not isinstance(value, list):
-                    raise HTTPException(
-                        status_code=400,
-                        detail=(
-                            "Operator '$in' for '{field_key}' "
-                            "must be a list of UUID strings."
-                        ),
-                    )
-                value_list = [UUID(v) for v in value]
-            else:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Operator '{operator}' not supported.",
-                )
-
-            # Map them to local filter variables
-            if field_key == "owner_id":
-                filter_user_ids = value_list
-            elif field_key == "document_id":
-                filter_document_ids = value_list
-            elif field_key == "collection_ids":
-                filter_collection_ids = value_list
-
-        return filter_user_ids, filter_document_ids, filter_collection_ids
+                return None, []
+        else:
+            # Admin user
+            return None, []
 
     async def _build_documents_context(
         self,
-        filter_user_ids: Optional[list[UUID]] = None,
-        filter_document_ids: Optional[list[UUID]] = None,
-        filter_collection_ids: Optional[list[UUID]] = None,
-        limit: int = 5,
+        filter_user_id: Optional[UUID] = None,
+        max_summary_length: int = 128,
+        limit: int = 50,
     ) -> str:
         """
         Fetches documents matching the given filters and returns a formatted string
@@ -1066,10 +1000,8 @@ class RetrievalService(Service):
         docs_data = await self.providers.database.documents_handler.get_documents_overview(
             offset=0,
             limit=limit,
-            filter_user_ids=filter_user_ids,
-            filter_document_ids=filter_document_ids,
-            filter_collection_ids=filter_collection_ids,
-            include_summary_embedding=False,  # up to you
+            filter_user_ids=[filter_user_id],
+            include_summary_embedding=False,
         )
 
         docs = docs_data["results"]
@@ -1080,14 +1012,13 @@ class RetrievalService(Service):
         for i, doc in enumerate(docs, start=1):
             # Build a line referencing the doc
             title = doc.title or "(Untitled Document)"
-            doc_id = str(doc.id)
-            lines.append(f"[{i}] Title: {title} (ID: {doc_id})")
+            lines.append(
+                f"[{i}] Title: {title}, Summary: {doc.summary[0:max_summary_length] + ('...' if len(doc.summary) > max_summary_length else '')}"
+            )
         return "\n".join(lines)
 
     async def _build_collections_context(
         self,
-        filter_user_ids: Optional[list[UUID]] = None,
-        filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
         limit: int = 5,
     ) -> str:
@@ -1098,8 +1029,6 @@ class RetrievalService(Service):
         coll_data = await self.providers.database.collections_handler.get_collections_overview(
             offset=0,
             limit=limit,
-            filter_user_ids=filter_user_ids,
-            filter_document_ids=filter_document_ids,
             filter_collection_ids=filter_collection_ids,
         )
         colls = coll_data["results"]
@@ -1116,8 +1045,7 @@ class RetrievalService(Service):
 
     async def _build_extended_system_instruction(
         self,
-        filter_user_ids: Optional[list[UUID]] = None,
-        filter_document_ids: Optional[list[UUID]] = None,
+        filter_user_id: Optional[UUID] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
     ) -> str:
         """
@@ -1126,17 +1054,13 @@ class RetrievalService(Service):
           2) builds the collections context
           3) loads the new `extended_rag_agent` prompt
         """
-        date_str = str(datetime.now().isoformat())
+        date_str = str(datetime.now().isoformat()).split("T")[0]
 
         doc_context_str = await self._build_documents_context(
-            filter_user_ids=filter_user_ids,
-            filter_document_ids=filter_document_ids,
-            filter_collection_ids=filter_collection_ids,
+            filter_user_id=filter_user_id,
         )
 
         coll_context_str = await self._build_collections_context(
-            filter_user_ids=filter_user_ids,
-            filter_document_ids=filter_document_ids,
             filter_collection_ids=filter_collection_ids,
         )
 

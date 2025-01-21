@@ -394,48 +394,104 @@ class PostgresDocumentsHandler(Handler):
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
         include_summary_embedding: Optional[bool] = True,
+        filters: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
+        """
+        Fetch overviews of documents with optional offset/limit pagination.
+
+        You can use either:
+          - Traditional filters: `filter_user_ids`, `filter_document_ids`, `filter_collection_ids`
+          - A `filters` dict (e.g., like we do in semantic search), which will be passed to `apply_filters`.
+
+        If both the `filters` dict and any of the traditional filter arguments are provided,
+        this method will raise an error.
+        """
+
+        # Safety check: We do not allow mixing the old filter arguments with the new `filters` dict.
+        # This keeps the query logic unambiguous.
+        if filters and any(
+            [
+                filter_user_ids,
+                filter_document_ids,
+                filter_collection_ids,
+            ]
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Cannot use both the 'filters' dictionary "
+                    "and the 'filter_*_ids' parameters simultaneously."
+                ),
+            )
+
         conditions = []
-        or_conditions = []
         params: list[Any] = []
         param_index = 1
 
-        # Handle document IDs with AND
-        if filter_document_ids:
-            conditions.append(f"id = ANY(${param_index})")
-            params.append(filter_document_ids)
-            param_index += 1
+        # -------------------------------------------
+        # 1) If using the new `filters` dict approach
+        # -------------------------------------------
+        if filters:
+            # Apply the filters to generate a WHERE clause
+            filter_condition, filter_params = apply_filters(filters, params)
+            if filter_condition:
+                conditions.append(filter_condition)
+            # Make sure we keep adding to the same params list
+            params.extend(filter_params)
 
-        # Handle user_ids and collection_ids with OR
-        if filter_user_ids:
-            or_conditions.append(f"owner_id = ANY(${param_index})")
-            params.append(filter_user_ids)
-            param_index += 1
+        # -------------------------------------------
+        # 2) If using the old filter_*_ids approach
+        # -------------------------------------------
+        else:
+            # Handle document IDs with AND
+            if filter_document_ids:
+                conditions.append(f"id = ANY(${param_index})")
+                params.append(filter_document_ids)
+                param_index += 1
 
-        if filter_collection_ids:
-            or_conditions.append(f"collection_ids && ${param_index}")
-            params.append(filter_collection_ids)
-            param_index += 1
+            # For owner/collection filters, we used OR logic previously
+            # so we combine them into a single sub-condition in parentheses
+            or_conditions = []
+            if filter_user_ids:
+                or_conditions.append(f"owner_id = ANY(${param_index})")
+                params.append(filter_user_ids)
+                param_index += 1
 
-        base_query = f"""
-            FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
-        """
+            if filter_collection_ids:
+                or_conditions.append(f"collection_ids && ${param_index}")
+                params.append(filter_collection_ids)
+                param_index += 1
 
-        # Combine conditions with appropriate AND/OR logic
-        where_conditions = []
+            if or_conditions:
+                conditions.append(f"({' OR '.join(or_conditions)})")
+
+        # -------------------------
+        # Build the full query
+        # -------------------------
+        base_query = (
+            f"FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}"
+        )
         if conditions:
-            where_conditions.append("(" + " AND ".join(conditions) + ")")
-        if or_conditions:
-            where_conditions.append("(" + " OR ".join(or_conditions) + ")")
+            # Combine everything with AND
+            base_query += " WHERE " + " AND ".join(conditions)
 
-        if where_conditions:
-            base_query += " WHERE " + " AND ".join(where_conditions)
-
-        # Construct the SELECT part of the query based on column existence
+        # Construct SELECT fields (including total_entries via window function)
         select_fields = """
-            SELECT id, collection_ids, owner_id, type, metadata, title, version,
-                size_in_bytes, ingestion_status, extraction_status, created_at, updated_at,
-                summary, summary_embedding,
+            SELECT
+                id,
+                collection_ids,
+                owner_id,
+                type,
+                metadata,
+                title,
+                version,
+                size_in_bytes,
+                ingestion_status,
+                extraction_status,
+                created_at,
+                updated_at,
+                summary,
+                summary_embedding,
                 COUNT(*) OVER() AS total_entries
         """
 
@@ -466,7 +522,7 @@ class PostgresDocumentsHandler(Handler):
                     and row["summary_embedding"] is not None
                 ):
                     try:
-                        # Parse the vector string returned by Postgres
+                        # The embedding is stored as a string like "[0.1, 0.2, ...]"
                         embedding_str = row["summary_embedding"]
                         if embedding_str.startswith(
                             "["
