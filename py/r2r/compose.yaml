@@ -38,13 +38,6 @@ services:
 
   r2r:
     image: ${R2R_IMAGE:-ragtoriches/prod:latest}
-    build:
-      context: .
-      args:
-        PORT: ${R2R_PORT:-7272}
-        R2R_PORT: ${R2R_PORT:-7272}
-        HOST: ${R2R_HOST:-0.0.0.0}
-        R2R_HOST: ${R2R_HOST:-0.0.0.0}
     ports:
       - "${R2R_PORT:-7272}:${R2R_PORT:-7272}"
     environment:

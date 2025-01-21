@@ -144,6 +144,9 @@ __all__ = [
     "TextParser",
     "SupabaseAuthProvider",
     "R2RAuthProvider",
+    "JwtAuthProvider",
+    # Email
+    # Crypto
     "BCryptCryptoProvider",
     "BcryptCryptoConfig",
     "NaClCryptoConfig",

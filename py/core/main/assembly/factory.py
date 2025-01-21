@@ -25,6 +25,7 @@ from core.providers import (
     BCryptCryptoProvider,
     ConsoleMockEmailProvider,
     HatchetOrchestrationProvider,
+    JwtAuthProvider,
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
     NaClCryptoConfig,
@@ -60,7 +61,7 @@ class R2RProviderFactory:
         ),
         *args,
         **kwargs,
-    ) -> R2RAuthProvider | SupabaseAuthProvider:
+    ) -> R2RAuthProvider | SupabaseAuthProvider | JwtAuthProvider:
         if auth_config.provider == "r2r":
             r2r_auth = R2RAuthProvider(
                 auth_config, crypto_provider, database_provider, email_provider
@@ -69,6 +70,10 @@ class R2RProviderFactory:
             return r2r_auth
         elif auth_config.provider == "supabase":
             return SupabaseAuthProvider(
+                auth_config, crypto_provider, database_provider, email_provider
+            )
+        elif auth_config.provider == "jwt":
+            return JwtAuthProvider(
                 auth_config, crypto_provider, database_provider, email_provider
             )
         else:

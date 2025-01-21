@@ -155,7 +155,8 @@ def generate_document_id(filename: str, user_id: UUID) -> UUID:
     """
     Generates a unique document id from a given filename and user id
     """
-    return _generate_id_from_label(f'{filename.split("/")[-1]}-{str(user_id)}')
+    safe_filename = filename.replace("/", "_")
+    return _generate_id_from_label(f"{safe_filename}-{str(user_id)}")
 
 
 def generate_extraction_id(

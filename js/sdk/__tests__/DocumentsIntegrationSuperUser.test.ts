@@ -14,6 +14,8 @@ const TEST_OUTPUT_DIR = path.join(__dirname, "test-output");
 describe("r2rClient V3 Documents Integration Tests", () => {
   let client: r2rClient;
   let documentId: string;
+  let documentId2: string;
+  let documentId3: string;
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);
@@ -54,6 +56,26 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
     expect(response.results.documentId).toBeDefined();
   }, 30000);
+
+  test("Create a document with content that ends in a URL on a newline", async () => {
+    const response = await client.documents.create({
+      raw_text: "This is a test document\nhttps://example.com",
+      metadata: { title: "Test Document with URL", numericId: 789 },
+    });
+
+    expect(response.results.documentId).toBeDefined();
+    documentId2 = response.results.documentId;
+  });
+
+  test("Create a different document with the same URL on a newline", async () => {
+    const response = await client.documents.create({
+      raw_text: "This is a different test document\nhttps://example.com",
+      metadata: { title: "Different Test Document with URL", numericId: 101 },
+    });
+
+    expect(response.results.documentId).toBeDefined();
+    documentId3 = response.results.documentId;
+  });
 
   test("Retrieve document", async () => {
     const response = await client.documents.retrieve({
@@ -314,6 +336,22 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   test("Delete untitled document", async () => {
     const response = await client.documents.delete({
       id: "5556836e-a51c-57c7-916a-de76c79df2b6",
+    });
+
+    expect(response.results).toBeDefined();
+  });
+
+  test("Delete document with URL", async () => {
+    const response = await client.documents.delete({
+      id: documentId2,
+    });
+
+    expect(response.results).toBeDefined();
+  });
+
+  test("Delete another document with URL", async () => {
+    const response = await client.documents.delete({
+      id: documentId3,
     });
 
     expect(response.results).toBeDefined();
