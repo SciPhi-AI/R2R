@@ -1245,22 +1245,29 @@ class CollectionsRouter(BaseRouterV3):
                     settings_dict=settings,  # type: ignore
                 )
             if run_with_orchestration:
-                workflow_input = {
-                    "collection_id": str(id),
-                    "graph_creation_settings": server_graph_creation_settings.model_dump_json(),
-                    "user": auth_user.json(),
-                }
+                try:
+                    workflow_input = {
+                        "collection_id": str(id),
+                        "graph_creation_settings": server_graph_creation_settings.model_dump_json(),
+                        "user": auth_user.json(),
+                    }
 
-                return await self.providers.orchestration.run_workflow(  # type: ignore
-                    "extract-triples", {"request": workflow_input}, {}
-                )
-            else:
-                from core.main.orchestration import simple_kg_factory
+                    return await self.providers.orchestration.run_workflow(  # type: ignore
+                        "extract-triples", {"request": workflow_input}, {}
+                    )
+                except (
+                    Exception
+                ) as e:  # TODO: Need to find specific error (gRPC most likely?)
+                    logger.error(
+                        f"Error running orchestrated extraction: {e} \n\nAttempting to run without orchestration."
+                    )
 
-                logger.info("Running extract-triples without orchestration.")
-                simple_kg = simple_kg_factory(self.services.graph)
-                await simple_kg["extract-triples"](workflow_input)  # type: ignore
-                return {  # type: ignore
-                    "message": "Graph created successfully.",
-                    "task_id": None,
-                }
+            from core.main.orchestration import simple_kg_factory
+
+            logger.info("Running extract-triples without orchestration.")
+            simple_kg = simple_kg_factory(self.services.graph)
+            await simple_kg["extract-triples"](workflow_input)  # type: ignore
+            return {  # type: ignore
+                "message": "Graph created successfully.",
+                "task_id": None,
+            }
