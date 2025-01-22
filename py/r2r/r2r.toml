@@ -50,8 +50,8 @@ default_max_upload_size = 2147483648  # 2 GB for anything not explicitly listed
 
 [agent]
 system_instruction_name = "rag_agent"
-tools = ["content", "local_search", "web_search"] # uncomment to enable web search.
-# tools = ["local_search", "content"]
+# tools = ["content", "local_search", "web_search"] # uncomment to enable web search.
+tools = ["local_search", "content"]
 
   [agent.generation_config]
   model = "openai/gpt-4o"
