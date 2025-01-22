@@ -1,6 +1,6 @@
 """add_total_tokens_to_documents
 
-Revision ID: 123456789abc
+Revision ID: 3efc7b3b1b3d
 Revises: 7eb70560f406
 Create Date: 2025-01-21 14:59:00.000000
 
@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
-revision = "123456789abc"
+revision = "3efc7b3b1b3d"
 down_revision = "7eb70560f406"  # Make sure this matches your newest migration
 branch_labels = None
 depends_on = None
