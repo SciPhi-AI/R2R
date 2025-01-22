@@ -255,19 +255,30 @@ class Agent(ABC):
             )
             if tool.stream_function:
                 tool_result.stream_result = tool.stream_function(raw_result)
+
+            await self.conversation.add_message(
+                Message(
+                    role="tool" if tool_id else "function",
+                    content=str(tool_result.llm_formatted_result),
+                    name=function_name,
+                    tool_call_id=tool_id,
+                )
+            )
+
         else:
             error_message = f"The requested tool '{function_name}' is not available. Available tools: {', '.join(t.name for t in self.tools)}"
             tool_result = ToolResult(
                 raw_result=error_message,
                 llm_formatted_result=error_message,
             )
-        await self.conversation.add_message(
-            Message(
-                role="tool" if tool_id else "function",
-                content=str(tool_result.llm_formatted_result),
-                name=function_name,
-                tool_call_id=tool_id,
+            await self.conversation.add_message(
+                Message(
+                    role="tool" if tool_id else "function",
+                    content=str(tool_result.llm_formatted_result),
+                    name=function_name,
+                    tool_call_id=tool_id,
+                )
             )
-        )
+
 
         return tool_result
