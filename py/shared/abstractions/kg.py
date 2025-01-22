@@ -35,7 +35,7 @@ class KGCreationSettings(R2RSerializable):
     )
 
     chunk_merge_count: int = Field(
-        default=4,
+        default=2,
         description="The number of extractions to merge into a single KG extraction.",
     )
 
