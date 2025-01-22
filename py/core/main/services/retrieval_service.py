@@ -463,35 +463,22 @@ class RetrievalService(Service):
           • call LLM for final answer
         No pipeline classes necessary.
         """
-
         # Convert any UUID filters to string
         for f, val in list(search_settings.filters.items()):
             if isinstance(val, UUID):
                 search_settings.filters[f] = str(val)
 
         try:
-            if rag_generation_config.stream:
-                # For streaming, handle separately
-                return await self.stream_rag_response(
-                    query,
-                    rag_generation_config,
-                    search_settings,
-                    **kwargs,
-                )
-
-            # 1) Do the search
+            # Do the search
             search_results_dict = await self.search(query, search_settings)
             aggregated = AggregateSearchResult.from_dict(search_results_dict)
 
-            # 2) Build context from search results
-            #    (You can rename/adjust this as needed)
+            # Build context from search results
             context_str = self._build_rag_context(query, aggregated)
 
-            # 3) Prepare your message payload
-            #    (Assuming you have some "prompts_handler" for system+task)
-            #    If you store your RAG prompt names in config, do something like:
+            # Prepare your message payload
             system_prompt_name = system_prompt_name or "default_system"
-            task_prompt_name = task_prompt_name or "rag_context"
+            task_prompt_name = task_prompt_name or "default_rag"
             task_prompt_override = kwargs.get("task_prompt_override", None)
 
             messages = await self.providers.database.prompts_handler.get_message_payload(
@@ -501,15 +488,23 @@ class RetrievalService(Service):
                 task_prompt_override=task_prompt_override,
             )
 
-            # 4) LLM completion
+            if rag_generation_config.stream:
+                return await self.stream_rag_response(
+                    messages=messages,
+                    rag_generation_config=rag_generation_config,
+                    aggregated_results=aggregated,
+                    **kwargs
+                )
+
+            # LLM completion
             response = await self.providers.llm.aget_completion(
                 messages=messages, generation_config=rag_generation_config
             )
 
-            # 5) Build final RAGResponse
+            # Build final RAGResponse
             return RAGResponse(
                 completion=response.choices[0].message.content,
-                search_results=aggregated,  # let’s store the aggregated search info
+                search_results=aggregated,
             )
 
         except Exception as e:
@@ -573,26 +568,32 @@ class RetrievalService(Service):
 
     async def stream_rag_response(
         self,
-        query,
+        messages,
         rag_generation_config,
-        search_settings,
-        *args,
+        aggregated_results,
         **kwargs,
     ):
+        #FIXME: We need to yield aggregated_results as well
+        print(f"Aggregate results: {aggregated_results}")
         async def stream_response():
-            merged_kwargs = {
-                "input": to_async_generator([query]),
-                "state": None,
-                "search_settings": search_settings,
-                "rag_generation_config": rag_generation_config,
-                **kwargs,
-            }
-
-            async for chunk in await self.pipelines.streaming_rag_pipeline.run(
-                *args,
-                **merged_kwargs,
-            ):
-                yield chunk
+            try:
+                yield aggregated_results
+                async for chunk in self.providers.llm.aget_completion_stream(
+                    messages=messages,
+                    generation_config=rag_generation_config
+                ):
+                    yield chunk.choices[0].delta.content or ""
+            except Exception as e:
+                logger.error(f"Error in streaming RAG: {e}")
+                if "NoneType" in str(e):
+                    raise HTTPException(
+                        status_code=502,
+                        detail="Server not reachable or returned an invalid response"
+                    )
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Internal RAG Error - {str(e)}"
+                )
 
         return stream_response()
 
