@@ -1208,6 +1208,7 @@ class GraphService(Service):
                     messages, generation_config=generation_config
                 )
                 kg_str = resp.choices[0].message.content
+
                 if not kg_str:
                     raise R2RException(
                         "No extraction found in LLM response.",
@@ -1230,7 +1231,7 @@ class GraphService(Service):
                         f"Failed all retries chunkGroup doc={doc_id} reason={e}"
                     )
 
-        return KGExtraction(entities=[], relationships=[])
+                return KGExtraction(entities=[], relationships=[])
 
     async def _parse_kg_extraction_xml(
         self, response_str: str, chunks: list[DocumentChunk]
@@ -1303,32 +1304,30 @@ class GraphService(Service):
             type_elem = r_elem.find("type")
             desc_elem = r_elem.find("description")
             weight_elem = r_elem.find("weight")
+            try:
+                subject = source_elem.text
+                object_ = target_elem.text
+                predicate = type_elem.text
+                desc = desc_elem.text
+                weight = float(weight_elem.text)
+                embed = await self.providers.embedding.async_get_embedding(
+                    desc
+                )
 
-            if not all(
-                [source_elem, target_elem, type_elem, desc_elem, weight_elem]
-            ):
-                continue  # skip malformed
-
-            subject = source_elem.text
-            object_ = target_elem.text
-            predicate = type_elem.text
-            desc = desc_elem.text
-            weight = float(weight_elem.text)
-            embed = await self.providers.embedding.async_get_embedding(desc)
-
-            rel = Relationship(
-                subject=subject,
-                predicate=predicate,
-                object=object_,
-                description=desc,
-                weight=weight,
-                parent_id=doc_id,
-                chunk_ids=chunk_ids,
-                attributes={},
-                description_embedding=embed,
-            )
-            relationships_list.append(rel)
-
+                rel = Relationship(
+                    subject=subject,
+                    predicate=predicate,
+                    object=object_,
+                    description=desc,
+                    weight=weight,
+                    parent_id=doc_id,
+                    chunk_ids=chunk_ids,
+                    attributes={},
+                    description_embedding=embed,
+                )
+                relationships_list.append(rel)
+            except:
+                continue
         return entities_list, relationships_list
 
     # --------------------------------------------------------------------------------
