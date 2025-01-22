@@ -314,7 +314,6 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
         local_search_method: Callable,
         content_method: Optional[Callable] = None,
         max_tool_context_length: int = 10_000,
-
     ):
         # Initialize base R2RAgent
         R2RAgent.__init__(

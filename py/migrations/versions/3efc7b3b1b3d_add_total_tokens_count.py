@@ -6,12 +6,13 @@ Create Date: 2025-01-21 14:59:00.000000
 
 """
 
-import os
-import math
-import tiktoken
 import logging
-from alembic import op
+import math
+import os
+
 import sqlalchemy as sa
+import tiktoken
+from alembic import op
 from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
@@ -43,15 +44,25 @@ def upgrade() -> None:
     #    If not, we'll create it with a default of 0.
     #    (If you want the default to be NULL instead of 0, adjust as needed.)
     insp = sa.inspect(connection)
-    columns = insp.get_columns("documents")  # uses default schema or your schema
+    columns = insp.get_columns(
+        "documents"
+    )  # uses default schema or your schema
     col_names = [col["name"] for col in columns]
     if "total_tokens" not in col_names:
         logger.info("Adding 'total_tokens' column to 'documents' table...")
         op.add_column(
-            "documents", sa.Column("total_tokens", sa.Integer(), nullable=False, server_default="0")
+            "documents",
+            sa.Column(
+                "total_tokens",
+                sa.Integer(),
+                nullable=False,
+                server_default="0",
+            ),
         )
     else:
-        logger.info("Column 'total_tokens' already exists in 'documents' table, skipping add-column step.")
+        logger.info(
+            "Column 'total_tokens' already exists in 'documents' table, skipping add-column step."
+        )
 
     # 2) Fill in 'total_tokens' for each document by summing the tokens from all chunks
     #    We do this in batches to avoid loading too much data at once.
@@ -70,7 +81,9 @@ def upgrade() -> None:
 
     # b) We'll iterate over documents in pages of size BATCH_SIZE
     pages = math.ceil(total_docs / BATCH_SIZE)
-    logger.info(f"Updating total_tokens in {pages} batches of up to {BATCH_SIZE} documents...")
+    logger.info(
+        f"Updating total_tokens in {pages} batches of up to {BATCH_SIZE} documents..."
+    )
 
     # Optionally choose a Tiktoken model via environment variable
     # or just default if none is set
@@ -78,7 +91,9 @@ def upgrade() -> None:
 
     offset = 0
     for page_idx in range(pages):
-        logger.info(f"Processing batch {page_idx + 1} / {pages} (OFFSET={offset}, LIMIT={BATCH_SIZE})")
+        logger.info(
+            f"Processing batch {page_idx + 1} / {pages} (OFFSET={offset}, LIMIT={BATCH_SIZE})"
+        )
 
         # c) Fetch the IDs of the next batch of documents
         batch_docs_query = text(
@@ -111,12 +126,16 @@ def upgrade() -> None:
                 WHERE document_id = :doc_id
                 """
             )
-            chunk_rows = connection.execute(chunks_query, {"doc_id": doc_id}).fetchall()
+            chunk_rows = connection.execute(
+                chunks_query, {"doc_id": doc_id}
+            ).fetchall()
 
             total_tokens = 0
             for c_row in chunk_rows:
                 chunk_text = c_row["data"] or ""
-                total_tokens += count_tokens_for_text(chunk_text, model=default_model)
+                total_tokens += count_tokens_for_text(
+                    chunk_text, model=default_model
+                )
 
             # e) Update total_tokens for this doc
             update_query = text(
@@ -126,7 +145,9 @@ def upgrade() -> None:
                 WHERE id = :doc_id
                 """
             )
-            connection.execute(update_query, {"tokcount": total_tokens, "doc_id": doc_id})
+            connection.execute(
+                update_query, {"tokcount": total_tokens, "doc_id": doc_id}
+            )
 
         logger.info(f"Finished batch {page_idx + 1}")
 
@@ -138,5 +159,7 @@ def downgrade() -> None:
     If you want to remove the total_tokens column on downgrade, do so here.
     Otherwise, you can leave it in place.
     """
-    logger.info("Dropping column 'total_tokens' from 'documents' table (downgrade).")
+    logger.info(
+        "Dropping column 'total_tokens' from 'documents' table (downgrade)."
+    )
     op.drop_column("documents", "total_tokens")

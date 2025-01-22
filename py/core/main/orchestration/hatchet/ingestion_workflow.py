@@ -100,10 +100,8 @@ def hatchet_ingestion_factory(
                 )
 
                 ingestion_config = parsed_data["ingestion_config"] or {}
-                extractions_generator = (
-                    self.ingestion_service.parse_file(
-                        document_info, ingestion_config
-                    )
+                extractions_generator = self.ingestion_service.parse_file(
+                    document_info, ingestion_config
                 )
 
                 extractions = []
@@ -147,7 +145,7 @@ def hatchet_ingestion_factory(
                     status=IngestionStatus.STORING,
                 )
 
-                storage_generator =  self.ingestion_service.store_embeddings(  # type: ignore
+                storage_generator = self.ingestion_service.store_embeddings(  # type: ignore
                     embeddings
                 )
 
@@ -382,7 +380,7 @@ def hatchet_ingestion_factory(
             # 2) Sum tokens
             total_tokens = 0
             for chunk in extractions:
-                text_data = chunk.data
+                text_data = chunk["data"]
                 if not isinstance(text_data, str):
                     text_data = text_data.decode("utf-8", errors="ignore")
                 total_tokens += count_tokens_for_text(text_data)
@@ -413,7 +411,7 @@ def hatchet_ingestion_factory(
                 document_info, status=IngestionStatus.STORING
             )
 
-            storage_generator =  self.ingestion_service.store_embeddings(
+            storage_generator = self.ingestion_service.store_embeddings(
                 embeddings
             )
             async for _ in storage_generator:
