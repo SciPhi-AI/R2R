@@ -254,7 +254,6 @@ class Agent(ABC):
                 raw_result=error_message,
                 llm_formatted_result=error_message,
             )
-
         await self.conversation.add_message(
             Message(
                 role="tool" if tool_id else "function",

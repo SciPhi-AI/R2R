@@ -37,6 +37,7 @@ from .search import (
     AggregateSearchResult,
     ChunkSearchResult,
     ChunkSearchSettings,
+    ContextDocumentResult,
     GraphCommunityResult,
     GraphEntityResult,
     GraphRelationshipResult,

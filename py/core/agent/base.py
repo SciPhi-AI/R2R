@@ -203,7 +203,6 @@ class R2RStreamingAgent(R2RAgent):
                         *args,
                         **kwargs,
                     )
-                    print("tool_result = ", tool_result)
                     if tool_result.stream_result:
                         yield f"<results>{tool_result.stream_result}</results>"
                     else:

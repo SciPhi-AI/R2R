@@ -103,39 +103,69 @@ def format_search_results_for_llm(results: AggregateSearchResult) -> str:
                 formatted_results.append(f"Date: {result.date}")
             source_counter += 1
 
+    # 4) NEW: If context_document_results is present:
+    if results.context_document_results:
+        formatted_results.append("Local Context Documents:")
+        for doc_result in results.context_document_results:
+            doc_data = doc_result.document
+            chunks = doc_result.chunks
+            doc_title = doc_data.get("title", "Untitled Document")
+            doc_id = doc_data.get("id", "N/A")
+            summary = doc_data.get("summary", "")
+
+            formatted_results.append(
+                f"Document Title: {doc_title} (ID: {doc_id})"
+            )
+            if summary:
+                formatted_results.append(f"Summary: {summary}")
+
+            # Then each chunk inside:
+            for i, ch in enumerate(chunks, start=1):
+                chunk_text = ch.get("text", "")
+                formatted_results.append(f"Chunk {i}: {chunk_text}")
+
+            source_counter += 1
+
     return "\n".join(formatted_results)
 
 
-def format_search_results_for_stream(result: AggregateSearchResult) -> str:
+def format_search_results_for_stream(results: AggregateSearchResult) -> str:
     CHUNK_SEARCH_STREAM_MARKER = "chunk_search"
     GRAPH_SEARCH_STREAM_MARKER = "graph_search"
     WEB_SEARCH_STREAM_MARKER = "web_search"
+    CONTEXT_STREAM_MARKER = "content"
 
     context = ""
 
-    if result.chunk_search_results:
+    if results.chunk_search_results:
         context += f"<{CHUNK_SEARCH_STREAM_MARKER}>"
         vector_results_list = [
-            result.as_dict() for result in result.chunk_search_results
+            r.as_dict() for r in results.chunk_search_results
         ]
         context += json.dumps(vector_results_list, default=str)
         context += f"</{CHUNK_SEARCH_STREAM_MARKER}>"
 
-    if result.graph_search_results:
+    if results.graph_search_results:
         context += f"<{GRAPH_SEARCH_STREAM_MARKER}>"
-        kg_results_list = [
-            result.dict() for result in result.graph_search_results
-        ]
+        kg_results_list = [r.dict() for r in results.graph_search_results]
         context += json.dumps(kg_results_list, default=str)
         context += f"</{GRAPH_SEARCH_STREAM_MARKER}>"
 
-    if result.web_search_results:
+    if results.web_search_results:
         context += f"<{WEB_SEARCH_STREAM_MARKER}>"
-        web_results_list = [
-            result.to_dict() for result in result.web_search_results
-        ]
+        web_results_list = [r.to_dict() for r in results.web_search_results]
         context += json.dumps(web_results_list, default=str)
         context += f"</{WEB_SEARCH_STREAM_MARKER}>"
+
+    # NEW: local context
+    if results.context_document_results:
+        context += f"<{CONTEXT_STREAM_MARKER}>"
+        # Just store them as raw dict JSON, or build a more structured form
+        content_list = [
+            cdr.to_dict() for cdr in results.context_document_results
+        ]
+        context += json.dumps(content_list, default=str)
+        context += f"</{CONTEXT_STREAM_MARKER}>"
 
     return context
 

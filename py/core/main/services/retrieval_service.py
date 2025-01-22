@@ -606,6 +606,7 @@ class RetrievalService(Service):
         message: Optional[Message] = None,
         messages: Optional[list[Message]] = None,
         use_extended_prompt: bool = False,
+        max_tool_context_length: int = 32_768,
     ):
         try:
             if message and messages:
@@ -735,6 +736,7 @@ class RetrievalService(Service):
                 # Build the brand-new extended system prompt that includes doc/coll context
                 system_instruction = (
                     await self._build_extended_system_instruction(
+                        max_tool_context_length=max_tool_context_length,
                         filter_user_id=filter_user_id,
                         filter_collection_ids=filter_collection_ids,
                     )
@@ -755,13 +757,15 @@ class RetrievalService(Service):
                             database_provider=self.providers.database,
                             llm_provider=self.providers.llm,
                             config=self.config.agent,
+                            search_settings=search_settings,
                             rag_generation_config=rag_generation_config,
+                            max_tool_context_length=max_tool_context_length,
                             local_search_method=self.search,
+                            content_method=self.get_context,
                         )
                         async for chunk in agent.arun(
                             messages=messages,
                             system_instruction=system_instruction,
-                            search_settings=search_settings,
                             include_title_if_available=include_title_if_available,
                         ):
                             yield chunk
@@ -815,14 +819,16 @@ class RetrievalService(Service):
                 database_provider=self.providers.database,
                 llm_provider=self.providers.llm,
                 config=self.config.agent,
+                search_settings=search_settings,
                 rag_generation_config=rag_generation_config,
+                max_tool_context_length=max_tool_context_length,
                 local_search_method=self.search,
+                content_method=self.get_context,
             )
 
             results = await agent.arun(
                 messages=messages,
                 system_instruction=system_instruction,
-                search_settings=search_settings,
                 include_title_if_available=include_title_if_available,
             )
 
@@ -887,7 +893,9 @@ class RetrievalService(Service):
             )
 
     async def get_context(
-        self, filters: dict[str, Any], options: dict[str, Any]
+        self,
+        filters: dict[str, Any],
+        options: dict[str, Any],
     ) -> list[dict[str, Any]]:
         """
         Return an ordered list of documents (with minimal overview fields),
@@ -1013,7 +1021,7 @@ class RetrievalService(Service):
             # Build a line referencing the doc
             title = doc.title or "(Untitled Document)"
             lines.append(
-                f"[{i}] Title: {title}, Summary: {doc.summary[0:max_summary_length] + ('...' if len(doc.summary) > max_summary_length else '')}"
+                f"[{i}] Title: {title}, Summary: {doc.summary[0:max_summary_length] + ('...' if len(doc.summary) > max_summary_length else ''),}, Total Tokens: {doc.total_tokens}, ID: {doc.id}"
             )
         return "\n".join(lines)
 
@@ -1045,6 +1053,7 @@ class RetrievalService(Service):
 
     async def _build_extended_system_instruction(
         self,
+        max_tool_context_length: int = 10_000,
         filter_user_id: Optional[UUID] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
     ) -> str:
@@ -1072,6 +1081,7 @@ class RetrievalService(Service):
                 "extended_rag_agent",
                 inputs={
                     "date": date_str,
+                    "max_tool_context_length": max_tool_context_length,
                     "document_context": doc_context_str,
                     "collection_context": coll_context_str,
                 },

@@ -613,6 +613,10 @@ class RetrievalRouterV3(BaseRouterV3):
                 default=None,
                 description="ID of the conversation",
             ),
+            max_tool_context_length: Optional[int] = Body(
+                default=32_768,
+                description="Maximum length of tool context",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAgentResponse:
             """
@@ -657,6 +661,7 @@ class RetrievalRouterV3(BaseRouterV3):
                     rag_generation_config=rag_generation_config,
                     task_prompt_override=task_prompt_override,
                     include_title_if_available=include_title_if_available,
+                    max_tool_context_length=max_tool_context_length,
                     conversation_id=(
                         str(conversation_id) if conversation_id else None
                     ),

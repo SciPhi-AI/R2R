@@ -77,7 +77,6 @@ def test_collection_id_eq_filter(client, setup_docs_with_collections):
 def test_collection_id_ne_filter(client, setup_docs_with_collections):
     coll_ids = setup_docs_with_collections["coll_ids"]
     doc_ids = setup_docs_with_collections["doc_ids"]
-    print("doc_ids = ", doc_ids)
     doc1, doc2, doc3, doc4 = doc_ids
 
     # collection_id != coll_ids[0] means docs that are NOT in coll0

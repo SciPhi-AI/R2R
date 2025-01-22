@@ -2,6 +2,7 @@ import asyncio
 import logging
 from uuid import UUID
 
+import tiktoken
 from fastapi import HTTPException
 from litellm import AuthenticationError
 
@@ -20,6 +21,16 @@ from core.utils import (
 from ...services import IngestionService
 
 logger = logging.getLogger()
+
+
+def count_tokens_for_text(text: str, model: str = "gpt-4o") -> int:
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        # Fallback to a known encoding if model not recognized
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+    return len(encoding.encode(text))
 
 
 def simple_ingestion_factory(service: IngestionService):
@@ -56,6 +67,15 @@ def simple_ingestion_factory(service: IngestionService):
                 extraction.model_dump()
                 async for extraction in extractions_generator
             ]
+
+            # 2) Sum tokens
+            total_tokens = 0
+            for chunk_dict in extractions:
+                text_data = chunk_dict["data"]
+                if not isinstance(text_data, str):
+                    text_data = text_data.decode("utf-8", errors="ignore")
+                total_tokens += count_tokens_for_text(text_data)
+            document_info.total_tokens = total_tokens
 
             await service.update_document_status(
                 document_info, status=IngestionStatus.AUGMENTING

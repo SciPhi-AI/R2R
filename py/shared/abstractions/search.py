@@ -193,18 +193,29 @@ class WebSearchResponse(R2RSerializable):
         )
 
 
+class ContextDocumentResult(R2RSerializable):
+    """
+    Holds a single 'document' plus its 'chunks', exactly as your
+    content_method returns them, or tidied up a bit.
+    """
+
+    document: dict[str, Any]  # or create a formal Document model
+    chunks: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class AggregateSearchResult(R2RSerializable):
     """Result of an aggregate search operation."""
 
     chunk_search_results: Optional[list[ChunkSearchResult]]
     graph_search_results: Optional[list[GraphSearchResult]] = None
     web_search_results: Optional[list[WebSearchResult]] = None
+    context_document_results: Optional[list[ContextDocumentResult]] = None
 
     def __str__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, context_document_results={self.context_document_results})"
 
     def __repr__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, context_document_results={self.context_document_results})"
 
     def as_dict(self) -> dict:
         return {
@@ -221,6 +232,11 @@ class AggregateSearchResult(R2RSerializable):
             "web_search_results": (
                 [result.to_dict() for result in self.web_search_results]
                 if self.web_search_results
+                else []
+            ),
+            "context_document_results": (
+                [cdr.to_dict() for cdr in self.context_document_results]
+                if self.context_document_results
                 else []
             ),
         }

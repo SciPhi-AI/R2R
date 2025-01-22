@@ -4,6 +4,7 @@ import uuid
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+import tiktoken
 from fastapi import HTTPException
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
 from litellm import AuthenticationError
@@ -28,6 +29,16 @@ if TYPE_CHECKING:
     from hatchet_sdk import Hatchet
 
 logger = logging.getLogger()
+
+
+def count_tokens_for_text(text: str, model: str = "gpt-4o") -> int:
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        # Fallback to a known encoding if model not recognized
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+    return len(encoding.encode(text))
 
 
 def hatchet_ingestion_factory(
@@ -98,6 +109,15 @@ def hatchet_ingestion_factory(
                 extractions = []
                 async for extraction in extractions_generator:
                     extractions.append(extraction)
+
+                # 2) Sum tokens
+                total_tokens = 0
+                for chunk in extractions:
+                    text_data = chunk.data
+                    if not isinstance(text_data, str):
+                        text_data = text_data.decode("utf-8", errors="ignore")
+                    total_tokens += count_tokens_for_text(text_data)
+                document_info.total_tokens = total_tokens
 
                 await service.update_document_status(
                     document_info, status=IngestionStatus.AUGMENTING
@@ -358,6 +378,16 @@ def hatchet_ingestion_factory(
                 ).to_dict()
                 for i, chunk in enumerate(parsed_data["chunks"])
             ]
+
+            # 2) Sum tokens
+            total_tokens = 0
+            for chunk in extractions:
+                text_data = chunk.data
+                if not isinstance(text_data, str):
+                    text_data = text_data.decode("utf-8", errors="ignore")
+                total_tokens += count_tokens_for_text(text_data)
+            document_info.total_tokens = total_tokens
+
             return {
                 "status": "Successfully ingested chunks",
                 "extractions": extractions,
