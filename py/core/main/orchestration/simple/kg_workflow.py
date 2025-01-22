@@ -133,24 +133,22 @@ def simple_kg_factory(service: GraphService):
                 # graph_id=input_data.get("graph_id", None),
                 **input_data["graph_enrichment_settings"],
             )
-            num_communities = num_communities[0]["num_communities"]
+            num_communities = num_communities["num_communities"][0]
             # TODO - Do not hardcode the number of parallel communities,
             # make it a configurable parameter at runtime & add server-side defaults
 
             if num_communities == 0:
                 raise R2RException("No communities found", 400)
 
-            parallel_communities = min(100, num_communities[0])
+            parallel_communities = min(100, num_communities)
 
-            total_workflows = math.ceil(
-                num_communities[0] / parallel_communities
-            )
+            total_workflows = math.ceil(num_communities / parallel_communities)
             for i in range(total_workflows):
                 input_data_copy = input_data.copy()
                 input_data_copy["offset"] = i * parallel_communities
                 input_data_copy["limit"] = min(
                     parallel_communities,
-                    num_communities[0] - i * parallel_communities,
+                    num_communities - i * parallel_communities,
                 )
 
                 logger.info(

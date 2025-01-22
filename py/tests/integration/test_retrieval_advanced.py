@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 from r2r import Message, R2RException, SearchMode
@@ -6,18 +8,20 @@ from r2r import Message, R2RException, SearchMode
 # Semantic Search Tests
 def test_semantic_search_with_near_duplicates(client):
     """Test semantic search can handle and differentiate near-duplicate content"""
+    random_1 = str(uuid.uuid4())
+    random_2 = str(uuid.uuid4())
     # Create two similar but distinct documents
     doc1 = client.documents.create(
-        raw_text="Aristotle was a Greek philosopher who studied logic."
+        raw_text=f"Aristotle was a Greek philosopher who studied logic {random_1}."
     )["results"]["document_id"]
     doc2 = client.documents.create(
-        raw_text="Aristotle, the Greek philosopher, studied formal logic."
+        raw_text=f"Aristotle, the Greek philosopher, studied formal logic {random_2}."
     )["results"]["document_id"]
 
     resp = client.retrieval.search(
         query="Tell me about Aristotle's work in logic",
         search_mode="custom",
-        search_settings={"use_semantic_search": True, "limit": 5},
+        search_settings={"use_semantic_search": True, "limit": 25},
     )
     results = resp["results"]["chunk_search_results"]
 
@@ -32,10 +36,14 @@ def test_semantic_search_with_near_duplicates(client):
 def test_semantic_search_multilingual(client):
     """Test semantic search handles multilingual content"""
     # Create documents in different languages
+    random_1 = str(uuid.uuid4())
+    random_2 = str(uuid.uuid4())
+    random_3 = str(uuid.uuid4())
+
     docs = [
-        ("Aristotle was a philosopher", "English"),
-        ("Aristóteles fue un filósofo", "Spanish"),
-        ("アリストテレスは哲学者でした", "Japanese"),
+        (f"Aristotle was a philosopher {random_1}", "English"),
+        (f"Aristóteles fue un filósofo {random_2}", "Spanish"),
+        (f"アリストテレスは哲学者でした {random_3}", "Japanese"),
     ]
     doc_ids = []
     for text, lang in docs:
@@ -107,12 +115,13 @@ def test_semantic_search_multilingual(client):
 def test_rag_context_window_limits(client):
     """Test RAG handles documents at or near context window limits"""
     # Create a document that approaches the context window limit
+    random_1 = str(uuid.uuid4())
     large_text = (
         "Aristotle " * 1000
     )  # Adjust multiplier based on your context window
-    doc_id = client.documents.create(raw_text=large_text)["results"][
-        "document_id"
-    ]
+    doc_id = client.documents.create(raw_text=large_text + f" {random_1}")[
+        "results"
+    ]["document_id"]
 
     resp = client.retrieval.rag(
         query="Summarize this text about Aristotle",

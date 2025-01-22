@@ -38,6 +38,7 @@ class GraphRouter(BaseRouterV3):
         providers: R2RProviders,
         services: R2RServices,
     ):
+        logging.info("Initializing GraphRouter")
         super().__init__(providers, services)
         self._register_workflows()
 

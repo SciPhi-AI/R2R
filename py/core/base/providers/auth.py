@@ -14,14 +14,12 @@ from ..abstractions import R2RException, Token, TokenData
 from ..api.models import User
 from .base import Provider, ProviderConfig
 from .crypto import CryptoProvider
-
-# from .database import DatabaseProvider
 from .email import EmailProvider
 
 logger = logging.getLogger()
 
 if TYPE_CHECKING:
-    from core.database import PostgresDatabaseProvider
+    from core.providers.database import PostgresDatabaseProvider
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 

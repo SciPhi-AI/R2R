@@ -56,13 +56,13 @@ class ChunkSearchResult(R2RSerializable):
         }
 
 
-class KGSearchResultType(str, Enum):
+class GraphSearchResultType(str, Enum):
     ENTITY = "entity"
     RELATIONSHIP = "relationship"
     COMMUNITY = "community"
 
 
-class KGEntityResult(R2RSerializable):
+class GraphEntityResult(R2RSerializable):
     name: str
     description: str
     metadata: Optional[dict[str, Any]] = None
@@ -75,7 +75,7 @@ class KGEntityResult(R2RSerializable):
         }
 
 
-class KGRelationshipResult(R2RSerializable):
+class GraphRelationshipResult(R2RSerializable):
     # name: str
     subject: str
     predicate: str
@@ -94,7 +94,7 @@ class KGRelationshipResult(R2RSerializable):
         }
 
 
-class KGCommunityResult(R2RSerializable):
+class GraphCommunityResult(R2RSerializable):
     name: str
     summary: str
     rating: float
@@ -114,15 +114,15 @@ class KGCommunityResult(R2RSerializable):
 
 
 class GraphSearchResult(R2RSerializable):
-    content: KGEntityResult | KGRelationshipResult | KGCommunityResult
-    result_type: Optional[KGSearchResultType] = None
+    content: GraphEntityResult | GraphRelationshipResult | GraphCommunityResult
+    result_type: Optional[GraphSearchResultType] = None
     chunk_ids: Optional[list[UUID]] = None
     metadata: dict[str, Any] = {}
     score: Optional[float] = None
 
     class Config:
         json_schema_extra = {
-            "content": KGEntityResult.Config.json_schema_extra,
+            "content": GraphEntityResult.Config.json_schema_extra,
             "result_type": "entity",
             "chunk_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
             "metadata": {"associated_query": "What is the capital of France?"},
@@ -137,6 +137,21 @@ class WebSearchResult(R2RSerializable):
     type: str = "organic"
     date: Optional[str] = None
     sitelinks: Optional[list[dict]] = None
+
+    class Config:
+        json_schema_extra = {
+            "title": "Page Title",
+            "link": "https://example.com/page",
+            "snippet": "Page snippet",
+            "position": 1,
+            "date": "2021-01-01",
+            "sitelinks": [
+                {
+                    "title": "Sitelink Title",
+                    "link": "https://example.com/sitelink",
+                }
+            ],
+        }
 
 
 class RelatedSearchResult(R2RSerializable):
@@ -178,18 +193,29 @@ class WebSearchResponse(R2RSerializable):
         )
 
 
+class ContextDocumentResult(R2RSerializable):
+    """
+    Holds a single 'document' plus its 'chunks', exactly as your
+    content_method returns them, or tidied up a bit.
+    """
+
+    document: dict[str, Any]  # or create a formal Document model
+    chunks: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class AggregateSearchResult(R2RSerializable):
     """Result of an aggregate search operation."""
 
     chunk_search_results: Optional[list[ChunkSearchResult]]
     graph_search_results: Optional[list[GraphSearchResult]] = None
     web_search_results: Optional[list[WebSearchResult]] = None
+    context_document_results: Optional[list[ContextDocumentResult]] = None
 
     def __str__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, context_document_results={self.context_document_results})"
 
     def __repr__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, context_document_results={self.context_document_results})"
 
     def as_dict(self) -> dict:
         return {
@@ -206,6 +232,11 @@ class AggregateSearchResult(R2RSerializable):
             "web_search_results": (
                 [result.to_dict() for result in self.web_search_results]
                 if self.web_search_results
+                else []
+            ),
+            "context_document_results": (
+                [cdr.to_dict() for cdr in self.context_document_results]
+                if self.context_document_results
                 else []
             ),
         }

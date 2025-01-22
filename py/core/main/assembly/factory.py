@@ -2,9 +2,7 @@ import logging
 import os
 from typing import Any, Optional
 
-from core.agent import R2RRAGAgent, R2RStreamingRAGAgent
 from core.base import (
-    AsyncPipe,
     AuthConfig,
     CompletionConfig,
     CompletionProvider,
@@ -13,34 +11,14 @@ from core.base import (
     EmailConfig,
     EmbeddingConfig,
     EmbeddingProvider,
-    GenerationConfig,
     IngestionConfig,
     OrchestrationConfig,
 )
-from core.pipelines import RAGPipeline, SearchPipeline
-from core.pipes import (
-    EmbeddingPipe,
-    GeneratorPipe,
-    GraphClusteringPipe,
-    GraphCommunitySummaryPipe,
-    GraphDescriptionPipe,
-    GraphSearchSearchPipe,
-    GraphStoragePipe,
-    MultiSearchPipe,
-    ParsingPipe,
-    RAGPipe,
-    SearchPipe,
-    StreamingRAGPipe,
-    VectorSearchPipe,
-    VectorStoragePipe,
-)
-from core.providers.email.sendgrid import SendGridEmailProvider
 
-from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
+from ..abstractions import R2RProviders
 from ..config import R2RConfig
 
 logger = logging.getLogger()
-from core.database import PostgresDatabaseProvider
 from core.providers import (
     AsyncSMTPEmailProvider,
     BcryptCryptoConfig,
@@ -55,9 +33,11 @@ from core.providers import (
     OllamaEmbeddingProvider,
     OpenAICompletionProvider,
     OpenAIEmbeddingProvider,
+    PostgresDatabaseProvider,
     R2RAuthProvider,
     R2RIngestionConfig,
     R2RIngestionProvider,
+    SendGridEmailProvider,
     SimpleOrchestrationProvider,
     SupabaseAuthProvider,
     UnstructuredIngestionConfig,
@@ -191,8 +171,6 @@ class R2RProviderFactory:
             self.config.embedding.quantization_settings.quantization_type
         )
         if db_config.provider == "postgres":
-            from ...database.postgres import PostgresDatabaseProvider
-
             database_provider = PostgresDatabaseProvider(
                 db_config,
                 dimension,
@@ -319,6 +297,7 @@ class R2RProviderFactory:
                 self.config.embedding, *args, **kwargs
             )
         )
+
         llm_provider = llm_provider_override or self.create_llm_provider(
             self.config.completion, *args, **kwargs
         )
@@ -327,6 +306,7 @@ class R2RProviderFactory:
             crypto_provider_override
             or self.create_crypto_provider(self.config.crypto, *args, **kwargs)
         )
+
         database_provider = (
             database_provider_override
             or await self.create_database_provider(
@@ -377,365 +357,4 @@ class R2RProviderFactory:
             llm=llm_provider,
             email=email_provider,
             orchestration=orchestration_provider,
-        )
-
-
-class R2RPipeFactory:
-    def __init__(self, config: R2RConfig, providers: R2RProviders):
-        self.config = config
-        self.providers = providers
-
-    def create_pipes(
-        self,
-        parsing_pipe_override: Optional[ParsingPipe] = None,
-        embedding_pipe_override: Optional[EmbeddingPipe] = None,
-        graph_storage_pipe_override: Optional[GraphStoragePipe] = None,
-        graph_search_pipe_override: Optional[GraphSearchSearchPipe] = None,
-        vector_storage_pipe_override: Optional[VectorStoragePipe] = None,
-        vector_search_pipe_override: Optional[VectorSearchPipe] = None,
-        rag_pipe_override: Optional[RAGPipe] = None,
-        streaming_rag_pipe_override: Optional[StreamingRAGPipe] = None,
-        graph_description_pipe: Optional[GraphDescriptionPipe] = None,
-        graph_clustering_pipe: Optional[GraphClusteringPipe] = None,
-        graph_community_summary_pipe: Optional[
-            GraphCommunitySummaryPipe
-        ] = None,
-        *args,
-        **kwargs,
-    ) -> R2RPipes:
-        return R2RPipes(
-            parsing_pipe=parsing_pipe_override
-            or self.create_parsing_pipe(
-                self.config.ingestion.excluded_parsers,
-                *args,
-                **kwargs,
-            ),
-            embedding_pipe=embedding_pipe_override
-            or self.create_embedding_pipe(*args, **kwargs),
-            graph_storage_pipe=graph_storage_pipe_override
-            or self.create_graph_storage_pipe(*args, **kwargs),
-            vector_storage_pipe=vector_storage_pipe_override
-            or self.create_vector_storage_pipe(*args, **kwargs),
-            vector_search_pipe=vector_search_pipe_override
-            or self.create_vector_search_pipe(*args, **kwargs),
-            graph_search_pipe=graph_search_pipe_override
-            or self.create_graph_search_pipe(*args, **kwargs),
-            rag_pipe=rag_pipe_override
-            or self.create_rag_pipe(*args, **kwargs),
-            streaming_rag_pipe=streaming_rag_pipe_override
-            or self.create_rag_pipe(True, *args, **kwargs),
-            graph_description_pipe=graph_description_pipe
-            or self.create_graph_description_pipe(*args, **kwargs),
-            graph_clustering_pipe=graph_clustering_pipe
-            or self.create_graph_clustering_pipe(*args, **kwargs),
-            graph_community_summary_pipe=graph_community_summary_pipe
-            or self.create_graph_community_summary_pipe(*args, **kwargs),
-        )
-
-    def create_parsing_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import ParsingPipe
-
-        return ParsingPipe(
-            ingestion_provider=self.providers.ingestion,
-            database_provider=self.providers.database,
-            config=AsyncPipe.PipeConfig(name="parsing_pipe"),
-        )
-
-    def create_embedding_pipe(self, *args, **kwargs) -> Any:
-        if self.config.embedding.provider is None:
-            return None
-
-        from core.pipes import EmbeddingPipe
-
-        return EmbeddingPipe(
-            embedding_provider=self.providers.embedding,
-            database_provider=self.providers.database,
-            embedding_batch_size=self.config.embedding.batch_size,
-            config=AsyncPipe.PipeConfig(name="embedding_pipe"),
-        )
-
-    def create_vector_storage_pipe(self, *args, **kwargs) -> Any:
-        if self.config.embedding.provider is None:
-            return None
-
-        from core.pipes import VectorStoragePipe
-
-        return VectorStoragePipe(
-            database_provider=self.providers.database,
-            config=AsyncPipe.PipeConfig(name="vector_storage_pipe"),
-        )
-
-    def create_default_vector_search_pipe(self, *args, **kwargs) -> Any:
-        if self.config.embedding.provider is None:
-            return None
-
-        from core.pipes import VectorSearchPipe
-
-        return VectorSearchPipe(
-            database_provider=self.providers.database,
-            embedding_provider=self.providers.embedding,
-            config=SearchPipe.SearchConfig(name="vector_search_pipe"),
-        )
-
-    def create_multi_search_pipe(
-        self,
-        inner_search_pipe: SearchPipe,
-        use_rrf: bool = False,
-        expansion_technique: str = "hyde",
-        expansion_factor: int = 3,
-        *args,
-        **kwargs,
-    ) -> MultiSearchPipe:
-        from core.pipes import QueryTransformPipe
-
-        multi_search_config = MultiSearchPipe.PipeConfig(
-            use_rrf=use_rrf, expansion_factor=expansion_factor
-        )
-
-        query_transform_pipe = QueryTransformPipe(
-            llm_provider=self.providers.llm,
-            database_provider=self.providers.database,
-            config=QueryTransformPipe.QueryTransformConfig(
-                name="multi_query_transform",
-                task_prompt=expansion_technique,
-            ),
-        )
-
-        return MultiSearchPipe(
-            query_transform_pipe=query_transform_pipe,
-            inner_search_pipe=inner_search_pipe,
-            config=multi_search_config,
-        )
-
-    def create_vector_search_pipe(self, *args, **kwargs) -> Any:
-        if self.config.embedding.provider is None:
-            return None
-
-        vanilla_vector_search_pipe = self.create_default_vector_search_pipe(
-            *args, **kwargs
-        )
-        hyde_search_pipe = self.create_multi_search_pipe(
-            vanilla_vector_search_pipe,
-            False,
-            "hyde",
-            *args,
-            **kwargs,
-        )
-        rag_fusion_pipe = self.create_multi_search_pipe(
-            vanilla_vector_search_pipe,
-            True,
-            "rag_fusion",
-            *args,
-            **kwargs,
-        )
-
-        from core.pipes import RoutingSearchPipe
-
-        return RoutingSearchPipe(
-            search_pipes={
-                "vanilla": vanilla_vector_search_pipe,
-                "hyde": hyde_search_pipe,
-                "rag_fusion": rag_fusion_pipe,
-            },
-            default_strategy="hyde",
-            config=AsyncPipe.PipeConfig(name="routing_search_pipe"),
-        )
-
-    def create_graph_storage_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import GraphStoragePipe
-
-        return GraphStoragePipe(
-            database_provider=self.providers.database,
-            config=AsyncPipe.PipeConfig(name="graph_storage_pipe"),
-        )
-
-    def create_graph_search_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import GraphSearchSearchPipe
-
-        return GraphSearchSearchPipe(
-            database_provider=self.providers.database,
-            llm_provider=self.providers.llm,
-            embedding_provider=self.providers.embedding,
-            config=GeneratorPipe.PipeConfig(
-                name="kg_rag_pipe", task_prompt="kg_search"
-            ),
-        )
-
-    def create_rag_pipe(self, stream: bool = False, *args, **kwargs) -> Any:
-        if stream:
-            from core.pipes import StreamingRAGPipe
-
-            return StreamingRAGPipe(
-                llm_provider=self.providers.llm,
-                database_provider=self.providers.database,
-                config=GeneratorPipe.PipeConfig(
-                    name="streaming_rag_pipe", task_prompt="default_rag"
-                ),
-            )
-        else:
-            from core.pipes import RAGPipe
-
-            return RAGPipe(
-                llm_provider=self.providers.llm,
-                database_provider=self.providers.database,
-                config=GeneratorPipe.PipeConfig(
-                    name="search_rag_pipe", task_prompt="default_rag"
-                ),
-            )
-
-    def create_graph_description_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import GraphDescriptionPipe
-
-        return GraphDescriptionPipe(
-            database_provider=self.providers.database,
-            llm_provider=self.providers.llm,
-            embedding_provider=self.providers.embedding,
-            config=AsyncPipe.PipeConfig(name="graph_description_pipe"),
-        )
-
-    def create_graph_clustering_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import GraphClusteringPipe
-
-        return GraphClusteringPipe(
-            database_provider=self.providers.database,
-            llm_provider=self.providers.llm,
-            embedding_provider=self.providers.embedding,
-            config=AsyncPipe.PipeConfig(name="graph_clustering_pipe"),
-        )
-
-    def create_graph_community_summary_pipe(self, *args, **kwargs) -> Any:
-        from core.pipes import GraphCommunitySummaryPipe
-
-        return GraphCommunitySummaryPipe(
-            database_provider=self.providers.database,
-            llm_provider=self.providers.llm,
-            embedding_provider=self.providers.embedding,
-            config=AsyncPipe.PipeConfig(name="graph_community_summary_pipe"),
-        )
-
-
-class R2RPipelineFactory:
-    def __init__(
-        self, config: R2RConfig, providers: R2RProviders, pipes: R2RPipes
-    ):
-        self.config = config
-        self.providers = providers
-        self.pipes = pipes
-
-    def create_search_pipeline(self, *args, **kwargs) -> SearchPipeline:
-        """factory method to create an ingestion pipeline."""
-        search_pipeline = SearchPipeline()
-
-        # Add vector search pipes if embedding provider and vector provider is set
-        if (
-            self.config.embedding.provider is not None
-            and self.config.database.provider is not None
-        ):
-            search_pipeline.add_pipe(
-                self.pipes.vector_search_pipe, vector_search_pipe=True
-            )
-            search_pipeline.add_pipe(
-                self.pipes.graph_search_pipe, graph_search_pipe=True
-            )
-
-        return search_pipeline
-
-    def create_rag_pipeline(
-        self,
-        search_pipeline: SearchPipeline,
-        stream: bool = False,
-        *args,
-        **kwargs,
-    ) -> RAGPipeline:
-        rag_pipe = (
-            self.pipes.streaming_rag_pipe if stream else self.pipes.rag_pipe
-        )
-
-        rag_pipeline = RAGPipeline()
-        rag_pipeline.set_search_pipeline(search_pipeline)
-        rag_pipeline.add_pipe(rag_pipe)
-        return rag_pipeline
-
-    def create_pipelines(
-        self,
-        search_pipeline: Optional[SearchPipeline] = None,
-        rag_pipeline: Optional[RAGPipeline] = None,
-        streaming_rag_pipeline: Optional[RAGPipeline] = None,
-        *args,
-        **kwargs,
-    ) -> R2RPipelines:
-        search_pipeline = search_pipeline or self.create_search_pipeline(
-            *args, **kwargs
-        )
-        return R2RPipelines(
-            search_pipeline=search_pipeline,
-            rag_pipeline=rag_pipeline
-            or self.create_rag_pipeline(
-                search_pipeline,
-                False,
-                *args,
-                **kwargs,
-            ),
-            streaming_rag_pipeline=streaming_rag_pipeline
-            or self.create_rag_pipeline(
-                search_pipeline,
-                True,
-                *args,
-                **kwargs,
-            ),
-        )
-
-
-class R2RAgentFactory:
-    def __init__(
-        self,
-        config: R2RConfig,
-        providers: R2RProviders,
-        pipelines: R2RPipelines,
-    ):
-        self.config = config
-        self.providers = providers
-        self.pipelines = pipelines
-
-    def create_agents(
-        self,
-        rag_agent_override: Optional[R2RRAGAgent] = None,
-        stream_rag_agent_override: Optional[R2RStreamingRAGAgent] = None,
-        *args,
-        **kwargs,
-    ) -> R2RAgents:
-        return R2RAgents(
-            rag_agent=rag_agent_override
-            or self.create_rag_agent(*args, **kwargs),
-            streaming_rag_agent=stream_rag_agent_override
-            or self.create_streaming_rag_agent(*args, **kwargs),
-        )
-
-    def create_streaming_rag_agent(
-        self, *args, **kwargs
-    ) -> R2RStreamingRAGAgent:
-        if not self.providers.llm or not self.providers.database:
-            raise ValueError(
-                "LLM and database providers are required for RAG Agent"
-            )
-
-        return R2RStreamingRAGAgent(
-            database_provider=self.providers.database,
-            llm_provider=self.providers.llm,
-            config=self.config.agent,
-            search_pipeline=self.pipelines.search_pipeline,
-            rag_generation_config=GenerationConfig(),
-        )
-
-    def create_rag_agent(self, *args, **kwargs) -> R2RRAGAgent:
-        if not self.providers.llm or not self.providers.database:
-            raise ValueError(
-                "LLM and database providers are required for RAG Agent"
-            )
-        return R2RRAGAgent(
-            database_provider=self.providers.database,
-            llm_provider=self.providers.llm,
-            config=self.config.agent,
-            search_pipeline=self.pipelines.search_pipeline,
-            rag_generation_config=GenerationConfig(),
         )

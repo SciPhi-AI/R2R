@@ -4,6 +4,7 @@ import uuid
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+import tiktoken
 from fastapi import HTTPException
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
 from litellm import AuthenticationError
@@ -28,6 +29,16 @@ if TYPE_CHECKING:
     from hatchet_sdk import Hatchet
 
 logger = logging.getLogger()
+
+
+def count_tokens_for_text(text: str, model: str = "gpt-4o") -> int:
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        # Fallback to a known encoding if model not recognized
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+    return len(encoding.encode(text))
 
 
 def hatchet_ingestion_factory(
@@ -89,15 +100,22 @@ def hatchet_ingestion_factory(
                 )
 
                 ingestion_config = parsed_data["ingestion_config"] or {}
-                extractions_generator = (
-                    await self.ingestion_service.parse_file(
-                        document_info, ingestion_config
-                    )
+                extractions_generator = self.ingestion_service.parse_file(
+                    document_info, ingestion_config
                 )
 
                 extractions = []
                 async for extraction in extractions_generator:
                     extractions.append(extraction)
+
+                # 2) Sum tokens
+                total_tokens = 0
+                for chunk in extractions:
+                    text_data = chunk.data
+                    if not isinstance(text_data, str):
+                        text_data = text_data.decode("utf-8", errors="ignore")
+                    total_tokens += count_tokens_for_text(text_data)
+                document_info.total_tokens = total_tokens
 
                 await service.update_document_status(
                     document_info, status=IngestionStatus.AUGMENTING
@@ -114,10 +132,8 @@ def hatchet_ingestion_factory(
 
                 # extractions = context.step_output("parse")["extractions"]
 
-                embedding_generator = (
-                    await self.ingestion_service.embed_document(
-                        [extraction.to_dict() for extraction in extractions]
-                    )
+                embedding_generator = self.ingestion_service.embed_document(
+                    [extraction.to_dict() for extraction in extractions]
                 )
 
                 embeddings = []
@@ -129,7 +145,7 @@ def hatchet_ingestion_factory(
                     status=IngestionStatus.STORING,
                 )
 
-                storage_generator = await self.ingestion_service.store_embeddings(  # type: ignore
+                storage_generator = self.ingestion_service.store_embeddings(  # type: ignore
                     embeddings
                 )
 
@@ -325,105 +341,6 @@ def hatchet_ingestion_factory(
                     f"Failed to update document status for {document_id}: {e}"
                 )
 
-    # TODO: Implement a check to see if the file is actually changed before updating
-    @orchestration_provider.workflow(name="update-files", timeout="60m")
-    class HatchetUpdateFilesWorkflow:
-        def __init__(self, ingestion_service: IngestionService):
-            self.ingestion_service = ingestion_service
-
-        @orchestration_provider.step(retries=0, timeout="60m")
-        async def update_files(self, context: Context) -> None:
-            data = context.workflow_input()["request"]
-            parsed_data = IngestionServiceAdapter.parse_update_files_input(
-                data
-            )
-
-            file_datas = parsed_data["file_datas"]
-            user = parsed_data["user"]
-            document_ids = parsed_data["document_ids"]
-            metadatas = parsed_data["metadatas"]
-            ingestion_config = parsed_data["ingestion_config"]
-            file_sizes_in_bytes = parsed_data["file_sizes_in_bytes"]
-
-            if not file_datas:
-                raise R2RException(
-                    status_code=400, message="No files provided for update."
-                )
-            if len(document_ids) != len(file_datas):
-                raise R2RException(
-                    status_code=400,
-                    message="Number of ids does not match number of files.",
-                )
-
-            documents_overview = (
-                await self.ingestion_service.providers.database.documents_handler.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
-                    offset=0,
-                    limit=100,
-                    filter_document_ids=document_ids,
-                    filter_user_ids=None if user.is_superuser else [user.id],
-                )
-            )["results"]
-
-            if len(documents_overview) != len(document_ids):
-                raise R2RException(
-                    status_code=404,
-                    message="One or more documents not found.",
-                )
-
-            results = []
-
-            for idx, (
-                file_data,
-                doc_id,
-                doc_info,
-                file_size_in_bytes,
-            ) in enumerate(
-                zip(
-                    file_datas,
-                    document_ids,
-                    documents_overview,
-                    file_sizes_in_bytes,
-                )
-            ):
-                new_version = increment_version(doc_info.version)
-
-                updated_metadata = (
-                    metadatas[idx] if metadatas else doc_info.metadata
-                )
-                updated_metadata["title"] = (
-                    updated_metadata.get("title")
-                    or file_data["filename"].split("/")[-1]
-                )
-
-                # Prepare input for ingest_file workflow
-                ingest_input = {
-                    "file_data": file_data,
-                    "user": data.get("user"),
-                    "metadata": updated_metadata,
-                    "document_id": str(doc_id),
-                    "version": new_version,
-                    "ingestion_config": (
-                        ingestion_config.model_dump_json()
-                        if ingestion_config
-                        else None
-                    ),
-                    "size_in_bytes": file_size_in_bytes,
-                }
-
-                # Spawn ingest_file workflow as a child workflow
-                child_result = (
-                    await context.aio.spawn_workflow(
-                        "ingest-files",
-                        {"request": ingest_input},
-                        key=f"ingest_file_{doc_id}",
-                    )
-                ).result()
-                results.append(child_result)
-
-            await asyncio.gather(*results)
-
-            return None
-
     @orchestration_provider.workflow(
         name="ingest-chunks",
         timeout="60m",
@@ -459,6 +376,16 @@ def hatchet_ingestion_factory(
                 ).to_dict()
                 for i, chunk in enumerate(parsed_data["chunks"])
             ]
+
+            # 2) Sum tokens
+            total_tokens = 0
+            for chunk in extractions:
+                text_data = chunk["data"]
+                if not isinstance(text_data, str):
+                    text_data = text_data.decode("utf-8", errors="ignore")
+                total_tokens += count_tokens_for_text(text_data)
+            document_info.total_tokens = total_tokens
+
             return {
                 "status": "Successfully ingested chunks",
                 "extractions": extractions,
@@ -472,7 +399,7 @@ def hatchet_ingestion_factory(
 
             extractions = context.step_output("ingest")["extractions"]
 
-            embedding_generator = await self.ingestion_service.embed_document(
+            embedding_generator = self.ingestion_service.embed_document(
                 extractions
             )
             embeddings = [
@@ -484,7 +411,7 @@ def hatchet_ingestion_factory(
                 document_info, status=IngestionStatus.STORING
             )
 
-            storage_generator = await self.ingestion_service.store_embeddings(
+            storage_generator = self.ingestion_service.store_embeddings(
                 embeddings
             )
             async for _ in storage_generator:
@@ -769,7 +696,6 @@ def hatchet_ingestion_factory(
 
     # Add this to the workflows dictionary in hatchet_ingestion_factory
     ingest_files_workflow = HatchetIngestFilesWorkflow(service)
-    update_files_workflow = HatchetUpdateFilesWorkflow(service)
     ingest_chunks_workflow = HatchetIngestChunksWorkflow(service)
     update_chunks_workflow = HatchetUpdateChunkWorkflow(service)
     update_document_metadata_workflow = HatchetUpdateDocumentMetadataWorkflow(
@@ -780,7 +706,6 @@ def hatchet_ingestion_factory(
 
     return {
         "ingest_files": ingest_files_workflow,
-        "update_files": update_files_workflow,
         "ingest_chunks": ingest_chunks_workflow,
         "update_chunk": update_chunks_workflow,
         "update_document_metadata": update_document_metadata_workflow,

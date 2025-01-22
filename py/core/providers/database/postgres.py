@@ -3,8 +3,8 @@ import logging
 import os
 from typing import TYPE_CHECKING, Any, Optional
 
-from ..base.abstractions import VectorQuantizationType
-from ..base.providers import (
+from ...base.abstractions import VectorQuantizationType
+from ...base.providers import (
     DatabaseConfig,
     DatabaseProvider,
     PostgresConfigurationSettings,

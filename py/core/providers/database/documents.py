@@ -72,7 +72,8 @@ class PostgresDocumentsHandler(Handler):
                     setweight(to_tsvector('english', COALESCE(title, '')), 'A') ||
                     setweight(to_tsvector('english', COALESCE(summary, '')), 'B') ||
                     setweight(to_tsvector('english', COALESCE((metadata->>'description')::text, '')), 'C')
-                ) STORED
+                ) STORED,
+                total_tokens INT DEFAULT 0
             );
             CREATE INDEX IF NOT EXISTS idx_collection_ids_{self.project_name}
             ON {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)} USING GIN (collection_ids);
@@ -83,6 +84,83 @@ class PostgresDocumentsHandler(Handler):
             USING GIN (raw_tsvector);
             """
             await self.connection_manager.execute_query(query)
+
+            # ---------------------------------------------------------------
+            # Now check if total_tokens column exists in the 'documents' table
+            # ---------------------------------------------------------------
+            # 1) See what columns exist
+            # column_check_query = f"""
+            # SELECT column_name
+            # FROM information_schema.columns
+            # WHERE table_name = '{self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}'
+            # AND table_schema = CURRENT_SCHEMA()
+            # """
+            # existing_columns = await self.connection_manager.fetch_query(column_check_query)
+            # 2) Parse the table name for schema checks
+            table_full_name = self._get_table_name(
+                PostgresDocumentsHandler.TABLE_NAME
+            )
+            parsed_schema = "public"
+            parsed_table_name = table_full_name
+            if "." in table_full_name:
+                parts = table_full_name.split(".", maxsplit=1)
+                parsed_schema = parts[0].replace('"', "").strip()
+                parsed_table_name = parts[1].replace('"', "").strip()
+            else:
+                parsed_table_name = parsed_table_name.replace('"', "").strip()
+
+            # 3) Check columns
+            column_check_query = f"""
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = '{parsed_table_name}'
+            AND table_schema = '{parsed_schema}'
+            """
+            existing_columns = await self.connection_manager.fetch_query(
+                column_check_query
+            )
+
+            existing_column_names = {
+                row["column_name"] for row in existing_columns
+            }
+
+            if "total_tokens" not in existing_column_names:
+                # 2) If missing, see if the table already has data
+                # doc_count_query = f"SELECT COUNT(*) FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}"
+                # doc_count = await self.connection_manager.fetchval(doc_count_query)
+                doc_count_query = f"SELECT COUNT(*) AS doc_count FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}"
+                row = await self.connection_manager.fetchrow_query(
+                    doc_count_query
+                )
+                if row is None:
+                    doc_count = 0
+                else:
+                    doc_count = row[
+                        "doc_count"
+                    ]  # or row[0] if you prefer positional indexing
+
+                if doc_count > 0:
+                    # We already have documents, but no total_tokens column
+                    # => ask user to run r2r db migrate
+                    raise RuntimeError(
+                        "Your 'documents' table is missing the 'total_tokens' column, "
+                        "but existing documents are present. Please run:\n\n"
+                        "  r2r db migrate\n\n"
+                        "to update your schema before continuing."
+                    )
+                else:
+                    # Table is empty, so we can safely add the column
+                    create_tokens_col = f"""
+                    ALTER TABLE {table_full_name}
+                    ADD COLUMN total_tokens INT DEFAULT 0
+                    """
+                    logger.warning(
+                        "Adding missing 'total_tokens' column to the 'documents' table."
+                    )
+                    await self.connection_manager.execute_query(
+                        create_tokens_col
+                    )
+
         except Exception as e:
             logger.warning(f"Error {e} when creating document table.")
 
@@ -136,11 +214,21 @@ class PostgresDocumentsHandler(Handler):
 
                                 update_query = f"""
                                 UPDATE {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
-                                SET collection_ids = $1, owner_id = $2, type = $3, metadata = $4,
-                                    title = $5, version = $6, size_in_bytes = $7, ingestion_status = $8,
-                                    extraction_status = $9, updated_at = $10, ingestion_attempt_number = $11,
-                                    summary = $12, summary_embedding = $13
-                                WHERE id = $14
+                                SET collection_ids = $1,
+                                    owner_id = $2,
+                                    type = $3,
+                                    metadata = $4,
+                                    title = $5,
+                                    version = $6,
+                                    size_in_bytes = $7,
+                                    ingestion_status = $8,
+                                    extraction_status = $9,
+                                    updated_at = $10,
+                                    ingestion_attempt_number = $11,
+                                    summary = $12,
+                                    summary_embedding = $13,
+                                    total_tokens = $14
+                                WHERE id = $15
                                 """
 
                                 await conn.execute(
@@ -155,9 +243,12 @@ class PostgresDocumentsHandler(Handler):
                                     db_entry["ingestion_status"],
                                     db_entry["extraction_status"],
                                     db_entry["updated_at"],
-                                    new_attempt_number,
+                                    db_entry["ingestion_attempt_number"],
                                     db_entry["summary"],
                                     db_entry["summary_embedding"],
+                                    db_entry[
+                                        "total_tokens"
+                                    ],  # pass the new field here
                                     document.id,
                                 )
                             else:
@@ -165,8 +256,8 @@ class PostgresDocumentsHandler(Handler):
                                 INSERT INTO {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
                                 (id, collection_ids, owner_id, type, metadata, title, version,
                                 size_in_bytes, ingestion_status, extraction_status, created_at,
-                                updated_at, ingestion_attempt_number, summary, summary_embedding)
-                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                                updated_at, ingestion_attempt_number, summary, summary_embedding, total_tokens)
+                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
                                 """
                                 await conn.execute(
                                     insert_query,
@@ -185,6 +276,7 @@ class PostgresDocumentsHandler(Handler):
                                     db_entry["ingestion_attempt_number"],
                                     db_entry["summary"],
                                     db_entry["summary_embedding"],
+                                    db_entry["total_tokens"],
                                 )
 
                     break  # Success, exit the retry loop
@@ -393,48 +485,109 @@ class PostgresDocumentsHandler(Handler):
         filter_user_ids: Optional[list[UUID]] = None,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
+        include_summary_embedding: Optional[bool] = True,
+        filters: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
+        """
+        Fetch overviews of documents with optional offset/limit pagination.
+
+        You can use either:
+          - Traditional filters: `filter_user_ids`, `filter_document_ids`, `filter_collection_ids`
+          - A `filters` dict (e.g., like we do in semantic search), which will be passed to `apply_filters`.
+
+        If both the `filters` dict and any of the traditional filter arguments are provided,
+        this method will raise an error.
+        """
+
+        # Safety check: We do not allow mixing the old filter arguments with the new `filters` dict.
+        # This keeps the query logic unambiguous.
+        if filters and any(
+            [
+                filter_user_ids,
+                filter_document_ids,
+                filter_collection_ids,
+            ]
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Cannot use both the 'filters' dictionary "
+                    "and the 'filter_*_ids' parameters simultaneously."
+                ),
+            )
+
         conditions = []
-        or_conditions = []
         params: list[Any] = []
         param_index = 1
 
-        # Handle document IDs with AND
-        if filter_document_ids:
-            conditions.append(f"id = ANY(${param_index})")
-            params.append(filter_document_ids)
-            param_index += 1
+        # -------------------------------------------
+        # 1) If using the new `filters` dict approach
+        # -------------------------------------------
+        if filters:
+            # Apply the filters to generate a WHERE clause
+            filter_condition, filter_params = apply_filters(
+                filters, params, mode="condition_only"
+            )
+            if filter_condition:
+                conditions.append(filter_condition)
+            # Make sure we keep adding to the same params list
+            # params.extend(filter_params)
+            param_index += len(filter_params)
 
-        # Handle user_ids and collection_ids with OR
-        if filter_user_ids:
-            or_conditions.append(f"owner_id = ANY(${param_index})")
-            params.append(filter_user_ids)
-            param_index += 1
+        # -------------------------------------------
+        # 2) If using the old filter_*_ids approach
+        # -------------------------------------------
+        else:
+            # Handle document IDs with AND
+            if filter_document_ids:
+                conditions.append(f"id = ANY(${param_index})")
+                params.append(filter_document_ids)
+                param_index += 1
 
-        if filter_collection_ids:
-            or_conditions.append(f"collection_ids && ${param_index}")
-            params.append(filter_collection_ids)
-            param_index += 1
+            # For owner/collection filters, we used OR logic previously
+            # so we combine them into a single sub-condition in parentheses
+            or_conditions = []
+            if filter_user_ids:
+                or_conditions.append(f"owner_id = ANY(${param_index})")
+                params.append(filter_user_ids)
+                param_index += 1
 
-        base_query = f"""
-            FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
-        """
+            if filter_collection_ids:
+                or_conditions.append(f"collection_ids && ${param_index}")
+                params.append(filter_collection_ids)
+                param_index += 1
 
-        # Combine conditions with appropriate AND/OR logic
-        where_conditions = []
+            if or_conditions:
+                conditions.append(f"({' OR '.join(or_conditions)})")
+
+        # -------------------------
+        # Build the full query
+        # -------------------------
+        base_query = (
+            f"FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}"
+        )
         if conditions:
-            where_conditions.append("(" + " AND ".join(conditions) + ")")
-        if or_conditions:
-            where_conditions.append("(" + " OR ".join(or_conditions) + ")")
+            # Combine everything with AND
+            base_query += " WHERE " + " AND ".join(conditions)
 
-        if where_conditions:
-            base_query += " WHERE " + " AND ".join(where_conditions)
-
-        # Construct the SELECT part of the query based on column existence
+        # Construct SELECT fields (including total_entries via window function)
         select_fields = """
-            SELECT id, collection_ids, owner_id, type, metadata, title, version,
-                size_in_bytes, ingestion_status, extraction_status, created_at, updated_at,
-                summary, summary_embedding,
+            SELECT
+                id,
+                collection_ids,
+                owner_id,
+                type,
+                metadata,
+                title,
+                version,
+                size_in_bytes,
+                ingestion_status,
+                extraction_status,
+                created_at,
+                updated_at,
+                summary,
+                summary_embedding,
+                total_tokens,
                 COUNT(*) OVER() AS total_entries
         """
 
@@ -465,7 +618,7 @@ class PostgresDocumentsHandler(Handler):
                     and row["summary_embedding"] is not None
                 ):
                     try:
-                        # Parse the vector string returned by Postgres
+                        # The embedding is stored as a string like "[0.1, 0.2, ...]"
                         embedding_str = row["summary_embedding"]
                         if embedding_str.startswith(
                             "["
@@ -499,7 +652,10 @@ class PostgresDocumentsHandler(Handler):
                         created_at=row["created_at"],
                         updated_at=row["updated_at"],
                         summary=row["summary"] if "summary" in row else None,
-                        summary_embedding=embedding,
+                        summary_embedding=(
+                            embedding if include_summary_embedding else None
+                        ),
+                        total_tokens=row["total_tokens"],
                     )
                 )
             return {"results": documents, "total_entries": total_entries}
@@ -548,6 +704,7 @@ class PostgresDocumentsHandler(Handler):
                 updated_at,
                 summary,
                 summary_embedding,
+                total_tokens,
                 (summary_embedding <=> $1::vector({vector_dim})) as semantic_distance
             FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
             WHERE {where_clause}
@@ -592,6 +749,7 @@ class PostgresDocumentsHandler(Handler):
                     for x in row["summary_embedding"][1:-1].split(",")
                     if x
                 ],
+                total_tokens=row["total_tokens"],
             )
             for row in results
         ]
@@ -630,6 +788,7 @@ class PostgresDocumentsHandler(Handler):
                 updated_at,
                 summary,
                 summary_embedding,
+                total_tokens,
                 ts_rank_cd(raw_tsvector, websearch_to_tsquery('english', $1), 32) as text_score
             FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
             WHERE {where_clause}
@@ -676,6 +835,7 @@ class PostgresDocumentsHandler(Handler):
                     if row["summary_embedding"]
                     else None
                 ),
+                total_tokens=row["total_tokens"],
             )
             for row in results
         ]
@@ -827,6 +987,7 @@ class PostgresDocumentsHandler(Handler):
             "extraction_status",
             "created_at",
             "updated_at",
+            "total_tokens",
         }
 
         if not columns:
@@ -848,7 +1009,8 @@ class PostgresDocumentsHandler(Handler):
                 ingestion_status,
                 extraction_status,
                 to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at,
-                to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') AS updated_at
+                to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') AS updated_at,
+                total_tokens
             FROM {self._get_table_name(self.TABLE_NAME)}
         """
 
@@ -920,6 +1082,7 @@ class PostgresDocumentsHandler(Handler):
                                 "extraction_status": row[10],
                                 "created_at": row[11],
                                 "updated_at": row[12],
+                                "total_tokens": row[13],
                             }
                             writer.writerow([row_dict[col] for col in columns])
 

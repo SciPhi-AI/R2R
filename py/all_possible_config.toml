@@ -158,7 +158,7 @@ concurrent_request_limit = 128 # Global concurrency limit for completion request
 # -------------------------------------
 [agent]
 system_instruction_name = "rag_agent"         # The "system" message or prompt name
-tool_names = ["local_search", "retrieval"]    # Tools accessible to the agent
+tools = ["local_search", "retrieval"]    # Tools accessible to the agent
 
   [agent.generation_config]
   model = "azure/gpt-4o"            # e.g. "openai/gpt-3.5-turbo", "ollama/llama3.1"

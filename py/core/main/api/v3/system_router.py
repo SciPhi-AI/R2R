@@ -1,15 +1,14 @@
+import logging
 import textwrap
 from datetime import datetime, timezone
-from typing import Optional
 
 import psutil
-from fastapi import Depends, Query
+from fastapi import Depends
 
 from core.base import R2RException
 from core.base.api.models import (
     GenericMessageResponse,
     WrappedGenericMessageResponse,
-    WrappedLogsResponse,
     WrappedServerStatsResponse,
     WrappedSettingsResponse,
 )
@@ -24,6 +23,7 @@ class SystemRouter(BaseRouterV3):
         providers: R2RProviders,
         services: R2RServices,
     ):
+        logging.info("Initializing SystemRouter")
         super().__init__(providers, services)
         self.start_time = datetime.now(timezone.utc)
 

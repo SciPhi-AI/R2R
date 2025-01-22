@@ -1,4 +1,3 @@
-# email_provider.py
 import logging
 import os
 from abc import ABC, abstractmethod

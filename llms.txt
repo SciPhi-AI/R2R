@@ -763,7 +763,7 @@ generation_config = { model = "openai/gpt-4o-mini" }
 
 [agent]
 system_instruction_name = "rag_agent"
-tool_names = ["local_search", "web_search"]
+tools = ["local_search", "web_search"]
 
 [database.graph_creation_settings]
 entity_types = []
@@ -2266,7 +2266,7 @@ The RAG agent is configured through the `r2r.toml` file. By default, it uses loc
 ```toml
 [agent]
 system_instruction_name = "rag_agent"
-tool_names = ["local_search"]
+tools = ["local_search"]
 ```
 
 **Enable Web Search:**
@@ -2274,7 +2274,7 @@ tool_names = ["local_search"]
 ```toml
 [agent]
 system_instruction_name = "rag_agent"
-tool_names = ["local_search", "web_search"]
+tools = ["local_search", "web_search"]
 ```
 
 ### Using the RAG Agent
@@ -11006,7 +11006,7 @@ default_max_collections_per_user = 10
 
 [agent]
 system_instruction_name = "rag_agent"
-tool_names = ["local_search"]
+tools = ["local_search"]
 
   [agent.generation_config]
   model = "openai/gpt-4o"

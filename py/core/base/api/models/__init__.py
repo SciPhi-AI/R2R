@@ -68,7 +68,6 @@ from shared.api.models.management.responses import (  # Document Responses; Prom
 )
 from shared.api.models.retrieval.responses import (
     AgentResponse,
-    CombinedSearchResponse,
     RAGResponse,
     WrappedAgentResponse,
     WrappedCompletionResponse,
@@ -149,8 +148,6 @@ __all__ = [
     "WrappedBooleanResponse",
     "WrappedGenericMessageResponse",
     # TODO: This needs to be cleaned up
-    # Retrieval Responses
-    "CombinedSearchResponse",
     "RAGResponse",
     "AgentResponse",
     "WrappedDocumentSearchResponse",

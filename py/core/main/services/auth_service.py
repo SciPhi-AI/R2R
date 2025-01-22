@@ -3,12 +3,12 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from core.base import R2RException, RunManager, Token
+from core.base import R2RException, Token
 from core.base.api.models import User
 from core.telemetry.telemetry_decorator import telemetry_event
 from core.utils import generate_default_user_collection_id
 
-from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
+from ..abstractions import R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
@@ -20,18 +20,10 @@ class AuthService(Service):
         self,
         config: R2RConfig,
         providers: R2RProviders,
-        pipes: R2RPipes,
-        pipelines: R2RPipelines,
-        agents: R2RAgents,
-        run_manager: RunManager,
     ):
         super().__init__(
             config,
             providers,
-            pipes,
-            pipelines,
-            agents,
-            run_manager,
         )
 
     @telemetry_event("RegisterUser")

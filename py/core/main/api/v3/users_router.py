@@ -1,3 +1,4 @@
+import logging
 import os
 import textwrap
 import urllib.parse
@@ -5,7 +6,7 @@ from typing import Optional
 from uuid import UUID
 
 import requests
-from fastapi import Body, Depends, HTTPException, Path, Query, Request
+from fastapi import Body, Depends, HTTPException, Path, Query
 from fastapi.background import BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -38,6 +39,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 class UsersRouter(BaseRouterV3):
     def __init__(self, providers: R2RProviders, services: R2RServices):
+        logging.info("Initializing UsersRouter")
         super().__init__(providers, services)
         self.google_client_id = os.environ.get("GOOGLE_CLIENT_ID")
         self.google_client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")

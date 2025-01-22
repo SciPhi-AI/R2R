@@ -81,6 +81,7 @@ class DocumentsRouter(BaseRouterV3):
         providers: R2RProviders,
         services: R2RServices,
     ):
+        logging.info("Initializing DocumentsRouter")
         super().__init__(providers, services)
         self._register_workflows()
 
@@ -129,11 +130,6 @@ class DocumentsRouter(BaseRouterV3):
                     "Ingest chunks task queued successfully."
                     if self.providers.orchestration.config.provider != "simple"
                     else "Document created and ingested successfully."
-                ),
-                "update-files": (
-                    "Update file task queued successfully."
-                    if self.providers.orchestration.config.provider != "simple"
-                    else "Update task queued successfully."
                 ),
                 "update-chunk": (
                     "Update chunk task queued successfully."

@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Any, AsyncGenerator, Optional, Type
 
 from pydantic import BaseModel
@@ -56,7 +57,8 @@ class Conversation:
 # TODO - Move agents to provider pattern
 class AgentConfig(BaseModel):
     system_instruction_name: str = "rag_agent"
-    tool_names: list[str] = ["search"]
+    tools: list[str] = ["search"]
+    tool_names: Optional[list[str]] = None
     generation_config: GenerationConfig = GenerationConfig()
     stream: bool = False
 
@@ -68,6 +70,9 @@ class AgentConfig(BaseModel):
             for k, v in kwargs.items()
             if k in base_args
         }
+        filtered_kwargs["tools"] = kwargs.get("tools", None) or kwargs.get(
+            "tool_names", None
+        )
         return cls(**filtered_kwargs)  # type: ignore
 
 
@@ -92,19 +97,17 @@ class Agent(ABC):
     def _register_tools(self):
         pass
 
-    async def _setup(self, system_instruction: Optional[str] = None):
-        content = system_instruction or (
-            await self.database_provider.prompts_handler.get_cached_prompt(
-                self.config.system_instruction_name
-            )
-        )
+    async def _setup(
+        self, system_instruction: Optional[str] = None, *args, **kwargs
+    ):
         await self.conversation.add_message(
             Message(
                 role="system",
                 content=system_instruction
                 or (
                     await self.database_provider.prompts_handler.get_cached_prompt(
-                        self.config.system_instruction_name
+                        self.config.system_instruction_name,
+                        inputs={"date": str(datetime.now().isoformat())},
                     )
                 ),
             )
@@ -209,6 +212,9 @@ class Agent(ABC):
         *args,
         **kwargs,
     ) -> ToolResult:
+        logger.info(
+            f"Calling function: {function_name}, args: {function_arguments}, tool_id: {tool_id}"
+        )
         await self.conversation.add_message(
             Message(
                 role="assistant",
@@ -216,7 +222,6 @@ class Agent(ABC):
                     [
                         {
                             "id": tool_id,
-                            "tool_call_id": tool_id,
                             "type": "function",
                             "function": {
                                 "name": function_name,
@@ -256,7 +261,6 @@ class Agent(ABC):
                 raw_result=error_message,
                 llm_formatted_result=error_message,
             )
-
         await self.conversation.add_message(
             Message(
                 role="tool" if tool_id else "function",

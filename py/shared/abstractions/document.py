@@ -191,6 +191,7 @@ class DocumentResponse(R2RSerializable):
     ingestion_attempt_number: Optional[int] = None
     summary: Optional[str] = None
     summary_embedding: Optional[list[float]] = None  # Add optional embedding
+    total_tokens: Optional[int] = None
 
     def convert_to_db_entry(self):
         """Prepare the document info for database entry, extracting certain fields from metadata."""
@@ -217,6 +218,7 @@ class DocumentResponse(R2RSerializable):
             "ingestion_attempt_number": self.ingestion_attempt_number or 0,
             "summary": self.summary,
             "summary_embedding": embedding,
+            "total_tokens": self.total_tokens or 0,  # ensure we pass 0 if None
         }
 
 

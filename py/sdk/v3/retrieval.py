@@ -1,7 +1,7 @@
 from typing import Any, AsyncGenerator, Optional
 
 from ..models import (
-    CombinedSearchResponse,
+    AggregateSearchResult,
     GenerationConfig,
     GraphSearchSettings,
     Message,
@@ -24,7 +24,7 @@ class RetrievalSDK:
         query: str,
         search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
-    ) -> CombinedSearchResponse:
+    ) -> AggregateSearchResult:
         """
         Conduct a vector and/or KG search.
 
@@ -33,7 +33,7 @@ class RetrievalSDK:
             search_settings (Optional[dict, SearchSettings]]): Vector search settings.
 
         Returns:
-            CombinedSearchResponse: The search response.
+            AggregateSearchResult: The search response.
         """
         if search_mode and not isinstance(search_mode, str):
             search_mode = search_mode.value
@@ -159,6 +159,8 @@ class RetrievalSDK:
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
         conversation_id: Optional[str] = None,
+        tools: Optional[list[dict]] = None,
+        max_tool_context_length: Optional[int] = None,
     ) -> list[Message] | AsyncGenerator[Message, None]:
         """
         Performs a single turn in a conversation with a RAG agent.
@@ -185,6 +187,8 @@ class RetrievalSDK:
             "task_prompt_override": task_prompt_override,
             "include_title_if_available": include_title_if_available,
             "conversation_id": conversation_id,
+            "tools": tools,
+            "max_tool_context_length": max_tool_context_length,
         }
         if search_mode:
             data["search_mode"] = search_mode

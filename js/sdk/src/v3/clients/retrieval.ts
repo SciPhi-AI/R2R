@@ -157,6 +157,8 @@ export class RetrievalClient {
    * @param taskPromptOverride Optional custom prompt to override default
    * @param includeTitleIfAvailable Include document titles in responses when available
    * @param conversationId ID of the conversation
+   * @param maxToolContextLength Maximum context length for tool replies
+   * @param tools List of tool configurations
    * @returns
    */
   @feature("retrieval.agent")
@@ -168,6 +170,8 @@ export class RetrievalClient {
     taskPromptOverride?: string;
     includeTitleIfAvailable?: boolean;
     conversationId?: string;
+    maxToolContextLength?: number;
+    tools?: Array<Record<string, any>>;
   }): Promise<any | AsyncGenerator<string, void, unknown>> {
     const data: Record<string, any> = {
       message: options.message,
@@ -188,6 +192,12 @@ export class RetrievalClient {
       }),
       ...(options.conversationId && {
         conversation_id: options.conversationId,
+      }),
+      ...(options.maxToolContextLength && {
+        max_tool_context_length: options.maxToolContextLength,
+      }),
+      ...(options.tools && {
+        tools: options.tools,
       }),
     };
 

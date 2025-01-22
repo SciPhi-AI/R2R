@@ -2,6 +2,7 @@ import asyncio
 import logging
 from uuid import UUID
 
+import tiktoken
 from fastapi import HTTPException
 from litellm import AuthenticationError
 
@@ -20,6 +21,16 @@ from core.utils import (
 from ...services import IngestionService
 
 logger = logging.getLogger()
+
+
+def count_tokens_for_text(text: str, model: str = "gpt-4o") -> int:
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        # Fallback to a known encoding if model not recognized
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+    return len(encoding.encode(text))
 
 
 def simple_ingestion_factory(service: IngestionService):
@@ -49,13 +60,22 @@ def simple_ingestion_factory(service: IngestionService):
             )
 
             ingestion_config = parsed_data["ingestion_config"]
-            extractions_generator = await service.parse_file(
+            extractions_generator = service.parse_file(
                 document_info, ingestion_config
             )
             extractions = [
                 extraction.model_dump()
                 async for extraction in extractions_generator
             ]
+
+            # 2) Sum tokens
+            total_tokens = 0
+            for chunk_dict in extractions:
+                text_data = chunk_dict["data"]
+                if not isinstance(text_data, str):
+                    text_data = text_data.decode("utf-8", errors="ignore")
+                total_tokens += count_tokens_for_text(text_data)
+            document_info.total_tokens = total_tokens
 
             await service.update_document_status(
                 document_info, status=IngestionStatus.AUGMENTING
@@ -65,7 +85,7 @@ def simple_ingestion_factory(service: IngestionService):
             await service.update_document_status(
                 document_info, status=IngestionStatus.EMBEDDING
             )
-            embedding_generator = await service.embed_document(extractions)
+            embedding_generator = service.embed_document(extractions)
             embeddings = [
                 embedding.model_dump()
                 async for embedding in embedding_generator
@@ -74,7 +94,7 @@ def simple_ingestion_factory(service: IngestionService):
             await service.update_document_status(
                 document_info, status=IngestionStatus.STORING
             )
-            storage_generator = await service.store_embeddings(embeddings)
+            storage_generator = service.store_embeddings(embeddings)
             async for _ in storage_generator:
                 pass
 
@@ -340,7 +360,7 @@ def simple_ingestion_factory(service: IngestionService):
                 for i, chunk in enumerate(parsed_data["chunks"])
             ]
 
-            embedding_generator = await service.embed_document(extractions)
+            embedding_generator = service.embed_document(extractions)
             embeddings = [
                 embedding.model_dump()
                 async for embedding in embedding_generator
@@ -349,7 +369,7 @@ def simple_ingestion_factory(service: IngestionService):
             await service.update_document_status(
                 document_info, status=IngestionStatus.STORING
             )
-            storage_generator = await service.store_embeddings(embeddings)
+            storage_generator = service.store_embeddings(embeddings)
             async for _ in storage_generator:
                 pass
 
@@ -559,7 +579,6 @@ def simple_ingestion_factory(service: IngestionService):
 
     return {
         "ingest-files": ingest_files,
-        "update-files": update_files,
         "ingest-chunks": ingest_chunks,
         "update-chunk": update_chunk,
         "update-document-metadata": update_document_metadata,

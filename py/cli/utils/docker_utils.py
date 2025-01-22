@@ -285,23 +285,23 @@ def check_set_docker_env_vars(
         or os.environ.get("PYTEST_CURRENT_TEST")
     )
 
-    if not is_test:
-        for var in env_vars:
-            if value := os.environ.get(var):
-                warning_text = click.style("Warning:", fg="red", bold=True)
+    # if not is_test:
+    #     for var in env_vars:
+    #         if value := os.environ.get(var):
+    #             warning_text = click.style("Warning:", fg="red", bold=True)
 
-                if value == env_vars[var]:
-                    continue
+    #             if value == env_vars[var]:
+    #                 continue
 
-                prompt = (
-                    f"{warning_text} It's only necessary to set this environment variable when connecting to an instance not managed by R2R.\n"
-                    f"Environment variable {var} is set to '{value}'. Unset it?"
-                )
-                if click.confirm(prompt, default=True):
-                    os.environ[var] = ""
-                    click.echo(f"Unset {var}")
-                else:
-                    click.echo(f"Kept {var}")
+    #             prompt = (
+    #                 f"{warning_text} It's only necessary to set this environment variable when connecting to an instance not managed by R2R.\n"
+    #                 f"Environment variable {var} is set to '{value}'. Unset it?"
+    #             )
+    #             if click.confirm(prompt, default=True):
+    #                 os.environ[var] = ""
+    #                 click.echo(f"Unset {var}")
+    #             else:
+    #                 click.echo(f"Kept {var}")
 
 
 def get_compose_files():

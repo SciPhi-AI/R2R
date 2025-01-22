@@ -1,3 +1,4 @@
+import logging
 import textwrap
 from typing import Optional
 
@@ -23,6 +24,7 @@ class PromptsRouter(BaseRouterV3):
         providers: R2RProviders,
         services: R2RServices,
     ):
+        logging.info("Initializing PromptsRouter")
         super().__init__(providers, services)
 
     def _setup_routes(self):

@@ -154,7 +154,7 @@ class ChunksSDK:
         self,
         query: str,
         search_settings: Optional[dict | SearchSettings] = None,
-    ):  # -> CombinedSearchResponse:
+    ):
         """
         Conduct a vector and/or KG search.
 
@@ -162,8 +162,6 @@ class ChunksSDK:
             query (str): The query to search for.
             search_settings (Optional[dict, SearchSettings]]): Vector search settings.
 
-        Returns:
-            CombinedSearchResponse: The search response.
         """
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()

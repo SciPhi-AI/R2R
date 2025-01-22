@@ -1,6 +1,6 @@
 [agent]
 system_instruction_name = "rag_agent"
-tool_names = ["local_search"]
+tools = ["local_search"]
 
   [agent.generation_config]
   model = "ollama/llama3.1"

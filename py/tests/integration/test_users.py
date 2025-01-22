@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from core.database.postgres import PostgresUserHandler
+from core.providers.database.postgres import PostgresUserHandler
 from r2r import R2RClient, R2RException
 from shared.abstractions import User
 

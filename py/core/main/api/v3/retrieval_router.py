@@ -1,3 +1,4 @@
+import logging
 import textwrap
 from typing import Any, Optional
 from uuid import UUID
@@ -46,6 +47,7 @@ class RetrievalRouterV3(BaseRouterV3):
         providers: R2RProviders,
         services: R2RServices,
     ):
+        logging.info("Initializing RetrievalRouterV3")
         super().__init__(providers, services)
 
     def _register_workflows(self):
@@ -61,7 +63,6 @@ class RetrievalRouterV3(BaseRouterV3):
         Prepare the effective search settings based on the provided search_mode,
         optional user-overrides in search_settings, and applied filters.
         """
-
         if search_mode != SearchMode.custom:
             # Start from mode defaults
             effective_settings = SearchSettings.get_default(search_mode.value)
@@ -78,7 +79,6 @@ class RetrievalRouterV3(BaseRouterV3):
         effective_settings.filters = select_search_filters(
             auth_user, effective_settings
         )
-
         return effective_settings
 
     def _setup_routes(self):
@@ -615,6 +615,14 @@ class RetrievalRouterV3(BaseRouterV3):
                 default=None,
                 description="ID of the conversation",
             ),
+            tools: Optional[list[str]] = Body(
+                None,
+                description="List of tools to execute",
+            ),
+            max_tool_context_length: Optional[int] = Body(
+                default=32_768,
+                description="Maximum length of returned tool context",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAgentResponse:
             """
@@ -651,7 +659,6 @@ class RetrievalRouterV3(BaseRouterV3):
             effective_settings = self._prepare_search_settings(
                 auth_user, search_mode, search_settings
             )
-
             try:
                 response = await self.services.retrieval.agent(
                     message=message,
@@ -660,9 +667,12 @@ class RetrievalRouterV3(BaseRouterV3):
                     rag_generation_config=rag_generation_config,
                     task_prompt_override=task_prompt_override,
                     include_title_if_available=include_title_if_available,
+                    max_tool_context_length=max_tool_context_length,
                     conversation_id=(
                         str(conversation_id) if conversation_id else None
                     ),
+                    use_extended_prompt=True,
+                    override_tools=tools,
                 )
 
                 if rag_generation_config.stream:

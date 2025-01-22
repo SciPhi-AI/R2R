@@ -15,7 +15,6 @@ from shared.utils import (
     generate_id,
     generate_user_id,
     increment_version,
-    run_pipeline,
     to_async_generator,
     validate_uuid,
 )
@@ -27,7 +26,6 @@ __all__ = [
     "generate_default_user_collection_id",
     "increment_version",
     "decrement_version",
-    "run_pipeline",
     "to_async_generator",
     "generate_document_id",
     "generate_extraction_id",

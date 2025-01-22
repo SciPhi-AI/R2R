@@ -516,7 +516,7 @@ async def test_filter_by_collection_ids_in_entities(graphs_handler):
 # # tests/test_graph_filters.py
 # import pytest
 # import uuid
-# from core.database.postgres import PostgresGraphsHandler
+# from core.providers.database.postgres import PostgresGraphsHandler
 
 # @pytest.mark.asyncio
 # async def test_filter_by_collection_ids_in_entities(graphs_handler: PostgresGraphsHandler):

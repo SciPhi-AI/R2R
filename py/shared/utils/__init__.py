@@ -13,7 +13,6 @@ from .base_utils import (
     generate_id,
     generate_user_id,
     increment_version,
-    run_pipeline,
     to_async_generator,
     validate_uuid,
 )
@@ -33,7 +32,6 @@ __all__ = [
     # Other
     "increment_version",
     "decrement_version",
-    "run_pipeline",
     "to_async_generator",
     "validate_uuid",
     "deep_update",

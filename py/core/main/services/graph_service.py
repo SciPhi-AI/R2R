@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import math
+import random
 import re
 import time
 import xml.etree.ElementTree as ET
@@ -13,14 +14,11 @@ from core.base import (
     KGExtraction,
     KGExtractionStatus,
     R2RDocumentProcessingError,
-    RunManager,
 )
 from core.base.abstractions import (
     Community,
     Entity,
     GenerationConfig,
-    KGCreationSettings,
-    KGEnrichmentSettings,
     KGEnrichmentStatus,
     R2RException,
     Relationship,
@@ -29,43 +27,39 @@ from core.base.abstractions import (
 from core.base.api.models import GraphResponse
 from core.telemetry.telemetry_decorator import telemetry_event
 
-from ..abstractions import R2RAgents, R2RPipelines, R2RPipes, R2RProviders
+from ..abstractions import R2RProviders
 from ..config import R2RConfig
 from .base import Service
 
 logger = logging.getLogger()
 
-
 MIN_VALID_KG_EXTRACTION_RESPONSE_LENGTH = 128
 
 
-async def _collect_results(result_gen: AsyncGenerator) -> list[dict]:
+async def _collect_async_results(result_gen: AsyncGenerator) -> list[Any]:
+    """
+    Collects all results from an async generator into a list.
+    """
     results = []
     async for res in result_gen:
-        results.append(res.json() if hasattr(res, "json") else res)
+        results.append(res)
     return results
 
 
-# TODO - Fix naming convention to read `KGService` instead of `GraphService`
-# this will require a minor change in how services are registered.
 class GraphService(Service):
     def __init__(
         self,
         config: R2RConfig,
         providers: R2RProviders,
-        pipes: R2RPipes,
-        pipelines: R2RPipelines,
-        agents: R2RAgents,
-        run_manager: RunManager,
     ):
         super().__init__(
             config,
             providers,
-            pipes,
-            pipelines,
-            agents,
-            run_manager,
         )
+
+    # --------------------------------------------------------------------------------
+    # Entity / Relationship CRUD
+    # --------------------------------------------------------------------------------
 
     @telemetry_event("create_entity")
     async def create_entity(
@@ -248,6 +242,10 @@ class GraphService(Service):
             entity_names=entity_names,
         )
 
+    # --------------------------------------------------------------------------------
+    # Community CRUD
+    # --------------------------------------------------------------------------------
+
     @telemetry_event("create_community")
     async def create_community(
         self,
@@ -342,18 +340,20 @@ class GraphService(Service):
             include_embeddings=include_embeddings,
         )
 
+    # --------------------------------------------------------------------------------
+    # Graph CRUD (collections)
+    # --------------------------------------------------------------------------------
+
     async def list_graphs(
         self,
         offset: int,
         limit: int,
-        # user_ids: Optional[list[UUID]] = None,
         graph_ids: Optional[list[UUID]] = None,
         collection_id: Optional[UUID] = None,
     ) -> dict[str, list[GraphResponse] | int]:
         return await self.providers.database.graphs_handler.list_graphs(
             offset=offset,
             limit=limit,
-            # filter_user_ids=user_ids,
             filter_graph_ids=graph_ids,
             filter_collection_id=collection_id,
         )
@@ -400,105 +400,277 @@ class GraphService(Service):
             collection_id=collection_id,
         )
 
+    # --------------------------------------------------------------------------------
+    # Replacement for GraphDescriptionPipe logic
+    # --------------------------------------------------------------------------------
     @telemetry_event("kg_entity_description")
     async def kg_entity_description(
         self,
         document_id: UUID,
         max_description_input_length: int,
+        batch_size: int = 256,
         **kwargs,
     ):
-        start_time = time.time()
+        """
+        A new implementation of the old GraphDescriptionPipe logic inline. No references to pipe objects.
 
+        We:
+         1) Count how many entities are in the document
+         2) Process them in batches of `batch_size`
+         3) For each batch, we retrieve the entity map and possibly call LLM for missing descriptions
+        """
+        start_time = time.time()
         logger.info(
-            f"KGService: Running kg_entity_description for document {document_id}"
+            f"KGService: Running kg_entity_description for doc={document_id}"
         )
 
+        # Count how many doc-entities exist
         entity_count = (
             await self.providers.database.graphs_handler.get_entity_count(
                 document_id=document_id,
                 distinct=True,
-                entity_table_name="documents_entities",
+                entity_table_name="documents_entities",  # or whichever table
             )
         )
-
         logger.info(
-            f"KGService: Found {entity_count} entities in document {document_id}"
+            f"KGService: Found {entity_count} doc-entities to describe."
         )
 
-        # TODO - Do not hardcode the batch size,
-        # make it a configurable parameter at runtime & server-side defaults
-
-        # process 256 entities at a time
-        num_batches = math.ceil(entity_count / 256)
-        logger.info(
-            f"Calling `kg_entity_description` on document {document_id} with an entity count of {entity_count} and total batches of {num_batches}"
-        )
         all_results = []
+        num_batches = math.ceil(entity_count / batch_size)
+
         for i in range(num_batches):
-            logger.info(
-                f"KGService: Running kg_entity_description for batch {i+1}/{num_batches} for document {document_id}"
-            )
-
-            node_descriptions = await self.pipes.graph_description_pipe.run(
-                input=self.pipes.graph_description_pipe.Input(
-                    message={
-                        "offset": i * 256,
-                        "limit": 256,
-                        "max_description_input_length": max_description_input_length,
-                        "document_id": document_id,
-                        "logger": logger,
-                    }
-                ),
-                state=None,
-                run_manager=self.run_manager,
-            )
-
-            all_results.append(await _collect_results(node_descriptions))
+            offset = i * batch_size
+            limit = batch_size
 
             logger.info(
-                f"KGService: Completed kg_entity_description for batch {i+1}/{num_batches} for document {document_id}"
+                f"KGService: describing batch {i+1}/{num_batches}, offset={offset}, limit={limit}"
             )
 
+            # Actually handle describing the entities in the batch
+            # We'll collect them into a list via an async generator
+            gen = self._describe_entities_in_document_batch(
+                document_id=document_id,
+                offset=offset,
+                limit=limit,
+                max_description_input_length=max_description_input_length,
+            )
+            batch_results = await _collect_async_results(gen)
+            all_results.append(batch_results)
+
+        # Mark the doc's extraction status as success
         await self.providers.database.documents_handler.set_workflow_status(
             id=document_id,
             status_type="extraction_status",
             status=KGExtractionStatus.SUCCESS,
         )
-
         logger.info(
-            f"KGService: Completed kg_entity_description for document {document_id} in {time.time() - start_time:.2f} seconds",
+            f"KGService: Completed kg_entity_description for doc {document_id} in {time.time() - start_time:.2f}s."
         )
-
         return all_results
 
+    async def _describe_entities_in_document_batch(
+        self,
+        document_id: UUID,
+        offset: int,
+        limit: int,
+        max_description_input_length: int,
+    ) -> AsyncGenerator[str, None]:
+        """
+        Core logic that replaces GraphDescriptionPipe._run_logic for a particular document/batch.
+        Yields entity-names or some textual result as each entity is updated.
+        """
+        start_time = time.time()
+        logger.info(
+            f"Started describing doc={document_id}, offset={offset}, limit={limit}"
+        )
+
+        # 1) Get the "entity map" from the DB
+        entity_map = (
+            await self.providers.database.graphs_handler.get_entity_map(
+                offset=offset, limit=limit, document_id=document_id
+            )
+        )
+        total_entities = len(entity_map)
+        logger.info(
+            f"_describe_entities_in_document_batch: got {total_entities} items in entity_map for doc={document_id}."
+        )
+
+        # 2) For each entity name in the map, we gather sub-entities and relationships
+        tasks = []
+        for entity_name, entity_info in entity_map.items():
+            tasks.append(
+                self._process_entity_for_description(
+                    entities=entity_info["entities"],
+                    relationships=entity_info["relationships"],
+                    document_id=document_id,
+                    max_description_input_length=max_description_input_length,
+                )
+            )
+
+        # 3) Wait for all tasks, yield as they complete
+        idx = 0
+        for coro in asyncio.as_completed(tasks):
+            result = await coro
+            idx += 1
+            if idx % 100 == 0:
+                logger.info(
+                    f"_describe_entities_in_document_batch: {idx}/{total_entities} described for doc={document_id}"
+                )
+            yield result
+
+        logger.info(
+            f"Finished describing doc={document_id} batch offset={offset} in {time.time() - start_time:.2f}s."
+        )
+
+    async def _process_entity_for_description(
+        self,
+        entities: list[Entity],
+        relationships: list[Relationship],
+        document_id: UUID,
+        max_description_input_length: int,
+    ) -> str:
+        """
+        Adapted from the old process_entity function in GraphDescriptionPipe.
+        If entity has no description, call an LLM to create one, then store it.
+        Returns the name of the top entity (or could store more details).
+        """
+
+        def truncate_info(info_list: list[str], max_length: int) -> str:
+            """
+            Shuffles lines of info to try to keep them distinct, then accumulates
+            until hitting max_length.
+            """
+            random.shuffle(info_list)
+            truncated_info = ""
+            current_length = 0
+            for info in info_list:
+                if current_length + len(info) > max_length:
+                    break
+                truncated_info += info + "\n"
+                current_length += len(info)
+            return truncated_info
+
+        # Grab a doc-level summary (optional) to feed into the prompt
+        response = await self.providers.database.documents_handler.get_documents_overview(
+            offset=0,
+            limit=1,
+            filter_document_ids=[document_id],
+        )
+        document_summary = (
+            response["results"][0].summary if response["results"] else None
+        )
+
+        # Synthesize a minimal “entity info” string + relationship summary
+        entity_info = [
+            f"{e.name}, {e.description or 'NONE'}" for e in entities
+        ]
+        relationships_txt = [
+            f"{i+1}: {r.subject}, {r.object}, {r.predicate} - Summary: {r.description or ''}"
+            for i, r in enumerate(relationships)
+        ]
+
+        # We'll describe only the first entity for simplicity
+        # or you could do them all if needed
+        main_entity = entities[0]
+
+        if not main_entity.description:
+            # We only call LLM if the entity is missing a description
+            messages = await self.providers.database.prompts_handler.get_message_payload(
+                task_prompt_name=self.providers.database.config.graph_creation_settings.graph_entity_description_prompt,
+                task_inputs={
+                    "document_summary": document_summary,
+                    "entity_info": truncate_info(
+                        entity_info, max_description_input_length
+                    ),
+                    "relationships_txt": truncate_info(
+                        relationships_txt, max_description_input_length
+                    ),
+                },
+            )
+
+            # Call the LLM
+            gen_config = (
+                self.providers.database.config.graph_creation_settings.generation_config
+            )
+            llm_resp = await self.providers.llm.aget_completion(
+                messages=messages,
+                generation_config=gen_config,
+            )
+            new_description = llm_resp.choices[0].message.content
+
+            if not new_description:
+                logger.error(
+                    f"No LLM description returned for entity={main_entity.name}"
+                )
+                return main_entity.name
+
+            # create embedding
+            embed = (
+                await self.providers.embedding.async_get_embeddings(
+                    [new_description]
+                )
+            )[0]
+
+            # update DB
+            main_entity.description = new_description
+            main_entity.description_embedding = embed
+
+            # Use a method to upsert entity in `documents_entities` or your table
+            await self.providers.database.graphs_handler.add_entities(
+                [main_entity],
+                table_name="documents_entities",
+            )
+
+        return main_entity.name
+
+    # --------------------------------------------------------------------------------
+    # Replacement for GraphClusteringPipe logic
+    # --------------------------------------------------------------------------------
     @telemetry_event("kg_clustering")
     async def kg_clustering(
         self,
         collection_id: UUID,
-        # graph_id: UUID,
         generation_config: GenerationConfig,
         leiden_params: dict,
         **kwargs,
     ):
+        """
+        Replacement for the old GraphClusteringPipe logic:
+          1) call perform_graph_clustering on the DB
+          2) return the result
+        """
         logger.info(
-            f"Running ClusteringPipe for collection {collection_id} with settings {leiden_params}"
+            f"Running inline clustering for collection={collection_id} with params={leiden_params}"
+        )
+        return await self._perform_graph_clustering(
+            collection_id=collection_id,
+            generation_config=generation_config,
+            leiden_params=leiden_params,
         )
 
-        clustering_result = await self.pipes.graph_clustering_pipe.run(
-            input=self.pipes.graph_clustering_pipe.Input(
-                message={
-                    "collection_id": collection_id,
-                    "generation_config": generation_config,
-                    "leiden_params": leiden_params,
-                    "logger": logger,
-                    "clustering_mode": self.config.database.graph_creation_settings.clustering_mode,
-                }
-            ),
-            state=None,
-            run_manager=self.run_manager,
+    async def _perform_graph_clustering(
+        self,
+        collection_id: UUID,
+        generation_config: GenerationConfig,
+        leiden_params: dict,
+    ) -> dict:
+        """
+        The actual clustering logic (previously in GraphClusteringPipe.cluster_kg).
+        """
+        clustering_mode = (
+            self.config.database.graph_creation_settings.clustering_mode
         )
-        return await _collect_results(clustering_result)
+        num_communities = await self.providers.database.graphs_handler.perform_graph_clustering(
+            collection_id=collection_id,
+            leiden_params=leiden_params,
+            clustering_mode=clustering_mode,
+        )
+        return {"num_communities": num_communities}
 
+    # --------------------------------------------------------------------------------
+    # Replacement for GraphCommunitySummaryPipe logic
+    # --------------------------------------------------------------------------------
     @telemetry_event("kg_community_summary")
     async def kg_community_summary(
         self,
@@ -507,25 +679,334 @@ class GraphService(Service):
         max_summary_input_length: int,
         generation_config: GenerationConfig,
         collection_id: UUID | None,
-        # graph_id: UUID | None,
+        leiden_params: Optional[dict] = None,
         **kwargs,
     ):
-        summary_results = await self.pipes.graph_community_summary_pipe.run(
-            input=self.pipes.graph_community_summary_pipe.Input(
-                message={
-                    "offset": offset,
-                    "limit": limit,
-                    "generation_config": generation_config,
-                    "max_summary_input_length": max_summary_input_length,
-                    "collection_id": collection_id,
-                    # "graph_id": graph_id,
-                    "logger": logger,
-                }
-            ),
-            state=None,
-            run_manager=self.run_manager,
+        """
+        Replacement for the old GraphCommunitySummaryPipe logic. Summarizes communities after clustering.
+        Returns an async generator or you can collect into a list.
+        """
+        logger.info(
+            f"Running inline community summaries for coll={collection_id}, offset={offset}, limit={limit}"
         )
-        return await _collect_results(summary_results)
+        # We call an internal function that yields summaries
+        gen = self._summarize_communities(
+            offset=offset,
+            limit=limit,
+            max_summary_input_length=max_summary_input_length,
+            generation_config=generation_config,
+            collection_id=collection_id,
+            leiden_params=leiden_params or {},
+        )
+        return await _collect_async_results(gen)
+
+    async def _summarize_communities(
+        self,
+        offset: int,
+        limit: int,
+        max_summary_input_length: int,
+        generation_config: GenerationConfig,
+        collection_id: UUID,
+        leiden_params: dict,
+    ) -> AsyncGenerator[dict, None]:
+        """
+        Does the community summary logic from GraphCommunitySummaryPipe._run_logic.
+        Yields each summary dictionary as it completes.
+        """
+        start_time = time.time()
+        logger.info(
+            f"Starting community summarization for collection={collection_id}"
+        )
+
+        # get all entities & relationships
+        all_entities, _ = (
+            await self.providers.database.graphs_handler.get_entities(
+                parent_id=collection_id,
+                offset=0,
+                limit=-1,
+                include_embeddings=False,
+            )
+        )
+        all_relationships, _ = (
+            await self.providers.database.graphs_handler.get_relationships(
+                parent_id=collection_id,
+                offset=0,
+                limit=-1,
+                include_embeddings=False,
+            )
+        )
+
+        # We can optionally re-run the clustering to produce fresh community assignments
+        clustering_mode = (
+            self.config.database.graph_creation_settings.clustering_mode
+        )
+        _, community_clusters = (
+            await self.providers.database.graphs_handler._cluster_and_add_community_info(
+                relationships=all_relationships,
+                leiden_params=leiden_params,
+                collection_id=collection_id,
+                clustering_mode=clustering_mode,
+            )
+        )
+
+        # Group clusters
+        clusters: dict[Any, list[str]] = {}
+        for item in community_clusters:
+            # item is either a dict (remote) or an object (local)
+            # unify logic accordingly
+            cluster_id = (
+                item["cluster"]
+                if clustering_mode == "remote"
+                else item.cluster
+            )
+            node_name = (
+                item["node"] if clustering_mode == "remote" else item.node
+            )
+            clusters.setdefault(cluster_id, []).append(node_name)
+
+        # create an async job for each cluster
+        tasks = []
+        import uuid
+
+        for _, nodes in clusters.items():
+            tasks.append(
+                self._process_community_summary(
+                    community_id=uuid.uuid4(),
+                    nodes=nodes,
+                    all_entities=all_entities,
+                    all_relationships=all_relationships,
+                    max_summary_input_length=max_summary_input_length,
+                    generation_config=generation_config,
+                    collection_id=collection_id,
+                )
+            )
+
+        total_jobs = len(tasks)
+        results_returned = 0
+        total_errors = 0
+
+        for coro in asyncio.as_completed(tasks):
+            summary = await coro
+            results_returned += 1
+            if results_returned % 50 == 0:
+                logger.info(
+                    f"Community summaries: {results_returned}/{total_jobs} done in {time.time()-start_time:.2f}s"
+                )
+            if "error" in summary:
+                total_errors += 1
+            yield summary
+
+        if total_errors > 0:
+            logger.warning(
+                f"{total_errors} communities failed summarization out of {total_jobs}"
+            )
+
+    async def _process_community_summary(
+        self,
+        community_id: UUID,
+        nodes: list[str],
+        all_entities: list[Entity],
+        all_relationships: list[Relationship],
+        max_summary_input_length: int,
+        generation_config: GenerationConfig,
+        collection_id: UUID,
+    ) -> dict:
+        """
+        Summarize a single community: gather all relevant entities/relationships, call LLM to generate an XML block,
+        parse it, store the result as a community in DB.
+        """
+        # (Equivalent to process_community in old code)
+        # fetch the collection description (optional)
+        response = await self.providers.database.collections_handler.get_collections_overview(
+            offset=0,
+            limit=1,
+            filter_collection_ids=[collection_id],
+        )
+        collection_description = (
+            response["results"][0].description if response["results"] else None
+        )
+
+        # filter out relevant entities / relationships
+        entities = [e for e in all_entities if e.name in nodes]
+        relationships = [
+            r
+            for r in all_relationships
+            if r.subject in nodes and r.object in nodes
+        ]
+        if not entities and not relationships:
+            return {
+                "community_id": community_id,
+                "error": f"No data in this community (nodes={nodes})",
+            }
+
+        # Create the big input text for the LLM
+        input_text = await self._community_summary_prompt(
+            entities,
+            relationships,
+            max_summary_input_length,
+        )
+
+        # Attempt up to 3 times to parse
+        for attempt in range(3):
+            try:
+                # Build the prompt
+                messages = await self.providers.database.prompts_handler.get_message_payload(
+                    task_prompt_name=self.providers.database.config.graph_enrichment_settings.graphrag_communities,
+                    task_inputs={
+                        "collection_description": collection_description,
+                        "input_text": input_text,
+                    },
+                )
+                llm_resp = await self.providers.llm.aget_completion(
+                    messages=messages,
+                    generation_config=generation_config,
+                )
+                llm_text = llm_resp.choices[0].message.content
+
+                # find <community>...</community> XML
+                match = re.search(
+                    r"<community>.*?</community>", llm_text, re.DOTALL
+                )
+                if not match:
+                    raise ValueError(
+                        "No <community> XML found in LLM response"
+                    )
+
+                xml_content = match.group(0)
+                root = ET.fromstring(xml_content)
+
+                # extract fields
+                name_elem = root.find("name")
+                summary_elem = root.find("summary")
+                rating_elem = root.find("rating")
+                rating_expl_elem = root.find("rating_explanation")
+                findings_elem = root.find("findings")
+
+                name = name_elem.text if name_elem is not None else ""
+                summary = summary_elem.text if summary_elem is not None else ""
+                rating = (
+                    float(rating_elem.text)
+                    if rating_elem is not None
+                    else None
+                )
+                rating_explanation = (
+                    rating_expl_elem.text
+                    if rating_expl_elem is not None
+                    else None
+                )
+                findings = (
+                    [f.text for f in findings_elem.findall("finding")]
+                    if findings_elem is not None
+                    else []
+                )
+
+                # build embedding
+                embed_text = (
+                    "Summary:\n"
+                    + summary
+                    + "\n\nFindings:\n"
+                    + "\n".join(findings)
+                )
+                embedding = await self.providers.embedding.async_get_embedding(
+                    embed_text
+                )
+
+                # build Community object
+                community = Community(
+                    community_id=community_id,
+                    collection_id=collection_id,
+                    name=name,
+                    summary=summary,
+                    rating=rating,
+                    rating_explanation=rating_explanation,
+                    findings=findings,
+                    description_embedding=embedding,
+                )
+
+                # store it
+                await self.providers.database.graphs_handler.add_community(
+                    community
+                )
+
+                return {
+                    "community_id": community_id,
+                    "name": name,
+                }
+
+            except Exception as e:
+                logger.error(
+                    f"Error summarizing community {community_id}: {e}"
+                )
+                if attempt == 2:
+                    return {"community_id": community_id, "error": str(e)}
+                await asyncio.sleep(1)
+
+        # fallback
+        return {"community_id": community_id, "error": "Failed after retries"}
+
+    async def _community_summary_prompt(
+        self,
+        entities: list[Entity],
+        relationships: list[Relationship],
+        max_summary_input_length: int,
+    ) -> str:
+        """
+        (Equivalent to community_summary_prompt in old code.)
+        Gathers the entity/relationship text, tries not to exceed `max_summary_input_length`.
+        """
+        # Group them by entity.name
+        entity_map = {}
+        for e in entities:
+            entity_map.setdefault(
+                e.name, {"entities": [], "relationships": []}
+            )
+            entity_map[e.name]["entities"].append(e)
+
+        for r in relationships:
+            # subject
+            entity_map.setdefault(
+                r.subject, {"entities": [], "relationships": []}
+            )
+            entity_map[r.subject]["relationships"].append(r)
+            # optionally do the same for r.object if you want both directions
+            # entity_map.setdefault(r.object, {"entities": [], "relationships": []})
+            # entity_map[r.object]["relationships"].append(r)
+
+        # sort by # of relationships
+        sorted_entries = sorted(
+            entity_map.items(),
+            key=lambda x: len(x[1]["relationships"]),
+            reverse=True,
+        )
+
+        # build up the prompt text
+        prompt_chunks = []
+        cur_len = 0
+        for entity_name, data in sorted_entries:
+            block = f"\nEntity: {entity_name}\nDescriptions:\n"
+            block += "\n".join(
+                f"{e.id},{(e.description or '')}" for e in data["entities"]
+            )
+            block += "\nRelationships:\n"
+            block += "\n".join(
+                f"{r.id},{r.subject},{r.object},{r.predicate},{r.description or ''}"
+                for r in data["relationships"]
+            )
+            # check length
+            if cur_len + len(block) > max_summary_input_length:
+                prompt_chunks.append(
+                    block[: max_summary_input_length - cur_len]
+                )
+                break
+            else:
+                prompt_chunks.append(block)
+                cur_len += len(block)
+
+        return "".join(prompt_chunks)
+
+    # --------------------------------------------------------------------------------
+    # Deletion / Housekeeping
+    # --------------------------------------------------------------------------------
 
     @telemetry_event("delete_graph_for_documents")
     async def delete_graph_for_documents(
@@ -533,7 +1014,7 @@ class GraphService(Service):
         document_ids: list[UUID],
         **kwargs,
     ):
-        # TODO: Implement this, as it needs some checks.
+        # TODO: Implement
         raise NotImplementedError
 
     @telemetry_event("delete_graph")
@@ -553,7 +1034,11 @@ class GraphService(Service):
             collection_id=collection_id,
         )
 
-    async def kg_extraction(  # type: ignore
+    # --------------------------------------------------------------------------------
+    # KG Extraction logic
+    # --------------------------------------------------------------------------------
+
+    async def kg_extraction(
         self,
         document_id: UUID,
         generation_config: GenerationConfig,
@@ -566,125 +1051,112 @@ class GraphService(Service):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[KGExtraction | R2RDocumentProcessingError, None]:
+        """
+        The original “extract KG from doc” logic, but inlined instead of referencing a pipe.
+        """
         start_time = time.time()
 
         logger.info(
-            f"Graph Extraction: Processing document {document_id} for KG extraction",
+            f"Graph Extraction: Processing document {document_id} for KG extraction"
         )
 
-        # Then create the extractions from the results
+        # Retrieve chunks from DB
+        chunks = []
         limit = 100
         offset = 0
-        chunks = []
         while True:
-            chunk_req = await self.providers.database.chunks_handler.list_document_chunks(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+            chunk_req = await self.providers.database.chunks_handler.list_document_chunks(
                 document_id=document_id,
                 offset=offset,
                 limit=limit,
             )
-
-            chunks.extend(
-                [
-                    DocumentChunk(
-                        id=chunk["id"],
-                        document_id=chunk["document_id"],
-                        owner_id=chunk["owner_id"],
-                        collection_ids=chunk["collection_ids"],
-                        data=chunk["text"],
-                        metadata=chunk["metadata"],
-                    )
-                    for chunk in chunk_req["results"]
-                ]
-            )
+            new_chunk_objs = [
+                DocumentChunk(
+                    id=chunk["id"],
+                    document_id=chunk["document_id"],
+                    owner_id=chunk["owner_id"],
+                    collection_ids=chunk["collection_ids"],
+                    data=chunk["text"],
+                    metadata=chunk["metadata"],
+                )
+                for chunk in chunk_req["results"]
+            ]
+            chunks.extend(new_chunk_objs)
             if len(chunk_req["results"]) < limit:
                 break
             offset += limit
 
-        logger.info(f"Found {len(chunks)} chunks for document {document_id}")
-        if len(chunks) == 0:
+        if not chunks:
             logger.info(f"No chunks found for document {document_id}")
             raise R2RException(
                 message="No chunks found for document",
                 status_code=404,
             )
 
+        # Possibly filter out any chunks that have already been processed
         if filter_out_existing_chunks:
             existing_chunk_ids = await self.providers.database.graphs_handler.get_existing_document_entity_chunk_ids(
                 document_id=document_id
             )
-            chunks = [
-                chunk for chunk in chunks if chunk.id not in existing_chunk_ids
-            ]
+            before_count = len(chunks)
+            chunks = [c for c in chunks if c.id not in existing_chunk_ids]
             logger.info(
-                f"Filtered out {len(existing_chunk_ids)} existing chunks, remaining {len(chunks)} chunks for document {document_id}"
+                f"Filtered out {len(existing_chunk_ids)} existing chunk-IDs. {before_count}->{len(chunks)} remain."
             )
-
             if len(chunks) == 0:
-                logger.info(f"No extractions left for document {document_id}")
-                return
+                return  # nothing left to yield
 
-        logger.info(
-            f"Graph Extraction: Obtained {len(chunks)} chunks to process, time from start: {time.time() - start_time:.2f} seconds",
-        )
-
-        # sort the extractions accroding to chunk_order field in metadata in ascending order
+        # sort by chunk_order if present
         chunks = sorted(
             chunks,
             key=lambda x: x.metadata.get("chunk_order", float("inf")),
         )
 
-        # group these extractions into groups of chunk_merge_count
+        # group them
         grouped_chunks = [
             chunks[i : i + chunk_merge_count]
             for i in range(0, len(chunks), chunk_merge_count)
         ]
 
         logger.info(
-            f"Graph Extraction: Extracting KG Relationships for document and created {len(grouped_chunks)} tasks, time from start: {time.time() - start_time:.2f} seconds",
+            f"Graph Extraction: Created {len(grouped_chunks)} tasks for doc={document_id}"
         )
-
         tasks = [
             asyncio.create_task(
-                self._extract_kg(
-                    chunks=chunk_group,
-                    generation_config=generation_config,
-                    max_knowledge_relationships=max_knowledge_relationships,
-                    entity_types=entity_types,
-                    relation_types=relation_types,
-                    task_id=task_id,
+                self._extract_kg_from_chunk_group(
+                    chunk_group,
+                    generation_config,
+                    max_knowledge_relationships,
+                    entity_types,
+                    relation_types,
+                    task_id=i,
                     total_tasks=len(grouped_chunks),
                 )
             )
-            for task_id, chunk_group in enumerate(grouped_chunks)
+            for i, chunk_group in enumerate(grouped_chunks)
         ]
 
         completed_tasks = 0
-        total_tasks = len(tasks)
-
-        logger.info(
-            f"Graph Extraction: Waiting for {total_tasks} KG extraction tasks to complete",
-        )
-
-        for completed_task in asyncio.as_completed(tasks):
+        for t in asyncio.as_completed(tasks):
             try:
-                yield await completed_task
+                yield await t
                 completed_tasks += 1
                 if completed_tasks % 100 == 0:
                     logger.info(
-                        f"Graph Extraction: Completed {completed_tasks}/{total_tasks} KG extraction tasks",
+                        f"Graph Extraction: completed {completed_tasks}/{len(tasks)} tasks"
                     )
             except Exception as e:
-                logger.error(f"Error in Extracting KG Relationships: {e}")
+                logger.error(f"Error extracting from chunk group: {e}")
                 yield R2RDocumentProcessingError(
                     document_id=document_id,
                     error_message=str(e),
                 )
 
         logger.info(
-            f"Graph Extraction: Completed {completed_tasks}/{total_tasks} KG extraction tasks, time from start: {time.time() - start_time:.2f} seconds",
+            f"Graph Extraction: done with {document_id}, time={time.time()-start_time:.2f}s"
         )
 
-    async def _extract_kg(
+    async def _extract_kg_from_chunk_group(
         self,
         chunks: list[DocumentChunk],
         generation_config: GenerationConfig,
@@ -697,260 +1169,214 @@ class GraphService(Service):
         total_tasks: Optional[int] = None,
     ) -> KGExtraction:
         """
-        Extracts NER relationships from a extraction with retries.
+        (Equivalent to _extract_kg in old code.)
+        Merges chunk data, calls LLM, parses XML, returns KGExtraction object.
         """
+        combined_extraction: str = " ".join([c.data for c in chunks if c.data])
 
-        # combine all extractions into a single string
-        combined_extraction: str = " ".join([chunk.data for chunk in chunks])  # type: ignore
-
-        response = await self.providers.database.documents_handler.get_documents_overview(  # type: ignore
+        # Possibly get doc-level summary
+        doc_id = chunks[0].document_id
+        response = await self.providers.database.documents_handler.get_documents_overview(
             offset=0,
             limit=1,
-            filter_document_ids=[chunks[0].document_id],
+            filter_document_ids=[doc_id],
         )
         document_summary = (
             response["results"][0].summary if response["results"] else None
         )
 
-        messages = await self.providers.database.prompts_handler.get_message_payload(
-            task_prompt_name=self.providers.database.config.graph_creation_settings.graphrag_relationships_extraction_few_shot,
-            task_inputs={
-                "document_summary": document_summary,
-                "input": combined_extraction,
-                "max_knowledge_relationships": max_knowledge_relationships,
-                "entity_types": "\n".join(entity_types),
-                "relation_types": "\n".join(relation_types),
-            },
+        # Build messages/prompt
+        prompt_name = (
+            self.providers.database.config.graph_creation_settings.graphrag_relationships_extraction_few_shot
+        )
+        messages = (
+            await self.providers.database.prompts_handler.get_message_payload(
+                task_prompt_name=prompt_name,
+                task_inputs={
+                    "document_summary": document_summary or "",
+                    "input": combined_extraction,
+                    "max_knowledge_relationships": max_knowledge_relationships,
+                    "entity_types": "\n".join(entity_types),
+                    "relation_types": "\n".join(relation_types),
+                },
+            )
         )
 
         for attempt in range(retries):
             try:
-                response = await self.providers.llm.aget_completion(
-                    messages,
-                    generation_config=generation_config,
+                resp = await self.providers.llm.aget_completion(
+                    messages, generation_config=generation_config
                 )
-
-                kg_extraction = response.choices[0].message.content
-
-                if not kg_extraction:
+                kg_str = resp.choices[0].message.content
+                if not kg_str:
                     raise R2RException(
-                        "No knowledge graph extraction found in the response string, the selected LLM likely failed to format it's response correctly.",
+                        "No extraction found in LLM response.",
                         400,
                     )
 
-                def sanitize_xml(response_str: str) -> str:
-                    """Attempts to sanitize the XML response string by"""
-                    # Strip any markdown
-                    response_str = re.sub(r"```xml|```", "", response_str)
-
-                    # Remove any XML processing instructions or style tags
-                    response_str = re.sub(r"<\?.*?\?>", "", response_str)
-                    response_str = re.sub(
-                        r"<userStyle>.*?</userStyle>", "", response_str
-                    )
-
-                    # Only replace & if it's not already part of an escape sequence
-                    response_str = re.sub(
-                        r"&(?!amp;|quot;|apos;|lt;|gt;)", "&amp;", response_str
-                    )
-
-                    # Remove any root tags since we'll add them in parse_fn
-                    response_str = response_str.replace("<root>", "").replace(
-                        "</root>", ""
-                    )
-
-                    # Find and track all opening/closing tags
-                    opened_tags = []
-                    for match in re.finditer(
-                        r"<(\w+)(?:\s+[^>]*)?>", response_str
-                    ):
-                        tag = match.group(1)
-                        if tag != "root":  # Don't track root tag
-                            opened_tags.append(tag)
-
-                    for match in re.finditer(r"</(\w+)>", response_str):
-                        tag = match.group(1)
-                        if tag in opened_tags:
-                            opened_tags.remove(tag)
-
-                    # Close any unclosed tags
-                    for tag in reversed(opened_tags):
-                        response_str += f"</{tag}>"
-
-                    return response_str.strip()
-
-                async def parse_fn(response_str: str) -> Any:
-                    # Wrap the response in a root element to ensure it is valid XML
-                    cleaned_xml = sanitize_xml(response_str)
-                    wrapped_xml = f"<root>{cleaned_xml}</root>"
-
-                    try:
-                        root = ET.fromstring(wrapped_xml)
-                    except ET.ParseError as e:
-                        raise R2RException(
-                            f"Failed to parse XML response: {e}. Response: {wrapped_xml}",
-                            400,
-                        )
-
-                    entities = root.findall(".//entity")
-                    if (
-                        len(kg_extraction)
-                        > MIN_VALID_KG_EXTRACTION_RESPONSE_LENGTH
-                        and len(entities) == 0
-                    ):
-                        raise R2RException(
-                            f"No entities found in the response string, the selected LLM likely failed to format it's response correctly. {response_str}",
-                            400,
-                        )
-
-                    entities_arr = []
-                    for entity_elem in entities:
-                        entity_value = entity_elem.get("name")
-                        entity_category = entity_elem.find("type").text
-                        entity_description = entity_elem.find(
-                            "description"
-                        ).text
-
-                        description_embedding = (
-                            await self.providers.embedding.async_get_embedding(
-                                entity_description
-                            )
-                        )
-
-                        entities_arr.append(
-                            Entity(
-                                category=entity_category,
-                                description=entity_description,
-                                name=entity_value,
-                                parent_id=chunks[0].document_id,
-                                chunk_ids=[chunk.id for chunk in chunks],
-                                description_embedding=description_embedding,
-                                attributes={},
-                            )
-                        )
-
-                    relations_arr = []
-                    for rel_elem in root.findall(".//relationship"):
-                        if rel_elem is not None:
-                            source_elem = rel_elem.find("source")
-                            target_elem = rel_elem.find("target")
-                            type_elem = rel_elem.find("type")
-                            desc_elem = rel_elem.find("description")
-                            weight_elem = rel_elem.find("weight")
-
-                            if all(
-                                [
-                                    elem is not None
-                                    for elem in [
-                                        source_elem,
-                                        target_elem,
-                                        type_elem,
-                                        desc_elem,
-                                        weight_elem,
-                                    ]
-                                ]
-                            ):
-                                assert source_elem is not None
-                                assert target_elem is not None
-                                assert type_elem is not None
-                                assert desc_elem is not None
-                                assert weight_elem is not None
-
-                                subject = source_elem.text
-                                object = target_elem.text
-                                predicate = type_elem.text
-                                description = desc_elem.text
-                                weight = float(weight_elem.text)
-
-                                relationship_embedding = await self.providers.embedding.async_get_embedding(
-                                    description
-                                )
-
-                                relations_arr.append(
-                                    Relationship(
-                                        subject=subject,
-                                        predicate=predicate,
-                                        object=object,
-                                        description=description,
-                                        weight=weight,
-                                        parent_id=chunks[0].document_id,
-                                        chunk_ids=[
-                                            chunk.id for chunk in chunks
-                                        ],
-                                        attributes={},
-                                        description_embedding=relationship_embedding,
-                                    )
-                                )
-
-                    return entities_arr, relations_arr
-
-                entities, relationships = await parse_fn(kg_extraction)
+                # parse the XML
+                entities, relationships = await self._parse_kg_extraction_xml(
+                    kg_str, chunks
+                )
                 return KGExtraction(
-                    entities=entities,
-                    relationships=relationships,
+                    entities=entities, relationships=relationships
                 )
 
-            except (
-                Exception,
-                json.JSONDecodeError,
-                KeyError,
-                IndexError,
-                R2RException,
-            ) as e:
+            except Exception as e:
                 if attempt < retries - 1:
                     await asyncio.sleep(delay)
                 else:
                     logger.warning(
-                        f"Failed after retries with for chunk {chunks[0].id} of document {chunks[0].document_id}: {e}"
+                        f"Failed all retries chunkGroup doc={doc_id} reason={e}"
                     )
 
-        logger.info(
-            f"Graph Extraction: Completed task number {task_id} of {total_tasks} for document {chunks[0].document_id}",
-        )
+        return KGExtraction(entities=[], relationships=[])
 
-        return KGExtraction(
-            entities=[],
-            relationships=[],
-        )
+    async def _parse_kg_extraction_xml(
+        self, response_str: str, chunks: list[DocumentChunk]
+    ) -> tuple[list[Entity], list[Relationship]]:
+        """
+        Helper to parse the LLM's XML format, handle edge cases/cleanup, produce Entities/Relationships.
+        """
+
+        def sanitize_xml(r: str) -> str:
+            # Remove markdown fences
+            r = re.sub(r"```xml|```", "", r)
+            # Remove xml instructions or userStyle
+            r = re.sub(r"<\?.*?\?>", "", r)
+            r = re.sub(r"<userStyle>.*?</userStyle>", "", r)
+            # Replace bare `&` with `&amp;`
+            r = re.sub(r"&(?!amp;|quot;|apos;|lt;|gt;)", "&amp;", r)
+            # Also remove <root> if it appears
+            r = r.replace("<root>", "").replace("</root>", "")
+            return r.strip()
+
+        cleaned_xml = sanitize_xml(response_str)
+        wrapped = f"<root>{cleaned_xml}</root>"
+        try:
+            root = ET.fromstring(wrapped)
+        except ET.ParseError as e:
+            raise R2RException(
+                f"Failed to parse XML: {e}\nData: {wrapped[:1000]}...", 400
+            )
+
+        entities_elems = root.findall(".//entity")
+        if (
+            len(response_str) > MIN_VALID_KG_EXTRACTION_RESPONSE_LENGTH
+            and len(entities_elems) == 0
+        ):
+            raise R2RException(
+                f"No <entity> found in LLM XML, possibly malformed. Response excerpt: {response_str[:300]}",
+                400,
+            )
+
+        # build entity objects
+        doc_id = chunks[0].document_id
+        chunk_ids = [c.id for c in chunks]
+        entities_list: list[Entity] = []
+        for e in entities_elems:
+            name_attr = e.get("name")
+            type_elem = e.find("type")
+            desc_elem = e.find("description")
+            category = type_elem.text if type_elem is not None else None
+            desc = desc_elem.text if desc_elem is not None else ""
+            desc_embed = await self.providers.embedding.async_get_embedding(
+                desc
+            )
+            ent = Entity(
+                category=category,
+                description=desc,
+                name=name_attr,
+                parent_id=doc_id,
+                chunk_ids=chunk_ids,
+                description_embedding=desc_embed,
+                attributes={},
+            )
+            entities_list.append(ent)
+
+        # build relationship objects
+        relationships_list: list[Relationship] = []
+        rel_elems = root.findall(".//relationship")
+        for r_elem in rel_elems:
+            source_elem = r_elem.find("source")
+            target_elem = r_elem.find("target")
+            type_elem = r_elem.find("type")
+            desc_elem = r_elem.find("description")
+            weight_elem = r_elem.find("weight")
+
+            if not all(
+                [source_elem, target_elem, type_elem, desc_elem, weight_elem]
+            ):
+                continue  # skip malformed
+
+            subject = source_elem.text
+            object_ = target_elem.text
+            predicate = type_elem.text
+            desc = desc_elem.text
+            weight = float(weight_elem.text)
+            embed = await self.providers.embedding.async_get_embedding(desc)
+
+            rel = Relationship(
+                subject=subject,
+                predicate=predicate,
+                object=object_,
+                description=desc,
+                weight=weight,
+                parent_id=doc_id,
+                chunk_ids=chunk_ids,
+                attributes={},
+                description_embedding=embed,
+            )
+            relationships_list.append(rel)
+
+        return entities_list, relationships_list
+
+    # --------------------------------------------------------------------------------
+    # Bulk storing
+    # --------------------------------------------------------------------------------
 
     async def store_kg_extractions(
         self,
         kg_extractions: list[KGExtraction],
     ):
         """
-        Stores a batch of knowledge graph extractions in the graph database.
+        Stores a batch of knowledge graph extractions in the DB.
         """
-
         for extraction in kg_extractions:
+            # Map name->id after creation
             entities_id_map = {}
-            for entity in extraction.entities:
+            for e in extraction.entities:
                 result = await self.providers.database.graphs_handler.entities.create(
-                    name=entity.name,
-                    parent_id=entity.parent_id,
+                    name=e.name,
+                    parent_id=e.parent_id,
                     store_type=StoreType.DOCUMENTS,
-                    category=entity.category,
-                    description=entity.description,
-                    description_embedding=entity.description_embedding,
-                    chunk_ids=entity.chunk_ids,
-                    metadata=entity.metadata,
+                    category=e.category,
+                    description=e.description,
+                    description_embedding=e.description_embedding,
+                    chunk_ids=e.chunk_ids,
+                    metadata=e.metadata,
                 )
-                entities_id_map[entity.name] = result.id
+                entities_id_map[e.name] = result.id
 
-            if extraction.relationships:
-                for relationship in extraction.relationships:
-                    await self.providers.database.graphs_handler.relationships.create(
-                        subject=relationship.subject,
-                        subject_id=entities_id_map.get(relationship.subject),
-                        predicate=relationship.predicate,
-                        object=relationship.object,
-                        object_id=entities_id_map.get(relationship.object),
-                        parent_id=relationship.parent_id,
-                        description=relationship.description,
-                        description_embedding=relationship.description_embedding,
-                        weight=relationship.weight,
-                        metadata=relationship.metadata,
-                        store_type=StoreType.DOCUMENTS,
-                    )
+            # Insert relationships
+            for rel in extraction.relationships:
+                await self.providers.database.graphs_handler.relationships.create(
+                    subject=rel.subject,
+                    subject_id=entities_id_map.get(rel.subject),
+                    predicate=rel.predicate,
+                    object=rel.object,
+                    object_id=entities_id_map.get(rel.object),
+                    parent_id=rel.parent_id,
+                    description=rel.description,
+                    description_embedding=rel.description_embedding,
+                    weight=rel.weight,
+                    metadata=rel.metadata,
+                    store_type=StoreType.DOCUMENTS,
+                )
+
+    # --------------------------------------------------------------------------------
+    # Dedup / Merge
+    # --------------------------------------------------------------------------------
 
     @telemetry_event("deduplicate_document_entities")
     async def deduplicate_document_entities(
@@ -958,14 +1384,14 @@ class GraphService(Service):
         document_id: UUID,
     ):
         """
-        Deduplicate entities in a document.
+        Inlined from old code: merges duplicates by name, calls LLM for a new consolidated description, updates the record.
         """
-
         merged_results = await self.providers.database.entities_handler.merge_duplicate_name_blocks(
             parent_id=document_id,
             store_type=StoreType.DOCUMENTS,
         )
 
+        # Grab doc summary
         response = await self.providers.database.documents_handler.get_documents_overview(
             offset=0,
             limit=1,
@@ -975,40 +1401,32 @@ class GraphService(Service):
             response["results"][0].summary if response["results"] else None
         )
 
+        # For each merged entity
         for original_entities, merged_entity in merged_results:
-            # Generate new consolidated description using the LLM
+            # Summarize them with LLM
+            entity_info = "\n".join(
+                e.description for e in original_entities if e.description
+            )
             messages = await self.providers.database.prompts_handler.get_message_payload(
                 task_prompt_name=self.providers.database.config.graph_creation_settings.graph_entity_description_prompt,
                 task_inputs={
                     "document_summary": document_summary,
-                    "entity_info": f"{merged_entity.name}\n".join(
-                        [
-                            desc
-                            for desc in {
-                                e.description for e in original_entities
-                            }
-                            if desc is not None
-                        ]
-                    ),
+                    "entity_info": f"{merged_entity.name}\n{entity_info}",
                     "relationships_txt": "",
                 },
             )
-
-            generation_config = (
+            gen_config = (
                 self.config.database.graph_creation_settings.generation_config
             )
-            response = await self.providers.llm.aget_completion(
-                messages,
-                generation_config=generation_config,
+            resp = await self.providers.llm.aget_completion(
+                messages, generation_config=gen_config
             )
-            new_description = response.choices[0].message.content
+            new_description = resp.choices[0].message.content
 
-            # Generate new embedding for the consolidated description
             new_embedding = await self.providers.embedding.async_get_embedding(
                 new_description
             )
 
-            # Update the entity with new description and embedding
             await self.providers.database.graphs_handler.entities.update(
                 entity_id=merged_entity.id,
                 store_type=StoreType.DOCUMENTS,

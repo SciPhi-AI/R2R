@@ -73,8 +73,10 @@ async def test_document(
     test_client: AsyncR2RTestClient,
 ) -> AsyncGenerator[Tuple[str, list[dict]], None]:
     """Create a test document with chunks."""
+    uuid_1 = uuid.uuid4()
+    uuid_2 = uuid.uuid4()
     doc_id, _ = await test_client.create_document(
-        ["Test chunk 1", "Test chunk 2"]
+        [f"Test chunk 1_{uuid_1}", f"Test chunk 2_{uuid_2}"]
     )
     await asyncio.sleep(1)  # Wait for ingestion
     chunks = await test_client.list_chunks(doc_id)
@@ -112,7 +114,9 @@ class TestChunks:
 
         retrieved = await test_client.retrieve_chunk(chunk_id)
         assert retrieved["id"] == chunk_id, "Retrieved wrong chunk ID"
-        assert retrieved["text"] == "Test chunk 1", "Chunk text mismatch"
+        assert (
+            retrieved["text"].split("_")[0] == "Test chunk 1"
+        ), "Chunk text mismatch"
 
     @pytest.mark.asyncio
     async def test_update_chunk(
@@ -146,9 +150,14 @@ class TestChunks:
 
     @pytest.mark.asyncio
     async def test_search_chunks(self, test_client: AsyncR2RTestClient):
+        random_1 = uuid.uuid4()
+        random_2 = uuid.uuid4()
         # Create searchable document
         doc_id, _ = await test_client.create_document(
-            ["Aristotle reference", "Another piece of text"]
+            [
+                f"Aristotle reference {random_1}",
+                f"Another piece of text {random_2}",
+            ]
         )
         await asyncio.sleep(1)  # Wait for indexing
 

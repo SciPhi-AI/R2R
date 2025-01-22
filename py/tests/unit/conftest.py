@@ -5,7 +5,8 @@ from uuid import uuid4
 import pytest
 
 from core.base import AppConfig, DatabaseConfig, VectorQuantizationType
-from core.database.postgres import (
+from core.providers import NaClCryptoConfig, NaClCryptoProvider
+from core.providers.database.postgres import (
     PostgresChunksHandler,
     PostgresCollectionsHandler,
     PostgresConnectionManager,
@@ -16,10 +17,9 @@ from core.database.postgres import (
     PostgresLimitsHandler,
     PostgresPromptsHandler,
 )
-from core.database.users import (  # Make sure this import is correct
+from core.providers.database.users import (  # Make sure this import is correct
     PostgresUserHandler,
 )
-from core.providers import NaClCryptoConfig, NaClCryptoProvider
 from core.utils import generate_user_id
 
 TEST_DB_CONNECTION_STRING = os.environ.get(
@@ -185,7 +185,7 @@ async def prompt_handler(db_provider):
     """
     Returns an instance of PostgresPromptsHandler, creating the necessary tables first.
     """
-    # from core.database.postgres_prompts import PostgresPromptsHandler
+    # from core.providers.database.postgres_prompts import PostgresPromptsHandler
 
     project_name = db_provider.project_name
     connection_manager = db_provider.connection_manager

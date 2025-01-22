@@ -19,7 +19,7 @@ from core.base import (
 from core.base.abstractions import DocumentChunk
 from core.utils import generate_extraction_id
 
-from ....database.postgres import PostgresDatabaseProvider
+from ...database import PostgresDatabaseProvider
 from ...llm import LiteLLMCompletionProvider, OpenAICompletionProvider
 
 logger = logging.getLogger()
