@@ -76,27 +76,27 @@ def test_rag_with_filter(client):
     assert "completion" in resp, "RAG response missing 'completion'"
 
 
-# def test_rag_stream_query(client):
-#     resp = client.retrieval.rag(
-#         query="Detail the philosophical schools Aristotle influenced",
-#         rag_generation_config={"stream": True, "max_tokens": 50},
-#         search_settings={"use_semantic_search": True, "limit": 2},
-#     )
+def test_rag_stream_query(client):
+    resp = client.retrieval.rag(
+        query="Detail the philosophical schools Aristotle influenced",
+        rag_generation_config={"stream": True, "max_tokens": 50},
+        search_settings={"use_semantic_search": True, "limit": 2},
+    )
 
-#     # Consume a few chunks from the async generator
-#     import asyncio
+    # Consume a few chunks from the async generator
+    import asyncio
 
-#     def consume_stream():
-#         count = 0
-#         for chunk in resp:
-#             count += 1
-#             if count > 1:
-#                 break
-#         return count
+    def consume_stream():
+        count = 0
+        for chunk in resp:
+            count += 1
+            if count > 1:
+                break
+        return count
 
-#     # count = asyncio.run(consume_stream())
-#     count = consume_stream()
-#     assert count > 0, "No chunks received from streamed RAG query"
+    # count = asyncio.run(consume_stream())
+    count = consume_stream()
+    assert count > 0, "No chunks received from streamed RAG query"
 
 
 def test_agent_query(client):
@@ -110,26 +110,26 @@ def test_agent_query(client):
     assert len(resp["results"]) > 0, "No messages returned by agent"
 
 
-# def test_agent_query_stream(client):
-#     msg = Message(role="user", content="Explain Aristotle's logic in steps.")
-#     resp = client.retrieval.agent(
-#         message=msg,
-#         rag_generation_config={"stream": True, "max_tokens": 50},
-#         search_settings={"use_semantic_search": True, "limit": 3},
-#     )
+def test_agent_query_stream(client):
+    msg = Message(role="user", content="Explain Aristotle's logic in steps.")
+    resp = client.retrieval.agent(
+        message=msg,
+        rag_generation_config={"stream": True, "max_tokens": 50},
+        search_settings={"use_semantic_search": True, "limit": 3},
+    )
 
-#     import asyncio
+    import asyncio
 
-#     def consume_stream():
-#         count = 0
-#         for chunk in resp:
-#             count += 1
-#             if count > 1:
-#                 break
-#         return count
+    def consume_stream():
+        count = 0
+        for chunk in resp:
+            count += 1
+            if count > 1:
+                break
+        return count
 
-#     count = consume_stream()  # asyncio.run(consume_stream())
-#     assert count > 0, "No streaming chunks received from agent"
+    count = consume_stream()  # asyncio.run(consume_stream())
+    assert count > 0, "No streaming chunks received from agent"
 
 
 def test_completion(client):

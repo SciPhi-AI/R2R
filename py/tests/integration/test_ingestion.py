@@ -317,7 +317,8 @@ def test_metadata_handling(client: R2RClient):
     try:
         doc_id = file_ingestion(
             client=client,
-            file_path="core/examples/supported_file_types/pdf.pdf",
+            # file_path="core/examples/supported_file_types/pdf.pdf",
+            raw_text="this is test text " + str(time.time()),
             ingestion_mode="fast",
             metadata=metadata,
             cleanup=False,
