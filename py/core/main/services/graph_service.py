@@ -1227,8 +1227,8 @@ class GraphService(Service):
                 if attempt < retries - 1:
                     await asyncio.sleep(delay)
                 else:
-                    logger.warning(
-                        f"Failed all retries chunkGroup doc={doc_id} reason={e}"
+                    logger.error(
+                        f"All extraction attempts for doc={doc_id} and chunks{[chunk.id for chunk in chunks]} failed with error:\n{e}"
                     )
 
                 return KGExtraction(entities=[], relationships=[])

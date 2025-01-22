@@ -24,6 +24,7 @@ from core.base import (
     Message,
     R2RException,
     SearchSettings,
+    format_search_results_for_stream,
     to_async_generator,
 )
 from core.base.api.models import RAGResponse, User
@@ -493,7 +494,7 @@ class RetrievalService(Service):
                     messages=messages,
                     rag_generation_config=rag_generation_config,
                     aggregated_results=aggregated,
-                    **kwargs
+                    **kwargs,
                 )
 
             # LLM completion
@@ -573,26 +574,25 @@ class RetrievalService(Service):
         aggregated_results,
         **kwargs,
     ):
-        #FIXME: We need to yield aggregated_results as well
-        print(f"Aggregate results: {aggregated_results}")
+        # FIXME: We need to yield aggregated_results as well
         async def stream_response():
             try:
-                yield aggregated_results
+                yield format_search_results_for_stream(aggregated_results)
+                yield "\n<completion>\n"
                 async for chunk in self.providers.llm.aget_completion_stream(
-                    messages=messages,
-                    generation_config=rag_generation_config
+                    messages=messages, generation_config=rag_generation_config
                 ):
                     yield chunk.choices[0].delta.content or ""
+                yield "</completion>"
             except Exception as e:
                 logger.error(f"Error in streaming RAG: {e}")
                 if "NoneType" in str(e):
                     raise HTTPException(
                         status_code=502,
-                        detail="Server not reachable or returned an invalid response"
+                        detail="Server not reachable or returned an invalid response",
                     )
                 raise HTTPException(
-                    status_code=500,
-                    detail=f"Internal RAG Error - {str(e)}"
+                    status_code=500, detail=f"Internal RAG Error - {str(e)}"
                 )
 
         return stream_response()

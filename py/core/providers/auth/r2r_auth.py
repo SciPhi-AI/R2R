@@ -28,6 +28,20 @@ logger = logging.getLogger()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
+def normalize_email(email: str) -> str:
+    """
+    Normalizes an email address by converting it to lowercase.
+    This ensures consistent email handling throughout the application.
+
+    Args:
+        email: The email address to normalize
+
+    Returns:
+        The normalized (lowercase) email address
+    """
+    return email.lower() if email else None
+
+
 class R2RAuthProvider(AuthProvider):
     def __init__(
         self,
@@ -59,7 +73,7 @@ class R2RAuthProvider(AuthProvider):
     async def initialize(self):
         try:
             user = await self.register(
-                email=self.admin_email,
+                email=normalize_email(self.admin_email),
                 password=self.admin_password,
                 is_superuser=True,
             )
@@ -122,7 +136,9 @@ class R2RAuthProvider(AuthProvider):
             raise R2RException(status_code=401, message="Token has expired")
 
         return TokenData(
-            email=email_str, token_type=token_type_str, exp=exp_datetime
+            email=normalize_email(email_str),
+            token_type=token_type_str,
+            exp=exp_datetime,
         )
 
     async def authenticate_api_key(self, api_key: str) -> Optional[User]:
@@ -173,7 +189,7 @@ class R2RAuthProvider(AuthProvider):
                 )
             user = (
                 await self.database_provider.users_handler.get_user_by_email(
-                    email=token_data.email
+                    email=normalize_email(token_data.email)
                 )
             )
             if user is None:
@@ -225,7 +241,7 @@ class R2RAuthProvider(AuthProvider):
                     message="Invalid OAuth specification without GitHub or Google ID",
                 )
         new_user = await self.database_provider.users_handler.create_user(
-            email=email,
+            email=normalize_email(email),
             password=password,
             is_superuser=is_superuser,
             account_type=account_type,
@@ -256,7 +272,7 @@ class R2RAuthProvider(AuthProvider):
 
         if self.config.require_email_verification:
             verification_code, _ = await self.send_verification_email(
-                email=email, user=new_user
+                email=normalize_email(email), user=new_user
             )
         else:
             expiry = datetime.now(timezone.utc) + timedelta(hours=366 * 10)
@@ -277,7 +293,7 @@ class R2RAuthProvider(AuthProvider):
         if user is None:
             user = (
                 await self.database_provider.users_handler.get_user_by_email(
-                    email=email
+                    email=normalize_email(email)
                 )
             )
             if not user:
@@ -324,7 +340,7 @@ class R2RAuthProvider(AuthProvider):
     async def login(self, email: str, password: str) -> dict[str, Token]:
         logger.debug(f"Attempting login for email: {email}")
         user = await self.database_provider.users_handler.get_user_by_email(
-            email=email
+            email=normalize_email(email)
         )
 
         if user.account_type != "password":
@@ -369,8 +385,12 @@ class R2RAuthProvider(AuthProvider):
             logger.warning(f"Unverified user attempted login: {email}")
             raise R2RException(status_code=401, message="Email not verified")
 
-        access_token = self.create_access_token(data={"sub": user.email})
-        refresh_token = self.create_refresh_token(data={"sub": user.email})
+        access_token = self.create_access_token(
+            data={"sub": normalize_email(user.email)}
+        )
+        refresh_token = self.create_refresh_token(
+            data={"sub": normalize_email(user.email)}
+        )
         return {
             "access_token": Token(token=access_token, token_type="access"),
             "refresh_token": Token(token=refresh_token, token_type="refresh"),
@@ -391,10 +411,10 @@ class R2RAuthProvider(AuthProvider):
         )
 
         new_access_token = self.create_access_token(
-            data={"sub": token_data.email}
+            data={"sub": normalize_email(token_data.email)}
         )
         new_refresh_token = self.create_refresh_token(
-            data={"sub": token_data.email}
+            data={"sub": normalize_email(token_data.email)}
         )
         return {
             "access_token": Token(token=new_access_token, token_type="access"),
@@ -432,7 +452,7 @@ class R2RAuthProvider(AuthProvider):
         )
         try:
             await self.email_provider.send_password_changed_email(
-                to_email=user.email,
+                to_email=normalize_email(user.email),
                 dynamic_template_data={
                     "first_name": user.name.split(" ")[0] or "User"
                 },
@@ -448,7 +468,7 @@ class R2RAuthProvider(AuthProvider):
         try:
             user = (
                 await self.database_provider.users_handler.get_user_by_email(
-                    email=email
+                    email=normalize_email(email)
                 )
             )
 
@@ -464,7 +484,7 @@ class R2RAuthProvider(AuthProvider):
                 user.name.split(" ")[0] if user.name else email.split("@")[0]
             )
             await self.email_provider.send_password_reset_email(
-                to_email=email,
+                to_email=normalize_email(email),
                 reset_token=reset_token,
                 dynamic_template_data={"first_name": first_name},
             )
@@ -509,7 +529,7 @@ class R2RAuthProvider(AuthProvider):
 
         try:
             await self.email_provider.send_password_changed_email(
-                to_email=user.email,
+                to_email=normalize_email(user.email),
                 dynamic_template_data={
                     "first_name": user.name.split(" ")[0] or "User"
                 },
@@ -530,7 +550,7 @@ class R2RAuthProvider(AuthProvider):
 
     async def send_reset_email(self, email: str) -> dict:
         verification_code, expiry = await self.send_verification_email(
-            email=email
+            email=normalize_email(email)
         )
 
         return {
@@ -601,7 +621,7 @@ class R2RAuthProvider(AuthProvider):
             if provider == "google":
                 try:
                     user = await self.database_provider.users_handler.get_user_by_email(
-                        email
+                        normalize_email(email)
                     )
                     # If user found, check if user.google_id matches or is null. If null, update it
                     if user and not user.google_id:
@@ -612,7 +632,7 @@ class R2RAuthProvider(AuthProvider):
                 except:
                     # Create new user
                     user = await self.register(
-                        email=email
+                        email=normalize_email(email)
                         or f"{oauth_id}@google_oauth.fake",  # fallback
                         password=None,  # no password
                         account_type="oauth",
@@ -621,7 +641,7 @@ class R2RAuthProvider(AuthProvider):
             elif provider == "github":
                 try:
                     user = await self.database_provider.users_handler.get_user_by_email(
-                        email
+                        normalize_email(email)
                     )
                     # If user found, check if user.google_id matches or is null. If null, update it
                     if user and not user.github_id:
@@ -632,7 +652,7 @@ class R2RAuthProvider(AuthProvider):
                 except:
                     # Create new user
                     user = await self.register(
-                        email=email
+                        email=normalize_email(email)
                         or f"{oauth_id}@github_oauth.fake",  # fallback
                         password=None,  # no password
                         account_type="oauth",
@@ -657,8 +677,12 @@ class R2RAuthProvider(AuthProvider):
         await self.database_provider.users_handler.update_user(user)
 
         # 2) Generate tokens
-        access_token = self.create_access_token(data={"sub": user.email})
-        refresh_token = self.create_refresh_token(data={"sub": user.email})
+        access_token = self.create_access_token(
+            data={"sub": normalize_email(user.email)}
+        )
+        refresh_token = self.create_refresh_token(
+            data={"sub": normalize_email(user.email)}
+        )
 
         return {
             "access_token": Token(token=access_token, token_type="access"),
