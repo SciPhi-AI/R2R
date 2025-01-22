@@ -525,12 +525,9 @@ class PostgresDocumentsHandler(Handler):
         # -------------------------------------------
         if filters:
             # Apply the filters to generate a WHERE clause
-            print("filters = ", filters)
             filter_condition, filter_params = apply_filters(
                 filters, params, mode="condition_only"
             )
-            print("filter_condition = ", filter_condition)
-            print("filter_params = ", filter_params)
             if filter_condition:
                 conditions.append(filter_condition)
             # Make sure we keep adding to the same params list

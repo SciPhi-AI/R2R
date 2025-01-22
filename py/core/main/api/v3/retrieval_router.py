@@ -613,9 +613,13 @@ class RetrievalRouterV3(BaseRouterV3):
                 default=None,
                 description="ID of the conversation",
             ),
+            tools: Optional[list[str]] = Body(
+                None,
+                description="List of tools to execute",
+            ),
             max_tool_context_length: Optional[int] = Body(
                 default=32_768,
-                description="Maximum length of tool context",
+                description="Maximum length of returned tool context",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAgentResponse:
@@ -666,6 +670,7 @@ class RetrievalRouterV3(BaseRouterV3):
                         str(conversation_id) if conversation_id else None
                     ),
                     use_extended_prompt=True,
+                    override_tools=tools,
                 )
 
                 if rag_generation_config.stream:

@@ -58,11 +58,11 @@ class RAGAgentMixin:
     def _register_tools(self):
         """
         Called by the base agent to register all requested tools
-        from self.config.tool_names.
+        from self.config.tools.
         """
-        if not self.config.tool_names:
+        if not self.config.tools:
             return
-        for tool_name in set(self.config.tool_names):
+        for tool_name in set(self.config.tools):
             if tool_name == "content":
                 self._tools.append(self.content())
             elif tool_name == "local_search":
@@ -286,10 +286,7 @@ class RAGAgentMixin:
     ) -> str:
         context = format_search_results_for_llm(results)
         context_tokens = num_tokens(context)
-        print("context_tokens = ", context_tokens)
-
         frac_to_return = self.max_tool_context_length / num_tokens(context)
-        print("frac_to_return = ", frac_to_return)
 
         if frac_to_return > 1:
             return context

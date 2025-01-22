@@ -57,7 +57,8 @@ class Conversation:
 # TODO - Move agents to provider pattern
 class AgentConfig(BaseModel):
     system_instruction_name: str = "rag_agent"
-    tool_names: list[str] = ["search"]
+    tools: list[str] = ["search"]
+    tool_names: Optional[list[str]] = None
     generation_config: GenerationConfig = GenerationConfig()
     stream: bool = False
 
@@ -69,6 +70,9 @@ class AgentConfig(BaseModel):
             for k, v in kwargs.items()
             if k in base_args
         }
+        filtered_kwargs["tools"] = kwargs.get("tools", None) or kwargs.get(
+            "tool_names", None
+        )
         return cls(**filtered_kwargs)  # type: ignore
 
 
@@ -208,6 +212,9 @@ class Agent(ABC):
         *args,
         **kwargs,
     ) -> ToolResult:
+        logger.info(
+            f"Calling function: {function_name}, args: {function_arguments}, tool_id: {tool_id}"
+        )
         await self.conversation.add_message(
             Message(
                 role="assistant",

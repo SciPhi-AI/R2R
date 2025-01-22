@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import time
+from copy import deepcopy
 from datetime import datetime
 from typing import Any, Optional
 from uuid import UUID
@@ -607,6 +608,7 @@ class RetrievalService(Service):
         messages: Optional[list[Message]] = None,
         use_extended_prompt: bool = False,
         max_tool_context_length: int = 32_768,
+        override_tools: Optional[list[dict[str, Any]]] = None,
     ):
         try:
             if message and messages:
@@ -748,6 +750,9 @@ class RetrievalService(Service):
                 # If None, your `_setup()` inside the agent code
                 # will fallback to your config’s default system prompt name
                 # e.g. "rag_agent"
+
+            agent_config = deepcopy(self.config.agent)
+            agent_config.tools = override_tools or agent_config.tools
 
             if rag_generation_config.stream:
 
@@ -1087,6 +1092,7 @@ class RetrievalService(Service):
                 },
             )
         )
+        logger.info(f"Running agent with system prompt = {system_prompt}")
         return system_prompt
 
 
