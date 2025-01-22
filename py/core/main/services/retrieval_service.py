@@ -463,28 +463,22 @@ class RetrievalService(Service):
           • call LLM for final answer
         No pipeline classes necessary.
         """
-
-        #FIXME: Unsure of the intention here, but we need to review 
-
         # Convert any UUID filters to string
         for f, val in list(search_settings.filters.items()):
             if isinstance(val, UUID):
                 search_settings.filters[f] = str(val)
 
         try:
-            # 1) Do the search
+            # Do the search
             search_results_dict = await self.search(query, search_settings)
             aggregated = AggregateSearchResult.from_dict(search_results_dict)
 
-            # 2) Build context from search results
-            #    (You can rename/adjust this as needed)
+            # Build context from search results
             context_str = self._build_rag_context(query, aggregated)
 
-            # 3) Prepare your message payload
-            #    (Assuming you have some "prompts_handler" for system+task)
-            #    If you store your RAG prompt names in config, do something like:
+            # Prepare your message payload
             system_prompt_name = system_prompt_name or "default_system"
-            task_prompt_name = task_prompt_name or "rag_context"
+            task_prompt_name = task_prompt_name or "default_rag"
             task_prompt_override = kwargs.get("task_prompt_override", None)
 
             messages = await self.providers.database.prompts_handler.get_message_payload(
@@ -502,15 +496,15 @@ class RetrievalService(Service):
                     **kwargs
                 )
 
-            # 4) LLM completion
+            # LLM completion
             response = await self.providers.llm.aget_completion(
                 messages=messages, generation_config=rag_generation_config
             )
 
-            # 5) Build final RAGResponse
+            # Build final RAGResponse
             return RAGResponse(
                 completion=response.choices[0].message.content,
-                search_results=aggregated,  # let’s store the aggregated search info
+                search_results=aggregated,
             )
 
         except Exception as e:
@@ -580,8 +574,10 @@ class RetrievalService(Service):
         **kwargs,
     ):
         #FIXME: We need to yield aggregated_results as well
+        print(f"Aggregate results: {aggregated_results}")
         async def stream_response():
             try:
+                yield aggregated_results
                 async for chunk in self.providers.llm.aget_completion_stream(
                     messages=messages,
                     generation_config=rag_generation_config
