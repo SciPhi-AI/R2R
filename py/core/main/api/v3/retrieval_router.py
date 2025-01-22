@@ -1,3 +1,4 @@
+import logging
 import textwrap
 from typing import Any, Optional
 from uuid import UUID
@@ -46,6 +47,7 @@ class RetrievalRouterV3(BaseRouterV3):
         providers: R2RProviders,
         services: R2RServices,
     ):
+        logging.info("Initializing RetrievalRouterV3")
         super().__init__(providers, services)
 
     def _register_workflows(self):

@@ -1,4 +1,3 @@
-# rag_agent.py
 from typing import Any, Callable, Optional
 
 import tiktoken
@@ -314,6 +313,8 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
         rag_generation_config: GenerationConfig,
         local_search_method: Callable,
         content_method: Optional[Callable] = None,
+        max_tool_context_length: int = 10_000,
+
     ):
         # Initialize base R2RAgent
         R2RAgent.__init__(
@@ -331,6 +332,7 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
             config=config,
             search_settings=search_settings,
             rag_generation_config=rag_generation_config,
+            max_tool_context_length=max_tool_context_length,
             local_search_method=local_search_method,
             content_method=content_method,
         )

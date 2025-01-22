@@ -29,6 +29,7 @@ class ConversationsRouter(BaseRouterV3):
         providers: R2RProviders,
         services: R2RServices,
     ):
+        logging.info("Initializing ConversationsRouter")
         super().__init__(providers, services)
 
     def _setup_routes(self):

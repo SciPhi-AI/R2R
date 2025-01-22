@@ -11,7 +11,6 @@ from fastapi import Body, Depends, Path, Query
 from core.base import IndexConfig, R2RException
 from core.base.abstractions import VectorTableName
 from core.base.api.models import (
-    GenericMessageResponse,
     WrappedGenericMessageResponse,
     WrappedListVectorIndicesResponse,
 )
@@ -28,6 +27,7 @@ class IndicesRouter(BaseRouterV3):
         providers: R2RProviders,
         services: R2RServices,
     ):
+        logging.info("Initializing IndicesRouter")
         super().__init__(providers, services)
 
     def _setup_routes(self):

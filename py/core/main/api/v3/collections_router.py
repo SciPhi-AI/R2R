@@ -87,6 +87,7 @@ async def authorize_collection_action(
 
 class CollectionsRouter(BaseRouterV3):
     def __init__(self, providers: R2RProviders, services: R2RServices):
+        logging.info("Initializing CollectionsRouter")
         super().__init__(providers, services)
 
     def _setup_routes(self):

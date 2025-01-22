@@ -101,7 +101,7 @@ def hatchet_ingestion_factory(
 
                 ingestion_config = parsed_data["ingestion_config"] or {}
                 extractions_generator = (
-                    await self.ingestion_service.parse_file(
+                    self.ingestion_service.parse_file(
                         document_info, ingestion_config
                     )
                 )
@@ -147,7 +147,7 @@ def hatchet_ingestion_factory(
                     status=IngestionStatus.STORING,
                 )
 
-                storage_generator = await self.ingestion_service.store_embeddings(  # type: ignore
+                storage_generator =  self.ingestion_service.store_embeddings(  # type: ignore
                     embeddings
                 )
 
@@ -413,7 +413,7 @@ def hatchet_ingestion_factory(
                 document_info, status=IngestionStatus.STORING
             )
 
-            storage_generator = await self.ingestion_service.store_embeddings(
+            storage_generator =  self.ingestion_service.store_embeddings(
                 embeddings
             )
             async for _ in storage_generator:

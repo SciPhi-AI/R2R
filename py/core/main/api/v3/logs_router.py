@@ -18,6 +18,7 @@ class LogsRouter(BaseRouterV3):
         providers: R2RProviders,
         services: R2RServices,
     ):
+        logging.info("Initializing LogsRouter")
         super().__init__(providers, services)
         CURRENT_DIR = Path(__file__).resolve().parent
         TEMPLATES_DIR = CURRENT_DIR.parent / "templates"
