@@ -145,7 +145,7 @@ class PostgresDocumentsHandler(Handler):
                     raise RuntimeError(
                         "Your 'documents' table is missing the 'total_tokens' column, "
                         "but existing documents are present. Please run:\n\n"
-                        "  r2r db migrate\n\n"
+                        "  r2r db upgrade\n\n"
                         "to update your schema before continuing."
                     )
                 else:
