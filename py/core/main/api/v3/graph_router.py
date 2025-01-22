@@ -312,19 +312,25 @@ class GraphRouter(BaseRouterV3):
             }
 
             if run_with_orchestration:
-                return await self.providers.orchestration.run_workflow(  # type: ignore
-                    "build-communities", {"request": workflow_input}, {}
-                )
-            else:
-                from core.main.orchestration import simple_kg_factory
+                try:
+                    return await self.providers.orchestration.run_workflow(  # type: ignore
+                        "build-communities", {"request": workflow_input}, {}
+                    )
+                except (
+                    Exception
+                ) as e:  # TODO: Need to find specific error (gRPC most likely?)
+                    logger.error(
+                        f"Error running orchestrated community building: {e} \n\nAttempting to run without orchestration."
+                    )
+            from core.main.orchestration import simple_kg_factory
 
-                logger.info("Running build-communities without orchestration.")
-                simple_kg = simple_kg_factory(self.services.graph)
-                await simple_kg["build-communities"](workflow_input)
-                return {
-                    "message": "Graph communities created successfully.",
-                    "task_id": None,
-                }
+            logger.info("Running build-communities without orchestration.")
+            simple_kg = simple_kg_factory(self.services.graph)
+            await simple_kg["build-communities"](workflow_input)
+            return {
+                "message": "Graph communities created successfully.",
+                "task_id": None,
+            }
 
         @self.router.post(
             "/graphs/{collection_id}/reset",

@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Optional
 
 import jwt
 from fastapi import Depends
@@ -34,10 +34,10 @@ class JwtAuthProvider(AuthProvider):
             config, crypto_provider, database_provider, email_provider
         )
 
-    async def login(self, email: str, password: str) -> Dict[str, Token]:
+    async def login(self, email: str, password: str) -> dict[str, Token]:
         raise R2RException(status_code=400, message="Not implemented")
 
-    async def oauth_callback(self, code: str) -> Dict[str, Token]:
+    async def oauth_callback(self, code: str) -> dict[str, Token]:
         raise R2RException(status_code=400, message="Not implemented")
 
     async def user(self, token: str) -> User:

@@ -18,6 +18,10 @@ WORKDIR /app
 RUN pip install --no-cache-dir unstructured "unstructured[all-docs]"
 
 
+ENV NLTK_DATA=/usr/share/nltk_data
+RUN mkdir -p ${NLTK_DATA}
+RUN python -m nltk.downloader -d ${NLTK_DATA} punkt_tab averaged_perceptron_tagger_eng
+
 RUN python -c "from unstructured.partition.model_init import initialize; initialize()"
 
 RUN pip install gunicorn uvicorn fastapi httpx
