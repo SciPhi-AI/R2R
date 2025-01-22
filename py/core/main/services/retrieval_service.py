@@ -464,21 +464,14 @@ class RetrievalService(Service):
         No pipeline classes necessary.
         """
 
+        #FIXME: Unsure of the intention here, but we need to review 
+
         # Convert any UUID filters to string
         for f, val in list(search_settings.filters.items()):
             if isinstance(val, UUID):
                 search_settings.filters[f] = str(val)
 
         try:
-            if rag_generation_config.stream:
-                # For streaming, handle separately
-                return await self.stream_rag_response(
-                    query,
-                    rag_generation_config,
-                    search_settings,
-                    **kwargs,
-                )
-
             # 1) Do the search
             search_results_dict = await self.search(query, search_settings)
             aggregated = AggregateSearchResult.from_dict(search_results_dict)
@@ -500,6 +493,14 @@ class RetrievalService(Service):
                 task_inputs={"query": query, "context": context_str},
                 task_prompt_override=task_prompt_override,
             )
+
+            if rag_generation_config.stream:
+                return await self.stream_rag_response(
+                    messages=messages,
+                    rag_generation_config=rag_generation_config,
+                    aggregated_results=aggregated,
+                    **kwargs
+                )
 
             # 4) LLM completion
             response = await self.providers.llm.aget_completion(
@@ -573,26 +574,30 @@ class RetrievalService(Service):
 
     async def stream_rag_response(
         self,
-        query,
+        messages,
         rag_generation_config,
-        search_settings,
-        *args,
+        aggregated_results,
         **kwargs,
     ):
+        #FIXME: We need to yield aggregated_results as well
         async def stream_response():
-            merged_kwargs = {
-                "input": to_async_generator([query]),
-                "state": None,
-                "search_settings": search_settings,
-                "rag_generation_config": rag_generation_config,
-                **kwargs,
-            }
-
-            async for chunk in await self.pipelines.streaming_rag_pipeline.run(
-                *args,
-                **merged_kwargs,
-            ):
-                yield chunk
+            try:
+                async for chunk in self.providers.llm.aget_completion_stream(
+                    messages=messages,
+                    generation_config=rag_generation_config
+                ):
+                    yield chunk.choices[0].delta.content or ""
+            except Exception as e:
+                logger.error(f"Error in streaming RAG: {e}")
+                if "NoneType" in str(e):
+                    raise HTTPException(
+                        status_code=502,
+                        detail="Server not reachable or returned an invalid response"
+                    )
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Internal RAG Error - {str(e)}"
+                )
 
         return stream_response()
 
