@@ -74,7 +74,7 @@ fast_llm = "openai/gpt-4o-mini"
   model = "openai/gpt-4o"
   temperature = 0.1
   top_p = 1
-  max_tokens_to_sample = 1_024
+  max_tokens_to_sample = 4_096
   stream = false
   add_generation_kwargs = { }
 
@@ -99,13 +99,13 @@ batch_size = 256
     fragment_merge_count = 1 # number of fragments to merge into a single extraction
     max_knowledge_relationships = 100
     max_description_input_length = 65536
-    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for relationshipt extraction
+    generation_config = { model = "openai/gpt-4o-mini", max_tokens_to_sample = 4_096 } # and other params, model used for relationshipt extraction
     automatic_deduplication = true # enable automatic deduplication of entities
 
   [database.graph_enrichment_settings]
     community_reports_prompt = "graphrag_community_reports"
     max_summary_input_length = 65536
-    generation_config = { model = "openai/gpt-4o-mini" } # and other params, model used for node description and graph clustering
+    generation_config = { model = "openai/gpt-4o-mini", max_tokens_to_sample = 4_096 } # and other params, model used for node description and graph clustering
     leiden_params = {}
 
   [database.graph_search_settings]
