@@ -17,7 +17,7 @@ from core.base.api.models import (
     WrappedGenericMessageResponse,
     WrappedUsersResponse,
 )
-from core.utils import update_settings_from_dict
+from core.utils import update_settings_from_dict, generate_default_user_collection_id
 
 from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
@@ -29,7 +29,6 @@ from enum import Enum
 from uuid import UUID
 
 from core.base import R2RException
-
 
 class CollectionAction(str, Enum):
     VIEW = "view"
@@ -666,6 +665,11 @@ class CollectionsRouter(BaseRouterV3):
             The user must have appropriate permissions to delete the collection.
             Deleting a collection removes all associations but does not delete the documents within it.
             """
+            if id == generate_default_user_collection_id(auth_user.id):
+                raise R2RException(
+                    "Cannot delete the default user collection.",
+                    400,
+                )
             await authorize_collection_action(
                 auth_user, id, CollectionAction.DELETE, self.services
             )
