@@ -128,7 +128,7 @@ class IngestionConfig(ProviderConfig):
             "automatic_extraction"
         ]
     )
-    document_summary_max_length = Field(
+    document_summary_max_length: int = Field(
         default_factory=lambda: IngestionConfig._defaults[
             "document_summary_max_length"
         ]

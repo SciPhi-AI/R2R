@@ -17,7 +17,10 @@ from core.base.api.models import (
     WrappedGenericMessageResponse,
     WrappedUsersResponse,
 )
-from core.utils import update_settings_from_dict, generate_default_user_collection_id
+from core.utils import (
+    generate_default_user_collection_id,
+    update_settings_from_dict,
+)
 
 from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
@@ -29,6 +32,7 @@ from enum import Enum
 from uuid import UUID
 
 from core.base import R2RException
+
 
 class CollectionAction(str, Enum):
     VIEW = "view"
