@@ -142,27 +142,19 @@ class PostgresDocumentsHandler(Handler):
                 if doc_count > 0:
                     # We already have documents, but no total_tokens column
                     # => ask user to run r2r db migrate
-                    raise RuntimeError(
-                        "Your 'documents' table is missing the 'total_tokens' column, "
-                        "but existing documents are present. Please run:\n\n"
-                        "  r2r db upgrade\n\n"
-                        "to update your schema before continuing."
-                    )
-                else:
-                    # Table is empty, so we can safely add the column
-                    create_tokens_col = f"""
-                    ALTER TABLE {table_full_name}
-                    ADD COLUMN total_tokens INT DEFAULT 0
-                    """
                     logger.warning(
-                        "Adding missing 'total_tokens' column to the 'documents' table."
+                        "Adding the missing 'total_tokens' column to the 'documents' table, this will impact existing files."
                     )
-                    await self.connection_manager.execute_query(
-                        create_tokens_col
-                    )
+
+                create_tokens_col = f"""
+                ALTER TABLE {table_full_name}
+                ADD COLUMN total_tokens INT DEFAULT 0
+                """
+                await self.connection_manager.execute_query(create_tokens_col)
 
         except Exception as e:
             logger.warning(f"Error {e} when creating document table.")
+            raise e
 
     async def upsert_documents_overview(
         self, documents_overview: DocumentResponse | list[DocumentResponse]
