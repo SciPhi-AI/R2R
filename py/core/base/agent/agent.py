@@ -3,6 +3,7 @@ import json
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
+from json import JSONDecodeError
 from typing import Any, AsyncGenerator, Optional, Type
 
 from pydantic import BaseModel
@@ -12,6 +13,7 @@ from core.base.abstractions import (
     LLMChatCompletion,
     Message,
     MessageType,
+    R2RException,
 )
 from core.base.providers import CompletionProvider, DatabaseProvider
 
@@ -246,7 +248,14 @@ class Agent(ABC):
         if tool := next(
             (t for t in self.tools if t.name == function_name), None
         ):
-            merged_kwargs = {**kwargs, **json.loads(function_arguments)}
+            try:
+                function_args = json.loads(function_arguments)
+            except JSONDecodeError as e:
+                raise R2RException(
+                    message=f"Error parsing function arguments: {e}, agent likely produced invalid tool inputs.",
+                    status_code=400,
+                )
+            merged_kwargs = {**kwargs, **function_args}
             raw_result = await tool.results_function(*args, **merged_kwargs)
             llm_formatted_result = tool.llm_format_function(raw_result)
             tool_result = ToolResult(
