@@ -21,6 +21,7 @@ from core.base import (
     GraphRelationshipResult,
     GraphSearchResult,
     GraphSearchResultType,
+    IngestionStatus,
     Message,
     R2RException,
     SearchSettings,
@@ -1024,6 +1025,15 @@ class RetrievalService(Service):
 
         lines = []
         for i, doc in enumerate(docs, start=1):
+            if (
+                not doc.summary
+                or doc.ingestion_status != IngestionStatus.SUCCESS
+            ):
+                lines.append(
+                    f"[{i}] Title: {doc.title}, Summary: (Summary not available), Status:{doc.ingestion_status} ID: {doc.id}"
+                )
+                continue
+
             # Build a line referencing the doc
             title = doc.title or "(Untitled Document)"
             lines.append(
