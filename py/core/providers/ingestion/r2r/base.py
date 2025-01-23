@@ -93,7 +93,7 @@ class R2RIngestionProvider(IngestionProvider):
         llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
     ):
         super().__init__(config, database_provider, llm_provider)
-        self.config: R2RIngestionConfig = config  # for type hinting
+        self.config: R2RIngestionConfig = config
         self.database_provider: PostgresDatabaseProvider = database_provider
         self.llm_provider: (
             LiteLLMCompletionProvider | OpenAICompletionProvider
