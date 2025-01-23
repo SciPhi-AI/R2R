@@ -762,7 +762,7 @@ class RetrievalService(Service):
                         agent = R2RStreamingRAGAgent(
                             database_provider=self.providers.database,
                             llm_provider=self.providers.llm,
-                            config=self.config.agent,
+                            config=agent_config,
                             search_settings=search_settings,
                             rag_generation_config=rag_generation_config,
                             max_tool_context_length=max_tool_context_length,
@@ -824,7 +824,7 @@ class RetrievalService(Service):
             agent = R2RRAGAgent(
                 database_provider=self.providers.database,
                 llm_provider=self.providers.llm,
-                config=self.config.agent,
+                config=agent_config,
                 search_settings=search_settings,
                 rag_generation_config=rag_generation_config,
                 max_tool_context_length=max_tool_context_length,
