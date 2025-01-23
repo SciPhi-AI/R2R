@@ -2323,6 +2323,11 @@ class PostgresGraphsHandler(Handler):
         logger.info(
             f"Clustering over {len(all_relationships)} relationships for {collection_id} with settings: {leiden_params}"
         )
+        if len(all_relationships) == 0:
+            raise R2RException(
+                message="No relationships found for clustering",
+                status_code=400,
+            )
 
         return await self._cluster_and_add_community_info(
             relationships=all_relationships,
