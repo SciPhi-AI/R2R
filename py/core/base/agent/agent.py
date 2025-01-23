@@ -280,5 +280,4 @@ class Agent(ABC):
                 )
             )
 
-
         return tool_result
