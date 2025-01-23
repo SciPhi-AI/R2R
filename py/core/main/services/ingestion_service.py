@@ -305,7 +305,11 @@ class IngestionService:
             messages = await self.providers.database.prompts_handler.get_message_payload(
                 system_prompt_name=self.config.ingestion.document_summary_system_prompt,
                 task_prompt_name=self.config.ingestion.document_summary_task_prompt,
-                task_inputs={"document": document},
+                task_inputs={
+                    "document": document[
+                        0 : self.config.ingestion.document_summary_max_length
+                    ]
+                },
             )
             response = await self.providers.llm.aget_completion(
                 messages=messages,
