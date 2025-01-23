@@ -127,8 +127,8 @@ class VLMPDFParser(AsyncParser[str | bytes]):
 
             if response.choices and response.choices[0].message:
                 content = response.choices[0].message.content
-                if not content:
-                    raise ValueError("No content in response")
+                # if not content:
+                # raise ValueError("No content in response")
                 return {"page": str(page_num), "content": content}
             else:
                 raise ValueError("No response content")
