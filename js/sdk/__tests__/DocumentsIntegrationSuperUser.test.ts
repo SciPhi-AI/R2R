@@ -10,6 +10,7 @@ const TEST_OUTPUT_DIR = path.join(__dirname, "test-output");
  * marmeladov.txt will have an id of 649d1072-7054-4e17-bd51-1af5f467d617
  * The untitled document will have an id of 5556836e-a51c-57c7-916a-de76c79df2b6
  * The default collection id is 122fdf6a-e116-546b-a8f6-e4cb2e2c0a09
+ * The invalid JSON file will have an id of 04ebba11-8d7c-5e7e-ade8-8f02edee2327
  */
 describe("r2rClient V3 Documents Integration Tests", () => {
   let client: r2rClient;
@@ -75,6 +76,15 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
     expect(response.results.documentId).toBeDefined();
     documentId3 = response.results.documentId;
+  });
+
+  test("Create a document from an invalid JSON file", async () => {
+    await expect(
+      client.documents.create({
+        file: { path: "examples/data/invalid.json", name: "invalid.json" },
+        metadata: { title: "invalid.json" },
+      }),
+    ).rejects.toThrow(/Status 400/);
   });
 
   test("Retrieve document", async () => {
@@ -352,6 +362,14 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   test("Delete another document with URL", async () => {
     const response = await client.documents.delete({
       id: documentId3,
+    });
+
+    expect(response.results).toBeDefined();
+  });
+
+  test("Delete invalid JSON document", async () => {
+    const response = await client.documents.delete({
+      id: "04ebba11-8d7c-5e7e-ade8-8f02edee2327",
     });
 
     expect(response.results).toBeDefined();
