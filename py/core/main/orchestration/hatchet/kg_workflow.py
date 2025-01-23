@@ -289,7 +289,7 @@ def hatchet_kg_factory(
                     **input_data["graph_enrichment_settings"],
                 )
 
-                num_communities = kg_clustering_results[0]["num_communities"]
+                num_communities = kg_clustering_results["num_communities"][0]
 
                 if num_communities == 0:
                     raise R2RException("No communities found", 400)
@@ -299,8 +299,7 @@ def hatchet_kg_factory(
                 )
 
                 return {
-                    "result": "successfully ran kg clustering",
-                    "kg_clustering": kg_clustering_results,
+                    "result": kg_clustering_results,
                 }
             except Exception as e:
                 await self.kg_service.providers.database.documents_handler.set_workflow_status(
@@ -319,11 +318,10 @@ def hatchet_kg_factory(
             )
             collection_id = input_data.get("collection_id", None)
             graph_id = input_data.get("graph_id", None)
-
             # Get number of communities from previous step
-            num_communities = context.step_output("kg_clustering")[
-                "kg_clustering"
-            ][0]["num_communities"]
+            num_communities = context.step_output("kg_clustering")["result"][
+                "num_communities"
+            ][0]
 
             # Calculate batching
             parallel_communities = min(100, num_communities)
