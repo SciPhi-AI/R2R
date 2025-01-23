@@ -46,6 +46,7 @@ class IngestionConfig(ProviderConfig):
         "skip_document_summary": False,
         "document_summary_system_prompt": "default_system",
         "document_summary_task_prompt": "default_summary",
+        "document_summary_max_length": 100_000,
         "chunks_for_document_summary": 128,
         "document_summary_model": "openai/gpt-4o-mini",
         "parser_overrides": {},
@@ -125,6 +126,11 @@ class IngestionConfig(ProviderConfig):
     automatic_extraction: bool = Field(
         default_factory=lambda: IngestionConfig._defaults[
             "automatic_extraction"
+        ]
+    )
+    document_summary_max_length = Field(
+        default_factory=lambda: IngestionConfig._defaults[
+            "document_summary_max_length"
         ]
     )
 
