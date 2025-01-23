@@ -310,7 +310,7 @@ services:
 
       # XAI / GROK
       - XAI_API_KEY=${XAI_API_KEY:-}
-      
+
       # Anthropic
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
 
