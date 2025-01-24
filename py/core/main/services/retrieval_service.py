@@ -708,7 +708,9 @@ class RetrievalService(Service):
                 )
 
             current_message = messages[-1]
-
+            logger.info(
+                f"Running the agnet with conversation_id = {conversation_id} and message = {current_message}"
+            )
             # Save the new message to the conversation
             parent_id = ids[-1] if ids else None
             message_response = await self.providers.database.conversations_handler.add_message(

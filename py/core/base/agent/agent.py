@@ -217,44 +217,31 @@ class Agent(ABC):
         logger.info(
             f"Calling function: {function_name}, args: {function_arguments}, tool_id: {tool_id}"
         )
-        await self.conversation.add_message(
-            Message(
-                role="assistant",
-                tool_calls=(
-                    [
-                        {
-                            "id": tool_id,
-                            "type": "function",
-                            "function": {
-                                "name": function_name,
-                                "arguments": function_arguments,
-                            },
-                        }
-                    ]
-                    if tool_id
-                    else None
-                ),
-                function_call=(
-                    {
-                        "name": function_name,
-                        "arguments": function_arguments,
-                    }
-                    if not tool_id
-                    else None
-                ),
-            )
-        )
-
         if tool := next(
             (t for t in self.tools if t.name == function_name), None
         ):
             try:
                 function_args = json.loads(function_arguments)
             except JSONDecodeError as e:
+                error_message = f"The requested tool '{function_name}' is not available with arguments {function_arguments} failed."
+                tool_result = ToolResult(
+                    raw_result=error_message,
+                    llm_formatted_result=error_message,
+                )
+                await self.conversation.add_message(
+                    Message(
+                        role="tool" if tool_id else "function",
+                        content=str(tool_result.llm_formatted_result),
+                        name=function_name,
+                        tool_call_id=tool_id,
+                    )
+                )
+
                 raise R2RException(
                     message=f"Error parsing function arguments: {e}, agent likely produced invalid tool inputs.",
                     status_code=400,
                 )
+
             merged_kwargs = {**kwargs, **function_args}
             raw_result = await tool.results_function(*args, **merged_kwargs)
             llm_formatted_result = tool.llm_format_function(raw_result)
@@ -265,21 +252,6 @@ class Agent(ABC):
             if tool.stream_function:
                 tool_result.stream_result = tool.stream_function(raw_result)
 
-            await self.conversation.add_message(
-                Message(
-                    role="tool" if tool_id else "function",
-                    content=str(tool_result.llm_formatted_result),
-                    name=function_name,
-                    tool_call_id=tool_id,
-                )
-            )
-
-        else:
-            error_message = f"The requested tool '{function_name}' is not available. Available tools: {', '.join(t.name for t in self.tools)}"
-            tool_result = ToolResult(
-                raw_result=error_message,
-                llm_formatted_result=error_message,
-            )
             await self.conversation.add_message(
                 Message(
                     role="tool" if tool_id else "function",
