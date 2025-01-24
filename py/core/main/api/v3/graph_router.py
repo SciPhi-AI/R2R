@@ -408,7 +408,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            await self.services.graph.reset_graph_v3(id=collection_id)
+            await self.services.graph.reset_graph(id=collection_id)
             # await _pull(collection_id, auth_user)
             return GenericBooleanResponse(success=True)  # type: ignore
 

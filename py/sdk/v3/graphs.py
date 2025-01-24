@@ -300,8 +300,6 @@ class GraphsSDK:
             version="v3",
         )
 
-    # TODO: create community
-
     async def list_communities(
         self,
         collection_id: str | UUID,
