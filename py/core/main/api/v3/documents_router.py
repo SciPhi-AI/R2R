@@ -1778,13 +1778,6 @@ class DocumentsRouter(BaseRouterV3):
                     "task_id": None,
                 }
 
-        @self.router.post("/documents/test")
-        @self.base_endpoint
-        async def test_endpoint(
-            auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ):
-            return {"message": "Test endpoint works"}
-
         @self.router.get(
             "/documents/{id}/entities",
             dependencies=[Depends(self.rate_limit_dependency)],
