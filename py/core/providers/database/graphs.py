@@ -19,8 +19,6 @@ from core.base.abstractions import (
     Community,
     Entity,
     Graph,
-    KGCreationSettings,
-    KGEnrichmentSettings,
     KGExtractionStatus,
     R2RException,
     Relationship,
@@ -2297,7 +2295,7 @@ class PostgresGraphsHandler(Handler):
         clustering_mode: str,
     ) -> Tuple[int, Any]:
         """
-        Calls the external clustering service to cluster the KG.
+        Calls the external clustering service to cluster the graph.
         """
 
         offset = 0
@@ -2368,8 +2366,7 @@ class PostgresGraphsHandler(Handler):
             response.raise_for_status()
 
         data = response.json()
-        communities = data.get("communities", [])
-        return communities
+        return data.get("communities", [])
 
     async def _create_graph_and_cluster(
         self,
@@ -2409,19 +2406,13 @@ class PostgresGraphsHandler(Handler):
         self,
         relationships: list[Relationship],
         leiden_params: dict[str, Any],
-        collection_id: Optional[UUID] = None,
+        collection_id: UUID,
         clustering_mode: str = "local",
     ) -> Tuple[int, Any]:
-        # clear if there is any old information
-        conditions = []
-        if collection_id is not None:
-            conditions.append("collection_id = $1")
+        logger.info(f"Creating graph and clustering for {collection_id}")
 
         await asyncio.sleep(0.1)
-
         start_time = time.time()
-
-        logger.info(f"Creating graph and clustering for {collection_id}")
 
         hierarchical_communities = await self._create_graph_and_cluster(
             relationships=relationships,
@@ -2433,24 +2424,17 @@ class PostgresGraphsHandler(Handler):
             f"Computing Leiden communities completed, time {time.time() - start_time:.2f} seconds."
         )
 
-        # If remote: hierarchical_communities is a list of dicts like:
-        # [{"node": str, "cluster": int, "level": int}, ...]
-        # If local: hierarchical_communities is the returned structure from hierarchical_leiden (list of named tuples)
-
-        if clustering_mode == "remote":
-            if not hierarchical_communities:
-                num_communities = 0
-            else:
+        if not hierarchical_communities:
+            num_communities = 0
+        else:
+            if (
+                clustering_mode == "remote"
+            ):  # Remote clustering: hierarchical_communities is a list of dicts
                 num_communities = (
                     max(item["cluster"] for item in hierarchical_communities)
                     + 1
                 )
-        else:
-            # Local mode: hierarchical_communities returned by hierarchical_leiden
-            # According to the original code, it's likely a list of items with .cluster attribute
-            if not hierarchical_communities:
-                num_communities = 0
-            else:
+            else:  # Local clustering: hierarchical_communities is returned by hierarchical_leiden
                 num_communities = (
                     max(item.cluster for item in hierarchical_communities) + 1
                 )
