@@ -469,15 +469,15 @@ class GraphService(Service):
 
         # 2) For each entity name in the map, we gather sub-entities and relationships
         tasks = []
-        for entity_name, entity_info in entity_map.items():
-            tasks.append(
-                self._process_entity_for_description(
-                    entities=entity_info["entities"],
-                    relationships=entity_info["relationships"],
-                    document_id=document_id,
-                    max_description_input_length=max_description_input_length,
-                )
+        tasks.extend(
+            self._process_entity_for_description(
+                entities=entity_info["entities"],
+                relationships=entity_info["relationships"],
+                document_id=document_id,
+                max_description_input_length=max_description_input_length,
             )
+            for entity_name, entity_info in entity_map.items()
+        )
 
         # 3) Wait for all tasks, yield as they complete
         idx = 0
@@ -733,18 +733,18 @@ class GraphService(Service):
         tasks = []
         import uuid
 
-        for _, nodes in clusters.items():
-            tasks.append(
-                self._process_community_summary(
-                    community_id=uuid.uuid4(),
-                    nodes=nodes,
-                    all_entities=all_entities,
-                    all_relationships=all_relationships,
-                    max_summary_input_length=max_summary_input_length,
-                    generation_config=generation_config,
-                    collection_id=collection_id,
-                )
+        tasks.extend(
+            self._process_community_summary(
+                community_id=uuid.uuid4(),
+                nodes=nodes,
+                all_entities=all_entities,
+                all_relationships=all_relationships,
+                max_summary_input_length=max_summary_input_length,
+                generation_config=generation_config,
+                collection_id=collection_id,
             )
+            for nodes in clusters.values()
+        )
 
         total_jobs = len(tasks)
         results_returned = 0
@@ -976,7 +976,6 @@ class GraphService(Service):
             collection_id=collection_id,
         )
 
-    @telemetry_event("kg_extraction")
     async def kg_extraction(
         self,
         document_id: UUID,
