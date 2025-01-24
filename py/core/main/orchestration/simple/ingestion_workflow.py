@@ -239,7 +239,7 @@ def simple_ingestion_factory(service: IngestionService):
                 await service.update_document_status(
                     document_info, status=IngestionStatus.FAILED
                 )
-            if R2RException:
+            if isinstance(e, R2RException):
                 raise
             raise HTTPException(
                 status_code=500, detail=f"Error during ingestion: {str(e)}"
