@@ -140,31 +140,60 @@ class RAGAgentMixin:
         Tool to fetch entire documents from the local database. Typically used if the agent needs
         deeper or more structured context from documents, not just chunk-level hits.
         """
-        return Tool(
-            name="content",
-            description=(
-                "Fetches the complete contents of all user documents from the local database. "
-                "Can be used alongside filter criteria (e.g. doc IDs, collection IDs, etc.) to restrict the query."
-                "For instance, a single document can be returned with a filter like so:"
-                "{'document_id': {'$eq': '...'}}."
-            ),
-            results_function=self._content_function,
-            llm_format_function=self.format_search_results_for_llm,
-            stream_function=self.format_search_results_for_stream,
-            parameters={
-                "type": "object",
-                "properties": {
-                    "filters": {
-                        "type": "object",
-                        "description": (
-                            "Dictionary with filter criteria, such as "
-                            '{"$and": [{"document_id": {"$eq": "6c9d1c39..."}, {"collection_ids": {"$overlap": [...]}]}'
-                        ),
+        if "gemini" in self.rag_generation_config.model:
+            tool = Tool(
+                name="content",
+                description=(
+                    "Fetches the complete contents of all user documents from the local database. "
+                    "Can be used alongside filter criteria (e.g. doc IDs, collection IDs, etc.) to restrict the query."
+                    "For instance, a single document can be returned with a filter like so:"
+                    "{'document_id': {'$eq': '...'}}."
+                ),
+                results_function=self._content_function,
+                llm_format_function=self.format_search_results_for_llm,
+                stream_function=self.format_search_results_for_stream,
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "filters": {
+                            "type": "string",
+                            "description": (
+                                "Dictionary with filter criteria, such as "
+                                '{"$and": [{"document_id": {"$eq": "6c9d1c39..."}, {"collection_ids": {"$overlap": [...]}]}'
+                            ),
+                        },
                     },
+                    "required": ["filters"],
                 },
-                "required": ["filters"],
-            },
-        )
+            )
+
+        else:
+            tool = Tool(
+                name="content",
+                description=(
+                    "Fetches the complete contents of all user documents from the local database. "
+                    "Can be used alongside filter criteria (e.g. doc IDs, collection IDs, etc.) to restrict the query."
+                    "For instance, a single document can be returned with a filter like so:"
+                    "{'document_id': {'$eq': '...'}}."
+                ),
+                results_function=self._content_function,
+                llm_format_function=self.format_search_results_for_llm,
+                stream_function=self.format_search_results_for_stream,
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        "filters": {
+                            "type": "object",
+                            "description": (
+                                "Dictionary with filter criteria, such as "
+                                '{"$and": [{"document_id": {"$eq": "6c9d1c39..."}, {"collection_ids": {"$overlap": [...]}]}'
+                            ),
+                        },
+                    },
+                    "required": ["filters"],
+                },
+            )
+        return tool
 
     async def _content_function(
         self,
@@ -267,138 +296,138 @@ class RAGAgentMixin:
             web_search_results=web_response.organic_results,
         )
 
-    # ---------------------------------------------------------------------
-    # MULTI_SEARCH IMPLEMENTATION
-    # ---------------------------------------------------------------------
-    def multi_search(self) -> Tool:
-        """
-        A tool that accepts multiple queries at once, runs local/web/content
-        searches *in parallel*, merges them, and returns aggregated results.
-        """
-        return Tool(
-            name="multi_search",
-            description=(
-                "Run parallel searches for multiple queries. Submit ALL queries in a SINGLE request with this exact format:\n"
-                '{"queries": ["query1", "query2", "query3"], "include_web": false}\n\n'
-                "Example valid input:\n"
-                '{"queries": ["latest research on GPT-4", "advances in robotics 2024"], "include_web": false}\n\n'
-                "IMPORTANT:\n"
-                "- All queries must be in a single array under the 'queries' key\n"
-                "- Do NOT submit multiple separate JSON objects\n"
-                "- Do NOT add empty JSON objects {}\n"
-                "- Each query should be a string in the array\n"
-                "You can submit up to 10 queries in a single request. Results are limited to 20 per query."
-            ),
-            results_function=self._multi_search,
-            llm_format_function=self.format_search_results_for_llm,
-            stream_function=self.format_search_results_for_stream,
-            parameters={
-                "type": "object",
-                "properties": {
-                    "queries": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "description": "Array of search queries to run in parallel. Example: ['query1', 'query2']",
-                        "maxItems": 10,
-                    },
-                    "include_web": {
-                        "type": "boolean",
-                        "description": "Whether to include web search results",
-                        "default": False,
-                    },
-                },
-                "required": ["queries"],
-            },
-        )
+    # # ---------------------------------------------------------------------
+    # # MULTI_SEARCH IMPLEMENTATION
+    # # ---------------------------------------------------------------------
+    # def multi_search(self) -> Tool:
+    #     """
+    #     A tool that accepts multiple queries at once, runs local/web/content
+    #     searches *in parallel*, merges them, and returns aggregated results.
+    #     """
+    #     return Tool(
+    #         name="multi_search",
+    #         description=(
+    #             "Run parallel searches for multiple queries. Submit ALL queries in a SINGLE request with this exact format:\n"
+    #             '{"queries": ["query1", "query2", "query3"], "include_web": false}\n\n'
+    #             "Example valid input:\n"
+    #             '{"queries": ["latest research on GPT-4", "advances in robotics 2024"], "include_web": false}\n\n'
+    #             "IMPORTANT:\n"
+    #             "- All queries must be in a single array under the 'queries' key\n"
+    #             "- Do NOT submit multiple separate JSON objects\n"
+    #             "- Do NOT add empty JSON objects {}\n"
+    #             "- Each query should be a string in the array\n"
+    #             "You can submit up to 10 queries in a single request. Results are limited to 20 per query."
+    #         ),
+    #         results_function=self._multi_search,
+    #         llm_format_function=self.format_search_results_for_llm,
+    #         stream_function=self.format_search_results_for_stream,
+    #         parameters={
+    #             "type": "object",
+    #             "properties": {
+    #                 "queries": {
+    #                     "type": "array",
+    #                     "items": {"type": "string"},
+    #                     "description": "Array of search queries to run in parallel. Example: ['query1', 'query2']",
+    #                     "maxItems": 10,
+    #                 },
+    #                 "include_web": {
+    #                     "type": "boolean",
+    #                     "description": "Whether to include web search results",
+    #                     "default": False,
+    #                 },
+    #             },
+    #             "required": ["queries"],
+    #         },
+    #     )
 
-    async def _multi_search(
-        self,
-        queries: list[str],
-        include_web: bool = False,
-        include_content: bool = False,
-        *args,
-        **kwargs,
-    ) -> list[Tuple[str, AggregateSearchResult]]:
-        """
-        Run local, web, and content searches *in parallel* for each query,
-        merge results, and return them sorted by best "score".
+    # async def _multi_search(
+    #     self,
+    #     queries: list[str],
+    #     include_web: bool = False,
+    #     include_content: bool = False,
+    #     *args,
+    #     **kwargs,
+    # ) -> list[Tuple[str, AggregateSearchResult]]:
+    #     """
+    #     Run local, web, and content searches *in parallel* for each query,
+    #     merge results, and return them sorted by best "score".
 
-        :param queries: a list of search queries
-        :param include_web: whether to run web search (True by default)
-        :param include_content: whether to fetch entire documents (True by default)
-        :return: A list of (query, merged_results), sorted by highest chunk score
-        """
-        # Set search results to 10
-        self.search_settings.limit = 20
+    #     :param queries: a list of search queries
+    #     :param include_web: whether to run web search (True by default)
+    #     :param include_content: whether to fetch entire documents (True by default)
+    #     :return: A list of (query, merged_results), sorted by highest chunk score
+    #     """
+    #     # Set search results to 10
+    #     self.search_settings.limit = 20
 
-        # Build tasks (one per query)
-        tasks = [
-            self._multi_search_for_single_query(
-                q, include_web, include_content
-            )
-            for q in queries
-        ]
-        # Run them all in parallel
-        partial_results = await asyncio.gather(*tasks)
-        return self._merge_aggregate_results(partial_results)
+    #     # Build tasks (one per query)
+    #     tasks = [
+    #         self._multi_search_for_single_query(
+    #             q, include_web, include_content
+    #         )
+    #         for q in queries
+    #     ]
+    #     # Run them all in parallel
+    #     partial_results = await asyncio.gather(*tasks)
+    #     return self._merge_aggregate_results(partial_results)
 
-    async def _multi_search_for_single_query(
-        self,
-        query: str,
-        include_web: bool,
-        include_content: bool,
-    ) -> AggregateSearchResult:
-        """
-        For a single query, run local, web, and content searches in parallel,
-        then merge everything into one AggregateSearchResult.
-        """
-        # local always
-        searches = [self._local_search_function(query)]
+    # async def _multi_search_for_single_query(
+    #     self,
+    #     query: str,
+    #     include_web: bool,
+    #     include_content: bool,
+    # ) -> AggregateSearchResult:
+    #     """
+    #     For a single query, run local, web, and content searches in parallel,
+    #     then merge everything into one AggregateSearchResult.
+    #     """
+    #     # local always
+    #     searches = [self._local_search_function(query)]
 
-        # optionally web
-        if include_web:
-            searches.append(self._web_search_function(query))
+    #     # optionally web
+    #     if include_web:
+    #         searches.append(self._web_search_function(query))
 
-        # optionally content
-        if include_content:
-            # pass any needed filters/options
-            searches.append(self._content_function(filters={}, options={}))
+    #     # optionally content
+    #     if include_content:
+    #         # pass any needed filters/options
+    #         searches.append(self._content_function(filters={}, options={}))
 
-        # gather them concurrently
-        partial_results = await asyncio.gather(*searches)
+    #     # gather them concurrently
+    #     partial_results = await asyncio.gather(*searches)
 
-        # merge all partial AggregateSearchResults
-        merged_result = self._merge_aggregate_results(partial_results)
-        return merged_result
+    #     # merge all partial AggregateSearchResults
+    #     merged_result = self._merge_aggregate_results(partial_results)
+    #     return merged_result
 
-    def _merge_aggregate_results(
-        self, results: list[AggregateSearchResult]
-    ) -> AggregateSearchResult:
-        """
-        Concatenate chunk_search_results, web_search_results, etc. from multiple
-        AggregateSearchResult objects into one.
-        """
-        all_chunks = []
-        all_graphs = []
-        all_web = []
-        all_docs = []
+    # def _merge_aggregate_results(
+    #     self, results: list[AggregateSearchResult]
+    # ) -> AggregateSearchResult:
+    #     """
+    #     Concatenate chunk_search_results, web_search_results, etc. from multiple
+    #     AggregateSearchResult objects into one.
+    #     """
+    #     all_chunks = []
+    #     all_graphs = []
+    #     all_web = []
+    #     all_docs = []
 
-        for r in results:
-            if r.chunk_search_results:
-                all_chunks.extend(r.chunk_search_results)
-            if r.graph_search_results:
-                all_graphs.extend(r.graph_search_results)
-            if r.web_search_results:
-                all_web.extend(r.web_search_results)
-            if r.context_document_results:
-                all_docs.extend(r.context_document_results)
+    #     for r in results:
+    #         if r.chunk_search_results:
+    #             all_chunks.extend(r.chunk_search_results)
+    #         if r.graph_search_results:
+    #             all_graphs.extend(r.graph_search_results)
+    #         if r.web_search_results:
+    #             all_web.extend(r.web_search_results)
+    #         if r.context_document_results:
+    #             all_docs.extend(r.context_document_results)
 
-        return AggregateSearchResult(
-            chunk_search_results=all_chunks if all_chunks else None,
-            graph_search_results=all_graphs if all_graphs else None,
-            web_search_results=all_web if all_web else None,
-            context_document_results=all_docs if all_docs else None,
-        )
+    #     return AggregateSearchResult(
+    #         chunk_search_results=all_chunks if all_chunks else None,
+    #         graph_search_results=all_graphs if all_graphs else None,
+    #         web_search_results=all_web if all_web else None,
+    #         context_document_results=all_docs if all_docs else None,
+    #     )
 
     # ---------------------------------------------------------------------
     # 4) Utility format methods for search results
