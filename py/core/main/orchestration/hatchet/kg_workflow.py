@@ -294,10 +294,6 @@ def hatchet_kg_factory(
                 if num_communities == 0:
                     raise R2RException("No communities found", 400)
 
-                logger.info(
-                    f"Successfully ran kg clustering: {json.dumps(kg_clustering_results)}"
-                )
-
                 return {
                     "result": kg_clustering_results,
                 }
