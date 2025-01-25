@@ -47,6 +47,7 @@ class Conversation:
     async def add_message(self, message):
         async with self._lock:
             self.messages.append(message)
+            print("latest message = ", message)
 
     async def get_messages(self) -> list[dict[str, Any]]:
         async with self._lock:
