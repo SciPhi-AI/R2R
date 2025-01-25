@@ -28,7 +28,7 @@ async def check_connection_and_run(schema: str, command: str, revision: str = No
         click.secho(f"Command '{command}' completed successfully.", fg="green")
     else:
         click.secho(f"Command '{command}' failed.", fg="red")
-    
+
     return result
 
 @db.command()

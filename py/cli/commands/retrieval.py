@@ -15,13 +15,13 @@ def retrieval():
 
 @retrieval.command()
 @click.option(
-    "--query", 
-    prompt="Enter your search query", 
+    "--query",
+    prompt="Enter your search query",
     help="The search query to perform the retrieval."
 )
 @click.option(
-    "--limit", 
-    default=None, 
+    "--limit",
+    default=None,
     help="Specify the maximum number of search results to return."
 )
 @click.option(
@@ -30,19 +30,19 @@ def retrieval():
     help="Enable hybrid search, combining both semantic and fulltext search."
 )
 @click.option(
-    "--use-semantic-search", 
-    default=None, 
+    "--use-semantic-search",
+    default=None,
     help="Enable semantic search for more contextual results."
 )
 @click.option(
-    "--use-fulltext-search", 
-    default=None, 
+    "--use-fulltext-search",
+    default=None,
     help="Enable fulltext search for exact matches."
 )
 @click.option(
     "--filters",
     type=JSON,
-    help="""Apply filters to the vector search in JSON format. 
+    help="""Apply filters to the vector search in JSON format.
     Example: --filters='{"document_id":{"$in":["doc_id_1", "doc_id_2"]}}'"""
 )
 @click.option(
@@ -52,8 +52,8 @@ def retrieval():
     help="Specify the search strategy (e.g., vanilla RAG or advanced methods like query fusion or HyDE)."
 )
 @click.option(
-    "--graph-search-enabled", 
-    default=None, 
+    "--graph-search-enabled",
+    default=None,
     help="Enable knowledge graph search."
 )
 @click.option(
@@ -65,10 +65,10 @@ def retrieval():
 async def search(ctx: click.Context, query, **kwargs):
     """Perform a search query with the specified parameters."""
     search_settings = {
-        k: v for k, v in kwargs.items() 
+        k: v for k, v in kwargs.items()
         if k in [
-            "filters", "limit", "search_strategy", 
-            "use_hybrid_search", "use_semantic_search", 
+            "filters", "limit", "search_strategy",
+            "use_hybrid_search", "use_semantic_search",
             "use_fulltext_search"] and v is not None
     }
 
@@ -107,13 +107,13 @@ async def search(ctx: click.Context, query, **kwargs):
 
 @retrieval.command()
 @click.option(
-    "--query", 
-    prompt="Enter your search query", 
+    "--query",
+    prompt="Enter your search query",
     help="The search query for RAG."
 )
 @click.option(
-    "--limit", 
-    default=None, 
+    "--limit",
+    default=None,
     help="Specify the number of search results to return."
 )
 @click.option(
@@ -122,19 +122,19 @@ async def search(ctx: click.Context, query, **kwargs):
     help="Enable hybrid search, combining both semantic and fulltext search."
 )
 @click.option(
-    "--use-semantic-search", 
-    default=None, 
+    "--use-semantic-search",
+    default=None,
     help="Enable semantic search."
 )
 @click.option(
-    "--use-fulltext-search", 
-    default=None, 
+    "--use-fulltext-search",
+    default=None,
     help="Enable fulltext search."
 )
 @click.option(
     "--filters",
     type=JSON,
-    help="""Apply filters to the vector search in JSON format. 
+    help="""Apply filters to the vector search in JSON format.
     Example: --filters='{"document_id":{"$in":["doc_id_1", "doc_id_2"]}}'"""
 )
 @click.option(
@@ -144,8 +144,8 @@ async def search(ctx: click.Context, query, **kwargs):
     help="Specify the search strategy for RAG."
 )
 @click.option(
-    "--graph-search-enabled", 
-    default=None, 
+    "--graph-search-enabled",
+    default=None,
     help="Enable knowledge graph search."
 )
 @click.option(
@@ -167,10 +167,10 @@ async def rag(ctx: click.Context, query, **kwargs):
 
     # Prepare search settings similar to the search command
     search_settings = {
-        k: v for k, v in kwargs.items() 
+        k: v for k, v in kwargs.items()
         if k in [
-            "filters", "limit", "search_strategy", 
-            "use_hybrid_search", "use_semantic_search", 
+            "filters", "limit", "search_strategy",
+            "use_hybrid_search", "use_semantic_search",
             "use_fulltext_search"] and v is not None
     }
 
@@ -201,4 +201,3 @@ async def rag(ctx: click.Context, query, **kwargs):
         click.echo(f"R2R Error: {str(e)}", err=True)
     except Exception as e:
         click.echo(f"An unexpected error occurred: {e}", err=True)
-

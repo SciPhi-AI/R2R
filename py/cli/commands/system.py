@@ -119,7 +119,7 @@ async def serve(
 
     if config_path and config_name:
         raise click.UsageError("Both `config-path` and `config-name` were provided. Please provide only one.")
-        
+
     if config_name and os.path.isfile(config_name):
         click.echo("Warning: `config-name` corresponds to an existing file. If you intended a custom config, use `config-path`.")
 
