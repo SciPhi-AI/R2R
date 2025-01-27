@@ -39,7 +39,7 @@ def normalize_email(email: str) -> str:
     Returns:
         The normalized (lowercase) email address
     """
-    return email.lower() if email else None
+    return email.lower() if email else ""
 
 
 class R2RAuthProvider(AuthProvider):
@@ -606,7 +606,7 @@ class R2RAuthProvider(AuthProvider):
         )
 
     async def oauth_callback_handler(
-        self, provider: str, oauth_id: str, email: Optional[str]
+        self, provider: str, oauth_id: str, email: str
     ) -> dict[str, Token]:
         """
         Handles a login/registration flow for OAuth providers (e.g., Google or GitHub).
