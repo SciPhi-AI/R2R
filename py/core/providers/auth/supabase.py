@@ -247,7 +247,7 @@ class SupabaseAuthProvider(AuthProvider):
         )
 
     async def oauth_callback_handler(
-        self, provider: str, oauth_id: str, email: Optional[str]
+        self, provider: str, oauth_id: str, email: str
     ) -> dict[str, Token]:
         raise NotImplementedError(
             "API key management is not supported with Supabase authentication"
