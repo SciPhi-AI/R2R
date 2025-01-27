@@ -225,7 +225,7 @@ files = [
 name = "anthropic"
 version = "0.45.1"
 description = "The official Python library for the anthropic API"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "anthropic-0.45.1-py3-none-any.whl", hash = "sha256:16ccb6fffb4c0f1842b16547a85f96390ecfe00c67269ae87f2d4aadc70a550b"},
@@ -6708,10 +6708,10 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 type = ["pytest-mypy"]
 
 [extras]
-core = ["aiohttp", "aiosqlite", "apscheduler", "asyncpg", "bcrypt", "boto3", "colorlog", "fsspec", "future", "google-auth", "google-auth-oauthlib", "graspologic", "gunicorn", "hatchet-sdk", "litellm", "networkx", "ollama", "psutil", "pydantic", "pyjwt", "pynacl", "python-multipart", "pyyaml", "sendgrid", "sqlalchemy", "supabase", "tiktoken", "tokenizers", "unstructured-client", "uvicorn", "vecs"]
+core = ["aiohttp", "aiosqlite", "anthropic", "apscheduler", "asyncpg", "bcrypt", "boto3", "colorlog", "fsspec", "future", "google-auth", "google-auth-oauthlib", "graspologic", "gunicorn", "hatchet-sdk", "litellm", "networkx", "ollama", "psutil", "pydantic", "pyjwt", "pynacl", "python-multipart", "pyyaml", "sendgrid", "sqlalchemy", "supabase", "tiktoken", "tokenizers", "unstructured-client", "uvicorn", "vecs"]
 ingestion-bundle = ["aioshutil", "beautifulsoup4", "docutils", "epub", "extract-msg", "markdown", "numpy", "olefile", "openpyxl", "orgparse", "pdf2image", "pillow-heif", "pypdf", "pypdf2", "python-docx", "python-pptx", "striprtf", "xlrd"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "f88bd84d2e01f18fe0195a4985060ac5da0deeb0779c729748dc826bc55767af"
+content-hash = "e40e45538d2b3037de6220192b12ac116adc0d3e4559b4677315ca6fc3d1b1a1"
