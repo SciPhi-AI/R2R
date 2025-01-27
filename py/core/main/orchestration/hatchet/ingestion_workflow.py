@@ -314,9 +314,9 @@ def hatchet_ingestion_factory(
 
             try:
                 documents_overview = (
-                    await self.ingestion_service.providers.database.documents_handler.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                    await self.ingestion_service.providers.database.documents_handler.get_documents_overview(
                         offset=0,
-                        limit=100,
+                        limit=1,
                         filter_document_ids=[document_id],
                     )
                 )["results"]
@@ -334,6 +334,7 @@ def hatchet_ingestion_factory(
                     await self.ingestion_service.update_document_status(
                         document_info,
                         status=IngestionStatus.FAILED,
+                        metadata={"failure": f"{context.step_run_errors()}"},
                     )
 
             except Exception as e:

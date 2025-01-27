@@ -46,11 +46,14 @@ class ManagementService(Service):
         )
         config_toml = self.config.to_toml()
         config_dict = toml.loads(config_toml)
+        try:
+            project_name = os.environ["R2R_PROJECT_NAME"]
+        except KeyError:
+            project_name = ""
         return {
             "config": config_dict,
             "prompts": prompts,
-            "r2r_project_name": os.environ["R2R_PROJECT_NAME"],
-            # "r2r_version": get_version("r2r"),
+            "r2r_project_name": project_name,
         }
 
     @telemetry_event("UsersOverview")
