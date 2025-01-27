@@ -48,14 +48,12 @@ class AnthropicCompletionProvider(CompletionProvider):
         """
         Convert an Anthropic response into an OpenAI-compatible ChatCompletion.
         """
-        # Grab the text out of the content list
         content_text = (
             anthropic_response.content[0].text
             if anthropic_response.content
             else ""
         )
 
-        # Map stop_reason from Anthropic to finish_reason in OpenAI
         finish_reason = (
             "stop"
             if anthropic_response.stop_reason == "end_turn"
