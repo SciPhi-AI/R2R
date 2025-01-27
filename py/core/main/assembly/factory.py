@@ -20,6 +20,7 @@ from ..config import R2RConfig
 
 logger = logging.getLogger()
 from core.providers import (
+    AnthropicCompletionProvider,
     AsyncSMTPEmailProvider,
     BcryptCryptoConfig,
     BCryptCryptoProvider,
@@ -102,7 +103,11 @@ class R2RProviderFactory:
     def create_ingestion_provider(
         ingestion_config: IngestionConfig,
         database_provider: PostgresDatabaseProvider,
-        llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
+        llm_provider: (
+            AnthropicCompletionProvider
+            | LiteLLMCompletionProvider
+            | OpenAICompletionProvider
+        ),
         *args,
         **kwargs,
     ) -> R2RIngestionProvider | UnstructuredIngestionProvider:
@@ -223,12 +228,18 @@ class R2RProviderFactory:
     @staticmethod
     def create_llm_provider(
         llm_config: CompletionConfig, *args, **kwargs
-    ) -> LiteLLMCompletionProvider | OpenAICompletionProvider:
+    ) -> (
+        AnthropicCompletionProvider
+        | LiteLLMCompletionProvider
+        | OpenAICompletionProvider
+    ):
         llm_provider: Optional[CompletionProvider] = None
-        if llm_config.provider == "openai":
-            llm_provider = OpenAICompletionProvider(llm_config)
+        if llm_config.provider == "anthropic":
+            llm_provider = AnthropicCompletionProvider(llm_config)
         elif llm_config.provider == "litellm":
             llm_provider = LiteLLMCompletionProvider(llm_config)
+        elif llm_config.provider == "openai":
+            llm_provider = OpenAICompletionProvider(llm_config)
         else:
             raise ValueError(
                 f"Language model provider {llm_config.provider} not supported"
@@ -285,7 +296,9 @@ class R2RProviderFactory:
             R2RIngestionProvider | UnstructuredIngestionProvider
         ] = None,
         llm_provider_override: Optional[
-            OpenAICompletionProvider | LiteLLMCompletionProvider
+            AnthropicCompletionProvider
+            | OpenAICompletionProvider
+            | LiteLLMCompletionProvider
         ] = None,
         orchestration_provider_override: Optional[Any] = None,
         *args,

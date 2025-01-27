@@ -54,7 +54,7 @@ system_instruction_name = "rag_agent"
 tools = ["local_search", "content"]
 
   [agent.generation_config]
-  model = "openai/gpt-4o"
+  model = "claude-3-sonnet-20240229"
 
 [auth]
 provider = "r2r"
@@ -66,12 +66,12 @@ default_admin_email = "admin@example.com"
 default_admin_password = "change_me_immediately"
 
 [completion]
-provider = "litellm"
+provider = "anthropic"
 concurrent_request_limit = 64
-fast_llm = "openai/gpt-4o-mini"
+fast_llm = "claude-3-5-haiku-latest"
 
   [completion.generation_config]
-  model = "openai/gpt-4o"
+  model = "claude-3-sonnet-20240229"
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 4_096
@@ -99,17 +99,17 @@ batch_size = 256
     fragment_merge_count = 1 # number of fragments to merge into a single extraction
     max_knowledge_relationships = 100
     max_description_input_length = 65536
-    generation_config = { model = "openai/gpt-4o-mini", max_tokens_to_sample = 4_096 } # and other params, model used for relationshipt extraction
+    generation_config = { model = "claude-3-5-haiku-latest", max_tokens_to_sample = 4_096 } # and other params, model used for relationshipt extraction
     automatic_deduplication = true # enable automatic deduplication of entities
 
   [database.graph_enrichment_settings]
     community_reports_prompt = "graphrag_community_reports"
     max_summary_input_length = 65536
-    generation_config = { model = "openai/gpt-4o-mini", max_tokens_to_sample = 4_096 } # and other params, model used for node description and graph clustering
+    generation_config = { model = "claude-3-5-haiku-latest", max_tokens_to_sample = 4_096 } # and other params, model used for node description and graph clustering
     leiden_params = {}
 
   [database.graph_search_settings]
-    generation_config = { model = "openai/gpt-4o-mini" }
+    generation_config = { model = "claude-3-5-haiku-latest" }
 
   [database.limits]
     # Default fallback limits if no route or user-level overrides are found
@@ -153,15 +153,15 @@ excluded_parsers = ["mp4"]
 # document_summary_system_prompt = 'default_system'
 # document_summary_task_prompt = 'default_summary'
 # chunks_for_document_summary = 128
-document_summary_model = "openai/gpt-4o-mini"
-vision_img_model = "openai/gpt-4o"
-vision_pdf_model = "openai/gpt-4o"
+document_summary_model = "claude-3-5-haiku-latest"
+vision_img_model = "claude-3-sonnet-20240229"
+vision_pdf_model = "claude-3-sonnet-20240229"
 automatic_extraction = true # enable automatic extraction of entities and relations
 
   [ingestion.chunk_enrichment_settings]
     enable_chunk_enrichment = false # disabled by default
     n_chunks = 2 # the number of chunks (both preceeding and succeeding) to use in enrichment
-    generation_config = { model = "openai/gpt-4o-mini" }
+    generation_config = { model = "claude-3-5-haiku-latest" }
 
   [ingestion.extra_parsers]
     pdf = "zerox"
