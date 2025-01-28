@@ -9,11 +9,11 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from core import (
+from core import (  # R2RXMLToolsStreamingRAGAgent,
     R2RRAGAgent,
     R2RStreamingRAGAgent,
-    R2RXMLToolsStreamingRAGAgent,
 )
+from core.agent.rag import GeminiXMLToolsStreamingRAGAgent
 from core.base import (
     AggregateSearchResult,
     ChunkSearchResult,
@@ -779,7 +779,7 @@ class RetrievalService(Service):
                                 content_method=self.get_context,
                             )
                         else:
-                            agent = R2RXMLToolsStreamingRAGAgent(
+                            agent = GeminiXMLToolsStreamingRAGAgent(
                                 database_provider=self.providers.database,
                                 llm_provider=self.providers.llm,
                                 config=agent_config,
@@ -1035,7 +1035,7 @@ class RetrievalService(Service):
         docs_data = await self.providers.database.documents_handler.get_documents_overview(
             offset=0,
             limit=limit,
-            filter_user_ids=[filter_user_id],
+            filter_user_ids=[filter_user_id] if filter_user_id else None,
             include_summary_embedding=False,
         )
 

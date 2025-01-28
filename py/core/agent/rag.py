@@ -225,7 +225,8 @@ class RAGAgentMixin:
         if filters:
             if "document_id" in filters:
                 filters["id"] = filters.pop("document_id")
-            filters = {"$and": [filters, self.search_settings.filters]}
+            if self.search_settings.filters != {}:
+                filters = {"$and": [filters, self.search_settings.filters]}
         else:
             filters = self.search_settings.filters
 
@@ -242,7 +243,10 @@ class RAGAgentMixin:
             context_document_results.append(
                 ContextDocumentResult(
                     document=item["document"],
-                    chunks=item.get("chunks", []),
+                    chunks=[
+                        chunk.get("text", "")
+                        for chunk in item.get("chunks", [])
+                    ],
                 )
             )
 
@@ -302,139 +306,6 @@ class RAGAgentMixin:
             graph_search_results=None,
             web_search_results=web_response.organic_results,
         )
-
-    # # ---------------------------------------------------------------------
-    # # MULTI_SEARCH IMPLEMENTATION
-    # # ---------------------------------------------------------------------
-    # def multi_search(self) -> Tool:
-    #     """
-    #     A tool that accepts multiple queries at once, runs local/web/content
-    #     searches *in parallel*, merges them, and returns aggregated results.
-    #     """
-    #     return Tool(
-    #         name="multi_search",
-    #         description=(
-    #             "Run parallel searches for multiple queries. Submit ALL queries in a SINGLE request with this exact format:\n"
-    #             '{"queries": ["query1", "query2", "query3"], "include_web": false}\n\n'
-    #             "Example valid input:\n"
-    #             '{"queries": ["latest research on GPT-4", "advances in robotics 2024"], "include_web": false}\n\n'
-    #             "IMPORTANT:\n"
-    #             "- All queries must be in a single array under the 'queries' key\n"
-    #             "- Do NOT submit multiple separate JSON objects\n"
-    #             "- Do NOT add empty JSON objects {}\n"
-    #             "- Each query should be a string in the array\n"
-    #             "You can submit up to 10 queries in a single request. Results are limited to 20 per query."
-    #         ),
-    #         results_function=self._multi_search,
-    #         llm_format_function=self.format_search_results_for_llm,
-    #         stream_function=self.format_search_results_for_stream,
-    #         parameters={
-    #             "type": "object",
-    #             "properties": {
-    #                 "queries": {
-    #                     "type": "array",
-    #                     "items": {"type": "string"},
-    #                     "description": "Array of search queries to run in parallel. Example: ['query1', 'query2']",
-    #                     "maxItems": 10,
-    #                 },
-    #                 "include_web": {
-    #                     "type": "boolean",
-    #                     "description": "Whether to include web search results",
-    #                     "default": False,
-    #                 },
-    #             },
-    #             "required": ["queries"],
-    #         },
-    #     )
-
-    # async def _multi_search(
-    #     self,
-    #     queries: list[str],
-    #     include_web: bool = False,
-    #     include_content: bool = False,
-    #     *args,
-    #     **kwargs,
-    # ) -> list[Tuple[str, AggregateSearchResult]]:
-    #     """
-    #     Run local, web, and content searches *in parallel* for each query,
-    #     merge results, and return them sorted by best "score".
-
-    #     :param queries: a list of search queries
-    #     :param include_web: whether to run web search (True by default)
-    #     :param include_content: whether to fetch entire documents (True by default)
-    #     :return: A list of (query, merged_results), sorted by highest chunk score
-    #     """
-    #     # Set search results to 10
-    #     self.search_settings.limit = 20
-
-    #     # Build tasks (one per query)
-    #     tasks = [
-    #         self._multi_search_for_single_query(
-    #             q, include_web, include_content
-    #         )
-    #         for q in queries
-    #     ]
-    #     # Run them all in parallel
-    #     partial_results = await asyncio.gather(*tasks)
-    #     return self._merge_aggregate_results(partial_results)
-
-    # async def _multi_search_for_single_query(
-    #     self,
-    #     query: str,
-    #     include_web: bool,
-    #     include_content: bool,
-    # ) -> AggregateSearchResult:
-    #     """
-    #     For a single query, run local, web, and content searches in parallel,
-    #     then merge everything into one AggregateSearchResult.
-    #     """
-    #     # local always
-    #     searches = [self._local_search_function(query)]
-
-    #     # optionally web
-    #     if include_web:
-    #         searches.append(self._web_search_function(query))
-
-    #     # optionally content
-    #     if include_content:
-    #         # pass any needed filters/options
-    #         searches.append(self._content_function(filters={}, options={}))
-
-    #     # gather them concurrently
-    #     partial_results = await asyncio.gather(*searches)
-
-    #     # merge all partial AggregateSearchResults
-    #     merged_result = self._merge_aggregate_results(partial_results)
-    #     return merged_result
-
-    # def _merge_aggregate_results(
-    #     self, results: list[AggregateSearchResult]
-    # ) -> AggregateSearchResult:
-    #     """
-    #     Concatenate chunk_search_results, web_search_results, etc. from multiple
-    #     AggregateSearchResult objects into one.
-    #     """
-    #     all_chunks = []
-    #     all_graphs = []
-    #     all_web = []
-    #     all_docs = []
-
-    #     for r in results:
-    #         if r.chunk_search_results:
-    #             all_chunks.extend(r.chunk_search_results)
-    #         if r.graph_search_results:
-    #             all_graphs.extend(r.graph_search_results)
-    #         if r.web_search_results:
-    #             all_web.extend(r.web_search_results)
-    #         if r.context_document_results:
-    #             all_docs.extend(r.context_document_results)
-
-    #     return AggregateSearchResult(
-    #         chunk_search_results=all_chunks if all_chunks else None,
-    #         graph_search_results=all_graphs if all_graphs else None,
-    #         web_search_results=all_web if all_web else None,
-    #         context_document_results=all_docs if all_docs else None,
-    #     )
 
     # ---------------------------------------------------------------------
     # 4) Utility format methods for search results
@@ -542,24 +413,42 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
         )
 
 
-# ---------------------------------------------------------------------
-# Gemini Agent that directly iterates over .candidates[0].content.parts
-# ---------------------------------------------------------------------
+import asyncio
+import json
+import logging
+import xml.etree.ElementTree as ET
+from typing import Any, AsyncGenerator, Callable, Optional
+
+from core.agent import R2RStreamingAgent
+from core.base.abstractions import (
+    AggregateSearchResult,
+    ContextDocumentResult,
+    GenerationConfig,
+    Message,
+    SearchSettings,
+)
+from core.base.agent import AgentConfig, Tool
+from core.base.providers import DatabaseProvider
+
+logger = logging.getLogger(__name__)
+
+
 class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
     """
-    A streaming-capable RAG Agent that:
-      1) Calls Gemini's flash-thinking API
-      2) Directly loops over response.candidates[0].content.parts
-      3) Yields partial “thought” vs. normal “assistant” text
-      4) Accumulates the final text to parse for <Action><ToolCalls>
-      5) Executes any requested tool calls
-      6) Yields tool results, then final answer
+    Abstract base class for a streaming-capable RAG Agent that:
+      - Streams chain-of-thought tokens vs. normal text
+      - Accumulates final text for parsing <Action><ToolCalls>
+      - Executes any requested tool calls (max_steps enforced)
+      - Produces a final <Response> or failure if max steps are exceeded
+
+    You must override:
+      - _generate_thinking_response(user_prompt: str)
+      - _generate_final_response(context: str, user_prompt: str)
     """
 
     def __init__(
         self,
         database_provider: DatabaseProvider,
-        # We won't really use llm_provider here, but it's needed by the parent.
         llm_provider: Optional[Any],
         config: AgentConfig,
         search_settings: SearchSettings,
@@ -567,18 +456,8 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
         local_search_method: Callable,
         content_method: Optional[Callable] = None,
         max_tool_context_length: int = 10_000,
-        gemini_api_key: Optional[str] = None,
-        gemini_model_name: str = "gemini-2.0-flash-thinking-exp",
+        max_steps: int = 5,  # limit on number of tool calls
     ):
-        logger.info("Initializing R2RXMLToolsStreamingRAGAgent.")
-        import os
-
-        from google import genai  # "pip install google-genai"
-
-        # Force streaming in the agent config
-        config.stream = True
-
-        # Init the RAG mixin
         super().__init__(
             database_provider=database_provider,
             llm_provider=llm_provider,
@@ -590,17 +469,8 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             max_tool_context_length=max_tool_context_length,
         )
 
-        # Create a Gemini client
-        api_key = gemini_api_key or os.environ.get("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError(
-                "Gemini API key not found. Provide gemini_api_key or set GEMINI_API_KEY."
-            )
-        self.gemini_client = genai.Client(
-            api_key=api_key,
-            http_options={"api_version": "v1alpha"},
-        )
-        self.gemini_model_name = gemini_model_name
+        self.max_steps = max_steps
+        self.current_step_count = 0
 
     async def arun(
         self,
@@ -610,118 +480,424 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
         **kwargs,
     ) -> AsyncGenerator[str, None]:
         """
-        Main entrypoint:
-          1) Combine system/user messages into a single prompt
-          2) Call gemini_client.models.generate_content(...)
-          3) For each `part` in response.candidates[0].content.parts:
-             - if part.thought => yield role="assistant_thought"
-             - else => yield role="assistant"
-          4) Accumulate final “assistant” text => parse <Action><ToolCalls>
-          5) If tool calls => execute them => yield results
-          6) Yield final answer
+        Iterative approach with chain-of-thought wrapped in <Thought>...</Thought> each iteration.
+        1) In each iteration (up to max_steps):
+            a) Call _generate_thinking_response(conversation_context).
+            b) Stream chain-of-thought tokens *inline* but enclosed by <Thought>...</Thought>.
+            c) Collect "assistant" tokens (is_thought=False) in a buffer to parse after.
+            d) Parse <Action> blocks; if any <Action> has <Response>, yield it & stop.
+            e) Else, if there's a bare <Response> outside <Action>, yield & stop.
+            f) If still no <Response>, append iteration text to context, move to next iteration.
+        2) If we exhaust steps, yield fallback <Response>.
         """
-        # 1) Prepare conversation
+
+        # Step 1) Setup conversation
         await self._setup(system_instruction=system_instruction)
         if messages:
             for msg in messages:
                 await self.conversation.add_message(msg)
 
-        # 2) Build the prompt
+        # Build initial conversation context from all messages
         all_msgs = await self.conversation.get_messages()
-        user_prompt = self._build_single_user_prompt(all_msgs)
+        conversation_context = self._build_single_user_prompt(all_msgs)
 
-        # 3) Call Gemini once, fetch entire response
-        config = {"thinking_config": {"include_thoughts": True}}
-        response = self.gemini_client.models.generate_content(
-            model=self.gemini_model_name,
-            contents=user_prompt,
-            config=config,
-        )
+        for step_i in range(self.max_steps):
+            # We'll collect final text tokens to parse for <Action>/<Response>.
+            assistant_text_buffer = []
+            # Track whether we are “inside” a <Thought> block while streaming:
+            inside_thought_block = False
 
-        # We assume there's at least one candidate
-        if not response.candidates:
-            # yield an error
-            yield "[Gemini Error: no candidates returned]"
-            return
+            # Step 2) Single LLM call => yields (is_thought, text) pairs
+            async for (
+                is_thought,
+                token_text,
+            ) in self._generate_thinking_response(
+                conversation_context, **kwargs
+            ):
+                if is_thought:
+                    # Stream chain-of-thought text *inline*, but bracket with <Thought>...</Thought>
+                    if not inside_thought_block:
+                        inside_thought_block = True
+                        yield "<Thought>"
+                    yield token_text
+                else:
+                    # If we were inside a thought block, close it
+                    if inside_thought_block:
+                        yield "</Thought>"
+                        inside_thought_block = False
 
-        # Accumulate normal text parts into final_response
-        action_text = []
+                    # “Assistant text” is user-facing text that we
+                    # will parse for <Action> or <Response>
+                    assistant_text_buffer.append(token_text)
 
-        context = "<Thought>"
-        yield "<Thought>"
-        # assume we always have at least one candidate and yield thoughts
-        for part in response.candidates[0].content.parts:
-            if part.thought:
-                # yield chain-of-thought tokens
-                context += part.text
-                yield part.text
+            # If the model ended while still in a thought block, close it
+            if inside_thought_block:
+                yield "</Thought>"
+
+            # Step 3) Combine the final user-facing tokens
+            iteration_text = "".join(assistant_text_buffer).strip()
+
+            #
+            # 3a) Parse out <Action> blocks
+            #
+            parsed_actions = self._parse_action_blocks(iteration_text)
+
+            any_response_found = False
+
+            if parsed_actions:
+                # For each action block, see if it has <ToolCalls>, <Response>
+                for action_block in parsed_actions:
+                    toolcalls_xml = "<ToolCalls>"
+                    toolcalls_minus_results = "<ToolCalls>"
+
+                    # Execute any tool calls
+                    for tc in action_block["tool_calls"]:
+                        name = tc["name"]
+                        params = tc["params"]
+                        logger.info(f"Executing tool '{name}' with {params}")
+
+                        toolcalls_xml += "<ToolCall>"
+                        toolcalls_xml += f"<Name>{name}</Name>"
+                        toolcalls_xml += (
+                            f"<Parameters>{json.dumps(params)}</Parameters>"
+                        )
+
+                        result = await self.execute_tool(name, **params)
+                        toolcalls_minus_results += (
+                            toolcalls_xml + "</ToolCall>"
+                        )
+                        toolcalls_xml += f"<Result>{result}</Result>"
+                        toolcalls_xml += "</ToolCall>"
+
+                    toolcalls_xml += "</ToolCalls>"
+                    toolcalls_minus_results += "</ToolCalls>"
+                    yield toolcalls_minus_results
+
+                    # If this <Action> has a <Response>, yield once and stop
+                    if action_block["response"] is not None:
+                        resp_str = action_block["response"]
+                        yield f"<Response>{resp_str}</Response>"
+                        return
+
+                    # Otherwise, embed the <ToolCalls> in conversation context
+                    # so it sees the results next iteration
+                    conversation_context += f"<Action>{toolcalls_xml}</Action>"
+
             else:
-                action_text.append(part.text)
-        context += "</Thought>"
-        yield "</Thought>"
+                #
+                # 3b) If no <Action> blocks at all, check for a bare <Response>
+                #
+                response_text = self._extract_response_text(iteration_text)
+                if response_text is not None:
+                    # Found a top-level <Response>, yield it once and stop
+                    yield f"<Response>{response_text}</Response>"
+                    return
 
-        # 5) Now parse the final <Action><ToolCalls> from the full text
-        action_text = "".join(action_text).strip()
-        tool_calls = self._parse_action_xml(action_text)
+            #
+            # 3c) If we did not return, it means no <Response> was found in this iteration.
+            #     So append the entire iteration text to conversation_context and proceed.
+            #
+            conversation_context += "\n" + iteration_text
 
-        if not tool_calls:
-            pass  # No tool calls found
-        else:
-            context += "<Action>"
-            yield "<Action>"
-            context += " <ToolCalls>"
-            yield " <ToolCalls>"
-            # 6) If there are tool calls, execute them
-            for tc in tool_calls:
-                context += "  <ToolCall>"
-                yield "  <ToolCall>"
-                tool_name = tc["name"]
-                context += f"   <Name>{tool_name}</Name>"
-                yield f"   <Name>{tool_name}</Name>"
+        # If we finish all steps with no <Response>, yield fallback:
+        yield "<Response>I failed to reach a conclusion with my allowed compute.</Response>"
 
-                tool_params = tc["params"]
-                context += f"   <Parameters>{tool_params}</Parameters>"
-                yield f"   <Parameters>{tool_params}</Parameters>"
-                logger.info(
-                    f"[R2RXMLToolsStreamingRAGAgent] Executing tool {tool_name} with {tool_params}"
-                )
-                tool_result_str = await self.execute_tool(
-                    tool_name, **tool_params
-                )
-                context += f"   <Result>{str(tool_result_str)}</Result>"
-                yield f"   <Result>{str(tool_result_str)}</Result>"
-                context += "  </ToolCall>"
-                yield "  </ToolCall>"
-            context += " </ToolCalls>"
-            yield " </ToolCalls>"
+    # async def arun(
+    #     self,
+    #     system_instruction: Optional[str] = None,
+    #     messages: Optional[list[Message]] = None,
+    #     *args,
+    #     **kwargs,
+    # ) -> AsyncGenerator[str, None]:
+    #     """
+    #     Iterative approach with chain-of-thought wrapped in <Thought>...</Thought> each iteration.
+    #     1) In each iteration (up to max_steps):
+    #     a) Call _generate_thinking_response(conversation_context).
+    #     b) Buffer all chain-of-thought tokens; yield them at once between <Thought>...</Thought>.
+    #     c) Stream 'assistant' tokens as they arrive (is_thought=False).
+    #     d) Parse <Action> blocks and execute tools (adding <Result> to context, not streaming).
+    #     e) If <Response> is found, yield it and stop.
+    #     2) If we exhaust steps, yield fallback <Response>.
+    #     """
 
-        final_response = self.gemini_client.models.generate_content(
-            model=self.gemini_model_name,
-            contents=user_prompt
-            + "Agent Reply:\n\n"
-            + context
-            + "\n\nNow, given the above, generate a coherent reply for the user.",
-            config=config,
+    #     # Step 1) Setup conversation
+    #     await self._setup(system_instruction=system_instruction)
+    #     if messages:
+    #         for msg in messages:
+    #             await self.conversation.add_message(msg)
+
+    #     # Build initial conversation context from all messages
+    #     all_msgs = await self.conversation.get_messages()
+    #     conversation_context = self._build_single_user_prompt(all_msgs)
+
+    #     for step_i in range(self.max_steps):
+    #         # We'll buffer chain-of-thought tokens so we can yield them as one block
+    #         chain_of_thought_buffer = []
+    #         # We'll also buffer final text tokens so we can parse them for <Action>/<Response>
+    #         assistant_text_buffer = []
+
+    #         # Step 2) Single LLM call => yields (is_thought, text) pairs
+    #         async for is_thought, token_text in self._generate_thinking_response(
+    #             conversation_context, **kwargs
+    #         ):
+    #             if is_thought:
+    #                 # Buffer chain-of-thought tokens
+    #                 if len(chain_of_thought_buffer) == 0:
+    #                     yield "<Thought>"
+    #                 yield token_text
+    #                 chain_of_thought_buffer.append(token_text)
+    #             else:
+    #                 # Stream “assistant text” tokens immediately to the user
+    #                 assistant_text_buffer.append(token_text)
+
+    #         if len(chain_of_thought_buffer) > 0:
+    #             yield "</Thought>"
+    #             chain_of_thought_buffer = []
+
+    #         # for token in assistant_text_buffer:
+    #         #     # Stream the assistant text tokens to the user
+    #         #     yield token
+
+    #         # Step 3) Parse final text for <Action> or <Response>
+    #         iteration_text = "".join(assistant_text_buffer).strip()
+    #         assistant_text_buffer = []
+    #         parsed_actions = self._parse_action_blocks(iteration_text)
+
+    #         # If no <Action> blocks, maybe a standalone <Response>?
+    #         if not parsed_actions:
+    #             response_text = self._extract_response_text(iteration_text)
+    #             if response_text is not None:
+    #                 # Found a <Response>, yield it once and stop
+    #                 yield f"<Response>{response_text}</Response>"
+    #                 return
+    #             # Otherwise, no <Action>, no <Response> => keep context
+    #             conversation_context += "\n" + iteration_text
+    #             continue
+
+    #         # Step 4) If <Action> blocks exist, handle them in order
+    #         for action_block in parsed_actions:
+    #             # Each block = { "tool_calls": [...], "response": <str or None> }
+    #             action_xml = "<Action>"
+    #             toolcalls_xml = "<ToolCalls>"
+
+    #             # Execute tools
+    #             for tc in action_block["tool_calls"]:
+    #                 name = tc["name"]
+    #                 params = tc["params"]
+    #                 logger.info(f"Executing tool '{name}' with {params}")
+
+    #                 toolcalls_xml += "<ToolCall>"
+    #                 toolcalls_xml += f"<Name>{name}</Name>"
+    #                 toolcalls_xml += f"<Parameters>{json.dumps(params)}</Parameters>"
+
+    #                 result = await self.execute_tool(name, **params)
+    #                 # We do NOT stream the result, just embed it
+    #                 toolcalls_xml += f"<Result>{result}</Result>"
+    #                 toolcalls_xml += "</ToolCall>"
+
+    #             toolcalls_xml += "</ToolCalls>"
+
+    #             # If there's a <Response>, we yield it once and end
+    #             if action_block["response"] is not None:
+    #                 resp_str = action_block["response"]
+    #                 action_xml += toolcalls_xml + f"<Response>{resp_str}</Response></Action>"
+    #                 conversation_context += "\n" + action_xml
+    #                 yield f"<Response>{resp_str}</Response>"
+    #                 return
+    #             else:
+    #                 # No <Response>, so embed the <ToolCalls> in context
+    #                 action_xml += toolcalls_xml + "</Action>"
+    #                 conversation_context += "\n" + action_xml
+
+    #     # If we finish the loop with no <Response>, yield fallback
+    #     yield "<Response>I failed to reach a conclusion with my allowed compute.</Response>"
+
+    # async def arun(
+    #     self,
+    #     system_instruction: Optional[str] = None,
+    #     messages: Optional[list[Message]] = None,
+    #     *args,
+    #     **kwargs,
+    # ) -> AsyncGenerator[str, None]:
+    #     """
+    #     A simpler iterative approach to multi-step reasoning:
+    #     1. Up to max_steps times, we:
+    #         - Call _generate_thinking_response with the current conversation context.
+    #         - Stream *every* token (chain-of-thought or final text) to the user as soon as we see it.
+    #         - Once that iteration ends, parse the aggregated text for <Action> or <Response>.
+    #         - If <Response>, yield it once and end.
+    #         - If <Action><ToolCalls>, execute them (don't stream the results), append them to context.
+    #     2. If we never get <Response>, yield a fallback error response at the end.
+    #     """
+
+    #     # 1) Setup initial conversation
+    #     await self._setup(system_instruction=system_instruction)
+    #     if messages:
+    #         for msg in messages:
+    #             await self.conversation.add_message(msg)
+
+    #     # 2) Convert conversation messages to a single user prompt
+    #     all_msgs = await self.conversation.get_messages()
+    #     conversation_context = self._build_single_user_prompt(all_msgs)
+
+    #     for step_i in range(self.max_steps):
+    #         # We'll collect the "assistant text" (is_thought=False)
+    #         # in order to parse it for <Action> or <Response> after streaming
+    #         assistant_text_chunks = []
+
+    #         # 3) Make one LLM call for this step
+    #         #    We stream each token to the user immediately
+    #         async for is_thought, token_text in self._generate_thinking_response(
+    #             conversation_context, **kwargs
+    #         ):
+    #             # Always yield tokens in real-time, whether chain-of-thought or final text
+    #             yield token_text
+
+    #             if not is_thought:
+    #                 # Accumulate final "assistant" text for later parsing
+    #                 assistant_text_chunks.append(token_text)
+
+    #         # 4) Now that we have the entire iteration's final text,
+    #         #    parse it for <Action> blocks and/or <Response>.
+    #         iteration_text = "".join(assistant_text_chunks).strip()
+    #         parsed_actions = self._parse_action_blocks(iteration_text)
+
+    #         # If no <Action> blocks, check if there's a standalone <Response> anyway
+    #         if not parsed_actions:
+    #             response_text = self._extract_response_text(iteration_text)
+    #             if response_text is not None:
+    #                 # We found a <Response> => yield it and stop
+    #                 yield f"<Response>{response_text}</Response>"
+    #                 return
+
+    #             # Otherwise, no <Response>, no <Action> => Just keep all text in context
+    #             conversation_context += "\n" + iteration_text
+    #             continue
+
+    #         # If we do have <Action> blocks, handle them in order:
+    #         for action_block in parsed_actions:
+    #             # action_block = { "tool_calls": [...], "response": <str or None> }
+    #             # We'll build up a new <Action> element to append to conversation_context
+    #             action_xml = "<Action>"
+    #             toolcalls_xml = "<ToolCalls>"
+
+    #             # 5) Execute the <ToolCalls>, but do not stream their <Result> back
+    #             for tc in action_block["tool_calls"]:
+    #                 name = tc["name"]
+    #                 params = tc["params"]
+    #                 logger.info(f"Executing tool '{name}' with {params}")
+    #                 toolcalls_xml += (
+    #                     f"<ToolCall>"
+    #                     f"<Name>{name}</Name>"
+    #                     f"<Parameters>{json.dumps(params)}</Parameters>"
+    #                 )
+    #                 result = await self.execute_tool(name, **params)
+    #                 toolcalls_xml += f"<Result>{result}</Result>"
+    #                 toolcalls_xml += "</ToolCall>"
+
+    #             toolcalls_xml += "</ToolCalls>"
+
+    #             # If there's a <Response> in the same <Action>, yield it and end
+    #             if action_block["response"] is not None:
+    #                 resp_str = action_block["response"]
+    #                 action_xml += toolcalls_xml + f"<Response>{resp_str}</Response></Action>"
+    #                 # Add it to the conversation context for completeness
+    #                 conversation_context += "\n" + action_xml
+    #                 # Finally, yield <Response> and end everything
+    #                 yield f"<Response>{resp_str}</Response>"
+    #                 return
+    #             else:
+    #                 # No <Response> => just embed the updated <ToolCalls> in context
+    #                 action_xml += toolcalls_xml + "</Action>"
+    #                 conversation_context += "\n" + action_xml
+
+    #     # If we exhaust self.max_steps without ever finding <Response>,
+    #     # yield a final "I failed" message and return
+    #     yield "<Response>I failed to reach a conclusion with my allowed compute.</Response>"
+
+    def _parse_action_blocks(self, text: str) -> list[dict]:
+        """
+        Attempt to find zero or more <Action> blocks in text.
+        For each block, parse any <ToolCalls> and <Response>.
+        Return a list of dicts: [ { "tool_calls": [...], "response": <str or None> }, ... ]
+
+        Each 'tool_calls' entry is a list of { "name": <tool_name>, "params": <dict> }.
+        'response' is either a string if <Response> block is found, or None if absent.
+        """
+        # A naive approach is to split on <Action>...</Action> if multiple appear.
+        # We'll do that with a simple loop using xml.etree, ignoring text outside <Action>.
+        # Adjust to your actual patterns if your LLM can produce multiple <Action> blocks in one pass.
+        results = []
+
+        try:
+            # We attempt to parse the entire text and look for top-level <Action> blocks
+            # or repeated <Action> blocks. Because xml.etree won't parse multiple top-level
+            # elements easily, we can wrap them in a dummy root if we want to handle multiples.
+            # For simplicity, let's do a quick iteration:
+            import re
+
+            pattern = re.compile(
+                r"(<Action>.*?</Action>)", re.DOTALL | re.IGNORECASE
+            )
+            matches = pattern.findall(text)
+            for match in matches:
+                # parse each <Action>...</Action> snippet individually
+                # to handle multiple blocks in a single step
+                block_data = {
+                    "tool_calls": [],
+                    "response": None,
+                }
+                try:
+                    root = ET.fromstring(match)
+                    # parse <ToolCalls>
+                    tc_element = root.find("ToolCalls")
+                    if tc_element is not None:
+                        for tc_el in tc_element.findall("ToolCall"):
+                            name_el = tc_el.find("Name")
+                            params_el = tc_el.find("Parameters")
+                            if name_el is not None and params_el is not None:
+                                tool_name = name_el.text.strip()
+                                try:
+                                    tool_params = json.loads(
+                                        params_el.text.strip()
+                                    )
+                                except:
+                                    tool_params = {}
+                                block_data["tool_calls"].append(
+                                    {"name": tool_name, "params": tool_params}
+                                )
+                    # parse <Response>
+                    resp_el = root.find("Response")
+                    if resp_el is not None and resp_el.text is not None:
+                        block_data["response"] = resp_el.text.strip()
+
+                except ET.ParseError:
+                    pass  # skip invalid block
+                results.append(block_data)
+
+        except Exception as e:
+            logger.warning(f"Action block parsing error: {e}")
+
+        return results
+
+    def _extract_response_text(self, text: str) -> Optional[str]:
+        """
+        If the raw text contains a bare <Response>...</Response> block (outside <Action>),
+        we can parse it here. Return the string or None if not present.
+        """
+        import re
+
+        match = re.search(
+            r"<Response>(.*?)</Response>", text, re.DOTALL | re.IGNORECASE
         )
-        final_results = []
-        yield "<Thought>"
-        for part in final_response.candidates[0].content.parts:
-            if part.thought:
-                # yield chain-of-thought tokens
-                yield part.text
-            else:
-                final_results.append(part.text)
-        yield "</Thought>"
-        final_text = "".join(final_results).strip()
-        yield final_text
-
-        # # 7) Finally, yield the original final text as the "answer"
-        # yield LLMChatCompletion(role="assistant", content=final_text)
+        if match:
+            return match.group(1).strip()
+        return None
 
     def _build_single_user_prompt(self, conversation_msgs: list[dict]) -> str:
         """
-        Converts the system/user messages to a single text prompt for Gemini.
-        Adjust as you like. E.g., you could keep them separated or incorporate roles.
+        Converts system+user+assistant messages into a single text prompt.
+        Overridable if you want a different style.
         """
         system_msgs = []
         user_msgs = []
@@ -734,15 +910,26 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                 user_msgs.append(f"[User]\n{content}\n")
             elif role == "assistant":
                 user_msgs.append(f"[Assistant]\n{content}\n")
-            # skip others
 
-        combined_prompt = "\n".join(system_msgs + user_msgs)
-        return combined_prompt
+        return "\n".join(system_msgs + user_msgs)
 
     def _parse_action_xml(self, text: str) -> list[dict]:
+        """
+        Attempt to parse <Action><ToolCalls><ToolCall> from XML in text.
+        Return a list of { "name": <tool_name>, "params": <dict> }.
+        """
         tool_calls = []
+        if not text.strip():
+            return tool_calls
+
         try:
-            root = ET.fromstring(text.split("```xml")[-1].split("```")[0])
+            # For safety, parse only the portion in ```xml``` if present
+            if "```xml" in text and "```" in text.split("```xml")[-1]:
+                extracted = text.split("```xml")[-1].split("```")[0]
+            else:
+                extracted = text
+
+            root = ET.fromstring(extracted)
             if root.tag.lower() == "action":
                 tool_calls_el = root.find("ToolCalls")
                 if tool_calls_el is not None:
@@ -753,7 +940,7 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                         if name_el is not None and params_el is not None:
                             t_name = name_el.text.strip()
 
-                            # Try to parse parameters as JSON
+                            # parse JSON in <Parameters>
                             try:
                                 params_text = params_el.text.strip()
                                 t_params = json.loads(params_text)
@@ -761,13 +948,361 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                                     {"name": t_name, "params": t_params}
                                 )
                             except json.JSONDecodeError:
-                                logger.error(
-                                    f"Invalid JSON in Parameters for tool {t_name}: {params_text}"
+                                logger.warning(
+                                    f"Invalid JSON in <Parameters> for tool {t_name}"
                                 )
-                                # Instead of falling back to XML parsing, we'll skip this tool call
-                                continue
-
-        except ET.ParseError as e:
-            logger.error(f"Failed to parse XML structure: {e}")
-
+        except ET.ParseError:
+            logger.warning("Failed to parse <Action> XML block.")
         return tool_calls
+
+    # ------------------------------------------------------------------------
+    # ABSTRACT METHODS – must be implemented by a subclass
+    # ------------------------------------------------------------------------
+    async def _generate_thinking_response(
+        self, user_prompt: str, **kwargs
+    ) -> AsyncGenerator[tuple[bool, str], None]:
+        """
+        Should yield (is_thought, text) pairs from the LLM's first pass.
+          - is_thought=True => chain-of-thought tokens
+          - is_thought=False => final user-facing text (accumulated, then parsed)
+        """
+        raise NotImplementedError(
+            "Subclasses must implement _generate_thinking_response."
+        )
+
+    async def _generate_final_response(
+        self, context: str, user_prompt: str, **kwargs
+    ) -> AsyncGenerator[tuple[bool, str], None]:
+        """
+        Given the context (including <ToolCalls> results) and original user_prompt,
+        produce the final user-facing text. Should yield (is_thought, text).
+        """
+        raise NotImplementedError(
+            "Subclasses must implement _generate_final_response."
+        )
+
+
+class GeminiXMLToolsStreamingRAGAgent(R2RXMLToolsStreamingRAGAgent):
+    """
+    A Gemini-based implementation that uses the `XMLToolsStreamingRAGAgentBase`.
+    """
+
+    def __init__(
+        self,
+        *args,
+        gemini_api_key: str = "",
+        gemini_model_name: str = "gemini-2.0-flash-thinking-exp",
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+
+        import os
+
+        from google import genai  # "pip install google-genai"
+
+        key = gemini_api_key or os.environ.get("GEMINI_API_KEY")
+        if not key:
+            raise ValueError(
+                "Gemini API key not provided or set in environment."
+            )
+        self.gemini_client = genai.Client(
+            api_key=key,
+            http_options={"api_version": "v1alpha"},
+        )
+        self.gemini_model_name = gemini_model_name
+
+    async def _generate_thinking_response(
+        self, user_prompt: str, **kwargs
+    ) -> AsyncGenerator[tuple[bool, str], None]:
+        """
+        1) Call Gemini with `include_thoughts=True`.
+        2) For each part in `candidates[0].content.parts`, yield (True, text) if part.thought else (False, text).
+        """
+        config = {"thinking_config": {"include_thoughts": True}}
+
+        # Gemini is a blocking call so you'll want to put it in a thread pool or adapt to async if possible.
+        # We'll do a naive synchronous call in this example:
+        response = self.gemini_client.models.generate_content(
+            model=self.gemini_model_name,
+            contents=user_prompt,
+            config=config,
+        )
+
+        # No candidates => yield some minimal fallback
+        if not response.candidates:
+            yield (False, "I failed to retrieve a valid Gemini response.")
+            return
+
+        for part in response.candidates[0].content.parts:
+            if part.thought:
+                # chain-of-thought
+                yield (True, part.text)
+            else:
+                yield (False, part.text)
+
+    async def _generate_final_response(
+        self, context: str, user_prompt: str, **kwargs
+    ) -> AsyncGenerator[tuple[bool, str], None]:
+        """
+        A second LLM call with the current conversation + <Action> context,
+        to produce the final user-facing answer.
+        Yields chain-of-thought tokens as (True, text), and final user text as (False, text).
+        """
+        config = {"thinking_config": {"include_thoughts": True}}
+
+        # Build final prompt
+        final_prompt = (
+            user_prompt
+            + "\n\nAgent Reply:\n\n"
+            + context
+            + "\n\nNow, given the above, generate a coherent reply for the user."
+        )
+
+        response = self.gemini_client.models.generate_content(
+            model=self.gemini_model_name,
+            contents=final_prompt,
+            config=config,
+        )
+
+        if not response.candidates:
+            yield (
+                False,
+                "I failed to retrieve a final conclusion from Gemini.",
+            )
+            return
+
+        final_parts = response.candidates[0].content.parts
+        for part in final_parts:
+            # If it's chain-of-thought => (True, text), else => (False, text)
+            yield (part.thought, part.text)
+
+
+# # ---------------------------------------------------------------------
+# # Gemini Agent that directly iterates over .candidates[0].content.parts
+# # ---------------------------------------------------------------------
+# class GeminiXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
+#     """
+#     A streaming-capable RAG Agent that:
+#       1) Calls Gemini's flash-thinking API
+#       2) Directly loops over response.candidates[0].content.parts
+#       3) Yields partial “thought” vs. normal “assistant” text
+#       4) Accumulates the final text to parse for <Action><ToolCalls>
+#       5) Executes any requested tool calls
+#       6) Yields tool results, then final answer
+#     """
+
+#     def __init__(
+#         self,
+#         database_provider: DatabaseProvider,
+#         # We won't really use llm_provider here, but it's needed by the parent.
+#         llm_provider: Optional[Any],
+#         config: AgentConfig,
+#         search_settings: SearchSettings,
+#         rag_generation_config: GenerationConfig,
+#         local_search_method: Callable,
+#         content_method: Optional[Callable] = None,
+#         max_tool_context_length: int = 10_000,
+#         gemini_api_key: Optional[str] = None,
+#         gemini_model_name: str = "gemini-2.0-flash-thinking-exp",
+#     ):
+#         logger.info("Initializing R2RXMLToolsStreamingRAGAgent.")
+#         import os
+
+#         from google import genai  # "pip install google-genai"
+
+#         # Force streaming in the agent config
+#         config.stream = True
+
+#         # Init the RAG mixin
+#         super().__init__(
+#             database_provider=database_provider,
+#             llm_provider=llm_provider,
+#             config=config,
+#             search_settings=search_settings,
+#             rag_generation_config=rag_generation_config,
+#             local_search_method=local_search_method,
+#             content_method=content_method,
+#             max_tool_context_length=max_tool_context_length,
+#         )
+
+#         # Create a Gemini client
+#         api_key = gemini_api_key or os.environ.get("GEMINI_API_KEY")
+#         if not api_key:
+#             raise ValueError(
+#                 "Gemini API key not found. Provide gemini_api_key or set GEMINI_API_KEY."
+#             )
+#         self.gemini_client = genai.Client(
+#             api_key=api_key,
+#             http_options={"api_version": "v1alpha"},
+#         )
+#         self.gemini_model_name = gemini_model_name
+
+#     async def arun(
+#         self,
+#         system_instruction: Optional[str] = None,
+#         messages: Optional[list[Message]] = None,
+#         *args,
+#         **kwargs,
+#     ) -> AsyncGenerator[str, None]:
+#         """
+#         Main entrypoint:
+#           1) Combine system/user messages into a single prompt
+#           2) Call gemini_client.models.generate_content(...)
+#           3) For each `part` in response.candidates[0].content.parts:
+#              - if part.thought => yield role="assistant_thought"
+#              - else => yield role="assistant"
+#           4) Accumulate final “assistant” text => parse <Action><ToolCalls>
+#           5) If tool calls => execute them => yield results
+#           6) Yield final answer
+#         """
+#         # 1) Prepare conversation
+#         await self._setup(system_instruction=system_instruction)
+#         if messages:
+#             for msg in messages:
+#                 await self.conversation.add_message(msg)
+
+#         # 2) Build the prompt
+#         all_msgs = await self.conversation.get_messages()
+#         user_prompt = self._build_single_user_prompt(all_msgs)
+
+#         # 3) Call Gemini once, fetch entire response
+#         config = {"thinking_config": {"include_thoughts": True}}
+#         response = self.gemini_client.models.generate_content(
+#             model=self.gemini_model_name,
+#             contents=user_prompt,
+#             config=config,
+#         )
+
+#         # We assume there's at least one candidate
+#         if not response.candidates:
+#             # yield an error
+#             yield "[Gemini Error: no candidates returned]"
+#             return
+
+#         # Accumulate normal text parts into final_response
+#         action_text = []
+
+#         context = "<Thought>"
+#         yield "<Thought>"
+#         # assume we always have at least one candidate and yield thoughts
+#         for part in response.candidates[0].content.parts:
+#             if part.thought:
+#                 # yield chain-of-thought tokens
+#                 context += part.text
+#                 yield part.text
+#             else:
+#                 action_text.append(part.text)
+#         context += "</Thought>"
+#         yield "</Thought>"
+
+#         # 5) Now parse the final <Action><ToolCalls> from the full text
+#         action_text = "".join(action_text).strip()
+#         tool_calls = self._parse_action_xml(action_text)
+
+#         if not tool_calls:
+#             pass  # No tool calls found
+#         else:
+#             context += "<Action>"
+#             yield "<Action>"
+#             context += " <ToolCalls>"
+#             yield " <ToolCalls>"
+#             # 6) If there are tool calls, execute them
+#             for tc in tool_calls:
+#                 context += "  <ToolCall>"
+#                 yield "  <ToolCall>"
+#                 tool_name = tc["name"]
+#                 context += f"   <Name>{tool_name}</Name>"
+#                 yield f"   <Name>{tool_name}</Name>"
+
+#                 tool_params = tc["params"]
+#                 context += f"   <Parameters>{tool_params}</Parameters>"
+#                 yield f"   <Parameters>{tool_params}</Parameters>"
+#                 logger.info(
+#                     f"[R2RXMLToolsStreamingRAGAgent] Executing tool {tool_name} with {tool_params}"
+#                 )
+#                 tool_result_str = await self.execute_tool(
+#                     tool_name, **tool_params
+#                 )
+#                 context += f"   <Result>{str(tool_result_str)}</Result>"
+#                 yield f"   <Result>{str(tool_result_str)}</Result>"
+#                 context += "  </ToolCall>"
+#                 yield "  </ToolCall>"
+#             context += " </ToolCalls>"
+#             yield " </ToolCalls>"
+
+#         final_response = self.gemini_client.models.generate_content(
+#             model=self.gemini_model_name,
+#             contents=user_prompt
+#             + "Agent Reply:\n\n"
+#             + context
+#             + "\n\nNow, given the above, generate a coherent reply for the user.",
+#             config=config,
+#         )
+#         final_results = []
+#         yield "<Thought>"
+#         for part in final_response.candidates[0].content.parts:
+#             if part.thought:
+#                 # yield chain-of-thought tokens
+#                 yield part.text
+#             else:
+#                 final_results.append(part.text)
+#         yield "</Thought>"
+#         final_text = "".join(final_results).strip()
+#         yield final_text
+
+#         # # 7) Finally, yield the original final text as the "answer"
+#         # yield LLMChatCompletion(role="assistant", content=final_text)
+
+#     def _build_single_user_prompt(self, conversation_msgs: list[dict]) -> str:
+#         """
+#         Converts the system/user messages to a single text prompt for Gemini.
+#         Adjust as you like. E.g., you could keep them separated or incorporate roles.
+#         """
+#         system_msgs = []
+#         user_msgs = []
+#         for msg in conversation_msgs:
+#             role = msg["role"]
+#             content = msg["content"]
+#             if role == "system":
+#                 system_msgs.append(f"[System]\n{content}\n")
+#             elif role == "user":
+#                 user_msgs.append(f"[User]\n{content}\n")
+#             elif role == "assistant":
+#                 user_msgs.append(f"[Assistant]\n{content}\n")
+#             # skip others
+
+#         combined_prompt = "\n".join(system_msgs + user_msgs)
+#         return combined_prompt
+
+#     def _parse_action_xml(self, text: str) -> list[dict]:
+#         tool_calls = []
+#         try:
+#             root = ET.fromstring(text.split("```xml")[-1].split("```")[0])
+#             if root.tag.lower() == "action":
+#                 tool_calls_el = root.find("ToolCalls")
+#                 if tool_calls_el is not None:
+#                     for tc_el in tool_calls_el.findall("ToolCall"):
+#                         name_el = tc_el.find("Name")
+#                         params_el = tc_el.find("Parameters")
+
+#                         if name_el is not None and params_el is not None:
+#                             t_name = name_el.text.strip()
+
+#                             # Try to parse parameters as JSON
+#                             try:
+#                                 params_text = params_el.text.strip()
+#                                 t_params = json.loads(params_text)
+#                                 tool_calls.append(
+#                                     {"name": t_name, "params": t_params}
+#                                 )
+#                             except json.JSONDecodeError:
+#                                 logger.error(
+#                                     f"Invalid JSON in Parameters for tool {t_name}: {params_text}"
+#                                 )
+#                                 # Instead of falling back to XML parsing, we'll skip this tool call
+#                                 continue
+
+#         except ET.ParseError as e:
+#             logger.error(f"Failed to parse XML structure: {e}")
+
+#         return tool_calls

@@ -70,10 +70,12 @@ extended_rag_agent_r2r_tooling:
         </ToolCall>
     </ToolCalls>
 
-    <!-- OR if no tools apply -->
+    <!-- OR if no tools apply, or context from previous tool calls and messages is sufficient -->
     <Response>
-        [1] No matches found for "[aspect1]"
-        [2] Suggest clarifying "[ambiguous_term]"
+        <!-- Either provide a clear response -->
+        Based on the search results, the answer is ... [1][3].
+        <!-- OR explain that the information is not available and ask for clarification -->
+        I'm sorry, I couldn't find the information you requested. Could you provide more details?
     </Response>
     </Action>
 
