@@ -524,8 +524,11 @@ class IngestionService:
         self,
         document_info: DocumentResponse,
         status: IngestionStatus,
+        metadata: Optional[dict] = None,
     ) -> None:
         document_info.ingestion_status = status
+        if metadata:
+            document_info.metadata = {**document_info.metadata, **metadata}
         await self._update_document_status_in_db(document_info)
 
     async def _update_document_status_in_db(

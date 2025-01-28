@@ -161,6 +161,6 @@ class JwtAuthProvider(AuthProvider):
         raise NotImplementedError("Not implemented")
 
     async def oauth_callback_handler(
-        self, provider: str, oauth_id: str, email: Optional[str]
+        self, provider: str, oauth_id: str, email: str
     ) -> dict[str, Token]:
         raise NotImplementedError("Not implemented")
