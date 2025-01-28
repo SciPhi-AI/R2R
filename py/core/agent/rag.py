@@ -15,7 +15,6 @@ from core.base.abstractions import (
     AggregateSearchResult,
     ContextDocumentResult,
     GenerationConfig,
-    LLMChatCompletion,
     Message,
     SearchSettings,
     WebSearchResponse,
@@ -508,10 +507,7 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             inside_thought_block = False
 
             # Step 2) Single LLM call => yields (is_thought, text) pairs
-            async for (
-                is_thought,
-                token_text,
-            ) in self._generate_thinking_response(
+            async for (is_thought, token_text) in self._generate_thinking_response(
                 conversation_context, **kwargs
             ):
                 if is_thought:
@@ -542,11 +538,12 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             #
             parsed_actions = self._parse_action_blocks(iteration_text)
 
-            any_response_found = False
-
             if parsed_actions:
                 # For each action block, see if it has <ToolCalls>, <Response>
                 for action_block in parsed_actions:
+                    # Prepare two separate <ToolCalls> blocks:
+                    #  - "toolcalls_xml": with <Result> inside (for conversation_context)
+                    #  - "toolcalls_minus_results": no <Result> (to show user)
                     toolcalls_xml = "<ToolCalls>"
                     toolcalls_minus_results = "<ToolCalls>"
 
@@ -556,21 +553,30 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                         params = tc["params"]
                         logger.info(f"Executing tool '{name}' with {params}")
 
-                        toolcalls_xml += "<ToolCall>"
-                        toolcalls_xml += f"<Name>{name}</Name>"
-                        toolcalls_xml += (
+                        # Build the <ToolCall> to show user (minus <Result>)
+                        minimal_toolcall = (
+                            f"<ToolCall>"
+                            f"<Name>{name}</Name>"
+                            f"<Parameters>{json.dumps(params)}</Parameters>"
+                            f"</ToolCall>"
+                        )
+                        toolcalls_minus_results += minimal_toolcall
+
+                        # Build the <ToolCall> with results for context
+                        toolcall_with_result = (
+                            f"<ToolCall>"
+                            f"<Name>{name}</Name>"
                             f"<Parameters>{json.dumps(params)}</Parameters>"
                         )
-
                         result = await self.execute_tool(name, **params)
-                        toolcalls_minus_results += (
-                            toolcalls_xml + "</ToolCall>"
-                        )
-                        toolcalls_xml += f"<Result>{result}</Result>"
-                        toolcalls_xml += "</ToolCall>"
+                        toolcall_with_result += f"<Result>{result}</Result></ToolCall>"
+
+                        toolcalls_xml += toolcall_with_result
 
                     toolcalls_xml += "</ToolCalls>"
                     toolcalls_minus_results += "</ToolCalls>"
+
+                    # Yield the no-results block so user sees the calls
                     yield toolcalls_minus_results
 
                     # If this <Action> has a <Response>, yield once and stop
@@ -579,8 +585,7 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                         yield f"<Response>{resp_str}</Response>"
                         return
 
-                    # Otherwise, embed the <ToolCalls> in conversation context
-                    # so it sees the results next iteration
+                    # Otherwise, embed the <ToolCalls> with <Result> in conversation context
                     conversation_context += f"<Action>{toolcalls_xml}</Action>"
 
             else:
@@ -601,6 +606,137 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
 
         # If we finish all steps with no <Response>, yield fallback:
         yield "<Response>I failed to reach a conclusion with my allowed compute.</Response>"
+
+
+    # async def arun(
+    #     self,
+    #     system_instruction: Optional[str] = None,
+    #     messages: Optional[list[Message]] = None,
+    #     *args,
+    #     **kwargs,
+    # ) -> AsyncGenerator[str, None]:
+    #     """
+    #     Iterative approach with chain-of-thought wrapped in <Thought>...</Thought> each iteration.
+    #     1) In each iteration (up to max_steps):
+    #         a) Call _generate_thinking_response(conversation_context).
+    #         b) Stream chain-of-thought tokens *inline* but enclosed by <Thought>...</Thought>.
+    #         c) Collect "assistant" tokens (is_thought=False) in a buffer to parse after.
+    #         d) Parse <Action> blocks; if any <Action> has <Response>, yield it & stop.
+    #         e) Else, if there's a bare <Response> outside <Action>, yield & stop.
+    #         f) If still no <Response>, append iteration text to context, move to next iteration.
+    #     2) If we exhaust steps, yield fallback <Response>.
+    #     """
+
+    #     # Step 1) Setup conversation
+    #     await self._setup(system_instruction=system_instruction)
+    #     if messages:
+    #         for msg in messages:
+    #             await self.conversation.add_message(msg)
+
+    #     # Build initial conversation context from all messages
+    #     all_msgs = await self.conversation.get_messages()
+    #     conversation_context = self._build_single_user_prompt(all_msgs)
+
+    #     for step_i in range(self.max_steps):
+    #         # We'll collect final text tokens to parse for <Action>/<Response>.
+    #         assistant_text_buffer = []
+    #         # Track whether we are “inside” a <Thought> block while streaming:
+    #         inside_thought_block = False
+
+    #         # Step 2) Single LLM call => yields (is_thought, text) pairs
+    #         async for (
+    #             is_thought,
+    #             token_text,
+    #         ) in self._generate_thinking_response(
+    #             conversation_context, **kwargs
+    #         ):
+    #             if is_thought:
+    #                 # Stream chain-of-thought text *inline*, but bracket with <Thought>...</Thought>
+    #                 if not inside_thought_block:
+    #                     inside_thought_block = True
+    #                     yield "<Thought>"
+    #                 yield token_text
+    #             else:
+    #                 # If we were inside a thought block, close it
+    #                 if inside_thought_block:
+    #                     yield "</Thought>"
+    #                     inside_thought_block = False
+
+    #                 # “Assistant text” is user-facing text that we
+    #                 # will parse for <Action> or <Response>
+    #                 assistant_text_buffer.append(token_text)
+
+    #         # If the model ended while still in a thought block, close it
+    #         if inside_thought_block:
+    #             yield "</Thought>"
+
+    #         # Step 3) Combine the final user-facing tokens
+    #         iteration_text = "".join(assistant_text_buffer).strip()
+
+    #         #
+    #         # 3a) Parse out <Action> blocks
+    #         #
+    #         parsed_actions = self._parse_action_blocks(iteration_text)
+
+    #         any_response_found = False
+
+    #         if parsed_actions:
+    #             # For each action block, see if it has <ToolCalls>, <Response>
+    #             for action_block in parsed_actions:
+    #                 toolcalls_xml = "<ToolCalls>"
+    #                 toolcalls_minus_results = "<ToolCalls>"
+
+    #                 # Execute any tool calls
+    #                 for tc in action_block["tool_calls"]:
+    #                     name = tc["name"]
+    #                     params = tc["params"]
+    #                     logger.info(f"Executing tool '{name}' with {params}")
+
+    #                     toolcalls_xml += "<ToolCall>"
+    #                     toolcalls_xml += f"<Name>{name}</Name>"
+    #                     toolcalls_xml += (
+    #                         f"<Parameters>{json.dumps(params)}</Parameters>"
+    #                     )
+
+    #                     result = await self.execute_tool(name, **params)
+    #                     toolcalls_minus_results += (
+    #                         toolcalls_xml + "</ToolCall>"
+    #                     )
+    #                     toolcalls_xml += f"<Result>{result}</Result>"
+    #                     toolcalls_xml += "</ToolCall>"
+
+    #                 toolcalls_xml += "</ToolCalls>"
+    #                 toolcalls_minus_results += "</ToolCalls>"
+    #                 yield toolcalls_minus_results
+
+    #                 # If this <Action> has a <Response>, yield once and stop
+    #                 if action_block["response"] is not None:
+    #                     resp_str = action_block["response"]
+    #                     yield f"<Response>{resp_str}</Response>"
+    #                     return
+
+    #                 # Otherwise, embed the <ToolCalls> in conversation context
+    #                 # so it sees the results next iteration
+    #                 conversation_context += f"<Action>{toolcalls_xml}</Action>"
+
+    #         else:
+    #             #
+    #             # 3b) If no <Action> blocks at all, check for a bare <Response>
+    #             #
+    #             response_text = self._extract_response_text(iteration_text)
+    #             if response_text is not None:
+    #                 # Found a top-level <Response>, yield it once and stop
+    #                 yield f"<Response>{response_text}</Response>"
+    #                 return
+
+    #         #
+    #         # 3c) If we did not return, it means no <Response> was found in this iteration.
+    #         #     So append the entire iteration text to conversation_context and proceed.
+    #         #
+    #         conversation_context += "\n" + iteration_text
+
+    #     # If we finish all steps with no <Response>, yield fallback:
+    #     yield "<Response>I failed to reach a conclusion with my allowed compute.</Response>"
 
     def _parse_action_blocks(self, text: str) -> list[dict]:
         """
