@@ -120,7 +120,7 @@ services:
         condition: on-failure
 
   hatchet-migration:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-migrate:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-migrate:v0.53.15
     environment:
       DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
     depends_on:
@@ -133,7 +133,7 @@ services:
         condition: on-failure
 
   hatchet-setup-config:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:v0.53.15
     command: /hatchet/hatchet-admin quickstart --skip certs --generated-config-dir /hatchet/config --overwrite=false
     environment:
       DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
@@ -169,7 +169,7 @@ services:
         condition: on-failure
 
   hatchet-engine:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:v0.53.15
     command: /hatchet/hatchet-engine --config /hatchet/config
     depends_on:
       - hatchet-setup-config
@@ -198,7 +198,7 @@ services:
         condition: on-failure
 
   hatchet-dashboard:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-dashboard:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-dashboard:v0.53.15
     command: sh ./entrypoint.sh --config /hatchet/config
     depends_on:
       - hatchet-setup-config
@@ -217,7 +217,7 @@ services:
         condition: on-failure
 
   setup-token:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:v0.53.15
     command: sh /scripts/setup-token.sh
     volumes:
       - ./scripts:/scripts
@@ -290,6 +290,9 @@ services:
       # OpenAI
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OPENAI_API_BASE=${OPENAI_API_BASE:-}
+
+      # XAI / GROK
+      - XAI_API_KEY=${XAI_API_KEY:-}
 
       # Anthropic
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}

@@ -108,7 +108,7 @@ services:
       - r2r-network
 
   hatchet-migration:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-migrate:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-migrate:v0.53.15
     environment:
       DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
     depends_on:
@@ -118,7 +118,7 @@ services:
       - r2r-network
 
   hatchet-setup-config:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:v0.53.15
     command: /hatchet/hatchet-admin quickstart --skip certs --generated-config-dir /hatchet/config --overwrite=false
     environment:
       DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
@@ -152,7 +152,7 @@ services:
       - r2r-network
 
   hatchet-engine:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:v0.53.15
     command: /hatchet/hatchet-engine --config /hatchet/config
     restart: on-failure
     depends_on:
@@ -179,7 +179,7 @@ services:
       retries: 5
 
   hatchet-dashboard:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-dashboard:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-dashboard:v0.53.15
     command: sh ./entrypoint.sh --config /hatchet/config
     restart: on-failure
     depends_on:
@@ -196,7 +196,7 @@ services:
       - "${R2R_HATCHET_DASHBOARD_PORT:-7274}:80"
 
   setup-token:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:v0.53.15
     command: >
       sh -c "
         set -e
@@ -281,7 +281,8 @@ services:
       retries: 5
 
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    # image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    image: r2r/test
     ports:
       - "${R2R_PORT:-7272}:${R2R_PORT:-7272}"
     environment:
@@ -307,6 +308,9 @@ services:
       # OpenAI
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OPENAI_API_BASE=${OPENAI_API_BASE:-}
+
+      # XAI / GROK
+      - XAI_API_KEY=${XAI_API_KEY:-}
 
       # Anthropic
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}

@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import math
 import random
@@ -56,10 +55,6 @@ class GraphService(Service):
             config,
             providers,
         )
-
-    # --------------------------------------------------------------------------------
-    # Entity / Relationship CRUD
-    # --------------------------------------------------------------------------------
 
     @telemetry_event("create_entity")
     async def create_entity(
@@ -242,10 +237,6 @@ class GraphService(Service):
             entity_names=entity_names,
         )
 
-    # --------------------------------------------------------------------------------
-    # Community CRUD
-    # --------------------------------------------------------------------------------
-
     @telemetry_event("create_community")
     async def create_community(
         self,
@@ -308,20 +299,6 @@ class GraphService(Service):
             community_id=community_id,
         )
 
-    @telemetry_event("list_communities")
-    async def list_communities(
-        self,
-        collection_id: UUID,
-        offset: int,
-        limit: int,
-    ):
-        return await self.providers.database.graphs_handler.communities.get(
-            parent_id=collection_id,
-            store_type=StoreType.GRAPHS,
-            offset=offset,
-            limit=limit,
-        )
-
     @telemetry_event("get_communities")
     async def get_communities(
         self,
@@ -340,10 +317,7 @@ class GraphService(Service):
             include_embeddings=include_embeddings,
         )
 
-    # --------------------------------------------------------------------------------
-    # Graph CRUD (collections)
-    # --------------------------------------------------------------------------------
-
+    @telemetry_event("list_graphs")
     async def list_graphs(
         self,
         offset: int,
@@ -371,8 +345,8 @@ class GraphService(Service):
             description=description,
         )
 
-    @telemetry_event("reset_graph_v3")
-    async def reset_graph_v3(self, id: UUID) -> bool:
+    @telemetry_event("reset_graph")
+    async def reset_graph(self, id: UUID) -> bool:
         await self.providers.database.graphs_handler.reset(
             parent_id=id,
         )
@@ -400,9 +374,6 @@ class GraphService(Service):
             collection_id=collection_id,
         )
 
-    # --------------------------------------------------------------------------------
-    # Replacement for GraphDescriptionPipe logic
-    # --------------------------------------------------------------------------------
     @telemetry_event("kg_entity_description")
     async def kg_entity_description(
         self,
@@ -498,15 +469,15 @@ class GraphService(Service):
 
         # 2) For each entity name in the map, we gather sub-entities and relationships
         tasks = []
-        for entity_name, entity_info in entity_map.items():
-            tasks.append(
-                self._process_entity_for_description(
-                    entities=entity_info["entities"],
-                    relationships=entity_info["relationships"],
-                    document_id=document_id,
-                    max_description_input_length=max_description_input_length,
-                )
+        tasks.extend(
+            self._process_entity_for_description(
+                entities=entity_info["entities"],
+                relationships=entity_info["relationships"],
+                document_id=document_id,
+                max_description_input_length=max_description_input_length,
             )
+            for entity_name, entity_info in entity_map.items()
+        )
 
         # 3) Wait for all tasks, yield as they complete
         idx = 0
@@ -624,9 +595,6 @@ class GraphService(Service):
 
         return main_entity.name
 
-    # --------------------------------------------------------------------------------
-    # Replacement for GraphClusteringPipe logic
-    # --------------------------------------------------------------------------------
     @telemetry_event("kg_clustering")
     async def kg_clustering(
         self,
@@ -668,9 +636,6 @@ class GraphService(Service):
         )
         return {"num_communities": num_communities}
 
-    # --------------------------------------------------------------------------------
-    # Replacement for GraphCommunitySummaryPipe logic
-    # --------------------------------------------------------------------------------
     @telemetry_event("kg_community_summary")
     async def kg_community_summary(
         self,
@@ -768,18 +733,18 @@ class GraphService(Service):
         tasks = []
         import uuid
 
-        for _, nodes in clusters.items():
-            tasks.append(
-                self._process_community_summary(
-                    community_id=uuid.uuid4(),
-                    nodes=nodes,
-                    all_entities=all_entities,
-                    all_relationships=all_relationships,
-                    max_summary_input_length=max_summary_input_length,
-                    generation_config=generation_config,
-                    collection_id=collection_id,
-                )
+        tasks.extend(
+            self._process_community_summary(
+                community_id=uuid.uuid4(),
+                nodes=nodes,
+                all_entities=all_entities,
+                all_relationships=all_relationships,
+                max_summary_input_length=max_summary_input_length,
+                generation_config=generation_config,
+                collection_id=collection_id,
             )
+            for nodes in clusters.values()
+        )
 
         total_jobs = len(tasks)
         results_returned = 0
@@ -968,9 +933,6 @@ class GraphService(Service):
                 r.subject, {"entities": [], "relationships": []}
             )
             entity_map[r.subject]["relationships"].append(r)
-            # optionally do the same for r.object if you want both directions
-            # entity_map.setdefault(r.object, {"entities": [], "relationships": []})
-            # entity_map[r.object]["relationships"].append(r)
 
         # sort by # of relationships
         sorted_entries = sorted(
@@ -1004,26 +966,6 @@ class GraphService(Service):
 
         return "".join(prompt_chunks)
 
-    # --------------------------------------------------------------------------------
-    # Deletion / Housekeeping
-    # --------------------------------------------------------------------------------
-
-    @telemetry_event("delete_graph_for_documents")
-    async def delete_graph_for_documents(
-        self,
-        document_ids: list[UUID],
-        **kwargs,
-    ):
-        # TODO: Implement
-        raise NotImplementedError
-
-    @telemetry_event("delete_graph")
-    async def delete_graph(
-        self,
-        collection_id: UUID,
-    ):
-        return await self.delete(collection_id=collection_id)
-
     @telemetry_event("delete")
     async def delete(
         self,
@@ -1033,10 +975,6 @@ class GraphService(Service):
         return await self.providers.database.graphs_handler.delete(
             collection_id=collection_id,
         )
-
-    # --------------------------------------------------------------------------------
-    # KG Extraction logic
-    # --------------------------------------------------------------------------------
 
     async def kg_extraction(
         self,
@@ -1330,10 +1268,6 @@ class GraphService(Service):
                 continue
         return entities_list, relationships_list
 
-    # --------------------------------------------------------------------------------
-    # Bulk storing
-    # --------------------------------------------------------------------------------
-
     async def store_kg_extractions(
         self,
         kg_extractions: list[KGExtraction],
@@ -1372,10 +1306,6 @@ class GraphService(Service):
                     metadata=rel.metadata,
                     store_type=StoreType.DOCUMENTS,
                 )
-
-    # --------------------------------------------------------------------------------
-    # Dedup / Merge
-    # --------------------------------------------------------------------------------
 
     @telemetry_event("deduplicate_document_entities")
     async def deduplicate_document_entities(

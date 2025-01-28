@@ -228,7 +228,9 @@ def simple_ingestion_factory(service: IngestionService):
         except AuthenticationError as e:
             if document_info is not None:
                 await service.update_document_status(
-                    document_info, status=IngestionStatus.FAILED
+                    document_info,
+                    status=IngestionStatus.FAILED,
+                    metadata={"failure": f"{str(e)}"},
                 )
             raise R2RException(
                 status_code=401,
@@ -237,8 +239,12 @@ def simple_ingestion_factory(service: IngestionService):
         except Exception as e:
             if document_info is not None:
                 await service.update_document_status(
-                    document_info, status=IngestionStatus.FAILED
+                    document_info,
+                    status=IngestionStatus.FAILED,
+                    metadata={"failure": f"{str(e)}"},
                 )
+            if isinstance(e, R2RException):
+                raise
             raise HTTPException(
                 status_code=500, detail=f"Error during ingestion: {str(e)}"
             )
@@ -463,7 +469,9 @@ def simple_ingestion_factory(service: IngestionService):
         except Exception as e:
             if document_info is not None:
                 await service.update_document_status(
-                    document_info, status=IngestionStatus.FAILED
+                    document_info,
+                    status=IngestionStatus.FAILED,
+                    metadata={"failure": f"{str(e)}"},
                 )
             raise HTTPException(
                 status_code=500,

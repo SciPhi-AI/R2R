@@ -752,13 +752,8 @@ class RetrievalService(Service):
                         model=rag_generation_config.model,
                     )
                 )
-            else:
-                # If the user wants a normal rag_agent prompt or override
-                # your old logic might do something like:
-                system_instruction = task_prompt_override  # or None
-                # If None, your `_setup()` inside the agent code
-                # will fallback to your config’s default system prompt name
-                # e.g. "rag_agent"
+            elif task_prompt_override:
+                system_instruction = task_prompt_override
 
             agent_config = deepcopy(self.config.agent)
             agent_config.tools = override_tools or agent_config.tools
@@ -882,23 +877,25 @@ class RetrievalService(Service):
                 },
             )
             if needs_conversation_name:
-                prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
-                conversation_name = (
-                    (
-                        await self.providers.llm.aget_completion(
-                            [{"role": "system", "content": prompt}],
-                            GenerationConfig(
-                                model=self.providers.llm.config.fast_llm
-                            ),
+                try:
+                    prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
+                    conversation_name = (
+                        (
+                            await self.providers.llm.aget_completion(
+                                [{"role": "system", "content": prompt}],
+                                GenerationConfig(
+                                    model=self.providers.llm.config.fast_llm
+                                ),
+                            )
                         )
+                        .choices[0]
+                        .message.content
                     )
-                    .choices[0]
-                    .message.content
-                )
-                await self.providers.database.conversations_handler.update_conversation(
-                    conversation_id=conversation_id,
-                    name=conversation_name,
-                )
+                finally:
+                    await self.providers.database.conversations_handler.update_conversation(
+                        conversation_id=conversation_id,
+                        name=conversation_name or "",
+                    )
 
             return {
                 "messages": results,

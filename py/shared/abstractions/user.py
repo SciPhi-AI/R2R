@@ -36,9 +36,9 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    email: Optional[str] = None
-    token_type: Optional[str] = None
-    exp: Optional[datetime] = None
+    email: str
+    token_type: str
+    exp: datetime
 
 
 class User(R2RSerializable):

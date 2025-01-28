@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import threading
 from typing import Any, Callable, Optional
 
 from core.base import OrchestrationConfig, OrchestrationProvider, Workflow
@@ -21,13 +20,12 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
         root_logger = logging.getLogger()
 
         self.orchestrator = Hatchet(
-            debug=True,
             config=ClientConfig(
                 logger=root_logger,
             ),
         )
         self.root_logger = root_logger
-        self.config: OrchestrationConfig = config  # for type hinting
+        self.config: OrchestrationConfig = config
         self.messages: dict[str, str] = {}
 
     def workflow(self, *args, **kwargs) -> Callable:
@@ -55,23 +53,6 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
             )
 
         asyncio.create_task(self.worker.async_start())
-
-    # # Instead of using asyncio.create_task, run the worker in a separate thread
-    # def start_worker(self):
-    #     if not self.worker:
-    #         raise ValueError(
-    #             "Worker not initialized. Call get_worker() first."
-    #         )
-
-    #     def run_worker():
-    #         # Create a new event loop for this thread
-    #         loop = asyncio.new_event_loop()
-    #         asyncio.set_event_loop(loop)
-    #         loop.run_until_complete(self.worker.async_start())
-    #         loop.run_forever()  # If needed, or just run_until_complete for one task
-
-    #     thread = threading.Thread(target=run_worker, daemon=True)
-    #     thread.start()
 
     async def run_workflow(
         self,

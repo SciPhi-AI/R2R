@@ -19,6 +19,7 @@ class HTTPStatusFilter(logging.Filter):
     # This should capture the HTTP status code from a line like:
     # '127.0.0.1:54946 - "GET /v2/relationships HTTP/1.1" 404'
     STATUS_CODE_PATTERN = re.compile(r"\b(\d{3})\b")
+    HEALTH_ENDPOINT_PATTERN = re.compile(r'"GET /v3/health HTTP/\d\.\d"')
 
     LEVEL_TO_ANSI = {
         logging.INFO: "\033[32m",  # green
@@ -32,6 +33,12 @@ class HTTPStatusFilter(logging.Filter):
             return True
 
         message = record.getMessage()
+
+        # Filter out health endpoint requests
+        # FIXME: This should be made configurable in the future
+        if self.HEALTH_ENDPOINT_PATTERN.search(message):
+            return False
+
         if codes := self.STATUS_CODE_PATTERN.findall(message):
             status_code = int(codes[-1])
             if 200 <= status_code < 300:

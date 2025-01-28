@@ -12,13 +12,14 @@ from core.base import (
     AuthConfig,
     AuthProvider,
     CryptoProvider,
-    DatabaseProvider,
     EmailProvider,
     R2RException,
     Token,
     TokenData,
 )
 from core.base.api.models import User
+
+from ..database import PostgresDatabaseProvider
 
 logger = logging.getLogger()
 
@@ -32,7 +33,7 @@ class SupabaseAuthProvider(AuthProvider):
         self,
         config: AuthConfig,
         crypto_provider: CryptoProvider,
-        database_provider: DatabaseProvider,
+        database_provider: PostgresDatabaseProvider,
         email_provider: EmailProvider,
     ):
         super().__init__(
@@ -87,15 +88,6 @@ class SupabaseAuthProvider(AuthProvider):
                 status_code=400,
                 message="Supabase provider implementation is still under construction",
             )
-            # return User(
-            #     id=user.id,
-            #     email=user.email,
-            #     is_active=True,
-            #     is_superuser=False,
-            #     created_at=user.created_at,
-            #     updated_at=user.updated_at,
-            #     is_verified=False,
-            # )
         else:
             raise R2RException(
                 status_code=400, message="User registration failed"
@@ -235,7 +227,10 @@ class SupabaseAuthProvider(AuthProvider):
         raise NotImplementedError("send_reset_email is not used with Supabase")
 
     async def create_user_api_key(
-        self, user_id: UUID, name: Optional[str] = None
+        self,
+        user_id: UUID,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
     ) -> dict[str, str]:
         raise NotImplementedError(
             "API key management is not supported with Supabase authentication"
@@ -247,6 +242,13 @@ class SupabaseAuthProvider(AuthProvider):
         )
 
     async def delete_user_api_key(self, user_id: UUID, key_id: UUID) -> dict:
+        raise NotImplementedError(
+            "API key management is not supported with Supabase authentication"
+        )
+
+    async def oauth_callback_handler(
+        self, provider: str, oauth_id: str, email: str
+    ) -> dict[str, Token]:
         raise NotImplementedError(
             "API key management is not supported with Supabase authentication"
         )
