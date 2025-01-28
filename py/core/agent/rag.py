@@ -1,8 +1,8 @@
-import json
-import xml.etree.ElementTree as ET
-import logging
 import asyncio
-from typing import Any, Callable, Optional, Tuple, AsyncGenerator
+import json
+import logging
+import xml.etree.ElementTree as ET
+from typing import Any, AsyncGenerator, Callable, Optional, Tuple
 
 import tiktoken
 
@@ -15,9 +15,9 @@ from core.base.abstractions import (
     AggregateSearchResult,
     ContextDocumentResult,
     GenerationConfig,
+    LLMChatCompletion,
     Message,
     SearchSettings,
-    LLMChatCompletion,
     WebSearchResponse,
 )
 from core.base.agent import AgentConfig, Tool
@@ -25,6 +25,7 @@ from core.base.providers import DatabaseProvider
 from core.providers import LiteLLMCompletionProvider, OpenAICompletionProvider
 
 logger = logging.getLogger(__name__)
+
 
 def num_tokens(text, model="gpt-4o"):
     try:
@@ -541,11 +542,10 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
         )
 
 
-
 # ---------------------------------------------------------------------
 # Gemini Agent that directly iterates over .candidates[0].content.parts
 # ---------------------------------------------------------------------
-class GeminiStreamingRAGAgent(R2RStreamingRAGAgent):
+class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
     """
     A streaming-capable RAG Agent that:
       1) Calls Gemini's flash-thinking API
@@ -570,9 +570,10 @@ class GeminiStreamingRAGAgent(R2RStreamingRAGAgent):
         gemini_api_key: Optional[str] = None,
         gemini_model_name: str = "gemini-2.0-flash-thinking-exp",
     ):
-        logger.info("Initializing GeminiStreamingRAGAgent.")
-        from google import genai  # "pip install google-genai"
+        logger.info("Initializing R2RXMLToolsStreamingRAGAgent.")
         import os
+
+        from google import genai  # "pip install google-genai"
 
         # Force streaming in the agent config
         config.stream = True
@@ -621,17 +622,13 @@ class GeminiStreamingRAGAgent(R2RStreamingRAGAgent):
         """
         # 1) Prepare conversation
         await self._setup(system_instruction=system_instruction)
-        print("messages = ", messages)
         if messages:
             for msg in messages:
                 await self.conversation.add_message(msg)
 
         # 2) Build the prompt
         all_msgs = await self.conversation.get_messages()
-        print('all_msgs = ', all_msgs)
         user_prompt = self._build_single_user_prompt(all_msgs)
-
-        print('user_prompt = ', user_prompt)
 
         # 3) Call Gemini once, fetch entire response
         config = {"thinking_config": {"include_thoughts": True}}
@@ -685,8 +682,12 @@ class GeminiStreamingRAGAgent(R2RStreamingRAGAgent):
                 tool_params = tc["params"]
                 context += f"   <Parameters>{tool_params}</Parameters>"
                 yield f"   <Parameters>{tool_params}</Parameters>"
-                logger.info(f"[GeminiStreamingRAGAgent] Executing tool {tool_name} with {tool_params}")
-                tool_result_str = await self.execute_tool(tool_name, **tool_params)
+                logger.info(
+                    f"[R2RXMLToolsStreamingRAGAgent] Executing tool {tool_name} with {tool_params}"
+                )
+                tool_result_str = await self.execute_tool(
+                    tool_name, **tool_params
+                )
                 context += f"   <Result>{str(tool_result_str)}</Result>"
                 yield f"   <Result>{str(tool_result_str)}</Result>"
                 context += "  </ToolCall>"
@@ -696,7 +697,10 @@ class GeminiStreamingRAGAgent(R2RStreamingRAGAgent):
 
         final_response = self.gemini_client.models.generate_content(
             model=self.gemini_model_name,
-            contents=user_prompt + "Agent Reply:\n\n" + context + "\n\nNow, given the above, generate a coherent reply for the user.",
+            contents=user_prompt
+            + "Agent Reply:\n\n"
+            + context
+            + "\n\nNow, given the above, generate a coherent reply for the user.",
             config=config,
         )
         final_results = []
@@ -745,49 +749,25 @@ class GeminiStreamingRAGAgent(R2RStreamingRAGAgent):
                     for tc_el in tool_calls_el.findall("ToolCall"):
                         name_el = tc_el.find("Name")
                         params_el = tc_el.find("Parameters")
-                        
+
                         if name_el is not None and params_el is not None:
                             t_name = name_el.text.strip()
-                            
+
                             # Try to parse parameters as JSON
                             try:
                                 params_text = params_el.text.strip()
                                 t_params = json.loads(params_text)
-                                tool_calls.append({"name": t_name, "params": t_params})
+                                tool_calls.append(
+                                    {"name": t_name, "params": t_params}
+                                )
                             except json.JSONDecodeError:
-                                logger.error(f"Invalid JSON in Parameters for tool {t_name}: {params_text}")
+                                logger.error(
+                                    f"Invalid JSON in Parameters for tool {t_name}: {params_text}"
+                                )
                                 # Instead of falling back to XML parsing, we'll skip this tool call
                                 continue
-                                
+
         except ET.ParseError as e:
             logger.error(f"Failed to parse XML structure: {e}")
-        
+
         return tool_calls
-
-    # def _parse_action_xml(self, text: str) -> list[dict]:
-    #     """
-    #     Look for <Action><ToolCalls> blocks in the final text. Return a list:
-    #         [ {"name": "...", "params": {...}}, ... ]
-    #     If none found or invalid XML, returns [].
-    #     """
-    #     tool_calls = []
-    #     try:
-    #         root = ET.fromstring(text.split("```xml")[-1].split("```")[0])
-    #         if root.tag.lower() == "action":
-    #             tool_calls_el = root.find("ToolCalls")
-    #             if tool_calls_el is not None:
-    #                 for tc_el in tool_calls_el.findall("ToolCall"):
-    #                     name_el = tc_el.find("Name")
-    #                     params_el = tc_el.find("Parameters")
-    #                     if name_el is not None and params_el is not None:
-    #                         t_name = name_el.text.strip()
-    #                         try:
-    #                             t_params = json.loads(params_el.text.strip())
-    #                         except json.JSONDecodeError:
-    #                             t_params = {}
-    #                         tool_calls.append({"name": t_name, "params": t_params})
-    #     except ET.ParseError:
-    #         pass
-
-    #     return tool_calls
-

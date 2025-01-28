@@ -1,5 +1,9 @@
 from .base import R2RAgent, R2RStreamingAgent
-from .rag import R2RRAGAgent, R2RStreamingRAGAgent, GeminiStreamingRAGAgent
+from .rag import (
+    R2RRAGAgent,
+    R2RStreamingRAGAgent,
+    R2RXMLToolsStreamingRAGAgent,
+)
 
 __all__ = [
     # Base
@@ -8,5 +12,5 @@ __all__ = [
     # RAG Agents
     "R2RRAGAgent",
     "R2RStreamingRAGAgent",
-    "GeminiStreamingRAGAgent"
+    "R2RXMLToolsStreamingRAGAgent",
 ]

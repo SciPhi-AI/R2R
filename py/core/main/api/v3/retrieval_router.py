@@ -660,7 +660,6 @@ class RetrievalRouterV3(BaseRouterV3):
                 auth_user, search_mode, search_settings
             )
 
-
             try:
                 response = await self.services.retrieval.agent(
                     message=message,

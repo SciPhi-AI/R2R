@@ -35,7 +35,7 @@ __all__ = [
     "R2RStreamingAgent",
     "R2RRAGAgent",
     "R2RStreamingRAGAgent",
-    "GeminiStreamingRAGAgent",
+    "R2RXMLToolsStreamingRAGAgent",
     "AsyncSyncMeta",
     "syncable",
     "MessageType",
