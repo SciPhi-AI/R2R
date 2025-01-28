@@ -28,6 +28,46 @@ from .filters import apply_filters
 logger = logging.getLogger()
 
 
+def transform_filter_fields(filters: dict[str, Any]) -> dict[str, Any]:
+    """
+    Recursively transform filter field names by replacing 'document_id' with 'id'.
+    Handles nested logical operators like $and, $or, etc.
+
+    Args:
+        filters (Dict[str, Any]): The original filters dictionary
+
+    Returns:
+        Dict[str, Any]: A new dictionary with transformed field names
+    """
+    if not filters:
+        return {}
+
+    transformed = {}
+
+    for key, value in filters.items():
+        # Handle logical operators recursively
+        if key in ("$and", "$or", "$not"):
+            if isinstance(value, list):
+                transformed[key] = [
+                    transform_filter_fields(item) for item in value
+                ]
+            else:
+                transformed[key] = transform_filter_fields(value)
+            continue
+
+        # Replace 'document_id' with 'id'
+        new_key = "id" if key == "document_id" else key
+
+        # Handle nested dictionary cases (e.g., for operators like $eq, $gt, etc.)
+        if isinstance(value, dict):
+            transformed[new_key] = transform_filter_fields(value)
+        else:
+            transformed[new_key] = value
+
+    logger.debug(f"Transformed filters from {filters} to {transformed}")
+    return transformed
+
+
 class PostgresDocumentsHandler(Handler):
     TABLE_NAME = "documents"
 
@@ -491,6 +531,9 @@ class PostgresDocumentsHandler(Handler):
         this method will raise an error.
         """
 
+        filters = copy.deepcopy(filters)
+        filters = transform_filter_fields(filters)
+
         # Safety check: We do not allow mixing the old filter arguments with the new `filters` dict.
         # This keeps the query logic unambiguous.
         if filters and any(
@@ -669,10 +712,10 @@ class PostgresDocumentsHandler(Handler):
         vector_dim = (
             "" if math.isnan(self.dimension) else f"({self.dimension})"
         )
-
-        if search_settings.filters:
+        filters = copy.deepcopy(search_settings.filters)
+        if filters:
             filter_condition, params = apply_filters(
-                search_settings.filters, params, mode="condition_only"
+                transform_filter_fields(filters), params, mode="condition_only"
             )
             if filter_condition:
                 where_clauses.append(filter_condition)
@@ -754,9 +797,10 @@ class PostgresDocumentsHandler(Handler):
         where_clauses = ["raw_tsvector @@ websearch_to_tsquery('english', $1)"]
         params: list[str | int | bytes] = [query_text]
 
-        if search_settings.filters:
+        filters = copy.deepcopy(search_settings.filters)
+        if filters:
             filter_condition, params = apply_filters(
-                search_settings.filters, params, mode="condition_only"
+                transform_filter_fields(filters), params, mode="condition_only"
             )
             if filter_condition:
                 where_clauses.append(filter_condition)
@@ -981,6 +1025,8 @@ class PostgresDocumentsHandler(Handler):
             "updated_at",
             "total_tokens",
         }
+        filters = copy.deepcopy(filters)
+        filters = transform_filter_fields(filters)
 
         if not columns:
             columns = list(valid_columns)

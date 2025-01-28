@@ -25,6 +25,8 @@ from core.providers import LiteLLMCompletionProvider, OpenAICompletionProvider
 
 logger = logging.getLogger(__name__)
 
+COMPUTE_FAILURE = "<Response>I failed to reach a conclusion with my allowed compute.</Response>"
+
 
 def num_tokens(text, model="gpt-4o"):
     try:
@@ -33,7 +35,7 @@ def num_tokens(text, model="gpt-4o"):
         encoding = tiktoken.get_encoding("cl100k_base")
 
     """Return the number of tokens used by a list of messages for both user and assistant."""
-    return len(encoding.encode(text))
+    return len(encoding.encode(text, disallowed_special=()))
 
 
 class RAGAgentMixin:
@@ -52,6 +54,7 @@ class RAGAgentMixin:
         local_search_method: Optional[Callable] = None,
         content_method: Optional[Callable] = None,
         max_tool_context_length=10_000,
+        max_context_window_tokens=256_000,
         **kwargs,
     ):
         # Save references to the retrieval logic
@@ -59,6 +62,7 @@ class RAGAgentMixin:
         self.local_search_method = local_search_method
         self.content_method = content_method
         self.max_tool_context_length = max_tool_context_length
+        self.max_context_window_tokens = max_context_window_tokens
         super().__init__(*args, **kwargs)
 
     def _register_tools(self):
@@ -239,9 +243,11 @@ class RAGAgentMixin:
         context_document_results = []
         for item in raw_context:
             # item = { 'document': {...}, 'chunks': [...] }
+            document = item["document"]
+            document["metadata"].pop("chunk_metadata", None)
             context_document_results.append(
                 ContextDocumentResult(
-                    document=item["document"],
+                    document=document,
                     chunks=[
                         chunk.get("text", "")
                         for chunk in item.get("chunks", [])
@@ -453,8 +459,8 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
         rag_generation_config: GenerationConfig,
         local_search_method: Callable,
         content_method: Optional[Callable] = None,
-        max_tool_context_length: int = 10_000,
-        max_steps: int = 5,  # limit on number of tool calls
+        max_tool_context_length: int = 20_000,
+        max_steps: int = 10,  # limit on number of tool calls
     ):
         super().__init__(
             database_provider=database_provider,
@@ -505,11 +511,13 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             # Track whether we are “inside” a <Thought> block while streaming:
             inside_thought_block = False
 
-            print("-" * 100)
-            print("conversation_context = ", conversation_context)
-            print("-" * 100)
-
             conversation_context += "\n\n[Assistant]\n"
+
+            print("-" * 250)
+            print("STEP = ", step_i)
+            print(f"CONTEXT = {conversation_context}")
+            print("-" * 250)
+
             # Step 2) Single LLM call => yields (is_thought, text) pairs
             async for (
                 is_thought,
@@ -517,6 +525,9 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             ) in self._generate_thinking_response(
                 conversation_context, **kwargs
             ):
+                print(
+                    f"Yielding is_thought={is_thought}, token_text={token_text}"
+                )
                 if is_thought:
                     # Stream chain-of-thought text *inline*, but bracket with <Thought>...</Thought>
                     if not inside_thought_block:
@@ -549,7 +560,13 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             #
             parsed_actions = self._parse_action_blocks(iteration_text)
 
+            pre_text = iteration_text.split("<Action>")[0]
+            conversation_context += pre_text
+
+            print("parsed_actions = ", parsed_actions)
+
             if parsed_actions:
+                print(f"<--- PARSED ACTIONS --->\n\n{parsed_actions}")
                 # For each action block, see if it has <ToolCalls>, <Response>
                 for action_block in parsed_actions:
 
@@ -567,9 +584,9 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
 
                         if name == "result":
                             logger.info(
-                                f"Returning response = {params['response']}"
+                                f"Returning response = {params['answer']}"
                             )
-                            yield f"<Response>{params['response']}</Response>"
+                            yield f"<Response>{params['answer']}</Response>"
                             return
 
                         # Build the <ToolCall> to show user (minus <Result>)
@@ -587,7 +604,23 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                             f"<Name>{name}</Name>"
                             f"<Parameters>{json.dumps(params)}</Parameters>"
                         )
-                        result = await self.execute_tool(name, **params)
+                        try:
+                            result = await self.execute_tool(name, **params)
+
+                            context_tokens = num_tokens(str(result))
+                            max_to_result = (
+                                self.max_tool_context_length / context_tokens
+                            )
+
+                            if max_to_result < 1:
+                                result = (
+                                    str(result)[
+                                        0 : int(max_to_result * context_tokens)
+                                    ]
+                                    + "... RESULT TRUNCATED DUE TO MAX LENGTH ..."
+                                )
+                        except Exception as e:
+                            result = f"Error executing tool '{name}': {e}"
 
                         toolcall_with_result += (
                             f"<Result>{result}</Result></ToolCall>"
@@ -601,35 +634,36 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                     # Yield the no-results block so user sees the calls
                     yield toolcalls_minus_results
 
-                    # If this <Action> has a <Response>, yield once and stop
-                    # if action_block["response"] is not None:
-                    #     resp_str = action_block["response"]
-                    #     yield f"<Response>{resp_str}</Response>"
-                    #     return
-
                     # Otherwise, embed the <ToolCalls> with <Result> in conversation context
                     conversation_context += f"<Action>{toolcalls_xml}</Action>"
 
             else:
                 #
-                # 3b) If no <Action> blocks at all, check for a bare <Response>
-                #
-                # response_text = self._extract_response_text(iteration_text)
-                # if response_text is not None:
-                #     # Found a top-level <Response>, yield it once and stop
-                #     yield f"<Response>{response_text}</Response>"
-                #     return
-                yield "<Response>I failed to reach a conclusion with my allowed compute.</Response>"
-                return
+                # 3b) If no <Action> blocks at all, yield the iteration text below
+                failed_iteration_text = "<Action><ToolCalls></ToolCalls><Response>I failed to use any tools, I should probably return a response with the `result` tool now.</Response></Action>"
+                conversation_context += failed_iteration_text
+                context_size = num_tokens(conversation_context)
+                if context_size > self.max_context_window_tokens:
+                    yield COMPUTE_FAILURE
+                    return
 
-            #
-            # 3c) If we did not return, it means no <Response> was found in this iteration.
-            #     So append the entire iteration text to conversation_context and proceed.
-            #
-            conversation_context += "\n" + iteration_text
+                yield failed_iteration_text + f"[system]\n{step_i+1} steps completed, no <Action> blocks found. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
+                continue
+
+            post_text = (
+                iteration_text.split("</Action>")[-1]
+                + f"[system]\n{step_i+1} steps completed."
+            )
+            conversation_context += post_text
+            context_size = num_tokens(conversation_context)
+            if context_size > self.max_context_window_tokens:
+                yield COMPUTE_FAILURE
+                return
+            conversation_context += f"[system]\n{step_i+1} steps completed. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
 
         # If we finish all steps with no <Response>, yield fallback:
-        yield "<Response>I failed to reach a conclusion with my allowed compute.</Response>"
+        yield COMPUTE_FAILURE
+        return
 
     def _parse_action_blocks(self, text: str) -> list[dict]:
         """
@@ -644,6 +678,24 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
         # We'll do that with a simple loop using xml.etree, ignoring text outside <Action>.
         # Adjust to your actual patterns if your LLM can produce multiple <Action> blocks in one pass.
         results = []
+
+        ### HARDCODE RESULT PARSING DUE TO TROUBLES
+        if "<Name>result</Name>" in text:
+            return [
+                {
+                    "tool_calls": [
+                        {
+                            "name": "result",
+                            "params": {
+                                "answer": text.split("<Parameters>")[-1].split(
+                                    "</Parameters>"
+                                )[0][12:-2]
+                            },
+                        }
+                    ],
+                    "response": None,
+                }
+            ]
 
         try:
             # We attempt to parse the entire text and look for top-level <Action> blocks
@@ -667,6 +719,8 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                     root = ET.fromstring(match)
                     # parse <ToolCalls>
                     tc_element = root.find("ToolCalls")
+                    print("tc_element = ", tc_element)
+
                     if tc_element is not None:
                         for tc_el in tc_element.findall("ToolCall"):
                             name_el = tc_el.find("Name")
@@ -678,15 +732,17 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                                         params_el.text.strip()
                                     )
                                 except:
-                                    tool_params = {}
+
+                                    # if name_el.text.strip() == "result":
+                                    #     tool_params = params_el.text[12:-1]
+                                    logger.warning(
+                                        f"Tool params for {tool_name} are not JSON: {tool_params}, stripping answer directly"
+                                    )
+                                    # else:
+                                    # tool_params = {}
                                 block_data["tool_calls"].append(
                                     {"name": tool_name, "params": tool_params}
                                 )
-                    # # parse <Response>
-                    # resp_el = root.find("Response")
-                    # if resp_el is not None and resp_el.text is not None:
-                    #     block_data["response"] = resp_el.text.strip()
-
                 except ET.ParseError:
                     pass  # skip invalid block
                 results.append(block_data)
@@ -823,7 +879,10 @@ class GeminiXMLToolsStreamingRAGAgent(R2RXMLToolsStreamingRAGAgent):
         1) Call Gemini with `include_thoughts=True`.
         2) For each part in `candidates[0].content.parts`, yield (True, text) if part.thought else (False, text).
         """
-        config = {"thinking_config": {"include_thoughts": True}}
+        config = {
+            "thinking_config": {"include_thoughts": True},
+            "max_output_tokens": 8192,
+        }
 
         # Gemini is a blocking call so you'll want to put it in a thread pool or adapt to async if possible.
         # We'll do a naive synchronous call in this example:

@@ -1022,7 +1022,7 @@ class RetrievalService(Service):
         self,
         filter_user_id: Optional[UUID] = None,
         max_summary_length: int = 128,
-        limit: int = 50,
+        limit: int = 1000,
     ) -> str:
         """
         Fetches documents matching the given filters and returns a formatted string
