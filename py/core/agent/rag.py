@@ -89,7 +89,7 @@ class RAGAgentMixin:
         using self.local_search_method.
         """
         return Tool(
-            name="search",
+            name="local_search",
             description=(
                 "Search your local knowledge base using the R2R system. "
                 "Use this when you want relevant text chunks or knowledge graph data."
@@ -442,7 +442,6 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
 
     You must override:
       - _generate_thinking_response(user_prompt: str)
-      - _generate_final_response(context: str, user_prompt: str)
     """
 
     def __init__(
@@ -506,19 +505,30 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             # Track whether we are “inside” a <Thought> block while streaming:
             inside_thought_block = False
 
+            print("-" * 100)
+            print("conversation_context = ", conversation_context)
+            print("-" * 100)
+
+            conversation_context += "\n\n[Assistant]\n"
             # Step 2) Single LLM call => yields (is_thought, text) pairs
-            async for (is_thought, token_text) in self._generate_thinking_response(
+            async for (
+                is_thought,
+                token_text,
+            ) in self._generate_thinking_response(
                 conversation_context, **kwargs
             ):
                 if is_thought:
                     # Stream chain-of-thought text *inline*, but bracket with <Thought>...</Thought>
                     if not inside_thought_block:
                         inside_thought_block = True
+                        conversation_context += "<Thought>"
                         yield "<Thought>"
+                    conversation_context += token_text
                     yield token_text
                 else:
                     # If we were inside a thought block, close it
                     if inside_thought_block:
+                        conversation_context += "</Thought>"
                         yield "</Thought>"
                         inside_thought_block = False
 
@@ -528,6 +538,7 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
 
             # If the model ended while still in a thought block, close it
             if inside_thought_block:
+                conversation_context += "</Thought>"
                 yield "</Thought>"
 
             # Step 3) Combine the final user-facing tokens
@@ -541,6 +552,7 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             if parsed_actions:
                 # For each action block, see if it has <ToolCalls>, <Response>
                 for action_block in parsed_actions:
+
                     # Prepare two separate <ToolCalls> blocks:
                     #  - "toolcalls_xml": with <Result> inside (for conversation_context)
                     #  - "toolcalls_minus_results": no <Result> (to show user)
@@ -552,6 +564,13 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                         name = tc["name"]
                         params = tc["params"]
                         logger.info(f"Executing tool '{name}' with {params}")
+
+                        if name == "result":
+                            logger.info(
+                                f"Returning response = {params['response']}"
+                            )
+                            yield f"<Response>{params['response']}</Response>"
+                            return
 
                         # Build the <ToolCall> to show user (minus <Result>)
                         minimal_toolcall = (
@@ -569,7 +588,10 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                             f"<Parameters>{json.dumps(params)}</Parameters>"
                         )
                         result = await self.execute_tool(name, **params)
-                        toolcall_with_result += f"<Result>{result}</Result></ToolCall>"
+
+                        toolcall_with_result += (
+                            f"<Result>{result}</Result></ToolCall>"
+                        )
 
                         toolcalls_xml += toolcall_with_result
 
@@ -580,10 +602,10 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                     yield toolcalls_minus_results
 
                     # If this <Action> has a <Response>, yield once and stop
-                    if action_block["response"] is not None:
-                        resp_str = action_block["response"]
-                        yield f"<Response>{resp_str}</Response>"
-                        return
+                    # if action_block["response"] is not None:
+                    #     resp_str = action_block["response"]
+                    #     yield f"<Response>{resp_str}</Response>"
+                    #     return
 
                     # Otherwise, embed the <ToolCalls> with <Result> in conversation context
                     conversation_context += f"<Action>{toolcalls_xml}</Action>"
@@ -592,11 +614,13 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                 #
                 # 3b) If no <Action> blocks at all, check for a bare <Response>
                 #
-                response_text = self._extract_response_text(iteration_text)
-                if response_text is not None:
-                    # Found a top-level <Response>, yield it once and stop
-                    yield f"<Response>{response_text}</Response>"
-                    return
+                # response_text = self._extract_response_text(iteration_text)
+                # if response_text is not None:
+                #     # Found a top-level <Response>, yield it once and stop
+                #     yield f"<Response>{response_text}</Response>"
+                #     return
+                yield "<Response>I failed to reach a conclusion with my allowed compute.</Response>"
+                return
 
             #
             # 3c) If we did not return, it means no <Response> was found in this iteration.
@@ -606,7 +630,6 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
 
         # If we finish all steps with no <Response>, yield fallback:
         yield "<Response>I failed to reach a conclusion with my allowed compute.</Response>"
-
 
     def _parse_action_blocks(self, text: str) -> list[dict]:
         """
@@ -659,10 +682,10 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                                 block_data["tool_calls"].append(
                                     {"name": tool_name, "params": tool_params}
                                 )
-                    # parse <Response>
-                    resp_el = root.find("Response")
-                    if resp_el is not None and resp_el.text is not None:
-                        block_data["response"] = resp_el.text.strip()
+                    # # parse <Response>
+                    # resp_el = root.find("Response")
+                    # if resp_el is not None and resp_el.text is not None:
+                    #     block_data["response"] = resp_el.text.strip()
 
                 except ET.ParseError:
                     pass  # skip invalid block
@@ -763,17 +786,6 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             "Subclasses must implement _generate_thinking_response."
         )
 
-    async def _generate_final_response(
-        self, context: str, user_prompt: str, **kwargs
-    ) -> AsyncGenerator[tuple[bool, str], None]:
-        """
-        Given the context (including <ToolCalls> results) and original user_prompt,
-        produce the final user-facing text. Should yield (is_thought, text).
-        """
-        raise NotImplementedError(
-            "Subclasses must implement _generate_final_response."
-        )
-
 
 class GeminiXMLToolsStreamingRAGAgent(R2RXMLToolsStreamingRAGAgent):
     """
@@ -832,39 +844,3 @@ class GeminiXMLToolsStreamingRAGAgent(R2RXMLToolsStreamingRAGAgent):
                 yield (True, part.text)
             else:
                 yield (False, part.text)
-
-    async def _generate_final_response(
-        self, context: str, user_prompt: str, **kwargs
-    ) -> AsyncGenerator[tuple[bool, str], None]:
-        """
-        A second LLM call with the current conversation + <Action> context,
-        to produce the final user-facing answer.
-        Yields chain-of-thought tokens as (True, text), and final user text as (False, text).
-        """
-        config = {"thinking_config": {"include_thoughts": True}}
-
-        # Build final prompt
-        final_prompt = (
-            user_prompt
-            + "\n\nAgent Reply:\n\n"
-            + context
-            + "\n\nNow, given the above, generate a coherent reply for the user."
-        )
-
-        response = self.gemini_client.models.generate_content(
-            model=self.gemini_model_name,
-            contents=final_prompt,
-            config=config,
-        )
-
-        if not response.candidates:
-            yield (
-                False,
-                "I failed to retrieve a final conclusion from Gemini.",
-            )
-            return
-
-        final_parts = response.candidates[0].content.parts
-        for part in final_parts:
-            # If it's chain-of-thought => (True, text), else => (False, text)
-            yield (part.thought, part.text)

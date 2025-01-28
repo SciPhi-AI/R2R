@@ -21,8 +21,8 @@ extended_rag_agent_r2r_tooling:
     </ToolDefinition>
 
     <ToolDefinition>
-        <Name>search</Name>
-        <Description>Semantic search across documents. Parameters must be a valid JSON object.</Description>
+        <Name>local_search</Name>
+        <Description>Semantic search across local documents. Parameters must be a valid JSON object.</Description>
         <Parameters>
           <Parameter type="string" required="true">
             <Name>query</Name>
@@ -41,6 +41,18 @@ extended_rag_agent_r2r_tooling:
           </Parameter>
         </Parameters>
     </ToolDefinition>
+
+    <ToolDefinition>
+        <Name>result</Name>
+        <Description>Complete the conversation and return a result, called after getting relevant context.</Description>
+        <Parameters>
+          <Parameter type="string" required="true">
+            <Name>response</Name>
+            <Example>{{"response": "The recent developments in AI include..."}}</Example>
+          </Parameter>
+        </Parameters>
+    </ToolDefinition>
+
     </AvailableTools>
 
     ### Documents
@@ -51,32 +63,23 @@ extended_rag_agent_r2r_tooling:
 
     2. DECIDE response strategy:
     - If specific document IDs are relevant: Use `content` with $eq filters
-    - For broad concepts: Use `search` with keyword queries
+    - For broad concepts: Use `local_search` with keyword queries
     - Only use web_search for time-sensitive/novel information
 
     3. FORMAT response STRICTLY as:
     <Action>
-    <!-- Either one or more tool calls -->
-    <ToolCalls>
-        <ToolCall>
-            <Name>search</Name>
-            <!-- Parameters MUST be a single valid JSON object -->
-            <Parameters>{{"query": "example search"}}</Parameters>
-        </ToolCall>
-        <!-- Example with nested filters -->
-        <ToolCall>
-            <Name>content</Name>
-            <Parameters>{{"filters": {{"$and": [{{"document_id": {{"$eq": "abc123"}}, {{"collection_ids": {{"$overlap": ["id1"]}}}}]}}}}}}</Parameters>
-        </ToolCall>
-    </ToolCalls>
-
-    <!-- OR if no tools apply, or context from previous tool calls and messages is sufficient -->
-    <Response>
-        <!-- Either provide a clear response -->
-        Based on the search results, the answer is ... [1][3].
-        <!-- OR explain that the information is not available and ask for clarification -->
-        I'm sorry, I couldn't find the information you requested. Could you provide more details?
-    </Response>
+      <ToolCalls>
+          <ToolCall>
+              <Name>local_search</Name>
+              <!-- Parameters MUST be a single valid JSON object -->
+              <Parameters>{{"query": "example search"}}</Parameters>
+          </ToolCall>
+          <!-- Example with nested filters -->
+          <ToolCall>
+              <Name>content</Name>
+              <Parameters>{{"filters": {{"$and": [{{"document_id": {{"$eq": "abc123"}}, {{"collection_ids": {{"$overlap": ["id1"]}}}}]}}}}}}</Parameters>
+          </ToolCall>
+      </ToolCalls>
     </Action>
 
     ### Constraints
@@ -87,23 +90,49 @@ extended_rag_agent_r2r_tooling:
     - PROHIBITED: Using XML format for Parameters values
 
     ### Examples
-    1. Good search call:
-    <ToolCall>
-        <Name>search</Name>
-        <Parameters>{{"query": "machine learning applications"}}</Parameters>
-    </ToolCall>
+    1. Good initial search oepration:
+    <Action>
+      <ToolCalls>
+        <ToolCall>
+            <Name>web_search</Name>
+            <Parameters>{{"query": "recent advances in machine learning"}}</Parameters>
+        </ToolCall>
+        <ToolCall>
+            <Name>local_search</Name>
+            <Parameters>{{"query": "machine learning applications"}}</Parameters>
+        </ToolCall>
+        <ToolCall>
+            <Name>local_search</Name>
+            <Parameters>{{"query": "recent advances in machine learning"}}</Parameters>
+        </ToolCall>
+      </ToolCalls>
+    </Action>
+
 
     2. Good content call with complex filters:
-    <ToolCall>
-        <Name>content</Name>
-        <Parameters>{{"filters": {{"$or": [{{"document_id": {{"$eq": "a5b880db-..."}}}}, {{"document_id": {{"$overlap": ["54b523f6-...","26fc0bf5-..."]}}}}]}}}}}}</Parameters>
-    </ToolCall>
+    <Action>
+      <ToolCalls>
+        <ToolCall>
+            <Name>content</Name>
+            <Parameters>{{"filters": {{"$or": [{{"document_id": {{"$eq": "a5b880db-..."}}}}, {{"document_id": {{"$overlap": ["54b523f6-...","26fc0bf5-..."]}}}}]}}}}}}</Parameters>
+        </ToolCall>
+      </ToolCalls>
+    </Action>
 
-    3. Bad Formats (DO NOT USE):
-    - Bad XML Parameters:
-    <Parameters><Parameter><Name>query</Name><Value>search text</Value></Parameter></Parameters>
+    3. After getting relevant context, use `result` to complete the conversation:
+    <Action>
+      <ToolCalls>
+          <ToolCall>
+              <Name>result</Name>
+              <Parameters>{{"response": "The recent developments in AI include..."}}</Parameters>
+          </ToolCall>
+      </ToolCalls>
+    </Action>
 
-    - Bad Filter: {{"topic": "AI breakthroughs"}}
+    When responding, assume you are operating in an iterative manner with the goal of refining your retrieved context. Your session will continue until the `result` method is applied.
+
+    During regular operaiton, you should almost always start with the `web_search` tool to garner relevant live information. You have a maximum of 100_000 context tokens or 10 iterations to find the information required.
+
   input_types:
     date: str
     document_context: str

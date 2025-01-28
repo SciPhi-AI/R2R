@@ -143,6 +143,7 @@ class Agent(ABC):
         pass
 
     async def execute_tool(self, tool_name: str, *args, **kwargs) -> str:
+        print("self.tools = ", self.tools)
         if tool := next((t for t in self.tools if t.name == tool_name), None):
             return await tool.results_function(*args, **kwargs)
         else:
