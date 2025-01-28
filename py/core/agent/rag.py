@@ -1,5 +1,8 @@
+import json
+import xml.etree.ElementTree as ET
+import logging
 import asyncio
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, AsyncGenerator
 
 import tiktoken
 
@@ -12,13 +15,16 @@ from core.base.abstractions import (
     AggregateSearchResult,
     ContextDocumentResult,
     GenerationConfig,
+    Message,
     SearchSettings,
+    LLMChatCompletion,
     WebSearchResponse,
 )
 from core.base.agent import AgentConfig, Tool
 from core.base.providers import DatabaseProvider
 from core.providers import LiteLLMCompletionProvider, OpenAICompletionProvider
 
+logger = logging.getLogger(__name__)
 
 def num_tokens(text, model="gpt-4o"):
     try:
@@ -533,3 +539,255 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
             local_search_method=local_search_method,
             content_method=content_method,
         )
+
+
+
+# ---------------------------------------------------------------------
+# Gemini Agent that directly iterates over .candidates[0].content.parts
+# ---------------------------------------------------------------------
+class GeminiStreamingRAGAgent(R2RStreamingRAGAgent):
+    """
+    A streaming-capable RAG Agent that:
+      1) Calls Gemini's flash-thinking API
+      2) Directly loops over response.candidates[0].content.parts
+      3) Yields partial “thought” vs. normal “assistant” text
+      4) Accumulates the final text to parse for <Action><ToolCalls>
+      5) Executes any requested tool calls
+      6) Yields tool results, then final answer
+    """
+
+    def __init__(
+        self,
+        database_provider: DatabaseProvider,
+        # We won't really use llm_provider here, but it's needed by the parent.
+        llm_provider: Optional[Any],
+        config: AgentConfig,
+        search_settings: SearchSettings,
+        rag_generation_config: GenerationConfig,
+        local_search_method: Callable,
+        content_method: Optional[Callable] = None,
+        max_tool_context_length: int = 10_000,
+        gemini_api_key: Optional[str] = None,
+        gemini_model_name: str = "gemini-2.0-flash-thinking-exp",
+    ):
+        logger.info("Initializing GeminiStreamingRAGAgent.")
+        from google import genai  # "pip install google-genai"
+        import os
+
+        # Force streaming in the agent config
+        config.stream = True
+
+        # Init the RAG mixin
+        super().__init__(
+            database_provider=database_provider,
+            llm_provider=llm_provider,
+            config=config,
+            search_settings=search_settings,
+            rag_generation_config=rag_generation_config,
+            local_search_method=local_search_method,
+            content_method=content_method,
+            max_tool_context_length=max_tool_context_length,
+        )
+
+        # Create a Gemini client
+        api_key = gemini_api_key or os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError(
+                "Gemini API key not found. Provide gemini_api_key or set GEMINI_API_KEY."
+            )
+        self.gemini_client = genai.Client(
+            api_key=api_key,
+            http_options={"api_version": "v1alpha"},
+        )
+        self.gemini_model_name = gemini_model_name
+
+    async def arun(
+        self,
+        system_instruction: Optional[str] = None,
+        messages: Optional[list[Message]] = None,
+        *args,
+        **kwargs,
+    ) -> AsyncGenerator[str, None]:
+        """
+        Main entrypoint:
+          1) Combine system/user messages into a single prompt
+          2) Call gemini_client.models.generate_content(...)
+          3) For each `part` in response.candidates[0].content.parts:
+             - if part.thought => yield role="assistant_thought"
+             - else => yield role="assistant"
+          4) Accumulate final “assistant” text => parse <Action><ToolCalls>
+          5) If tool calls => execute them => yield results
+          6) Yield final answer
+        """
+        # 1) Prepare conversation
+        await self._setup(system_instruction=system_instruction)
+        print("messages = ", messages)
+        if messages:
+            for msg in messages:
+                await self.conversation.add_message(msg)
+
+        # 2) Build the prompt
+        all_msgs = await self.conversation.get_messages()
+        print('all_msgs = ', all_msgs)
+        user_prompt = self._build_single_user_prompt(all_msgs)
+
+        print('user_prompt = ', user_prompt)
+
+        # 3) Call Gemini once, fetch entire response
+        config = {"thinking_config": {"include_thoughts": True}}
+        response = self.gemini_client.models.generate_content(
+            model=self.gemini_model_name,
+            contents=user_prompt,
+            config=config,
+        )
+
+        # We assume there's at least one candidate
+        if not response.candidates:
+            # yield an error
+            yield "[Gemini Error: no candidates returned]"
+            return
+
+        # Accumulate normal text parts into final_response
+        action_text = []
+
+        context = "<Thought>"
+        yield "<Thought>"
+        # assume we always have at least one candidate and yield thoughts
+        for part in response.candidates[0].content.parts:
+            if part.thought:
+                # yield chain-of-thought tokens
+                context += part.text
+                yield part.text
+            else:
+                action_text.append(part.text)
+        context += "</Thought>"
+        yield "</Thought>"
+
+        # 5) Now parse the final <Action><ToolCalls> from the full text
+        action_text = "".join(action_text).strip()
+        tool_calls = self._parse_action_xml(action_text)
+
+        if not tool_calls:
+            pass  # No tool calls found
+        else:
+            context += "<Action>"
+            yield "<Action>"
+            context += " <ToolCalls>"
+            yield " <ToolCalls>"
+            # 6) If there are tool calls, execute them
+            for tc in tool_calls:
+                context += "  <ToolCall>"
+                yield "  <ToolCall>"
+                tool_name = tc["name"]
+                context += f"   <Name>{tool_name}</Name>"
+                yield f"   <Name>{tool_name}</Name>"
+
+                tool_params = tc["params"]
+                context += f"   <Parameters>{tool_params}</Parameters>"
+                yield f"   <Parameters>{tool_params}</Parameters>"
+                logger.info(f"[GeminiStreamingRAGAgent] Executing tool {tool_name} with {tool_params}")
+                tool_result_str = await self.execute_tool(tool_name, **tool_params)
+                context += f"   <Result>{str(tool_result_str)}</Result>"
+                yield f"   <Result>{str(tool_result_str)}</Result>"
+                context += "  </ToolCall>"
+                yield "  </ToolCall>"
+            context += " </ToolCalls>"
+            yield " </ToolCalls>"
+
+        final_response = self.gemini_client.models.generate_content(
+            model=self.gemini_model_name,
+            contents=user_prompt + "Agent Reply:\n\n" + context + "\n\nNow, given the above, generate a coherent reply for the user.",
+            config=config,
+        )
+        final_results = []
+        yield "<Thought>"
+        for part in final_response.candidates[0].content.parts:
+            if part.thought:
+                # yield chain-of-thought tokens
+                yield part.text
+            else:
+                final_results.append(part.text)
+        yield "</Thought>"
+        final_text = "".join(final_results).strip()
+        yield final_text
+
+        # # 7) Finally, yield the original final text as the "answer"
+        # yield LLMChatCompletion(role="assistant", content=final_text)
+
+    def _build_single_user_prompt(self, conversation_msgs: list[dict]) -> str:
+        """
+        Converts the system/user messages to a single text prompt for Gemini.
+        Adjust as you like. E.g., you could keep them separated or incorporate roles.
+        """
+        system_msgs = []
+        user_msgs = []
+        for msg in conversation_msgs:
+            role = msg["role"]
+            content = msg["content"]
+            if role == "system":
+                system_msgs.append(f"[System]\n{content}\n")
+            elif role == "user":
+                user_msgs.append(f"[User]\n{content}\n")
+            elif role == "assistant":
+                user_msgs.append(f"[Assistant]\n{content}\n")
+            # skip others
+
+        combined_prompt = "\n".join(system_msgs + user_msgs)
+        return combined_prompt
+
+    def _parse_action_xml(self, text: str) -> list[dict]:
+        tool_calls = []
+        try:
+            root = ET.fromstring(text.split("```xml")[-1].split("```")[0])
+            if root.tag.lower() == "action":
+                tool_calls_el = root.find("ToolCalls")
+                if tool_calls_el is not None:
+                    for tc_el in tool_calls_el.findall("ToolCall"):
+                        name_el = tc_el.find("Name")
+                        params_el = tc_el.find("Parameters")
+                        
+                        if name_el is not None and params_el is not None:
+                            t_name = name_el.text.strip()
+                            
+                            # Try to parse parameters as JSON
+                            try:
+                                params_text = params_el.text.strip()
+                                t_params = json.loads(params_text)
+                                tool_calls.append({"name": t_name, "params": t_params})
+                            except json.JSONDecodeError:
+                                logger.error(f"Invalid JSON in Parameters for tool {t_name}: {params_text}")
+                                # Instead of falling back to XML parsing, we'll skip this tool call
+                                continue
+                                
+        except ET.ParseError as e:
+            logger.error(f"Failed to parse XML structure: {e}")
+        
+        return tool_calls
+
+    # def _parse_action_xml(self, text: str) -> list[dict]:
+    #     """
+    #     Look for <Action><ToolCalls> blocks in the final text. Return a list:
+    #         [ {"name": "...", "params": {...}}, ... ]
+    #     If none found or invalid XML, returns [].
+    #     """
+    #     tool_calls = []
+    #     try:
+    #         root = ET.fromstring(text.split("```xml")[-1].split("```")[0])
+    #         if root.tag.lower() == "action":
+    #             tool_calls_el = root.find("ToolCalls")
+    #             if tool_calls_el is not None:
+    #                 for tc_el in tool_calls_el.findall("ToolCall"):
+    #                     name_el = tc_el.find("Name")
+    #                     params_el = tc_el.find("Parameters")
+    #                     if name_el is not None and params_el is not None:
+    #                         t_name = name_el.text.strip()
+    #                         try:
+    #                             t_params = json.loads(params_el.text.strip())
+    #                         except json.JSONDecodeError:
+    #                             t_params = {}
+    #                         tool_calls.append({"name": t_name, "params": t_params})
+    #     except ET.ParseError:
+    #         pass
+
+    #     return tool_calls
+

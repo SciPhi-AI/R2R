@@ -9,7 +9,7 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from core import R2RRAGAgent, R2RStreamingRAGAgent
+from core import R2RRAGAgent, R2RStreamingRAGAgent, GeminiStreamingRAGAgent
 from core.base import (
     AggregateSearchResult,
     ChunkSearchResult,
@@ -709,7 +709,7 @@ class RetrievalService(Service):
 
             current_message = messages[-1]
             logger.info(
-                f"Running the agnet with conversation_id = {conversation_id} and message = {current_message}"
+                f"Running the agent with conversation_id = {conversation_id} and message = {current_message}"
             )
             # Save the new message to the conversation
             parent_id = ids[-1] if ids else None
@@ -745,6 +745,7 @@ class RetrievalService(Service):
                         max_tool_context_length=max_tool_context_length,
                         filter_user_id=filter_user_id,
                         filter_collection_ids=filter_collection_ids,
+                        model=rag_generation_config.model,
                     )
                 )
             else:
@@ -762,16 +763,30 @@ class RetrievalService(Service):
 
                 async def stream_response():
                     try:
-                        agent = R2RStreamingRAGAgent(
-                            database_provider=self.providers.database,
-                            llm_provider=self.providers.llm,
-                            config=agent_config,
-                            search_settings=search_settings,
-                            rag_generation_config=rag_generation_config,
-                            max_tool_context_length=max_tool_context_length,
-                            local_search_method=self.search,
-                            content_method=self.get_context,
-                        )
+                        if 'gemini' not in rag_generation_config.model:
+                            agent = R2RStreamingRAGAgent(
+                                database_provider=self.providers.database,
+                                llm_provider=self.providers.llm,
+                                config=agent_config,
+                                search_settings=search_settings,
+                                rag_generation_config=rag_generation_config,
+                                max_tool_context_length=max_tool_context_length,
+                                local_search_method=self.search,
+                                content_method=self.get_context,
+                            )
+                        else:
+                            print("Making agent...")
+                            agent = GeminiStreamingRAGAgent(
+                                database_provider=self.providers.database,
+                                llm_provider=self.providers.llm,
+                                config=agent_config,
+                                search_settings=search_settings,
+                                rag_generation_config=rag_generation_config,
+                                max_tool_context_length=max_tool_context_length,
+                                local_search_method=self.search,
+                                content_method=self.get_context,
+                            )
+                            
                         async for chunk in agent.arun(
                             messages=messages,
                             system_instruction=system_instruction,
@@ -1074,6 +1089,7 @@ class RetrievalService(Service):
         max_tool_context_length: int = 10_000,
         filter_user_id: Optional[UUID] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
+        model: Optional[str] = None
     ) -> str:
         """
         High-level method that:
@@ -1094,9 +1110,11 @@ class RetrievalService(Service):
         # Now fetch the prompt from the database prompts handler
         # This relies on your "rag_agent_extended" existing with
         # placeholders: date, document_context, collection_context
+        print("getting system prompt")        
         system_prompt = (
             await self.providers.database.prompts_handler.get_cached_prompt(
-                "extended_rag_agent",
+                # We use custom tooling and a custom agent to handle gemini models
+                "extended_rag_agent" if model and "gemini" not in model else "extended_rag_agent_r2r_tooling",
                 inputs={
                     "date": date_str,
                     "max_tool_context_length": max_tool_context_length,
@@ -1105,6 +1123,7 @@ class RetrievalService(Service):
                 },
             )
         )
+        print("gotten system prompt")
         logger.info(f"Running agent with system prompt = {system_prompt}")
         return system_prompt
 
