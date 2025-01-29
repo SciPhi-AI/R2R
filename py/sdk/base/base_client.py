@@ -60,13 +60,6 @@ class BaseClient:
         else:
             return {}
 
-    def _ensure_authenticated(self):
-        if not self.access_token:
-            raise R2RException(
-                status_code=401,
-                message="Not authenticated. Please login first.",
-            )
-
     def _get_full_url(self, endpoint: str, version: str = "v3") -> str:
         return f"{self.base_url}/{version}/{endpoint}"
 
