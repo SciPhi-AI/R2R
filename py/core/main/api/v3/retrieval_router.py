@@ -659,6 +659,7 @@ class RetrievalRouterV3(BaseRouterV3):
             effective_settings = self._prepare_search_settings(
                 auth_user, search_mode, search_settings
             )
+
             try:
                 response = await self.services.retrieval.agent(
                     message=message,

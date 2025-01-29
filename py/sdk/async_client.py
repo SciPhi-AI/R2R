@@ -53,6 +53,8 @@ class R2RAsyncClient(BaseClient):
         if (
             "https://api.cloud.sciphi.ai" in url
             and ("login" not in endpoint)
+            and ("create" not in endpoint)
+            and ("users" not in endpoint)
             and ("health" not in endpoint)
         ):
             if not self.access_token and not self.api_key:
