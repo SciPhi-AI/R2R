@@ -1,10 +1,13 @@
 import asyncio
 import json
 import logging
+import random
+import re
 import xml.etree.ElementTree as ET
 from typing import Any, AsyncGenerator, Callable, Optional, Tuple
 
 import tiktoken
+from google.genai.errors import ServerError
 
 from core.agent import R2RAgent, R2RStreamingAgent
 from core.base import (
@@ -54,7 +57,7 @@ class RAGAgentMixin:
         local_search_method: Optional[Callable] = None,
         content_method: Optional[Callable] = None,
         max_tool_context_length=10_000,
-        max_context_window_tokens=256_000,
+        max_context_window_tokens=512_000,
         **kwargs,
     ):
         # Save references to the retrieval logic
@@ -513,11 +516,6 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
 
             conversation_context += "\n\n[Assistant]\n"
 
-            print("-" * 250)
-            print("STEP = ", step_i)
-            print(f"CONTEXT = {conversation_context}")
-            print("-" * 250)
-
             # Step 2) Single LLM call => yields (is_thought, text) pairs
             async for (
                 is_thought,
@@ -525,9 +523,6 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             ) in self._generate_thinking_response(
                 conversation_context, **kwargs
             ):
-                print(
-                    f"Yielding is_thought={is_thought}, token_text={token_text}"
-                )
                 if is_thought:
                     # Stream chain-of-thought text *inline*, but bracket with <Thought>...</Thought>
                     if not inside_thought_block:
@@ -563,10 +558,7 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             pre_text = iteration_text.split("<Action>")[0]
             conversation_context += pre_text
 
-            print("parsed_actions = ", parsed_actions)
-
             if parsed_actions:
-                print(f"<--- PARSED ACTIONS --->\n\n{parsed_actions}")
                 # For each action block, see if it has <ToolCalls>, <Response>
                 for action_block in parsed_actions:
 
@@ -641,43 +633,40 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                 #
                 # 3b) If no <Action> blocks at all, yield the iteration text below
                 failed_iteration_text = "<Action><ToolCalls></ToolCalls><Response>I failed to use any tools, I should probably return a response with the `result` tool now.</Response></Action>"
-                conversation_context += failed_iteration_text
                 context_size = num_tokens(conversation_context)
                 if context_size > self.max_context_window_tokens:
                     yield COMPUTE_FAILURE
                     return
 
-                yield failed_iteration_text + f"[system]\n{step_i+1} steps completed, no <Action> blocks found. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
+                yield failed_iteration_text + f"\n\n[System]\n{step_i+1} steps completed, no <Action> blocks found. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
+                conversation_context += failed_iteration_text
                 continue
 
-            post_text = (
-                iteration_text.split("</Action>")[-1]
-                + f"[system]\n{step_i+1} steps completed."
-            )
+            post_text = iteration_text.split("</Action>")[-1]
             conversation_context += post_text
             context_size = num_tokens(conversation_context)
             if context_size > self.max_context_window_tokens:
                 yield COMPUTE_FAILURE
                 return
-            conversation_context += f"[system]\n{step_i+1} steps completed. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
-
+            conversation_context += f"\n\n[System]\n{step_i+1} steps completed. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
         # If we finish all steps with no <Response>, yield fallback:
         yield COMPUTE_FAILURE
         return
 
     def _parse_action_blocks(self, text: str) -> list[dict]:
         """
-        Attempt to find zero or more <Action> blocks in text.
-        For each block, parse any <ToolCalls> and <Response>.
-        Return a list of dicts: [ { "tool_calls": [...], "response": <str or None> }, ... ]
+        Find <Action>...</Action> blocks in 'text' using simple regex,
+        then parse out <ToolCall> blocks within each <Action>.
 
-        Each 'tool_calls' entry is a list of { "name": <tool_name>, "params": <dict> }.
-        'response' is either a string if <Response> block is found, or None if absent.
+        Returns a list of dicts, each with:
+        {
+            "tool_calls": [
+                {"name": <tool_name>, "params": <dict>},
+                ...
+            ],
+            "response": <str or None if no <Response> found>
+        }
         """
-        # A naive approach is to split on <Action>...</Action> if multiple appear.
-        # We'll do that with a simple loop using xml.etree, ignoring text outside <Action>.
-        # Adjust to your actual patterns if your LLM can produce multiple <Action> blocks in one pass.
-        results = []
 
         ### HARDCODE RESULT PARSING DUE TO TROUBLES
         if "<Name>result</Name>" in text:
@@ -687,9 +676,9 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                         {
                             "name": "result",
                             "params": {
-                                "answer": text.split("<Parameters>")[-1].split(
-                                    "</Parameters>"
-                                )[0][12:-2]
+                                "answer": text.split("<Parameters>")[-1]
+                                .split("</Parameters>")[0]
+                                .strip()[12:-2]
                             },
                         }
                     ],
@@ -697,58 +686,68 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                 }
             ]
 
-        try:
-            # We attempt to parse the entire text and look for top-level <Action> blocks
-            # or repeated <Action> blocks. Because xml.etree won't parse multiple top-level
-            # elements easily, we can wrap them in a dummy root if we want to handle multiples.
-            # For simplicity, let's do a quick iteration:
-            import re
+        results = []
 
-            pattern = re.compile(
-                r"(<Action>.*?</Action>)", re.DOTALL | re.IGNORECASE
+        # 1) Find all <Action>...</Action> blocks
+        action_pattern = re.compile(
+            r"<Action>(.*?)</Action>", re.DOTALL | re.IGNORECASE
+        )
+        action_matches = action_pattern.findall(text)
+
+        for action_content in action_matches:
+            block_data = {
+                "tool_calls": [],
+                "response": None,
+            }
+
+            # 2) Within each <Action> block, find all <ToolCall>...</ToolCall> blocks
+            toolcall_pattern = re.compile(
+                r"<ToolCall>(.*?)</ToolCall>", re.DOTALL | re.IGNORECASE
             )
-            matches = pattern.findall(text)
-            for match in matches:
-                # parse each <Action>...</Action> snippet individually
-                # to handle multiple blocks in a single step
-                block_data = {
-                    "tool_calls": [],
-                    "response": None,
-                }
-                try:
-                    root = ET.fromstring(match)
-                    # parse <ToolCalls>
-                    tc_element = root.find("ToolCalls")
-                    print("tc_element = ", tc_element)
+            toolcall_matches = toolcall_pattern.findall(action_content)
 
-                    if tc_element is not None:
-                        for tc_el in tc_element.findall("ToolCall"):
-                            name_el = tc_el.find("Name")
-                            params_el = tc_el.find("Parameters")
-                            if name_el is not None and params_el is not None:
-                                tool_name = name_el.text.strip()
-                                try:
-                                    tool_params = json.loads(
-                                        params_el.text.strip()
-                                    )
-                                except:
+            for tc_text in toolcall_matches:
+                # Look for <Name>...</Name> and <Parameters>...</Parameters>
+                name_match = re.search(
+                    r"<Name>(.*?)</Name>", tc_text, re.DOTALL | re.IGNORECASE
+                )
+                params_match = re.search(
+                    r"<Parameters>(.*?)</Parameters>",
+                    tc_text,
+                    re.DOTALL | re.IGNORECASE,
+                )
 
-                                    # if name_el.text.strip() == "result":
-                                    #     tool_params = params_el.text[12:-1]
-                                    logger.warning(
-                                        f"Tool params for {tool_name} are not JSON: {tool_params}, stripping answer directly"
-                                    )
-                                    # else:
-                                    # tool_params = {}
-                                block_data["tool_calls"].append(
-                                    {"name": tool_name, "params": tool_params}
-                                )
-                except ET.ParseError:
-                    pass  # skip invalid block
-                results.append(block_data)
+                if not name_match:
+                    continue  # no <Name> => skip
 
-        except Exception as e:
-            logger.warning(f"Action block parsing error: {e}")
+                tool_name = name_match.group(1).strip()
+
+                # If <Parameters> is present, try to parse as JSON
+                if params_match:
+                    raw_params = params_match.group(1).strip()
+                    try:
+                        tool_params = json.loads(raw_params)
+                    except json.JSONDecodeError:
+                        logger.warning(
+                            f"Failed to parse JSON from <Parameters>: {raw_params}"
+                        )
+                        tool_params = {}
+                else:
+                    tool_params = {}
+
+                block_data["tool_calls"].append(
+                    {"name": tool_name, "params": tool_params}
+                )
+
+            # 3) Optionally, see if there's a <Response>...</Response> in the same <Action> block
+            response_pattern = re.compile(
+                r"<Response>(.*?)</Response>", re.DOTALL | re.IGNORECASE
+            )
+            response_match = response_pattern.search(action_content)
+            if response_match:
+                block_data["response"] = response_match.group(1).strip()
+
+            results.append(block_data)
 
         return results
 
@@ -873,33 +872,70 @@ class GeminiXMLToolsStreamingRAGAgent(R2RXMLToolsStreamingRAGAgent):
         self.gemini_model_name = gemini_model_name
 
     async def _generate_thinking_response(
-        self, user_prompt: str, **kwargs
+        self,
+        user_prompt: str,
+        max_retries: int = 3,
+        initial_delay: float = 1.0,
+        **kwargs,
     ) -> AsyncGenerator[tuple[bool, str], None]:
         """
-        1) Call Gemini with `include_thoughts=True`.
-        2) For each part in `candidates[0].content.parts`, yield (True, text) if part.thought else (False, text).
+        Generate thinking response with retry logic for handling transient failures.
+
+        Args:
+            user_prompt: The prompt to send to Gemini
+            max_retries: Maximum number of retry attempts (default: 3)
+            initial_delay: Initial delay between retries in seconds (default: 1.0)
+            **kwargs: Additional arguments passed to generate_content
+
+        Yields:
+            Tuples of (is_thought: bool, text: str)
         """
         config = {
             "thinking_config": {"include_thoughts": True},
-            "max_output_tokens": 8192,
+            # "max_output_tokens": 8192,
         }
 
-        # Gemini is a blocking call so you'll want to put it in a thread pool or adapt to async if possible.
-        # We'll do a naive synchronous call in this example:
-        response = self.gemini_client.models.generate_content(
-            model=self.gemini_model_name,
-            contents=user_prompt,
-            config=config,
-        )
+        attempt = 0
+        last_error = None
 
-        # No candidates => yield some minimal fallback
-        if not response.candidates:
-            yield (False, "I failed to retrieve a valid Gemini response.")
-            return
+        while attempt <= max_retries:
+            try:
+                response = self.gemini_client.models.generate_content(
+                    model=self.gemini_model_name,
+                    contents=user_prompt,
+                    config=config,
+                )
 
-        for part in response.candidates[0].content.parts:
-            if part.thought:
-                # chain-of-thought
-                yield (True, part.text)
-            else:
-                yield (False, part.text)
+                # Handle empty response
+                if not response.candidates:
+                    yield (
+                        False,
+                        "I failed to retrieve a valid Gemini response.",
+                    )
+                    return
+
+                # Process successful response
+                for part in response.candidates[0].content.parts:
+                    if part.thought:
+                        yield (True, part.text)
+                    else:
+                        yield (False, part.text)
+                return  # Success - exit the retry loop
+
+            except ServerError as e:
+                last_error = e
+                attempt += 1
+
+                if attempt <= max_retries:
+                    # Exponential backoff with jitter
+                    delay = (
+                        initial_delay
+                        * (2 ** (attempt - 1))
+                        * (0.5 + random.random())
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    # All retries exhausted
+                    error_msg = f"Failed after {max_retries} attempts. Last error: {str(last_error)}"
+                    yield (False, error_msg)
+                    return
