@@ -165,12 +165,9 @@ class R2RStreamingAgent(R2RAgent):
         """
         pending_tool_calls = {}
         content_buffer = ""
-        function_name = None
         function_arguments = ""
-        tool_calls_active = False
 
         async for chunk in stream:
-            # print("Chunk = ", chunk)
             delta = chunk.choices[0].delta
             finish_reason = chunk.choices[0].finish_reason
 

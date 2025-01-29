@@ -28,7 +28,6 @@ class Conversation:
         self._lock = asyncio.Lock()
 
     async def add_message(self, message):
-        print("adding message =- ", message)
         async with self._lock:
             self.messages.append(message)
 
