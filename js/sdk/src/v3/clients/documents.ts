@@ -16,9 +16,7 @@ import { downloadBlob } from "../../utils";
 
 let fs: any;
 if (typeof window === "undefined") {
-  import("fs").then((module) => {
-    fs = module;
-  });
+  fs = require("fs");
 }
 
 type FileInput = string | File | { path: string; name: string };
