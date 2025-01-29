@@ -1,4 +1,3 @@
-import { feature } from "../../feature";
 import { r2rClient } from "../../r2rClient";
 import {
   WrappedBooleanResponse,
@@ -20,7 +19,6 @@ export class PromptsClient {
    * @param inputTypes A dictionary mapping input names to their types
    * @returns
    */
-  @feature("prompts.create")
   async create(options: {
     name: string;
     template: string;
@@ -38,7 +36,6 @@ export class PromptsClient {
    * Only superusers can access this endpoint.
    * @returns
    */
-  @feature("prompts.list")
   async list(): Promise<WrappedPromptsResponse> {
     return this.client.makeRequest("GET", "prompts");
   }
@@ -52,7 +49,6 @@ export class PromptsClient {
    * @param options
    * @returns
    */
-  @feature("prompts.retrieve")
   async retrieve(options: {
     name: string;
     inputs?: string[];
@@ -77,7 +73,6 @@ export class PromptsClient {
    * @param options
    * @returns
    */
-  @feature("prompts.update")
   async update(options: {
     name: string;
     template?: string;

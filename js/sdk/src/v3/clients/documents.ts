@@ -11,7 +11,6 @@ import {
   WrappedRelationshipsResponse,
   WrappedGenericMessageResponse,
 } from "../../types";
-import { feature } from "../../feature";
 import { downloadBlob } from "../../utils";
 
 let fs: any;
@@ -36,7 +35,6 @@ export class DocumentsClient {
    * @param runWithOrchestration Optional flag to run with orchestration
    * @returns
    */
-  @feature("documents.create")
   async create(options: {
     file?: FileInput;
     raw_text?: string;
@@ -156,7 +154,6 @@ export class DocumentsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
-  @feature("documents.retrieve")
   async retrieve(options: { id: string }): Promise<WrappedDocumentResponse> {
     return this.client.makeRequest("GET", `documents/${options.id}`);
   }
@@ -168,7 +165,6 @@ export class DocumentsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
-  @feature("documents.list")
   async list(options?: {
     ids?: string[];
     offset?: number;
@@ -193,7 +189,6 @@ export class DocumentsClient {
    * @param id ID of document to download
    * @returns Blob containing the document's file content
    */
-  @feature("documents.download")
   async download(options: { id: string }): Promise<Blob> {
     const response = await this.client.makeRequest(
       "GET",
@@ -232,7 +227,6 @@ export class DocumentsClient {
    * @param options.includeHeader Whether to include column headers (default: true)
    * @returns Promise<Blob> in browser environments, Promise<void> in Node.js
    */
-  @feature("documents.export")
   async export(
     options: {
       outputPath?: string;
@@ -278,7 +272,6 @@ export class DocumentsClient {
    * @param options.includeHeader Whether to include column headers (default: true)
    * @returns Promise<Blob> in browser environments, Promise<void> in Node.js
    */
-  @feature("documents.exportEntities")
   async exportEntities(options: {
     id: string;
     outputPath?: string;
@@ -323,7 +316,6 @@ export class DocumentsClient {
    * @param filename
    * @param options
    */
-  @feature("documents.exportEntitiesToFile")
   async exportEntitiesToFile(options: {
     filename: string;
     id: string;
@@ -347,7 +339,6 @@ export class DocumentsClient {
    * @param options.includeHeader Whether to include column headers (default: true)
    * @returns Promise<Blob> in browser environments, Promise<void> in Node.js
    */
-  @feature("documents.exportRelationships")
   async exportRelationships(options: {
     id: string;
     outputPath?: string;
@@ -391,7 +382,6 @@ export class DocumentsClient {
    * @param filename
    * @param options
    */
-  @feature("documents.exportRelationshipsToFile")
   async exportRelationshipsToFile(options: {
     filename: string;
     id: string;
@@ -414,7 +404,6 @@ export class DocumentsClient {
    * @param options.outputPath Optional path to save the zip file (Node.js only)
    * @returns Promise<Blob> in browser environments, Promise<void> in Node.js
    */
-  @feature("documents.downloadZip")
   async downloadZip(options: {
     documentIds?: string[];
     startDate?: Date;
@@ -457,7 +446,6 @@ export class DocumentsClient {
    * Download multiple documents as a zip file and save to the user's device.
    * @param options
    */
-  @feature("documents.downloadZipToFile")
   async downloadZipToFile(options: {
     filename: string;
     documentIds?: string[];
@@ -475,7 +463,6 @@ export class DocumentsClient {
    * @param filename
    * @param options
    */
-  @feature("documents.exportToFile")
   async exportToFile(options: {
     filename: string;
     columns?: string[];
@@ -493,7 +480,6 @@ export class DocumentsClient {
    * @param id ID of document to delete
    * @returns
    */
-  @feature("documents.delete")
   async delete(options: { id: string }): Promise<WrappedBooleanResponse> {
     return this.client.makeRequest("DELETE", `documents/${options.id}`);
   }
@@ -506,7 +492,6 @@ export class DocumentsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
-  @feature("documents.listChunks")
   async listChunks(options: {
     id: string;
     includeVectors?: boolean;
@@ -531,7 +516,6 @@ export class DocumentsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
-  @feature("documents.listCollections")
   async listCollections(options: {
     id: string;
     offset?: number;
@@ -551,7 +535,6 @@ export class DocumentsClient {
     );
   }
 
-  @feature("documents.deleteByFilter")
   async deleteByFilter(options: {
     filters: Record<string, any>;
   }): Promise<WrappedBooleanResponse> {
@@ -569,7 +552,6 @@ export class DocumentsClient {
    * @param options
    * @returns
    */
-  @feature("documents.extract")
   async extract(options: {
     id: string;
     runType?: string;
@@ -605,7 +587,6 @@ export class DocumentsClient {
    * @param includeEmbeddings Whether to include vector embeddings in the response.
    * @returns
    */
-  @feature("documents.listEntities")
   async listEntities(options: {
     id: string;
     offset?: number;
@@ -641,7 +622,6 @@ export class DocumentsClient {
    * @param relationshipTypes Filter relationships by specific relationship types.
    * @returns WrappedRelationshipsResponse
    */
-  @feature("documents.listRelationships")
   async listRelationships(options: {
     id: string;
     offset?: number;
@@ -673,7 +653,6 @@ export class DocumentsClient {
    * @param runWithOrchestration Optional flag to run with orchestration
    * @returns WrappedGenericMessageResponse
    */
-  @feature("documents.deduplicate")
   async deduplicate(options: {
     id: string;
     runType?: string;

@@ -14,12 +14,8 @@ import { UsersClient } from "./v3/clients/users";
 
 let fs: any;
 if (typeof window === "undefined") {
-  import("fs").then((module) => {
-    fs = module;
-  });
+  fs = require("fs");
 }
-
-import { initializeTelemetry } from "./feature";
 
 type RefreshTokenResponse = {
   results: {
@@ -74,8 +70,6 @@ export class r2rClient extends BaseClient {
     this.retrieval = new RetrievalClient(this);
     this.system = new SystemClient(this);
     this.users = new UsersClient(this);
-
-    initializeTelemetry(this.anonymousTelemetry);
 
     this.axiosInstance = axios.create({
       baseURL: this.baseUrl,

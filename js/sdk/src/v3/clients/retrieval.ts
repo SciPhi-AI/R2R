@@ -1,6 +1,5 @@
 import { r2rClient } from "../../r2rClient";
 
-import { feature } from "../../feature";
 import {
   GenerationConfig,
   Message,
@@ -26,7 +25,6 @@ export class RetrievalClient {
    * @param searchSettings Settings for the search
    * @returns
    */
-  @feature("retrieval.search")
   async search(options: {
     query: string;
     searchMode?: "advanced" | "basic" | "custom";
@@ -62,7 +60,6 @@ export class RetrievalClient {
    * @param includeTitleIfAvailable Include document titles in responses when available
    * @returns
    */
-  @feature("retrieval.rag")
   async rag(options: {
     query: string;
     searchMode?: "advanced" | "basic" | "custom";
@@ -99,7 +96,6 @@ export class RetrievalClient {
     }
   }
 
-  @feature("retrieval.streamRag")
   private async streamRag(
     ragData: Record<string, any>,
   ): Promise<ReadableStream<Uint8Array>> {
@@ -161,7 +157,6 @@ export class RetrievalClient {
    * @param tools List of tool configurations
    * @returns
    */
-  @feature("retrieval.agent")
   async agent(options: {
     message: Message;
     searchMode?: "advanced" | "basic" | "custom";
@@ -210,7 +205,6 @@ export class RetrievalClient {
     }
   }
 
-  @feature("retrieval.streamAgent")
   private async streamAgent(
     agentData: Record<string, any>,
   ): Promise<ReadableStream<Uint8Array>> {
@@ -240,7 +234,6 @@ export class RetrievalClient {
    * @param messages List of messages to generate completion for
    * @returns
    */
-  @feature("retrieval.completion")
   async completion(options: {
     messages: Message[];
     generationConfig?: GenerationConfig | Record<string, any>;
@@ -261,7 +254,6 @@ export class RetrievalClient {
     }
   }
 
-  @feature("retrieval.streamCompletion")
   private async streamCompletion(
     ragData: Record<string, any>,
   ): Promise<ReadableStream<Uint8Array>> {
