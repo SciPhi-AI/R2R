@@ -45,6 +45,9 @@ class PostgresEntitiesHandler(Handler):
         self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
         self.dimension: int = kwargs.get("dimension")  # type: ignore
         self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
+        self.relationships_handler: PostgresRelationshipsHandler = (
+            PostgresRelationshipsHandler(*args, **kwargs)
+        )
 
     def _get_table_name(self, table: str) -> str:
         """Get the fully qualified table name."""
@@ -442,11 +445,36 @@ class PostgresEntitiesHandler(Handler):
 
                 merged_entity.id = new_id
 
-                # FIXME: Replace the original entities with the merged entity in relationships
-                # This is not working as current entity IDs do not match actual IDs
+                # Get the old entity IDs
+                old_ids = [str(entity.id) for entity in block]
+
+                relationship_table = self.relationships_handler._get_relationship_table_for_store(
+                    store_type
+                )
+
+                # Update relationships where old entities appear as subjects
+                subject_update_query = f"""
+                    UPDATE {self._get_table_name(relationship_table)}
+                    SET subject_id = $1
+                    WHERE subject_id = ANY($2::uuid[])
+                    AND parent_id = $3
+                """
+                await self.connection_manager.execute_query(
+                    subject_update_query, [new_id, old_ids, parent_id]
+                )
+
+                # Update relationships where old entities appear as objects
+                object_update_query = f"""
+                    UPDATE {self._get_table_name(relationship_table)}
+                    SET object_id = $1
+                    WHERE object_id = ANY($2::uuid[])
+                    AND parent_id = $3
+                """
+                await self.connection_manager.execute_query(
+                    object_update_query, [new_id, old_ids, parent_id]
+                )
 
                 # Delete the original entities
-                old_ids = [str(entity.id) for entity in block]
                 delete_query = f"""
                     DELETE FROM {self._get_table_name(table_name)}
                     WHERE id = ANY($1::uuid[])
