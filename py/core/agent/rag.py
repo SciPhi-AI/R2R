@@ -24,7 +24,11 @@ from core.base.abstractions import (
 )
 from core.base.agent import AgentConfig, Tool
 from core.base.providers import DatabaseProvider
-from core.providers import LiteLLMCompletionProvider, OpenAICompletionProvider
+from core.providers import (
+    AnthropicCompletionProvider,
+    LiteLLMCompletionProvider,
+    OpenAICompletionProvider,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -350,7 +354,11 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
     def __init__(
         self,
         database_provider: DatabaseProvider,
-        llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
+        llm_provider: (
+            AnthropicCompletionProvider
+            | LiteLLMCompletionProvider
+            | OpenAICompletionProvider
+        ),
         config: AgentConfig,
         search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,
@@ -388,7 +396,11 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
     def __init__(
         self,
         database_provider: DatabaseProvider,
-        llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
+        llm_provider: (
+            AnthropicCompletionProvider
+            | LiteLLMCompletionProvider
+            | OpenAICompletionProvider
+        ),
         config: AgentConfig,
         search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,

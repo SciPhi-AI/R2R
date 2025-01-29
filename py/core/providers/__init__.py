@@ -22,7 +22,11 @@ from .ingestion import (  # type: ignore
     UnstructuredIngestionConfig,
     UnstructuredIngestionProvider,
 )
-from .llm import LiteLLMCompletionProvider, OpenAICompletionProvider
+from .llm import (
+    AnthropicCompletionProvider,
+    LiteLLMCompletionProvider,
+    OpenAICompletionProvider,
+)
 from .orchestration import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
@@ -57,6 +61,7 @@ __all__ = [
     "HatchetOrchestrationProvider",
     "SimpleOrchestrationProvider",
     # LLM
+    "AnthropicCompletionProvider",
     "OpenAICompletionProvider",
     "LiteLLMCompletionProvider",
 ]
