@@ -166,6 +166,7 @@ class Agent(ABC):
             "azure" in self.rag_generation_config.model
             or "anthropic" in self.rag_generation_config.model
             or "openai" in self.rag_generation_config.model
+            or "deepseek" in self.rag_generation_config.model
         ):
             # return with tools
             return GenerationConfig(
