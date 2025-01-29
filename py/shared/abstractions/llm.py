@@ -139,7 +139,7 @@ class MessageType(Enum):
 
 class Message(R2RSerializable):
     role: MessageType | str
-    content: Optional[str] = None
+    content: Optional[Any] = None
     name: Optional[str] = None
     function_call: Optional[dict[str, Any]] = None
     tool_calls: Optional[list[dict[str, Any]]] = None

@@ -27,24 +27,8 @@ class Conversation:
         self.messages: list[Message] = []
         self._lock = asyncio.Lock()
 
-    def create_and_add_message(
-        self,
-        role: MessageType | str,
-        content: Optional[str] = None,
-        name: Optional[str] = None,
-        function_call: Optional[dict[str, Any]] = None,
-        tool_calls: Optional[list[dict[str, Any]]] = None,
-    ):
-        message = Message(
-            role=role,
-            content=content,
-            name=name,
-            function_call=function_call,
-            tool_calls=tool_calls,
-        )
-        self.add_message(message)
-
     async def add_message(self, message):
+        print("adding message =- ", message)
         async with self._lock:
             self.messages.append(message)
 
@@ -206,19 +190,24 @@ class Agent(ABC):
                     raw_result=error_message,
                     llm_formatted_result=error_message,
                 )
-                await self.conversation.add_message(
-                    Message(
-                        role="tool" if tool_id else "function",
-                        content=str(tool_result.llm_formatted_result),
-                        name=function_name,
-                        tool_call_id=tool_id,
-                    )
-                )
-
                 raise R2RException(
                     message=f"Error parsing function arguments: {e}, agent likely produced invalid tool inputs.",
                     status_code=400,
                 )
+
+            await self.conversation.add_message(
+                Message(
+                    role="assistant",
+                    content=[
+                        {
+                            "type": "tool_use",
+                            "id": tool_id,
+                            "name": function_name,
+                            "input": function_args,
+                        }
+                    ],
+                )
+            )
 
             merged_kwargs = {**kwargs, **function_args}
             raw_result = await tool.results_function(*args, **merged_kwargs)
@@ -232,10 +221,14 @@ class Agent(ABC):
 
             await self.conversation.add_message(
                 Message(
-                    role="tool" if tool_id else "function",
-                    content=str(tool_result.llm_formatted_result),
-                    name=function_name,
-                    tool_call_id=tool_id,
+                    role="user",
+                    content=[
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": tool_id,  # This should match the original tool_use id
+                            "content": str(tool_result.llm_formatted_result),
+                        }
+                    ],
                 )
             )
 

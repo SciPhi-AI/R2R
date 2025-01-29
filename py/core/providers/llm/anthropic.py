@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import os
@@ -179,7 +180,8 @@ class AnthropicCompletionProvider(CompletionProvider):
         """
         system_msg = None
         filtered = []
-        for m in messages:
+        for m in copy.deepcopy(messages):
+            m.pop("tool_calls", None)
             if m["role"] == "system" and system_msg is None:
                 system_msg = m["content"]
             else:
@@ -248,7 +250,6 @@ class AnthropicCompletionProvider(CompletionProvider):
                 model_name = args.get("model", "claude-2")
 
                 async for event in stream:
-                    print("event = ", event)
 
                     # Process the event(s) in a shared function
                     chunks = self._process_stream_event(
@@ -331,19 +332,9 @@ class AnthropicCompletionProvider(CompletionProvider):
             raise
 
     def _process_stream_event(
-        self,
-        event: Any,
-        buffer_data: dict,
-        model_name: str,
-    ) -> List[dict]:
-        """
-        Streams partial function-call arguments (tool use) in a more 'OpenAI-like' way:
-        - Yields partial function_call chunks on each InputJSONDelta.
-        - Yields a final chunk with finish_reason="function_call" at the end
-            if stop_reason="tool_use".
-        - Yields finish_reason="stop" otherwise.
-        """
-        chunks: List[dict] = []
+        self, event: Any, buffer_data: dict, model_name: str
+    ) -> list[dict]:
+        chunks: list[dict] = []
 
         def make_base_chunk() -> dict:
             return {
@@ -360,12 +351,8 @@ class AnthropicCompletionProvider(CompletionProvider):
                 ],
             }
 
-        # For usage:
-        etype = getattr(event, "type", None)
         if isinstance(event, RawMessageStartEvent):
-            # Update message_id, record usage, emit an initial chunk with usage.
             buffer_data["message_id"] = event.message.id
-
             chunk = make_base_chunk()
             input_tokens = (
                 event.message.usage.input_tokens if event.message.usage else 0
@@ -378,68 +365,314 @@ class AnthropicCompletionProvider(CompletionProvider):
             chunks.append(chunk)
 
         elif isinstance(event, RawContentBlockStartEvent):
-            # If this is a tool_use block, store the name so we can stream partial JSON
             if isinstance(event.content_block, ToolUseBlock):
                 buffer_data["tool_name"] = event.content_block.name
-                buffer_data["tool_json_buffer"] = ""
+                buffer_data["tool_json_buffer"] = ""  # Reset buffer
+                buffer_data["is_collecting_tool"] = (
+                    True  # Flag to indicate we're collecting a tool call
+                )
 
         elif isinstance(event, RawContentBlockDeltaEvent):
-            # Could be partial text or partial JSON
             delta_obj = getattr(event, "delta", None)
             if isinstance(delta_obj, TextDelta):
-                # Plain text
+                # Regular text content - yield immediately
                 text_chunk = delta_obj.text
                 if text_chunk:
                     chunk = make_base_chunk()
                     chunk["choices"][0]["delta"] = {"content": text_chunk}
                     chunks.append(chunk)
             else:
-                # Possibly InputJSONDelta
+                # Tool call JSON - accumulate in buffer
                 partial_json = getattr(delta_obj, "partial_json", None)
-                if partial_json:
-                    # Append to our partial JSON buffer
+                if partial_json and buffer_data.get("is_collecting_tool"):
                     buffer_data["tool_json_buffer"] += partial_json
-                    # Yield a partial function_call chunk
+
+        elif isinstance(event, ContentBlockStopEvent):
+            # Tool collection is complete - yield the full tool call
+            if buffer_data.get("is_collecting_tool"):
+                try:
+                    # Validate JSON is complete
+                    json.loads(buffer_data["tool_json_buffer"])
+
                     chunk = make_base_chunk()
                     chunk["choices"][0]["delta"] = {
-                        "function_call": {
-                            "name": buffer_data["tool_name"],
-                            "arguments": buffer_data["tool_json_buffer"],
-                        }
+                        "tool_calls": [
+                            {
+                                "index": 0,
+                                "type": "function",
+                                "id": f"call_{buffer_data['message_id']}",
+                                "function": {
+                                    "name": buffer_data["tool_name"],
+                                    "arguments": buffer_data[
+                                        "tool_json_buffer"
+                                    ],
+                                },
+                            }
+                        ]
                     }
                     chunks.append(chunk)
 
-        elif isinstance(event, ContentBlockStopEvent):
-            # In an OpenAI-like approach, we *don't* finalize the function call here.
-            # Instead, we'll finalize when we see the "message_stop" with "stop_reason=tool_use".
-            pass
+                    # Reset tool collection state
+                    buffer_data["is_collecting_tool"] = False
+                    buffer_data["tool_json_buffer"] = ""
+                    buffer_data["tool_name"] = None
+                except json.JSONDecodeError:
+                    # JSON is incomplete - don't yield anything
+                    logger.warning(
+                        "Incomplete JSON in tool call, skipping chunk"
+                    )
 
         elif isinstance(event, MessageStopEvent):
-            # The entire message is done. We'll now decide how to wrap up:
             stop_reason = event.message.stop_reason
             chunk = make_base_chunk()
             if stop_reason == "tool_use":
-                # This is how we replicate OpenAI's final chunk for a function call:
-                #   - We do not include a "delta" update in this chunk.
-                #   - We set "finish_reason": "function_call"
                 chunk["choices"][0]["delta"] = {}
-                chunk["choices"][0]["finish_reason"] = "function_call"
+                chunk["choices"][0]["finish_reason"] = "tool_calls"
             else:
-                # Normal end (model just finished text):
                 chunk["choices"][0]["delta"] = {}
                 chunk["choices"][0]["finish_reason"] = "stop"
-
-            # Optionally record final usage if needed
-            if event.message.usage:
-                input_tokens = event.message.usage.input_tokens or 0
-                output_tokens = event.message.usage.output_tokens or 0
-                chunk["usage"] = {
-                    "prompt_tokens": input_tokens,
-                    "completion_tokens": output_tokens,
-                    "total_tokens": input_tokens + output_tokens,
-                }
             chunks.append(chunk)
 
-        # For any other event types, you can handle them similarly or ignore.
-
         return chunks
+
+    # def _process_stream_event(self, event: Any, buffer_data: dict, model_name: str) -> list[dict]:
+    #     chunks: list[dict] = []
+
+    #     def make_base_chunk() -> dict:
+    #         return {
+    #             "id": buffer_data["message_id"],
+    #             "object": "chat.completion.chunk",
+    #             "created": int(time.time()),
+    #             "model": model_name,
+    #             "choices": [
+    #                 {
+    #                     "index": 0,
+    #                     "delta": {},
+    #                     "finish_reason": None,
+    #                 }
+    #             ],
+    #         }
+
+    #     # ---------------------------
+    #     # 1) Skip the InputJsonEvent entirely:
+    #     # ---------------------------
+    #     # from anthropic.types import InputJsonEvent
+    #     # if isinstance(event, InputJsonEvent):
+    #     #     # do nothing; we handle partial JSON from RawContentBlockDeltaEvent
+    #     #     return chunks
+
+    #     # For usage:
+    #     if isinstance(event, RawMessageStartEvent):
+    #         # Update message_id, record usage, emit an initial chunk with usage.
+    #         buffer_data["message_id"] = event.message.id
+
+    #         chunk = make_base_chunk()
+    #         input_tokens = (
+    #             event.message.usage.input_tokens if event.message.usage else 0
+    #         )
+    #         chunk["usage"] = {
+    #             "prompt_tokens": input_tokens,
+    #             "completion_tokens": 0,
+    #             "total_tokens": input_tokens,
+    #         }
+    #         chunks.append(chunk)
+
+    #     elif isinstance(event, RawContentBlockStartEvent):
+    #         # If this is a tool_use block, store the name so we can stream partial JSON
+    #         if isinstance(event.content_block, ToolUseBlock):
+    #             buffer_data["tool_name"] = event.content_block.name
+    #             buffer_data["tool_json_buffer"] = ""
+    #     elif isinstance(event, RawContentBlockDeltaEvent):
+    #         delta_obj = getattr(event, "delta", None)
+    #         if isinstance(delta_obj, TextDelta):
+    #             # This is normal text
+    #             text_chunk = delta_obj.text
+    #             if text_chunk:
+    #                 chunk = make_base_chunk()
+    #                 chunk["choices"][0]["delta"] = {"content": text_chunk}
+    #                 chunks.append(chunk)
+    #         else:
+    #             # Possibly InputJSONDelta
+    #             partial_json = getattr(delta_obj, "partial_json", None)
+    #             if partial_json:
+    #                 chunk = make_base_chunk()
+    #                 chunk["choices"][0]["delta"] = {
+    #                     "tool_calls": [  # Make this an array
+    #                         {
+    #                             "index": 0,  # Add an index for the tool call
+    #                             "type": "function",  # Specify the type as 'function'
+    #                             "id": f"call_{buffer_data['message_id']}",  # Add a unique ID
+    #                             "function": {  # Nest under 'function' key
+    #                                 "name": buffer_data["tool_name"],
+    #                                 "arguments": partial_json
+    #                             }
+    #                         }
+    #                     ]
+    #                 }
+    #                 chunks.append(chunk)
+
+    #     elif isinstance(event, MessageStopEvent):
+    #         # Normal or tool_use end
+    #         stop_reason = event.message.stop_reason
+    #         chunk = make_base_chunk()
+    #         if stop_reason == "tool_use":
+    #             chunk["choices"][0]["delta"] = {}
+    #             chunk["choices"][0]["finish_reason"] = "tool_calls"  # Change to tool_calls
+    #         else:
+    #             chunk["choices"][0]["delta"] = {}
+    #             chunk["choices"][0]["finish_reason"] = "stop"
+    #         chunks.append(chunk)
+
+    #     # elif isinstance(event, RawContentBlockDeltaEvent):
+    #     #     delta_obj = getattr(event, "delta", None)
+    #     #     if isinstance(delta_obj, TextDelta):
+    #     #         # This is normal text
+    #     #         text_chunk = delta_obj.text
+    #     #         if text_chunk:
+    #     #             chunk = make_base_chunk()
+    #     #             chunk["choices"][0]["delta"] = {"content": text_chunk}
+    #     #             chunks.append(chunk)
+
+    #     #     else:
+    #     #         # Possibly InputJSONDelta
+    #     #         partial_json = getattr(delta_obj, "partial_json", None)
+    #     #         if partial_json:
+    #     #             # *Append partial JSON only once*
+    #     #             # buffer_data["tool_json_buffer"] += partial_json
+
+    #     #             chunk = make_base_chunk()
+    #     #             chunk["choices"][0]["delta"] = {
+    #     #                 "tool_calls": {
+    #     #                     "name": buffer_data["tool_name"],
+    #     #                     "arguments": partial_json
+    #     #                 }
+    #     #             }
+    #     #             chunks.append(chunk)
+
+    #     # elif isinstance(event, MessageStopEvent):
+    #     #     # Normal or tool_use end
+    #     #     stop_reason = event.message.stop_reason
+    #     #     chunk = make_base_chunk()
+    #     #     if stop_reason == "tool_use":
+    #     #         chunk["choices"][0]["delta"] = {}
+    #     #         chunk["choices"][0]["finish_reason"] = "tool_calls"
+    #     #     else:
+    #     #         chunk["choices"][0]["delta"] = {}
+    #     #         chunk["choices"][0]["finish_reason"] = "stop"
+    #     #     chunks.append(chunk)
+
+    #     # return chunks
+
+    # def _process_stream_event(
+    #     self,
+    #     event: Any,
+    #     buffer_data: dict,
+    #     model_name: str,
+    # ) -> List[dict]:
+    #     """
+    #     Streams partial function-call arguments (tool use) in a more 'OpenAI-like' way:
+    #     - Yields partial function_call chunks on each InputJSONDelta.
+    #     - Yields a final chunk with finish_reason="function_call" at the end
+    #         if stop_reason="tool_use".
+    #     - Yields finish_reason="stop" otherwise.
+    #     """
+    #     chunks: List[dict] = []
+
+    #     def make_base_chunk() -> dict:
+    #         return {
+    #             "id": buffer_data["message_id"],
+    #             "object": "chat.completion.chunk",
+    #             "created": int(time.time()),
+    #             "model": model_name,
+    #             "choices": [
+    #                 {
+    #                     "index": 0,
+    #                     "delta": {},
+    #                     "finish_reason": None,
+    #                 }
+    #             ],
+    #         }
+
+    #     # For usage:
+    #     etype = getattr(event, "type", None)
+    #     if isinstance(event, RawMessageStartEvent):
+    #         # Update message_id, record usage, emit an initial chunk with usage.
+    #         buffer_data["message_id"] = event.message.id
+
+    #         chunk = make_base_chunk()
+    #         input_tokens = (
+    #             event.message.usage.input_tokens if event.message.usage else 0
+    #         )
+    #         chunk["usage"] = {
+    #             "prompt_tokens": input_tokens,
+    #             "completion_tokens": 0,
+    #             "total_tokens": input_tokens,
+    #         }
+    #         chunks.append(chunk)
+
+    #     elif isinstance(event, RawContentBlockStartEvent):
+    #         # If this is a tool_use block, store the name so we can stream partial JSON
+    #         if isinstance(event.content_block, ToolUseBlock):
+    #             buffer_data["tool_name"] = event.content_block.name
+    #             buffer_data["tool_json_buffer"] = ""
+
+    #     elif isinstance(event, RawContentBlockDeltaEvent):
+    #         # Could be partial text or partial JSON
+    #         delta_obj = getattr(event, "delta", None)
+    #         if isinstance(delta_obj, TextDelta):
+    #             # Plain text
+    #             text_chunk = delta_obj.text
+    #             if text_chunk:
+    #                 chunk = make_base_chunk()
+    #                 chunk["choices"][0]["delta"] = {"content": text_chunk}
+    #                 chunks.append(chunk)
+    #         else:
+    #             # Possibly InputJSONDelta
+    #             partial_json = getattr(delta_obj, "partial_json", None)
+    #             if partial_json:
+    #                 # Append to our partial JSON buffer
+    #                 buffer_data["tool_json_buffer"] += partial_json
+    #                 # Yield a partial function_call chunk
+    #                 chunk = make_base_chunk()
+    #                 chunk["choices"][0]["delta"] = {
+    #                     "function_call": {
+    #                         "name": buffer_data["tool_name"],
+    #                         "arguments": buffer_data["tool_json_buffer"],
+    #                     }
+    #                 }
+    #                 chunks.append(chunk)
+
+    #     elif isinstance(event, ContentBlockStopEvent):
+    #         # In an OpenAI-like approach, we *don't* finalize the function call here.
+    #         # Instead, we'll finalize when we see the "message_stop" with "stop_reason=tool_use".
+    #         pass
+
+    #     elif isinstance(event, MessageStopEvent):
+    #         # The entire message is done. We'll now decide how to wrap up:
+    #         stop_reason = event.message.stop_reason
+    #         chunk = make_base_chunk()
+    #         if stop_reason == "tool_use":
+    #             # This is how we replicate OpenAI's final chunk for a function call:
+    #             #   - We do not include a "delta" update in this chunk.
+    #             #   - We set "finish_reason": "function_call"
+    #             chunk["choices"][0]["delta"] = {}
+    #             chunk["choices"][0]["finish_reason"] = "function_call"
+    #         else:
+    #             # Normal end (model just finished text):
+    #             chunk["choices"][0]["delta"] = {}
+    #             chunk["choices"][0]["finish_reason"] = "stop"
+
+    #         # Optionally record final usage if needed
+    #         if event.message.usage:
+    #             input_tokens = event.message.usage.input_tokens or 0
+    #             output_tokens = event.message.usage.output_tokens or 0
+    #             chunk["usage"] = {
+    #                 "prompt_tokens": input_tokens,
+    #                 "completion_tokens": output_tokens,
+    #                 "total_tokens": input_tokens + output_tokens,
+    #             }
+    #         chunks.append(chunk)
+
+    #     # For any other event types, you can handle them similarly or ignore.
+
+    #     return chunks
