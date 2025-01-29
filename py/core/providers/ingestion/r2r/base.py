@@ -129,22 +129,22 @@ class R2RIngestionProvider(IngestionProvider):
     ) -> TextSplitter:
         logger.info(
             f"Initializing text splitter with method: {self.config.chunking_strategy}"
-        )  # Debug log
+        )
 
         if not ingestion_config_override:
             ingestion_config_override = {}
 
         chunking_strategy = (
-            ingestion_config_override.get("chunking_strategy", None)
+            ingestion_config_override.get("chunking_strategy")
             or self.config.chunking_strategy
         )
 
         chunk_size = (
-            ingestion_config_override.get("chunk_size", None)
+            ingestion_config_override.get("chunk_size")
             or self.config.chunk_size
         )
         chunk_overlap = (
-            ingestion_config_override.get("chunk_overlap", None)
+            ingestion_config_override.get("chunk_overlap")
             or self.config.chunk_overlap
         )
 
@@ -157,7 +157,7 @@ class R2RIngestionProvider(IngestionProvider):
             from core.base.utils.splitter.text import CharacterTextSplitter
 
             separator = (
-                ingestion_config_override.get("separator", None)
+                ingestion_config_override.get("separator")
                 or self.config.separator
                 or CharacterTextSplitter.DEFAULT_SEPARATOR
             )
@@ -237,12 +237,20 @@ class R2RIngestionProvider(IngestionProvider):
                 async for text in self.parsers[
                     f"zerox_{DocumentType.PDF.value}"
                 ].ingest(file_content, **ingestion_config_override):
-                    contents += text + "\n"
+                    if text is not None:
+                        contents += text + "\n"
             else:
                 async for text in self.parsers[document.document_type].ingest(
                     file_content, **ingestion_config_override
                 ):
-                    contents += text + "\n"
+                    if text is not None:
+                        contents += text + "\n"
+
+            if not contents.strip():
+                logging.warning(
+                    "No valid text content was extracted during parsing"
+                )
+                return
 
             iteration = 0
             chunks = self.chunk(contents, ingestion_config_override)
