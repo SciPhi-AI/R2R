@@ -12,27 +12,40 @@ chunk_enrichment:
     ## Input Chunk:
     {chunk}
 
-    ## Enrichment Requirements:
-    1. Maintain third-person perspective
-    2. Replace generic terms with specific identifiers
-    3. Resolve ambiguous references
-    4. Expand acronyms on first use
-    5. Add crucial missing context
-    6. Preserve original formatting and structure
-    7. Maintain technical accuracy
-    8. Ensure independence while preserving narrative flow
+    ## Semantic Organization Guidelines:
+    1. Group related information:
+       - Combine logically connected data points
+       - Maintain context within each grouping
+       - Preserve relationships between entities
 
-    ## Size Constraints:
+    2. Structure hierarchy:
+       - Organize from general to specific
+       - Use clear categorical divisions
+       - Maintain parent-child relationships
+
+    3. Information density:
+       - Balance completeness with clarity
+       - Ensure each chunk can stand alone
+       - Preserve essential context
+
+    4. Pattern recognition:
+       - Standardize similar information
+       - Use consistent formatting for similar data types
+       - It is appropriate to restructure tables or lists in ways that are more advantageous for sematic matching
+       - Maintain searchable patterns
+
+    ## Output Requirements:
+    1. Each chunk should be independently meaningful
+    2. Related information should stay together
+    3. Format should support efficient matching
+    4. Original data relationships must be preserved
+    5. Context should be clear without external references
+
     Maximum length: {chunk_size} characters
-    Priority order if size limit reached:
-    1. Essential technical information
-    2. Specific identifiers and references
-    3. Contextual clarity
-    4. Supporting details
 
-    Output the enriched chunk only, without additional text or formatting.
+    Output the restructured chunk only.
 
-    ## Enriched Chunk:
+    ## Restructured Chunk:
 
   input_types:
     document_summary: str
@@ -40,3 +53,4 @@ chunk_enrichment:
     preceding_chunks: str
     succeeding_chunks: str
     chunk_size: int
+  overwrite_on_diff: true
