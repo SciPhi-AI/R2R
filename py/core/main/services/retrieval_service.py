@@ -812,28 +812,33 @@ class RetrievalService(Service):
                         )
                         # TODO  - no copy pasta!
                         if needs_conversation_name:
-                            prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
-                            conversation_name = (
-                                (
-                                    await self.providers.llm.aget_completion(
-                                        [
-                                            {
-                                                "role": "system",
-                                                "content": prompt,
-                                            }
-                                        ],
-                                        GenerationConfig(
-                                            model=self.providers.llm.config.fast_llm
-                                        ),
+                            try:
+                                prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
+                                conversation_name = (
+                                    (
+                                        await self.providers.llm.aget_completion(
+                                            [
+                                                {
+                                                    "role": "system",
+                                                    "content": prompt,
+                                                }
+                                            ],
+                                            GenerationConfig(
+                                                model=self.providers.llm.config.fast_llm
+                                            ),
+                                        )
                                     )
+                                    .choices[0]
+                                    .message.content
                                 )
-                                .choices[0]
-                                .message.content
-                            )
-                            await self.providers.database.conversations_handler.update_conversation(
-                                conversation_id=conversation_id,
-                                name=conversation_name,
-                            )
+                                await self.providers.database.conversations_handler.update_conversation(
+                                    conversation_id=conversation_id,
+                                    name=conversation_name,
+                                )
+                            except Exception as e:
+                                logger.error(
+                                    f"Error generating conversation name: {e}"
+                                )
 
                 return stream_response()
 
@@ -877,6 +882,7 @@ class RetrievalService(Service):
                 },
             )
             if needs_conversation_name:
+                conversation_name = None
                 try:
                     prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
                     conversation_name = (
@@ -891,6 +897,8 @@ class RetrievalService(Service):
                         .choices[0]
                         .message.content
                     )
+                except Exception as e:
+                    pass
                 finally:
                     await self.providers.database.conversations_handler.update_conversation(
                         conversation_id=conversation_id,

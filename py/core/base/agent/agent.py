@@ -162,50 +162,27 @@ class Agent(ABC):
                 stream=stream,
             )
 
-        if (
-            "azure" in self.rag_generation_config.model
-            or "anthropic" in self.rag_generation_config.model
-            or "openai" in self.rag_generation_config.model
-            or "deepseek" in self.rag_generation_config.model
-        ):
-            # return with tools
-            return GenerationConfig(
-                **self.rag_generation_config.model_dump(
-                    exclude={"functions", "tools", "stream"}
-                ),
-                # FIXME: Use tools instead of functions
-                # TODO - Investigate why `tools` fails with OpenAI+LiteLLM
-                tools=[
-                    {
-                        "function": {
-                            "name": tool.name,
-                            "description": tool.description,
-                            "parameters": tool.parameters,
-                        },
-                        "type": "function",
-                        "name": tool.name,
-                    }
-                    for tool in self.tools
-                ],
-                stream=stream,
-            )
-        else:
-            return GenerationConfig(
-                **self.rag_generation_config.model_dump(
-                    exclude={"functions", "tools", "stream"}
-                ),
-                # FIXME: Use tools instead of functions
-                # TODO - Investigate why `tools` fails with ollama and the like
-                functions=[
-                    {
+        # return with tools
+        return GenerationConfig(
+            **self.rag_generation_config.model_dump(
+                exclude={"functions", "tools", "stream"}
+            ),
+            # FIXME: Use tools instead of functions
+            # TODO - Investigate why `tools` fails with OpenAI+LiteLLM
+            tools=[
+                {
+                    "function": {
                         "name": tool.name,
                         "description": tool.description,
                         "parameters": tool.parameters,
-                    }
-                    for tool in self.tools
-                ],
-                stream=stream,
-            )
+                    },
+                    "type": "function",
+                    "name": tool.name,
+                }
+                for tool in self.tools
+            ],
+            stream=stream,
+        )
 
     async def handle_function_or_tool_call(
         self,

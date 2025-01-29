@@ -167,7 +167,9 @@ class CompletionProvider(Provider):
             "kwargs": kwargs,
         }
         async for chunk in self._execute_with_backoff_async_stream(task):
-            yield LLMChatCompletionChunk(**chunk.dict())
+            yield LLMChatCompletionChunk(
+                **(chunk.dict() if not isinstance(chunk, dict) else chunk)
+            )
 
     def get_completion_stream(
         self,
