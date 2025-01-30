@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Dict
 
 import asyncclick as click
 from rich.console import Console
@@ -18,7 +18,7 @@ from cli.commands import (
     system,
     users,
 )
-from cli.utils.telemetry import posthog, telemetry
+from cli.utils.telemetry import posthog
 from r2r import R2RAsyncClient
 
 from .command_group import CONFIG_DIR, CONFIG_FILE, load_config
@@ -26,41 +26,42 @@ from .command_group import CONFIG_DIR, CONFIG_FILE, load_config
 console = Console()
 
 
-def add_command_with_telemetry(command):
-    cli.add_command(telemetry(command))
+def add_commands_with_telemetry(commands):
+    """Add commands to CLI with telemetry."""
+    for command in commands:
+        cli.add_command(telemetry(command))
 
 
-# Chunks
-add_command_with_telemetry(collections.collections)
-add_command_with_telemetry(conversations.conversations)
-add_command_with_telemetry(documents.documents)
-add_command_with_telemetry(graphs.graphs)
+# Register commands with telemetry
+commands_to_register = [
+    collections.collections,
+    conversations.conversations,
+    documents.documents,
+    graphs.graphs,
+    indices.indices,
+    prompts.prompts,
+    retrieval.retrieval,
+    users.users,
+    system.system,
+    database.db,
+    database.upgrade,
+    database.downgrade,
+    database.current,
+    database.history,
+    config.configure
+]
 
-# Graph
-add_command_with_telemetry(indices.indices)
-add_command_with_telemetry(prompts.prompts)
-add_command_with_telemetry(retrieval.retrieval)
-add_command_with_telemetry(users.users)
-add_command_with_telemetry(system.system)
-
-
-# Database
-add_command_with_telemetry(database.db)
-add_command_with_telemetry(database.upgrade)
-add_command_with_telemetry(database.downgrade)
-add_command_with_telemetry(database.current)
-add_command_with_telemetry(database.history)
-
-add_command_with_telemetry(config.configure)
+add_commands_with_telemetry(commands_to_register)
 
 
-def main():
+def main() -> None:
+    """Main entry point for the CLI application."""
     try:
         cli()
     except SystemExit:
         pass
     except Exception as e:
-        console.print("[red]CLI error: An error occurred[/red]")
+        console.print("[red]CLI error: An unexpected error occurred:[/red]")
         console.print_exception()
     finally:
         if posthog:
@@ -73,10 +74,8 @@ def _ensure_config_dir_exists() -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def save_config(config_data: dict[str, Any]) -> None:
-    """
-    Persist the given config data to ~/.r2r/config.json.
-    """
+def save_config(config_data: Dict[str, Any]) -> None:
+    """Persist the given config data to ~/.r2r/config.json."""
     _ensure_config_dir_exists()
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
         json.dump(config_data, f, indent=2)
@@ -85,55 +84,39 @@ def save_config(config_data: dict[str, Any]) -> None:
 @cli.command("set-api-key", short_help="Set your R2R API key")
 @click.argument("api_key", required=True, type=str)
 @click.pass_context
-async def set_api_key(ctx, api_key: str):
-    """
-    Store your R2R API key locally so you don’t have to pass it on every command.
-    Example usage:
-      r2r set-api sk-1234abcd
-    """
+async def set_api_key(ctx, api_key: str) -> None:
+    """Store your R2R API key locally."""
     try:
-        # 1) Load existing config
         config = load_config()
-
-        # 2) Overwrite or add the API key
         config["api_key"] = api_key
-
-        # 3) Save changes
         save_config(config)
-
         console.print("[green]API key set successfully![/green]")
-    except Exception as e:
+    except (FileNotFoundError, json.JSONDecodeError) as e:
         console.print("[red]Failed to set API key:[/red]", str(e))
+    except Exception as e:
+        console.print("[red]An unexpected error occurred:[/red]", str(e))
 
 
-# Commands for Setting / Retrieving Base URL
-#
 @cli.command("set-api-base", short_help="Set your R2R API base URL")
 @click.argument("base_url", required=True, type=str)
 @click.pass_context
-async def set_api_base(ctx, base_url: str):
-    """
-    Store your R2R API base URL locally so you don’t have to pass it on every command.
-    Example usage:
-      r2r set-api-base https://api.example.com
-    """
+async def set_api_base(ctx, base_url: str) -> None:
+    """Store your R2R API base URL locally."""
     try:
         config = load_config()
         config["api_base"] = base_url
         save_config(config)
         console.print("[green]API base URL set successfully![/green]")
-    except Exception as e:
+    except (FileNotFoundError, json.JSONDecodeError) as e:
         console.print("[red]Failed to set API base:[/red]", str(e))
+    except Exception as e:
+        console.print("[red]An unexpected error occurred:[/red]", str(e))
 
 
 @cli.command("get-api", short_help="Get your stored R2R API key")
 @click.pass_context
-async def get_api(ctx):
-    """
-    Display your stored R2R API key.
-    Example usage:
-      r2r get-api
-    """
+async def get_api(ctx) -> None:
+    """Display your stored R2R API key."""
     try:
         config = load_config()
         api_key = config.get("api_key")
@@ -141,11 +124,11 @@ async def get_api(ctx):
         if api_key:
             console.print(f"API Key: {api_key}")
         else:
-            console.print(
-                "[yellow]No API key found. Set one using 'r2r set-api <key>'[/yellow]"
-            )
-    except Exception as e:
+            console.print("[yellow]No API key found. Set one using 'r2r set-api <key>'[/yellow]")
+    except (FileNotFoundError, json.JSONDecodeError) as e:
         console.print("[red]Failed to retrieve API key:[/red]", str(e))
+    except Exception as e:
+        console.print("[red]An unexpected error occurred:[/red]", str(e))
 
 
 if __name__ == "__main__":

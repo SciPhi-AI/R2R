@@ -1,49 +1,50 @@
 import logging
+from typing import List
 
 import networkx as nx
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
 
-# Make sure graspologic and networkx are installed
+# Ensure that graspologic and networkx are installed.
 # Requires that "graspologic[leiden]" extras are installed if needed.
 from graspologic.partition import hierarchical_leiden
-from pydantic import BaseModel
 
 app = FastAPI()
 logger = logging.getLogger("graspologic_service")
 logger.setLevel(logging.INFO)
 
+# Define data models for relationships and clustering parameters
 class Relationship(BaseModel):
-    id: str
-    subject: str
-    object: str
-    weight: float = 1.0
+    id: str = Field(..., description="Unique identifier for the relationship")
+    subject: str = Field(..., description="Subject node of the relationship")
+    object: str = Field(..., description="Object node of the relationship")
+    weight: float = Field(1.0, description="Weight of the relationship, default is 1.0")
 
 class LeidenParams(BaseModel):
-    # Add any parameters you use in your code. Here are some examples:
-    resolution: float = 1.0
-    randomness: float = 0.001
-    max_cluster_size: int = 1000
-    extra_forced_iterations: int = 0
-    use_modularity: bool = True
-    random_seed: int = 7272
-    weight_attribute: str = "weight"
-    # Add any other parameters as needed.
+    resolution: float = Field(1.0, description="Resolution parameter for clustering")
+    randomness: float = Field(0.001, description="Randomness parameter for clustering")
+    max_cluster_size: int = Field(1000, description="Maximum size of clusters")
+    extra_forced_iterations: int = Field(0, description="Extra iterations for convergence")
+    use_modularity: bool = Field(True, description="Use modularity in clustering")
+    random_seed: int = Field(7272, description="Random seed for reproducibility")
+    weight_attribute: str = Field("weight", description="Attribute to use as weight")
 
 class ClusterRequest(BaseModel):
-    relationships: list[Relationship]
-    leiden_params: LeidenParams
+    relationships: List[Relationship] = Field(..., description="List of relationships to create the graph")
+    leiden_params: LeidenParams = Field(..., description="Parameters for the Leiden algorithm")
 
 class CommunityAssignment(BaseModel):
-    node: str
-    cluster: int
-    level: int
+    node: str = Field(..., description="Node identifier")
+    cluster: int = Field(..., description="Cluster identifier")
+    level: int = Field(..., description="Hierarchical level of the cluster")
 
 class ClusterResponse(BaseModel):
-    communities: list[CommunityAssignment]
+    communities: List[CommunityAssignment] = Field(..., description="List of community assignments")
 
-
+# Endpoint for clustering the graph
 @app.post("/cluster", response_model=ClusterResponse)
 def cluster_graph(request: ClusterRequest):
+    logger.info("Received clustering request")
     try:
         # Build graph from relationships
         G = nx.Graph()
@@ -51,8 +52,6 @@ def cluster_graph(request: ClusterRequest):
             G.add_edge(rel.subject, rel.object, weight=rel.weight, id=rel.id)
 
         # Compute hierarchical leiden
-        # hierarchical_leiden returns a list of objects with node, cluster, level
-        # Adjust this code to match exactly how you handle the returned structure in your code.
         logger.info("Starting Leiden clustering")
         communities = hierarchical_leiden(
             G,
@@ -67,8 +66,6 @@ def cluster_graph(request: ClusterRequest):
         logger.info("Leiden clustering complete")
 
         # Convert communities to response model
-        # communities is typically a list of objects with node, cluster, and level attributes.
-        # If hierarchical_leiden returns a named tuple or a custom object, adapt accordingly.
         assignments = [
             CommunityAssignment(
                 node=c.node, cluster=c.cluster, level=c.level
@@ -78,9 +75,10 @@ def cluster_graph(request: ClusterRequest):
 
         return ClusterResponse(communities=assignments)
     except Exception as e:
-        logger.error(f"Error clustering graph: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error clustering graph: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
+# Health check endpoint
 @app.get("/health")
 def health():
     return {"status": "ok"}
