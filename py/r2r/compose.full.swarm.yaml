@@ -1,7 +1,7 @@
 networks:
   r2r-network:
     external: true
-    name: r2r_r2r-network
+    name: ${DOCKER_NETWORK_NAME:-r2r_r2r-network}
 
 volumes:
   hatchet_certs:
@@ -361,6 +361,10 @@ services:
       # Other
       - SERPER_API_KEY=${SERPER_API_KEY}
       - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - R2R_SENTRY_DSN=${R2R_SENTRY_DSN}
+      - R2R_SENTRY_ENVIRONMENT=${R2R_SENTRY_ENVIRONMENT}
+      - R2R_SENTRY_TRACES_SAMPLE_RATE=${R2R_SENTRY_TRACES_SAMPLE_RATE}
+      - R2R_SENTRY_PROFILES_SAMPLE_RATE=${R2R_SENTRY_PROFILES_SAMPLE_RATE}
 
     command: >
       sh -c '

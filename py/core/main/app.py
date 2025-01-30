@@ -8,6 +8,7 @@ from core.providers import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
+from core.utils.sentry import init_sentry
 
 from .abstractions import R2RServices
 from .api.v3.chunks_router import ChunksRouter
@@ -44,6 +45,8 @@ class R2RApp:
         system_router: SystemRouter,
         users_router: UsersRouter,
     ):
+        init_sentry()
+
         self.config = config
         self.services = services
         self.chunks_router = chunks_router
