@@ -134,18 +134,6 @@ class Agent(ABC):
     def get_generation_config(
         self, last_message: dict, stream: bool = False
     ) -> GenerationConfig:
-        if (
-            last_message["role"] in ["tool", "function"]
-            and last_message["content"] != ""
-        ):
-            return GenerationConfig(
-                **self.rag_generation_config.model_dump(
-                    exclude={"functions", "tools", "stream"}
-                ),
-                stream=stream,
-            )
-
-        # return with tools
         return GenerationConfig(
             **self.rag_generation_config.model_dump(
                 exclude={"functions", "tools", "stream"}
@@ -183,30 +171,26 @@ class Agent(ABC):
         ):
             try:
                 function_args = json.loads(function_arguments)
+
             except JSONDecodeError as e:
                 error_message = f"The requested tool '{function_name}' is not available with arguments {function_arguments} failed."
                 tool_result = ToolResult(
                     raw_result=error_message,
                     llm_formatted_result=error_message,
                 )
+                await self.conversation.add_message(
+                    Message(
+                        role="tool" if tool_id else "function",
+                        content=str(tool_result.llm_formatted_result),
+                        name=function_name,
+                        tool_call_id=tool_id,
+                    )
+                )
+
                 raise R2RException(
                     message=f"Error parsing function arguments: {e}, agent likely produced invalid tool inputs.",
                     status_code=400,
                 )
-
-            await self.conversation.add_message(
-                Message(
-                    role="assistant",
-                    content=[
-                        {
-                            "type": "tool_use",
-                            "id": tool_id,
-                            "name": function_name,
-                            "input": function_args,
-                        }
-                    ],
-                )
-            )
 
             merged_kwargs = {**kwargs, **function_args}
             raw_result = await tool.results_function(*args, **merged_kwargs)
@@ -220,14 +204,10 @@ class Agent(ABC):
 
             await self.conversation.add_message(
                 Message(
-                    role="user",
-                    content=[
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": tool_id,  # This should match the original tool_use id
-                            "content": str(tool_result.llm_formatted_result),
-                        }
-                    ],
+                    role="tool" if tool_id else "function",
+                    content=str(tool_result.llm_formatted_result),
+                    name=function_name,
+                    tool_call_id=tool_id,
                 )
             )
 

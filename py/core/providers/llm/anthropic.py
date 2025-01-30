@@ -23,6 +23,74 @@ from core.base.providers.llm import CompletionConfig, CompletionProvider
 logger = logging.getLogger(__name__)
 
 
+def openai_message_to_anthropic_block(msg: dict) -> dict:
+    """
+    Converts a single OpenAI-style message (including function/tool calls)
+    into one Anthropic-style message.
+
+    Expected keys in `msg` can include:
+      - role: "system" | "assistant" | "user" | "function" | "tool"
+      - content: str (possibly JSON arguments or the final text)
+      - name: str (tool/function name)
+      - tool_call_id or function_call arguments
+      - function_call: {"name": ..., "arguments": "..."}
+    """
+    role = msg.get("role", "")
+    content = msg.get("content", "")
+    name = msg.get("name")  # Tool or function name
+    tool_call_id = msg.get("tool_call_id")
+
+    # System -> store it for the Anthropic `system` param (handled separately).
+    if role == "system":
+        return msg
+
+    # Basic user or assistant messages (with no function/tool call)
+    if role in ["user", "assistant"]:
+        # If an assistant message has function_call, treat as "tool_use"
+        function_call = msg.get("function_call")
+        if function_call:
+            # This is the assistant calling a tool
+            fn_name = function_call.get("name", "")
+            raw_args = function_call.get("arguments", "{}")
+            try:
+                fn_args = json.loads(raw_args)
+            except json.JSONDecodeError:
+                # If the model produced invalid JSON, do your fallback
+                fn_args = {"_raw": raw_args}
+
+            return {
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": tool_call_id,  # If you track a unique call ID
+                        "name": fn_name,
+                        "input": fn_args,
+                    }
+                ],
+            }
+        else:
+            # It's a normal user or assistant message
+            return {"role": role, "content": content}
+
+    # "function" or "tool" role => typically the result from that tool
+    if role in ["function", "tool"]:
+        # Return as "tool_result" from the user's perspective
+        return {
+            "role": "user",
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": tool_call_id,
+                    "content": content,
+                }
+            ],
+        }
+
+    # Default fallback (unrecognized role): pass it through
+    return {"role": role, "content": content}
+
+
 class AnthropicCompletionProvider(CompletionProvider):
     def __init__(self, config: CompletionConfig, *args, **kwargs) -> None:
         super().__init__(config)
@@ -74,11 +142,9 @@ class AnthropicCompletionProvider(CompletionProvider):
             for tool in generation_config.tools:
                 # required = parameters.pop("required", [])
                 tool_def = {
-                    # "type": "custom",  # Use 'function' for custom tools
-                    "name": tool["function"]["name"],  # .get("name"),
+                    "name": tool["function"]["name"],
                     "description": tool["function"]["description"],
                     "input_schema": tool["function"]["parameters"],
-                    # tool.get("parameters", {}),
                 }
                 anthropic_tools.append(tool_def)
 
@@ -181,11 +247,34 @@ class AnthropicCompletionProvider(CompletionProvider):
         system_msg = None
         filtered = []
         for m in copy.deepcopy(messages):
-            m.pop("tool_calls", None)
+            # m.pop("tool_calls", None)
+
             if m["role"] == "system" and system_msg is None:
                 system_msg = m["content"]
             else:
+
+                m2 = None
+                if m.get("tool_calls") != None:
+                    m2 = {
+                        "role": "assistant",
+                        "content": [
+                            {
+                                "type": "tool_use",
+                                "id": call["id"],
+                                "name": call["function"]["name"],
+                                "input": json.loads(
+                                    call["function"]["arguments"]
+                                ),
+                            }
+                            for call in m["tool_calls"]
+                        ],
+                    }
+                    m.pop("tool_calls")
+
+                m = openai_message_to_anthropic_block(m)
                 filtered.append(m)
+                if m2:
+                    filtered.append(m2)
         return filtered, system_msg
 
     async def _execute_task(self, task: Dict[str, Any]):

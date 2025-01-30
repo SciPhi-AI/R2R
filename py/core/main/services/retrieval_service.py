@@ -52,7 +52,6 @@ def tokens_count_for_message(message, encoding):
 
     num_tokens = 0
     num_tokens += tokens_per_message
-    print("message = ", message)
     if message.get("function_call"):
         num_tokens += len(encoding.encode(message["function_call"]["name"]))
         num_tokens += len(
