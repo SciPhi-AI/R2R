@@ -62,7 +62,6 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
         while not self._completed:
             messages_list = await self.conversation.get_messages()
             generation_config = self.get_generation_config(messages_list[-1])
-            print("Getting completion...")
             response = await self.llm_provider.aget_completion(
                 messages_list,
                 generation_config,
@@ -175,8 +174,6 @@ class R2RStreamingAgent(R2RAgent):
 
             # 1) Handle interleaved tool_calls
             if delta.tool_calls:
-                print('handling tool calls...')
-                tool_calls_active = True
                 for tc in delta.tool_calls:
                     idx = tc.index
                     if idx not in pending_tool_calls:
