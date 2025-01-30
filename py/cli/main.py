@@ -29,15 +29,15 @@ console = Console()
 def add_commands_with_telemetry(commands):
     return commands
     # """Add commands to CLI with telemetry."""
-    # for command in commands:
-    #     cli.add_command(telemetry(command))
+    for command in commands:
+        cli.add_command(telemetry(command))
 
 
 # Register commands with telemetry
 commands_to_register = [
     collections.collections,
     conversations.conversations,
-    # documents.documents,
+    documents.documents,
     graphs.graphs,
     indices.indices,
     prompts.prompts,
