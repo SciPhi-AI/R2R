@@ -1,9 +1,12 @@
 import json
+
 import asyncclick as click
 from asyncclick import pass_context
+
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
 from r2r import R2RAsyncClient, R2RException
+
 
 @click.group()
 def graphs():

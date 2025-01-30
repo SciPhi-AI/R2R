@@ -28,7 +28,7 @@ from core.providers import (
     AnthropicCompletionProvider,
     LiteLLMCompletionProvider,
     OpenAICompletionProvider,
-    R2RCompletionProvider
+    R2RCompletionProvider,
 )
 
 logger = logging.getLogger(__name__)

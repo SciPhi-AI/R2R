@@ -4,7 +4,7 @@ import platform
 import subprocess
 import sys
 from importlib.metadata import version as get_version
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 import asyncclick as click
 from asyncclick import pass_context

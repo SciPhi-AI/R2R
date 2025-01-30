@@ -26,7 +26,11 @@ from core.base.providers.ingestion import IngestionConfig, IngestionProvider
 from core.utils import generate_extraction_id
 
 from ...database import PostgresDatabaseProvider
-from ...llm import LiteLLMCompletionProvider, OpenAICompletionProvider, R2RCompletionProvider
+from ...llm import (
+    LiteLLMCompletionProvider,
+    OpenAICompletionProvider,
+    R2RCompletionProvider,
+)
 
 logger = logging.getLogger()
 

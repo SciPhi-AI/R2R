@@ -1,10 +1,13 @@
 import sys
+
 import asyncclick as click
+
 from ..utils.database_utils import (
     check_database_connection,
     get_database_url_from_env,
     run_alembic_command,
 )
+
 
 @click.group()
 def db():
