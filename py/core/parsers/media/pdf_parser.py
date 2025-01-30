@@ -140,7 +140,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             raise
 
     async def ingest(
-        self, data: str | bytes, maintain_order: bool = False, **kwargs
+        self, data: str | bytes, maintain_order: bool = True, **kwargs
     ) -> AsyncGenerator[dict[str, str], None]:
         """
         Ingest PDF data and yield descriptions for each page using vision model.

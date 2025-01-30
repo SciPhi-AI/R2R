@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from core.base.abstractions import GenerationConfig
 from core.base.providers.llm import CompletionConfig, CompletionProvider
@@ -69,7 +69,7 @@ class R2RCompletionProvider(CompletionProvider):
         # LiteLLM fallback route
         return self._litellm_provider
 
-    async def _execute_task(self, task: Dict[str, Any]):
+    async def _execute_task(self, task: dict[str, Any]):
         """
         Required abstract method from the base CompletionProvider.
         We pick the sub-provider based on model name, then forward the async call.
@@ -79,7 +79,7 @@ class R2RCompletionProvider(CompletionProvider):
         sub_provider = self._choose_subprovider_by_model(model_name)
         return await sub_provider._execute_task(task)
 
-    def _execute_task_sync(self, task: Dict[str, Any]):
+    def _execute_task_sync(self, task: dict[str, Any]):
         """
         Required abstract method from the base CompletionProvider.
         We pick the sub-provider based on model name, then forward the sync call.

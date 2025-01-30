@@ -148,20 +148,22 @@ export class RetrievalClient {
    * find and synthesize information, providing detailed, factual responses
    * with proper attribution to source documents.
    * @param message Current message to process
-   * @param searchSettings Settings for the search
    * @param ragGenerationConfig Configuration for RAG generation
+   * @param searchMode Search mode to use, either "basic", "advanced", or "custom"
+   * @param searchSettings Settings for the search
    * @param taskPromptOverride Optional custom prompt to override default
    * @param includeTitleIfAvailable Include document titles in responses when available
    * @param conversationId ID of the conversation
-   * @param maxToolContextLength Maximum context length for tool replies
    * @param tools List of tool configurations
+   * @param maxToolContextLength Maximum context length for tool replies
+   * @param useExtendedPrompt Use extended prompt for generation
    * @returns
    */
   async agent(options: {
     message: Message;
-    searchMode?: "advanced" | "basic" | "custom";
-    searchSettings?: SearchSettings | Record<string, any>;
     ragGenerationConfig?: GenerationConfig | Record<string, any>;
+    searchMode?: "basic" | "advanced" | "custom";
+    searchSettings?: SearchSettings | Record<string, any>;
     taskPromptOverride?: string;
     includeTitleIfAvailable?: boolean;
     conversationId?: string;
@@ -174,11 +176,11 @@ export class RetrievalClient {
       ...(options.searchMode && {
           search_mode: options.searchMode,
       }),
-      ...(options.searchSettings && {
-          search_settings: ensureSnakeCase(options.searchSettings),
-      }),
       ...(options.ragGenerationConfig && {
           rag_generation_config: ensureSnakeCase(options.ragGenerationConfig),
+      }),
+      ...(options.searchSettings && {
+        search_settings: ensureSnakeCase(options.searchSettings),
       }),
       ...(options.taskPromptOverride && {
           task_prompt_override: options.taskPromptOverride,
@@ -188,6 +190,9 @@ export class RetrievalClient {
       }),
       ...(options.conversationId && {
           conversation_id: options.conversationId,
+      }),
+      ...(options.tools && {
+        tools: options.tools,
       }),
       ...(options.maxToolContextLength && {
           max_tool_context_length: options.maxToolContextLength,

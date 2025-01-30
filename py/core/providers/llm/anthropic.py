@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import time
-from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, Union
+from typing import Any, AsyncGenerator, Generator, Optional
 
 from anthropic import Anthropic, AsyncAnthropic
 from anthropic.types import (
@@ -231,8 +231,8 @@ class AnthropicCompletionProvider(CompletionProvider):
         }
 
     def _split_system_messages(
-        self, messages: List[dict]
-    ) -> (List[dict], Optional[str]):
+        self, messages: list[dict]
+    ) -> (list[dict], Optional[str]):
         """
         Extract the system message (if any) from a combined list of messages.
         Return (filtered_messages, system_message).
@@ -268,7 +268,7 @@ class AnthropicCompletionProvider(CompletionProvider):
                     filtered.append(m2)
         return filtered, system_msg
 
-    async def _execute_task(self, task: Dict[str, Any]):
+    async def _execute_task(self, task: dict[str, Any]):
         """
         Async entry point. Decide if streaming or not, then call the appropriate helper.
         """
@@ -358,7 +358,7 @@ class AnthropicCompletionProvider(CompletionProvider):
             logger.error(f"Failed to execute streaming Anthropic task: {e}")
             raise
 
-    def _execute_task_sync(self, task: Dict[str, Any]):
+    def _execute_task_sync(self, task: dict[str, Any]):
         """
         Synchronous entry point.
         """

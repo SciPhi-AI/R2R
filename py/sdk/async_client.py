@@ -6,8 +6,7 @@ import httpx
 
 from shared.abstractions import R2RException
 
-from .base.base_client import BaseClient
-from .v3 import (
+from .asnyc_methods import (
     ChunksSDK,
     CollectionsSDK,
     ConversationsSDK,
@@ -19,6 +18,7 @@ from .v3 import (
     SystemSDK,
     UsersSDK,
 )
+from .base.base_client import BaseClient
 
 
 class R2RAsyncClient(BaseClient):
@@ -56,23 +56,20 @@ class R2RAsyncClient(BaseClient):
             and ("create" not in endpoint)
             and ("users" not in endpoint)
             and ("health" not in endpoint)
+            and (not self.access_token and not self.api_key)
         ):
-            if not self.access_token and not self.api_key:
-                raise R2RException(
-                    status_code=401,
-                    message="Access token or api key is required to access `https://api.cloud.sciphi.ai`. To change the base url, use `set_base_url` method. For instance, if using the CLI then execute `r2r set-api-base http://localhost:7272`, or set the local environment variable `R2R_API_BASE` to `http://localhost:7272`.",
-                )
+            raise R2RException(
+                status_code=401,
+                message="Access token or api key is required to access `https://api.cloud.sciphi.ai`. To change the base url, use `set_base_url` method. For instance, if using the CLI then execute `r2r set-api-base http://localhost:7272`, or set the local environment variable `R2R_API_BASE` to `http://localhost:7272`.",
+            )
         request_args = self._prepare_request_args(endpoint, **kwargs)
 
         try:
             response = await self.client.request(method, url, **request_args)
             await self._handle_response(response)
-            # return response.json() if response.content else None
-            # In async_client.py, inside _make_request:
             if "application/json" in response.headers.get("Content-Type", ""):
                 return response.json() if response.content else None
             else:
-                # Return raw binary content as BytesIO
                 return BytesIO(response.content)
 
         except httpx.RequestError as e:
@@ -94,7 +91,7 @@ class R2RAsyncClient(BaseClient):
                     if line.strip():  # Ignore empty lines
                         try:
                             yield json.loads(line)
-                        except:  #  json.JSONDecodeError:
+                        except Exception:
                             yield line
 
     async def _handle_response(self, response):

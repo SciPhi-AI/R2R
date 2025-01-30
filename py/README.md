@@ -1,6 +1,10 @@
-<img width="1041" alt="r2r" src="https://github.com/user-attachments/assets/b6ee6a78-5d37-496d-ae10-ce18eee7a1d6">
+<img width="1149" alt="Screenshot 2025-01-29 at 9 22 50 PM" src="https://github.com/user-attachments/assets/9ab33cbc-1e8a-4bf2-8e6f-4a6f9c81ba8f" />
+
+
+
+
 <h3 align="center">
-  Containerized, Retrieval-Augmented Generation (RAG) with a RESTful API.
+The most advanced AI retrieval system. Containerized, Agentic Retrieval-Augmented Generation (RAG) with a RESTful API.
 </h3>
 
 <div align="center">
@@ -31,7 +35,7 @@
 </div>
 
 # About
-R2R (RAG to Riches) is the most advanced AI retrieval system, supporting Retrieval-Augmented Generation (RAG) with production-ready features. Built around a containerized RESTful API, R2R offers multimodal content ingestion, hybrid search functionality, knowledge graphs, and comprehensive user and document management.
+R2R (Reason to Retrieve) is the most advanced AI retrieval system, supporting Retrieval-Augmented Generation (RAG) with production-ready features. Built around a containerized RESTful API, R2R offers multimodal content ingestion, hybrid search functionality, knowledge graphs, and comprehensive user and document management.
 
 For a more complete view of R2R, check out the [full documentation](https://r2r-docs.sciphi.ai/).
 
