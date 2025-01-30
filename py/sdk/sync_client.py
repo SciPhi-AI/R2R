@@ -75,6 +75,22 @@ class R2RClient(BaseClient):
                 message=f"Request failed: {str(e)}",
             ) from e
 
+    def _make_streaming_request(
+        self, method: str, endpoint: str, version: str = "v3", **kwargs
+    ) -> Any:
+        url = self._get_full_url(endpoint, version)
+        request_args = self._prepare_request_args(endpoint, **kwargs)
+
+        with Client(timeout=self.timeout) as client:
+            with client.stream(method, url, **request_args) as response:
+                self._handle_response(response)
+                for line in response.iter_lines():
+                    if line.strip():  # Ignore empty lines
+                        try:
+                            yield json.loads(line)
+                        except Exception:
+                            yield line
+
     def _handle_response(self, response: Response) -> None:
         if response.status_code >= 400:
             try:
@@ -95,3 +111,14 @@ class R2RClient(BaseClient):
             raise R2RException(
                 status_code=response.status_code, message=message
             )
+
+    def set_api_key(self, api_key: str) -> None:
+        if self.access_token:
+            raise ValueError("Cannot have both access token and api key.")
+        self.api_key = api_key
+
+    def unset_api_key(self) -> None:
+        self.api_key = None
+
+    def set_base_url(self, base_url: str) -> None:
+        self.base_url = base_url
