@@ -132,10 +132,9 @@ class CollectionsSDK:
         Returns:
             bool: True if deletion was successful
         """
-        result = await self.client._make_request(
+        return await self.client._make_request(
             "DELETE", f"collections/{str(id)}", version="v3"
         )
-        return result
 
     async def list_documents(
         self,
@@ -202,12 +201,11 @@ class CollectionsSDK:
         Returns:
             bool: True if removal was successful
         """
-        result = await self.client._make_request(
+        return await self.client._make_request(
             "DELETE",
             f"collections/{str(id)}/documents/{str(document_id)}",
             version="v3",
         )
-        return result
 
     async def list_users(
         self,

@@ -31,12 +31,6 @@ class R2RBuilder:
     def __init__(self, config: R2RConfig):
         self.config = config
 
-    async def _create_providers(
-        self, provider_factory: Type[R2RProviderFactory], *args, **kwargs
-    ) -> Any:
-        factory = provider_factory(self.config)
-        return await factory.create_providers(*args, **kwargs)
-
     async def build(self, *args, **kwargs) -> R2RApp:
         provider_factory = R2RProviderFactory
 

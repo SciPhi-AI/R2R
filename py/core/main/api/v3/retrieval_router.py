@@ -664,7 +664,6 @@ class RetrievalRouterV3(BaseRouterV3):
                 auth_user, search_mode, search_settings
             )
 
-            print("use_extended_prompt = ", use_extended_prompt)
             try:
                 response = await self.services.retrieval.agent(
                     message=message,

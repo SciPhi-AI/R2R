@@ -3,8 +3,6 @@ from pathlib import Path
 from typing import Any, Optional
 from uuid import UUID
 
-import aiofiles
-
 from shared.api.models.base import WrappedBooleanResponse
 from shared.api.models.management.responses import (
     WrappedConversationMessagesResponse,
@@ -18,7 +16,7 @@ class ConversationsSDK:
     def __init__(self, client):
         self.client = client
 
-    async def create(
+    def create(
         self,
         name: Optional[str] = None,
     ) -> WrappedConversationResponse:
@@ -32,14 +30,14 @@ class ConversationsSDK:
         if name:
             data["name"] = name
 
-        return await self.client._make_request(
+        return self.client._make_request(
             "POST",
             "conversations",
             data=data,
             version="v3",
         )
 
-    async def list(
+    def list(
         self,
         ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
@@ -63,14 +61,14 @@ class ConversationsSDK:
         if ids:
             params["ids"] = ids
 
-        return await self.client._make_request(
+        return self.client._make_request(
             "GET",
             "conversations",
             params=params,
             version="v3",
         )
 
-    async def retrieve(
+    def retrieve(
         self,
         id: str | UUID,
     ) -> WrappedConversationMessagesResponse:
@@ -83,13 +81,13 @@ class ConversationsSDK:
         Returns:
             dict: Detailed conversation information
         """
-        return await self.client._make_request(
+        return self.client._make_request(
             "GET",
             f"conversations/{str(id)}",
             version="v3",
         )
 
-    async def update(
+    def update(
         self,
         id: str | UUID,
         name: str,
@@ -108,14 +106,14 @@ class ConversationsSDK:
             "name": name,
         }
 
-        return await self.client._make_request(
+        return self.client._make_request(
             "POST",
             f"conversations/{str(id)}",
             json=data,
             version="v3",
         )
 
-    async def delete(
+    def delete(
         self,
         id: str | UUID,
     ) -> WrappedBooleanResponse:
@@ -128,13 +126,13 @@ class ConversationsSDK:
         Returns:
             bool: True if deletion was successful
         """
-        return await self.client._make_request(
+        return self.client._make_request(
             "DELETE",
             f"conversations/{str(id)}",
             version="v3",
         )
 
-    async def add_message(
+    def add_message(
         self,
         id: str | UUID,
         content: str,
@@ -164,14 +162,14 @@ class ConversationsSDK:
         if metadata:
             data["metadata"] = metadata
 
-        return await self.client._make_request(
+        return self.client._make_request(
             "POST",
             f"conversations/{str(id)}/messages",
             json=data,
             version="v3",
         )
 
-    async def update_message(
+    def update_message(
         self,
         id: str | UUID,
         message_id: str,
@@ -193,14 +191,14 @@ class ConversationsSDK:
         data: dict[str, Any] = {"content": content}
         if metadata:
             data["metadata"] = metadata
-        return await self.client._make_request(
+        return self.client._make_request(
             "POST",
             f"conversations/{str(id)}/messages/{message_id}",
             json=data,
             version="v3",
         )
 
-    async def export(
+    def export(
         self,
         output_path: str | Path,
         columns: Optional[_list[str]] = None,
@@ -229,13 +227,13 @@ class ConversationsSDK:
             data["filters"] = filters
 
         # Stream response directly to file
-        async with aiofiles.open(output_path, "wb") as f:
-            async with self.client.session.post(
+        with open(output_path, "wb") as f:
+            with self.client.client.post(
                 f"{self.client.base_url}/v3/conversations/export",
                 json=data,
                 headers={
                     "Accept": "text/csv",
-                    **self.client._get_auth_headers(),
+                    **self.client._get_auth_header(),
                 },
             ) as response:
                 if response.status != 200:
@@ -244,11 +242,11 @@ class ConversationsSDK:
                         response,
                     )
 
-                async for chunk in response.content.iter_chunks():
+                for chunk in response.content.iter_chunks():
                     if chunk:
-                        await f.write(chunk[0])
+                        f.write(chunk[0])
 
-    async def export_messages(
+    def export_messages(
         self,
         output_path: str | Path,
         columns: Optional[_list[str]] = None,
@@ -277,21 +275,21 @@ class ConversationsSDK:
             data["filters"] = filters
 
         # Stream response directly to file
-        async with aiofiles.open(output_path, "wb") as f:
-            async with self.client.session.post(
+        with open(output_path, "wb") as f:
+            with self.client.session.post(
                 f"{self.client.base_url}/v3/conversations/export_messages",
                 json=data,
                 headers={
                     "Accept": "text/csv",
-                    **self.client._get_auth_headers(),
+                    **self.client._get_auth_header(),
                 },
             ) as response:
-                if response.status != 200:
+                if response.status_code != 200:
                     raise ValueError(
-                        f"Export failed with status {response.status}",
+                        f"Export failed with status {response.status_code}",
                         response,
                     )
 
-                async for chunk in response.content.iter_chunks():
+                for chunk in response.iter_bytes():
                     if chunk:
-                        await f.write(chunk[0])
+                        f.write(chunk[0])
