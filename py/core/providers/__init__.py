@@ -26,6 +26,7 @@ from .llm import (
     AnthropicCompletionProvider,
     LiteLLMCompletionProvider,
     OpenAICompletionProvider,
+    R2RCompletionProvider,
 )
 from .orchestration import (
     HatchetOrchestrationProvider,
@@ -63,5 +64,6 @@ __all__ = [
     # LLM
     "AnthropicCompletionProvider",
     "OpenAICompletionProvider",
+    "R2RCompletionProvider",
     "LiteLLMCompletionProvider",
 ]

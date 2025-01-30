@@ -33,6 +33,7 @@ from core.providers import (
     NaClCryptoProvider,
     OllamaEmbeddingProvider,
     OpenAICompletionProvider,
+    R2RCompletionProvider,
     OpenAIEmbeddingProvider,
     PostgresDatabaseProvider,
     R2RAuthProvider,
@@ -107,6 +108,7 @@ class R2RProviderFactory:
             AnthropicCompletionProvider
             | LiteLLMCompletionProvider
             | OpenAICompletionProvider
+            | R2RCompletionProvider
         ),
         *args,
         **kwargs,
@@ -232,6 +234,7 @@ class R2RProviderFactory:
         AnthropicCompletionProvider
         | LiteLLMCompletionProvider
         | OpenAICompletionProvider
+        | R2RCompletionProvider
     ):
         llm_provider: Optional[CompletionProvider] = None
         if llm_config.provider == "anthropic":
@@ -240,6 +243,8 @@ class R2RProviderFactory:
             llm_provider = LiteLLMCompletionProvider(llm_config)
         elif llm_config.provider == "openai":
             llm_provider = OpenAICompletionProvider(llm_config)
+        elif llm_config.provider == "r2r":
+            llm_provider = R2RCompletionProvider(llm_config)
         else:
             raise ValueError(
                 f"Language model provider {llm_config.provider} not supported"
@@ -299,6 +304,7 @@ class R2RProviderFactory:
             AnthropicCompletionProvider
             | OpenAICompletionProvider
             | LiteLLMCompletionProvider
+            | R2RCompletionProvider
         ] = None,
         orchestration_provider_override: Optional[Any] = None,
         *args,

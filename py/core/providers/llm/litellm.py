@@ -24,11 +24,11 @@ class LiteLLMCompletionProvider(CompletionProvider):
                 "Please install the `litellm` package to use the LiteLLMCompletionProvider."
             )
 
-        if config.provider != "litellm":
-            logger.error(f"Invalid provider: {config.provider}")
-            raise ValueError(
-                "LiteLLMCompletionProvider must be initialized with config with `litellm` provider."
-            )
+        # if config.provider != "litellm":
+        #     logger.error(f"Invalid provider: {config.provider}")
+        #     raise ValueError(
+        #         "LiteLLMCompletionProvider must be initialized with config with `litellm` provider."
+        #     )
 
     def _get_base_args(self, generation_config: GenerationConfig) -> dict:
         args = {

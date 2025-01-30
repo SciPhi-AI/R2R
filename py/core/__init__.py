@@ -157,6 +157,7 @@ __all__ = [
     "OpenAIEmbeddingProvider",
     "OllamaEmbeddingProvider",
     "OpenAICompletionProvider",
+    "R2RCompletionProvider",
     "LiteLLMCompletionProvider",
     "UnstructuredIngestionProvider",
     "R2RIngestionProvider",

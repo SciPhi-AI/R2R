@@ -13,6 +13,7 @@ from core.providers import (
     LiteLLMEmbeddingProvider,
     OllamaEmbeddingProvider,
     OpenAICompletionProvider,
+    R2RCompletionProvider,
     OpenAIEmbeddingProvider,
     PostgresDatabaseProvider,
     R2RAuthProvider,
@@ -44,6 +45,7 @@ class R2RProviders(BaseModel):
         AnthropicCompletionProvider
         | LiteLLMCompletionProvider
         | OpenAICompletionProvider
+        | R2RCompletionProvider
     )
     orchestration: HatchetOrchestrationProvider | SimpleOrchestrationProvider
     email: (
