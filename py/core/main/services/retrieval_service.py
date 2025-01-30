@@ -754,6 +754,9 @@ class RetrievalService(Service):
                 )
             elif task_prompt_override:
                 system_instruction = task_prompt_override
+            else:
+                # Use the default system prompt
+                system_instruction = None
 
             agent_config = deepcopy(self.config.agent)
             agent_config.tools = override_tools or agent_config.tools

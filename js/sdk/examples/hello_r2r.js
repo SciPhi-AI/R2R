@@ -1,48 +1,43 @@
+const path = require('path');
 const { r2rClient } = require("r2r-js");
 
-// http://localhost:7272 or the address that you are running the R2R server
-const client = new r2rClient("http://localhost:7272");
+// Create an account at SciPhi Cloud https://app.sciphi.ai and set an R2R_API_KEY environment variable
+// or set the base URL to your instance. E.g. r2rClient("http://localhost:7272")
+const client = new r2rClient();
 
 async function main() {
-  const EMAIL = "admin@example.com";
-  const PASSWORD = "change_me_immediately";
-  console.log("Logging in...");
-  await client.login(EMAIL, PASSWORD);
+  const filePath = path.resolve(__dirname, "data/raskolnikov.txt");
 
-  const files = [
-    { path: "examples/data/raskolnikov.txt", name: "raskolnikov.txt" },
-  ];
 
   console.log("Ingesting file...");
-  const ingestResult = await client.ingestFiles(files, {
-    metadatas: [{ title: "raskolnikov.txt" }],
+  const ingestResult = await client.documents.create({
+    file: {
+      path: filePath,
+      name: "raskolnikov.txt"
+    },
+    metadata: { author: "Dostoevsky" },
   });
   console.log("Ingest result:", JSON.stringify(ingestResult, null, 2));
 
+  console.log("Waiting for the file to be ingested...");
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+
   console.log("Performing RAG...");
-  const ragResponse = await client.rag({
-    query: "What does the file talk about?",
-    rag_generation_config: {
-      model: "gpt-4o",
-      temperature: 0.0,
-      stream: false,
-    },
+  const ragResponse = await client.retrieval.rag({
+    query: "To whom was Raskolnikov desperately in debt to?",
   });
 
   console.log("Search Results:");
-  ragResponse.results.search_results.vector_search_results.forEach(
+  ragResponse.results.searchResults.chunkSearchResults.forEach(
     (result, index) => {
       console.log(`\nResult ${index + 1}:`);
-      console.log(`Text: ${result.metadata.text.substring(0, 100)}...`);
+      console.log(`Text: ${result.text.substring(0, 100)}...`);
       console.log(`Score: ${result.score}`);
     },
   );
 
   console.log("\nCompletion:");
-  console.log(ragResponse.results.completion.choices[0].message.content);
-
-  console.log("Logging out...");
-  await client.logout();
+  console.log(ragResponse.results.completion);
 }
 
 main();

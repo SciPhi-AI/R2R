@@ -94,11 +94,11 @@ def openai_message_to_anthropic_block(msg: dict) -> dict:
 class AnthropicCompletionProvider(CompletionProvider):
     def __init__(self, config: CompletionConfig, *args, **kwargs) -> None:
         super().__init__(config)
-        if config.provider != "anthropic":
-            logger.error(f"Invalid provider: {config.provider}")
-            raise ValueError(
-                "AnthropicCompletionProvider must be used with provider='anthropic'."
-            )
+        # if config.provider != "anthropic":
+        #     logger.error(f"Invalid provider: {config.provider}")
+        #     raise ValueError(
+        #         "AnthropicCompletionProvider must be used with provider='anthropic'."
+        #     )
 
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
@@ -129,7 +129,7 @@ class AnthropicCompletionProvider(CompletionProvider):
         }
         """
         args = {
-            "model": generation_config.model,
+            "model": generation_config.model.split("anthropic/")[-1],
             "temperature": generation_config.temperature,
             "top_p": generation_config.top_p,
             "max_tokens": generation_config.max_tokens_to_sample,
@@ -200,7 +200,7 @@ class AnthropicCompletionProvider(CompletionProvider):
             "id": anthropic_msg.id,
             "object": "chat.completion",
             "created": int(time.time()),
-            "model": anthropic_msg.model,
+            "model": anthropic_msg.model.split("anthropic/")[-1],
             "usage": {
                 "prompt_tokens": (
                     anthropic_msg.usage.input_tokens
@@ -334,7 +334,7 @@ class AnthropicCompletionProvider(CompletionProvider):
                     "tool_name": None,
                     "message_id": f"chatcmpl-{int(time.time())}",
                 }
-                model_name = args.get("model", "claude-2")
+                model_name = args.get("model", "anthropic/claude-2")
 
                 async for event in stream:
 
@@ -342,7 +342,7 @@ class AnthropicCompletionProvider(CompletionProvider):
                     chunks = self._process_stream_event(
                         event=event,
                         buffer_data=buffer_data,
-                        model_name=model_name,
+                        model_name=model_name.split("anthropic/")[-1],
                     )
                     # The helper returns a list of chunk dicts
                     for chunk in chunks:

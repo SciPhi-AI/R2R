@@ -28,6 +28,7 @@ from core.providers import (
     AnthropicCompletionProvider,
     LiteLLMCompletionProvider,
     OpenAICompletionProvider,
+    R2RCompletionProvider,
 )
 
 logger = logging.getLogger(__name__)
@@ -358,6 +359,7 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
             AnthropicCompletionProvider
             | LiteLLMCompletionProvider
             | OpenAICompletionProvider
+            | R2RCompletionProvider
         ),
         config: AgentConfig,
         search_settings: SearchSettings,
@@ -400,6 +402,7 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
             AnthropicCompletionProvider
             | LiteLLMCompletionProvider
             | OpenAICompletionProvider
+            | R2RCompletionProvider
         ),
         config: AgentConfig,
         search_settings: SearchSettings,

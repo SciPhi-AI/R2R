@@ -20,7 +20,11 @@ from core.base.abstractions import DocumentChunk
 from core.utils import generate_extraction_id
 
 from ...database import PostgresDatabaseProvider
-from ...llm import LiteLLMCompletionProvider, OpenAICompletionProvider
+from ...llm import (
+    LiteLLMCompletionProvider,
+    OpenAICompletionProvider,
+    R2RCompletionProvider,
+)
 
 logger = logging.getLogger()
 
@@ -90,13 +94,13 @@ class R2RIngestionProvider(IngestionProvider):
         self,
         config: R2RIngestionConfig,
         database_provider: PostgresDatabaseProvider,
-        llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
+        llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider | R2RCompletionProvider,
     ):
         super().__init__(config, database_provider, llm_provider)
         self.config: R2RIngestionConfig = config
         self.database_provider: PostgresDatabaseProvider = database_provider
         self.llm_provider: (
-            LiteLLMCompletionProvider | OpenAICompletionProvider
+            LiteLLMCompletionProvider | OpenAICompletionProvider | R2RCompletionProvider
         ) = llm_provider
         self.parsers: dict[DocumentType, AsyncParser] = {}
         self.text_splitter = self._build_text_splitter()

@@ -16,6 +16,7 @@ from core.providers import (
     OpenAIEmbeddingProvider,
     PostgresDatabaseProvider,
     R2RAuthProvider,
+    R2RCompletionProvider,
     R2RIngestionProvider,
     SendGridEmailProvider,
     SimpleOrchestrationProvider,
@@ -44,6 +45,7 @@ class R2RProviders(BaseModel):
         AnthropicCompletionProvider
         | LiteLLMCompletionProvider
         | OpenAICompletionProvider
+        | R2RCompletionProvider
     )
     orchestration: HatchetOrchestrationProvider | SimpleOrchestrationProvider
     email: (

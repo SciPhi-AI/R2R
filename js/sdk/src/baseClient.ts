@@ -9,9 +9,7 @@ import { ensureCamelCase } from "./utils";
 
 let fs: any;
 if (typeof window === "undefined") {
-  import("fs").then((module) => {
-    fs = module;
-  });
+  fs = require("fs");
 }
 
 function handleRequestError(response: AxiosResponse): void {
@@ -38,25 +36,24 @@ function handleRequestError(response: AxiosResponse): void {
 export abstract class BaseClient {
   protected axiosInstance: AxiosInstance;
   protected baseUrl: string;
-  protected accessToken: string | null;
+  protected accessToken?: string | null;
+  protected apiKey?: string | null;
   protected refreshToken: string | null;
   protected anonymousTelemetry: boolean;
-
-  // NEW: declare enableAutoRefresh
   protected enableAutoRefresh: boolean;
 
   constructor(
-    baseURL: string,
+    baseURL: string = "https://api.cloud.sciphi.ai",
     prefix: string = "",
     anonymousTelemetry = true,
     enableAutoRefresh = false,
   ) {
     this.baseUrl = `${baseURL}${prefix}`;
     this.accessToken = null;
+    this.apiKey = process.env.R2R_API_KEY || null;
     this.refreshToken = null;
     this.anonymousTelemetry = anonymousTelemetry;
 
-    // Add this assignment
     this.enableAutoRefresh = enableAutoRefresh;
 
     this.axiosInstance = axios.create({
@@ -134,7 +131,16 @@ export abstract class BaseClient {
       }
     }
 
+    if (this.accessToken && this.apiKey) {
+      throw new Error("Cannot have both access token and api key.");
+    }
+
     if (
+      this.apiKey &&
+      !["register", "login", "verify_email", "health"].includes(endpoint)
+    ) {
+      config.headers["x-api-key"] = this.apiKey;
+    } else if (
       this.accessToken &&
       !["register", "login", "verify_email", "health"].includes(endpoint)
     ) {

@@ -161,6 +161,7 @@ class RetrievalSDK:
         conversation_id: Optional[str] = None,
         tools: Optional[list[dict]] = None,
         max_tool_context_length: Optional[int] = None,
+        use_extended_prompt: Optional[bool] = True,
     ) -> list[Message] | AsyncGenerator[Message, None]:
         """
         Performs a single turn in a conversation with a RAG agent.
@@ -189,6 +190,7 @@ class RetrievalSDK:
             "conversation_id": conversation_id,
             "tools": tools,
             "max_tool_context_length": max_tool_context_length,
+            "use_extended_prompt": use_extended_prompt,
         }
         if search_mode:
             data["search_mode"] = search_mode

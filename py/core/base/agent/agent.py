@@ -134,6 +134,18 @@ class Agent(ABC):
     def get_generation_config(
         self, last_message: dict, stream: bool = False
     ) -> GenerationConfig:
+        if (
+            last_message["role"] in ["tool", "function"]
+            and last_message["content"] != ""
+            and "ollama" in self.config.generation_config.model 
+        ):
+            return GenerationConfig(
+                **self.rag_generation_config.model_dump(
+                    exclude={"functions", "tools", "stream"}
+                ),
+                stream=stream,
+            )
+        
         return GenerationConfig(
             **self.rag_generation_config.model_dump(
                 exclude={"functions", "tools", "stream"}

@@ -1,4 +1,3 @@
-import { feature } from "../../feature";
 import { r2rClient } from "../../r2rClient";
 import {
   WrappedGraphResponse,
@@ -15,9 +14,7 @@ import { downloadBlob } from "../../utils";
 
 let fs: any;
 if (typeof window === "undefined") {
-  import("fs").then((module) => {
-    fs = module;
-  });
+  fs = require("fs");
 }
 
 export class GraphsClient {
@@ -30,7 +27,6 @@ export class GraphsClient {
    * @param limit Optional limit for pagination
    * @returns
    */
-  @feature("graphs.list")
   async list(options?: {
     collectionIds?: string[];
     offset?: number;
@@ -55,7 +51,6 @@ export class GraphsClient {
    * @param collectionId The collection ID corresponding to the graph
    * @returns
    */
-  @feature("graphs.retrieve")
   async retrieve(options: {
     collectionId: string;
   }): Promise<WrappedGraphResponse> {
@@ -72,7 +67,6 @@ export class GraphsClient {
    * @param collectionId The collection ID corresponding to the graph
    * @returns
    */
-  @feature("graphs.reset")
   async reset(options: {
     collectionId: string;
   }): Promise<WrappedBooleanResponse> {
@@ -89,7 +83,6 @@ export class GraphsClient {
    * @param description Optional new description for the graph
    * @returns
    */
-  @feature("graphs.update")
   async update(options: {
     collectionId: string;
     name?: string;
@@ -111,7 +104,6 @@ export class GraphsClient {
    * @param entity Entity to add
    * @returns
    */
-  @feature("graphs.createEntity")
   async createEntity(options: {
     collectionId: string;
     name: string;
@@ -142,7 +134,6 @@ export class GraphsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
-  @feature("graphs.listEntities")
   async listEntities(options: {
     collectionId: string;
     offset?: number;
@@ -168,7 +159,6 @@ export class GraphsClient {
    * @param entityId Entity ID to retrieve
    * @returns
    */
-  @feature("graphs.getEntity")
   async getEntity(options: {
     collectionId: string;
     entityId: string;
@@ -186,7 +176,6 @@ export class GraphsClient {
    * @param entity Entity to update
    * @returns
    */
-  @feature("graphs.updateEntity")
   async updateEntity(options: {
     collectionId: string;
     entityId: string;
@@ -217,7 +206,6 @@ export class GraphsClient {
    * @param entityId Entity ID to remove
    * @returns
    */
-  @feature("graphs.removeEntity")
   async removeEntity(options: {
     collectionId: string;
     entityId: string;
@@ -233,7 +221,6 @@ export class GraphsClient {
    * @param relationship Relationship to add
    * @returns
    */
-  @feature("graphs.createRelationship")
   async createRelationship(options: {
     collectionId: string;
     subject: string;
@@ -272,7 +259,6 @@ export class GraphsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
-  @feature("graphs.listRelationships")
   async listRelationships(options: {
     collectionId: string;
     offset?: number;
@@ -298,7 +284,6 @@ export class GraphsClient {
    * @param relationshipId Relationship ID to retrieve
    * @returns
    */
-  @feature("graphs.getRelationship")
   async getRelationship(options: {
     collectionId: string;
     relationshipId: string;
@@ -316,7 +301,6 @@ export class GraphsClient {
    * @param relationship Relationship to update
    * @returns WrappedRelationshipResponse
    */
-  @feature("graphs.updateRelationship")
   async updateRelationship(options: {
     collectionId: string;
     relationshipId: string;
@@ -355,7 +339,6 @@ export class GraphsClient {
    * @param relationshipId Entity ID to remove
    * @returns
    */
-  @feature("graphs.removeRelationship")
   async removeRelationship(options: {
     collectionId: string;
     relationshipId: string;
@@ -376,7 +359,6 @@ export class GraphsClient {
    * @param options.includeHeader Whether to include column headers (default: true)
    * @returns Promise<Blob> in browser environments, Promise<void> in Node.js
    */
-  @feature("graphs.exportEntities")
   async exportEntities(options: {
     collectionId: string;
     outputPath?: string;
@@ -420,7 +402,6 @@ export class GraphsClient {
    * @param filename
    * @param options
    */
-  @feature("graphs.exportEntitiesToFile")
   async exportEntitiesToFile(options: {
     filename: string;
     collectionId: string;
@@ -444,7 +425,6 @@ export class GraphsClient {
    * @param options.includeHeader Whether to include column headers (default: true)
    * @returns Promise<Blob> in browser environments, Promise<void> in Node.js
    */
-  @feature("graphs.exportRelationships")
   async exportRelationships(options: {
     collectionId: string;
     outputPath?: string;
@@ -488,7 +468,6 @@ export class GraphsClient {
    * @param filename
    * @param options
    */
-  @feature("graphs.exportRelationshipsToFile")
   async exportRelationshipsToFile(options: {
     filename: string;
     collectionId: string;
@@ -512,7 +491,6 @@ export class GraphsClient {
    * @param options.includeHeader Whether to include column headers (default: true)
    * @returns Promise<Blob> in browser environments, Promise<void> in Node.js
    */
-  @feature("graphs.exportCommunities")
   async exportCommunities(options: {
     collectionId: string;
     outputPath?: string;
@@ -556,7 +534,6 @@ export class GraphsClient {
    * @param filename
    * @param options
    */
-  @feature("graphs.exportCommunitiesToFile")
   async exportCommunitiesToFile(options: {
     filename: string;
     collectionId: string;
@@ -594,7 +571,6 @@ export class GraphsClient {
    * @param attributes Additional attributes to associate with the community
    * @returns WrappedCommunityResponse
    */
-  @feature("graphs.createCommunity")
   async createCommunity(options: {
     collectionId: string;
     name: string;
@@ -631,7 +607,6 @@ export class GraphsClient {
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
-  @feature("graphs.listCommunities")
   async listCommunities(options: {
     collectionId: string;
     offset?: number;
@@ -657,7 +632,6 @@ export class GraphsClient {
    * @param communityId Entity ID to retrieve
    * @returns
    */
-  @feature("graphs.getCommunity")
   async getCommunity(options: {
     collectionId: string;
     communityId: string;
@@ -675,7 +649,6 @@ export class GraphsClient {
    * @param entity Entity to update
    * @returns WrappedCommunityResponse
    */
-  @feature("graphs.updateCommunity")
   async updateCommunity(options: {
     collectionId: string;
     communityId: string;
@@ -711,7 +684,6 @@ export class GraphsClient {
    * @param communityId Community ID to delete
    * @returns
    */
-  @feature("graphs.deleteCommunity")
   async deleteCommunity(options: {
     collectionId: string;
     communityId: string;
@@ -744,7 +716,6 @@ export class GraphsClient {
    * @param collectionId The collection ID corresponding to the graph
    * @returns
    */
-  @feature("graphs.pull")
   async pull(options: {
     collectionId: string;
   }): Promise<WrappedBooleanResponse> {
@@ -766,7 +737,6 @@ export class GraphsClient {
    * @param documentId The document ID to remove
    * @returns
    */
-  @feature("graphs.removeDocument")
   async removeDocument(options: {
     collectionId: string;
     documentId: string;
@@ -799,7 +769,6 @@ export class GraphsClient {
    * @param options
    * @returns
    */
-  @feature("graphs.buildCommunities")
   async buildCommunities(options: {
     collectionId: string;
     runType?: string;
