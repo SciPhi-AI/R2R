@@ -161,7 +161,7 @@ class RetrievalSDK:
         conversation_id: Optional[str] = None,
         tools: Optional[list[dict]] = None,
         max_tool_context_length: Optional[int] = None,
-        use_extended_prompt: Optional[bool] = True,
+        use_system_context: Optional[bool] = True,
     ) -> list[Message] | AsyncGenerator[Message, None]:
         """
         Performs a single turn in a conversation with a RAG agent.
@@ -190,7 +190,7 @@ class RetrievalSDK:
             "conversation_id": conversation_id,
             "tools": tools,
             "max_tool_context_length": max_tool_context_length,
-            "use_extended_prompt": use_extended_prompt,
+            "use_system_context": use_system_context,
         }
         if search_mode:
             data["search_mode"] = search_mode
@@ -213,6 +213,60 @@ class RetrievalSDK:
             return await self.client._make_request(
                 "POST",
                 "retrieval/agent",
+                json=data,
+                version="v3",
+            )
+
+    async def reasoning_agent(
+        self,
+        message: Optional[dict | Message] = None,
+        rag_generation_config: Optional[dict | GenerationConfig] = None,
+        conversation_id: Optional[str] = None,
+        tools: Optional[list[dict]] = None,
+        max_tool_context_length: Optional[int] = None,
+    ) -> list[Message] | AsyncGenerator[Message, None]:
+        """
+        Performs a single turn in a conversation with a RAG agent.
+
+        Args:
+            message (Optional[dict | Message]): The message to send to the agent.
+            search_settings (Optional[dict | SearchSettings]): Vector search settings.
+            task_prompt_override (Optional[str]): Task prompt override.
+            include_title_if_available (Optional[bool]): Include the title if available.
+
+        Returns:
+            List[Message], AsyncGenerator[Message, None]]: The agent response.
+        """
+        if rag_generation_config and not isinstance(
+            rag_generation_config, dict
+        ):
+            rag_generation_config = rag_generation_config.model_dump()
+
+        data: dict[str, Any] = {
+            "rag_generation_config": rag_generation_config or {},
+            "conversation_id": conversation_id,
+            "tools": tools,
+            "max_tool_context_length": max_tool_context_length,
+        }
+
+        if message:
+            cast_message: Message = (
+                Message(**message) if isinstance(message, dict) else message
+            )
+            data["message"] = cast_message.model_dump()
+        if rag_generation_config and rag_generation_config.get(  # type: ignore
+            "stream", False
+        ):
+            return self.client._make_streaming_request(
+                "POST",
+                "retrieval/reasoning_agent",
+                json=data,
+                version="v3",
+            )
+        else:
+            return await self.client._make_request(
+                "POST",
+                "retrieval/reasoning_agent",
                 json=data,
                 version="v3",
             )

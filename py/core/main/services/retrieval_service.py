@@ -9,11 +9,12 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from core import (  # R2RXMLToolsStreamingRAGAgent,
+from core import (
     R2RRAGAgent,
     R2RStreamingRAGAgent,
+    R2RStreamingReasoningRAGAgent,
 )
-from core.agent.rag import GeminiXMLToolsStreamingRAGAgent
+from core.agent.rag import GeminiXMLToolsStreamingReasoningRAGAgent
 from core.base import (
     AggregateSearchResult,
     ChunkSearchResult,
@@ -612,9 +613,10 @@ class RetrievalService(Service):
         conversation_id: Optional[UUID] = None,
         message: Optional[Message] = None,
         messages: Optional[list[Message]] = None,
-        use_extended_prompt: bool = False,
+        use_system_context: bool = False,
         max_tool_context_length: int = 32_768,
         override_tools: Optional[list[dict[str, Any]]] = None,
+        reasoning_agent: bool = False,
     ):
         try:
             if message and messages:
@@ -735,28 +737,49 @@ class RetrievalService(Service):
                 )
             )
 
-            if use_extended_prompt and task_prompt_override:
+            system_instruction = None
+
+            if use_system_context and task_prompt_override:
                 raise R2RException(
                     status_code=400,
-                    message="Both use_extended_prompt and task_prompt_override cannot be True at the same time",
+                    message="Both use_system_context and task_prompt_override cannot be True at the same time",
                 )
 
             # STEP 1: Determine the final system prompt content
-            if use_extended_prompt:
+            if use_system_context:
+                if reasoning_agent:
+                    raise R2RException(
+                        status_code=400,
+                        message="Reasoning agent not supported with extended prompt",
+                    )
                 # Build the brand-new extended system prompt that includes doc/coll context
                 system_instruction = (
-                    await self._build_extended_system_instruction(
+                    await self._build_aware_system_instruction(
                         max_tool_context_length=max_tool_context_length,
                         filter_user_id=filter_user_id,
                         filter_collection_ids=filter_collection_ids,
                         model=rag_generation_config.model,
+                        reasoning_agent=reasoning_agent,
                     )
                 )
             elif task_prompt_override:
+                if reasoning_agent:
+                    raise R2RException(
+                        status_code=400,
+                        message="Reasoning agent not supported with task prompt override",
+                    )
+
                 system_instruction = task_prompt_override
-            else:
-                # Use the default system prompt
-                system_instruction = None
+            elif reasoning_agent:
+                system_instruction = (
+                    await self._build_aware_system_instruction(
+                        max_tool_context_length=max_tool_context_length,
+                        filter_user_id=filter_user_id,
+                        filter_collection_ids=filter_collection_ids,
+                        model=rag_generation_config.model,
+                        reasoning_agent=reasoning_agent,
+                    )
+                )
 
             agent_config = deepcopy(self.config.agent)
             agent_config.tools = override_tools or agent_config.tools
@@ -765,7 +788,7 @@ class RetrievalService(Service):
 
                 async def stream_response():
                     try:
-                        if "gemini" not in rag_generation_config.model:
+                        if not reasoning_agent:
                             agent = R2RStreamingRAGAgent(
                                 database_provider=self.providers.database,
                                 llm_provider=self.providers.llm,
@@ -777,16 +800,39 @@ class RetrievalService(Service):
                                 content_method=self.get_context,
                             )
                         else:
-                            agent = GeminiXMLToolsStreamingRAGAgent(
-                                database_provider=self.providers.database,
-                                llm_provider=self.providers.llm,
-                                config=agent_config,
-                                search_settings=search_settings,
-                                rag_generation_config=rag_generation_config,
-                                max_tool_context_length=max_tool_context_length,
-                                local_search_method=self.search,
-                                content_method=self.get_context,
-                            )
+                            if (
+                                "gemini-2.0-flash-thinking-exp-01-21"
+                                in rag_generation_config.model
+                            ):
+                                agent = GeminiXMLToolsStreamingReasoningRAGAgent(
+                                    database_provider=self.providers.database,
+                                    llm_provider=self.providers.llm,
+                                    config=agent_config,
+                                    search_settings=search_settings,
+                                    rag_generation_config=rag_generation_config,
+                                    max_tool_context_length=max_tool_context_length,
+                                    local_search_method=self.search,
+                                    content_method=self.get_context,
+                                )
+                            elif (
+                                "claude-3-5-sonnet-20241022"
+                                in rag_generation_config.model
+                            ):
+                                agent = R2RStreamingReasoningRAGAgent(
+                                    database_provider=self.providers.database,
+                                    llm_provider=self.providers.llm,
+                                    config=agent_config,
+                                    search_settings=search_settings,
+                                    rag_generation_config=rag_generation_config,
+                                    max_tool_context_length=max_tool_context_length,
+                                    local_search_method=self.search,
+                                    content_method=self.get_context,
+                                )
+                            else:
+                                raise R2RException(
+                                    status_code=400,
+                                    message="Reasoning agent not supported for this model",
+                                )
 
                         async for chunk in agent.arun(
                             messages=messages,
@@ -1095,18 +1141,19 @@ class RetrievalService(Service):
             lines.append(f"[{i}] Name: {name} (ID: {cid}, docs: {doc_count})")
         return "\n".join(lines)
 
-    async def _build_extended_system_instruction(
+    async def _build_aware_system_instruction(
         self,
         max_tool_context_length: int = 10_000,
         filter_user_id: Optional[UUID] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
         model: Optional[str] = None,
+        reasoning_agent: bool = False,
     ) -> str:
         """
         High-level method that:
           1) builds the documents context
           2) builds the collections context
-          3) loads the new `extended_rag_agent` prompt
+          3) loads the new `aware_rag_agent` prompt
         """
         date_str = str(datetime.now().isoformat()).split("T")[0]
 
@@ -1118,16 +1165,24 @@ class RetrievalService(Service):
             filter_collection_ids=filter_collection_ids,
         )
 
+        if not reasoning_agent:
+            prompt_name = "aware_rag_agent"
+        else:
+            if "gemini-2.0-flash-thinking-exp-01-21" in model:
+                prompt_name = "aware_rag_agent_reasoning_xml_tooling"
+            elif "claude-3-5-sonnet-20241022" in model:
+                prompt_name = "aware_rag_agent_reasoning_prompted"
+            else:
+                raise R2RException(
+                    status_code=400,
+                    message="Reasoning agent not supported for this model",
+                )
         # Now fetch the prompt from the database prompts handler
         # This relies on your "rag_agent_extended" existing with
         # placeholders: date, document_context, collection_context
         system_prompt = await self.providers.database.prompts_handler.get_cached_prompt(
             # We use custom tooling and a custom agent to handle gemini models
-            (
-                "extended_rag_agent"
-                if model and "gemini" not in model
-                else "extended_rag_agent_r2r_tooling"
-            ),
+            prompt_name,
             inputs={
                 "date": date_str,
                 "max_tool_context_length": max_tool_context_length,
