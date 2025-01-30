@@ -139,6 +139,7 @@ class R2RStreamingAgent(R2RAgent):
                 messages_list,
                 generation_config,
             )
+            print("getting streaming response....")
             async for proc_chunk in self.process_llm_response(
                 stream, *args, **kwargs
             ):
@@ -165,9 +166,7 @@ class R2RStreamingAgent(R2RAgent):
         """
         pending_tool_calls = {}
         content_buffer = ""
-        function_name = None
         function_arguments = ""
-        tool_calls_active = False
 
         async for chunk in stream:
             delta = chunk.choices[0].delta
@@ -175,7 +174,6 @@ class R2RStreamingAgent(R2RAgent):
 
             # 1) Handle interleaved tool_calls
             if delta.tool_calls:
-                tool_calls_active = True
                 for tc in delta.tool_calls:
                     idx = tc.index
                     if idx not in pending_tool_calls:
@@ -265,54 +263,38 @@ class R2RStreamingAgent(R2RAgent):
                 pending_tool_calls.clear()
                 content_buffer = ""
 
-            elif finish_reason == "function_call":
-                # Single function call handling
-                if not function_name:
-                    logger.warning("Function name not found in function call.")
-                    continue
-
-                assistant_msg = Message(
-                    role="assistant",
-                    content=content_buffer if content_buffer else None,
-                    function_call={
-                        "name": function_name,
-                        "arguments": function_arguments,
-                    },
-                )
-                await self.conversation.add_message(assistant_msg)
-
-                yield "<function_call>"
-                yield f"<name>{function_name}</name>"
-                yield f"<arguments>{function_arguments}</arguments>"
-
-                tool_result = await self.handle_function_or_tool_call(
-                    function_name, function_arguments, *args, **kwargs
-                )
-                if tool_result.stream_result:
-                    yield f"<results>{tool_result.stream_result}</results>"
-                else:
-                    yield f"<results>{tool_result.llm_formatted_result}</results>"
-                yield "</function_call>"
-
-                await self.conversation.add_message(
-                    Message(
-                        role="function",
-                        name=function_name,
-                        content=tool_result.llm_formatted_result,
-                    )
-                )
-                function_name, function_arguments, content_buffer = (
-                    None,
-                    "",
-                    "",
-                )
-
             elif finish_reason == "stop":
                 # Finalize content if streaming stops
                 if content_buffer:
                     await self.conversation.add_message(
                         Message(role="assistant", content=content_buffer)
                     )
+                elif pending_tool_calls:
+                    # TODO - RM COPY PASTA.
+                    calls_list = []
+                    sorted_indexes = sorted(pending_tool_calls.keys())
+                    for idx in sorted_indexes:
+                        call_info = pending_tool_calls[idx]
+                        call_id = call_info["id"] or f"call_{idx}"
+                        calls_list.append(
+                            {
+                                "id": call_id,
+                                "type": "function",
+                                "function": {
+                                    "name": call_info["name"],
+                                    "arguments": call_info["arguments"],
+                                },
+                            }
+                        )
+
+                    assistant_msg = Message(
+                        role="assistant",
+                        content=content_buffer or None,
+                        tool_calls=calls_list,
+                    )
+                    await self.conversation.add_message(assistant_msg)
+                    return
+
                 self._completed = True
                 yield "</completion>"
 

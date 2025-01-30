@@ -26,7 +26,11 @@ from core.base.providers.ingestion import IngestionConfig, IngestionProvider
 from core.utils import generate_extraction_id
 
 from ...database import PostgresDatabaseProvider
-from ...llm import LiteLLMCompletionProvider, OpenAICompletionProvider
+from ...llm import (
+    LiteLLMCompletionProvider,
+    OpenAICompletionProvider,
+    R2RCompletionProvider,
+)
 
 logger = logging.getLogger()
 
@@ -118,13 +122,19 @@ class UnstructuredIngestionProvider(IngestionProvider):
         self,
         config: UnstructuredIngestionConfig,
         database_provider: PostgresDatabaseProvider,
-        llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider,
+        llm_provider: (
+            LiteLLMCompletionProvider
+            | OpenAICompletionProvider
+            | R2RCompletionProvider
+        ),
     ):
         super().__init__(config, database_provider, llm_provider)
         self.config: UnstructuredIngestionConfig = config
         self.database_provider: PostgresDatabaseProvider = database_provider
         self.llm_provider: (
-            LiteLLMCompletionProvider | OpenAICompletionProvider
+            LiteLLMCompletionProvider
+            | OpenAICompletionProvider
+            | R2RCompletionProvider
         ) = llm_provider
 
         if config.provider == "unstructured_api":

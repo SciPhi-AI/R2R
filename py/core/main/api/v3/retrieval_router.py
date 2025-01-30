@@ -623,6 +623,10 @@ class RetrievalRouterV3(BaseRouterV3):
                 default=32_768,
                 description="Maximum length of returned tool context",
             ),
+            use_extended_prompt: Optional[bool] = Body(
+                default=True,
+                description="Use extended prompt for generation",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAgentResponse:
             """
@@ -660,6 +664,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 auth_user, search_mode, search_settings
             )
 
+            print("use_extended_prompt = ", use_extended_prompt)
             try:
                 response = await self.services.retrieval.agent(
                     message=message,
@@ -672,7 +677,7 @@ class RetrievalRouterV3(BaseRouterV3):
                     conversation_id=(
                         str(conversation_id) if conversation_id else None
                     ),
-                    use_extended_prompt=True,
+                    use_extended_prompt=use_extended_prompt,
                     override_tools=tools,
                 )
 

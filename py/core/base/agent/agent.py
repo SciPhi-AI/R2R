@@ -27,23 +27,6 @@ class Conversation:
         self.messages: list[Message] = []
         self._lock = asyncio.Lock()
 
-    def create_and_add_message(
-        self,
-        role: MessageType | str,
-        content: Optional[str] = None,
-        name: Optional[str] = None,
-        function_call: Optional[dict[str, Any]] = None,
-        tool_calls: Optional[list[dict[str, Any]]] = None,
-    ):
-        message = Message(
-            role=role,
-            content=content,
-            name=name,
-            function_call=function_call,
-            tool_calls=tool_calls,
-        )
-        self.add_message(message)
-
     async def add_message(self, message):
         async with self._lock:
             self.messages.append(message)
@@ -154,6 +137,7 @@ class Agent(ABC):
         if (
             last_message["role"] in ["tool", "function"]
             and last_message["content"] != ""
+            and "ollama" in self.config.generation_config.model
         ):
             return GenerationConfig(
                 **self.rag_generation_config.model_dump(
@@ -162,49 +146,26 @@ class Agent(ABC):
                 stream=stream,
             )
 
-        if (
-            "azure" in self.rag_generation_config.model
-            or "anthropic" in self.rag_generation_config.model
-            or "openai" in self.rag_generation_config.model
-        ):
-            # return with tools
-            return GenerationConfig(
-                **self.rag_generation_config.model_dump(
-                    exclude={"functions", "tools", "stream"}
-                ),
-                # FIXME: Use tools instead of functions
-                # TODO - Investigate why `tools` fails with OpenAI+LiteLLM
-                tools=[
-                    {
-                        "function": {
-                            "name": tool.name,
-                            "description": tool.description,
-                            "parameters": tool.parameters,
-                        },
-                        "type": "function",
-                        "name": tool.name,
-                    }
-                    for tool in self.tools
-                ],
-                stream=stream,
-            )
-        else:
-            return GenerationConfig(
-                **self.rag_generation_config.model_dump(
-                    exclude={"functions", "tools", "stream"}
-                ),
-                # FIXME: Use tools instead of functions
-                # TODO - Investigate why `tools` fails with ollama and the like
-                functions=[
-                    {
+        return GenerationConfig(
+            **self.rag_generation_config.model_dump(
+                exclude={"functions", "tools", "stream"}
+            ),
+            # FIXME: Use tools instead of functions
+            # TODO - Investigate why `tools` fails with OpenAI+LiteLLM
+            tools=[
+                {
+                    "function": {
                         "name": tool.name,
                         "description": tool.description,
                         "parameters": tool.parameters,
-                    }
-                    for tool in self.tools
-                ],
-                stream=stream,
-            )
+                    },
+                    "type": "function",
+                    "name": tool.name,
+                }
+                for tool in self.tools
+            ],
+            stream=stream,
+        )
 
     async def handle_function_or_tool_call(
         self,
@@ -222,6 +183,7 @@ class Agent(ABC):
         ):
             try:
                 function_args = json.loads(function_arguments)
+
             except JSONDecodeError as e:
                 error_message = f"The requested tool '{function_name}' is not available with arguments {function_arguments} failed."
                 tool_result = ToolResult(

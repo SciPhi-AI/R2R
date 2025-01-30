@@ -50,8 +50,8 @@ default_max_upload_size = 2147483648  # 2 GB for anything not explicitly listed
 
 [agent]
 system_instruction_name = "rag_agent"
-# tools = ["content", "local_search", "web_search", "multi_search"] # uncomment to enable web search.
-tools = ["local_search", "content"]
+# tools = ["local_search", "content", "web_search"]
+tools = ["content", "local_search"]
 
   [agent.generation_config]
   model = "openai/gpt-4o"
@@ -66,7 +66,7 @@ default_admin_email = "admin@example.com"
 default_admin_password = "change_me_immediately"
 
 [completion]
-provider = "litellm"
+provider = "r2r"
 concurrent_request_limit = 64
 fast_llm = "openai/gpt-4o-mini"
 

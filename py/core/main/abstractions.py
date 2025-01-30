@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel
 
 from core.providers import (
+    AnthropicCompletionProvider,
     AsyncSMTPEmailProvider,
     ConsoleMockEmailProvider,
     HatchetOrchestrationProvider,
@@ -15,6 +16,7 @@ from core.providers import (
     OpenAIEmbeddingProvider,
     PostgresDatabaseProvider,
     R2RAuthProvider,
+    R2RCompletionProvider,
     R2RIngestionProvider,
     SendGridEmailProvider,
     SimpleOrchestrationProvider,
@@ -39,7 +41,12 @@ class R2RProviders(BaseModel):
         | OpenAIEmbeddingProvider
         | OllamaEmbeddingProvider
     )
-    llm: LiteLLMCompletionProvider | OpenAICompletionProvider
+    llm: (
+        AnthropicCompletionProvider
+        | LiteLLMCompletionProvider
+        | OpenAICompletionProvider
+        | R2RCompletionProvider
+    )
     orchestration: HatchetOrchestrationProvider | SimpleOrchestrationProvider
     email: (
         AsyncSMTPEmailProvider
