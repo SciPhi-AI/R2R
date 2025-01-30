@@ -137,4 +137,5 @@ jobs:
           username: ${{ secrets.STAGING_USERNAME }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
+            docker pull ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.RELEASE_VERSION }}
             docker service update --image ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.RELEASE_VERSION }} r2r-blue_r2r
