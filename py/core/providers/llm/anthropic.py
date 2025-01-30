@@ -247,8 +247,6 @@ class AnthropicCompletionProvider(CompletionProvider):
         system_msg = None
         filtered = []
         for m in copy.deepcopy(messages):
-            # m.pop("tool_calls", None)
-
             if m["role"] == "system" and system_msg is None:
                 system_msg = m["content"]
             else:
