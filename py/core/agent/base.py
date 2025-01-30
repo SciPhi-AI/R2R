@@ -165,12 +165,9 @@ class R2RStreamingAgent(R2RAgent):
         """
         pending_tool_calls = {}
         content_buffer = ""
-        function_name = None
         function_arguments = ""
-        tool_calls_active = False
 
         async for chunk in stream:
-            print("Streaming Chunk = ", chunk)
             delta = chunk.choices[0].delta
             finish_reason = chunk.choices[0].finish_reason
 
@@ -265,48 +262,6 @@ class R2RStreamingAgent(R2RAgent):
                 # Clear the tool call state
                 pending_tool_calls.clear()
                 content_buffer = ""
-
-            elif finish_reason == "function_call":
-                # Single function call handling
-                if not function_name:
-                    logger.warning("Function name not found in function call.")
-                    continue
-
-                assistant_msg = Message(
-                    role="assistant",
-                    content=content_buffer if content_buffer else None,
-                    function_call={
-                        "name": function_name,
-                        "arguments": function_arguments,
-                    },
-                )
-                await self.conversation.add_message(assistant_msg)
-
-                yield "<function_call>"
-                yield f"<name>{function_name}</name>"
-                yield f"<arguments>{function_arguments}</arguments>"
-
-                tool_result = await self.handle_function_or_tool_call(
-                    function_name, function_arguments, *args, **kwargs
-                )
-                if tool_result.stream_result:
-                    yield f"<results>{tool_result.stream_result}</results>"
-                else:
-                    yield f"<results>{tool_result.llm_formatted_result}</results>"
-                yield "</function_call>"
-
-                await self.conversation.add_message(
-                    Message(
-                        role="function",
-                        name=function_name,
-                        content=tool_result.llm_formatted_result,
-                    )
-                )
-                function_name, function_arguments, content_buffer = (
-                    None,
-                    "",
-                    "",
-                )
 
             elif finish_reason == "stop":
                 # Finalize content if streaming stops
