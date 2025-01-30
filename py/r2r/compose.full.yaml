@@ -281,8 +281,7 @@ services:
       retries: 5
 
   r2r:
-    # image: ${R2R_IMAGE:-ragtoriches/prod:latest}
-    image: r2r/test
+    image: ${R2R_IMAGE:-ragtoriches/prod:latest}
     ports:
       - "${R2R_PORT:-7272}:${R2R_PORT:-7272}"
     environment:
@@ -408,7 +407,7 @@ services:
         condition: service_healthy
 
   r2r-dashboard:
-    image: emrgntcmplxty/r2r-dashboard:latest
+    image: ${R2R_DASHBOARD_IMAGE:-emrgntcmplxty/r2r-dashboard:latest}
     environment:
       - NEXT_PUBLIC_R2R_DEPLOYMENT_URL=${R2R_DEPLOYMENT_URL:-http://localhost:7272}
       - NEXT_PUBLIC_HATCHET_DASHBOARD_URL=${HATCHET_DASHBOARD_URL:-http://localhost:${R2R_HATCHET_DASHBOARD_PORT:-7274}}

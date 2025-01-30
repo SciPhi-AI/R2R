@@ -145,7 +145,7 @@ services:
       - host.docker.internal:host-gateway
 
   r2r-dashboard:
-    image: emrgntcmplxty/r2r-dashboard:latest
+    image: ${R2R_DASHBOARD_IMAGE:-emrgntcmplxty/r2r-dashboard:latest}
     environment:
       - NEXT_PUBLIC_R2R_DEPLOYMENT_URL=${R2R_DEPLOYMENT_URL:-http://localhost:7272}
     networks:

@@ -9,7 +9,11 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from core import R2RRAGAgent, R2RStreamingRAGAgent
+from core import (  # R2RXMLToolsStreamingRAGAgent,
+    R2RRAGAgent,
+    R2RStreamingRAGAgent,
+)
+from core.agent.rag import GeminiXMLToolsStreamingRAGAgent
 from core.base import (
     AggregateSearchResult,
     ChunkSearchResult,
@@ -709,7 +713,7 @@ class RetrievalService(Service):
 
             current_message = messages[-1]
             logger.info(
-                f"Running the agnet with conversation_id = {conversation_id} and message = {current_message}"
+                f"Running the agent with conversation_id = {conversation_id} and message = {current_message}"
             )
             # Save the new message to the conversation
             parent_id = ids[-1] if ids else None
@@ -745,6 +749,7 @@ class RetrievalService(Service):
                         max_tool_context_length=max_tool_context_length,
                         filter_user_id=filter_user_id,
                         filter_collection_ids=filter_collection_ids,
+                        model=rag_generation_config.model,
                     )
                 )
             elif task_prompt_override:
@@ -757,16 +762,29 @@ class RetrievalService(Service):
 
                 async def stream_response():
                     try:
-                        agent = R2RStreamingRAGAgent(
-                            database_provider=self.providers.database,
-                            llm_provider=self.providers.llm,
-                            config=agent_config,
-                            search_settings=search_settings,
-                            rag_generation_config=rag_generation_config,
-                            max_tool_context_length=max_tool_context_length,
-                            local_search_method=self.search,
-                            content_method=self.get_context,
-                        )
+                        if "gemini" not in rag_generation_config.model:
+                            agent = R2RStreamingRAGAgent(
+                                database_provider=self.providers.database,
+                                llm_provider=self.providers.llm,
+                                config=agent_config,
+                                search_settings=search_settings,
+                                rag_generation_config=rag_generation_config,
+                                max_tool_context_length=max_tool_context_length,
+                                local_search_method=self.search,
+                                content_method=self.get_context,
+                            )
+                        else:
+                            agent = GeminiXMLToolsStreamingRAGAgent(
+                                database_provider=self.providers.database,
+                                llm_provider=self.providers.llm,
+                                config=agent_config,
+                                search_settings=search_settings,
+                                rag_generation_config=rag_generation_config,
+                                max_tool_context_length=max_tool_context_length,
+                                local_search_method=self.search,
+                                content_method=self.get_context,
+                            )
+
                         async for chunk in agent.arun(
                             messages=messages,
                             system_instruction=system_instruction,
@@ -1004,7 +1022,7 @@ class RetrievalService(Service):
         self,
         filter_user_id: Optional[UUID] = None,
         max_summary_length: int = 128,
-        limit: int = 50,
+        limit: int = 1000,
     ) -> str:
         """
         Fetches documents matching the given filters and returns a formatted string
@@ -1014,7 +1032,7 @@ class RetrievalService(Service):
         docs_data = await self.providers.database.documents_handler.get_documents_overview(
             offset=0,
             limit=limit,
-            filter_user_ids=[filter_user_id],
+            filter_user_ids=[filter_user_id] if filter_user_id else None,
             include_summary_embedding=False,
         )
 
@@ -1071,6 +1089,7 @@ class RetrievalService(Service):
         max_tool_context_length: int = 10_000,
         filter_user_id: Optional[UUID] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
+        model: Optional[str] = None,
     ) -> str:
         """
         High-level method that:
@@ -1091,16 +1110,19 @@ class RetrievalService(Service):
         # Now fetch the prompt from the database prompts handler
         # This relies on your "rag_agent_extended" existing with
         # placeholders: date, document_context, collection_context
-        system_prompt = (
-            await self.providers.database.prompts_handler.get_cached_prompt(
-                "extended_rag_agent",
-                inputs={
-                    "date": date_str,
-                    "max_tool_context_length": max_tool_context_length,
-                    "document_context": doc_context_str,
-                    "collection_context": coll_context_str,
-                },
-            )
+        system_prompt = await self.providers.database.prompts_handler.get_cached_prompt(
+            # We use custom tooling and a custom agent to handle gemini models
+            (
+                "extended_rag_agent"
+                if model and "gemini" not in model
+                else "extended_rag_agent_r2r_tooling"
+            ),
+            inputs={
+                "date": date_str,
+                "max_tool_context_length": max_tool_context_length,
+                "document_context": doc_context_str,
+                "collection_context": coll_context_str,
+            },
         )
         logger.info(f"Running agent with system prompt = {system_prompt}")
         return system_prompt

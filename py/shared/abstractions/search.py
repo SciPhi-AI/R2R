@@ -24,7 +24,7 @@ class ChunkSearchResult(R2RSerializable):
     metadata: dict[str, Any]
 
     def __str__(self) -> str:
-        return f"ChunkSearchResult(id={self.id}, document_id={self.document_id}, score={self.score}, text={self.text}, metadata={self.metadata})"
+        return f"ChunkSearchResult(score={self.score:.3f}, text={self.text})"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -93,6 +93,9 @@ class GraphRelationshipResult(R2RSerializable):
             "metadata": {},
         }
 
+    def __str__(self) -> str:
+        return f"GraphRelationshipResult(subject={self.subject}, predicate={self.predicate}, object={self.object})"
+
 
 class GraphCommunityResult(R2RSerializable):
     name: str
@@ -112,6 +115,11 @@ class GraphCommunityResult(R2RSerializable):
             "metadata": {},
         }
 
+    def __str__(self) -> str:
+        return (
+            f"GraphCommunityResult(name={self.name}, summary={self.summary})"
+        )
+
 
 class GraphSearchResult(R2RSerializable):
     content: GraphEntityResult | GraphRelationshipResult | GraphCommunityResult
@@ -127,6 +135,9 @@ class GraphSearchResult(R2RSerializable):
             "chunk_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
             "metadata": {"associated_query": "What is the capital of France?"},
         }
+
+    def __str__(self) -> str:
+        return f"GraphSearchResult(content={self.content}, result_type={self.result_type})"
 
 
 class WebSearchResult(R2RSerializable):
@@ -152,6 +163,9 @@ class WebSearchResult(R2RSerializable):
                 }
             ],
         }
+
+    def __str__(self) -> str:
+        return f"WebSearchResult(title={self.title}, link={self.link}, snippet={self.snippet})"
 
 
 class RelatedSearchResult(R2RSerializable):
@@ -200,7 +214,10 @@ class ContextDocumentResult(R2RSerializable):
     """
 
     document: dict[str, Any]  # or create a formal Document model
-    chunks: list[dict[str, Any]] = Field(default_factory=list)
+    chunks: list[str] = Field(default_factory=list)
+
+    def __str__(self) -> str:
+        return f"ContextDocumentResult(document={self.document}, chunks={self.chunks})"
 
 
 class AggregateSearchResult(R2RSerializable):
@@ -212,10 +229,10 @@ class AggregateSearchResult(R2RSerializable):
     context_document_results: Optional[list[ContextDocumentResult]] = None
 
     def __str__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, context_document_results={self.context_document_results})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, context_document_results={str(self.context_document_results)})"
 
     def __repr__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, context_document_results={self.context_document_results})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, context_document_results={str(self.context_document_results)})"
 
     def as_dict(self) -> dict:
         return {

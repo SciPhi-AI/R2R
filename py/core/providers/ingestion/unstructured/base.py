@@ -195,8 +195,15 @@ class UnstructuredIngestionProvider(IngestionProvider):
     ) -> AsyncGenerator[FallbackElement, None]:
         context = ""
         async for text in self.parsers[parser_name].ingest(file_content, **ingestion_config):  # type: ignore
-            context += text + "\n\n"
+            if text is not None:
+                context += text + "\n\n"
         logging.info(f"Fallback ingestion with config = {ingestion_config}")
+
+        if not context.strip():
+            logging.warning(
+                "No valid text content was extracted during parsing"
+            )
+            return
 
         loop = asyncio.get_event_loop()
         splitter = RecursiveCharacterTextSplitter(

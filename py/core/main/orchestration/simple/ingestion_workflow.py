@@ -30,7 +30,7 @@ def count_tokens_for_text(text: str, model: str = "gpt-4o") -> int:
         # Fallback to a known encoding if model not recognized
         encoding = tiktoken.get_encoding("cl100k_base")
 
-    return len(encoding.encode(text))
+    return len(encoding.encode(text, disallowed_special=()))
 
 
 def simple_ingestion_factory(service: IngestionService):
