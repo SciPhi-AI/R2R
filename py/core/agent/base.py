@@ -139,7 +139,6 @@ class R2RStreamingAgent(R2RAgent):
                 messages_list,
                 generation_config,
             )
-            print("getting streaming response....")
             async for proc_chunk in self.process_llm_response(
                 stream, *args, **kwargs
             ):

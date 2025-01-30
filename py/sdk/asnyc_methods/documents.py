@@ -233,7 +233,7 @@ class DocumentsSDK:
                 json=data,
                 headers={
                     "Accept": "text/csv",
-                    **self.client._get_auth_headers(),
+                    **self.client._get_auth_header(),
                 },
             ) as response:
                 if response.status != 200:
@@ -282,7 +282,7 @@ class DocumentsSDK:
                 json=data,
                 headers={
                     "Accept": "text/csv",
-                    **self.client._get_auth_headers(),
+                    **self.client._get_auth_header(),
                 },
             ) as response:
                 if response.status != 200:
@@ -331,7 +331,7 @@ class DocumentsSDK:
                 json=data,
                 headers={
                     "Accept": "text/csv",
-                    **self.client._get_auth_headers(),
+                    **self.client._get_auth_header(),
                 },
             ) as response:
                 if response.status != 200:
