@@ -62,6 +62,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
         while not self._completed:
             messages_list = await self.conversation.get_messages()
             generation_config = self.get_generation_config(messages_list[-1])
+            print("Getting completion...")
             response = await self.llm_provider.aget_completion(
                 messages_list,
                 generation_config,
@@ -139,6 +140,7 @@ class R2RStreamingAgent(R2RAgent):
                 messages_list,
                 generation_config,
             )
+            print("getting streaming response....")
             async for proc_chunk in self.process_llm_response(
                 stream, *args, **kwargs
             ):
@@ -173,6 +175,7 @@ class R2RStreamingAgent(R2RAgent):
 
             # 1) Handle interleaved tool_calls
             if delta.tool_calls:
+                print('handling tool calls...')
                 tool_calls_active = True
                 for tc in delta.tool_calls:
                     idx = tc.index
@@ -269,6 +272,32 @@ class R2RStreamingAgent(R2RAgent):
                     await self.conversation.add_message(
                         Message(role="assistant", content=content_buffer)
                     )
+                elif pending_tool_calls:
+                    # TODO - RM COPY PASTA.
+                    calls_list = []
+                    sorted_indexes = sorted(pending_tool_calls.keys())
+                    for idx in sorted_indexes:
+                        call_info = pending_tool_calls[idx]
+                        call_id = call_info["id"] or f"call_{idx}"
+                        calls_list.append(
+                            {
+                                "id": call_id,
+                                "type": "function",
+                                "function": {
+                                    "name": call_info["name"],
+                                    "arguments": call_info["arguments"],
+                                },
+                            }
+                        )
+
+                    assistant_msg = Message(
+                        role="assistant",
+                        content=content_buffer or None,
+                        tool_calls=calls_list,
+                    )
+                    await self.conversation.add_message(assistant_msg)
+                    return
+
                 self._completed = True
                 yield "</completion>"
 
