@@ -81,7 +81,7 @@ class R2RClient(BaseClient):
         url = self._get_full_url(endpoint, version)
         request_args = self._prepare_request_args(endpoint, **kwargs)
 
-        with Client(timeout=self.timeout) as client:
+        with self.client(timeout=self.timeout) as client:
             with client.stream(method, url, **request_args) as response:
                 self._handle_response(response)
                 for line in response.iter_lines():
