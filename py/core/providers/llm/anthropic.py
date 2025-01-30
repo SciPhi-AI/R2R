@@ -100,12 +100,6 @@ class AnthropicCompletionProvider(CompletionProvider):
         #         "AnthropicCompletionProvider must be used with provider='anthropic'."
         #     )
 
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            logger.error("Missing ANTHROPIC_API_KEY in environment.")
-            raise ValueError(
-                "Anthropic API key not found. Set ANTHROPIC_API_KEY env var."
-            )
 
         # Create sync + async clients
         self.client = Anthropic()  # for sync calls
@@ -279,6 +273,13 @@ class AnthropicCompletionProvider(CompletionProvider):
         """
         Async entry point. Decide if streaming or not, then call the appropriate helper.
         """
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            logger.error("Missing ANTHROPIC_API_KEY in environment.")
+            raise ValueError(
+                "Anthropic API key not found. Set ANTHROPIC_API_KEY env var."
+            )
+
         messages = task["messages"]
         generation_config = task["generation_config"]
         extra_kwargs = task["kwargs"]
@@ -306,6 +307,13 @@ class AnthropicCompletionProvider(CompletionProvider):
         """
         Non-streaming call: returns the final LLMChatCompletion.
         """
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            logger.error("Missing ANTHROPIC_API_KEY in environment.")
+            raise ValueError(
+                "Anthropic API key not found. Set ANTHROPIC_API_KEY env var."
+            )
+
         try:
             response = await self.async_client.messages.create(**args)
             logger.debug("Anthropic async non-stream call succeeded.")
