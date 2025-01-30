@@ -5558,7 +5558,7 @@ starkbank-ecdsa = ">=2.0.1"
 name = "sentry-sdk"
 version = "2.20.0"
 description = "Python client for Sentry (https://sentry.io)"
-optional = false
+optional = true
 python-versions = ">=3.6"
 files = [
     {file = "sentry_sdk-2.20.0-py2.py3-none-any.whl", hash = "sha256:c359a1edf950eb5e80cffd7d9111f3dbeef57994cb4415df37d39fda2cf22364"},
@@ -6776,10 +6776,10 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 type = ["pytest-mypy"]
 
 [extras]
-core = ["aiohttp", "aiosqlite", "anthropic", "apscheduler", "asyncpg", "bcrypt", "boto3", "colorlog", "fsspec", "future", "google-auth", "google-auth-oauthlib", "google-genai", "graspologic", "gunicorn", "hatchet-sdk", "litellm", "networkx", "ollama", "psutil", "pydantic", "pyjwt", "pynacl", "python-multipart", "pyyaml", "sendgrid", "sqlalchemy", "supabase", "tiktoken", "tokenizers", "unstructured-client", "uvicorn", "vecs"]
+core = ["aiohttp", "aiosqlite", "anthropic", "apscheduler", "asyncpg", "bcrypt", "boto3", "colorlog", "fsspec", "future", "google-auth", "google-auth-oauthlib", "google-genai", "graspologic", "gunicorn", "hatchet-sdk", "litellm", "networkx", "ollama", "psutil", "pydantic", "pyjwt", "pynacl", "python-multipart", "pyyaml", "sendgrid", "sentry-sdk", "sqlalchemy", "supabase", "tiktoken", "tokenizers", "unstructured-client", "uvicorn", "vecs"]
 ingestion-bundle = ["aioshutil", "beautifulsoup4", "docutils", "epub", "extract-msg", "markdown", "numpy", "olefile", "openpyxl", "orgparse", "pdf2image", "pillow-heif", "pypdf", "pypdf2", "python-docx", "python-pptx", "striprtf", "xlrd"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "a93a6ee60b7b68f73f0bee509bd74dd3860c5e2fae161f937dd02c799c510bc9"
+content-hash = "ba5741ace7432a8555025ad61f32872484543c01c091eac7abcbe6fc9a53a8fd"
