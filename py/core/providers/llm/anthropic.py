@@ -100,7 +100,6 @@ class AnthropicCompletionProvider(CompletionProvider):
         #         "AnthropicCompletionProvider must be used with provider='anthropic'."
         #     )
 
-
         # Create sync + async clients
         self.client = Anthropic()  # for sync calls
         self.async_client = AsyncAnthropic()  # for async calls
@@ -345,7 +344,6 @@ class AnthropicCompletionProvider(CompletionProvider):
                 model_name = args.get("model", "anthropic/claude-2")
 
                 async for event in stream:
-
                     # Process the event(s) in a shared function
                     chunks = self._process_stream_event(
                         event=event,

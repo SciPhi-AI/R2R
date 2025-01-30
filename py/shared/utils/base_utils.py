@@ -120,8 +120,7 @@ def format_search_results_for_llm(results: AggregateSearchResult) -> str:
                 formatted_results.append(f"Summary: {summary}")
 
             # Then each chunk inside:
-            for i, ch in enumerate(chunks, start=1):
-                chunk_text = ch.get("text", "")
+            for i, chunk_text in enumerate(chunks, start=1):
                 formatted_results.append(f"Chunk {i}: {chunk_text}")
 
             source_counter += 1

@@ -139,7 +139,6 @@ class R2RStreamingAgent(R2RAgent):
                 messages_list,
                 generation_config,
             )
-            print("getting streaming response....")
             async for proc_chunk in self.process_llm_response(
                 stream, *args, **kwargs
             ):
@@ -168,8 +167,20 @@ class R2RStreamingAgent(R2RAgent):
         content_buffer = ""
         function_arguments = ""
 
+        inside_thoughts = False
         async for chunk in stream:
             delta = chunk.choices[0].delta
+            if delta.content and delta.content.count(
+                "<Thoughts>"
+            ) > delta.content.count("</Thoughts>"):
+                inside_thoughts = True
+            elif (
+                delta.content
+                and inside_thoughts
+                and delta.content.count("</Thoughts>")
+                > delta.content.count("<Thoughts>")
+            ):
+                inside_thoughts = False
             finish_reason = chunk.choices[0].finish_reason
 
             # 1) Handle interleaved tool_calls
@@ -203,8 +214,6 @@ class R2RStreamingAgent(R2RAgent):
 
             # 3) Handle normal content
             elif delta.content:
-                if not content_buffer:
-                    yield "<completion>"
                 content_buffer += delta.content
                 yield delta.content
 
@@ -235,6 +244,14 @@ class R2RStreamingAgent(R2RAgent):
                 await self.conversation.add_message(assistant_msg)
 
                 # Execute tool calls in parallel
+                for idx, tool_call in pending_tool_calls.items():
+                    if inside_thoughts:
+                        yield "</Thoughts>"
+                    yield "<Thoughts>"
+                    yield f"Calling function: {tool_call['name']}, with payload `{tool_call['arguments']}..."
+                    yield "</Thoughts>"
+                    if inside_thoughts:
+                        yield "<Thoughts>"
                 async_calls = [
                     self.handle_function_or_tool_call(
                         call_info["name"],
@@ -245,19 +262,7 @@ class R2RStreamingAgent(R2RAgent):
                     )
                     for idx, call_info in pending_tool_calls.items()
                 ]
-                results = await asyncio.gather(*async_calls)
-
-                # Yield tool call results
-                for idx, tool_result in zip(sorted_indexes, results):
-                    call_info = pending_tool_calls[idx]
-                    yield "<tool_call>"
-                    yield f"<name>{call_info['name']}</name>"
-                    yield f"<arguments>{call_info['arguments']}</arguments>"
-                    if tool_result.stream_result:
-                        yield f"<results>{tool_result.stream_result}</results>"
-                    else:
-                        yield f"<results>{tool_result.llm_formatted_result}</results>"
-                    yield "</tool_call>"
+                await asyncio.gather(*async_calls)
 
                 # Clear the tool call state
                 pending_tool_calls.clear()
@@ -296,7 +301,6 @@ class R2RStreamingAgent(R2RAgent):
                     return
 
                 self._completed = True
-                yield "</completion>"
 
         # If the stream ends without `finish_reason=stop`
         if not self._completed and content_buffer:
@@ -304,7 +308,6 @@ class R2RStreamingAgent(R2RAgent):
                 Message(role="assistant", content=content_buffer)
             )
             self._completed = True
-            yield "</completion>"
 
         # After the stream ends
         if content_buffer and not self._completed:
@@ -312,4 +315,3 @@ class R2RStreamingAgent(R2RAgent):
                 Message(role="assistant", content=content_buffer)
             )
             self._completed = True
-            yield "</completion>"

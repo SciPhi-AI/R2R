@@ -332,8 +332,10 @@ class RAGAgentMixin:
         self, results: AggregateSearchResult
     ) -> str:
         context = format_search_results_for_llm(results)
-        context_tokens = num_tokens(context)
-        frac_to_return = self.max_tool_context_length / num_tokens(context)
+        context_tokens = num_tokens(context) + 1
+        frac_to_return = self.max_tool_context_length / (
+            num_tokens(context) + 1
+        )
 
         if frac_to_return > 1:
             return context
