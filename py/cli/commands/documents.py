@@ -362,7 +362,7 @@ def create_collection_table(collections):
     return table
 
 
-async def ingest_files_from_urls(client: R2RAsyncClient, urls: list[str]):
+async def ingest_files_from_urls(client: R2RAsyncClient, urls: _list[str]):
     """Download and ingest files from given URLs."""
     files_to_ingest = []
     metadatas = []
