@@ -55,7 +55,9 @@ async def retrieve(ctx: click.Context, index_name: str, table_name: str):
 
     try:
         with timer():
-            response = await client.indices.retrieve(index_name=index_name, table_name=table_name)
+            response = await client.indices.retrieve(
+                index_name=index_name, table_name=table_name
+            )
         click.echo(json.dumps(response, indent=2))
     except R2RException as e:
         click.echo(f"R2R error: {str(e)}", err=True)
@@ -74,9 +76,13 @@ async def delete(ctx: click.Context, index_name: str, table_name: str):
     try:
         # Assuming that the delete operation should be performed here
         with timer():
-            response = await client.indices.delete(index_name=index_name, table_name=table_name)
+            response = await client.indices.delete(
+                index_name=index_name, table_name=table_name
+            )
 
-        click.echo(f"Successfully deleted index '{index_name}' from table '{table_name}'.")
+        click.echo(
+            f"Successfully deleted index '{index_name}' from table '{table_name}'."
+        )
     except R2RException as e:
         click.echo(f"R2R error: {str(e)}", err=True)
     except Exception as e:

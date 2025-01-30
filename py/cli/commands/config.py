@@ -8,18 +8,22 @@ from rich.table import Table
 
 console = Console()
 
+
 def get_config_dir() -> Path:
     """Create and return the configuration directory path."""
     config_dir = Path.home() / ".r2r"
     config_dir.mkdir(exist_ok=True)
     return config_dir
 
+
 def get_config_file() -> Path:
     """Get the configuration file path."""
     return get_config_dir() / "config.ini"
 
+
 class Config:
     """Singleton class to manage application configuration."""
+
     _instance = None
     _config = configparser.ConfigParser()
     _config_file = get_config_file()
@@ -51,13 +55,17 @@ class Config:
         cls._config[service].update(credentials)
         cls.save()
 
+
 @click.group()
 def configure() -> None:
     """Configuration management commands."""
     pass
 
+
 @configure.command()
-@click.confirmation_option(prompt="Are you sure you want to reset all settings?")
+@click.confirmation_option(
+    prompt="Are you sure you want to reset all settings?"
+)
 async def reset() -> None:
     """Reset all configuration to defaults."""
     if Config._config_file.exists():
@@ -67,7 +75,10 @@ async def reset() -> None:
     # Set default values
     Config.set_credentials("Base URL", {"base_url": "http://localhost:7272"})
 
-    console.print("[green]Successfully reset configuration to defaults[/green]")
+    console.print(
+        "[green]Successfully reset configuration to defaults[/green]"
+    )
+
 
 @configure.command()
 @click.option(
@@ -79,7 +90,10 @@ async def reset() -> None:
 async def key(api_key: str) -> None:
     """Configure SciPhi cloud API credentials."""
     Config.set_credentials("SciPhi", {"api_key": api_key})
-    console.print("[green]Successfully configured SciPhi cloud credentials[/green]")
+    console.print(
+        "[green]Successfully configured SciPhi cloud credentials[/green]"
+    )
+
 
 @configure.command()
 @click.option(
@@ -92,6 +106,7 @@ async def host(base_url: str) -> None:
     """Configure R2R host URL."""
     Config.set_credentials("Host", {"R2R_HOST": base_url})
     console.print("[green]Successfully configured R2R host URL[/green]")
+
 
 @configure.command()
 async def view() -> None:
@@ -109,30 +124,45 @@ async def view() -> None:
     )
 
     # Define table columns
-    table.add_column("Section", justify="left", style="bright_yellow", no_wrap=True)
-    table.add_column("Key", justify="left", style="bright_magenta", no_wrap=True)
-    table.add_column("Value", justify="left", style="bright_green", no_wrap=True)
+    table.add_column(
+        "Section", justify="left", style="bright_yellow", no_wrap=True
+    )
+    table.add_column(
+        "Key", justify="left", style="bright_magenta", no_wrap=True
+    )
+    table.add_column(
+        "Value", justify="left", style="bright_green", no_wrap=True
+    )
 
     # Group related configurations together
     config_groups = {
         "API Credentials": ["SciPhi"],
-        "Server Settings": ["Base URL", "Port"]
+        "Server Settings": ["Base URL", "Port"],
     }
 
     for group_name, sections in config_groups.items():
         if any(section in Config._config for section in sections):
-            table.add_row(f"[bold]{group_name}[/bold]", "", "", style="bright_blue")
+            table.add_row(
+                f"[bold]{group_name}[/bold]", "", "", style="bright_blue"
+            )
 
             for section in sections:
                 if section in Config._config:
                     for key, value in Config._config[section].items():
                         # Mask API keys for security
-                        displayed_value = f"****{value[-4:]}" if "api_key" in key.lower() else value
-                        table.add_row(f"  {section}", key.lower(), displayed_value)
+                        displayed_value = (
+                            f"****{value[-4:]}"
+                            if "api_key" in key.lower()
+                            else value
+                        )
+                        table.add_row(
+                            f"  {section}", key.lower(), displayed_value
+                        )
 
     console.print("\n")
     console.print(table)
     console.print("\n")
+
 
 if __name__ == "__main__":
     configure()

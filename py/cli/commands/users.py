@@ -25,7 +25,9 @@ async def create(ctx: click.Context, email: str, password: str):
 
     try:
         with timer():
-            response = await client.users.create(email=email, password=password)
+            response = await client.users.create(
+                email=email, password=password
+            )
         click.echo(json.dumps(response, indent=2))
     except R2RException as e:
         click.echo(f"Error creating user: {str(e)}", err=True)
@@ -35,17 +37,28 @@ async def create(ctx: click.Context, email: str, password: str):
 
 @users.command()
 @click.option("--ids", multiple=True, type=str, help="Document IDs to fetch.")
-@click.option("--offset", default=0, type=int, help="Offset to start from (default: 0).")
-@click.option("--limit", default=100, type=int, help="Maximum number of users to return (default: 100).")
+@click.option(
+    "--offset", default=0, type=int, help="Offset to start from (default: 0)."
+)
+@click.option(
+    "--limit",
+    default=100,
+    type=int,
+    help="Maximum number of users to return (default: 100).",
+)
 @pass_context
-async def list(ctx: click.Context, ids: tuple[str, ...], offset: int, limit: int):
+async def list(
+    ctx: click.Context, ids: tuple[str, ...], offset: int, limit: int
+):
     """Get an overview of users."""
     uuids: _list[UUID] = [UUID(id_) for id_ in ids] if ids else None
     client: R2RAsyncClient = ctx.obj
 
     try:
         with timer():
-            response = await client.users.list(ids=uuids, offset=offset, limit=limit)
+            response = await client.users.list(
+                ids=uuids, offset=offset, limit=limit
+            )
 
         for user in response.get("results", []):
             click.echo(json.dumps(user, indent=2))
@@ -90,21 +103,34 @@ async def me(ctx: click.Context):
 
 @users.command()
 @click.argument("id", type=str, required=True)
-@click.option("--offset", default=0, type=int, help="Offset to start from (default: 0).")
-@click.option("--limit", default=100, type=int, help="Maximum number of collections to return (default: 100).")
+@click.option(
+    "--offset", default=0, type=int, help="Offset to start from (default: 0)."
+)
+@click.option(
+    "--limit",
+    default=100,
+    type=int,
+    help="Maximum number of collections to return (default: 100).",
+)
 @pass_context
-async def list_collections(ctx: click.Context, id: str, offset: int, limit: int):
+async def list_collections(
+    ctx: click.Context, id: str, offset: int, limit: int
+):
     """List collections for a specific user."""
     client: R2RAsyncClient = ctx.obj
 
     try:
         with timer():
-            response = await client.users.list_collections(id=id, offset=offset, limit=limit)
+            response = await client.users.list_collections(
+                id=id, offset=offset, limit=limit
+            )
 
         for collection in response.get("results", []):
             click.echo(json.dumps(collection, indent=2))
     except R2RException as e:
-        click.echo(f"Error listing collections for user ID {id}: {str(e)}", err=True)
+        click.echo(
+            f"Error listing collections for user ID {id}: {str(e)}", err=True
+        )
     except Exception as e:
         click.echo(f"An unexpected error occurred: {e}", err=True)
 
@@ -119,10 +145,15 @@ async def add_to_collection(ctx: click.Context, id: str, collection_id: str):
 
     try:
         with timer():
-            response = await client.users.add_to_collection(id=id, collection_id=collection_id)
+            response = await client.users.add_to_collection(
+                id=id, collection_id=collection_id
+            )
         click.echo(json.dumps(response, indent=2))
     except R2RException as e:
-        click.echo(f"Error adding user ID {id} to collection ID {collection_id}: {str(e)}", err=True)
+        click.echo(
+            f"Error adding user ID {id} to collection ID {collection_id}: {str(e)}",
+            err=True,
+        )
     except Exception as e:
         click.echo(f"An unexpected error occurred: {e}", err=True)
 
@@ -131,15 +162,22 @@ async def add_to_collection(ctx: click.Context, id: str, collection_id: str):
 @click.argument("id", type=str, required=True)
 @click.argument("collection_id", type=str, required=True)
 @pass_context
-async def remove_from_collection(ctx: click.Context, id: str, collection_id: str):
+async def remove_from_collection(
+    ctx: click.Context, id: str, collection_id: str
+):
     """Remove a user from a specific collection."""
     client: R2RAsyncClient = ctx.obj
 
     try:
         with timer():
-            response = await client.users.remove_from_collection(id=id, collection_id=collection_id)
+            response = await client.users.remove_from_collection(
+                id=id, collection_id=collection_id
+            )
         click.echo(json.dumps(response, indent=2))
     except R2RException as e:
-        click.echo(f"Error removing user ID {id} from collection ID {collection_id}: {str(e)}", err=True)
+        click.echo(
+            f"Error removing user ID {id} from collection ID {collection_id}: {str(e)}",
+            err=True,
+        )
     except Exception as e:
         click.echo(f"An unexpected error occurred: {e}", err=True)

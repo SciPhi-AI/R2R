@@ -18,72 +18,85 @@ def retrieval():
 @click.option(
     "--query",
     prompt="Enter your search query",
-    help="The search query to perform the retrieval."
+    help="The search query to perform the retrieval.",
 )
 @click.option(
     "--limit",
     default=None,
-    help="Specify the maximum number of search results to return."
+    help="Specify the maximum number of search results to return.",
 )
 @click.option(
     "--use-hybrid-search",
     default=None,
-    help="Enable hybrid search, combining both semantic and fulltext search."
+    help="Enable hybrid search, combining both semantic and fulltext search.",
 )
 @click.option(
     "--use-semantic-search",
     default=None,
-    help="Enable semantic search for more contextual results."
+    help="Enable semantic search for more contextual results.",
 )
 @click.option(
     "--use-fulltext-search",
     default=None,
-    help="Enable fulltext search for exact matches."
+    help="Enable fulltext search for exact matches.",
 )
 @click.option(
     "--filters",
     type=JSON,
     help="""Apply filters to the vector search in JSON format.
-    Example: --filters='{"document_id":{"$in":["doc_id_1", "doc_id_2"]}}'"""
+    Example: --filters='{"document_id":{"$in":["doc_id_1", "doc_id_2"]}}'""",
 )
 @click.option(
     "--search-strategy",
     type=str,
     default="vanilla",
-    help="Specify the search strategy (e.g., vanilla RAG or advanced methods like query fusion or HyDE)."
+    help="Specify the search strategy (e.g., vanilla RAG or advanced methods like query fusion or HyDE).",
 )
 @click.option(
     "--graph-search-enabled",
     default=None,
-    help="Enable knowledge graph search."
+    help="Enable knowledge graph search.",
 )
 @click.option(
     "--chunk-search-enabled",
     default=None,
-    help="Enable search over document chunks."
+    help="Enable search over document chunks.",
 )
 @pass_context
 async def search(ctx: click.Context, query, **kwargs):
     """Perform a search query with the specified parameters."""
     search_settings = {
-        k: v for k, v in kwargs.items()
-        if k in [
-            "filters", "limit", "search_strategy",
-            "use_hybrid_search", "use_semantic_search",
-            "use_fulltext_search"] and v is not None
+        k: v
+        for k, v in kwargs.items()
+        if k
+        in [
+            "filters",
+            "limit",
+            "search_strategy",
+            "use_hybrid_search",
+            "use_semantic_search",
+            "use_fulltext_search",
+        ]
+        and v is not None
     }
 
     # Enable graph and chunk search if specified
     if kwargs.get("graph_search_enabled") is not None:
-        search_settings["graph_settings"] = {"enabled": kwargs["graph_search_enabled"]}
+        search_settings["graph_settings"] = {
+            "enabled": kwargs["graph_search_enabled"]
+        }
     if kwargs.get("chunk_search_enabled") is not None:
-        search_settings["chunk_settings"] = {"enabled": kwargs["chunk_search_enabled"]}
+        search_settings["chunk_settings"] = {
+            "enabled": kwargs["chunk_search_enabled"]
+        }
 
     client: R2RAsyncClient = ctx.obj
 
     try:
         with timer():
-            results = await client.retrieval.search(query, "custom", search_settings)
+            results = await client.retrieval.search(
+                query, "custom", search_settings
+            )
 
             # Extract results and handle output
             if isinstance(results, dict) and "results" in results:
@@ -96,7 +109,10 @@ async def search(ctx: click.Context, query, **kwargs):
                     click.echo(json.dumps(result, indent=2))
 
             # Display graph search results if available
-            if "graph_search_results" in results and results["graph_search_results"]:
+            if (
+                "graph_search_results" in results
+                and results["graph_search_results"]
+            ):
                 click.echo("KG search results:")
                 for result in results["graph_search_results"]:
                     click.echo(json.dumps(result, indent=2))
@@ -110,52 +126,52 @@ async def search(ctx: click.Context, query, **kwargs):
 @click.option(
     "--query",
     prompt="Enter your search query",
-    help="The search query for RAG."
+    help="The search query for RAG.",
 )
 @click.option(
     "--limit",
     default=None,
-    help="Specify the number of search results to return."
+    help="Specify the number of search results to return.",
 )
 @click.option(
     "--use-hybrid-search",
     default=None,
-    help="Enable hybrid search, combining both semantic and fulltext search."
+    help="Enable hybrid search, combining both semantic and fulltext search.",
 )
 @click.option(
-    "--use-semantic-search",
-    default=None,
-    help="Enable semantic search."
+    "--use-semantic-search", default=None, help="Enable semantic search."
 )
 @click.option(
-    "--use-fulltext-search",
-    default=None,
-    help="Enable fulltext search."
+    "--use-fulltext-search", default=None, help="Enable fulltext search."
 )
 @click.option(
     "--filters",
     type=JSON,
     help="""Apply filters to the vector search in JSON format.
-    Example: --filters='{"document_id":{"$in":["doc_id_1", "doc_id_2"]}}'"""
+    Example: --filters='{"document_id":{"$in":["doc_id_1", "doc_id_2"]}}'""",
 )
 @click.option(
     "--search-strategy",
     type=str,
     default="vanilla",
-    help="Specify the search strategy for RAG."
+    help="Specify the search strategy for RAG.",
 )
 @click.option(
     "--graph-search-enabled",
     default=None,
-    help="Enable knowledge graph search."
+    help="Enable knowledge graph search.",
 )
 @click.option(
     "--chunk-search-enabled",
     default=None,
-    help="Enable search over document chunks."
+    help="Enable search over document chunks.",
 )
-@click.option("--stream", is_flag=True, help="Stream the RAG response in real-time.")
-@click.option("--rag-model", default=None, help="Specify the model to use for RAG.")
+@click.option(
+    "--stream", is_flag=True, help="Stream the RAG response in real-time."
+)
+@click.option(
+    "--rag-model", default=None, help="Specify the model to use for RAG."
+)
 @pass_context
 async def rag(ctx: click.Context, query, **kwargs):
     """Perform a RAG query with the specified parameters."""
@@ -168,18 +184,29 @@ async def rag(ctx: click.Context, query, **kwargs):
 
     # Prepare search settings similar to the search command
     search_settings = {
-        k: v for k, v in kwargs.items()
-        if k in [
-            "filters", "limit", "search_strategy",
-            "use_hybrid_search", "use_semantic_search",
-            "use_fulltext_search"] and v is not None
+        k: v
+        for k, v in kwargs.items()
+        if k
+        in [
+            "filters",
+            "limit",
+            "search_strategy",
+            "use_hybrid_search",
+            "use_semantic_search",
+            "use_fulltext_search",
+        ]
+        and v is not None
     }
 
     # Enable graph and chunk search if specified
     if kwargs.get("graph_search_enabled") is not None:
-        search_settings["graph_settings"] = {"enabled": kwargs["graph_search_enabled"]}
+        search_settings["graph_settings"] = {
+            "enabled": kwargs["graph_search_enabled"]
+        }
     if kwargs.get("chunk_search_enabled") is not None:
-        search_settings["chunk_settings"] = {"enabled": kwargs["chunk_search_enabled"]}
+        search_settings["chunk_settings"] = {
+            "enabled": kwargs["chunk_search_enabled"]
+        }
 
     client: R2RAsyncClient = ctx.obj
 
@@ -197,7 +224,9 @@ async def rag(ctx: click.Context, query, **kwargs):
                     click.echo(chunk, nl=False)
                 click.echo()
             else:
-                click.echo(json.dumps(response["results"]["completion"], indent=2))
+                click.echo(
+                    json.dumps(response["results"]["completion"], indent=2)
+                )
     except R2RException as e:
         click.echo(f"R2R Error: {str(e)}", err=True)
     except Exception as e:

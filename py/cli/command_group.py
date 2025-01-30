@@ -31,10 +31,7 @@ def load_config() -> dict[str, Any]:
     try:
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-            # Ensure we always have a dict
-            if not isinstance(data, dict):
-                return {}
-            return data
+            return data if isinstance(data, dict) else {}
     except (IOError, json.JSONDecodeError):
         return {}
 

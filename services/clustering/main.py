@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 import networkx as nx
 from fastapi import FastAPI, HTTPException
@@ -30,7 +29,7 @@ class LeidenParams(BaseModel):
     weight_attribute: str = Field("weight", description="Attribute to use as weight")
 
 class ClusterRequest(BaseModel):
-    relationships: List[Relationship] = Field(..., description="List of relationships to create the graph")
+    relationships: list[Relationship] = Field(..., description="List of relationships to create the graph")
     leiden_params: LeidenParams = Field(..., description="Parameters for the Leiden algorithm")
 
 class CommunityAssignment(BaseModel):
@@ -39,7 +38,7 @@ class CommunityAssignment(BaseModel):
     level: int = Field(..., description="Hierarchical level of the cluster")
 
 class ClusterResponse(BaseModel):
-    communities: List[CommunityAssignment] = Field(..., description="List of community assignments")
+    communities: list[CommunityAssignment] = Field(..., description="List of community assignments")
 
 # Endpoint for clustering the graph
 @app.post("/cluster", response_model=ClusterResponse)

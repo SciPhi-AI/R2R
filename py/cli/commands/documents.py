@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 from uuid import UUID
 
 import asyncclick as click
+import requests
 from asyncclick import pass_context
 from rich.box import ROUNDED
 from rich.console import Console
@@ -25,10 +26,16 @@ def documents():
 
 
 @documents.command()
-@click.argument("file_paths", nargs=-1, required=True, type=click.Path(exists=True))
+@click.argument(
+    "file_paths", nargs=-1, required=True, type=click.Path(exists=True)
+)
 @click.option("--ids", multiple=True, help="Document IDs for ingestion")
-@click.option("--metadatas", type=JSON, help="Metadatas for ingestion as a JSON string")
-@click.option("--run-without-orchestration", is_flag=True, help="Run with orchestration")
+@click.option(
+    "--metadatas", type=JSON, help="Metadatas for ingestion as a JSON string"
+)
+@click.option(
+    "--run-without-orchestration", is_flag=True, help="Run with orchestration"
+)
 @pass_context
 async def create(
     ctx: click.Context,
@@ -44,7 +51,9 @@ async def create(
 
     for idx, file_path in enumerate(file_paths):
         current_id = ids[idx] if ids and idx < len(ids) else None
-        current_metadata = metadatas[idx] if metadatas and idx < len(metadatas) else None
+        current_metadata = (
+            metadatas[idx] if metadatas and idx < len(metadatas) else None
+        )
 
         click.echo(f"Processing file {idx + 1}/{len(file_paths)}: {file_path}")
         try:
@@ -61,15 +70,23 @@ async def create(
         except R2RException as e:
             click.echo(f"[bold red]Error:[/bold red] {str(e)}", err=True)
         except Exception as e:
-            click.echo(f"[bold red]Unexpected error:[/bold red] {str(e)}", err=True)
+            click.echo(
+                f"[bold red]Unexpected error:[/bold red] {str(e)}", err=True
+            )
 
     click.echo(f"\nProcessed {len(responses)} files successfully.")
 
 
 @documents.command()
 @click.option("--ids", multiple=True, help="Document IDs to fetch")
-@click.option("--offset", default=0, help="The offset to start from. Defaults to 0.")
-@click.option("--limit", default=100, help="The maximum number of nodes to return. Defaults to 100.")
+@click.option(
+    "--offset", default=0, help="The offset to start from. Defaults to 0."
+)
+@click.option(
+    "--limit",
+    default=100,
+    help="The maximum number of nodes to return. Defaults to 100.",
+)
 @pass_context
 async def list(
     ctx: click.Context,
@@ -84,12 +101,16 @@ async def list(
 
     try:
         with timer():
-            response = await client.documents.list(ids=ids, offset=offset, limit=limit)
+            response = await client.documents.list(
+                ids=ids, offset=offset, limit=limit
+            )
 
         table = create_document_table(response["results"])
         console.print("\n")
         console.print(table)
-        console.print(f"\n[dim]Showing {len(response['results'])} documents (offset: {offset}, limit: {limit})[/dim]")
+        console.print(
+            f"\n[dim]Showing {len(response['results'])} documents (offset: {offset}, limit: {limit})[/dim]"
+        )
     except R2RException as e:
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
     except Exception as e:
@@ -184,7 +205,9 @@ def create_metadata_table(document):
         metadata_table.add_row(field, str(value))
 
     if "metadata" in document:
-        metadata_table.add_row("[bold]Metadata[/bold]", "", style="bright_blue")
+        metadata_table.add_row(
+            "[bold]Metadata[/bold]", "", style="bright_blue"
+        )
         for key, value in document["metadata"].items():
             metadata_table.add_row(f"  {key}", str(value))
 
@@ -208,13 +231,21 @@ async def delete(ctx: click.Context, id: str):
     except R2RException as e:
         click.echo(f"[bold red]Error:[/bold red] {str(e)}", err=True)
     except Exception as e:
-        click.echo(f"[bold red]Unexpected error:[/bold red] {str(e)}", err=True)
+        click.echo(
+            f"[bold red]Unexpected error:[/bold red] {str(e)}", err=True
+        )
 
 
 @documents.command()
 @click.argument("id", required=True, type=str)
-@click.option("--offset", default=0, help="The offset to start from. Defaults to 0.")
-@click.option("--limit", default=100, help="The maximum number of nodes to return. Defaults to 100.")
+@click.option(
+    "--offset", default=0, help="The offset to start from. Defaults to 0."
+)
+@click.option(
+    "--limit",
+    default=100,
+    help="The maximum number of nodes to return. Defaults to 100.",
+)
 @pass_context
 async def list_chunks(ctx: click.Context, id: str, offset: int, limit: int):
     """List chunks for a specific document."""
@@ -223,12 +254,16 @@ async def list_chunks(ctx: click.Context, id: str, offset: int, limit: int):
 
     try:
         with timer():
-            response = await client.documents.list_chunks(id=id, offset=offset, limit=limit)
+            response = await client.documents.list_chunks(
+                id=id, offset=offset, limit=limit
+            )
 
         table = create_chunk_table(response["results"])
         console.print("\n")
         console.print(table)
-        console.print(f"\n[dim]Showing {len(response['results'])} chunks (offset: {offset}, limit: {limit})[/dim]")
+        console.print(
+            f"\n[dim]Showing {len(response['results'])} chunks (offset: {offset}, limit: {limit})[/dim]"
+        )
     except R2RException as e:
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
     except Exception as e:
@@ -252,7 +287,11 @@ def create_chunk_table(chunks):
     table.add_column("Text", style="bright_white")
 
     for chunk in chunks:  # type: ignore
-        text_preview = (chunk.get("text", "")[:200] + "...") if len(chunk.get("text", "")) > 200 else chunk.get("text", "")
+        text_preview = (
+            (chunk.get("text", "")[:200] + "...")
+            if len(chunk.get("text", "")) > 200
+            else chunk.get("text", "")
+        )
         table.add_row(chunk.get("id", ""), text_preview)
 
     return table
@@ -260,22 +299,34 @@ def create_chunk_table(chunks):
 
 @documents.command()
 @click.argument("id", required=True, type=str)
-@click.option("--offset", default=0, help="The offset to start from. Defaults to 0.")
-@click.option("--limit", default=100, help="The maximum number of nodes to return. Defaults to 100.")
+@click.option(
+    "--offset", default=0, help="The offset to start from. Defaults to 0."
+)
+@click.option(
+    "--limit",
+    default=100,
+    help="The maximum number of nodes to return. Defaults to 100.",
+)
 @pass_context
-async def list_collections(ctx: click.Context, id: str, offset: int, limit: int):
+async def list_collections(
+    ctx: click.Context, id: str, offset: int, limit: int
+):
     """List collections for a specific document."""
     client: R2RAsyncClient = ctx.obj
     console = Console()
 
     try:
         with timer():
-            response = await client.documents.list_collections(id=id, offset=offset, limit=limit)
+            response = await client.documents.list_collections(
+                id=id, offset=offset, limit=limit
+            )
 
         table = create_collection_table(response["results"])
         console.print("\n")
         console.print(table)
-        console.print(f"\n[dim]Showing {len(response['results'])} collections (offset: {offset}, limit: {limit})[/dim]")
+        console.print(
+            f"\n[dim]Showing {len(response['results'])} collections (offset: {offset}, limit: {limit})[/dim]"
+        )
     except R2RException as e:
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
     except Exception as e:
@@ -311,7 +362,7 @@ def create_collection_table(collections):
     return table
 
 
-async def ingest_files_from_urls(client: R2RAsyncClient, urls: list[str]):
+async def ingest_files_from_urls(client: R2RAsyncClient, urls: _list[str]):
     """Download and ingest files from given URLs."""
     files_to_ingest = []
     metadatas = []
@@ -323,7 +374,11 @@ async def ingest_files_from_urls(client: R2RAsyncClient, urls: list[str]):
             filename = os.path.basename(urlparse(url).path)
             is_pdf = filename.lower().endswith(".pdf")
 
-            with tempfile.NamedTemporaryFile(mode="wb" if is_pdf else "w+", delete=False, suffix=f"_{filename}") as temp_file:
+            with tempfile.NamedTemporaryFile(
+                mode="wb" if is_pdf else "w+",
+                delete=False,
+                suffix=f"_{filename}",
+            ) as temp_file:
                 temp_files.append(temp_file)
 
                 response = requests.get(url)
@@ -339,7 +394,9 @@ async def ingest_files_from_urls(client: R2RAsyncClient, urls: list[str]):
 
         for it, file in enumerate(files_to_ingest):
             click.echo(f"Ingesting file: {file}")
-            response = await client.documents.create(file, metadata=metadatas[it], id=document_ids[it])
+            response = await client.documents.create(
+                file, metadata=metadatas[it], id=document_ids[it]
+            )
 
         return response["results"]
 
@@ -352,51 +409,102 @@ async def ingest_files_from_urls(client: R2RAsyncClient, urls: list[str]):
 @documents.command()
 @click.argument("id", required=True, type=str)
 @click.option("--settings", type=JSON, help="Extraction settings as JSON")
-@click.option("--run-without-orchestration", is_flag=True, help="Run without orchestration")
+@click.option(
+    "--run-without-orchestration",
+    is_flag=True,
+    help="Run without orchestration",
+)
 @pass_context
-async def extract(ctx: click.Context, id: str, settings: Optional[dict], run_without_orchestration: bool = False):
+async def extract(
+    ctx: click.Context,
+    id: str,
+    settings: Optional[dict],
+    run_without_orchestration: bool = False,
+):
     """Extract entities and relationships from a document."""
     client: R2RAsyncClient = ctx.obj
     run_with_orchestration = not run_without_orchestration
 
     try:
         with timer():
-            response = await client.documents.extract(id=id, settings=settings, run_with_orchestration=run_with_orchestration)
+            response = await client.documents.extract(
+                id=id,
+                settings=settings,
+                run_with_orchestration=run_with_orchestration,
+            )
         click.echo(json.dumps(response, indent=2))
     except R2RException as e:
         click.echo(f"[bold red]Error:[/bold red] {str(e)}", err=True)
     except Exception as e:
-        click.echo(f"[bold red]Unexpected error:[/bold red] {str(e)}", err=True)
+        click.echo(
+            f"[bold red]Unexpected error:[/bold red] {str(e)}", err=True
+        )
 
 
 @documents.command()
 @click.argument("id", required=True, type=str)
-@click.option("--offset", default=0, help="The offset to start from. Defaults to 0.")
-@click.option("--limit", default=100, help="The maximum number of items to return. Defaults to 100.")
-@click.option("--include-embeddings", is_flag=True, help="Include embeddings in response")
+@click.option(
+    "--offset", default=0, help="The offset to start from. Defaults to 0."
+)
+@click.option(
+    "--limit",
+    default=100,
+    help="The maximum number of items to return. Defaults to 100.",
+)
+@click.option(
+    "--include-embeddings", is_flag=True, help="Include embeddings in response"
+)
 @pass_context
-async def list_entities(ctx: click.Context, id: str, offset: int, limit: int, include_embeddings: bool):
+async def list_entities(
+    ctx: click.Context,
+    id: str,
+    offset: int,
+    limit: int,
+    include_embeddings: bool,
+):
     """List entities extracted from a document."""
     client: R2RAsyncClient = ctx.obj
 
     try:
         with timer():
-            response = await client.documents.list_entities(id=id, offset=offset, limit=limit, include_embeddings=include_embeddings)
+            response = await client.documents.list_entities(
+                id=id,
+                offset=offset,
+                limit=limit,
+                include_embeddings=include_embeddings,
+            )
         click.echo(json.dumps(response, indent=2))
     except R2RException as e:
         click.echo(f"[bold red]Error:[/bold red] {str(e)}", err=True)
     except Exception as e:
-        click.echo(f"[bold red]Unexpected error:[/bold red] {str(e)}", err=True)
+        click.echo(
+            f"[bold red]Unexpected error:[/bold red] {str(e)}", err=True
+        )
 
 
 @documents.command()
 @click.argument("id", required=True, type=str)
-@click.option("--offset", default=0, help="The offset to start from. Defaults to 0.")
-@click.option("--limit", default=100, help="The maximum number of items to return. Defaults to 100.")
+@click.option(
+    "--offset", default=0, help="The offset to start from. Defaults to 0."
+)
+@click.option(
+    "--limit",
+    default=100,
+    help="The maximum number of items to return. Defaults to 100.",
+)
 @click.option("--entity-names", multiple=True, help="Filter by entity names")
-@click.option("--relationship-types", multiple=True, help="Filter by relationship types")
+@click.option(
+    "--relationship-types", multiple=True, help="Filter by relationship types"
+)
 @pass_context
-async def list_relationships(ctx: click.Context, id: str, offset: int, limit: int, entity_names: Optional[tuple[str, ...]], relationship_types: Optional[tuple[str, ...]]):
+async def list_relationships(
+    ctx: click.Context,
+    id: str,
+    offset: int,
+    limit: int,
+    entity_names: Optional[tuple[str, ...]],
+    relationship_types: Optional[tuple[str, ...]],
+):
     """List relationships extracted from a document."""
     client: R2RAsyncClient = ctx.obj
 
@@ -407,13 +515,17 @@ async def list_relationships(ctx: click.Context, id: str, offset: int, limit: in
                 offset=offset,
                 limit=limit,
                 entity_names=list(entity_names) if entity_names else None,
-                relationship_types=list(relationship_types) if relationship_types else None,
+                relationship_types=(
+                    list(relationship_types) if relationship_types else None
+                ),
             )
         click.echo(json.dumps(response, indent=2))
     except R2RException as e:
         click.echo(f"[bold red]Error:[/bold red] {str(e)}", err=True)
     except Exception as e:
-        click.echo(f"[bold red]Unexpected error:[/bold red] {str(e)}", err=True)
+        click.echo(
+            f"[bold red]Unexpected error:[/bold red] {str(e)}", err=True
+        )
 
 
 @documents.command()
@@ -426,12 +538,15 @@ async def create_sample(ctx: click.Context) -> None:
     try:
         with timer():
             response = await ingest_files_from_urls(client, [sample_file_url])
-        click.echo(f"Sample file ingestion completed. Ingest files response:\n
-{response}")
+        click.echo(
+            f"Sample file ingestion completed. Ingest files response:\n{response}"
+        )
     except R2RException as e:
         click.echo(f"[bold red]Error:[/bold red] {str(e)}", err=True)
     except Exception as e:
-        click.echo(f"[bold red]Unexpected error:[/bold red] {str(e)}", err=True)
+        click.echo(
+            f"[bold red]Unexpected error:[/bold red] {str(e)}", err=True
+        )
 
 
 @documents.command()
@@ -454,9 +569,12 @@ async def create_samples(ctx: click.Context) -> None:
     try:
         with timer():
             response = await ingest_files_from_urls(client, urls)
-        click.echo(f"Sample files ingestion completed. Ingest files response:\n
-{response}")
+        click.echo(
+            f"Sample files ingestion completed. Ingest files response:\n{response}"
+        )
     except R2RException as e:
         click.echo(f"[bold red]Error:[/bold red] {str(e)}", err=True)
     except Exception as e:
-        click.echo(f"[bold red]Unexpected error:[/bold red] {str(e)}", err=True)
+        click.echo(
+            f"[bold red]Unexpected error:[/bold red] {str(e)}", err=True
+        )

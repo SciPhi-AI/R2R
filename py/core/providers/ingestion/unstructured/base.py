@@ -122,13 +122,19 @@ class UnstructuredIngestionProvider(IngestionProvider):
         self,
         config: UnstructuredIngestionConfig,
         database_provider: PostgresDatabaseProvider,
-        llm_provider: LiteLLMCompletionProvider | OpenAICompletionProvider | R2RCompletionProvider,
+        llm_provider: (
+            LiteLLMCompletionProvider
+            | OpenAICompletionProvider
+            | R2RCompletionProvider
+        ),
     ):
         super().__init__(config, database_provider, llm_provider)
         self.config: UnstructuredIngestionConfig = config
         self.database_provider: PostgresDatabaseProvider = database_provider
         self.llm_provider: (
-            LiteLLMCompletionProvider | OpenAICompletionProvider | R2RCompletionProvider
+            LiteLLMCompletionProvider
+            | OpenAICompletionProvider
+            | R2RCompletionProvider
         ) = llm_provider
 
         if config.provider == "unstructured_api":

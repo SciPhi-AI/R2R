@@ -137,7 +137,7 @@ class Agent(ABC):
         if (
             last_message["role"] in ["tool", "function"]
             and last_message["content"] != ""
-            and "ollama" in self.config.generation_config.model 
+            and "ollama" in self.config.generation_config.model
         ):
             return GenerationConfig(
                 **self.rag_generation_config.model_dump(
@@ -145,7 +145,7 @@ class Agent(ABC):
                 ),
                 stream=stream,
             )
-        
+
         return GenerationConfig(
             **self.rag_generation_config.model_dump(
                 exclude={"functions", "tools", "stream"}
