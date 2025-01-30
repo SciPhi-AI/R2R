@@ -22,7 +22,7 @@ batch_size = 256
 
 [embedding]
 provider = "litellm"
-base_model = "azure/text-embedding-3-small"
+base_model = "openai/text-embedding-3-small"
 base_dimension = 512
 
 [file]
