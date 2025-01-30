@@ -4,12 +4,12 @@ import logging
 import random
 import re
 import xml.etree.ElementTree as ET
-from typing import Any, AsyncGenerator, Callable, Optional, Tuple
+from typing import Any, AsyncGenerator, Callable, Optional
 
 import tiktoken
 from google.genai.errors import ServerError
 
-from core.agent import R2RAgent, R2RStreamingAgent
+from core.agent import R2RAgent, R2RStreamingAgent, R2RStreamingReasoningAgent
 from core.base import (
     format_search_results_for_llm,
     format_search_results_for_stream,
@@ -332,8 +332,10 @@ class RAGAgentMixin:
         self, results: AggregateSearchResult
     ) -> str:
         context = format_search_results_for_llm(results)
-        context_tokens = num_tokens(context)
-        frac_to_return = self.max_tool_context_length / num_tokens(context)
+        context_tokens = num_tokens(context) + 1
+        frac_to_return = self.max_tool_context_length / (
+            num_tokens(context) + 1
+        )
 
         if frac_to_return > 1:
             return context
@@ -436,27 +438,53 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
         )
 
 
-import asyncio
-import json
-import logging
-import xml.etree.ElementTree as ET
-from typing import Any, AsyncGenerator, Callable, Optional
+class R2RStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoningAgent):
+    """
+    Streaming-capable RAG Agent that supports local_search, content, web_search.
+    """
 
-from core.agent import R2RStreamingAgent
-from core.base.abstractions import (
-    AggregateSearchResult,
-    ContextDocumentResult,
-    GenerationConfig,
-    Message,
-    SearchSettings,
-)
-from core.base.agent import AgentConfig, Tool
-from core.base.providers import DatabaseProvider
+    def __init__(
+        self,
+        database_provider: DatabaseProvider,
+        llm_provider: (
+            AnthropicCompletionProvider
+            | LiteLLMCompletionProvider
+            | OpenAICompletionProvider
+            | R2RCompletionProvider
+        ),
+        config: AgentConfig,
+        search_settings: SearchSettings,
+        rag_generation_config: GenerationConfig,
+        local_search_method: Callable,
+        content_method: Optional[Callable] = None,
+        max_tool_context_length: int = 10_000,
+    ):
+        # Force streaming on
+        config.stream = True
 
-logger = logging.getLogger(__name__)
+        # Initialize base R2RStreamingAgent
+        R2RStreamingReasoningAgent.__init__(
+            self,
+            database_provider=database_provider,
+            llm_provider=llm_provider,
+            config=config,
+            rag_generation_config=rag_generation_config,
+        )
+        # Initialize the RAGAgentMixin
+        RAGAgentMixin.__init__(
+            self,
+            database_provider=database_provider,
+            llm_provider=llm_provider,
+            config=config,
+            search_settings=search_settings,
+            rag_generation_config=rag_generation_config,
+            max_tool_context_length=max_tool_context_length,
+            local_search_method=local_search_method,
+            content_method=content_method,
+        )
 
 
-class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
+class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
     """
     Abstract base class for a streaming-capable RAG Agent that:
       - Streams chain-of-thought tokens vs. normal text
@@ -857,7 +885,9 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
         )
 
 
-class GeminiXMLToolsStreamingRAGAgent(R2RXMLToolsStreamingRAGAgent):
+class GeminiXMLToolsStreamingReasoningRAGAgent(
+    R2RXMLToolsStreamingReasoningRAGAgent
+):
     """
     A Gemini-based implementation that uses the `XMLToolsStreamingRAGAgentBase`.
     """
