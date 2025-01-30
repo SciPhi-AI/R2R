@@ -11,10 +11,12 @@ from r2r import R2RAsyncClient, R2RException
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 @click.group()
 def prompts():
     """Commands for managing prompts."""
     pass
+
 
 @prompts.command()
 @pass_context
@@ -36,12 +38,25 @@ async def list(ctx: click.Context) -> None:
         logger.error(f"Unexpected error occurred: {e}")
         click.echo(f"An unexpected error occurred: {e}", err=True)
 
+
 @prompts.command()
 @click.argument("name", type=str)
-@click.option("--inputs", default=None, type=str, help="Inputs for the prompt.")
-@click.option("--prompt-override", default=None, type=str, help="Override for the prompt.")
+@click.option(
+    "--inputs", default=None, type=str, help="Inputs for the prompt."
+)
+@click.option(
+    "--prompt-override",
+    default=None,
+    type=str,
+    help="Override for the prompt.",
+)
 @pass_context
-async def retrieve(ctx: click.Context, name: str, inputs: str = None, prompt_override: str = None) -> None:
+async def retrieve(
+    ctx: click.Context,
+    name: str,
+    inputs: str = None,
+    prompt_override: str = None,
+) -> None:
     """Retrieve a prompt by its name."""
     client: R2RAsyncClient = ctx.obj
 
@@ -60,6 +75,7 @@ async def retrieve(ctx: click.Context, name: str, inputs: str = None, prompt_ove
     except Exception as e:
         logger.error(f"Unexpected error occurred: {e}")
         click.echo(f"An unexpected error occurred: {e}", err=True)
+
 
 @prompts.command()
 @click.argument("name", required=True, type=str)

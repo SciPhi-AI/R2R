@@ -1,18 +1,23 @@
 import json
+
 import asyncclick as click
 from asyncclick import pass_context
+
 from cli.utils.param_types import JSON
 from cli.utils.timer import timer
 from r2r import R2RAsyncClient, R2RException
+
 
 @click.group()
 def graphs():
     """Graphs commands."""
     pass
 
+
 async def handle_response(ctx: click.Context, response, message: str):
     """Helper function to handle responses and print them."""
     click.echo(json.dumps(response, indent=2))
+
 
 async def handle_error(e: Exception):
     """Helper function to handle errors and print them."""
@@ -21,10 +26,19 @@ async def handle_error(e: Exception):
     else:
         click.echo(f"An unexpected error occurred: {e}", err=True)
 
+
 @graphs.command()
-@click.option("--collection-ids", multiple=True, help="Collection IDs to fetch")
-@click.option("--offset", default=0, help="The offset to start from. Defaults to 0.")
-@click.option("--limit", default=100, help="The maximum number of graphs to return. Defaults to 100.")
+@click.option(
+    "--collection-ids", multiple=True, help="Collection IDs to fetch"
+)
+@click.option(
+    "--offset", default=0, help="The offset to start from. Defaults to 0."
+)
+@click.option(
+    "--limit",
+    default=100,
+    help="The maximum number of graphs to return. Defaults to 100.",
+)
 @pass_context
 async def list(ctx: click.Context, collection_ids, offset, limit):
     """List available graphs."""
@@ -42,6 +56,7 @@ async def list(ctx: click.Context, collection_ids, offset, limit):
     except Exception as e:
         await handle_error(e)
 
+
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
 @pass_context
@@ -51,10 +66,13 @@ async def retrieve(ctx: click.Context, collection_id):
 
     try:
         with timer():
-            response = await client.graphs.retrieve(collection_id=collection_id)
+            response = await client.graphs.retrieve(
+                collection_id=collection_id
+            )
         await handle_response(ctx, response, "Graph retrieved successfully.")
     except Exception as e:
         await handle_error(e)
+
 
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
@@ -69,6 +87,7 @@ async def reset(ctx: click.Context, collection_id):
         await handle_response(ctx, response, "Graph reset successfully.")
     except Exception as e:
         await handle_error(e)
+
 
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
@@ -90,10 +109,17 @@ async def update(ctx: click.Context, collection_id, name, description):
     except Exception as e:
         await handle_error(e)
 
+
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
-@click.option("--offset", default=0, help="The offset to start from. Defaults to 0.")
-@click.option("--limit", default=100, help="The maximum number of entities to return. Defaults to 100.")
+@click.option(
+    "--offset", default=0, help="The offset to start from. Defaults to 0."
+)
+@click.option(
+    "--limit",
+    default=100,
+    help="The maximum number of entities to return. Defaults to 100.",
+)
 @pass_context
 async def list_entities(ctx: click.Context, collection_id, offset, limit):
     """List entities in a graph."""
@@ -109,6 +135,7 @@ async def list_entities(ctx: click.Context, collection_id, offset, limit):
         await handle_response(ctx, response, "Entities listed successfully.")
     except Exception as e:
         await handle_error(e)
+
 
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
@@ -128,6 +155,7 @@ async def get_entity(ctx: click.Context, collection_id, entity_id):
     except Exception as e:
         await handle_error(e)
 
+
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
 @click.argument("entity_id", required=True, type=str)
@@ -146,10 +174,17 @@ async def remove_entity(ctx: click.Context, collection_id, entity_id):
     except Exception as e:
         await handle_error(e)
 
+
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
-@click.option("--offset", default=0, help="The offset to start from. Defaults to 0.")
-@click.option("--limit", default=100, help="The maximum number of relationships to return. Defaults to 100.")
+@click.option(
+    "--offset", default=0, help="The offset to start from. Defaults to 0."
+)
+@click.option(
+    "--limit",
+    default=100,
+    help="The maximum number of relationships to return. Defaults to 100.",
+)
 @pass_context
 async def list_relationships(ctx: click.Context, collection_id, offset, limit):
     """List relationships in a graph."""
@@ -162,9 +197,12 @@ async def list_relationships(ctx: click.Context, collection_id, offset, limit):
                 offset=offset,
                 limit=limit,
             )
-        await handle_response(ctx, response, "Relationships listed successfully.")
+        await handle_response(
+            ctx, response, "Relationships listed successfully."
+        )
     except Exception as e:
         await handle_error(e)
+
 
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
@@ -180,15 +218,20 @@ async def get_relationship(ctx: click.Context, collection_id, relationship_id):
                 collection_id=collection_id,
                 relationship_id=relationship_id,
             )
-        await handle_response(ctx, response, "Relationship retrieved successfully.")
+        await handle_response(
+            ctx, response, "Relationship retrieved successfully."
+        )
     except Exception as e:
         await handle_error(e)
+
 
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
 @click.argument("relationship_id", required=True, type=str)
 @pass_context
-async def remove_relationship(ctx: click.Context, collection_id, relationship_id):
+async def remove_relationship(
+    ctx: click.Context, collection_id, relationship_id
+):
     """Remove a relationship from a graph."""
     client: R2RAsyncClient = ctx.obj
 
@@ -198,16 +241,27 @@ async def remove_relationship(ctx: click.Context, collection_id, relationship_id
                 collection_id=collection_id,
                 relationship_id=relationship_id,
             )
-        await handle_response(ctx, response, "Relationship removed successfully.")
+        await handle_response(
+            ctx, response, "Relationship removed successfully."
+        )
     except Exception as e:
         await handle_error(e)
 
+
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
-@click.option("--settings", required=True, type=JSON, help="Build settings as JSON")
-@click.option("--run-without-orchestration", is_flag=True, help="Run without orchestration")
+@click.option(
+    "--settings", required=True, type=JSON, help="Build settings as JSON"
+)
+@click.option(
+    "--run-without-orchestration",
+    is_flag=True,
+    help="Run without orchestration",
+)
 @pass_context
-async def build(ctx: click.Context, collection_id, settings, run_without_orchestration):
+async def build(
+    ctx: click.Context, collection_id, settings, run_without_orchestration
+):
     """Build a graph with specified settings."""
     run_with_orchestration = not run_without_orchestration
     client: R2RAsyncClient = ctx.obj
@@ -223,10 +277,17 @@ async def build(ctx: click.Context, collection_id, settings, run_without_orchest
     except Exception as e:
         await handle_error(e)
 
+
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
-@click.option("--offset", default=0, help="The offset to start from. Defaults to 0.")
-@click.option("--limit", default=100, help="The maximum number of communities to return. Defaults to 100.")
+@click.option(
+    "--offset", default=0, help="The offset to start from. Defaults to 0."
+)
+@click.option(
+    "--limit",
+    default=100,
+    help="The maximum number of communities to return. Defaults to 100.",
+)
 @pass_context
 async def list_communities(ctx: click.Context, collection_id, offset, limit):
     """List communities in a graph."""
@@ -239,9 +300,12 @@ async def list_communities(ctx: click.Context, collection_id, offset, limit):
                 offset=offset,
                 limit=limit,
             )
-        await handle_response(ctx, response, "Communities listed successfully.")
+        await handle_response(
+            ctx, response, "Communities listed successfully."
+        )
     except Exception as e:
         await handle_error(e)
+
 
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
@@ -257,22 +321,44 @@ async def get_community(ctx: click.Context, collection_id, community_id):
                 collection_id=collection_id,
                 community_id=community_id,
             )
-        await handle_response(ctx, response, "Community retrieved successfully.")
+        await handle_response(
+            ctx, response, "Community retrieved successfully."
+        )
     except Exception as e:
         await handle_error(e)
+
 
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
 @click.argument("community_id", required=True, type=str)
 @click.option("--name", help="New name for the community")
 @click.option("--summary", help="New summary for the community")
-@click.option("--findings", type=JSON, help="New findings for the community as JSON array")
+@click.option(
+    "--findings",
+    type=JSON,
+    help="New findings for the community as JSON array",
+)
 @click.option("--rating", type=int, help="New rating for the community")
-@click.option("--rating-explanation", help="New rating explanation for the community")
+@click.option(
+    "--rating-explanation", help="New rating explanation for the community"
+)
 @click.option("--level", type=int, help="New level for the community")
-@click.option("--attributes", type=JSON, help="New attributes for the community as JSON")
+@click.option(
+    "--attributes", type=JSON, help="New attributes for the community as JSON"
+)
 @pass_context
-async def update_community(ctx: click.Context, collection_id, community_id, name, summary, findings, rating, rating_explanation, level, attributes):
+async def update_community(
+    ctx: click.Context,
+    collection_id,
+    community_id,
+    name,
+    summary,
+    findings,
+    rating,
+    rating_explanation,
+    level,
+    attributes,
+):
     """Update community information."""
     client: R2RAsyncClient = ctx.obj
 
@@ -293,6 +379,7 @@ async def update_community(ctx: click.Context, collection_id, community_id, name
     except Exception as e:
         await handle_error(e)
 
+
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
 @click.argument("community_id", required=True, type=str)
@@ -311,6 +398,7 @@ async def delete_community(ctx: click.Context, collection_id, community_id):
     except Exception as e:
         await handle_error(e)
 
+
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)
 @pass_context
@@ -324,6 +412,7 @@ async def pull(ctx: click.Context, collection_id):
         await handle_response(ctx, response, "Documents pulled successfully.")
     except Exception as e:
         await handle_error(e)
+
 
 @graphs.command()
 @click.argument("collection_id", required=True, type=str)

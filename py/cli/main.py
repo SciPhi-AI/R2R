@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict
+from typing import Any
 
 import asyncclick as click
 from rich.console import Console
@@ -18,8 +18,7 @@ from cli.commands import (
     system,
     users,
 )
-from cli.utils.telemetry import posthog
-from r2r import R2RAsyncClient
+from cli.utils.telemetry import posthog, telemetry
 
 from .command_group import CONFIG_DIR, CONFIG_FILE, load_config
 
@@ -48,7 +47,7 @@ commands_to_register = [
     database.downgrade,
     database.current,
     database.history,
-    config.configure
+    config.configure,
 ]
 
 add_commands_with_telemetry(commands_to_register)
@@ -74,7 +73,7 @@ def _ensure_config_dir_exists() -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def save_config(config_data: Dict[str, Any]) -> None:
+def save_config(config_data: dict[str, Any]) -> None:
     """Persist the given config data to ~/.r2r/config.json."""
     _ensure_config_dir_exists()
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
@@ -119,12 +118,12 @@ async def get_api(ctx) -> None:
     """Display your stored R2R API key."""
     try:
         config = load_config()
-        api_key = config.get("api_key")
-
-        if api_key:
+        if api_key := config.get("api_key"):
             console.print(f"API Key: {api_key}")
         else:
-            console.print("[yellow]No API key found. Set one using 'r2r set-api <key>'[/yellow]")
+            console.print(
+                "[yellow]No API key found. Set one using 'r2r set-api <key>'[/yellow]"
+            )
     except (FileNotFoundError, json.JSONDecodeError) as e:
         console.print("[red]Failed to retrieve API key:[/red]", str(e))
     except Exception as e:
