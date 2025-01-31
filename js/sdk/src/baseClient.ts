@@ -176,12 +176,11 @@ export abstract class BaseClient {
     }
   }
 
-
   private async handleStreamingRequest<T>(
     method: Method,
     version: string,
     endpoint: string,
-    config: AxiosRequestConfig
+    config: AxiosRequestConfig,
   ): Promise<T> {
     const fetchHeaders: Record<string, string> = {};
 
@@ -204,7 +203,7 @@ export abstract class BaseClient {
         throw new Error(
           `HTTP error! status: ${response.status}: ${
             ensureCamelCase(errorData).message || "Unknown error"
-          }`
+          }`,
         );
       }
 

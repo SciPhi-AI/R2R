@@ -597,3 +597,27 @@ class GraphsSDK:
             json=data,
             version="v3",
         )
+
+    async def dijkstra(
+        self,
+        collection_id: str | UUID,
+        source_id: str | UUID,
+        target_id: str | UUID,
+    ):
+        """
+        Finds the shortest path between two entities in a graph.
+
+        Args:
+            collection_id (str | UUID): The collection ID corresponding to the graph
+            source_id (str | UUID): The ID of the source entity
+            target_id (str | UUID): The ID of the target entity
+
+        Returns:
+            dict: Shortest path information
+        """
+        return await self.client._make_request(
+            "GET",
+            f"graphs/{str(collection_id)}/dijkstra",
+            params={"source_id": str(source_id), "target_id": str(target_id)},
+            version="v3",
+        )

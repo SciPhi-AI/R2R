@@ -2165,7 +2165,7 @@ class GraphRouter(BaseRouterV3):
 
             return GenericBooleanResponse(success=success)  # type: ignore
 
-        @self.router.post(
+        @self.router.get(
             "/graphs/{collection_id}/dijkstra",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Dijsktra",

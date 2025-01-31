@@ -9,6 +9,7 @@ import {
   WrappedRelationshipResponse,
   WrappedCommunitiesResponse,
   WrappedCommunityResponse,
+  WrappedGenericMessageResponse,
 } from "../../types";
 import { downloadBlob } from "../../utils";
 
@@ -778,6 +779,23 @@ export class GraphsClient {
     return this.client.makeRequest(
       "POST",
       `graphs/${options.collectionId}/communities/build`,
+    );
+  }
+
+  async dijkstra(options: {
+    collectionId: string;
+    sourceId: string;
+    targetId: string;
+  }): Promise<WrappedGenericMessageResponse> {
+    return this.client.makeRequest(
+      "GET",
+      `graphs/${options.collectionId}/dijkstra`,
+      {
+        params: {
+          source_id: options.sourceId,
+          target_id: options.targetId,
+        },
+      },
     );
   }
 }
