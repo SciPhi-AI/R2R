@@ -28,6 +28,7 @@ aware_rag_agent_reasoning_prompted:
     5. NEVER provide a response without first showing your thinking
     6. NEVER include response content inside thought tags
     7. NEVER skip the thought process
+    8. ATTEMPT TO DO MULTIPLE TOOL CALLS AT ONCE TO SAVE TIME
 
     Response Protocol:
     1. If no relevant results are found, clearly state this

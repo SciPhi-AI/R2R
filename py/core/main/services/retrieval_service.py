@@ -783,7 +783,7 @@ class RetrievalService(Service):
 
             agent_config = deepcopy(self.config.agent)
             agent_config.tools = override_tools or agent_config.tools
-
+            print("model = ", rag_generation_config.model)
             if rag_generation_config.stream:
 
                 async def stream_response():
@@ -817,6 +817,8 @@ class RetrievalService(Service):
                             elif (
                                 "claude-3-5-sonnet-20241022"
                                 in rag_generation_config.model
+                                or "o3-mini" in rag_generation_config.model
+                                or "gpt-4o" in rag_generation_config.model
                             ):
                                 agent = R2RStreamingReasoningRAGAgent(
                                     database_provider=self.providers.database,
@@ -831,7 +833,7 @@ class RetrievalService(Service):
                             else:
                                 raise R2RException(
                                     status_code=400,
-                                    message="Reasoning agent not supported for this model",
+                                    message=f"Reasoning agent not supported for this model {rag_generation_config.model}",
                                 )
 
                         async for chunk in agent.arun(
@@ -1170,7 +1172,11 @@ class RetrievalService(Service):
         else:
             if "gemini-2.0-flash-thinking-exp-01-21" in model:
                 prompt_name = "aware_rag_agent_reasoning_xml_tooling"
-            elif "claude-3-5-sonnet-20241022" in model:
+            elif (
+                "claude-3-5-sonnet-20241022" in model
+                or "o3-mini" in model
+                or "gpt-4o" in model
+            ):
                 prompt_name = "aware_rag_agent_reasoning_prompted"
             else:
                 raise R2RException(

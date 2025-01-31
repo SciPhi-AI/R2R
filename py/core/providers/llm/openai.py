@@ -210,7 +210,10 @@ class OpenAICompletionProvider(CompletionProvider):
             "top_p": generation_config.top_p,
             "stream": generation_config.stream,
         }
-        if "o1" not in generation_config.model:
+        if (
+            "o1" not in generation_config.model
+            and "o3" not in generation_config.model
+        ):
             args["max_tokens"] = generation_config.max_tokens_to_sample
             args["temperature"] = generation_config.temperature
         else:
