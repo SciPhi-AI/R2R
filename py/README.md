@@ -4,8 +4,8 @@
 
 
 <h3 align="center">
-The most advanced AI retrieval system. 
-   
+The most advanced AI retrieval system.
+
 Agentic Retrieval-Augmented Generation (RAG) with a RESTful API.
 </h3>
 

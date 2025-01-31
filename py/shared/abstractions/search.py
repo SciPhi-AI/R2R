@@ -63,6 +63,7 @@ class GraphSearchResultType(str, Enum):
 
 
 class GraphEntityResult(R2RSerializable):
+    id: Optional[UUID] = None
     name: str
     description: str
     metadata: Optional[dict[str, Any]] = None
@@ -76,15 +77,15 @@ class GraphEntityResult(R2RSerializable):
 
 
 class GraphRelationshipResult(R2RSerializable):
-    # name: str
+    id: Optional[UUID] = None
     subject: str
     predicate: str
     object: str
+    subject_id: Optional[UUID] = None
+    object_id: Optional[UUID] = None
     metadata: Optional[dict[str, Any]] = None
     score: Optional[float] = None
-    # name: str
-    # description: str
-    # metadata: Optional[dict[str, Any]] = None
+    description: str | None = None
 
     class Config:
         json_schema_extra = {
@@ -98,11 +99,9 @@ class GraphRelationshipResult(R2RSerializable):
 
 
 class GraphCommunityResult(R2RSerializable):
+    id: Optional[UUID] = None
     name: str
     summary: str
-    rating: float
-    rating_explanation: str
-    findings: list[str]
     metadata: Optional[dict[str, Any]] = None
 
     class Config:
@@ -111,7 +110,6 @@ class GraphCommunityResult(R2RSerializable):
             "summary": "Community Summary",
             "rating": 9,
             "rating_explanation": "Rating Explanation",
-            "findings": ["Finding 1", "Finding 2"],
             "metadata": {},
         }
 
