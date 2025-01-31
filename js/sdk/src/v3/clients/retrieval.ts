@@ -299,7 +299,7 @@ export class RetrievalClient {
  * @param options.tools List of tool configurations
  * @returns
  */
-async reasoningAgent(options: {
+async rawr(options: {
   message?: Message;
   ragGenerationConfig?: GenerationConfig | Record<string, any>;
   conversationId?: string;

@@ -26,7 +26,6 @@ console = Console()
 
 
 def add_commands_with_telemetry(commands):
-    return commands
     # """Add commands to CLI with telemetry."""
     for command in commands:
         cli.add_command(telemetry(command))
