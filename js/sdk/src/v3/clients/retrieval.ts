@@ -327,7 +327,7 @@ async reasoningAgent(options: {
   if (options.ragGenerationConfig && options.ragGenerationConfig.stream) {
       return this.streamReasoningAgent(data);
   } else {
-      return await this.client.makeRequest("POST", "retrieval/reasoning_agent", {
+      return await this.client.makeRequest("POST", "retrieval/rawr", {
           data: data,
       });
   }
@@ -339,7 +339,7 @@ private async streamReasoningAgent(
 ): Promise<ReadableStream<Uint8Array>> {
   return this.client.makeRequest<ReadableStream<Uint8Array>>(
       "POST",
-      "retrieval/reasoning_agent",
+      "retrieval/rawr",
       {
           data: agentData,
           headers: {

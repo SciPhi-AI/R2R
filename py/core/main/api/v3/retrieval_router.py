@@ -703,7 +703,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 raise R2RException(str(e), 500)
 
         @self.router.post(
-            "/retrieval/reasoning_agent",
+            "/retrieval/rawr",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Reasoning RAG Agent (Chain-of-Thought + Tools)",
             openapi_extra={
@@ -717,7 +717,7 @@ class RetrievalRouterV3(BaseRouterV3):
                         client = R2RClient()
                         # when using auth, do client.login(...)
 
-                        response =client.retrieval.reasoning_agent(
+                        response =client.retrieval.rawr(
                             message={
                                 "role": "user",
                                 "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
@@ -852,7 +852,7 @@ class RetrievalRouterV3(BaseRouterV3):
                     ),
                     use_system_context=False,
                     override_tools=tools,
-                    reasoning_agent=True,
+                    rawr=True,
                 )
 
                 if rag_generation_config.stream:
