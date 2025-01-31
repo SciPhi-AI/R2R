@@ -151,36 +151,6 @@ export abstract class BaseClient {
       return this.handleStreamingRequest<T>(method, version, endpoint, config);
     }
 
-    // if (options.responseType === "stream") {
-    //   console.log('steraming response...')
-    //   const fetchHeaders: Record<string, string> = {};
-    //   Object.entries(config.headers).forEach(([key, value]) => {
-    //     if (typeof value === "string") {
-    //       fetchHeaders[key] = value;
-    //     }
-    //   });
-    //   console.log('config.headers = ', config.headers)
-    //   console.log('fetchHeaders = ', fetchHeaders)
-    //   console.log('config.data = ', config.data)
-    //   const response = await fetch(`${this.baseUrl}/${version}/${endpoint}`, {
-    //     method,
-    //     headers: fetchHeaders,
-    //     body: config.data,
-    //   });
-
-    //   if (!response.ok) {
-    //     const errorData = await response.json().catch(() => ({}));
-    //     throw new Error(
-    //       `HTTP error! status: ${response.status}: ${
-    //         ensureCamelCase(errorData).message || "Unknown error"
-    //       }`,
-    //     );
-    //   }
-
-    //   return response.body as unknown as T;
-    // }
-
-
     try {
       const response = await this.axiosInstance.request(config);
 
