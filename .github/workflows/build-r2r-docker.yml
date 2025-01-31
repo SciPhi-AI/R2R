@@ -142,11 +142,3 @@ jobs:
           script: |
             docker pull ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.RELEASE_VERSION }}
             docker service update --image ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.RELEASE_VERSION }} r2r-blue_r2r
-
-  success-check:
-    needs: [create-manifest]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Always succeed
-        run: exit 0
