@@ -105,6 +105,10 @@ class R2RAuthProvider(AuthProvider):
         )
 
     async def decode_token(self, token: str) -> TokenData:
+        if "token=" in token:
+            token = token.split("token=")[1]
+        if "&tokenType=refresh" in token:
+            token = token.split("&tokenType=refresh")[0]
         # First, check if the token is blacklisted
         if await self.database_provider.token_handler.is_token_blacklisted(
             token=token

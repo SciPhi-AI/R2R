@@ -148,29 +148,38 @@ export abstract class BaseClient {
     }
 
     if (options.responseType === "stream") {
-      const fetchHeaders: Record<string, string> = {};
-      Object.entries(config.headers).forEach(([key, value]) => {
-        if (typeof value === "string") {
-          fetchHeaders[key] = value;
-        }
-      });
-      const response = await fetch(`${this.baseUrl}/${version}/${endpoint}`, {
-        method,
-        headers: fetchHeaders,
-        body: config.data,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          `HTTP error! status: ${response.status}: ${
-            ensureCamelCase(errorData).message || "Unknown error"
-          }`,
-        );
-      }
-
-      return response.body as unknown as T;
+      return this.handleStreamingRequest<T>(method, version, endpoint, config);
     }
+
+    // if (options.responseType === "stream") {
+    //   console.log('steraming response...')
+    //   const fetchHeaders: Record<string, string> = {};
+    //   Object.entries(config.headers).forEach(([key, value]) => {
+    //     if (typeof value === "string") {
+    //       fetchHeaders[key] = value;
+    //     }
+    //   });
+    //   console.log('config.headers = ', config.headers)
+    //   console.log('fetchHeaders = ', fetchHeaders)
+    //   console.log('config.data = ', config.data)
+    //   const response = await fetch(`${this.baseUrl}/${version}/${endpoint}`, {
+    //     method,
+    //     headers: fetchHeaders,
+    //     body: config.data,
+    //   });
+
+    //   if (!response.ok) {
+    //     const errorData = await response.json().catch(() => ({}));
+    //     throw new Error(
+    //       `HTTP error! status: ${response.status}: ${
+    //         ensureCamelCase(errorData).message || "Unknown error"
+    //       }`,
+    //     );
+    //   }
+
+    //   return response.body as unknown as T;
+    // }
+
 
     try {
       const response = await this.axiosInstance.request(config);
@@ -193,6 +202,60 @@ export abstract class BaseClient {
       if (axios.isAxiosError(error) && error.response) {
         handleRequestError(error.response);
       }
+      throw error;
+    }
+  }
+
+
+  private async handleStreamingRequest<T>(
+    method: Method,
+    version: string,
+    endpoint: string,
+    config: AxiosRequestConfig
+  ): Promise<T> {
+    const fetchHeaders: Record<string, string> = {};
+
+    // Convert Axios headers to Fetch headers
+    Object.entries(config.headers || {}).forEach(([key, value]) => {
+      if (typeof value === "string") {
+        fetchHeaders[key] = value;
+      }
+    });
+
+    try {
+      const response = await fetch(`${this.baseUrl}/${version}/${endpoint}`, {
+        method,
+        headers: fetchHeaders,
+        body: config.data,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          `HTTP error! status: ${response.status}: ${
+            ensureCamelCase(errorData).message || "Unknown error"
+          }`
+        );
+      }
+
+      // Create a TransformStream to process the response
+      const transformStream = new TransformStream({
+        transform(chunk, controller) {
+          // Process each chunk here if needed
+          controller.enqueue(chunk);
+        },
+      });
+
+      // Pipe the response through the transform stream
+      const streamedResponse = response.body?.pipeThrough(transformStream);
+
+      if (!streamedResponse) {
+        throw new Error("No response body received from stream");
+      }
+
+      return streamedResponse as unknown as T;
+    } catch (error) {
+      console.error("Streaming request failed:", error);
       throw error;
     }
   }

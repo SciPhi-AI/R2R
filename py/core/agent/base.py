@@ -412,7 +412,9 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                     if inside_thoughts:
                         yield "</Thought>"
                     yield "<Thought>"
-                    yield f"Calling function: {tool_call['name']}, with payload `{tool_call['arguments']}..."
+                    name = tool_call["name"]
+                    arguments = tool_call["arguments"]
+                    yield f"Calling function: {name}, with payload {arguments}"
                     yield "</Thought>"
                     if inside_thoughts:
                         yield "<Thought>"

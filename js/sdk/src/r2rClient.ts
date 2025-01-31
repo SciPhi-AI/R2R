@@ -19,8 +19,8 @@ if (typeof window === "undefined") {
 
 type RefreshTokenResponse = {
   results: {
-    accessToken: string;
-    refreshToken: string;
+    accessToken: {token: string};
+    refreshToken: {token: string};
   };
 };
 
@@ -154,10 +154,12 @@ export class r2rClient extends BaseClient {
 
           // Attempt refresh
           try {
-            const refreshResponse =
-              (await this.users.refreshAccessToken()) as RefreshTokenResponse;
-            const newAccessToken = refreshResponse.results.accessToken;
-            const newRefreshToken = refreshResponse.results.refreshToken;
+            //@ts-ignore
+            const refreshResponse = await this.users.refreshAccessToken();
+            //@ts-ignore
+            const newAccessToken = refreshResponse.results.accessToken?.token;
+            //@ts-ignore
+            const newRefreshToken = refreshResponse.results.refreshToken?.token;
 
             // set new tokens
             this.setTokens(newAccessToken, newRefreshToken);
