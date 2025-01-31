@@ -1,17 +1,9 @@
-import asyncio
 import json
 import logging
 import math
 from copy import deepcopy
 from datetime import datetime
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncGenerator,
-    Iterable,
-    Optional,
-    TypeVar,
-)
+from typing import Any, AsyncGenerator, Iterable, Optional, TypeVar
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.search import (
@@ -44,48 +36,47 @@ def format_search_results_for_llm(results: AggregateSearchResult) -> str:
                 formatted_results.extend((f"Source [{source_counter}]:",))
             except AttributeError:
                 raise ValueError(f"Invalid KG search result: {kg_result}")
-                # formatted_results.extend(
-                #     (
-                #         f"Source [{source_counter}]:",
-                #         f"Type: {kg_result.content.type}",
-                #     )
-                # )
 
             if isinstance(kg_result.content, GraphCommunityResult):
                 formatted_results.extend(
                     (
-                        f"Name: {kg_result.content.name}",
+                        f"Community Name: {kg_result.content.name}",
+                        f"ID: {kg_result.content.id}",
                         f"Summary: {kg_result.content.summary}",
-                        # f"Rating: {kg_result.content.rating}",
-                        # f"Rating Explanation: {kg_result.content.rating_explanation}",
-                        # "Findings:",
+                        # f"Findings: {kg_result.content.findings}",
                     )
                 )
-                # formatted_results.append(
-                #     f"- {finding}" for finding in kg_result.content.findings
-                # )
             elif isinstance(
                 kg_result.content,
                 GraphEntityResult,
             ):
                 formatted_results.extend(
                     [
-                        f"Name: {kg_result.content.name}",
+                        f"Entity Name: {kg_result.content.name}",
+                        f"ID: {kg_result.content.id}",
                         f"Description: {kg_result.content.description}",
                     ]
                 )
             elif isinstance(kg_result.content, GraphRelationshipResult):
-                formatted_results.append(
-                    f"Relationship: {kg_result.content.subject} - {kg_result.content.predicate} - {kg_result.content.object}",
-                    # f"Description: {kg_result.content.description}"
+                formatted_results.extend(
+                    (
+                        f"Relationship: {kg_result.content.subject} - {kg_result.content.predicate} - {kg_result.content.object}",
+                        f"ID: {kg_result.content.id}",
+                        f"Description: {kg_result.content.description}",
+                        f"Subject ID: {kg_result.content.subject_id}",
+                        f"Object ID: {kg_result.content.object_id}",
+                    )
                 )
 
             if kg_result.metadata:
-                formatted_results.append("Metadata:")
-                formatted_results.extend(
-                    f"- {key}: {value}"
-                    for key, value in kg_result.metadata.items()
-                )
+                metadata_copy = kg_result.metadata.copy()
+                metadata_copy.pop("associated_query", None)
+                if metadata_copy:
+                    formatted_results.append("Metadata:")
+                    formatted_results.extend(
+                        f"- {key}: {value}"
+                        for key, value in metadata_copy.items()
+                    )
 
             source_counter += 1
     if results.web_search_results:

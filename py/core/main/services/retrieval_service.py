@@ -30,6 +30,7 @@ from core.base import (
     Message,
     R2RException,
     SearchSettings,
+    format_search_results_for_llm,
     format_search_results_for_stream,
     to_async_generator,
 )
@@ -271,16 +272,14 @@ class RetrievalService(Service):
         base_limit = search_settings.limit
         graph_limits = search_settings.graph_settings.limits or {}
 
-        #
-        # 1) Entity search
-        #
+        # Entity search
         entity_limit = graph_limits.get("entities", base_limit)
         entity_cursor = self.providers.database.graphs_handler.graph_search(
             query,
             search_type="entities",
             limit=entity_limit,
             query_embedding=query_embedding,
-            property_names=["name", "description", "chunk_ids"],
+            property_names=["name", "description", "id"],
             filters=search_settings.filters,
         )
         async for ent in entity_cursor:
@@ -300,6 +299,7 @@ class RetrievalService(Service):
                     content=GraphEntityResult(
                         name=ent.get("name", ""),
                         description=ent.get("description", ""),
+                        id=ent.get("id", None),
                     ),
                     result_type=GraphSearchResultType.ENTITY,
                     score=score if search_settings.include_scores else None,
@@ -314,9 +314,7 @@ class RetrievalService(Service):
                 )
             )
 
-        #
-        # 2) Relationship search
-        #
+        # Relationship search
         rel_limit = graph_limits.get("relationships", base_limit)
         rel_cursor = self.providers.database.graphs_handler.graph_search(
             query,
@@ -324,10 +322,13 @@ class RetrievalService(Service):
             limit=rel_limit,
             query_embedding=query_embedding,
             property_names=[
+                "id",
                 "subject",
                 "predicate",
                 "object",
                 "description",
+                "subject_id",
+                "object_id",
             ],
             filters=search_settings.filters,
         )
@@ -344,9 +345,12 @@ class RetrievalService(Service):
             results.append(
                 GraphSearchResult(
                     content=GraphRelationshipResult(
+                        id=rel.get("id", None),
                         subject=rel.get("subject", ""),
                         predicate=rel.get("predicate", ""),
                         object=rel.get("object", ""),
+                        subject_id=rel.get("subject_id", None),
+                        object_id=rel.get("object_id", None),
                         description=rel.get("description", ""),
                     ),
                     result_type=GraphSearchResultType.RELATIONSHIP,
@@ -362,9 +366,7 @@ class RetrievalService(Service):
                 )
             )
 
-        #
-        # 3) Community search
-        #
+        # Community search
         comm_limit = graph_limits.get("communities", base_limit)
         comm_cursor = self.providers.database.graphs_handler.graph_search(
             query,
@@ -372,11 +374,8 @@ class RetrievalService(Service):
             limit=comm_limit,
             query_embedding=query_embedding,
             property_names=[
-                "community_id",
+                "id",
                 "name",
-                "findings",
-                "rating",
-                "rating_explanation",
                 "summary",
             ],
             filters=search_settings.filters,
@@ -393,11 +392,9 @@ class RetrievalService(Service):
             results.append(
                 GraphSearchResult(
                     content=GraphCommunityResult(
+                        id=comm.get("id", None),
                         name=comm.get("name", ""),
                         summary=comm.get("summary", ""),
-                        rating=comm.get("rating", None),
-                        rating_explanation=comm.get("rating_explanation", ""),
-                        findings=comm.get("findings", ""),
                     ),
                     result_type=GraphSearchResultType.COMMUNITY,
                     score=score if search_settings.include_scores else None,
@@ -481,7 +478,7 @@ class RetrievalService(Service):
             aggregated = AggregateSearchResult.from_dict(search_results_dict)
 
             # Build context from search results
-            context_str = self._build_rag_context(query, aggregated)
+            context_str = format_search_results_for_llm(aggregated)
 
             # Prepare your message payload
             system_prompt_name = system_prompt_name or "default_system"
@@ -525,53 +522,6 @@ class RetrievalService(Service):
                 status_code=500,
                 detail=f"Internal RAG Error - {str(e)}",
             )
-
-    def _build_rag_context(
-        self,
-        query: str,
-        results: AggregateSearchResult,
-    ) -> str:
-        """
-        Equivalent to your old RAGPipe._collect_context or a simplified version.
-        Combines the chunk search results and graph search results into a single text.
-        """
-        context = f"Query:\n{query}\n\n"
-
-        # -- Vector/Chunk results
-        chunk_results = results.chunk_search_results or []
-        if chunk_results:
-            context += "Vector Search Results:\n"
-            i = 1
-            for c in chunk_results:
-                context += f"[{i}]: {c.text}\n\n"
-                i += 1
-
-        # -- Graph results
-        graph_results = results.graph_search_results or []
-        if graph_results:
-            context += "Knowledge Graph Results:\n"
-            j = 1
-            for g in graph_results:
-                if g.result_type == GraphSearchResultType.ENTITY:
-                    context += (
-                        f"[{j}]: ENTITY:\n"
-                        f"Name: {g.content.name}\n"
-                        f"Description: {g.content.description}\n\n"
-                    )
-                elif g.result_type == GraphSearchResultType.RELATIONSHIP:
-                    context += (
-                        f"[{j}]: RELATIONSHIP:\n"
-                        f"{g.content.subject} - {g.content.predicate} - {g.content.object}\n\n"
-                    )
-                elif g.result_type == GraphSearchResultType.COMMUNITY:
-                    context += (
-                        f"[{j}]: COMMUNITY:\n"
-                        f"Name: {g.content.name}\n"
-                        f"Summary: {g.content.summary}\n\n"
-                    )
-                j += 1
-
-        return context
 
     async def stream_rag_response(
         self,

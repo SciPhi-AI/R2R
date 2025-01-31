@@ -92,9 +92,7 @@ class RAGAgentMixin:
             else:
                 raise ValueError(f"Unsupported tool name: {tool_name}")
 
-    # ---------------------------------------------------------------------
-    # 1) LOCAL SEARCH TOOL
-    # ---------------------------------------------------------------------
+    # Local Search Tool
     def local_search(self) -> Tool:
         """
         Tool to do a semantic/hybrid search on the local knowledge base
@@ -150,9 +148,7 @@ class RAGAgentMixin:
             web_search_results=None,
         )
 
-    # ---------------------------------------------------------------------
-    # 2) LOCAL CONTEXT TOOL
-    # ---------------------------------------------------------------------
+    # 2) Local Context
     def content(self) -> Tool:
         """
         Tool to fetch entire documents from the local database. Typically used if the agent needs
@@ -272,9 +268,7 @@ class RAGAgentMixin:
             context_document_results=context_document_results,
         )
 
-    # ---------------------------------------------------------------------
-    # 3) WEB SEARCH TOOL
-    # ---------------------------------------------------------------------
+    # Web Search Tool
     def web_search(self) -> Tool:
         return Tool(
             name="web_search",
@@ -320,9 +314,7 @@ class RAGAgentMixin:
             web_search_results=web_response.organic_results,
         )
 
-    # ---------------------------------------------------------------------
     # 4) Utility format methods for search results
-    # ---------------------------------------------------------------------
     def format_search_results_for_stream(
         self, results: AggregateSearchResult
     ) -> str:
@@ -340,13 +332,7 @@ class RAGAgentMixin:
         if frac_to_return > 1:
             return context
         else:
-
-            return context[0 : int(frac_to_return * context_tokens)]
-
-
-# ------------------------------------------------------------------------------
-# AGENT CLASSES
-# ------------------------------------------------------------------------------
+            return context[: int(frac_to_return * context_tokens)]
 
 
 class R2RRAGAgent(RAGAgentMixin, R2RAgent):
@@ -869,9 +855,7 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
             logger.warning("Failed to parse <Action> XML block.")
         return tool_calls
 
-    # ------------------------------------------------------------------------
     # ABSTRACT METHODS – must be implemented by a subclass
-    # ------------------------------------------------------------------------
     async def _generate_thinking_response(
         self, user_prompt: str, **kwargs
     ) -> AsyncGenerator[tuple[bool, str], None]:
