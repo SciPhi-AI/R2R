@@ -208,6 +208,8 @@ class PostgresDatabaseProvider(DatabaseProvider):
             await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
             await conn.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
             await conn.execute("CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;")
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
+            await conn.execute("CREATE EXTENSION IF NOT EXISTS pgRouting;")
 
             # Create schema if it doesn't exist
             await conn.execute(

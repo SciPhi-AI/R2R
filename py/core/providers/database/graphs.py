@@ -2831,6 +2831,165 @@ class PostgresGraphsHandler(Handler):
 
         await self.connection_manager.execute_many(query, inputs)  # type: ignore
 
+    async def dijkstra_shortest_path(
+        self,
+        parent_id: UUID,
+        source_id: UUID,
+        target_id: UUID,
+    ) -> dict:
+        """
+        Find the shortest path between two entities in the graph.
+        Returns a structured path showing the sequence of entities and their connecting relationships.
+        Indicates whether relationships are being traversed in forward or reverse direction.
+        """
+        # Create a temporary table for the edges - store relationship direction
+        SETUP_QUERY = f"""
+        CREATE TEMPORARY TABLE IF NOT EXISTS pg_edges AS
+        SELECT
+            ('x' || substring(replace(id::text, '-', ''), 1, 16))::bit(64)::bigint AS id,
+            ('x' || substring(replace(subject_id::text, '-', ''), 1, 16))::bit(64)::bigint AS source,
+            ('x' || substring(replace(object_id::text, '-', ''), 1, 16))::bit(64)::bigint AS target,
+            CASE WHEN weight <= 0 THEN 1 ELSE weight END AS cost,
+            id as original_id,
+            subject_id,
+            object_id
+        FROM {self._get_table_name("graphs_relationships")}
+        WHERE parent_id = $1
+            AND subject_id IS NOT NULL
+            AND object_id IS NOT NULL;
+        """
+
+        QUERY = f"""
+        WITH RECURSIVE path AS (
+            SELECT
+                seq,
+                node AS current_node,
+                lead(node) OVER (ORDER BY seq) AS next_node,
+                edge AS edge_id,
+                cost AS path_cost,
+                agg_cost AS total_cost
+            FROM pgr_dijkstra(
+                'SELECT id, source, target, cost FROM pg_edges',
+                ('x' || substring(replace($1::text, '-', ''), 1, 16))::bit(64)::bigint,
+                ('x' || substring(replace($2::text, '-', ''), 1, 16))::bit(64)::bigint,
+                false
+            )
+        ),
+        enriched_path AS (
+            SELECT
+                p.*,
+                e.original_id as relationship_id,
+                e.source as rel_source,
+                e.target as rel_target,
+                e.subject_id,
+                e.object_id
+            FROM path p
+            LEFT JOIN pg_edges e ON e.id = p.edge_id
+        )
+        SELECT
+            p.seq,
+            p.current_node,
+            p.next_node,
+            p.edge_id,
+            p.path_cost,
+            p.total_cost,
+            p.relationship_id,
+            r.id as relationship_uuid,
+            r.subject,
+            r.predicate,
+            r.object,
+            r.subject_id,
+            r.object_id,
+            r.weight,
+            e1.id as current_entity_id,
+            e1.name as current_entity_name,
+            e2.id as next_entity_id,
+            e2.name as next_entity_name,
+            -- Check if we're traversing in reverse
+            CASE
+                WHEN p.current_node = p.rel_source THEN false
+                ELSE true
+            END as is_reverse
+        FROM enriched_path p
+        LEFT JOIN {self._get_table_name("graphs_relationships")} r
+            ON r.id = p.relationship_id::uuid
+        LEFT JOIN {self._get_table_name("graphs_entities")} e1
+            ON ('x' || substring(replace(e1.id::text, '-', ''), 1, 16))::bit(64)::bigint = p.current_node
+        LEFT JOIN {self._get_table_name("graphs_entities")} e2
+            ON ('x' || substring(replace(e2.id::text, '-', ''), 1, 16))::bit(64)::bigint = p.next_node
+        WHERE p.edge_id IS NOT NULL
+        ORDER BY p.seq;
+        """
+
+        try:
+            await self.connection_manager.execute_query(
+                SETUP_QUERY, [parent_id]
+            )
+            results = await self.connection_manager.fetch_query(
+                QUERY, [source_id, target_id]
+            )
+
+            if not results:
+                raise R2RException(
+                    message="No path found between the specified entities",
+                    status_code=404,
+                )
+
+            path = {
+                "path": [],
+                "total_cost": results[-1]["total_cost"]
+                + results[-1]["path_cost"],
+                "num_hops": len(results),
+            }
+
+            for i, row in enumerate(results):
+                # Add current entity if it's the first step or different from last entity
+                if i == 0 or path["path"][-1]["id"] != str(
+                    row["current_entity_id"]
+                ):
+                    path["path"].append(
+                        {
+                            "type": "entity",
+                            "id": str(row["current_entity_id"]),
+                            "name": row["current_entity_name"],
+                        }
+                    )
+
+                # Add the relationship with direction
+                path["path"].append(
+                    {
+                        "type": "relationship",
+                        "id": str(row["relationship_uuid"]),
+                        "predicate": row["predicate"],
+                        "reversed": row["is_reverse"],
+                        "subject": row["subject"],
+                        "object": row["object"],
+                        "weight": row["weight"],
+                        "cost": row["path_cost"],
+                    }
+                )
+
+                # Add next entity
+                path["path"].append(
+                    {
+                        "type": "entity",
+                        "id": str(row["next_entity_id"]),
+                        "name": row["next_entity_name"],
+                    }
+                )
+
+            return path
+        except R2RException as e:
+            path = {"path": [], "total_cost": 0, "num_hops": 0}
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, detail=f"Error finding path: {str(e)}"
+            ) from e
+        finally:
+            await self.connection_manager.execute_query(
+                "DROP TABLE IF EXISTS pg_edges;"
+            )
+
 
 def _json_serialize(obj):
     if isinstance(obj, UUID):

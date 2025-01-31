@@ -1362,3 +1362,19 @@ class GraphService(Service):
                 description=new_description,
                 description_embedding=str(new_embedding),
             )
+
+    @telemetry_event("dijkstra")
+    async def dijkstra(
+        self,
+        graph_id: UUID,
+        source_id: UUID,
+        target_id: UUID,
+    ) -> dict:
+        """
+        Returns the shortest path between two nodes in a graph.
+        """
+        return await self.providers.database.graphs_handler.dijkstra_shortest_path(
+            parent_id=graph_id,
+            source_id=source_id,
+            target_id=target_id,
+        )

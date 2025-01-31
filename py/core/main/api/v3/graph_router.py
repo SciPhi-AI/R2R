@@ -16,6 +16,7 @@ from core.base.api.models import (
     WrappedCommunityResponse,
     WrappedEntitiesResponse,
     WrappedEntityResponse,
+    WrappedGenericMessageResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
     WrappedRelationshipResponse,
@@ -2000,7 +2001,8 @@ class GraphRouter(BaseRouterV3):
 
                             response = client.graphs.pull(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
-                            )"""
+                            )
+                            """
                         ),
                     },
                     {
@@ -2162,3 +2164,29 @@ class GraphRouter(BaseRouterV3):
                 )
 
             return GenericBooleanResponse(success=success)  # type: ignore
+
+        @self.router.post(
+            "/graphs/{collection_id}/dijkstra",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            summary="Dijsktra",
+        )
+        @self.base_endpoint
+        async def dijkstra(
+            collection_id: UUID = Path(
+                ..., description="The ID of the graph to initialize."
+            ),
+            source_id: UUID = Body(
+                ..., description="The ID of the source entity."
+            ),
+            target_id: UUID = Body(
+                ..., description="The ID of the target entity."
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> WrappedGenericMessageResponse:
+            # TODO: Auth
+            logger.info(f"dijkstra endpoint called with {collection_id}")
+            return await self.services.graph.dijkstra(  # type: ignore
+                graph_id=collection_id,
+                source_id=source_id,
+                target_id=target_id,
+            )
