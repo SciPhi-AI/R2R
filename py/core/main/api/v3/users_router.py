@@ -524,7 +524,7 @@ class UsersRouter(BaseRouterV3):
 
         @self.router.post(
             "/users/refresh-token",
-            dependencies=[Depends(self.rate_limit_dependency)],
+            # dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
