@@ -1,10 +1,12 @@
-<img width="1149" alt="Screenshot 2025-01-29 at 9 22 50 PM" src="https://github.com/user-attachments/assets/9ab33cbc-1e8a-4bf2-8e6f-4a6f9c81ba8f" />
+![Screenshot 2025-01-30 at 5 11 34 PM](https://github.com/user-attachments/assets/16d32b31-4c7d-4e84-be19-24574b33527b)
 
 
 
 
 <h3 align="center">
-The most advanced AI retrieval system. Containerized, Agentic Retrieval-Augmented Generation (RAG) with a RESTful API.
+The most advanced AI retrieval system. 
+   
+Agentic Retrieval-Augmented Generation (RAG) with a RESTful API.
 </h3>
 
 <div align="center">
