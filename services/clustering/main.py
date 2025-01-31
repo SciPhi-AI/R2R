@@ -1,83 +1,157 @@
 import logging
-
+from typing import List, Optional
 import networkx as nx
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-
-# Ensure that graspologic and networkx are installed.
-# Requires that "graspologic[leiden]" extras are installed if needed.
+from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel, Field, confloat, conint
 from graspologic.partition import hierarchical_leiden
+from contextlib import asynccontextmanager
+import uvicorn
 
-app = FastAPI()
+# Configure structured logging
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
 logger = logging.getLogger("graspologic_service")
-logger.setLevel(logging.INFO)
 
-# Define data models for relationships and clustering parameters
+# --- Data Models (Improved Validation) ---
 class Relationship(BaseModel):
-    id: str = Field(..., description="Unique identifier for the relationship")
-    subject: str = Field(..., description="Subject node of the relationship")
-    object: str = Field(..., description="Object node of the relationship")
-    weight: float = Field(1.0, description="Weight of the relationship, default is 1.0")
+    id: str = Field(..., min_length=1, description="Unique relationship identifier")
+    subject: str = Field(..., min_length=1, description="Subject node")
+    object: str = Field(..., min_length=1, description="Object node")
+    weight: confloat(ge=0.0, le=1.0) = Field(1.0, description="Normalized weight [0,1]")
 
 class LeidenParams(BaseModel):
-    resolution: float = Field(1.0, description="Resolution parameter for clustering")
-    randomness: float = Field(0.001, description="Randomness parameter for clustering")
-    max_cluster_size: int = Field(1000, description="Maximum size of clusters")
-    extra_forced_iterations: int = Field(0, description="Extra iterations for convergence")
-    use_modularity: bool = Field(True, description="Use modularity in clustering")
-    random_seed: int = Field(7272, description="Random seed for reproducibility")
-    weight_attribute: str = Field("weight", description="Attribute to use as weight")
+    resolution: confloat(ge=0.0) = Field(1.0, description="Resolution parameter")
+    randomness: confloat(ge=0.0) = Field(0.001, description="Randomness parameter")
+    max_cluster_size: conint(ge=10) = Field(1000, description="Max cluster size")
+    extra_forced_iterations: conint(ge=0) = Field(0, description="Extra iterations")
+    use_modularity: bool = Field(True, description="Use modularity optimization")
+    random_seed: int = Field(7272, description="Reproducibility seed")
+    weight_attribute: str = Field("weight", min_length=1, description="Weight attribute")
 
 class ClusterRequest(BaseModel):
-    relationships: list[Relationship] = Field(..., description="List of relationships to create the graph")
-    leiden_params: LeidenParams = Field(..., description="Parameters for the Leiden algorithm")
+    relationships: List[Relationship] = Field(..., min_items=1, description="Edges list")
+    leiden_params: LeidenParams = Field(..., description="Clustering parameters")
 
 class CommunityAssignment(BaseModel):
     node: str = Field(..., description="Node identifier")
-    cluster: int = Field(..., description="Cluster identifier")
-    level: int = Field(..., description="Hierarchical level of the cluster")
+    cluster: int = Field(..., description="Cluster ID")
+    level: int = Field(..., description="Hierarchy level")
 
 class ClusterResponse(BaseModel):
-    communities: list[CommunityAssignment] = Field(..., description="List of community assignments")
+    communities: List[CommunityAssignment] = Field(..., description="Cluster assignments")
 
-# Endpoint for clustering the graph
-@app.post("/cluster", response_model=ClusterResponse)
-def cluster_graph(request: ClusterRequest):
-    logger.info("Received clustering request")
+# --- Application Setup with Lifespan Management ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifecycle events"""
+    logger.info("Starting service")
+    yield
+    logger.info("Shutting down service")
+
+app = FastAPI(
+    title="Graph Clustering Service",
+    description="API for hierarchical Leiden clustering of graphs",
+    lifespan=lifespan
+)
+
+# --- Helper Functions (Separation of Concerns) ---
+def build_graph(relationships: List[Relationship]) -> nx.Graph:
+    """Construct networkx graph from relationships with validation"""
+    if not relationships:
+        raise ValueError("Empty relationships list")
+    
+    G = nx.Graph()
+    edge_data = [
+        (rel.subject, rel.object, {"weight": rel.weight, "id": rel.id})
+        for rel in relationships
+    ]
+    
     try:
-        # Build graph from relationships
-        G = nx.Graph()
-        for rel in request.relationships:
-            G.add_edge(rel.subject, rel.object, weight=rel.weight, id=rel.id)
+        G.add_edges_from(edge_data)
+    except nx.NetworkXError as e:
+        logger.error(f"Invalid edge data: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid graph structure: {str(e)}"
+        )
+    
+    if nx.number_of_selfloops(G) > 0:
+        logger.warning("Graph contains self-loops which may affect clustering")
+    
+    return G
 
-        # Compute hierarchical leiden
-        logger.info("Starting Leiden clustering")
+def validate_clustering_parameters(params: LeidenParams) -> None:
+    """Validate clustering parameters before execution"""
+    if params.resolution == 0 and params.use_modularity:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Resolution cannot be zero when using modularity"
+        )
+
+# --- Core API Endpoints ---
+@app.post(
+    "/cluster",
+    response_model=ClusterResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Perform hierarchical Leiden clustering",
+    response_description="Cluster assignments for all nodes"
+)
+async def cluster_graph(request: ClusterRequest) -> ClusterResponse:
+    """
+    Process graph clustering request with validation and error handling
+    
+    - **relationships**: List of edges with weights
+    - **leiden_params**: Configuration for Leiden algorithm
+    """
+    logger.info(f"Clustering request received for {len(request.relationships)} edges")
+    
+    try:
+        # Input validation
+        validate_clustering_parameters(request.leiden_params)
+        G = build_graph(request.relationships)
+        
+        logger.info(f"Graph built with {G.number_of_nodes()} nodes and {G.number_of_edges()} edges")
+        
+        # Execute clustering
         communities = hierarchical_leiden(
             G,
-            resolution=request.leiden_params.resolution,
-            randomness=request.leiden_params.randomness,
-            max_cluster_size=request.leiden_params.max_cluster_size,
-            extra_forced_iterations=request.leiden_params.extra_forced_iterations,
-            use_modularity=request.leiden_params.use_modularity,
-            random_seed=request.leiden_params.random_seed,
-            weight_attribute=request.leiden_params.weight_attribute,
+            **request.leiden_params.dict(exclude={"random_seed"}),  # Safe parameter unpacking
+            random_seed=request.leiden_params.random_seed
         )
-        logger.info("Leiden clustering complete")
-
-        # Convert communities to response model
-        assignments = [
-            CommunityAssignment(
-                node=c.node, cluster=c.cluster, level=c.level
-            )
-            for c in communities
-        ]
-
-        return ClusterResponse(communities=assignments)
+        
+        # Format response
+        return ClusterResponse(
+            communities=[
+                CommunityAssignment(node=c.node, cluster=c.cluster, level=c.level)
+                for c in communities
+            ]
+        )
+        
+    except nx.NetworkXError as e:
+        logger.error(f"NetworkX error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Graph processing error: {str(e)}"
+        )
     except Exception as e:
-        logger.error(f"Error clustering graph: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        logger.exception("Unexpected error during clustering")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal processing error"
+        )
 
-# Health check endpoint
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+@app.get("/health", include_in_schema=False)
+async def health() -> dict:
+    """Service health check endpoint"""
+    return {"status": "ok", "service": "graph-clustering"}
+
+# --- Main Execution (Dev Mode) ---
+if __name__ == "__main__":
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000, # Do you can change the port to another
+        log_config=None  # Use default logging configuration 
+    )
