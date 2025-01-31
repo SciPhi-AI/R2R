@@ -532,7 +532,7 @@ async def list_relationships(
 @pass_context
 async def create_sample(ctx: click.Context) -> None:
     """Ingest the first sample file into R2R."""
-    sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle.txt"
+    sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/DeepSeek_R1.txt"
     client: R2RAsyncClient = ctx.obj
 
     try:
