@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import time
+import uuid
 from typing import Any, AsyncGenerator, Generator, Optional
 
 from anthropic import Anthropic, AsyncAnthropic
@@ -21,6 +22,11 @@ from core.base.abstractions import GenerationConfig, LLMChatCompletion
 from core.base.providers.llm import CompletionConfig, CompletionProvider
 
 logger = logging.getLogger(__name__)
+
+
+def generate_tool_id() -> str:
+    """Generate a unique tool ID using UUID4."""
+    return f"tool_{uuid.uuid4().hex[:12]}"
 
 
 def openai_message_to_anthropic_block(msg: dict) -> dict:
@@ -234,19 +240,27 @@ class AnthropicCompletionProvider(CompletionProvider):
         self, messages: list[dict]
     ) -> (list[dict], Optional[str]):
         """
-        Extract the system message (if any) from a combined list of messages.
-        Return (filtered_messages, system_message).
+        Extract the system message and properly group tool results with their calls.
         """
         system_msg = None
         filtered = []
+        pending_tool_results = []
+
         for m in copy.deepcopy(messages):
             if m["role"] == "system" and system_msg is None:
                 system_msg = m["content"]
-            else:
+                continue
 
-                m2 = None
-                if m.get("tool_calls") != None:
-                    m2 = {
+            if m.get("tool_calls"):
+                # First add any content as a regular message
+                if m.get("content"):
+                    filtered.append(
+                        {"role": "assistant", "content": m["content"]}
+                    )
+
+                # Add the tool calls message
+                filtered.append(
+                    {
                         "role": "assistant",
                         "content": [
                             {
@@ -260,12 +274,28 @@ class AnthropicCompletionProvider(CompletionProvider):
                             for call in m["tool_calls"]
                         ],
                     }
-                    m.pop("tool_calls")
+                )
 
-                m = openai_message_to_anthropic_block(m)
-                filtered.append(m)
-                if m2:
-                    filtered.append(m2)
+            elif m["role"] in ["function", "tool"]:
+                # Collect tool results to combine them
+                pending_tool_results.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": m.get("tool_call_id"),
+                        "content": m["content"],
+                    }
+                )
+
+                # If we have all expected results, add them as one message
+                if len(pending_tool_results) == len(filtered[-1]["content"]):
+                    filtered.append(
+                        {"role": "user", "content": pending_tool_results}
+                    )
+                    pending_tool_results = []
+            else:
+                # Regular message
+                filtered.append(openai_message_to_anthropic_block(m))
+
         return filtered, system_msg
 
     async def _execute_task(self, task: dict[str, Any]):
@@ -285,6 +315,7 @@ class AnthropicCompletionProvider(CompletionProvider):
 
         base_args = self._get_base_args(generation_config)
         filtered_messages, system_msg = self._split_system_messages(messages)
+
         base_args["messages"] = filtered_messages
         if system_msg:
             base_args["system"] = system_msg
@@ -493,7 +524,7 @@ class AnthropicCompletionProvider(CompletionProvider):
                             {
                                 "index": 0,
                                 "type": "function",
-                                "id": f"call_{buffer_data['message_id']}",
+                                "id": f"call_{generate_tool_id()}",
                                 "function": {
                                     "name": buffer_data["tool_name"],
                                     "arguments": buffer_data[

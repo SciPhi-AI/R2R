@@ -616,7 +616,7 @@ class RetrievalService(Service):
         use_system_context: bool = False,
         max_tool_context_length: int = 32_768,
         override_tools: Optional[list[dict[str, Any]]] = None,
-        reasoning_agent: bool = False,
+        rawr: bool = False,
     ):
         try:
             if message and messages:
@@ -747,7 +747,7 @@ class RetrievalService(Service):
 
             # STEP 1: Determine the final system prompt content
             if use_system_context:
-                if reasoning_agent:
+                if rawr:
                     raise R2RException(
                         status_code=400,
                         message="Reasoning agent not supported with extended prompt",
@@ -759,36 +759,35 @@ class RetrievalService(Service):
                         filter_user_id=filter_user_id,
                         filter_collection_ids=filter_collection_ids,
                         model=rag_generation_config.model,
-                        reasoning_agent=reasoning_agent,
+                        rawr=rawr,
                     )
                 )
             elif task_prompt_override:
-                if reasoning_agent:
+                if rawr:
                     raise R2RException(
                         status_code=400,
                         message="Reasoning agent not supported with task prompt override",
                     )
 
                 system_instruction = task_prompt_override
-            elif reasoning_agent:
+            elif rawr:
                 system_instruction = (
                     await self._build_aware_system_instruction(
                         max_tool_context_length=max_tool_context_length,
                         filter_user_id=filter_user_id,
                         filter_collection_ids=filter_collection_ids,
                         model=rag_generation_config.model,
-                        reasoning_agent=reasoning_agent,
+                        rawr=rawr,
                     )
                 )
 
             agent_config = deepcopy(self.config.agent)
             agent_config.tools = override_tools or agent_config.tools
-
             if rag_generation_config.stream:
 
                 async def stream_response():
                     try:
-                        if not reasoning_agent:
+                        if not rawr:
                             agent = R2RStreamingRAGAgent(
                                 database_provider=self.providers.database,
                                 llm_provider=self.providers.llm,
@@ -817,6 +816,8 @@ class RetrievalService(Service):
                             elif (
                                 "claude-3-5-sonnet-20241022"
                                 in rag_generation_config.model
+                                or "o3-mini" in rag_generation_config.model
+                                or "gpt-4o" in rag_generation_config.model
                             ):
                                 agent = R2RStreamingReasoningRAGAgent(
                                     database_provider=self.providers.database,
@@ -831,7 +832,7 @@ class RetrievalService(Service):
                             else:
                                 raise R2RException(
                                     status_code=400,
-                                    message="Reasoning agent not supported for this model",
+                                    message=f"Reasoning agent not supported for this model {rag_generation_config.model}",
                                 )
 
                         async for chunk in agent.arun(
@@ -1147,7 +1148,7 @@ class RetrievalService(Service):
         filter_user_id: Optional[UUID] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
         model: Optional[str] = None,
-        reasoning_agent: bool = False,
+        rawr: bool = False,
     ) -> str:
         """
         High-level method that:
@@ -1165,12 +1166,16 @@ class RetrievalService(Service):
             filter_collection_ids=filter_collection_ids,
         )
 
-        if not reasoning_agent:
+        if not rawr:
             prompt_name = "aware_rag_agent"
         else:
             if "gemini-2.0-flash-thinking-exp-01-21" in model:
                 prompt_name = "aware_rag_agent_reasoning_xml_tooling"
-            elif "claude-3-5-sonnet-20241022" in model:
+            elif (
+                "claude-3-5-sonnet-20241022" in model
+                or "o3-mini" in model
+                or "gpt-4o" in model
+            ):
                 prompt_name = "aware_rag_agent_reasoning_prompted"
             else:
                 raise R2RException(
