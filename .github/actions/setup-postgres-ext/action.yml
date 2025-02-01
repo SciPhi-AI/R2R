@@ -18,7 +18,7 @@ runs:
         wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg
 
         sudo apt-get update
-        sudo apt-get install -y postgresql-15 postgresql-client-15 postgresql-15-pgvector
+        sudo apt-get install -y postgresql-15 postgresql-client-15 postgresql-15-pgvector postgresql-15-postgis-3 postgresql-15-pgrouting
 
         sudo systemctl enable postgresql@15-main
         sudo systemctl start postgresql@15-main
