@@ -476,6 +476,7 @@ async def rawr(
                 click.echo()
             else:
                 # Assuming a list of messages is returned; print them nicely.
+                print("response = ", response)
                 for msg in response:
                     click.echo(json.dumps(msg, indent=2))
     except R2RException as e:
