@@ -2840,7 +2840,6 @@ class PostgresGraphsHandler(Handler):
         """
         Find the shortest path between two entities in the graph.
         Returns a structured path showing the sequence of entities and their connecting relationships.
-        Indicates whether relationships are being traversed in forward or reverse direction.
         """
         # Create a temporary table for the edges - store relationship direction
         SETUP_QUERY = f"""
@@ -2874,6 +2873,7 @@ class PostgresGraphsHandler(Handler):
                 ('x' || substring(replace($2::text, '-', ''), 1, 16))::bit(64)::bigint,
                 false
             )
+            WHERE edge IS NOT NULL  -- Filter out null edges right away
         ),
         enriched_path AS (
             SELECT
@@ -2884,7 +2884,7 @@ class PostgresGraphsHandler(Handler):
                 e.subject_id,
                 e.object_id
             FROM path p
-            LEFT JOIN pg_edges e ON e.id = p.edge_id
+            JOIN pg_edges e ON e.id = p.edge_id  -- Change LEFT JOIN to JOIN
         )
         SELECT
             p.seq,
@@ -2901,32 +2901,39 @@ class PostgresGraphsHandler(Handler):
             r.subject_id,
             r.object_id,
             r.weight,
-            e1.id as current_entity_id,
-            e1.name as current_entity_name,
-            e2.id as next_entity_id,
-            e2.name as next_entity_name,
-            -- Check if we're traversing in reverse
+            COALESCE(e1.id, e3.id) as current_entity_id,
+            COALESCE(e1.name, e3.name) as current_entity_name,
+            COALESCE(e2.id, e4.id) as next_entity_id,
+            COALESCE(e2.name, e4.name) as next_entity_name,
             CASE
                 WHEN p.current_node = p.rel_source THEN false
                 ELSE true
             END as is_reverse
         FROM enriched_path p
-        LEFT JOIN {self._get_table_name("graphs_relationships")} r
+        JOIN {self._get_table_name("graphs_relationships")} r
             ON r.id = p.relationship_id::uuid
+        -- Try to match current_node with both subject and object entities
         LEFT JOIN {self._get_table_name("graphs_entities")} e1
             ON ('x' || substring(replace(e1.id::text, '-', ''), 1, 16))::bit(64)::bigint = p.current_node
+            AND e1.id = r.subject_id
         LEFT JOIN {self._get_table_name("graphs_entities")} e2
             ON ('x' || substring(replace(e2.id::text, '-', ''), 1, 16))::bit(64)::bigint = p.next_node
-        WHERE p.edge_id IS NOT NULL
+            AND e2.id = r.object_id
+        LEFT JOIN {self._get_table_name("graphs_entities")} e3
+            ON ('x' || substring(replace(e3.id::text, '-', ''), 1, 16))::bit(64)::bigint = p.current_node
+            AND e3.id = r.object_id
+        LEFT JOIN {self._get_table_name("graphs_entities")} e4
+            ON ('x' || substring(replace(e4.id::text, '-', ''), 1, 16))::bit(64)::bigint = p.next_node
+            AND e4.id = r.subject_id
         ORDER BY p.seq;
-        """
+    """
 
         try:
             await self.connection_manager.execute_query(
-                SETUP_QUERY, [parent_id]
+                SETUP_QUERY, [str(parent_id)]
             )
             results = await self.connection_manager.fetch_query(
-                QUERY, [source_id, target_id]
+                QUERY, [str(source_id), str(target_id)]
             )
 
             if not results:
@@ -2936,51 +2943,51 @@ class PostgresGraphsHandler(Handler):
                 )
 
             path = {
-                "path": [],
-                "total_cost": results[-1]["total_cost"]
-                + results[-1]["path_cost"],
-                "num_hops": len(results),
+                "path": [
+                    {
+                        "type": "entity",
+                        "id": str(source_id),
+                        "name": results[0]["current_entity_name"],
+                    }
+                ],
+                "total_cost": 0,
+                "num_hops": 0,
             }
 
-            for i, row in enumerate(results):
-                # Add current entity if it's the first step or different from last entity
-                if i == 0 or path["path"][-1]["id"] != str(
-                    row["current_entity_id"]
-                ):
+            for row in results:
+                if row["relationship_uuid"]:
                     path["path"].append(
                         {
-                            "type": "entity",
-                            "id": str(row["current_entity_id"]),
-                            "name": row["current_entity_name"],
+                            "type": "relationship",
+                            "id": str(row["relationship_uuid"]),
+                            "predicate": row["predicate"],
+                            "reversed": row["is_reverse"],
+                            "subject": row["subject"],
+                            "object": row["object"],
+                            "weight": row["weight"],
+                            "cost": row["path_cost"],
                         }
                     )
 
-                # Add the relationship with direction
-                path["path"].append(
-                    {
-                        "type": "relationship",
-                        "id": str(row["relationship_uuid"]),
-                        "predicate": row["predicate"],
-                        "reversed": row["is_reverse"],
-                        "subject": row["subject"],
-                        "object": row["object"],
-                        "weight": row["weight"],
-                        "cost": row["path_cost"],
-                    }
-                )
+                    if row["next_entity_id"]:
+                        path["path"].append(
+                            {
+                                "type": "entity",
+                                "id": str(row["next_entity_id"]),
+                                "name": row["next_entity_name"],
+                            }
+                        )
 
-                # Add next entity
-                path["path"].append(
-                    {
-                        "type": "entity",
-                        "id": str(row["next_entity_id"]),
-                        "name": row["next_entity_name"],
-                    }
+            if results:
+                path["total_cost"] = results[-1]["total_cost"]
+                path["num_hops"] = len(
+                    [x for x in path["path"] if x["type"] == "relationship"]
                 )
 
             return path
-        except R2RException as e:
-            path = {"path": [], "total_cost": 0, "num_hops": 0}
+
+        except R2RException:
+            return {"results": {"path": [], "total_cost": 0, "num_hops": 0}}
         except Exception as e:
             raise HTTPException(
                 status_code=500, detail=f"Error finding path: {str(e)}"

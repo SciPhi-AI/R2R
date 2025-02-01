@@ -2175,16 +2175,15 @@ class GraphRouter(BaseRouterV3):
             collection_id: UUID = Path(
                 ..., description="The ID of the graph to initialize."
             ),
-            source_id: UUID = Body(
+            source_id: UUID = Query(
                 ..., description="The ID of the source entity."
             ),
-            target_id: UUID = Body(
+            target_id: UUID = Query(
                 ..., description="The ID of the target entity."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ) -> WrappedGenericMessageResponse:
+        ):
             # TODO: Auth
-            logger.info(f"dijkstra endpoint called with {collection_id}")
             return await self.services.graph.dijkstra(  # type: ignore
                 graph_id=collection_id,
                 source_id=source_id,
