@@ -39,6 +39,8 @@ Agentic Retrieval-Augmented Generation (RAG) with a RESTful API.
 # About
 R2R (Reason to Retrieve) is the most advanced AI retrieval system, supporting Retrieval-Augmented Generation (RAG) with production-ready features. Built around a containerized RESTful API, R2R offers multimodal content ingestion, hybrid search functionality, knowledge graphs, and comprehensive user and document management.
 
+R2R also includes **RAWR** (Reasoning Agents with RAG), a multi-step reasoning system that fetches relevant data and provides richer, context-aware answers for complex queries.
+
 For a more complete view of R2R, check out the [full documentation](https://r2r-docs.sciphi.ai/).
 
 
@@ -83,7 +85,7 @@ The command above will install the `full` installation which includes Hatchet fo
 - [API & SDKs](https://r2r-docs.sciphi.ai/api-and-sdks/introduction): API reference and Python/JS SDKs for interacting with R2R
 
 - Advanced Retrieval
-  - [RAG Agent](https://r2r-docs.sciphi.ai/documentation/agent): R2R's powerful RAG agent
+  - [RAG Agent](https://r2r-docs.sciphi.ai/documentation/retrieval/rawr): R2R's powerful Reasoning Agent with RAG
   - [Hybrid Search](https://r2r-docs.sciphi.ai/documentation/hybrid-search): Introduction to hybrid search
   - [Advanced RAG](https://r2r-docs.sciphi.ai/documentation/advanced-rag): Advanced RAG features
 
