@@ -94,7 +94,7 @@ r2r serve --docker --full
 
 - 🐋 **[Docker](/self-hosting/installation/full/docker)**
   Use Docker to easily deploy the full R2R system into your local environment
-- 🧩 ** [Configuration](https://r2r-docs.sciphi.ai/self-hosting/configuration/overview)**
+- 🧩 **[Configuration](https://r2r-docs.sciphi.ai/self-hosting/configuration/overview)**
   Set up your application using intuitive configuration files.
 
 ## Community
