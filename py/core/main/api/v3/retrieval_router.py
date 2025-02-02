@@ -705,7 +705,7 @@ class RetrievalRouterV3(BaseRouterV3):
         @self.router.post(
             "/retrieval/rawr",
             dependencies=[Depends(self.rate_limit_dependency)],
-            summary="Reasoning RAG Agent (Chain-of-Thought + Tools)",
+            summary="Reasoning Agent with RAG(Thoughts + Tools)",
             openapi_extra={
                 "x-codeSamples": [
                     {
