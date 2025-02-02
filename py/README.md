@@ -81,13 +81,13 @@ r2r serve --docker --full
 
 ### Application Layer
 
-- 💻 ** [Web Development](https://r2r-docs.sciphi.ai/cookbooks/web-dev)**
+- 💻 **[Web Development](https://r2r-docs.sciphi.ai/cookbooks/web-dev)**
   Building web apps using R2R.
-- 🔐 ** [User Auth](https://r2r-docs.sciphi.ai/documentation/user-auth)**
+- 🔐 **[User Auth](https://r2r-docs.sciphi.ai/documentation/user-auth)**
   Authenticating users.
-- 📂 ** [Collections](https://r2r-docs.sciphi.ai/self-hosting/collections)**
+- 📂 **[Collections](https://r2r-docs.sciphi.ai/self-hosting/collections)**
   Document collections management.
-- 🌐 ** [Web Application](https://r2r-docs.sciphi.ai/cookbooks/web-dev)**
+- 🌐 **[Web Application](https://r2r-docs.sciphi.ai/cookbooks/web-dev)**
   Connecting with the R2R Application.
 
 ### Self-Hosting
@@ -96,9 +96,6 @@ r2r serve --docker --full
   Use Docker to easily deploy the full R2R system into your local environment
 - 🧩 ** [Configuration](https://r2r-docs.sciphi.ai/self-hosting/configuration/overview)**
   Set up your application using intuitive configuration files.
-
-
-
 
 ## Community
 
