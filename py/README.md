@@ -61,6 +61,8 @@ export OPENAI_API_KEY=sk-...
 
 # Run the server and database
 r2r serve --docker --full
+
+# Refer to docs for local LLM setup - https://r2r-docs.sciphi.ai/self-hosting/local-rag
 ```
 
 ## Key Features
