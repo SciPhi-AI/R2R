@@ -581,7 +581,6 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                     else:
                         action_text += stream_delta
             parsed_actions = self._parse_action_blocks(action_text)
-            print("parsed_actions = ", parsed_actions)
 
             pre_text = action_text.split("<Action>")[0]
             conversation_context += pre_text

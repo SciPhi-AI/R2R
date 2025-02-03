@@ -167,7 +167,7 @@ class CompletionProvider(Provider):
             "kwargs": kwargs,
         }
         async for chunk in self._execute_with_backoff_async_stream(task):
-            print("CHUNK = ", chunk)
+            logger.debug(f"Received chunk: {chunk}")
             if isinstance(chunk, dict):
                 yield LLMChatCompletionChunk(**chunk)
                 continue
