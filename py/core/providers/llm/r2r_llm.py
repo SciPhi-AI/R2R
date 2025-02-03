@@ -49,14 +49,19 @@ class R2RCompletionProvider(CompletionProvider):
         )
 
     def _choose_subprovider_by_model(
-        self, model_name: str
+        self, model_name: str, is_streaming: bool = False
     ) -> CompletionProvider:
         """
         Decide which underlying sub-provider to call based on the model name (prefix).
         """
         # Route to Anthropic if appropriate.
         if model_name.startswith("anthropic/"):
-            return self._anthropic_provider
+            if not is_streaming:
+                return (
+                    self._litellm_provider
+                )  # Anthropic does not yet support non-streaming completions.
+            else:
+                return self._anthropic_provider
 
         # Route to Azure Foundry explicitly.
         if model_name.startswith("azure-foundry/"):

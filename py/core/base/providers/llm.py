@@ -176,7 +176,7 @@ class CompletionProvider(Provider):
                 chunk.choices[0].finish_reason
                 if chunk.choices[0].finish_reason != ""
                 else None
-            )  # handle error in together ai output
+            )  # handle error output conventions
             try:
                 yield LLMChatCompletionChunk(**(chunk.dict()))
             except Exception as e:
