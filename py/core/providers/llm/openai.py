@@ -300,7 +300,6 @@ class OpenAICompletionProvider(CompletionProvider):
             # For Azure Foundry, use the `complete` method; otherwise, use the OpenAI-style method.
             if client == self.async_azure_foundry_client:
                 args.pop("model")
-                print("args = ", args)
                 response = await client.complete(**args)
             else:
                 response = await client.chat.completions.create(**args)
