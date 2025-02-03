@@ -18,7 +18,6 @@ fast_llm = "ollama/llama3.1" # used inside R2R for `fast` completions, like docu
   stream = false
   add_generation_kwargs = { }
 
-
 [database]
 provider = "postgres"
 
@@ -42,8 +41,16 @@ provider = "postgres"
   [database.graph_search_settings]
     generation_config = { model = "ollama/llama3.1" }
 
-
 [embedding]
+provider = "ollama"
+base_model = "mxbai-embed-large"
+base_dimension = 1_024
+batch_size = 128
+add_title_as_prefix = true
+concurrent_request_limit = 2
+
+[completion_embedding]
+# Generally this should be the same as the embedding config, but advanced users may want to run with a different provider to reduce latency
 provider = "ollama"
 base_model = "mxbai-embed-large"
 base_dimension = 1_024

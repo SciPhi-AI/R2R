@@ -171,9 +171,7 @@ class RetrievalService(Service):
 
         return response_dict
 
-    # ---------------------------------------------------------------------
-    # Private method #1: Vector Search (replaces VectorSearchPipe.search)
-    # ---------------------------------------------------------------------
+    # Vector Search
     async def _vector_search_logic(
         self,
         query: str,
@@ -191,8 +189,10 @@ class RetrievalService(Service):
             return []
 
         # 1) embed the query
-        query_vector = await self.providers.embedding.async_get_embedding(
-            query, purpose=EmbeddingPurpose.QUERY
+        query_vector = (
+            await self.providers.completion_embedding.async_get_embedding(
+                query, purpose=EmbeddingPurpose.QUERY
+            )
         )
 
         # 2) Decide which search to run
@@ -228,7 +228,7 @@ class RetrievalService(Service):
             )
 
         # 3) Re-rank if you want a second pass
-        reranked = await self.providers.embedding.arerank(
+        reranked = await self.providers.completion_embedding.arerank(
             query=query, results=raw_results, limit=search_settings.limit
         )
 
@@ -245,9 +245,7 @@ class RetrievalService(Service):
 
         return final_results
 
-    # ---------------------------------------------------------------------
-    # Private method #2: Graph Search (replaces GraphSearchSearchPipe.search)
-    # ---------------------------------------------------------------------
+    # Graph Search
     async def _graph_search_logic(
         self,
         query: str,
@@ -265,8 +263,10 @@ class RetrievalService(Service):
             return results
 
         # embed query
-        query_embedding = await self.providers.embedding.async_get_embedding(
-            query
+        query_embedding = (
+            await self.providers.completion_embedding.async_get_embedding(
+                query
+            )
         )
 
         base_limit = search_settings.limit
@@ -446,7 +446,9 @@ class RetrievalService(Service):
         self,
         text: str,
     ):
-        return await self.providers.embedding.async_get_embedding(text=text)
+        return await self.providers.completion_embedding.async_get_embedding(
+            text=text
+        )
 
     @telemetry_event("RAG")
     async def rag(

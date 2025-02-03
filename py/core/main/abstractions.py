@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
@@ -41,6 +41,11 @@ class R2RProviders(BaseModel):
         | OpenAIEmbeddingProvider
         | OllamaEmbeddingProvider
     )
+    completion_embedding: (
+        LiteLLMEmbeddingProvider
+        | OpenAIEmbeddingProvider
+        | OllamaEmbeddingProvider
+    ) | None = None
     llm: (
         AnthropicCompletionProvider
         | LiteLLMCompletionProvider

@@ -310,10 +310,25 @@ class R2RProviderFactory:
         *args,
         **kwargs,
     ) -> R2RProviders:
+        if (
+            self.config.embedding.base_dimension
+            != self.config.completion_embedding.base_dimension
+        ):
+            raise ValueError(
+                f"Both embedding configurations must use the same dimensions. Got {self.config.embedding.base_dimension} and {self.config.completion_embedding.base_dimension}"
+            )
+
         embedding_provider = (
             embedding_provider_override
             or self.create_embedding_provider(
                 self.config.embedding, *args, **kwargs
+            )
+        )
+
+        completion_embedding_provider = (
+            embedding_provider_override
+            or self.create_embedding_provider(
+                self.config.completion_embedding, *args, **kwargs
             )
         )
 
@@ -372,6 +387,7 @@ class R2RProviderFactory:
             auth=auth_provider,
             database=database_provider,
             embedding=embedding_provider,
+            completion_embedding=completion_embedding_provider,
             ingestion=ingestion_provider,
             llm=llm_provider,
             email=email_provider,

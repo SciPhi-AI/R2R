@@ -18,7 +18,6 @@ fast_llm = "lm_studio/llama-3.2-3b-instruct" # used inside R2R for `fast` comple
   stream = false
   add_generation_kwargs = { }
 
-
 [database]
 provider = "postgres"
 
@@ -42,8 +41,16 @@ provider = "postgres"
   [database.graph_search_settings]
     generation_config = { model = "lm_studio/llama-3.2-3b-instruct" }
 
-
 [embedding]
+provider = "litellm"
+base_model = "lm_studio/text-embedding-nomic-embed-text-v1.5"
+base_dimension = nan
+batch_size = 128
+add_title_as_prefix = true
+concurrent_request_limit = 2
+
+[completion_embedding]
+# Generally this should be the same as the embedding config, but advanced users may want to run with a different provider to reduce latency
 provider = "litellm"
 base_model = "lm_studio/text-embedding-nomic-embed-text-v1.5"
 base_dimension = nan
