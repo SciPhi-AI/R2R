@@ -25,6 +25,12 @@ provider = "litellm"
 base_model = "openai/text-embedding-3-small"
 base_dimension = 512
 
+[completion_embedding]
+# Generally this should be the same as the embedding config, but advanced users may want to run with a different provider to reduce latency
+provider = "litellm"
+base_model = "openai/text-embedding-3-small"
+base_dimension = 512
+
 [file]
 provider = "postgres"
 

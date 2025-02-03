@@ -26,6 +26,15 @@ batch_size = 128
 add_title_as_prefix = true
 concurrent_request_limit = 2
 
+[completion_embedding]
+# Generally this should be the same as the embedding config, but advanced users may want to run with a different provider to reduce latency
+provider = "litellm"
+base_model = "lm_studio/text-embedding-nomic-embed-text-v1.5"
+base_dimension = nan
+batch_size = 128
+add_title_as_prefix = true
+concurrent_request_limit = 2
+
 [database]
 provider = "postgres"
 
