@@ -93,7 +93,6 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
             message = response.choices[0].message
 
             if message.tool_calls:
-                print("message.tool_calls = ", message.tool_calls)
                 # import pdb; pdb.set_trace()
                 assistant_msg = Message(
                     role="assistant",

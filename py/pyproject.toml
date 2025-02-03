@@ -142,6 +142,9 @@ core = [
     "python-multipart",
     "pynacl",
     "tiktoken",
+    "azure-ai-ml",
+    "azure-ai-inference",
+    "lark",
 ]
 ingestion-bundle = [
     "aioshutil",
