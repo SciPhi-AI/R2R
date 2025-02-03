@@ -281,7 +281,7 @@ class IngestionService:
                 status_code=e.status_code,
             )
         except Exception as e:
-            if R2RException:
+            if isinstance(e, R2RException):
                 raise
             raise R2RDocumentProcessingError(
                 document_id=document_info.id,
@@ -300,7 +300,7 @@ class IngestionService:
 
             document += "Document Text:\n"
             for chunk in chunked_documents[
-                0 : self.config.ingestion.chunks_for_document_summary
+                : self.config.ingestion.chunks_for_document_summary
             ]:
                 document += chunk["data"]
 
@@ -309,7 +309,7 @@ class IngestionService:
                 task_prompt_name=self.config.ingestion.document_summary_task_prompt,
                 task_inputs={
                     "document": document[
-                        0 : self.config.ingestion.document_summary_max_length
+                        : self.config.ingestion.document_summary_max_length
                     ]
                 },
             )
@@ -353,7 +353,14 @@ class IngestionService:
             batch: list[DocumentChunk],
         ) -> list[VectorEntry]:
             # All text from the batch
-            texts = [ex.data for ex in batch]
+            texts = [
+                (
+                    ex.data.decode("utf-8")
+                    if isinstance(ex.data, bytes)
+                    else ex.data
+                )
+                for ex in batch
+            ]
             # Retrieve embeddings in bulk
             vectors = await self.providers.embedding.async_get_embeddings(
                 texts,  # list of strings
@@ -368,7 +375,11 @@ class IngestionService:
                         owner_id=extraction.owner_id,
                         collection_ids=extraction.collection_ids,
                         vector=Vector(data=raw_vector, type=VectorType.FIXED),
-                        text=extraction.data,
+                        text=(
+                            extraction.data.decode("utf-8")
+                            if isinstance(extraction.data, bytes)
+                            else str(extraction.data)
+                        ),
                         metadata={**extraction.metadata},
                     )
                 )
@@ -644,7 +655,7 @@ class IngestionService:
         # Merge metadata
         merged_metadata = {**existing_chunk["metadata"]}
         if metadata is not None:
-            merged_metadata.update(metadata)
+            merged_metadata |= metadata
 
         # Create updated chunk
         extraction_data = {
@@ -660,8 +671,13 @@ class IngestionService:
         extraction = DocumentChunk(**extraction_data).model_dump()
 
         # Re-embed
-        embeddings = self.embed_document([extraction], embedding_batch_size=1)
-        embeddings = [embedding async for embedding in embeddings]
+        embeddings_generator = self.embed_document(
+            [extraction], embedding_batch_size=1
+        )
+        embeddings = []
+        async for embedding in embeddings_generator:
+            embeddings.append(embedding)
+
         # Re-store
         store_gen = self.store_embeddings(embeddings, storage_batch_size=1)
         async for _ in store_gen:
@@ -733,11 +749,13 @@ class IngestionService:
             updated_chunk_text = chunk["text"]
             chunk["metadata"]["chunk_enrichment_status"] = "failed"
         else:
-            if not updated_chunk_text:
-                updated_chunk_text = chunk["text"]
-                chunk["metadata"]["chunk_enrichment_status"] = "failed"
-            else:
-                chunk["metadata"]["chunk_enrichment_status"] = "success"
+            chunk["metadata"]["chunk_enrichment_status"] = (
+                "success" if updated_chunk_text else "failed"
+            )
+
+        if not updated_chunk_text or not isinstance(updated_chunk_text, str):
+            updated_chunk_text = str(chunk["text"])
+            chunk["metadata"]["chunk_enrichment_status"] = "failed"
 
         # Re-embed
         data = await self.providers.embedding.async_get_embedding(
