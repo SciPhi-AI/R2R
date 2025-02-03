@@ -91,20 +91,24 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
         # Unchanged from your snippet:
         if not self._completed:
             message = response.choices[0].message
-            if message.function_call:
-                await self.handle_function_or_tool_call(
-                    message.function_call.name,
-                    message.function_call.arguments,
-                    *args,
-                    **kwargs,
+
+            if message.tool_calls:
+                print("message.tool_calls = ", message.tool_calls)
+                # import pdb; pdb.set_trace()
+                assistant_msg = Message(
+                    role="assistant",
+                    content=None,
+                    tool_calls=[msg.dict() for msg in message.tool_calls],
                 )
-            elif message.tool_calls:
+                await self.conversation.add_message(assistant_msg)
+
                 # If there are multiple tool_calls, call them sequentially here
                 # (Because this is the non-streaming version, concurrency is less critical.)
                 for tool_call in message.tool_calls:
                     await self.handle_function_or_tool_call(
                         tool_call.function.name,
                         tool_call.function.arguments,
+                        tool_id=tool_call.id,
                         *args,
                         **kwargs,
                     )
