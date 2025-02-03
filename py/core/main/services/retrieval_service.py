@@ -773,7 +773,8 @@ class RetrievalService(Service):
                                 )
                             elif (
                                 "reasoner" in rag_generation_config.model
-                                or "deepseek-r1" in rag_generation_config.model.lower()
+                                or "deepseek-r1"
+                                in rag_generation_config.model.lower()
                             ):
                                 agent = R2RXMLToolsStreamingReasoningRAGAgent(
                                     database_provider=self.providers.database,
@@ -1143,8 +1144,8 @@ class RetrievalService(Service):
         else:
             if (
                 "gemini-2.0-flash-thinking-exp-01-21" in model
-                or "reasoner" in model # DeepSeek naming for R1
-                or "deepseek-r1" in model.lower() # Open source naming for R1
+                or "reasoner" in model  # DeepSeek naming for R1
+                or "deepseek-r1" in model.lower()  # Open source naming for R1
             ):
                 prompt_name = "aware_rag_agent_reasoning_xml_tooling"
             elif (
