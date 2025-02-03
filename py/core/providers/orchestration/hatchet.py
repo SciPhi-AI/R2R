@@ -16,7 +16,6 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
             raise ImportError(
                 "Hatchet SDK not installed. Please install it using `pip install hatchet-sdk`."
             )
-        logging.basicConfig(level=logging.INFO)
         root_logger = logging.getLogger()
 
         self.orchestrator = Hatchet(
