@@ -14,7 +14,10 @@ from core import (
     R2RStreamingRAGAgent,
     R2RStreamingReasoningRAGAgent,
 )
-from core.agent.rag import GeminiXMLToolsStreamingReasoningRAGAgent
+from core.agent.rag import (
+    GeminiXMLToolsStreamingReasoningRAGAgent,
+    R2RXMLToolsStreamingReasoningRAGAgent,
+)
 from core.base import (
     AggregateSearchResult,
     ChunkSearchResult,
@@ -568,6 +571,11 @@ class RetrievalService(Service):
         override_tools: Optional[list[dict[str, Any]]] = None,
         rawr: bool = False,
     ):
+        if rawr and not rag_generation_config.stream:
+            raise R2RException(
+                status_code=400,
+                message="Currently, the reasoning agent can only be used with `stream=True`.",
+            )
         try:
             if message and messages:
                 raise R2RException(
@@ -754,6 +762,21 @@ class RetrievalService(Service):
                                 in rag_generation_config.model
                             ):
                                 agent = GeminiXMLToolsStreamingReasoningRAGAgent(
+                                    database_provider=self.providers.database,
+                                    llm_provider=self.providers.llm,
+                                    config=agent_config,
+                                    search_settings=search_settings,
+                                    rag_generation_config=rag_generation_config,
+                                    max_tool_context_length=max_tool_context_length,
+                                    local_search_method=self.search,
+                                    content_method=self.get_context,
+                                )
+                            elif (
+                                "reasoner" in rag_generation_config.model
+                                or "DeepSeek-R1" in rag_generation_config.model
+                                or "deepseek-r1" in rag_generation_config.model
+                            ):
+                                agent = R2RXMLToolsStreamingReasoningRAGAgent(
                                     database_provider=self.providers.database,
                                     llm_provider=self.providers.llm,
                                     config=agent_config,
@@ -1119,7 +1142,12 @@ class RetrievalService(Service):
         if not rawr:
             prompt_name = "aware_rag_agent"
         else:
-            if "gemini-2.0-flash-thinking-exp-01-21" in model:
+            if (
+                "gemini-2.0-flash-thinking-exp-01-21" in model
+                or "reasoner" in model
+                or "DeepSeek-R1" in model
+                or "deepseek-r1" in model
+            ):
                 prompt_name = "aware_rag_agent_reasoning_xml_tooling"
             elif (
                 "claude-3-5-sonnet-20241022" in model

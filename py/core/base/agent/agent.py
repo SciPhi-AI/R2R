@@ -152,18 +152,22 @@ class Agent(ABC):
             ),
             # FIXME: Use tools instead of functions
             # TODO - Investigate why `tools` fails with OpenAI+LiteLLM
-            tools=[
-                {
-                    "function": {
+            tools=(
+                [
+                    {
+                        "function": {
+                            "name": tool.name,
+                            "description": tool.description,
+                            "parameters": tool.parameters,
+                        },
+                        "type": "function",
                         "name": tool.name,
-                        "description": tool.description,
-                        "parameters": tool.parameters,
-                    },
-                    "type": "function",
-                    "name": tool.name,
-                }
-                for tool in self.tools
-            ],
+                    }
+                    for tool in self.tools
+                ]
+                if self.tools
+                else None
+            ),
             stream=stream,
         )
 

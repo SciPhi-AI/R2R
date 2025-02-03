@@ -167,9 +167,20 @@ class CompletionProvider(Provider):
             "kwargs": kwargs,
         }
         async for chunk in self._execute_with_backoff_async_stream(task):
-            yield LLMChatCompletionChunk(
-                **(chunk.dict() if not isinstance(chunk, dict) else chunk)
-            )
+            print("CHUNK = ", chunk)
+            if isinstance(chunk, dict):
+                yield LLMChatCompletionChunk(**chunk)
+                continue
+
+            chunk.choices[0].finish_reason = (
+                chunk.choices[0].finish_reason
+                if chunk.choices[0].finish_reason != ""
+                else None
+            )  # handle error in together ai output
+            try:
+                yield LLMChatCompletionChunk(**(chunk.dict()))
+            except Exception as e:
+                yield LLMChatCompletionChunk(**(chunk.as_dict()))
 
     def get_completion_stream(
         self,
