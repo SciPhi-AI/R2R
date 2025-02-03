@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "r2r"
 readme = "README.md"
-version = "3.3.32"
+version = "3.3.33"
 
 description = "SciPhi R2R"
 authors = ["Owen Colegrove <owen@sciphi.ai>"]
@@ -102,6 +102,8 @@ striprtf = { version = "^0.0.28", optional = true }
 xlrd = { version = "^2.0.1", optional = true }
 pynacl = { version = "^1.5.0", optional = true }
 tiktoken = { version =  "^0.8.0", optional = true }
+azure-ai-ml = "^1.24.0"
+azure-ai-inference = "^1.0.0b8"
 
 [tool.poetry.extras]
 core = [
