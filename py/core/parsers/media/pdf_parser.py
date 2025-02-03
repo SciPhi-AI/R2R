@@ -1,19 +1,25 @@
 # type: ignore
+
+# Standard library imports
 import asyncio
 import base64
 import logging
 import os
 import string
 import tempfile
+import time
 import unicodedata
 import uuid
 from io import BytesIO
 from typing import AsyncGenerator
 
+# Third-party imports
 import aiofiles
-from pdf2image import convert_from_path
+from pdf2image import convert_from_bytes, convert_from_path
 from pdf2image.exceptions import PDFInfoNotInstalledError
+from PIL import Image
 
+# Local application imports
 from core.base.abstractions import GenerationConfig
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
@@ -47,33 +53,51 @@ class VLMPDFParser(AsyncParser[str | bytes]):
         except ImportError:
             logger.error("Failed to import LiteLLM vision support")
             raise ImportError(
-                "Please install the `litellm` package to use the VLMPDFParser."
+                "Please install the litellm package to use the VLMPDFParser."
             )
-
-    def _create_temp_dir(self) -> str:
-        """Create a unique temporary directory for PDF processing."""
-        # Create a unique directory name using UUID
-        unique_id = str(uuid.uuid4())
-        temp_base = tempfile.gettempdir()
-        temp_dir = os.path.join(temp_base, f"pdf_images_{unique_id}")
-        os.makedirs(temp_dir, exist_ok=True)
-        return temp_dir
+        # Check once if the model supports vision
+        if not self.supports_vision(model=self.config.vision_pdf_model):
+            msg = (
+                f"Model {self.config.vision_pdf_model} does not support vision"
+            )
+            logger.error(msg)
+            raise ValueError(msg)
+        logger.info(
+            f"Initialized VLMPDFParser with model {self.config.vision_pdf_model}"
+        )
 
     async def convert_pdf_to_images(
-        self, pdf_path: str, temp_dir: str
-    ) -> list[str]:
-        """Convert PDF pages to images asynchronously."""
+        self, data: str | bytes
+    ) -> list[Image.Image]:
+        """
+        Convert PDF pages to images asynchronously using in-memory conversion.
+        """
+        logger.info("Starting PDF conversion to images.")
+        start_time = time.perf_counter()
         options = {
-            "pdf_path": pdf_path,
-            "output_folder": temp_dir,
-            "dpi": 300,  # Configurable via config if needed
+            "dpi": 300,  # You can make this configurable via self.config if needed
             "fmt": "jpeg",
             "thread_count": 4,
-            "paths_only": True,
+            "paths_only": False,  # Return PIL Image objects instead of writing to disk
         }
         try:
-            return await asyncio.to_thread(convert_from_path, **options)
+            if isinstance(data, bytes):
+                images = await asyncio.to_thread(
+                    convert_from_bytes, data, **options
+                )
+            else:
+                images = await asyncio.to_thread(
+                    convert_from_path, data, **options
+                )
+            elapsed = time.perf_counter() - start_time
+            logger.info(
+                f"PDF conversion completed in {elapsed:.2f} seconds, total pages: {len(images)}"
+            )
+            return images
         except PDFInfoNotInstalledError:
+            logger.error(
+                "PDFInfoNotInstalledError encountered during PDF conversion."
+            )
             raise PopperNotFoundError()
         except Exception as err:
             logger.error(
@@ -82,21 +106,17 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             raise PDFParsingError(f"Failed to process PDF: {str(err)}", err)
 
     async def process_page(
-        self, image_path: str, page_num: int
+        self, image: Image.Image, page_num: int
     ) -> dict[str, str]:
         """Process a single PDF page using the vision model."""
-
+        page_start = time.perf_counter()
         try:
-            # Read and encode image
-            async with aiofiles.open(image_path, "rb") as image_file:
-                image_data = await image_file.read()
-                image_base64 = base64.b64encode(image_data).decode("utf-8")
-
-            # Verify model supports vision
-            if not self.supports_vision(model=self.config.vision_pdf_model):
-                raise ValueError(
-                    f"Model {self.config.vision_pdf_model} does not support vision"
-                )
+            # Convert PIL image to JPEG bytes in-memory
+            buf = BytesIO()
+            image.save(buf, format="JPEG")
+            buf.seek(0)
+            image_data = buf.read()
+            image_base64 = base64.b64encode(image_data).decode("utf-8")
 
             # Configure generation parameters
             generation_config = GenerationConfig(
@@ -104,7 +124,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                 stream=False,
             )
 
-            # Prepare message with image
+            # Prepare message with image content
             messages = [
                 {
                     "role": "user",
@@ -120,19 +140,27 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                 }
             ]
 
-            # Get completion from LiteLLM provider
+            logger.debug(f"Sending page {page_num} to vision model.")
+            req_start = time.perf_counter()
             response = await self.llm_provider.aget_completion(
                 messages=messages, generation_config=generation_config
+            )
+            req_elapsed = time.perf_counter() - req_start
+            logger.debug(
+                f"Vision model response for page {page_num} received in {req_elapsed:.2f} seconds."
             )
 
             if response.choices and response.choices[0].message:
                 content = response.choices[0].message.content
-                # if not content:
-                # raise ValueError("No content in response")
+                page_elapsed = time.perf_counter() - page_start
+                logger.info(
+                    f"Processed page {page_num} in {page_elapsed:.2f} seconds."
+                )
                 return {"page": str(page_num), "content": content}
             else:
-                raise ValueError("No response content")
-
+                msg = f"No response content for page {page_num}"
+                logger.error(msg)
+                raise ValueError(msg)
         except Exception as e:
             logger.error(
                 f"Error processing page {page_num} with vision model: {str(e)}"
@@ -141,86 +169,62 @@ class VLMPDFParser(AsyncParser[str | bytes]):
 
     async def ingest(
         self, data: str | bytes, maintain_order: bool = True, **kwargs
-    ) -> AsyncGenerator[dict[str, str], None]:
+    ) -> AsyncGenerator[str, None]:
         """
-        Ingest PDF data and yield descriptions for each page using vision model.
-
-        Args:
-            data: PDF file path or bytes
-            maintain_order: If True, yields results in page order. If False, yields as completed.
-            **kwargs: Additional arguments passed to the completion call
-
-        Yields:
-            Dict containing page number and content for each processed page
+        Ingest PDF data and yield the text description for each page using the vision model.
+        (This version yields a string per page rather than a dictionary.)
         """
+        ingest_start = time.perf_counter()
+        logger.info("Starting PDF ingestion using VLMPDFParser.")
         if not self.vision_prompt_text:
-            self.vision_prompt_text = await self.database_provider.prompts_handler.get_cached_prompt(  # type: ignore
-                prompt_name=self.config.vision_pdf_prompt_name
+            self.vision_prompt_text = (
+                await self.database_provider.prompts_handler.get_cached_prompt(
+                    prompt_name=self.config.vision_pdf_prompt_name
+                )
             )
+            logger.info("Retrieved vision prompt text from database.")
 
-        temp_dir = None
         try:
-            # Create temporary directory for image processing
-            # temp_dir = os.path.join(os.getcwd(), "temp_pdf_images")
-            # os.makedirs(temp_dir, exist_ok=True)
-            temp_dir = self._create_temp_dir()
+            # Convert PDF to images (in-memory)
+            images = await self.convert_pdf_to_images(data)
 
-            # Handle both file path and bytes input
-            if isinstance(data, bytes):
-                pdf_path = os.path.join(temp_dir, "temp.pdf")
-                async with aiofiles.open(pdf_path, "wb") as f:
-                    await f.write(data)
-            else:
-                pdf_path = data
-
-            # Convert PDF to images
-            image_paths = await self.convert_pdf_to_images(pdf_path, temp_dir)
-            # Create tasks for all pages
+            # Create asynchronous tasks for processing each page
             tasks = {
                 asyncio.create_task(
-                    self.process_page(image_path, page_num)
+                    self.process_page(image, page_num)
                 ): page_num
-                for page_num, image_path in enumerate(image_paths, 1)
+                for page_num, image in enumerate(images, 1)
             }
 
             if maintain_order:
-                # Store results in order
                 pending = set(tasks.keys())
                 results = {}
                 next_page = 1
-
                 while pending:
-                    # Get next completed task
                     done, pending = await asyncio.wait(
                         pending, return_when=asyncio.FIRST_COMPLETED
                     )
-
-                    # Process completed tasks
                     for task in done:
                         result = await task
                         page_num = int(result["page"])
                         results[page_num] = result
-
-                        # Yield results in order
+                        # **Fix:** Yield only the content string instead of the whole dictionary.
                         while next_page in results:
                             yield results.pop(next_page)["content"]
                             next_page += 1
             else:
-                # Yield results as they complete
+                # Yield results as tasks complete
                 for coro in asyncio.as_completed(tasks.keys()):
                     result = await coro
+                    # **Fix:** Yield only the content string.
                     yield result["content"]
-
+            total_elapsed = time.perf_counter() - ingest_start
+            logger.info(
+                f"Completed PDF ingestion in {total_elapsed:.2f} seconds using VLMPDFParser."
+            )
         except Exception as e:
             logger.error(f"Error processing PDF: {str(e)}")
             raise
-
-        finally:
-            # Cleanup temporary files
-            if temp_dir and os.path.exists(temp_dir):
-                for file in os.listdir(temp_dir):
-                    os.remove(os.path.join(temp_dir, file))
-                os.rmdir(temp_dir)
 
 
 class BasicPDFParser(AsyncParser[str | bytes]):

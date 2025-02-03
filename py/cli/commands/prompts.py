@@ -8,7 +8,6 @@ from cli.utils.timer import timer
 from r2r import R2RAsyncClient, R2RException
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

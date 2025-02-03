@@ -1,5 +1,6 @@
 import logging
 import logging.config
+import os
 import re
 import sys
 from pathlib import Path
@@ -69,13 +70,21 @@ class HTTPStatusFilter(logging.Filter):
 
 
 def configure_logging():
+    # Read the desired log level from the environment (default to DEBUG)
+    log_level = os.environ.get("R2R_LOG_LEVEL", "DEBUG").upper()
+
+    # Create a logs directory if it does not already exist
     log_dir = Path.cwd() / "logs"
     log_dir.mkdir(exist_ok=True)
 
     log_config = {
         "version": 1,
         "disable_existing_loggers": False,
-        "filters": {"http_status_filter": {"()": HTTPStatusFilter}},
+        "filters": {
+            "http_status_filter": {
+                "()": HTTPStatusFilter,
+            }
+        },
         "formatters": {
             "default": {
                 "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -102,32 +111,34 @@ def configure_logging():
                 "maxBytes": 10485760,  # 10MB
                 "backupCount": 5,
                 "filters": ["http_status_filter"],
+                "level": log_level,  # Set handler level based on the environment variable
             },
             "console": {
                 "class": "logging.StreamHandler",
                 "formatter": "colored",
                 "stream": sys.stdout,
                 "filters": ["http_status_filter"],
+                "level": log_level,  # Set handler level based on the environment variable
             },
         },
         "loggers": {
             "": {  # Root logger
                 "handlers": ["console", "file"],
-                "level": "INFO",
+                "level": log_level,  # Set logger level based on the environment variable
             },
             "uvicorn": {
                 "handlers": ["console", "file"],
-                "level": "INFO",
+                "level": log_level,
                 "propagate": False,
             },
             "uvicorn.error": {
                 "handlers": ["console", "file"],
-                "level": "INFO",
+                "level": log_level,
                 "propagate": False,
             },
             "uvicorn.access": {
                 "handlers": ["console", "file"],
-                "level": "INFO",
+                "level": log_level,
                 "propagate": False,
             },
         },
@@ -135,4 +146,5 @@ def configure_logging():
 
     logging.config.dictConfig(log_config)
     logger = logging.getLogger()
+    logger.info(f"Logging is configured at {log_level} level.")
     return logger, Path(log_config["handlers"]["file"]["filename"])
