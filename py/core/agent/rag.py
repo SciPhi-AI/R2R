@@ -508,9 +508,6 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
         self.max_steps = max_steps
         self.current_step_count = 0
 
-    def _register_tools(self):
-        self._tools = None
-
     async def arun(
         self,
         system_instruction: Optional[str] = None,
@@ -536,17 +533,9 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
             for msg in messages:
                 await self.conversation.add_message(msg)
 
-        # Build initial conversation context from all messages
-        all_msgs = await self.conversation.get_messages()
-        conversation_context = self._build_single_user_prompt(all_msgs)
-
         for step_i in range(self.max_steps):
-            # We'll collect final text tokens to parse for <Action>/<Response>.
-            assistant_text_buffer = []
-            # Track whether we are “inside” a <Thought> block while streaming:
-            inside_thought_block = False
+            iteration_text = ""
 
-            conversation_context += "\n\n[Assistant]\n"
             messages_list = await self.conversation.get_messages()
             generation_config = self.get_generation_config(
                 messages_list[-1], stream=True
@@ -558,6 +547,8 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
             )
             thought_text, action_text, in_thought = "", "", True
 
+            closing_detected = False
+
             async for stream_delta in self.process_llm_response(
                 stream, *args, **kwargs
             ):
@@ -565,234 +556,102 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                 stream_delta = stream_delta.replace(
                     "<think>", "<Thought>"
                 ).replace("</think>", "</Thought>")
-                if "</Thought>" not in stream_delta and in_thought:
+                if "</" not in stream_delta and not closing_detected:
                     thought_text += stream_delta
                     yield stream_delta
                 else:
+                    closing_detected = True
                     if in_thought:
-                        yield stream_delta.split("</Thought>")[
-                            0
-                        ] + "</Thought>"
-                        thought_text += (
-                            stream_delta.split("</Thought>")[0] + "</Thought>"
-                        )
-                        action_text += stream_delta.split("</Thought>")[-1]
+                        if ">" not in stream_delta:
+                            continue
+                        else:
+                            in_thought = False
+                            thought_text += "</Thought>"
+                            yield "</Thought>"
+                            action_text += stream_delta.split(">")[-1]
                         in_thought = False
                     else:
                         action_text += stream_delta
-            parsed_actions = self._parse_action_blocks(action_text)
+            iteration_text += thought_text
+            try:
+                parsed_tool_calls = self._parse_tool_calls(action_text)
+            except Exception as e:
+                logger.error(f"Failed to parse tool calls: {e}")
+                iteration_text += (
+                    f"<Thought>Failed to parse tool calls: {e}</Thought>"
+                )
+                await self.conversation.add_message(
+                    Message(role="assistant", content=iteration_text)
+                )
 
-            pre_text = action_text.split("<Action>")[0]
-            conversation_context += pre_text
-
-            if parsed_actions:
-                # For each action block, see if it has <ToolCalls>, <Response>
-                for action_block in parsed_actions:
-
-                    # Prepare two separate <ToolCalls> blocks:
-                    #  - "toolcalls_xml": with <Result> inside (for conversation_context)
-                    #  - "toolcalls_minus_results": no <Result> (to show user)
-                    toolcalls_xml = "<ToolCalls>"
-                    toolcalls_minus_results = "<ToolCalls>"
-
-                    # Execute any tool calls
-                    for tc in action_block["tool_calls"]:
-                        name = tc["name"]
-                        params = tc["params"]
-                        logger.info(f"Executing tool '{name}' with {params}")
-
-                        if name == "result":
-                            logger.info(
-                                f"Returning response = {params['answer']}"
-                            )
-                            yield f"<Response>{params['answer']}</Response>"
-                            return
-
-                        # Build the <ToolCall> to show user (minus <Result>)
-                        minimal_toolcall = (
-                            f"<ToolCall>"
-                            f"<Name>{name}</Name>"
-                            f"<Parameters>{json.dumps(params)}</Parameters>"
-                            f"</ToolCall>"
-                        )
-                        toolcalls_minus_results += minimal_toolcall
-                        yield f"\n\n<Thought>Calling function: {name}, with payload {json.dumps(params)}</Thought>"
-
-                        # Build the <ToolCall> with results for context
-                        toolcall_with_result = (
-                            f"<ToolCall>"
-                            f"<Name>{name}</Name>"
-                            f"<Parameters>{json.dumps(params)}</Parameters>"
-                        )
-                        try:
-                            result = await self.execute_tool(name, **params)
-
-                            context_tokens = num_tokens(str(result))
-                            max_to_result = (
-                                self.max_tool_context_length / context_tokens
-                            )
-
-                            if max_to_result < 1:
-                                result = (
-                                    str(result)[
-                                        0 : int(max_to_result * context_tokens)
-                                    ]
-                                    + "... RESULT TRUNCATED DUE TO MAX LENGTH ..."
-                                )
-                        except Exception as e:
-                            result = f"Error executing tool '{name}': {e}"
-
-                        toolcall_with_result += (
-                            f"<Result>{result}</Result></ToolCall>"
-                        )
-
-                        toolcalls_xml += toolcall_with_result
-
-                    toolcalls_xml += "</ToolCalls>"
-                    toolcalls_minus_results += "</ToolCalls>"
-
-                    # Yield the no-results block so user sees the calls
-                    # yield toolcalls_minus_results
-
-                    # Otherwise, embed the <ToolCalls> with <Result> in conversation context
-                    conversation_context += f"<Action>{toolcalls_xml}</Action>"
-
-            else:
-                #
-                # 3b) If no <Action> blocks at all, yield the iteration text below
-                failed_iteration_text = "<Action><ToolCalls></ToolCalls><Response>I failed to use any tools, I should probably return a response with the `result` tool now.</Response></Action>"
-                context_size = num_tokens(conversation_context)
-                if context_size > self.max_context_window_tokens:
-                    yield COMPUTE_FAILURE
-                    return
-
-                yield failed_iteration_text + f"\n\n[System]\n{step_i+1} steps completed, no <Action> blocks found. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
-                conversation_context += failed_iteration_text
+                yield f"<Thought>Failed to parse tool calls: {e}</Thought>"
                 continue
 
-            post_text = action_text.split("</Action>")[-1]
-            conversation_context += post_text
-            context_size = num_tokens(conversation_context)
-            if context_size > self.max_context_window_tokens:
+            logger.debug(f"action_text:\n{action_text}")
+            logger.debug(f"parsed_tool_calls:\n{parsed_tool_calls}")
+            if "<Response>" in action_text:
+                yield "<Response>" + action_text.split("<Response>")[-1].split(
+                    "</Response>"
+                )[0] + "</Response>"
+                return
+            # If there are tool calls, execute them concurrently and build the XML block with results
+            if parsed_tool_calls:
+                # Create tasks for each tool call
+                tasks = []
+                for call in parsed_tool_calls:
+                    # Log the call before executing
+                    yield f"\n\n<Thought>Calling function: {call['name']}, with payload {call['params']}</Thought>"
+                    tasks.append(
+                        asyncio.create_task(
+                            self.execute_tool(call["name"], **call["params"])
+                        )
+                    )
+
+                # Wait for all tool calls to complete
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+
+                # Build the XML block containing the original tool calls and their results
+                xml_toolcalls = "<ToolCalls>"
+                for call, result in zip(parsed_tool_calls, results):
+
+                    if call["name"] == "result":
+                        logger.info(
+                            f"Returning response = {call['params']['answer']}"
+                        )
+                        yield f"<Response>{call['params']['answer']}</Response>"
+                        return
+
+                    # Handle exceptions if any
+                    if isinstance(result, Exception):
+                        result_str = (
+                            f"Error executing tool '{call['name']}': {result}"
+                        )
+                    else:
+                        result_str = str(result)
+                    xml_toolcalls += (
+                        f"<ToolCall>"
+                        f"<Name>{call['name']}</Name>"
+                        f"<Parameters>{json.dumps(call['params'])}</Parameters>"
+                        f"<Result>{result_str}</Result>"
+                        f"</ToolCall>"
+                    )
+                xml_toolcalls += "</ToolCalls>"
+
+                # Append the XML block to the conversation context in its original format
+                iteration_text += f"<Action>{xml_toolcalls}</Action>"
+                # Optionally yield the XML block so that the user sees it
+                # yield f"\n\n<Action>{xml_toolcalls}</Action>"
+            else:
+                iteration_text += f"<Thought>No tool calls found in this step, trying again.</Thought>"
+                yield f"<Thought>No tool calls found in this step, trying again.</Thought>"
+
+            await self.conversation.add_message(
+                Message(role="assistant", content=iteration_text)
+            )
+
+            if step_i == self.max_steps - 1:
                 yield COMPUTE_FAILURE
                 return
-            conversation_context += f"\n\n[System]\n{step_i+1} steps completed. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
-
-        # If we finish all steps with no <Response>, yield fallback:
-        yield COMPUTE_FAILURE
-        return
-
-    def _parse_action_blocks(self, text: str) -> list[dict]:
-        """
-        Find <Action>...</Action> blocks in 'text' using simple regex,
-        then parse out <ToolCall> blocks within each <Action>.
-
-        Returns a list of dicts, each with:
-        {
-            "tool_calls": [
-                {"name": <tool_name>, "params": <dict>},
-                ...
-            ],
-            "response": <str or None if no <Response> found>
-        }
-        """
-
-        ### HARDCODE RESULT PARSING DUE TO TROUBLES
-        if "<Name>result</Name>" in text:
-            return [
-                {
-                    "tool_calls": [
-                        {
-                            "name": "result",
-                            "params": {
-                                "answer": text.split("<Parameters>")[-1]
-                                .split("</Parameters>")[0]
-                                .strip()[12:-2]
-                            },
-                        }
-                    ],
-                    "response": None,
-                }
-            ]
-
-        results = []
-
-        # 1) Find all <Action>...</Action> blocks
-        action_pattern = re.compile(
-            r"<Action>(.*?)</Action>", re.DOTALL | re.IGNORECASE
-        )
-        action_matches = action_pattern.findall(text)
-
-        for action_content in action_matches:
-            block_data = {
-                "tool_calls": [],
-                "response": None,
-            }
-
-            # 2) Within each <Action> block, find all <ToolCall>...</ToolCall> blocks
-            toolcall_pattern = re.compile(
-                r"<ToolCall>(.*?)</ToolCall>", re.DOTALL | re.IGNORECASE
-            )
-            toolcall_matches = toolcall_pattern.findall(action_content)
-
-            for tc_text in toolcall_matches:
-                # Look for <Name>...</Name> and <Parameters>...</Parameters>
-                name_match = re.search(
-                    r"<Name>(.*?)</Name>", tc_text, re.DOTALL | re.IGNORECASE
-                )
-                params_match = re.search(
-                    r"<Parameters>(.*?)</Parameters>",
-                    tc_text,
-                    re.DOTALL | re.IGNORECASE,
-                )
-
-                if not name_match:
-                    continue  # no <Name> => skip
-
-                tool_name = name_match.group(1).strip()
-
-                # If <Parameters> is present, try to parse as JSON
-                if params_match:
-                    raw_params = params_match.group(1).strip()
-                    try:
-                        tool_params = json.loads(raw_params)
-                    except json.JSONDecodeError:
-                        logger.warning(
-                            f"Failed to parse JSON from <Parameters>: {raw_params}"
-                        )
-                        tool_params = {}
-                else:
-                    tool_params = {}
-
-                block_data["tool_calls"].append(
-                    {"name": tool_name, "params": tool_params}
-                )
-
-            # 3) Optionally, see if there's a <Response>...</Response> in the same <Action> block
-            response_pattern = re.compile(
-                r"<Response>(.*?)</Response>", re.DOTALL | re.IGNORECASE
-            )
-            response_match = response_pattern.search(action_content)
-            if response_match:
-                block_data["response"] = response_match.group(1).strip()
-
-            results.append(block_data)
-
-        return results
-
-    def _extract_response_text(self, text: str) -> Optional[str]:
-        """
-        If the raw text contains a bare <Response>...</Response> block (outside <Action>),
-        we can parse it here. Return the string or None if not present.
-        """
-        import re
-
-        match = re.search(
-            r"<Response>(.*?)</Response>", text, re.DOTALL | re.IGNORECASE
-        )
-        if match:
-            return match.group(1).strip()
-        return None
 
     def _build_single_user_prompt(self, conversation_msgs: list[dict]) -> str:
         """
@@ -813,60 +672,151 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
 
         return "\n".join(system_msgs + user_msgs)
 
-    def _parse_action_xml(self, text: str) -> list[dict]:
+    @staticmethod
+    def _parse_tool_calls(text: str) -> list[dict]:
         """
-        Attempt to parse <Action><ToolCalls><ToolCall> from XML in text.
-        Return a list of { "name": <tool_name>, "params": <dict> }.
+        Parse tool calls from XML-like text.
+
+        This function locates <Action> blocks (or, if not present, the entire text)
+        and then extracts all <ToolCall> blocks within. It patches incomplete tags and
+        logs debug information along the way.
+
+        Special Handling:
+        - If a "<Name>result</Name>" tag is found, returns a single tool call
+            with the name "result" and its associated parameters.
         """
+        # Log the initial (possibly large) text truncated for debugging.
+        logger.debug(
+            "Starting _parse_tool_calls with text (first 500 chars): %s",
+            text[:500],
+        )
+
+        original_text = text
+
+        # --- Patch incomplete closing tags ---
+        # Ensure that any '</Action' or '</ToolCalls' missing a '>' are fixed.
+        text = re.sub(r"(</Action)(?!\s*>)", r"\1>", text)
+        text = re.sub(r"(</ToolCalls)(?!\s*>)", r"\1>", text)
+        if text != original_text:
+            logger.debug("Patched incomplete closing tags in text.")
+
+        # If an <Action> is found without a closing </Action>, append one.
+        if "<Action>" in text and "</Action>" not in text:
+            logger.debug(
+                "Incomplete <Action> tag detected; appending a closing </Action> tag."
+            )
+            text += "</Action>"
+
         tool_calls = []
-        if not text.strip():
+
+        # --- Special handling for result tool call ---
+        if "<Name>result</Name>" in text:
+            logger.debug(
+                "Detected '<Name>result</Name>' in text; processing as a result tool call."
+            )
+            try:
+                raw_params = (
+                    text.split("<Parameters>")[-1]
+                    .split("</Parameters>")[0]
+                    .strip()
+                )
+                answer = (
+                    json.loads(raw_params)
+                    if raw_params.startswith("{")
+                    else raw_params
+                )
+            except Exception as e:
+                logger.warning("Failed to parse result answer: %s", e)
+                answer = raw_params
+            tool_calls.append({"name": "result", "params": {"answer": answer}})
+            logger.debug("Returning result tool call: %s", tool_calls)
             return tool_calls
 
-        try:
-            # For safety, parse only the portion in ```xml``` if present
-            if "```xml" in text and "```" in text.split("```xml")[-1]:
-                extracted = text.split("```xml")[-1].split("```")[0]
-            else:
-                extracted = text
-
-            root = ET.fromstring(extracted)
-            if root.tag.lower() == "action":
-                tool_calls_el = root.find("ToolCalls")
-                if tool_calls_el is not None:
-                    for tc_el in tool_calls_el.findall("ToolCall"):
-                        name_el = tc_el.find("Name")
-                        params_el = tc_el.find("Parameters")
-
-                        if name_el is not None and params_el is not None:
-                            t_name = name_el.text.strip()
-
-                            # parse JSON in <Parameters>
-                            try:
-                                params_text = params_el.text.strip()
-                                t_params = json.loads(params_text)
-                                tool_calls.append(
-                                    {"name": t_name, "params": t_params}
-                                )
-                            except json.JSONDecodeError:
-                                logger.warning(
-                                    f"Invalid JSON in <Parameters> for tool {t_name}"
-                                )
-        except ET.ParseError:
-            logger.warning("Failed to parse <Action> XML block.")
-        return tool_calls
-
-    # ABSTRACT METHODS – must be implemented by a subclass
-    async def _generate_thinking_response(
-        self, user_prompt: str, **kwargs
-    ) -> AsyncGenerator[tuple[bool, str], None]:
-        """
-        Should yield (is_thought, text) pairs from the LLM's first pass.
-          - is_thought=True => chain-of-thought tokens
-          - is_thought=False => final user-facing text (accumulated, then parsed)
-        """
-        raise NotImplementedError(
-            "Subclasses must implement _generate_thinking_response."
+        # --- Locate <Action> blocks ---
+        action_pattern = re.compile(
+            r"<Action>(.*?)</Action>", re.DOTALL | re.IGNORECASE
         )
+        action_matches = action_pattern.findall(text)
+        logger.debug("Found %d <Action> blocks.", len(action_matches))
+
+        # If no <Action> blocks are found, attempt to use the entire text.
+        if not action_matches:
+            logger.debug(
+                "No <Action> blocks found; attempting to parse entire text for <ToolCall> blocks."
+            )
+            action_matches = [text]
+
+        # Process each Action block
+        for idx, action in enumerate(action_matches):
+            logger.debug(
+                "Processing Action block %d (first 200 chars): %s",
+                idx,
+                action.strip()[:200],
+            )
+            toolcall_pattern = re.compile(
+                r"<ToolCall>(.*?)</ToolCall>", re.DOTALL | re.IGNORECASE
+            )
+            toolcall_matches = toolcall_pattern.findall(action)
+            logger.debug(
+                "Found %d <ToolCall> blocks in Action block %d.",
+                len(toolcall_matches),
+                idx,
+            )
+
+            for jdx, tc in enumerate(toolcall_matches):
+                logger.debug(
+                    "Processing ToolCall block %d in Action block %d (first 200 chars): %s",
+                    jdx,
+                    idx,
+                    tc.strip()[:200],
+                )
+                # Extract the tool name
+                name_match = re.search(
+                    r"<Name>(.*?)</Name>", tc, re.DOTALL | re.IGNORECASE
+                )
+                if not name_match:
+                    logger.debug(
+                        "ToolCall block %d in Action block %d missing <Name> tag. Skipping.",
+                        jdx,
+                        idx,
+                    )
+                    continue
+                tool_name = name_match.group(1).strip()
+                logger.debug("Extracted tool name: '%s'", tool_name)
+                # Extract parameters
+                params_match = re.search(
+                    r"<Parameters>(.*?)</Parameters>",
+                    tc,
+                    re.DOTALL | re.IGNORECASE,
+                )
+                if params_match:
+                    raw_params = params_match.group(1).strip()
+                    try:
+                        tool_params = json.loads(raw_params)
+                        logger.debug(
+                            "Parsed parameters for tool '%s': %s",
+                            tool_name,
+                            tool_params,
+                        )
+                    except json.JSONDecodeError as e:
+                        logger.warning(
+                            "JSON decode error for tool '%s' parameters: %s. Error: %s",
+                            tool_name,
+                            raw_params,
+                            e,
+                        )
+                        tool_params = {}
+                else:
+                    logger.debug(
+                        "No <Parameters> found for tool '%s'. Defaulting to empty dict.",
+                        tool_name,
+                    )
+                    tool_params = {}
+
+                tool_calls.append({"name": tool_name, "params": tool_params})
+
+        logger.debug("Final parsed tool calls: %s", tool_calls)
+        return tool_calls
 
 
 class GeminiXMLToolsStreamingReasoningRAGAgent(

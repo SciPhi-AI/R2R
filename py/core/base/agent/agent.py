@@ -46,6 +46,7 @@ class AgentConfig(BaseModel):
     tool_names: Optional[list[str]] = None
     generation_config: GenerationConfig = GenerationConfig()
     stream: bool = False
+    include_tools: bool = True
 
     @classmethod
     def create(cls: Type["AgentConfig"], **kwargs: Any) -> "AgentConfig":
@@ -138,6 +139,7 @@ class Agent(ABC):
             last_message["role"] in ["tool", "function"]
             and last_message["content"] != ""
             and "ollama" in self.config.generation_config.model
+            or self.config.include_tools == False
         ):
             return GenerationConfig(
                 **self.rag_generation_config.model_dump(
