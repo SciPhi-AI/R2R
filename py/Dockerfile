@@ -20,10 +20,9 @@ COPY pyproject.toml /app/py/pyproject.toml
 # Install dependencies
 RUN poetry config virtualenvs.create false \
     && poetry install --extras "core ingestion-bundle" --no-root \
-    && pip install --no-cache-dir gunicorn uvicorn
-
-RUN pip install lark && \
-    python -c "import lark"
+    && pip install --no-cache-dir gunicorn uvicorn \
+    && pip uninstall -y lark-parser \
+    && pip install --no-cache-dir --no-binary :all: lark==1.1.9
 
 # Create the final image
 FROM python:3.12-slim
@@ -45,9 +44,6 @@ WORKDIR /app
 
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-
-# Add verification step after copying packages
-RUN python -c "import lark" || (pip install --no-cache-dir lark && python -c "import lark")
 
 # Expose the port and set environment variables
 ARG R2R_PORT=8000 R2R_HOST=0.0.0.0
