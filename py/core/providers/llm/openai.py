@@ -224,7 +224,7 @@ class OpenAICompletionProvider(CompletionProvider):
                 raise ValueError(
                     "Deepseek OpenAI credentials not configured but deepseek/ model prefix used"
                 )
-            return self.async_deepseek_client, model[9:]
+            return self.async_deepseek_client, model[9:].strip()
         elif model.startswith("ollama/"):
             if not self.async_ollama_client:
                 raise ValueError(
@@ -294,7 +294,6 @@ class OpenAICompletionProvider(CompletionProvider):
         args["model"] = model_name
         args["messages"] = messages
         args = {**args, **kwargs}
-
         logger.debug(f"Executing async task with args: {args}")
         try:
             # For Azure Foundry, use the `complete` method; otherwise, use the OpenAI-style method.

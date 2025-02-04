@@ -763,6 +763,7 @@ class RetrievalService(Service):
                                 "gemini-2.0-flash-thinking-exp-01-21"
                                 in rag_generation_config.model
                             ):
+                                agent_config.include_tools = False
                                 agent = GeminiXMLToolsStreamingReasoningRAGAgent(
                                     database_provider=self.providers.database,
                                     llm_provider=self.providers.llm,
@@ -778,6 +779,7 @@ class RetrievalService(Service):
                                 or "deepseek-r1"
                                 in rag_generation_config.model.lower()
                             ):
+                                agent_config.include_tools = False
                                 agent = R2RXMLToolsStreamingReasoningRAGAgent(
                                     database_provider=self.providers.database,
                                     llm_provider=self.providers.llm,
@@ -792,7 +794,6 @@ class RetrievalService(Service):
                                 "claude-3-5-sonnet-20241022"
                                 in rag_generation_config.model
                                 or "o3-mini" in rag_generation_config.model
-                                or "gpt-4o" in rag_generation_config.model
                             ):
                                 agent = R2RStreamingReasoningRAGAgent(
                                     database_provider=self.providers.database,
@@ -1150,11 +1151,7 @@ class RetrievalService(Service):
                 or "deepseek-r1" in model.lower()  # Open source naming for R1
             ):
                 prompt_name = "aware_rag_agent_reasoning_xml_tooling"
-            elif (
-                "claude-3-5-sonnet-20241022" in model
-                or "o3-mini" in model
-                or "gpt-4o" in model
-            ):
+            elif "o3-mini" in model:
                 prompt_name = "aware_rag_agent_reasoning_prompted"
             else:
                 raise R2RException(
