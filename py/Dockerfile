@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-RUN pip install --no-cache-dir poetry
+RUN pip install --no-cache-dir poetry==1.8.4
 
 
 # Add Rust to PATH
@@ -21,8 +21,7 @@ COPY pyproject.toml /app/py/pyproject.toml
 RUN poetry config virtualenvs.create false \
     && poetry install --extras "core ingestion-bundle" --no-root \
     && pip install --no-cache-dir gunicorn uvicorn \
-    && pip uninstall -y lark-parser \
-    && pip install --no-cache-dir --no-binary :all: lark==1.1.9
+    && python -c "import lark"
 
 # Create the final image
 FROM python:3.12-slim
