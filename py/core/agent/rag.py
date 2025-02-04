@@ -1092,3 +1092,101 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
                     error_msg = f"Failed after {max_retries} attempts. Last error: {str(last_error)}"
                     yield (False, error_msg)
                     return
+
+    def _parse_action_blocks(self, text: str) -> list[dict]:
+        """
+        Find <Action>...</Action> blocks in 'text' using simple regex,
+        then parse out <ToolCall> blocks within each <Action>.
+
+        Returns a list of dicts, each with:
+        {
+            "tool_calls": [
+                {"name": <tool_name>, "params": <dict>},
+                ...
+            ],
+            "response": <str or None if no <Response> found>
+        }
+        """
+
+        ### HARDCODE RESULT PARSING DUE TO TROUBLES
+        if "<Name>result</Name>" in text:
+            return [
+                {
+                    "tool_calls": [
+                        {
+                            "name": "result",
+                            "params": {
+                                "answer": text.split("<Parameters>")[-1]
+                                .split("</Parameters>")[0]
+                                .strip()[12:-2]
+                            },
+                        }
+                    ],
+                    "response": None,
+                }
+            ]
+
+        results = []
+
+        # 1) Find all <Action>...</Action> blocks
+        action_pattern = re.compile(
+            r"<Action>(.*?)</Action>", re.DOTALL | re.IGNORECASE
+        )
+        action_matches = action_pattern.findall(text)
+
+        for action_content in action_matches:
+            block_data = {
+                "tool_calls": [],
+                "response": None,
+            }
+
+            # 2) Within each <Action> block, find all <ToolCall>...</ToolCall> blocks
+            toolcall_pattern = re.compile(
+                r"<ToolCall>(.*?)</ToolCall>", re.DOTALL | re.IGNORECASE
+            )
+            toolcall_matches = toolcall_pattern.findall(action_content)
+
+            for tc_text in toolcall_matches:
+                # Look for <Name>...</Name> and <Parameters>...</Parameters>
+                name_match = re.search(
+                    r"<Name>(.*?)</Name>", tc_text, re.DOTALL | re.IGNORECASE
+                )
+                params_match = re.search(
+                    r"<Parameters>(.*?)</Parameters>",
+                    tc_text,
+                    re.DOTALL | re.IGNORECASE,
+                )
+
+                if not name_match:
+                    continue  # no <Name> => skip
+
+                tool_name = name_match.group(1).strip()
+
+                # If <Parameters> is present, try to parse as JSON
+                if params_match:
+                    raw_params = params_match.group(1).strip()
+                    try:
+                        tool_params = json.loads(raw_params)
+                    except json.JSONDecodeError:
+                        logger.warning(
+                            f"Failed to parse JSON from <Parameters>: {raw_params}"
+                        )
+                        tool_params = {}
+                else:
+                    tool_params = {}
+
+                block_data["tool_calls"].append(
+                    {"name": tool_name, "params": tool_params}
+                )
+
+            # 3) Optionally, see if there's a <Response>...</Response> in the same <Action> block
+            response_pattern = re.compile(
+                r"<Response>(.*?)</Response>", re.DOTALL | re.IGNORECASE
+            )
+            response_match = response_pattern.search(action_content)
+            if response_match:
+                block_data["response"] = response_match.group(1).strip()
+
+            results.append(block_data)
+
+        return results
