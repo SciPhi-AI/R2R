@@ -5,6 +5,9 @@ runs:
   steps:
     - name: Start R2R server
       shell: bash
+      env:
+        PYTHONWARNINGS: "ignore::UserWarning"
+        PYTHONPATH: "/app"
       run: |
         cd py
         export R2R_CONFIG_NAME=r2r_azure_with_test_limits
