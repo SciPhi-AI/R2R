@@ -793,6 +793,7 @@ class RetrievalService(Service):
                             elif (
                                 "claude-3-5-sonnet-20241022"
                                 in rag_generation_config.model
+                                or "gpt-4o" in rag_generation_config.model
                                 or "o3-mini" in rag_generation_config.model
                             ):
                                 agent = R2RStreamingReasoningRAGAgent(
@@ -1151,7 +1152,11 @@ class RetrievalService(Service):
                 or "deepseek-r1" in model.lower()  # Open source naming for R1
             ):
                 prompt_name = "aware_rag_agent_reasoning_xml_tooling"
-            elif "o3-mini" in model:
+            elif (
+                "o3-mini" in model
+                or "claude-3-5-sonnet-20241022" in model
+                or "gpt-4o" in model
+            ):
                 prompt_name = "aware_rag_agent_reasoning_prompted"
             else:
                 raise R2RException(
