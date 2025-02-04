@@ -27,7 +27,7 @@ runs:
         python-version: ${{ inputs.python-version }}
         cache: 'pip'
 
-    - name: Install R2R CLI & Python SDK
+    - name: Install Python SDK
       shell: bash
       run: |
         if [ "${{ inputs.r2r-version }}" = "latest" ]; then

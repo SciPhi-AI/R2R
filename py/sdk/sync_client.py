@@ -56,7 +56,7 @@ class R2RClient(BaseClient):
         ):
             raise R2RException(
                 status_code=401,
-                message="Access token or api key is required to access `https://api.cloud.sciphi.ai`. To change the base url, use `set_base_url` method. For instance, if using the CLI then execute `r2r set-api-base http://localhost:7272`, or set the local environment variable `R2R_API_BASE` to `http://localhost:7272`.",
+                message="Access token or api key is required to access `https://api.cloud.sciphi.ai`. To change the base url, use `set_base_url` method or set the local environment variable `R2R_API_BASE` to `http://localhost:7272`.",
             )
         request_args = self._prepare_request_args(endpoint, **kwargs)
 

@@ -22,7 +22,7 @@ repos:
     hooks:
       - id: check-print-statements
         name: Check for print statements
-        entry: bash -c 'echo "Checking for print statements..." && find . -name "*.py" ! -path "./py/cli/*" ! -path "./py/core/examples/*" ! -path "./py/migrations/*" ! -path "./py/tests/*" | xargs grep -n "print(" || exit 0 && echo "Found print statements!" && exit 1'
+        entry: bash -c 'echo "Checking for print statements..." && find . -name "*.py" ! -path "./py/core/examples/*" ! -path "./py/migrations/*" ! -path "./py/tests/*" | xargs grep -n "print(" || exit 0 && echo "Found print statements!" && exit 1'
         language: system
         types: [python]
         pass_filenames: false

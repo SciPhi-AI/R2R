@@ -16,7 +16,6 @@ packages = [
     { include = "sdk", from = "." },
     { include = "shared", from = "." },
     { include = "core", from = "." },
-    { include = "cli", from = "." },
 ]
 include = [
     { path = "migrations/**/*", format = ["sdist", "wheel"] },
@@ -32,8 +31,6 @@ python = ">=3.10,<3.13"
 
 aiofiles = "^24.1.0"
 alembic = "^1.13.3"
-asyncclick = "^8.1.7.2"
-click = "^8.0.0"
 fastapi = "^0.114.0"
 httpx = "^0.27.0"
 openai =  "^1.11.1"
@@ -44,7 +41,6 @@ toml = "^0.10.2"
 types-requests = "^2.31.0"
 psycopg-binary = "^3.2.3"
 types-aiofiles = "^24.1.0.20240626"
-rich = "^13.9.4"
 typing-extensions = "^4.12.2"
 
 # Shared dependencies (optional)
@@ -211,9 +207,6 @@ exclude = 'core/parsers/media/pyzerox/.*|playground/.*|deprecated/.*|dump/.*|doc
 [[tool.mypy.overrides]]
 module = "yaml"
 ignore_missing_imports = true
-
-[tool.poetry.scripts]
-r2r = "cli.main:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
