@@ -9,7 +9,9 @@ runs:
         cd py
         export R2R_CONFIG_NAME=r2r_azure_with_test_limits
 
-        docker compose -f r2r/compose.yaml --project-name r2r up -d
+        docker build -t r2r/test .
+
+        docker compose -f r2r/compose.test.yaml --project-name r2r up -d
 
         echo "Waiting for services to start..."
         sleep 30
