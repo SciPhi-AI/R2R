@@ -100,7 +100,6 @@ pynacl = { version = "^1.5.0", optional = true }
 tiktoken = { version =  "^0.8.0", optional = true }
 azure-ai-ml = { version = "^1.24.0", optional = true }
 azure-ai-inference = { version = "^1.0.0b8", optional = true }
-lark = { version = "1.1.8", optional = true }
 
 [tool.poetry.extras]
 core = [
@@ -140,7 +139,6 @@ core = [
     "tiktoken",
     "azure-ai-ml",
     "azure-ai-inference",
-    "lark",
 ]
 ingestion-bundle = [
     "aioshutil",
