@@ -11,7 +11,7 @@ runs:
 
         docker build -t r2r/test .
 
-        docker compose -f r2r/compose.test.yaml --project-name r2r up -d
+        docker compose -f r2r/compose.yaml --project-name r2r --profile postgres up -d
 
         echo "Waiting for services to start..."
         sleep 30
@@ -20,6 +20,3 @@ runs:
         docker logs r2r-r2r-1
 
         curl http://localhost:7272/v3/health || echo "Server not responding"
-
-        echo "R2R Container Logs:"
-        docker logs r2r-r2r-1
