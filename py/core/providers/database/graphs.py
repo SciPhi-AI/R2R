@@ -2961,7 +2961,7 @@ class PostgresGraphsHandler(Handler):
             return path
 
         except R2RException:
-            return {"results": {"path": [], "total_cost": 0, "num_hops": 0}}
+            return {"path": [], "total_cost": 0, "num_hops": 0}
         except Exception as e:
             raise HTTPException(
                 status_code=500, detail=f"Error finding path: {str(e)}"

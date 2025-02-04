@@ -12,8 +12,10 @@ from shared.api.models.base import (
 )
 from shared.api.models.graph.responses import (
     GraphResponse,
+    Traversal,
     WrappedGraphResponse,
     WrappedGraphsResponse,
+    WrappedTraversalResponse,
 )
 from shared.api.models.ingestion.responses import (
     IngestionResponse,
@@ -72,10 +74,11 @@ __all__ = [
     "WrappedIngestionResponse",
     "WrappedUpdateResponse",
     "WrappedMetadataUpdateResponse",
-    # TODO: Need to review anything above this
     "GraphResponse",
+    "Traversal",
     "WrappedGraphResponse",
     "WrappedGraphsResponse",
+    "WrappedTraversalResponse",
     # Management Responses
     "PromptResponse",
     "ServerStats",

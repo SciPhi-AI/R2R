@@ -16,11 +16,11 @@ from core.base.api.models import (
     WrappedCommunityResponse,
     WrappedEntitiesResponse,
     WrappedEntityResponse,
-    WrappedGenericMessageResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,
+    WrappedTraversalResponse,
 )
 from core.utils import (
     generate_default_user_collection_id,
@@ -2168,7 +2168,48 @@ class GraphRouter(BaseRouterV3):
         @self.router.get(
             "/graphs/{collection_id}/dijkstra",
             dependencies=[Depends(self.rate_limit_dependency)],
-            summary="Dijsktra",
+            summary="Run Dijkstra's algorithm on the graph, finding the shortest path between two entities.",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+                            # when using auth, do client.login(...)
+
+                            response = client.graphs.dijkstra(
+                                collection_id="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+                                source_id="8883f201-2a31-5ae1-b490-3c99210d8950",
+                                target_id="2883ce39-39fb-59e5-ab8d-3e1b6df010ce"
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient();
+
+                            async function main() {
+                                const response = await client.graphs.dijkstra({
+                                    collectionId="122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+                                    sourceId="8883f201-2a31-5ae1-b490-3c99210d8950",
+                                    targetId="2883ce39-39fb-59e5-ab8d-3e1b6df010ce"
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def dijkstra(
@@ -2182,8 +2223,39 @@ class GraphRouter(BaseRouterV3):
                 ..., description="The ID of the target entity."
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ):
-            # TODO: Auth
+        ) -> WrappedTraversalResponse:
+            # Check user permissions for graph
+            collections_overview_response = (
+                await self.services.management.collections_overview(
+                    user_ids=[auth_user.id],
+                    collection_ids=[collection_id],
+                    offset=0,
+                    limit=1,
+                )
+            )["results"]
+            if len(collections_overview_response) == 0:
+                raise R2RException("Collection not found.", 404)
+
+            if (
+                not auth_user.is_superuser
+                and collections_overview_response[0].owner_id != auth_user.id
+            ):
+                raise R2RException("Only superusers can `pull` a graph.", 403)
+
+            if collection_id not in auth_user.collection_ids:
+                raise R2RException(
+                    "The currently authenticated user does not have access to the collection associated with the given graph.",
+                    403,
+                )
+
+            list_graphs_response = await self.services.graph.list_graphs(
+                graph_ids=[collection_id],
+                offset=0,
+                limit=1,
+            )
+            if len(list_graphs_response["results"]) == 0:
+                raise R2RException("Graph not found", 404)
+
             return await self.services.graph.dijkstra(  # type: ignore
                 graph_id=collection_id,
                 source_id=source_id,

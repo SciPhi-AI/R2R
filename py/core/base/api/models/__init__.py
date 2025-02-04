@@ -10,11 +10,12 @@ from shared.api.models.base import (
     WrappedBooleanResponse,
     WrappedGenericMessageResponse,
 )
-from shared.api.models.graph.responses import (  # TODO: Need to review anything above this
+from shared.api.models.graph.responses import (
     Community,
     Entity,
     GraphResponse,
     Relationship,
+    Traversal,
     WrappedCommunitiesResponse,
     WrappedCommunityResponse,
     WrappedEntitiesResponse,
@@ -23,6 +24,7 @@ from shared.api.models.graph.responses import (  # TODO: Need to review anything
     WrappedGraphsResponse,
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,
+    WrappedTraversalResponse,
 )
 from shared.api.models.ingestion.responses import (
     IngestionResponse,
@@ -101,10 +103,11 @@ __all__ = [
     "WrappedRelationshipsResponse",
     "WrappedCommunityResponse",
     "WrappedCommunitiesResponse",
-    # TODO: Need to review anything above this
     "GraphResponse",
+    "Traversal",
     "WrappedGraphResponse",
     "WrappedGraphsResponse",
+    "WrappedTraversalResponse",
     # Management Responses
     "PromptResponse",
     "ServerStats",

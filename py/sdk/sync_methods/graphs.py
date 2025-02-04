@@ -11,6 +11,7 @@ from shared.api.models.graph.responses import (
     WrappedGraphsResponse,
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,
+    WrappedTraversalResponse,
 )
 
 _list = list  # Required for type hinting since we have a list method
@@ -603,7 +604,7 @@ class GraphsSDK:
         collection_id: str | UUID,
         source_id: str | UUID,
         target_id: str | UUID,
-    ):
+    ) -> WrappedTraversalResponse:
         """
         Get the shortest path between two entities in a graph.
 
