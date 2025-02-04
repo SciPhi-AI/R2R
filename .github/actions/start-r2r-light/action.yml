@@ -11,7 +11,6 @@ runs:
 
         docker compose -f r2r/compose.yaml \
           --project-name r2r \
-          --profile postgres \
           up -d
 
         echo "Waiting for services to start..."

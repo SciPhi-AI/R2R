@@ -12,4 +12,4 @@ runs:
     shell: bash
     run: |
       cd py
-      docker compose -f r2r/compose.full.yaml --project-name r2r-full --profile postgres up -d
+      docker compose -f r2r/compose.full.yaml --project-name r2r-full up -d
