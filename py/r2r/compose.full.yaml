@@ -45,8 +45,16 @@ services:
       retries: 5
     restart: on-failure
     command: >
-      postgres
-      -c max_connections=${R2R_POSTGRES_MAX_CONNECTIONS:-1024}
+      bash -c '
+        apt-get update &&
+        apt-get install -y postgresql-16-postgis-3 postgresql-16-postgis-3-scripts postgresql-16-pgrouting &&
+        dpkg --configure -a &&
+        docker-entrypoint.sh postgres -c max_connections=${R2R_POSTGRES_MAX_CONNECTIONS:-1024} &
+        until pg_isready; do sleep 1; done &&
+        psql -U postgres -c "CREATE EXTENSION IF NOT EXISTS postgis;" &&
+        psql -U postgres -c "CREATE EXTENSION IF NOT EXISTS pgrouting;" &&
+        wait
+      '
 
   hatchet-postgres:
     image: postgres:latest

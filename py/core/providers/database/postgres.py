@@ -208,8 +208,13 @@ class PostgresDatabaseProvider(DatabaseProvider):
             await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
             await conn.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
             await conn.execute("CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;")
-            await conn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
-            await conn.execute("CREATE EXTENSION IF NOT EXISTS pgRouting;")
+            try:
+                await conn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
+                await conn.execute("CREATE EXTENSION IF NOT EXISTS pgRouting;")
+            except Exception as e:
+                logger.warning(
+                    "Error creating postgis and pgrouting extensions. Some beta features, such as graph traversal, may not work."
+                )
 
             # Create schema if it doesn't exist
             await conn.execute(

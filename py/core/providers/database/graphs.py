@@ -2632,9 +2632,7 @@ class PostgresGraphsHandler(Handler):
         )
 
         def parse_condition(key: str, value: Any) -> str:
-            # ----------------------------------------------------------------------
             # 1) If it's the normal base_id_column (like "parent_id" or "collection_id")
-            # ----------------------------------------------------------------------
             if key == base_id_column:
                 if isinstance(value, dict):
                     op, clause = next(iter(value.items()))
@@ -2653,12 +2651,10 @@ class PostgresGraphsHandler(Handler):
                     parameters.append(str(value))
                     return f"{base_id_column} = ${len(parameters)}::uuid"
 
-            # ----------------------------------------------------------------------
             # 2) SPECIAL: if user specifically sets "collection_ids" in filters
             #    We interpret that to mean "Look for rows whose parent_id (or collection_id)
             #    is in the array of values" – i.e. we do the same logic but we forcibly
             #    direct it to the same column: parent_id or collection_id.
-            # ----------------------------------------------------------------------
             elif key == "collection_ids":
                 # If we are searching communities, the relevant field is `collection_id`.
                 # If searching entities/relationships, the relevant field is `parent_id`.
@@ -2687,9 +2683,7 @@ class PostgresGraphsHandler(Handler):
                     parameters.append(str(value))
                     return f"{col_to_use} = ${len(parameters)}::uuid"
 
-            # ----------------------------------------------------------------------
             # 3) If key starts with "metadata.", handle metadata-based filters
-            # ----------------------------------------------------------------------
             elif key.startswith("metadata."):
                 field = key.split("metadata.")[1]
                 if isinstance(value, dict):
@@ -2708,14 +2702,10 @@ class PostgresGraphsHandler(Handler):
                     parameters.append(value)
                     return f"(metadata->>'{field}') = ${len(parameters)}"
 
-            # ----------------------------------------------------------------------
             # 4) Not recognized => return empty so we skip it
-            # ----------------------------------------------------------------------
             return ""
 
-        # --------------------------------------------------------------------------
         # 5) parse_filter() is the recursive walker that sees $and/$or or normal fields
-        # --------------------------------------------------------------------------
         def parse_filter(fd: dict) -> str:
             filter_conditions = []
             for k, v in fd.items():
@@ -2848,7 +2838,10 @@ class PostgresGraphsHandler(Handler):
             ('x' || substring(replace(id::text, '-', ''), 1, 16))::bit(64)::bigint AS id,
             ('x' || substring(replace(subject_id::text, '-', ''), 1, 16))::bit(64)::bigint AS source,
             ('x' || substring(replace(object_id::text, '-', ''), 1, 16))::bit(64)::bigint AS target,
-            CASE WHEN weight <= 0 THEN 1 ELSE weight END AS cost,
+            CASE
+                WHEN weight <= 0 THEN 10  -- Handle zero/negative weights
+                ELSE (11 - weight)        -- Invert the 0-10 scale to 10-1
+            END AS cost,
             id as original_id,
             subject_id,
             object_id
@@ -2942,17 +2935,7 @@ class PostgresGraphsHandler(Handler):
                     status_code=404,
                 )
 
-            path = {
-                "path": [
-                    {
-                        "type": "entity",
-                        "id": str(source_id),
-                        "name": results[0]["current_entity_name"],
-                    }
-                ],
-                "total_cost": 0,
-                "num_hops": 0,
-            }
+            path = {"path": [], "total_cost": 0, "num_hops": 0}
 
             for row in results:
                 if row["relationship_uuid"]:
@@ -2968,15 +2951,6 @@ class PostgresGraphsHandler(Handler):
                             "cost": row["path_cost"],
                         }
                     )
-
-                    if row["next_entity_id"]:
-                        path["path"].append(
-                            {
-                                "type": "entity",
-                                "id": str(row["next_entity_id"]),
-                                "name": row["next_entity_name"],
-                            }
-                        )
 
             if results:
                 path["total_cost"] = results[-1]["total_cost"]
