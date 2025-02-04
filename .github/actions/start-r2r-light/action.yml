@@ -9,7 +9,7 @@ runs:
         cd py
         export R2R_CONFIG_NAME=r2r_azure_with_test_limits
 
-        docker compose -f compose.yaml \
+        docker compose -f r2r/compose.yaml \
           --project-name r2r \
           --profile postgres \
           up -d
