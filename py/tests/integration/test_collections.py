@@ -65,15 +65,15 @@ def test_update_collection(client: R2RClient, test_collection):
 def test_add_document_to_collection(
     client: R2RClient, test_collection, test_document_2
 ):
-    # Add the test document to the test collection
     client.collections.add_document(
-        test_collection["collection_id"], test_document_2
+        test_collection["collection_id"], str(test_document_2)
     )
-    # Verify by listing documents
     docs_in_collection = client.collections.list_documents(
         test_collection["collection_id"]
     )["results"]
-    found = any(doc["id"] == test_document_2 for doc in docs_in_collection)
+    found = any(
+        doc["id"] == str(test_document_2) for doc in docs_in_collection
+    )
     assert found, "Added document not found in collection"
 
 
@@ -84,12 +84,12 @@ def test_list_documents_in_collection(
     docs_in_collection = client.collections.list_documents(
         test_collection["collection_id"]
     )["results"]
-    found = any(doc["id"] == test_document for doc in docs_in_collection)
+    found = any(doc["id"] == str(test_document) for doc in docs_in_collection)
     assert found, "Expected document not found in collection"
 
 
 def test_remove_document_from_collection(
-    client, test_collection, test_document
+    client: R2RClient, test_collection, test_document
 ):
     # Remove the document from the collection
     client.collections.remove_document(
@@ -102,7 +102,7 @@ def test_remove_document_from_collection(
     assert not found, "Document still present in collection after removal"
 
 
-def test_remove_non_member_user_from_collection(mutable_client):
+def test_remove_non_member_user_from_collection(mutable_client: R2RClient):
     # Create a user and a collection
     user_email = f"user_{uuid.uuid4()}@test.com"
     password = "pwd123"
@@ -153,7 +153,7 @@ def test_delete_collection(client: R2RClient):
     ), "Wrong error code retrieving deleted collection"
 
 
-def test_add_user_to_non_existent_collection(mutable_client):
+def test_add_user_to_non_existent_collection(mutable_client: R2RClient):
     # Create a regular user
     user_email = f"test_user_{uuid.uuid4()}@test.com"
     user_password = "test_password"
@@ -215,13 +215,6 @@ def test_create_collection_without_name(client: R2RClient):
         422,
         409,
     ], "Expected validation error for empty name"
-
-
-def test_create_collection_with_invalid_data(client: R2RClient):
-    # Placeholder: If your API supports different data validation,
-    # you'd try invalid inputs here. If strongly typed, this might not be feasible.
-    # For now, we skip since the example client might prevent invalid data from being sent.
-    pass
 
 
 def test_filter_collections_by_non_existent_id(client: R2RClient):

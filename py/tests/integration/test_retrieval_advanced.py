@@ -26,7 +26,11 @@ def test_semantic_search_with_near_duplicates(client: R2RClient):
     results = resp["results"]["chunk_search_results"]
 
     # Both documents should be returned but with different scores
-    scores = [r["score"] for r in results if r["document_id"] in [doc1, doc2]]
+    scores = [
+        r["score"]
+        for r in results
+        if r["document_id"] in [str(doc1), str(doc2)]
+    ]
     assert len(scores) == 2, "Expected both similar documents"
     assert (
         len(set(scores)) == 2
