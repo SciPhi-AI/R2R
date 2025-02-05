@@ -2,6 +2,7 @@
 import asyncio
 import uuid
 from typing import AsyncGenerator, Optional, Tuple
+from uuid import UUID
 
 import pytest
 
@@ -111,7 +112,7 @@ class TestChunks:
         chunk_id = chunks[0].id
 
         retrieved = await test_client.retrieve_chunk(chunk_id)
-        assert retrieved["id"] == chunk_id, "Retrieved wrong chunk ID"
+        assert UUID(retrieved["id"]) == chunk_id, "Retrieved wrong chunk ID"
         assert (
             retrieved["text"].split("_")[0] == "Test chunk 1"
         ), "Chunk text mismatch"
@@ -125,7 +126,7 @@ class TestChunks:
 
         # Update chunk
         updated = await test_client.update_chunk(
-            chunk_id, "Updated text", {"version": 2}
+            str(chunk_id), "Updated text", {"version": 2}
         )
         assert updated["text"] == "Updated text", "Chunk text not updated"
         assert updated["metadata"]["version"] == 2, "Metadata not updated"

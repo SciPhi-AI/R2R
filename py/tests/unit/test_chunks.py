@@ -2,6 +2,7 @@
 import asyncio
 import uuid
 from typing import AsyncGenerator, Optional, Tuple
+from uuid import UUID
 
 import pytest
 
@@ -43,7 +44,7 @@ class AsyncR2RTestClient:
 
     async def delete_chunk(self, chunk_id: str) -> dict:
         response = await self.client.chunks.delete(id=chunk_id)
-        return response.results
+        return response["results"]
 
     async def search_chunks(self, query: str, limit: int = 5) -> list[dict]:
         response = await self.client.chunks.search(
@@ -113,7 +114,7 @@ class TestChunks:
         chunk_id = chunks[0].id
 
         retrieved = await test_client.retrieve_chunk(chunk_id)
-        assert retrieved["id"] == chunk_id, "Retrieved wrong chunk ID"
+        assert UUID(retrieved["id"]) == chunk_id, "Retrieved wrong chunk ID"
         assert (
             retrieved["text"].split("_")[0] == "Test chunk 1"
         ), "Chunk text mismatch"
@@ -127,7 +128,7 @@ class TestChunks:
 
         # Update chunk
         updated = await test_client.update_chunk(
-            chunk_id, "Updated text", {"version": 2}
+            str(chunk_id), "Updated text", {"version": 2}
         )
         assert updated["text"] == "Updated text", "Chunk text not updated"
         assert updated["metadata"]["version"] == 2, "Metadata not updated"
@@ -216,7 +217,7 @@ class TestChunks:
                 # Verify we only get chunks owned by our temp user
                 chunk = response["results"][0]
                 chunks = await test_client.list_chunks(doc_id)
-                assert chunk.owner_id in [
+                assert chunk["owner_id"] in [
                     c["owner_id"] for c in chunks
                 ], "Got chunk from wrong owner"
 
