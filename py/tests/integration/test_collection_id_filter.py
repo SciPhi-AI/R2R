@@ -69,7 +69,7 @@ def test_collection_id_eq_filter(
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]
-    found_ids = {d["document_id"] for d in listed}
+    found_ids = {str(d["document_id"]) for d in listed}
     assert {
         doc1,
         doc2,
@@ -90,7 +90,7 @@ def test_collection_id_ne_filter(
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]
-    found_ids = {d["document_id"] for d in listed}
+    found_ids = {str(d["document_id"]) for d in listed}
     assert coll_ids[0] not in found_ids, f"Expected no coll0, got {found_ids}"
     # assert {
     #     doc3,
@@ -112,7 +112,7 @@ def test_collection_id_in_filter(
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]
-    found_ids = {d["document_id"] for d in listed}
+    found_ids = {str(d["document_id"]) for d in listed}
     assert {
         doc1,
         doc2,
@@ -134,7 +134,7 @@ def test_collection_id_nin_filter(
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]
-    found_ids = {d["document_id"] for d in listed}
+    found_ids = {str(d["document_id"]) for d in listed}
     assert coll_ids[1] not in found_ids, f"Expected no coll1, got {found_ids}"
     # assert {
     #     doc1,
@@ -157,7 +157,7 @@ def test_collection_id_contains_filter(
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]
-    found_ids = {d["document_id"] for d in listed}
+    found_ids = {str(d["document_id"]) for d in listed}
     assert {
         doc1,
         doc2,
@@ -178,7 +178,7 @@ def test_collection_id_contains_multiple(
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]
-    found_ids = {d["document_id"] for d in listed}
+    found_ids = {str(d["document_id"]) for d in listed}
     assert {doc2} == found_ids, f"Expected doc2 only, got {found_ids}"
 
 

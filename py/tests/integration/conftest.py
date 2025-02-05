@@ -83,16 +83,15 @@ def client(config):
 
 
 @pytest.fixture(scope="session")
-def test_document(client):
+def test_document(client: R2RClient):
     """Create and yield a test document, then clean up."""
 
     random_suffix = str(uuid.uuid4())
-    doc_resp = client.documents.create(
+    doc_id = client.documents.create(
         raw_text=f"{random_suffix} Test doc for collections",
         run_with_orchestration=False,
-    )
+    ).results.document_id
 
-    doc_id = doc_resp["results"]["document_id"]
     yield doc_id
     # Cleanup: Try deleting the document if it still exists
     try:
@@ -102,7 +101,7 @@ def test_document(client):
 
 
 @pytest.fixture(scope="session")
-def test_collection(client, test_document):
+def test_collection(client: R2RClient, test_document):
     """Create a test collection with sample documents and clean up after tests."""
     collection_name = f"Test Collection {uuid.uuid4()}"
     collection_id = client.collections.create(name=collection_name)["results"][
@@ -146,10 +145,9 @@ def test_collection(client, test_document):
 
     doc_ids = []
     for doc in docs:
-        result = client.documents.create(
+        doc_id = client.documents.create(
             raw_text=doc["text"], metadata=doc["metadata"]
-        )["results"]
-        doc_id = result["document_id"]
+        ).results.document_id
         doc_ids.append(doc_id)
         client.collections.add_document(collection_id, doc_id)
     client.collections.add_document(collection_id, test_document)

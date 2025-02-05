@@ -13,7 +13,7 @@ from r2r import R2RClient, R2RException
 
 
 @pytest.fixture
-def normal_user_client(mutable_client):
+def normal_user_client(mutable_client: R2RClient):
     """Create a normal user and log in with that user."""
     # client = R2RClient(config.base_url)
 
@@ -236,7 +236,9 @@ def test_owner_can_remove_member_from_collection(
     ), "Removed user still has access after removal."
 
 
-def test_superuser_can_access_any_collection(client, user_owned_collection):
+def test_superuser_can_access_any_collection(
+    client: R2RClient, user_owned_collection
+):
     """A superuser should be able to view and edit any collection."""
     # Superuser can view
     coll = client.collections.retrieve(user_owned_collection)["results"]
@@ -270,7 +272,7 @@ def test_unauthenticated_cannot_access_collections(
 
 
 def test_user_cannot_add_document_to_collection_they_cannot_edit(
-    client, normal_user_client
+    client: R2RClient, normal_user_client: R2RClient
 ):
     """A normal user who is just a member (not owner) of a collection should not be able to add documents."""
     # Create a collection as normal user (owner)
@@ -299,15 +301,17 @@ def test_user_cannot_add_document_to_collection_they_cannot_edit(
     normal_user_client.collections.add_user(coll_id, second_id)
 
     # Create a document as owner
-    doc_resp = normal_user_client.documents.create(raw_text="Test Document")
-    doc_id = doc_resp["results"]["document_id"]
+    doc_id = normal_user_client.documents.create(
+        raw_text="Test Document"
+    ).results.document_id
 
     # Now second user tries to add another document (which they do not have edit rights for)
     second_client.users.logout()
     second_client.users.login(second_email, second_password)
     # Another doc created by second user (just for attempt)
-    doc2_resp = second_client.documents.create(raw_text="Doc by second user")
-    doc2_id = doc2_resp["results"]["document_id"]
+    doc2_id = second_client.documents.create(
+        raw_text="Doc by second user"
+    ).results.document_id
 
     # Second user tries to add their doc2_id to the owner’s collection
     with pytest.raises(R2RException) as exc_info:
@@ -323,7 +327,7 @@ def test_user_cannot_add_document_to_collection_they_cannot_edit(
 
 
 def test_user_cannot_remove_document_from_collection_they_cannot_edit(
-    normal_user_client,
+    normal_user_client: R2RClient,
 ):
     """A user who is just a member should not remove documents."""
     # Create a collection
@@ -333,8 +337,9 @@ def test_user_cannot_remove_document_from_collection_they_cannot_edit(
     coll_id = resp["results"]["id"]
 
     # Create a document in it
-    doc_resp = normal_user_client.documents.create(raw_text="Doc in coll")
-    doc_id = doc_resp["results"]["document_id"]
+    doc_id = normal_user_client.documents.create(
+        raw_text="Doc in coll"
+    ).results.document_id
     normal_user_client.collections.add_document(coll_id, doc_id)
 
     # Create another user and add as member
@@ -479,7 +484,9 @@ def test_unauthenticated_user_cannot_join_collection(
 
 
 def test_non_owner_cannot_remove_users_they_did_not_add(
-    user_owned_collection, normal_user_client, another_normal_user_client
+    user_owned_collection,
+    normal_user_client: R2RClient,
+    another_normal_user_client: R2RClient,
 ):
     """
     A member who is not the owner cannot remove other members from the collection.
@@ -501,7 +508,9 @@ def test_non_owner_cannot_remove_users_they_did_not_add(
 
 
 def test_owner_cannot_access_deleted_member_info_after_removal(
-    user_owned_collection, normal_user_client, another_normal_user_client
+    user_owned_collection,
+    normal_user_client: R2RClient,
+    another_normal_user_client: R2RClient,
 ):
     """
     After the owner removes a user from the collection, ensure that attempts to
@@ -537,8 +546,9 @@ def test_member_cannot_add_document_to_non_existent_collection(
     A member tries to add a document to a collection that doesn't exist.
     """
     fake_coll_id = str(uuid.uuid4())
-    doc_resp = normal_user_client.documents.create(raw_text="Test Doc")
-    doc_id = doc_resp["results"]["document_id"]
+    doc_id = normal_user_client.documents.create(
+        raw_text="Test Doc"
+    ).results.document_id
     with pytest.raises(R2RException) as exc_info:
         normal_user_client.collections.add_document(fake_coll_id, doc_id)
     assert exc_info.value.status_code in [
