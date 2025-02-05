@@ -397,12 +397,14 @@ class DocumentsSDK:
             "limit": limit,
             "include_vectors": include_vectors,
         }
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"documents/{str(id)}/chunks",
             params=params,
             version="v3",
         )
+
+        return WrappedChunksResponse(**response_dict)
 
     def list_collections(
         self,

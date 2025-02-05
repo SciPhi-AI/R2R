@@ -191,7 +191,7 @@ def test_delete_by_collection_id_eq(
     # Delete documents in coll0
     filters = {"collection_id": {"$eq": coll_ids[0]}}
     del_resp = client.documents.delete_by_filter(filters).results
-    assert del_resp["success"], "Failed to delete by collection_id $eq filter"
+    assert del_resp.success, "Failed to delete by collection_id $eq filter"
 
     # doc1 and doc2 should be deleted, doc3 and doc4 remain
     for d_id in [doc1, doc2]:

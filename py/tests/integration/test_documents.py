@@ -76,7 +76,7 @@ def test_create_document_different_modes(client: R2RClient, cleanup_documents):
         ingestion_mode="hi-res",
         run_with_orchestration=False,
     ).results
-    hi_res_id = cleanup_documents(hi_res_resp["document_id"])
+    hi_res_id = cleanup_documents(hi_res_resp.document_id)
     assert hi_res_id, "No doc_id returned for hi-res ingestion"
 
     # fast mode
@@ -85,7 +85,7 @@ def test_create_document_different_modes(client: R2RClient, cleanup_documents):
         ingestion_mode="fast",
         run_with_orchestration=False,
     ).results
-    fast_id = cleanup_documents(fast_resp["document_id"])
+    fast_id = cleanup_documents(fast_resp.document_id)
     assert fast_id, "No doc_id returned for fast ingestion"
 
 
@@ -160,7 +160,7 @@ def test_extract_document(client: R2RClient, test_document):
     run_resp = client.documents.extract(
         id=test_document, run_with_orchestration=False
     ).results
-    assert "message" in run_resp, "No message after extraction run"
+    assert run_resp.message is not None, "No message after extraction run"
 
 
 # @pytest.mark.skip(reason="Requires entity extraction results present")
@@ -347,7 +347,7 @@ def test_delete_by_complex_filter(client: R2RClient, cleanup_documents):
 
     filters = {"$or": [{"tag": {"$eq": "A"}}, {"tag": {"$eq": "B"}}]}
     del_resp = client.documents.delete_by_filter(filters).results
-    assert del_resp["success"], "Complex filter deletion failed"
+    assert del_resp.success, "Complex filter deletion failed"
 
     # Verify both documents are deleted
     for d_id in [doc1, doc2]:
