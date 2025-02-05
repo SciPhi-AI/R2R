@@ -40,7 +40,7 @@ class AsyncR2RTestClient:
         response = await self.client.chunks.update(
             {"id": chunk_id, "text": text, "metadata": metadata or {}}
         )
-        return response.results
+        return response["results"]
 
     async def delete_chunk(self, chunk_id: str) -> dict:
         response = await self.client.chunks.delete(id=chunk_id)
@@ -216,8 +216,10 @@ class TestChunks:
             if len(response["results"]) > 0:
                 # Verify we only get chunks owned by our temp user
                 chunk = response["results"][0]
+                print(f"chunk: {chunk}")
                 chunks = await test_client.list_chunks(doc_id)
-                assert chunk["owner_id"] in [
+                print(f"chunks: {chunks}")
+                assert chunk.owner_id in [
                     c["owner_id"] for c in chunks
                 ], "Got chunk from wrong owner"
 
