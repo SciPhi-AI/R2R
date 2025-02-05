@@ -108,7 +108,7 @@ class TestChunks:
         self, test_client: AsyncR2RTestClient, test_document
     ):
         doc_id, chunks = test_document
-        chunk_id = chunks[0]["id"]
+        chunk_id = chunks[0].id
 
         retrieved = await test_client.retrieve_chunk(chunk_id)
         assert retrieved["id"] == chunk_id, "Retrieved wrong chunk ID"
@@ -121,7 +121,7 @@ class TestChunks:
         self, test_client: AsyncR2RTestClient, test_document
     ):
         doc_id, chunks = test_document
-        chunk_id = chunks[0]["id"]
+        chunk_id = chunks[0].id
 
         # Update chunk
         updated = await test_client.update_chunk(
@@ -135,7 +135,7 @@ class TestChunks:
         self, test_client: AsyncR2RTestClient, test_document
     ):
         doc_id, chunks = test_document
-        chunk_id = chunks[0]["id"]
+        chunk_id = chunks[0].id
 
         # Delete and verify
         result = await test_client.delete_chunk(chunk_id)
@@ -171,7 +171,7 @@ class TestChunks:
         self, test_client: AsyncR2RTestClient, test_document
     ):
         doc_id, chunks = test_document
-        chunk_id = chunks[0]["id"]
+        chunk_id = chunks[0].id
 
         # Create and login as different user
         non_owner_client = AsyncR2RTestClient()
