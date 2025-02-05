@@ -23,12 +23,12 @@ def client(config):
     return client
 
 
-def test_search_basic_mode(client):
+def test_search_basic_mode(client: R2RClient):
     resp = client.retrieval.search(query="Aristotle", search_mode="basic")
     assert "results" in resp, "No results field in search response"
 
 
-def test_search_advanced_mode_with_filters(client):
+def test_search_advanced_mode_with_filters(client: R2RClient):
     filters = {"metadata.document_type": {"$eq": "txt"}}
     resp = client.retrieval.search(
         query="Philosophy",
@@ -38,7 +38,7 @@ def test_search_advanced_mode_with_filters(client):
     assert "results" in resp, "No results in advanced mode search"
 
 
-def test_search_custom_mode(client):
+def test_search_custom_mode(client: R2RClient):
     resp = client.retrieval.search(
         query="Greek philosophers",
         search_mode="custom",
@@ -47,7 +47,7 @@ def test_search_custom_mode(client):
     assert "results" in resp, "No results in custom mode search"
 
 
-def test_rag_query(client):
+def test_rag_query(client: R2RClient):
     resp = client.retrieval.rag(
         query="Summarize Aristotle's contributions to logic",
         rag_generation_config={"stream": False, "max_tokens": 100},
@@ -56,7 +56,7 @@ def test_rag_query(client):
     assert "completion" in resp, "RAG response missing 'completion'"
 
 
-def test_rag_with_filter(client):
+def test_rag_with_filter(client: R2RClient):
     # Ensure a doc with metadata.tier='test' is created
     # generate a random string
     suffix = str(uuid.uuid4())
@@ -76,7 +76,7 @@ def test_rag_with_filter(client):
     assert "completion" in resp, "RAG response missing 'completion'"
 
 
-def test_rag_stream_query(client):
+def test_rag_stream_query(client: R2RClient):
     resp = client.retrieval.rag(
         query="Detail the philosophical schools Aristotle influenced",
         rag_generation_config={"stream": True, "max_tokens": 50},
@@ -99,7 +99,7 @@ def test_rag_stream_query(client):
     assert count > 0, "No chunks received from streamed RAG query"
 
 
-def test_agent_query(client):
+def test_agent_query(client: R2RClient):
     msg = Message(role="user", content="What is Aristotle known for?")
     resp = client.retrieval.agent(
         message=msg,
@@ -110,7 +110,7 @@ def test_agent_query(client):
     assert len(resp["results"]) > 0, "No messages returned by agent"
 
 
-def test_agent_query_stream(client):
+def test_agent_query_stream(client: R2RClient):
     msg = Message(role="user", content="Explain Aristotle's logic in steps.")
     resp = client.retrieval.agent(
         message=msg,
@@ -132,7 +132,7 @@ def test_agent_query_stream(client):
     assert count > 0, "No streaming chunks received from agent"
 
 
-def test_completion(client):
+def test_completion(client: R2RClient):
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "What is the capital of France?"},
@@ -146,13 +146,13 @@ def test_completion(client):
     assert "choices" in resp["results"], "No choices in completion result"
 
 
-def test_embedding(client):
+def test_embedding(client: R2RClient):
     text = "Who is Aristotle?"
     resp = client.retrieval.embedding(text=text)["results"]
     assert len(resp) > 0, "No embedding vector returned"
 
 
-def test_error_handling(client):
+def test_error_handling(client: R2RClient):
     # Missing query should raise an error
     with pytest.raises(R2RException) as exc_info:
         client.retrieval.search(query=None)  # type: ignore
@@ -162,7 +162,7 @@ def test_error_handling(client):
     ], "Expected validation error for missing query"
 
 
-def test_no_results_scenario(client):
+def test_no_results_scenario(client: R2RClient):
     resp = client.retrieval.search(
         query="aslkfjaldfjal",
         search_mode="custom",
@@ -176,7 +176,7 @@ def test_no_results_scenario(client):
     assert len(results) == 0, "Expected no results for nonsense query"
 
 
-def test_pagination_limit_one(client):
+def test_pagination_limit_one(client: R2RClient):
     client.documents.create(
         chunks=[
             "a" + " " + str(uuid.uuid4()),
@@ -192,7 +192,7 @@ def test_pagination_limit_one(client):
     ), "Expected one result with limit=1"
 
 
-def test_pagination_offset(client):
+def test_pagination_offset(client: R2RClient):
     resp0 = client.retrieval.search(
         query="Aristotle",
         search_mode="basic",
@@ -210,7 +210,7 @@ def test_pagination_offset(client):
     ), "Offset should return different results"
 
 
-def test_rag_task_prompt_override(client):
+def test_rag_task_prompt_override(client: R2RClient):
     custom_prompt = """
     Answer the query given immediately below given the context. End your answer with: [END-TEST-PROMPT]
 
@@ -235,7 +235,7 @@ def test_rag_task_prompt_override(client):
     ), "Custom prompt override not reflected in RAG answer"
 
 
-def test_agent_conversation_id(client):
+def test_agent_conversation_id(client: R2RClient):
     conversation_id = client.conversations.create()["results"]["id"]
     msg = Message(role="user", content="What is Aristotle known for?")
     resp = client.retrieval.agent(
@@ -260,7 +260,7 @@ def test_agent_conversation_id(client):
     ), "No results from agent in second turn of conversation"
 
 
-def test_complex_filters_and_fulltext(client, test_collection):
+def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
     # collection_id, doc_ids = _setup_collection_with_documents(client)
 
     # rating > 5
@@ -344,7 +344,7 @@ def test_complex_filters_and_fulltext(client, test_collection):
     ), f"Expected 1 doc for unique_philosopher, got {len(results)}"
 
 
-def test_complex_nested_filters(client, test_collection):
+def test_complex_nested_filters(client: R2RClient, test_collection):
     # Setup docs
     # _setup_collection_with_documents(client)
 
@@ -381,7 +381,7 @@ def test_complex_nested_filters(client, test_collection):
     assert len(results) == 2, f"Expected 2 docs, got {len(results)}"
 
 
-# def test_invalid_operator(client):
+# def test_invalid_operator(client: R2RClient):
 #     filters = {"metadata.category": {"$like": "%ancient%"}}
 #     with pytest.raises(R2RException):
 #         client.retrieval.search(
@@ -391,7 +391,7 @@ def test_complex_nested_filters(client, test_collection):
 #         )
 
 
-def test_filters_no_match(client):
+def test_filters_no_match(client: R2RClient):
     filters = {"metadata.category": {"$in": ["nonexistent"]}}
     resp = client.retrieval.search(
         query="noresults",
@@ -402,7 +402,7 @@ def test_filters_no_match(client):
     assert len(results) == 0, f"Expected 0 docs, got {len(results)}"
 
 
-def test_pagination_extremes(client):
+def test_pagination_extremes(client: R2RClient):
     chunk_list = client.chunks.list()
     total_entries = chunk_list["total_entries"]
 
@@ -418,7 +418,7 @@ def test_pagination_extremes(client):
     ), f"Expected no results at large offset, got {len(results)}"
 
 
-def test_full_text_stopwords(client):
+def test_full_text_stopwords(client: R2RClient):
     resp = client.retrieval.search(
         query="the",
         search_mode="custom",
@@ -431,7 +431,7 @@ def test_full_text_stopwords(client):
     assert "results" in resp, "No results field in stopword query response"
 
 
-def test_full_text_non_ascii(client):
+def test_full_text_non_ascii(client: R2RClient):
     resp = client.retrieval.search(
         query="Aristotélēs",
         search_mode="custom",
@@ -444,7 +444,7 @@ def test_full_text_non_ascii(client):
     assert "results" in resp, "No results field in non-ASCII query response"
 
 
-def test_missing_fields(client):
+def test_missing_fields(client: R2RClient):
     filters = {"metadata.someNonExistentField": {"$eq": "anything"}}
     resp = client.retrieval.search(
         query="missingfield",
@@ -457,7 +457,7 @@ def test_missing_fields(client):
     ), f"Expected 0 docs for a non-existent field, got {len(results)}"
 
 
-def test_rag_with_large_context(client):
+def test_rag_with_large_context(client: R2RClient):
     resp = client.retrieval.rag(
         query="Explain the contributions of Kant in detail",
         rag_generation_config={"stream": False, "max_tokens": 200},
@@ -470,7 +470,7 @@ def test_rag_with_large_context(client):
     assert len(completion) > 0, "RAG large context returned empty answer"
 
 
-def test_agent_long_conversation(client):
+def test_agent_long_conversation(client: R2RClient):
     conversation = client.conversations.create()["results"]
     conversation_id = conversation["id"]
 
@@ -504,7 +504,7 @@ def test_agent_long_conversation(client):
     assert "results" in resp3, "No results in third turn of conversation"
 
 
-def test_filter_by_document_type(client):
+def test_filter_by_document_type(client: R2RClient):
     random_suffix = str(uuid.uuid4())
     client.documents.create(
         chunks=[

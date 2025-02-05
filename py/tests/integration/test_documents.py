@@ -98,7 +98,7 @@ def test_list_documents(client: R2RClient, test_document):
 
 def test_retrieve_document(client: R2RClient, test_document):
     retrieved = client.documents.retrieve(id=test_document).results
-    assert retrieved["id"] == test_document, "Retrieved wrong document"
+    assert retrieved.id == test_document, "Retrieved wrong document"
 
 
 def test_download_document(client: R2RClient, test_document):
@@ -114,9 +114,9 @@ def test_delete_document(client: R2RClient):
     resp = client.documents.create(
         raw_text="This is a temporary doc", run_with_orchestration=False
     ).results
-    doc_id = resp["document_id"]
+    doc_id = resp.document_id
     del_resp = client.documents.delete(id=doc_id).results
-    assert del_resp["success"], "Failed to delete document"
+    assert del_resp.success, "Failed to delete document"
     # Verify it's gone
     with pytest.raises(R2RException) as exc_info:
         client.documents.retrieve(id=doc_id)
@@ -130,11 +130,11 @@ def test_delete_document_by_filter(client: R2RClient):
         metadata={"to_delete": "yes"},
         run_with_orchestration=False,
     ).results
-    doc_id = resp["document_id"]
+    doc_id = resp.document_id
 
     filters = {"to_delete": {"$eq": "yes"}}
     del_resp = client.documents.delete_by_filter(filters).results
-    assert del_resp["success"], "Failed to delete documents by filter"
+    assert del_resp.success, "Failed to delete documents by filter"
     # Verify deletion
     with pytest.raises(R2RException) as exc_info:
         client.documents.retrieve(id=doc_id)
@@ -209,7 +209,7 @@ def test_list_document_chunks(mutable_client: R2RClient, cleanup_documents):
     resp = mutable_client.documents.create(
         chunks=["C1", "C2", "C3"], run_with_orchestration=False
     ).results
-    doc_id = cleanup_documents(resp["document_id"])
+    doc_id = cleanup_documents(resp.document_id)
     chunks_resp = mutable_client.documents.list_chunks(id=doc_id)
     results = chunks_resp.results
     assert len(results) == 3, "Expected 3 chunks"
@@ -302,7 +302,7 @@ def test_list_documents_with_pagination(
         )
 
     listed = mutable_client.documents.list(limit=2, offset=0)
-    results = listed["results"]
+    results = listed.results
     assert len(results) == 2, "Expected 2 results for paginated listing"
 
 
@@ -451,7 +451,7 @@ def test_delete_by_workflow_metadata(client: R2RClient, cleanup_documents):
         }
 
         response = client.documents.delete_by_filter(filters).results
-        assert response["success"]
+        assert response.success
 
         # Verify first draft is deleted
         with pytest.raises(R2RException) as exc:
@@ -513,7 +513,7 @@ def test_delete_by_classification_metadata(
         }
 
         response = client.documents.delete_by_filter(filters).results
-        assert response["success"]
+        assert response.success
 
         # Verify confidential HR doc is deleted
         with pytest.raises(R2RException) as exc:
@@ -573,7 +573,7 @@ def test_delete_by_version_metadata(client: R2RClient, cleanup_documents):
         }
 
         response = client.documents.delete_by_filter(filters).results
-        assert response["success"]
+        assert response.success
 
         # Verify deprecated doc is deleted
         with pytest.raises(R2RException) as exc:
