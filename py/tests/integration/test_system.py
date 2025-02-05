@@ -220,7 +220,7 @@
 #     print("me = ", me)
 #     # Configure user-specific limits
 #     # SET INSIDE THE CONFIG
-#     # user_id = client.users.me()["results"]["id"]
+#     # user_id = client.users.me().results.id
 #     # config.user_limits[user_id] = LimitSettings(
 #     #     global_per_min=2,
 #     #     route_per_min=1

@@ -263,12 +263,12 @@ def test_agent_conversation_id(client: R2RClient):
 def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
     # collection_id, doc_ids = _setup_collection_with_documents(client)
 
+    user_id = client.users.me().results.id
     # rating > 5
-    me = client.users.me()
     # include  owner id and collection ids to make robust against other database interactions from other users
     filters = {
         "rating": {"$gt": 5},
-        "owner_id": {"$eq": client.users.me()["results"]["id"]},
+        "owner_id": {"$eq": user_id},
         "collection_ids": {
             "$overlap": [str(test_collection["collection_id"])]
         },
@@ -286,7 +286,7 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
     # category in [ancient, modern]
     filters = {
         "metadata.category": {"$in": ["ancient", "modern"]},
-        "owner_id": {"$eq": client.users.me()["results"]["id"]},
+        "owner_id": {"$eq": user_id},
         "collection_ids": {
             "$overlap": [str(test_collection["collection_id"])]
         },
@@ -305,7 +305,7 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
         "$and": [
             {"metadata.rating": {"$gt": 5}},
             {"metadata.category": {"$eq": "modern"}},
-            {"owner_id": {"$eq": client.users.me()["results"]["id"]}},
+            {"owner_id": {"$eq": user_id}},
             {
                 "collection_ids": {
                     "$overlap": [str(test_collection["collection_id"])]
@@ -331,7 +331,7 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
             "use_fulltext_search": True,
             "use_semantic_search": False,
             "filters": {
-                "owner_id": {"$eq": client.users.me()["results"]["id"]},
+                "owner_id": {"$eq": user_id},
                 "collection_ids": {
                     "$overlap": [str(test_collection["collection_id"])]
                 },
@@ -361,7 +361,7 @@ def test_complex_nested_filters(client: R2RClient, test_collection):
                 ]
             },
             {"metadata.tags": {"$contains": ["philosophy"]}},
-            {"owner_id": {"$eq": client.users.me()["results"]["id"]}},
+            {"owner_id": {"$eq": client.users.me().results.id}},
             {
                 "collection_ids": {
                     "$overlap": [str(test_collection["collection_id"])]

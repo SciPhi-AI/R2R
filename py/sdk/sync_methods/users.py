@@ -50,12 +50,14 @@ class UsersSDK:
         if profile_picture is not None:
             data["profile_picture"] = profile_picture
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             "users",
             json=data,
             version="v3",
         )
+
+        return WrappedUserResponse(**response_dict)
 
     def send_verification_email(
         self, email: str
@@ -63,12 +65,14 @@ class UsersSDK:
         """
         Request that a verification email to a user.
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             "users/send-verification-email",
             json=email,
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)
 
     def delete(self, id: str | UUID, password: str) -> WrappedBooleanResponse:
         """
@@ -83,7 +87,7 @@ class UsersSDK:
             dict: Deletion result
         """
         data: dict[str, Any] = {"password": password}
-        response = self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"users/{str(id)}",
             json=data,
@@ -91,7 +95,8 @@ class UsersSDK:
         )
         self.client.access_token = None
         self.client._refresh_token = None
-        return response
+
+        return WrappedBooleanResponse(**response_dict)
 
     def verify_email(
         self, email: str, verification_code: str
@@ -110,14 +115,17 @@ class UsersSDK:
             "email": email,
             "verification_code": verification_code,
         }
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             "users/verify-email",
             json=data,
             version="v3",
         )
 
+        return WrappedGenericMessageResponse(**response_dict)
+
     def login(self, email: str, password: str) -> dict[str, Token]:
+        # FIXME: Need a proper response model
         """
         Log in a user.
 
@@ -183,7 +191,7 @@ class UsersSDK:
     def logout(self) -> WrappedGenericMessageResponse | None:
         """Log out the current user."""
         if self.client.access_token:
-            response = self.client._make_request(
+            response_dict = self.client._make_request(
                 "POST",
                 "users/logout",
                 version="v3",
@@ -191,7 +199,7 @@ class UsersSDK:
             self.client.access_token = None
             self.client._refresh_token = None
 
-            return response
+            return WrappedGenericMessageResponse(**response_dict)
 
         self.client.access_token = None
         self.client._refresh_token = None
@@ -200,17 +208,21 @@ class UsersSDK:
     def refresh_token(self) -> WrappedTokenResponse:
         """Refresh the access token using the refresh token."""
         if self.client._refresh_token:
-            response = self.client._make_request(
+            response_dict = self.client._make_request(
                 "POST",
                 "users/refresh-token",
                 json=self.client._refresh_token,
                 version="v3",
             )
-        self.client.access_token = response["results"]["access_token"]["token"]
-        self.client._refresh_token = response["results"]["refresh_token"][
+
+        self.client.access_token = response_dict["results"]["access_token"][
             "token"
         ]
-        return response
+        self.client._refresh_token = response_dict["results"]["refresh_token"][
+            "token"
+        ]
+
+        return WrappedTokenResponse(**response_dict)
 
     def change_password(
         self, current_password: str, new_password: str
@@ -229,12 +241,14 @@ class UsersSDK:
             "current_password": current_password,
             "new_password": new_password,
         }
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             "users/change-password",
             json=data,
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)
 
     def request_password_reset(
         self, email: str
@@ -248,12 +262,14 @@ class UsersSDK:
         Returns:
             dict: Password reset request result
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             "users/request-password-reset",
             json=email,
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)
 
     def reset_password(
         self, reset_token: str, new_password: str
@@ -272,12 +288,14 @@ class UsersSDK:
             "reset_token": reset_token,
             "new_password": new_password,
         }
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             "users/reset-password",
             json=data,
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)
 
     def list(
         self,
@@ -302,12 +320,14 @@ class UsersSDK:
         if ids:
             params["ids"] = [str(user_id) for user_id in ids]  # type: ignore
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             "users",
             params=params,
             version="v3",
         )
+
+        return WrappedUsersResponse(**response_dict)
 
     def retrieve(
         self,
@@ -322,11 +342,13 @@ class UsersSDK:
         Returns:
             dict: Detailed user information
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"users/{str(id)}",
             version="v3",
         )
+
+        return WrappedUserResponse(**response_dict)
 
     def me(
         self,
@@ -337,11 +359,13 @@ class UsersSDK:
         Returns:
             dict: Detailed user information
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             "users/me",
             version="v3",
         )
+
+        return WrappedUserResponse(**response_dict)
 
     def update(
         self,
@@ -384,12 +408,14 @@ class UsersSDK:
         if metadata is not None:
             data["metadata"] = metadata
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"users/{str(id)}",
-            json=data,  #  if len(data.keys()) != 1 else list(data.values())[0]
+            json=data,
             version="v3",
         )
+
+        return WrappedUserResponse(**response_dict)
 
     def list_collections(
         self,
@@ -413,12 +439,14 @@ class UsersSDK:
             "limit": limit,
         }
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"users/{str(id)}/collections",
             params=params,
             version="v3",
         )
+
+        return WrappedCollectionsResponse(**response_dict)
 
     def add_to_collection(
         self,
@@ -432,11 +460,13 @@ class UsersSDK:
             id (str | UUID): User ID to add
             collection_id (str | UUID): Collection ID to add user to
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"users/{str(id)}/collections/{str(collection_id)}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def remove_from_collection(
         self,
@@ -453,11 +483,13 @@ class UsersSDK:
         Returns:
             bool: True if successful
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"users/{str(id)}/collections/{str(collection_id)}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def create_api_key(
         self,
@@ -465,6 +497,7 @@ class UsersSDK:
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> dict:
+        # FIXME: Need a proper response model
         """
         Create a new API key for the specified user.
 
@@ -493,6 +526,7 @@ class UsersSDK:
         self,
         id: str | UUID,
     ) -> dict:
+        # FIXME: Need a proper response model
         """
         List all API keys for the specified user.
 
@@ -523,13 +557,16 @@ class UsersSDK:
         Returns:
             dict: { "message": "API key deleted successfully" }
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"users/{str(id)}/api-keys/{str(key_id)}",
             version="v3",
         )
 
+        return WrappedGenericMessageResponse(**response_dict)
+
     def get_limits(self) -> dict[str, Any]:
+        # FIXME: Need a proper response model
         return self.client._make_request(
             "GET",
             f"users/{str(self.client._user_id)}/limits",
@@ -537,6 +574,7 @@ class UsersSDK:
         )
 
     def oauth_google_authorize(self) -> dict[str, str]:
+        # FIXME: Need a proper response model
         """
         Get Google OAuth 2.0 authorization URL from the server.
         Returns: {"redirect_url": "..."}
@@ -548,6 +586,7 @@ class UsersSDK:
         )
 
     def oauth_github_authorize(self) -> dict[str, str]:
+        # FIXME: Need a proper response model
         """
         Get GitHub OAuth 2.0 authorization URL from the server.
         Returns: {"redirect_url": "..."}
@@ -559,6 +598,7 @@ class UsersSDK:
         )
 
     def oauth_google_callback(self, code: str, state: str) -> dict[str, Any]:
+        # FIXME: Need a proper response model
         """
         Exchange `code` and `state` with the Google OAuth 2.0 callback route.
         """
@@ -570,6 +610,7 @@ class UsersSDK:
         )
 
     def oauth_github_callback(self, code: str, state: str) -> dict[str, Any]:
+        # FIXME: Need a proper response model
         """
         Exchange `code` and `state` with the GitHub OAuth 2.0 callback route.
         """
