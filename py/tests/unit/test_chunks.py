@@ -110,7 +110,7 @@ class TestChunks:
         self, test_client: AsyncR2RTestClient, test_document
     ):
         doc_id, chunks = test_document
-        chunk_id = chunks[0]["id"]
+        chunk_id = chunks[0].id
 
         retrieved = await test_client.retrieve_chunk(chunk_id)
         assert retrieved["id"] == chunk_id, "Retrieved wrong chunk ID"
@@ -214,9 +214,9 @@ class TestChunks:
 
             if len(response["results"]) > 0:
                 # Verify we only get chunks owned by our temp user
-                chunk = response["results"][0]
+                chunk = response.results[0]
                 chunks = await test_client.list_chunks(doc_id)
-                assert chunk["owner_id"] in [
+                assert chunk.owner_id in [
                     c["owner_id"] for c in chunks
                 ], "Got chunk from wrong owner"
 
