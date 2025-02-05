@@ -5,7 +5,14 @@ from pathlib import Path
 from typing import Any, Optional
 from uuid import UUID
 
-from shared.api.models.base import WrappedBooleanResponse
+from shared.api.models.base import (
+    WrappedBooleanResponse,
+    WrappedGenericMessageResponse,
+)
+from shared.api.models.graph.responses import (
+    WrappedEntitiesResponse,
+    WrappedRelationshipsResponse,
+)
 from shared.api.models.ingestion.responses import WrappedIngestionResponse
 from shared.api.models.management.responses import (
     WrappedChunksResponse,
@@ -97,7 +104,7 @@ class DocumentsSDK:
                 )
             ]
             try:
-                result = self.client._make_request(
+                response_dict = self.client._make_request(
                     "POST",
                     "documents",
                     data=data,
@@ -107,10 +114,9 @@ class DocumentsSDK:
             finally:
                 # Ensure we close the file after the request is complete
                 file_instance.close()
-            return result
         elif raw_text:
             data["raw_text"] = raw_text  # type: ignore
-            return self.client._make_request(
+            response_dict = self.client._make_request(
                 "POST",
                 "documents",
                 data=data,
@@ -118,12 +124,14 @@ class DocumentsSDK:
             )
         else:
             data["chunks"] = json.dumps(chunks)
-            return self.client._make_request(
+            response_dict = self.client._make_request(
                 "POST",
                 "documents",
                 data=data,
                 version="v3",
             )
+
+        return WrappedIngestionResponse(**response_dict)
 
     def retrieve(
         self,
@@ -138,11 +146,13 @@ class DocumentsSDK:
         Returns:
             dict: Document information
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"documents/{str(id)}",
             version="v3",
         )
+
+        return WrappedDocumentResponse(**response_dict)
 
     def download(
         self,
@@ -351,12 +361,17 @@ class DocumentsSDK:
 
         Args:
             id (str | UUID): ID of document to delete
+
+        Returns:
+            WrappedBooleanResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"documents/{str(id)}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def list_chunks(
         self,
@@ -375,7 +390,7 @@ class DocumentsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of document chunks and pagination information
+            WrappedChunksResponse: List of document chunks and pagination information
         """
         params = {
             "offset": offset,
@@ -405,19 +420,21 @@ class DocumentsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of document chunks and pagination information
+            WrappedCollectionsResponse: List of document collections and pagination information
         """
         params = {
             "offset": offset,
             "limit": limit,
         }
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"documents/{str(id)}/collections",
             params=params,
             version="v3",
         )
+
+        return WrappedCollectionsResponse(**response_dict)
 
     def delete_by_filter(
         self,
@@ -430,7 +447,7 @@ class DocumentsSDK:
             filters (dict): Filters to apply when selecting documents to delete
         """
         filters_json = json.dumps(filters)
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             "documents/by-filter",
             data=filters_json,
@@ -439,12 +456,14 @@ class DocumentsSDK:
             version="v3",
         )
 
+        return WrappedBooleanResponse(**response_dict)
+
     def extract(
         self,
         id: str | UUID,
         settings: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
-    ) -> dict:
+    ) -> WrappedGenericMessageResponse:
         """
         Extract entities and relationships from a document.
 
@@ -462,12 +481,13 @@ class DocumentsSDK:
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"documents/{str(id)}/extract",
             params=data,
             version="v3",
         )
+        return WrappedGenericMessageResponse(**response_dict)
 
     def list_entities(
         self,
@@ -475,7 +495,7 @@ class DocumentsSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
         include_embeddings: Optional[bool] = False,
-    ) -> dict:
+    ) -> WrappedEntitiesResponse:
         """
         List entities extracted from a document.
 
@@ -493,12 +513,14 @@ class DocumentsSDK:
             "limit": limit,
             "include_embeddings": include_embeddings,
         }
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"documents/{str(id)}/entities",
             params=params,
             version="v3",
         )
+
+        return WrappedEntitiesResponse(**response_dict)
 
     def list_relationships(
         self,
@@ -507,7 +529,7 @@ class DocumentsSDK:
         limit: Optional[int] = 100,
         entity_names: Optional[list[str]] = None,
         relationship_types: Optional[list[str]] = None,
-    ) -> dict:
+    ) -> WrappedRelationshipsResponse:
         """
         List relationships extracted from a document.
 
@@ -530,12 +552,14 @@ class DocumentsSDK:
         if relationship_types:
             params["relationship_types"] = relationship_types
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"documents/{str(id)}/relationships",
             params=params,
             version="v3",
         )
+
+        return WrappedRelationshipsResponse(**response_dict)
 
     def list(
         self,
@@ -561,12 +585,14 @@ class DocumentsSDK:
         if ids:
             params["ids"] = [str(doc_id) for doc_id in ids]  # type: ignore
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             "documents",
             params=params,
             version="v3",
         )
+
+        return WrappedDocumentsResponse(**response_dict)
 
     def search(
         self,
@@ -574,6 +600,7 @@ class DocumentsSDK:
         search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
     ):
+        # FIXME: Get return type
         """
         Conduct a vector and/or KG search.
 
@@ -607,6 +634,7 @@ class DocumentsSDK:
         settings: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
     ):
+        # FIXME: Get return type
         """
         Deduplicate entities and relationships from a document.
 
