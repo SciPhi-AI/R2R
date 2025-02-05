@@ -28,7 +28,7 @@ def normal_user_client(mutable_client: R2RClient):
     try:
         mutable_client.users.login(email, password)
         mutable_client.users.delete(
-            mutable_client.users.me()["results"]["id"], password
+            id=mutable_client.users.me().results.id, password=password
         )
     except R2RException:
         pass
@@ -48,13 +48,13 @@ def another_normal_user_client(config):
     # Cleanup: Try deleting the user if exists
     try:
         client.users.login(email, password)
-        client.users.delete(client.users.me()["results"]["id"], password)
+        client.users.delete(id=client.users.me().results.id, password=password)
     except R2RException:
         pass
 
 
 @pytest.fixture
-def user_owned_collection(normal_user_client):
+def user_owned_collection(normal_user_client: R2RClient):
     """Create a collection owned by the normal user."""
     resp = normal_user_client.collections.create(
         name="User Owned Collection",
@@ -70,7 +70,7 @@ def user_owned_collection(normal_user_client):
 
 
 @pytest.fixture
-def superuser_owned_collection(client):
+def superuser_owned_collection(client: R2RClient):
     """Create a collection owned by the superuser."""
     resp = client.collections.create(
         name="Superuser Owned Collection",
@@ -98,7 +98,7 @@ def test_non_member_cannot_view_collection(
 
 
 def test_collection_owner_can_view_collection(
-    normal_user_client, user_owned_collection
+    normal_user_client: R2RClient, user_owned_collection
 ):
     """The owner should be able to view their own collection."""
     coll = normal_user_client.collections.retrieve(user_owned_collection)[
@@ -110,7 +110,7 @@ def test_collection_owner_can_view_collection(
 
 
 def test_collection_member_can_view_collection(
-    client, normal_user_client, user_owned_collection
+    client, normal_user_client: R2RClient, user_owned_collection
 ):
     """A user added to a collection should be able to view it."""
     # Create another user and add them to the user's collection
@@ -118,13 +118,13 @@ def test_collection_member_can_view_collection(
     new_user_password = "temp_member_password"
 
     # Store normal user's email before any logouts
-    normal_user_email = normal_user_client.users.me()["results"]["email"]
+    normal_user_email = normal_user_client.users.me().results.email
 
     # Create a new user and log in as them
     member_client = R2RClient(normal_user_client.base_url)
     member_client.users.create(new_user_email, new_user_password)
     member_client.users.login(new_user_email, new_user_password)
-    member_id = member_client.users.me()["results"]["id"]
+    member_id = member_client.users.me().results.id
 
     # Owner adds the new user to the collection
     normal_user_client.users.logout()
@@ -138,11 +138,13 @@ def test_collection_member_can_view_collection(
 
 
 def test_non_owner_member_cannot_edit_collection(
-    user_owned_collection, another_normal_user_client, normal_user_client
+    user_owned_collection,
+    another_normal_user_client: R2RClient,
+    normal_user_client: R2RClient,
 ):
     """A member who is not the owner should not be able to edit the collection."""
     # Add another normal user to the owner's collection
-    another_user_id = another_normal_user_client.users.me()["results"]["id"]
+    another_user_id = another_normal_user_client.users.me().results.id
     normal_user_client.collections.add_user(
         user_owned_collection, another_user_id
     )
@@ -158,11 +160,13 @@ def test_non_owner_member_cannot_edit_collection(
 
 
 def test_non_owner_member_cannot_delete_collection(
-    user_owned_collection, another_normal_user_client, normal_user_client
+    user_owned_collection,
+    another_normal_user_client: R2RClient,
+    normal_user_client: R2RClient,
 ):
     """A member who is not the owner should not be able to delete the collection."""
     # Add the other user
-    another_user_id = another_normal_user_client.users.me()["results"]["id"]
+    another_user_id = another_normal_user_client.users.me().results.id
     normal_user_client.collections.add_user(
         user_owned_collection, another_user_id
     )
@@ -176,14 +180,16 @@ def test_non_owner_member_cannot_delete_collection(
 
 
 def test_non_owner_member_cannot_add_other_users(
-    user_owned_collection, another_normal_user_client, normal_user_client
+    user_owned_collection,
+    another_normal_user_client: R2RClient,
+    normal_user_client: R2RClient,
 ):
     """A member who is not the owner should not be able to add other users."""
     # Another user tries to add a third user
     third_email = f"third_user_{uuid.uuid4()}@test.com"
     third_password = "third_password"
     # Need to create third user as a superuser or owner
-    normal_user_email = normal_user_client.users.me()["results"]["email"]
+    normal_user_email = normal_user_client.users.me().results.email
     normal_user_client.users.logout()
 
     # Login as normal user again
@@ -191,13 +197,12 @@ def test_non_owner_member_cannot_add_other_users(
     # This code snippet assumes we have these credentials available.
     # If not, manage credentials store in fixture creation.
     normal_user_client.users.login(normal_user_email, "normal_password")
-    third_user_resp = normal_user_client.users.create(
+    third_user_id = normal_user_client.users.create(
         third_email, third_password
-    )
-    third_user_id = third_user_resp["results"]["id"]
+    ).results.id
 
     # Add another user as a member
-    another_user_id = another_normal_user_client.users.me()["results"]["id"]
+    another_user_id = another_normal_user_client.users.me().results.id
     normal_user_client.collections.add_user(
         user_owned_collection, another_user_id
     )
@@ -213,11 +218,13 @@ def test_non_owner_member_cannot_add_other_users(
 
 
 def test_owner_can_remove_member_from_collection(
-    user_owned_collection, another_normal_user_client, normal_user_client
+    user_owned_collection,
+    another_normal_user_client: R2RClient,
+    normal_user_client: R2RClient,
 ):
     """The owner should be able to remove a member from their collection."""
     # Add another user to the collection
-    another_user_id = another_normal_user_client.users.me()["results"]["id"]
+    another_user_id = another_normal_user_client.users.me().results.id
     normal_user_client.collections.add_user(
         user_owned_collection, another_user_id
     )
@@ -225,8 +232,8 @@ def test_owner_can_remove_member_from_collection(
     # Remove them
     remove_resp = normal_user_client.collections.remove_user(
         user_owned_collection, another_user_id
-    )["results"]
-    assert remove_resp["success"], "Owner could not remove member."
+    ).results
+    assert remove_resp.success, "Owner could not remove member."
 
     # The removed user should no longer have access
     with pytest.raises(R2RException) as exc_info:
@@ -288,10 +295,10 @@ def test_user_cannot_add_document_to_collection_they_cannot_edit(
     second_client = R2RClient(normal_user_client.base_url)
     second_client.users.create(second_email, second_password)
     second_client.users.login(second_email, second_password)
-    second_id = second_client.users.me()["results"]["id"]
+    second_id = second_client.users.me().results.id
 
     # Owner adds second user as a member
-    email_of_normal_user = normal_user_client.users.me()["results"]["email"]
+    email_of_normal_user = normal_user_client.users.me().results.email
     normal_user_client.users.logout()
     # Re-login owner (assuming we stored the original user's creds)
     # For demonstration, we assume we know the normal_user_client creds or re-use fixtures carefully.
@@ -348,8 +355,8 @@ def test_user_cannot_remove_document_from_collection_they_cannot_edit(
     member_client = R2RClient(normal_user_client.base_url)
     member_client.users.create(another_email, another_password)
     member_client.users.login(another_email, another_password)
-    member_id = member_client.users.me()["results"]["id"]
-    user_email = normal_user_client.users.me()["results"]["email"]
+    member_id = member_client.users.me().results.id
+    user_email = normal_user_client.users.me().results.email
 
     # Add member to collection
     normal_user_client.users.logout()
@@ -367,13 +374,14 @@ def test_user_cannot_remove_document_from_collection_they_cannot_edit(
     normal_user_client.collections.delete(coll_id)
 
 
-def test_normal_user_cannot_make_another_user_superuser(normal_user_client):
+def test_normal_user_cannot_make_another_user_superuser(
+    normal_user_client: R2RClient,
+):
     """A normal user tries to update another user to superuser, should fail."""
     # Create another user
     email = f"regular_{uuid.uuid4()}@test.com"
     password = "not_superuser"
-    new_user_resp = normal_user_client.users.create(email, password)
-    new_user_id = new_user_resp["results"]["id"]
+    new_user_id = normal_user_client.users.create(email, password).results.id
 
     # Try updating their superuser status
     with pytest.raises(R2RException) as exc_info:
@@ -384,7 +392,7 @@ def test_normal_user_cannot_make_another_user_superuser(normal_user_client):
 
 
 def test_normal_user_cannot_view_other_users_if_not_superuser(
-    normal_user_client,
+    normal_user_client: R2RClient,
 ):
     """A normal user tries to list all users, should fail."""
     with pytest.raises(R2RException) as exc_info:
@@ -395,7 +403,7 @@ def test_normal_user_cannot_view_other_users_if_not_superuser(
 
 
 def test_normal_user_cannot_update_other_users_details(
-    normal_user_client, client
+    normal_user_client: R2RClient, client: R2RClient
 ):
     """A normal user tries to update another normal user's details."""
     # Create another normal user
@@ -405,7 +413,7 @@ def test_normal_user_cannot_update_other_users_details(
     another_client = R2RClient(normal_user_client.base_url)
     another_client.users.create(email, password)
     another_client.users.login(email, password)
-    another_user_id = another_client.users.me()["results"]["id"]
+    another_user_id = another_client.users.me().results.id
     another_client.users.logout()
 
     # Try to update as first normal user (not superuser, not same user)
@@ -420,14 +428,16 @@ def test_normal_user_cannot_update_other_users_details(
 
 
 def test_owner_cannot_promote_member_to_superuser_via_collection(
-    user_owned_collection, normal_user_client, another_normal_user_client
+    user_owned_collection,
+    normal_user_client: R2RClient,
+    another_normal_user_client: R2RClient,
 ):
     """
     Ensures that being a collection owner doesn't confer the right
     to promote a user to superuser.
     """
     # Add another user to the collection
-    another_user_id = another_normal_user_client.users.me()["results"]["id"]
+    another_user_id = another_normal_user_client.users.me().results.id
     normal_user_client.collections.add_user(
         user_owned_collection, another_user_id
     )
@@ -441,20 +451,22 @@ def test_owner_cannot_promote_member_to_superuser_via_collection(
 
 
 def test_member_cannot_view_other_users_info(
-    user_owned_collection, normal_user_client, another_normal_user_client
+    user_owned_collection,
+    normal_user_client: R2RClient,
+    another_normal_user_client: R2RClient,
 ):
     """
     A member (non-owner) of a collection should not be able to retrieve other users' details
     outside of their allowed scope.
     """
     # Add the other normal user as a member
-    another_user_id = another_normal_user_client.users.me()["results"]["id"]
+    another_user_id = another_normal_user_client.users.me().results.id
     normal_user_client.collections.add_user(
         user_owned_collection, another_user_id
     )
 
     # As another_normal_user_client (a member), try to retrieve owner user details
-    owner_id = normal_user_client.users.me()["results"]["id"]
+    owner_id = normal_user_client.users.me().results.id
     with pytest.raises(R2RException) as exc_info:
         another_normal_user_client.users.retrieve(owner_id)
     assert (
@@ -492,7 +504,7 @@ def test_non_owner_cannot_remove_users_they_did_not_add(
     A member who is not the owner cannot remove other members from the collection.
     """
     # Add another user as a member
-    another_user_id = another_normal_user_client.users.me()["results"]["id"]
+    another_user_id = another_normal_user_client.users.me().results.id
     normal_user_client.collections.add_user(
         user_owned_collection, another_user_id
     )
@@ -517,7 +529,7 @@ def test_owner_cannot_access_deleted_member_info_after_removal(
     perform collection-specific actions with that user fail.
     """
     # Add another user to the collection
-    another_user_id = another_normal_user_client.users.me()["results"]["id"]
+    another_user_id = another_normal_user_client.users.me().results.id
     normal_user_client.collections.add_user(
         user_owned_collection, another_user_id
     )
@@ -540,7 +552,7 @@ def test_owner_cannot_access_deleted_member_info_after_removal(
 
 
 def test_member_cannot_add_document_to_non_existent_collection(
-    normal_user_client,
+    normal_user_client: R2RClient,
 ):
     """
     A member tries to add a document to a collection that doesn't exist.
