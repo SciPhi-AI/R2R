@@ -216,11 +216,9 @@ class TestChunks:
             if len(response["results"]) > 0:
                 # Verify we only get chunks owned by our temp user
                 chunk = response["results"][0]
-                print(f"chunk: {chunk}")
                 chunks = await test_client.list_chunks(doc_id)
-                print(f"chunks: {chunks}")
-                assert chunk.owner_id in [
-                    c["owner_id"] for c in chunks
+                assert chunk["owner_id"] in [
+                    str(c.owner_id) for c in chunks
                 ], "Got chunk from wrong owner"
 
         finally:
