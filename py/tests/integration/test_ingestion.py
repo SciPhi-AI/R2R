@@ -297,8 +297,8 @@ def test_chunks_ingestion(client: R2RClient):
     response = client.documents.create(chunks=chunks, ingestion_mode="fast")
 
     assert response is not None
-    assert "results" in response
-    assert "document_id" in response["results"]
+    assert response.results is not None
+    assert response.results.document_id is not None
 
     client.documents.delete(id=response.results.document_id)
 

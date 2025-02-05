@@ -71,8 +71,8 @@ def test_collection_id_eq_filter(
     )["results"]["chunk_search_results"]
     found_ids = {str(d["document_id"]) for d in listed}
     assert {
-        doc1,
-        doc2,
+        str(doc1),
+        str(doc2),
     } == found_ids, f"Expected doc1 and doc2, got {found_ids}"
 
 
@@ -114,9 +114,9 @@ def test_collection_id_in_filter(
     )["results"]["chunk_search_results"]
     found_ids = {str(d["document_id"]) for d in listed}
     assert {
-        doc1,
-        doc2,
-        doc4,
+        str(doc1),
+        str(doc2),
+        str(doc4),
     } == found_ids, f"Expected doc1, doc2, doc4, got {found_ids}"
 
 
@@ -159,8 +159,8 @@ def test_collection_id_contains_filter(
     )["results"]["chunk_search_results"]
     found_ids = {str(d["document_id"]) for d in listed}
     assert {
-        doc1,
-        doc2,
+        str(doc1),
+        str(doc2),
     } == found_ids, f"Expected doc1 and doc2, got {found_ids}"
 
 
@@ -179,7 +179,7 @@ def test_collection_id_contains_multiple(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]
     found_ids = {str(d["document_id"]) for d in listed}
-    assert {doc2} == found_ids, f"Expected doc2 only, got {found_ids}"
+    assert {str(doc2)} == found_ids, f"Expected doc2 only, got {found_ids}"
 
 
 def test_delete_by_collection_id_eq(
