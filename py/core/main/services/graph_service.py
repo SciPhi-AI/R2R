@@ -563,6 +563,7 @@ class GraphService(Service):
             # Call the LLM
             gen_config = (
                 self.providers.database.config.graph_creation_settings.generation_config
+                or GenerationConfig(model=self.config.app.fast_llm)
             )
             llm_resp = await self.providers.llm.aget_completion(
                 messages=messages,
@@ -980,7 +981,6 @@ class GraphService(Service):
         self,
         document_id: UUID,
         generation_config: GenerationConfig,
-        max_knowledge_relationships: int,
         entity_types: list[str],
         relation_types: list[str],
         chunk_merge_count: int,
@@ -1064,7 +1064,6 @@ class GraphService(Service):
                 self._extract_kg_from_chunk_group(
                     chunk_group,
                     generation_config,
-                    max_knowledge_relationships,
                     entity_types,
                     relation_types,
                     task_id=i,
@@ -1098,7 +1097,6 @@ class GraphService(Service):
         self,
         chunks: list[DocumentChunk],
         generation_config: GenerationConfig,
-        max_knowledge_relationships: int,
         entity_types: list[str],
         relation_types: list[str],
         retries: int = 5,
@@ -1133,7 +1131,6 @@ class GraphService(Service):
                 task_inputs={
                     "document_summary": document_summary or "",
                     "input": combined_extraction,
-                    "max_knowledge_relationships": max_knowledge_relationships,
                     "entity_types": "\n".join(entity_types),
                     "relation_types": "\n".join(relation_types),
                 },
@@ -1346,6 +1343,7 @@ class GraphService(Service):
             )
             gen_config = (
                 self.config.database.graph_creation_settings.generation_config
+                or GenerationConfig(model=self.config.app.fast_llm)
             )
             resp = await self.providers.llm.aget_completion(
                 messages, generation_config=gen_config

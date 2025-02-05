@@ -317,6 +317,7 @@ class IngestionService:
                 messages=messages,
                 generation_config=GenerationConfig(
                     model=self.config.ingestion.document_summary_model
+                    or self.config.app.fast_llm
                 ),
             )
 
@@ -739,7 +740,8 @@ class IngestionService:
                                 or 1024,
                             },
                         ),
-                        generation_config=chunk_enrichment_settings.generation_config,
+                        generation_config=chunk_enrichment_settings.generation_config
+                        or GenerationConfig(model=self.config.app.fast_llm),
                     )
                 )
                 .choices[0]

@@ -67,11 +67,6 @@ class TIFFParser(AsyncParser[str | bytes]):
             )
 
         try:
-            if not self.supports_vision(model=self.config.vision_img_model):
-                raise ValueError(
-                    f"Model {self.config.vision_img_model} does not support vision"
-                )
-
             # Convert TIFF to JPEG
             if isinstance(data, bytes):
                 jpeg_data = await self._convert_tiff_to_jpeg(data)
@@ -81,7 +76,7 @@ class TIFFParser(AsyncParser[str | bytes]):
 
             # Use vision model to analyze image
             generation_config = GenerationConfig(
-                model=self.config.vision_img_model,
+                model=self.config.vision_img_model or self.config.app.vlm,
                 stream=False,
             )
 

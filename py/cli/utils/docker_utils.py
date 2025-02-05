@@ -104,13 +104,6 @@ async def run_local_serve(
         config=R2RConfig.load(config_name, config_path)
     ).build()
 
-    if config_name or config_path:
-        completion_config = r2r_instance.config.completion
-        llm_provider = completion_config.provider
-        llm_model = completion_config.generation_config.model
-        model_provider = llm_model.split("/")[0]
-        check_llm_reqs(llm_provider, model_provider)
-
     available_port = find_available_port(port)
 
     await r2r_instance.orchestration_provider.start_worker()
@@ -162,50 +155,6 @@ def run_docker_serve(
     click.echo("Starting Docker Compose setup...")
     click.echo(f"Calling `{up_command}`")
     os.system(up_command)
-
-
-def check_llm_reqs(llm_provider, model_provider):
-    providers = {
-        "openai": {"env_vars": ["OPENAI_API_KEY"]},
-        "anthropic": {"env_vars": ["ANTHROPIC_API_KEY"]},
-        "azure": {
-            "env_vars": [
-                "AZURE_API_KEY",
-                "AZURE_API_BASE",
-                "AZURE_API_VERSION",
-            ]
-        },
-        "vertex": {
-            "env_vars": [
-                "GOOGLE_APPLICATION_CREDENTIALS",
-                "VERTEX_PROJECT",
-                "VERTEX_LOCATION",
-            ]
-        },
-        "bedrock": {
-            "env_vars": [
-                "AWS_ACCESS_KEY_ID",
-                "AWS_SECRET_ACCESS_KEY",
-                "AWS_REGION_NAME",
-            ]
-        },
-        "groq": {"env_vars": ["GROQ_API_KEY"]},
-        "cohere": {"env_vars": ["COHERE_API_KEY"]},
-        "anyscale": {"env_vars": ["ANYSCALE_API_KEY"]},
-    }
-
-    for provider, config in providers.items():
-        if llm_provider == provider or model_provider == provider:
-            if missing_vars := [
-                var for var in config["env_vars"] if not os.environ.get(var)
-            ]:
-                message = f"You have specified `{provider}` as a default LLM provider, but the following environment variables are missing: {', '.join(missing_vars)}. Would you like to continue?"
-                if not click.confirm(message, default=False):
-                    click.echo("Aborting Docker setup.")
-                    sys.exit(1)
-
-    if model_provider == "ollama":
-        check_external_ollama()
 
 
 def check_external_ollama(ollama_url="http://localhost:11434/api/version"):

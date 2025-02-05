@@ -188,8 +188,6 @@ batch_size = 256                # Some ingestion/DB ops batch size (especially f
   clustering_mode = "remote"     # "remote" or "local"
   entity_types = []              # If empty, all entity types
   relation_types = []            # If empty, all relation types
-  fragment_merge_count = 4
-  max_knowledge_relationships = 100
   max_description_input_length = 65536
   generation_config = { model = "azure/gpt-4o-mini" }
 

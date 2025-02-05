@@ -32,7 +32,7 @@ class RAGCompletion:
 
 class GenerationConfig(R2RSerializable):
     _defaults: ClassVar[dict] = {
-        "model": "openai/gpt-4o",
+        "model": None,
         "temperature": 0.1,
         "top_p": 1.0,
         "max_tokens_to_sample": 1024,
@@ -44,7 +44,7 @@ class GenerationConfig(R2RSerializable):
         "response_format": None,
     }
 
-    model: str = Field(
+    model: Optional[str] = Field(
         default_factory=lambda: GenerationConfig._defaults["model"]
     )
     temperature: float = Field(

@@ -21,7 +21,7 @@ logger = logging.getLogger()
 
 class CompletionConfig(ProviderConfig):
     provider: Optional[str] = None
-    generation_config: GenerationConfig = GenerationConfig()
+    generation_config: Optional[GenerationConfig] = None
     concurrent_request_limit: int = 256
     fast_llm: str = "openai/gpt-4o"
     max_retries: int = 3

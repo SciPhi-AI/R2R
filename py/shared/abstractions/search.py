@@ -257,17 +257,6 @@ class AggregateSearchResult(R2RSerializable):
         }
 
 
-from enum import Enum
-from typing import Any, Optional
-from uuid import UUID
-
-from pydantic import Field
-
-from .base import R2RSerializable
-from .llm import GenerationConfig
-from .vector import IndexMeasure
-
-
 class HybridSearchSettings(R2RSerializable):
     """Settings for hybrid search combining full-text and semantic search."""
 
@@ -310,8 +299,8 @@ class ChunkSearchSettings(R2RSerializable):
 class GraphSearchSettings(R2RSerializable):
     """Settings specific to knowledge graph search."""
 
-    generation_config: GenerationConfig = Field(
-        default_factory=GenerationConfig,
+    generation_config: Optional[GenerationConfig] = Field(
+        default=None,
         description="Configuration for text generation during graph search.",
     )
     graphrag_map_system: str = Field(

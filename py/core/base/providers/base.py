@@ -33,6 +33,10 @@ class AppConfig(InnerConfig):
     default_max_chunks_per_user: Optional[int] = 10_000
     default_max_collections_per_user: Optional[int] = 5
     default_max_upload_size: int = 2_000_000  # e.g. ~2 MB
+    quality_llm: Optional[str] = None
+    fast_llm: Optional[str] = None
+    vlm: Optional[str] = None
+    audio_lm: Optional[str] = None
 
     # File extension to max-size mapping
     # These are examples; adjust sizes as needed.

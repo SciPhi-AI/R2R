@@ -851,7 +851,7 @@ class RetrievalService(Service):
                                                 }
                                             ],
                                             GenerationConfig(
-                                                model=self.providers.llm.config.fast_llm
+                                                model=self.config.app.fast_llm
                                             ),
                                         )
                                     )
@@ -917,7 +917,7 @@ class RetrievalService(Service):
                             await self.providers.llm.aget_completion(
                                 [{"role": "system", "content": prompt}],
                                 GenerationConfig(
-                                    model=self.providers.llm.config.fast_llm
+                                    model=self.config.app.fast_llm
                                 ),
                             )
                         )

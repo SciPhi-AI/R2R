@@ -687,6 +687,7 @@ class ManagementService(Service):
             messages=messages,
             generation_config=GenerationConfig(
                 model=self.config.ingestion.document_summary_model
+                or self.config.app.fast_llm
             ),
         )
 

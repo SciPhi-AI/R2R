@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import Field
 
 from .base import R2RSerializable
@@ -49,8 +51,8 @@ class KGCreationSettings(R2RSerializable):
         description="The maximum length of the description for a node in the graph.",
     )
 
-    generation_config: GenerationConfig = Field(
-        default_factory=GenerationConfig,
+    generation_config: Optional[GenerationConfig] = Field(
+        default=None,
         description="Configuration for text generation during graph enrichment.",
     )
 
@@ -79,8 +81,8 @@ class KGEnrichmentSettings(R2RSerializable):
         description="The maximum length of the summary for a community.",
     )
 
-    generation_config: GenerationConfig = Field(
-        default_factory=GenerationConfig,
+    generation_config: Optional[GenerationConfig] = Field(
+        default=None,
         description="Configuration for text generation during graph enrichment.",
     )
 
@@ -108,8 +110,8 @@ class GraphCommunitySettings(R2RSerializable):
         description="The maximum length of the summary for a community.",
     )
 
-    generation_config: GenerationConfig = Field(
-        default_factory=GenerationConfig,
+    generation_config: Optional[GenerationConfig] = Field(
+        default=None,
         description="Configuration for text generation during graph enrichment.",
     )
 

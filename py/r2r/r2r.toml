@@ -5,56 +5,25 @@ default_max_documents_per_user = 10_000
 default_max_chunks_per_user = 10_000_000
 default_max_collections_per_user = 5_000
 
-# Set the default max upload size to 2 GB for local testing
-default_max_upload_size = 2147483648  # 2 GB for anything not explicitly listed
+# Set the default max upload size to 200 GB for local testing
+default_max_upload_size = 214748364800
 
-  [app.max_upload_size_by_type]
-    # Common text-based formats
-    txt   = 2147483648  # 2 GB
-    md    = 2147483648
-    tsv   = 2147483648
-    csv   = 2147483648
-    xml   = 2147483648
-    html  = 2147483648
+# LLM used for internal operations, like deriving conversation names
+fast_llm = "openai/gpt-4o-mini"
 
-    # Office docs
-    doc   = 2147483648
-    docx  = 2147483648
-    ppt   = 2147483648
-    pptx  = 2147483648
-    xls   = 2147483648
-    xlsx  = 2147483648
-    odt   = 2147483648
+# LLM used for user-facing output, like RAG replies
+quality_llm = "openai/gpt-4o"
 
-    # PDFs
-    pdf   = 2147483648
+# LLM used for ingesting visual inputs
+vlm = "openai/gpt-4o"
 
-    # E-mail
-    eml   = 2147483648
-    msg   = 2147483648
-    p7s   = 2147483648
-
-    # Images
-    bmp   = 2147483648
-    heic  = 2147483648
-    jpeg  = 2147483648
-    jpg   = 2147483648
-    png   = 2147483648
-    tiff  = 2147483648
-
-    # E-books and other formats
-    epub  = 2147483648
-    rtf   = 2147483648
-    rst   = 2147483648
-    org   = 2147483648
+# LLM used for transcription
+audio_lm = "openai/whisper-1"
 
 [agent]
 system_instruction_name = "rag_agent"
 # tools = ["local_search", "content", "web_search"]
-tools = ["content", "local_search"]
-
-  [agent.generation_config]
-  model = "openai/gpt-4o"
+tools = ["local_search"]
 
 [auth]
 provider = "r2r"
@@ -68,10 +37,8 @@ default_admin_password = "change_me_immediately"
 [completion]
 provider = "r2r"
 concurrent_request_limit = 64
-fast_llm = "openai/gpt-4o-mini"
 
   [completion.generation_config]
-  model = "openai/gpt-4o"
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 4_096
@@ -82,44 +49,21 @@ fast_llm = "openai/gpt-4o-mini"
 provider = "bcrypt"
 
 [database]
-provider = "postgres"
 default_collection_name = "Default"
 default_collection_description = "Your default collection."
-# collection_summary_system_prompt = 'default_system'
-# collection_summary_task_prompt = 'default_collection_summary'
-
-# KG settings
-batch_size = 256
 
   [database.graph_creation_settings]
     clustering_mode = "local"
     graph_entity_description_prompt = "graphrag_entity_description"
     entity_types = [] # if empty, all entities are extracted
     relation_types = [] # if empty, all relations are extracted
-    fragment_merge_count = 1 # number of fragments to merge into a single extraction
-    max_knowledge_relationships = 100
     max_description_input_length = 65536
-    generation_config = { model = "openai/gpt-4o-mini", max_tokens_to_sample = 4_096 } # and other params, model used for relationshipt extraction
     automatic_deduplication = true # enable automatic deduplication of entities
 
   [database.graph_enrichment_settings]
     community_reports_prompt = "graphrag_community_reports"
     max_summary_input_length = 65536
-    generation_config = { model = "openai/gpt-4o-mini", max_tokens_to_sample = 4_096 } # and other params, model used for node description and graph clustering
     leiden_params = {}
-
-  [database.graph_search_settings]
-    generation_config = { model = "openai/gpt-4o-mini" }
-
-  [database.limits]
-    # Default fallback limits if no route or user-level overrides are found
-    global_per_min = 300
-    monthly_limit = 10000
-
-  [database.route_limits]
-    # Set the `v3/retrieval/search` route to have a maximum of 5 requests per minute
-    "/v3/retrieval/search" = { route_per_min = 120 }
-    "/v3/retrieval/rag" = { route_per_min = 30 }
 
 [embedding]
 provider = "litellm"
@@ -152,21 +96,11 @@ chunking_strategy = "recursive"
 chunk_size = 1_024
 chunk_overlap = 512
 excluded_parsers = ["mp4"]
-
-# Ingestion-time document summary parameters
-# skip_document_summary = False
-# document_summary_system_prompt = 'default_system'
-# document_summary_task_prompt = 'default_summary'
-# chunks_for_document_summary = 128
-document_summary_model = "openai/gpt-4o-mini"
-vision_img_model = "openai/gpt-4o"
-vision_pdf_model = "openai/gpt-4o"
 automatic_extraction = true # enable automatic extraction of entities and relations
 
   [ingestion.chunk_enrichment_settings]
     enable_chunk_enrichment = false # disabled by default
     n_chunks = 2 # the number of chunks (both preceeding and succeeding) to use in enrichment
-    generation_config = { model = "openai/gpt-4o-mini" }
 
   [ingestion.extra_parsers]
     pdf = "zerox"
@@ -178,7 +112,6 @@ log_info_table = "log_info"
 
 [orchestration]
 provider = "simple"
-
 
 [prompt]
 provider = "r2r"

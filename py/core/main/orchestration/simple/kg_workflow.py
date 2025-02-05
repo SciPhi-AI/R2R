@@ -22,19 +22,23 @@ def simple_kg_factory(service: GraphService):
 
             if key == "collection_id":
                 input_data[key] = uuid.UUID(value)
-
-            # if key == "graph_id":
-            #     input_data[key] = uuid.UUID(value)
-
             if key == "graph_creation_settings":
-                input_data[key] = json.loads(value)
-                input_data[key]["generation_config"] = GenerationConfig(
-                    **input_data[key]["generation_config"]
+                input_data[key] = (
+                    json.loads(value) if not isinstance(value, dict) else value
+                )
+                input_data[key]["generation_config"] = (
+                    GenerationConfig(**input_data[key]["generation_config"])
+                    if input_data[key]["generation_config"]
+                    else GenerationConfig()
                 )
             if key == "graph_enrichment_settings":
-                input_data[key] = json.loads(value)
-                input_data[key]["generation_config"] = GenerationConfig(
-                    **input_data[key]["generation_config"]
+                input_data[key] = (
+                    json.loads(value) if not isinstance(value, dict) else value
+                )
+                input_data[key]["generation_config"] = (
+                    GenerationConfig(**input_data[key]["generation_config"])
+                    if input_data[key]["generation_config"]
+                    else GenerationConfig()
                 )
         return input_data
 

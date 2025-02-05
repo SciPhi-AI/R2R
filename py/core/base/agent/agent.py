@@ -44,7 +44,6 @@ class AgentConfig(BaseModel):
     system_instruction_name: str = "rag_agent"
     tools: list[str] = ["search"]
     tool_names: Optional[list[str]] = None
-    generation_config: GenerationConfig = GenerationConfig()
     stream: bool = False
     include_tools: bool = True
 
@@ -138,7 +137,7 @@ class Agent(ABC):
         if (
             last_message["role"] in ["tool", "function"]
             and last_message["content"] != ""
-            and "ollama" in self.config.generation_config.model
+            and "ollama" in self.rag_generation_config.model
             or self.config.include_tools == False
         ):
             return GenerationConfig(

@@ -65,10 +65,6 @@ def test_base_config_loading(base_config):
 
     # Test critical base values
     assert config.database.graph_creation_settings.clustering_mode == "local"
-    assert (
-        config.database.graph_creation_settings.generation_config.model
-        == "openai/gpt-4o-mini"
-    )
     assert config.ingestion.provider == "r2r"
     assert config.orchestration.provider == "simple"
 
@@ -79,10 +75,6 @@ def test_full_config_override(base_config, full_config):
 
     # Test overridden values
     assert config.database.graph_creation_settings.clustering_mode == "remote"
-    assert (
-        config.database.graph_creation_settings.generation_config.model
-        == "openai/gpt-4o-mini"
-    )
     assert config.ingestion.provider == "unstructured_local"
     assert config.orchestration.provider == "hatchet"
 
@@ -91,14 +83,6 @@ def test_nested_config_preservation(merged_config):
     """Test that nested configurations are properly preserved during merging"""
     config = R2RConfig(merged_config)
 
-    assert (
-        config.database.graph_creation_settings.generation_config.model
-        == "openai/gpt-4o-mini"
-    )
-    assert (
-        config.database.graph_creation_settings.generation_config.temperature
-        == 0.1
-    )
     assert (
         config.database.graph_creation_settings.max_knowledge_relationships
         == 100
@@ -187,10 +171,6 @@ def test_serialization_roundtrip(merged_config):
         == config.database.graph_creation_settings.clustering_mode
     )
     assert (
-        roundtrip_config.database.graph_creation_settings.generation_config.model
-        == config.database.graph_creation_settings.generation_config.model
-    )
-    assert (
         roundtrip_config.orchestration.provider
         == config.orchestration.provider
     )
@@ -211,15 +191,6 @@ def test_all_merged_configs(base_config, all_merged_configs):
             assert (
                 config.database.graph_creation_settings.clustering_mode
                 == "local"
-            )
-
-        # Verify that generation_config model is preserved unless explicitly overridden
-        if "generation_config" not in merged_data.get("database", {}).get(
-            "graph_creation_settings", {}
-        ):
-            assert (
-                config.database.graph_creation_settings.generation_config.model
-                == "openai/gpt-4o-mini"
             )
 
 

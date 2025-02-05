@@ -1,3 +1,5 @@
+js/sdk/**/*.js
+js/tests/*
 **/.DS_Store
 .env
 .DS_Store

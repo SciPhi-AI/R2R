@@ -46,8 +46,6 @@ class AzureFoundryCompletionProvider(CompletionProvider):
                 ),
             )
             logger.debug("Azure Foundry clients initialized successfully")
-        else:
-            logger.warning("Azure Foundry credentials are not configured.")
 
     def _get_base_args(self, generation_config: GenerationConfig) -> dict:
         # Construct arguments similar to the other providers.

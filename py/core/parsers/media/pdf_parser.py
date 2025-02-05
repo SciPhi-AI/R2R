@@ -55,16 +55,6 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             raise ImportError(
                 "Please install the litellm package to use the VLMPDFParser."
             )
-        # Check once if the model supports vision
-        if not self.supports_vision(model=self.config.vision_pdf_model):
-            msg = (
-                f"Model {self.config.vision_pdf_model} does not support vision"
-            )
-            logger.error(msg)
-            raise ValueError(msg)
-        logger.info(
-            f"Initialized VLMPDFParser with model {self.config.vision_pdf_model}"
-        )
 
     async def convert_pdf_to_images(
         self, data: str | bytes
@@ -120,7 +110,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
 
             # Configure generation parameters
             generation_config = GenerationConfig(
-                model=self.config.vision_pdf_model,
+                model=self.config.vision_pdf_model or self.config.app.vlm,
                 stream=False,
             )
 
