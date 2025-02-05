@@ -21,14 +21,14 @@ class AsyncR2RTestClient:
         response = await self.client.documents.create(
             chunks=chunks, run_with_orchestration=run_with_orchestration
         )
-        return response["results"]["document_id"], []
+        return response.results.document_id, []
 
     async def delete_document(self, doc_id: str) -> None:
         await self.client.documents.delete(id=doc_id)
 
     async def list_chunks(self, doc_id: str) -> list[dict]:
         response = await self.client.documents.list_chunks(id=doc_id)
-        return response["results"]
+        return response.results
 
     async def retrieve_chunk(self, chunk_id: str) -> dict:
         response = await self.client.chunks.retrieve(id=chunk_id)
