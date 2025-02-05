@@ -7,7 +7,7 @@ from r2r import R2RClient, R2RException
 
 
 @pytest.fixture
-def cleanup_documents(client):
+def cleanup_documents(client: R2RClient):
     doc_ids = []
 
     def _track_document(doc_id):
@@ -24,45 +24,55 @@ def cleanup_documents(client):
             pass
 
 
-def test_create_document_with_file(client, cleanup_documents):
+def test_create_document_with_file(client: R2RClient, cleanup_documents):
     resp = client.documents.create(
         file_path="core/examples/data/aristotle.txt",
         run_with_orchestration=False,
-    )["results"]
-    doc_id = cleanup_documents(resp["document_id"])
+    )
+    results = resp.results
+
+    doc_id = cleanup_documents(results.document_id)
     assert (
-        "document_id" in resp and resp["document_id"]
+        hasattr(resp, "document_id") and results.document_id
     ), "No document_id returned after file ingestion"
 
 
-def test_create_document_with_raw_text(client, cleanup_documents):
+def test_create_document_with_raw_text(client: R2RClient, cleanup_documents):
     resp = client.documents.create(
         raw_text="This is raw text content.", run_with_orchestration=False
-    )["results"]
-    doc_id = cleanup_documents(resp["document_id"])
+    )
+    results = resp.results
+
+    doc_id = cleanup_documents(results.document_id)
     assert doc_id, "No document_id returned after raw text ingestion"
+
     # Verify retrieval
-    retrieved = client.documents.retrieve(id=doc_id)["results"]
+    retrieved = client.documents.retrieve(id=doc_id)
+    retrieved_results = retrieved.results
     assert (
-        retrieved["id"] == doc_id
+        retrieved_results.id == doc_id
     ), "Failed to retrieve the ingested raw text document"
 
 
-def test_create_document_with_chunks(client, cleanup_documents):
+def test_create_document_with_chunks(client: R2RClient, cleanup_documents):
     suffix = str(uuid.uuid4())[:8]
     resp = client.documents.create(
-        chunks=["Chunk one" + suffix, "Chunk two" + suffix],
+        chunks=[f"Chunk one{suffix}", f"Chunk two{suffix}"],
         run_with_orchestration=False,
-    )["results"]
-    doc_id = cleanup_documents(resp["document_id"])
+    )
+    results = resp.results
+
+    doc_id = cleanup_documents(results.document_id)
     assert doc_id, "No document_id returned after chunk ingestion"
-    retrieved = client.documents.retrieve(id=doc_id)["results"]
+
+    retrieved = client.documents.retrieve(id=doc_id)
+    retrieved_results = retrieved.results
     assert (
-        retrieved["id"] == doc_id
+        retrieved_results.id == doc_id
     ), "Failed to retrieve the chunk-based document"
 
 
-def test_create_document_different_modes(client, cleanup_documents):
+def test_create_document_different_modes(client: R2RClient, cleanup_documents):
     # hi-res mode
     hi_res_resp = client.documents.create(
         raw_text="High resolution doc.",
@@ -82,7 +92,7 @@ def test_create_document_different_modes(client, cleanup_documents):
     assert fast_id, "No doc_id returned for fast ingestion"
 
 
-def test_list_documents(client, test_document):
+def test_list_documents(client: R2RClient, test_document):
     listed = client.documents.list(offset=0, limit=10)
     results = listed["results"]
     assert isinstance(results, list), "Documents list response is not a list"
@@ -90,12 +100,12 @@ def test_list_documents(client, test_document):
     # test_document is created for this test, so we expect at least that one present.
 
 
-def test_retrieve_document(client, test_document):
+def test_retrieve_document(client: R2RClient, test_document):
     retrieved = client.documents.retrieve(id=test_document)["results"]
     assert retrieved["id"] == test_document, "Retrieved wrong document"
 
 
-def test_download_document(client, test_document):
+def test_download_document(client: R2RClient, test_document):
     # For text-only documents, the endpoint returns text as a buffer
     content = client.documents.download(id=test_document)
     assert content, "Failed to download document content"
@@ -103,7 +113,7 @@ def test_download_document(client, test_document):
     assert len(data) > 0, "Document content is empty"
 
 
-def test_delete_document(client):
+def test_delete_document(client: R2RClient):
     # Create a doc to delete
     resp = client.documents.create(
         raw_text="This is a temporary doc", run_with_orchestration=False
@@ -117,7 +127,7 @@ def test_delete_document(client):
     assert exc_info.value.status_code == 404, "Expected 404 after deletion"
 
 
-def test_delete_document_by_filter(client):
+def test_delete_document_by_filter(client: R2RClient):
     # Create a doc with unique metadata
     resp = client.documents.create(
         raw_text="Document to be filtered out",
@@ -138,7 +148,7 @@ def test_delete_document_by_filter(client):
 
 
 # @pytest.mark.skip(reason="Only if superuser-specific logic is implemented")
-def test_list_document_collections(client, test_document):
+def test_list_document_collections(client: R2RClient, test_document):
     # This test assumes the currently logged in user is a superuser
     collections = client.documents.list_collections(id=test_document)[
         "results"
@@ -151,7 +161,7 @@ def test_list_document_collections(client, test_document):
 # @pytest.mark.skip(
 #     reason="Requires actual entity extraction logic implemented and superuser access"
 # )
-def test_extract_document(client, test_document):
+def test_extract_document(client: R2RClient, test_document):
     time.sleep(10)
     run_resp = client.documents.extract(
         id=test_document, run_with_orchestration=False
@@ -160,7 +170,7 @@ def test_extract_document(client, test_document):
 
 
 # @pytest.mark.skip(reason="Requires entity extraction results present")
-def test_list_entities(client, test_document):
+def test_list_entities(client: R2RClient, test_document):
     # If no entities extracted yet, this could raise an exception
     try:
         entities = client.documents.list_entities(id=test_document)["results"]
@@ -171,7 +181,7 @@ def test_list_entities(client, test_document):
 
 
 # @pytest.mark.skip(reason="Requires relationship extraction results present")
-def test_list_relationships(client, test_document):
+def test_list_relationships(client: R2RClient, test_document):
     try:
         relationships = client.documents.list_relationships(id=test_document)[
             "results"
@@ -183,7 +193,7 @@ def test_list_relationships(client, test_document):
         pytest.skip(f"No relationships extracted yet: {str(e)}")
 
 
-def test_search_documents(client, test_document):
+def test_search_documents(client: R2RClient, test_document):
     # Add some delay if indexing takes time
     time.sleep(1)
     query = "Temporary"
@@ -212,7 +222,7 @@ def test_list_document_chunks(mutable_client, cleanup_documents):
     mutable_client.users.logout()
 
 
-def test_search_documents_extended(client, cleanup_documents):
+def test_search_documents_extended(client: R2RClient, cleanup_documents):
     doc_id = cleanup_documents(
         client.documents.create(
             raw_text="Aristotle was a Greek philosopher.",
@@ -262,7 +272,7 @@ def test_get_document_collections_non_superuser(client):
     ), "Expected 403 for non-superuser collections access"
 
 
-def test_access_document_not_owned(client, cleanup_documents):
+def test_access_document_not_owned(client: R2RClient, cleanup_documents):
     # Create a doc as superuser
     doc_id = cleanup_documents(
         client.documents.create(
@@ -323,7 +333,7 @@ def test_ingest_too_many_chunks(client):
     ), "Wrong error code for exceeding max chunks"
 
 
-def test_delete_by_complex_filter(client, cleanup_documents):
+def test_delete_by_complex_filter(client: R2RClient, cleanup_documents):
     doc1 = cleanup_documents(
         client.documents.create(
             raw_text="Doc with tag A",
@@ -352,7 +362,7 @@ def test_delete_by_complex_filter(client, cleanup_documents):
         ), f"Document {d_id} still exists after deletion"
 
 
-def test_search_documents_no_match(client, cleanup_documents):
+def test_search_documents_no_match(client: R2RClient, cleanup_documents):
     doc_id = cleanup_documents(
         client.documents.create(
             raw_text="Just a random document",
@@ -381,7 +391,7 @@ import pytest
 from r2r import R2RException
 
 
-def test_delete_by_workflow_metadata(client, cleanup_documents):
+def test_delete_by_workflow_metadata(client: R2RClient, cleanup_documents):
     """Test deletion by workflow state metadata."""
     # Create test documents with workflow metadata
     random_suffix = uuid.uuid4()
@@ -460,7 +470,9 @@ def test_delete_by_workflow_metadata(client, cleanup_documents):
         raise
 
 
-def test_delete_by_classification_metadata(client, cleanup_documents):
+def test_delete_by_classification_metadata(
+    client: R2RClient, cleanup_documents
+):
     """Test deletion by document classification metadata."""
     docs = []
     try:
@@ -519,7 +531,7 @@ def test_delete_by_classification_metadata(client, cleanup_documents):
         raise
 
 
-def test_delete_by_version_metadata(client, cleanup_documents):
+def test_delete_by_version_metadata(client: R2RClient, cleanup_documents):
     """Test deletion by version and status metadata with array conditions."""
     suffix = uuid.uuid4()
     docs = []
