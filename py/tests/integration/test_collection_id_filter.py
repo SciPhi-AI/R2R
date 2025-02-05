@@ -2,11 +2,11 @@ import uuid
 
 import pytest
 
-from r2r import R2RException
+from r2r import R2RClient, R2RException
 
 
 @pytest.fixture
-def setup_docs_with_collections(client):
+def setup_docs_with_collections(client: R2RClient):
     # Create some test collections
 
     random_suffix = str(uuid.uuid4())[:8]
@@ -18,15 +18,15 @@ def setup_docs_with_collections(client):
     # Create documents with different collection arrangements:
     # doc1: [coll1]
     doc1 = client.documents.create(
-        raw_text="Doc in coll1" + random_suffix, run_with_orchestration=False
-    )["results"]["document_id"]
+        raw_text=f"Doc in coll1{random_suffix}", run_with_orchestration=False
+    ).results.document_id
     client.collections.add_document(coll_ids[0], doc1)
 
     # doc2: [coll1, coll2]
     doc2 = client.documents.create(
-        raw_text="Doc in coll1 and coll2" + random_suffix,
+        raw_text=f"Doc in coll1 and coll2{random_suffix}",
         run_with_orchestration=False,
-    )["results"]["document_id"]
+    ).results.document_id
     client.collections.add_document(coll_ids[0], doc2)
     client.collections.add_document(coll_ids[1], doc2)
 
@@ -34,12 +34,12 @@ def setup_docs_with_collections(client):
     doc3 = client.documents.create(
         raw_text="Doc in no collections" + random_suffix,
         run_with_orchestration=False,
-    )["results"]["document_id"]
+    ).results.document_id
 
     # doc4: [coll3]
     doc4 = client.documents.create(
         raw_text="Doc in coll3" + random_suffix, run_with_orchestration=False
-    )["results"]["document_id"]
+    ).results.document_id
     client.collections.add_document(coll_ids[2], doc4)
 
     yield {"coll_ids": coll_ids, "doc_ids": [doc1, doc2, doc3, doc4]}
@@ -57,7 +57,9 @@ def setup_docs_with_collections(client):
             pass
 
 
-def test_collection_id_eq_filter(client, setup_docs_with_collections):
+def test_collection_id_eq_filter(
+    client: R2RClient, setup_docs_with_collections
+):
     coll_ids = setup_docs_with_collections["coll_ids"]
     doc_ids = setup_docs_with_collections["doc_ids"]
     doc1, doc2, doc3, doc4 = doc_ids
@@ -74,7 +76,9 @@ def test_collection_id_eq_filter(client, setup_docs_with_collections):
     } == found_ids, f"Expected doc1 and doc2, got {found_ids}"
 
 
-def test_collection_id_ne_filter(client, setup_docs_with_collections):
+def test_collection_id_ne_filter(
+    client: R2RClient, setup_docs_with_collections
+):
     coll_ids = setup_docs_with_collections["coll_ids"]
     doc_ids = setup_docs_with_collections["doc_ids"]
     doc1, doc2, doc3, doc4 = doc_ids
@@ -94,7 +98,9 @@ def test_collection_id_ne_filter(client, setup_docs_with_collections):
     # } == found_ids, f"Expected doc3 and doc4, got {found_ids}"
 
 
-def test_collection_id_in_filter(client, setup_docs_with_collections):
+def test_collection_id_in_filter(
+    client: R2RClient, setup_docs_with_collections
+):
     coll_ids = setup_docs_with_collections["coll_ids"]
     doc_ids = setup_docs_with_collections["doc_ids"]
     doc1, doc2, doc3, doc4 = doc_ids
@@ -114,7 +120,9 @@ def test_collection_id_in_filter(client, setup_docs_with_collections):
     } == found_ids, f"Expected doc1, doc2, doc4, got {found_ids}"
 
 
-def test_collection_id_nin_filter(client, setup_docs_with_collections):
+def test_collection_id_nin_filter(
+    client: R2RClient, setup_docs_with_collections
+):
     coll_ids = setup_docs_with_collections["coll_ids"]
     doc_ids = setup_docs_with_collections["doc_ids"]
     doc1, doc2, doc3, doc4 = doc_ids
@@ -135,7 +143,9 @@ def test_collection_id_nin_filter(client, setup_docs_with_collections):
     # } == found_ids, f"Expected doc1, doc3, doc4, got {found_ids}"
 
 
-def test_collection_id_contains_filter(client, setup_docs_with_collections):
+def test_collection_id_contains_filter(
+    client: R2RClient, setup_docs_with_collections
+):
     coll_ids = setup_docs_with_collections["coll_ids"]
     doc_ids = setup_docs_with_collections["doc_ids"]
     doc1, doc2, doc3, doc4 = doc_ids
@@ -154,7 +164,9 @@ def test_collection_id_contains_filter(client, setup_docs_with_collections):
     } == found_ids, f"Expected doc1 and doc2, got {found_ids}"
 
 
-def test_collection_id_contains_multiple(client, setup_docs_with_collections):
+def test_collection_id_contains_multiple(
+    client: R2RClient, setup_docs_with_collections
+):
     coll_ids = setup_docs_with_collections["coll_ids"]
     doc_ids = setup_docs_with_collections["doc_ids"]
     doc1, doc2, doc3, doc4 = doc_ids
@@ -170,13 +182,15 @@ def test_collection_id_contains_multiple(client, setup_docs_with_collections):
     assert {doc2} == found_ids, f"Expected doc2 only, got {found_ids}"
 
 
-def test_delete_by_collection_id_eq(client, setup_docs_with_collections):
+def test_delete_by_collection_id_eq(
+    client: R2RClient, setup_docs_with_collections
+):
     coll_ids = setup_docs_with_collections["coll_ids"]
     doc1, doc2, doc3, doc4 = setup_docs_with_collections["doc_ids"]
 
     # Delete documents in coll0
     filters = {"collection_id": {"$eq": coll_ids[0]}}
-    del_resp = client.documents.delete_by_filter(filters)["results"]
+    del_resp = client.documents.delete_by_filter(filters).results
     assert del_resp["success"], "Failed to delete by collection_id $eq filter"
 
     # doc1 and doc2 should be deleted, doc3 and doc4 remain

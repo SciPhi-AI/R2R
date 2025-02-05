@@ -25,16 +25,13 @@ def cleanup_documents(client: R2RClient):
 
 
 def test_create_document_with_file(client: R2RClient, cleanup_documents):
-    resp = client.documents.create(
+    results = client.documents.create(
         file_path="core/examples/data/aristotle.txt",
         run_with_orchestration=False,
-    )
-    results = resp.results
+    ).results
 
     doc_id = cleanup_documents(results.document_id)
-    assert (
-        hasattr(resp, "document_id") and results.document_id
-    ), "No document_id returned after file ingestion"
+    assert results.document_id, "No document_id returned after file ingestion"
 
 
 def test_create_document_with_raw_text(client: R2RClient, cleanup_documents):
@@ -78,7 +75,7 @@ def test_create_document_different_modes(client: R2RClient, cleanup_documents):
         raw_text="High resolution doc.",
         ingestion_mode="hi-res",
         run_with_orchestration=False,
-    )["results"]
+    ).results
     hi_res_id = cleanup_documents(hi_res_resp["document_id"])
     assert hi_res_id, "No doc_id returned for hi-res ingestion"
 
@@ -87,21 +84,20 @@ def test_create_document_different_modes(client: R2RClient, cleanup_documents):
         raw_text="Fast mode doc.",
         ingestion_mode="fast",
         run_with_orchestration=False,
-    )["results"]
+    ).results
     fast_id = cleanup_documents(fast_resp["document_id"])
     assert fast_id, "No doc_id returned for fast ingestion"
 
 
 def test_list_documents(client: R2RClient, test_document):
-    listed = client.documents.list(offset=0, limit=10)
-    results = listed["results"]
+    results = client.documents.list(offset=0, limit=10).results
     assert isinstance(results, list), "Documents list response is not a list"
     assert len(results) >= 1, "Expected at least one document"
     # test_document is created for this test, so we expect at least that one present.
 
 
 def test_retrieve_document(client: R2RClient, test_document):
-    retrieved = client.documents.retrieve(id=test_document)["results"]
+    retrieved = client.documents.retrieve(id=test_document).results
     assert retrieved["id"] == test_document, "Retrieved wrong document"
 
 
@@ -117,9 +113,9 @@ def test_delete_document(client: R2RClient):
     # Create a doc to delete
     resp = client.documents.create(
         raw_text="This is a temporary doc", run_with_orchestration=False
-    )["results"]
+    ).results
     doc_id = resp["document_id"]
-    del_resp = client.documents.delete(id=doc_id)["results"]
+    del_resp = client.documents.delete(id=doc_id).results
     assert del_resp["success"], "Failed to delete document"
     # Verify it's gone
     with pytest.raises(R2RException) as exc_info:
@@ -133,11 +129,11 @@ def test_delete_document_by_filter(client: R2RClient):
         raw_text="Document to be filtered out",
         metadata={"to_delete": "yes"},
         run_with_orchestration=False,
-    )["results"]
+    ).results
     doc_id = resp["document_id"]
 
     filters = {"to_delete": {"$eq": "yes"}}
-    del_resp = client.documents.delete_by_filter(filters)["results"]
+    del_resp = client.documents.delete_by_filter(filters).results
     assert del_resp["success"], "Failed to delete documents by filter"
     # Verify deletion
     with pytest.raises(R2RException) as exc_info:
@@ -150,9 +146,7 @@ def test_delete_document_by_filter(client: R2RClient):
 # @pytest.mark.skip(reason="Only if superuser-specific logic is implemented")
 def test_list_document_collections(client: R2RClient, test_document):
     # This test assumes the currently logged in user is a superuser
-    collections = client.documents.list_collections(id=test_document)[
-        "results"
-    ]
+    collections = client.documents.list_collections(id=test_document).results
     assert isinstance(
         collections, list
     ), "Document collections list is not a list"
@@ -165,7 +159,7 @@ def test_extract_document(client: R2RClient, test_document):
     time.sleep(10)
     run_resp = client.documents.extract(
         id=test_document, run_with_orchestration=False
-    )["results"]
+    ).results
     assert "message" in run_resp, "No message after extraction run"
 
 
@@ -173,7 +167,7 @@ def test_extract_document(client: R2RClient, test_document):
 def test_list_entities(client: R2RClient, test_document):
     # If no entities extracted yet, this could raise an exception
     try:
-        entities = client.documents.list_entities(id=test_document)["results"]
+        entities = client.documents.list_entities(id=test_document).results
         assert isinstance(entities, list), "Entities response not a list"
     except R2RException as e:
         # Possibly no entities extracted yet
@@ -183,9 +177,9 @@ def test_list_entities(client: R2RClient, test_document):
 # @pytest.mark.skip(reason="Requires relationship extraction results present")
 def test_list_relationships(client: R2RClient, test_document):
     try:
-        relationships = client.documents.list_relationships(id=test_document)[
-            "results"
-        ]
+        relationships = client.documents.list_relationships(
+            id=test_document
+        ).results
         assert isinstance(
             relationships, list
         ), "Relationships response not a list"
@@ -207,17 +201,17 @@ def test_search_documents(client: R2RClient, test_document):
     ), "Search results not a list"
 
 
-def test_list_document_chunks(mutable_client, cleanup_documents):
+def test_list_document_chunks(mutable_client: R2RClient, cleanup_documents):
     temp_user = f"{uuid.uuid4()}@me.com"
     mutable_client.users.create(temp_user, "password")
     mutable_client.users.login(temp_user, "password")
 
     resp = mutable_client.documents.create(
         chunks=["C1", "C2", "C3"], run_with_orchestration=False
-    )["results"]
+    ).results
     doc_id = cleanup_documents(resp["document_id"])
     chunks_resp = mutable_client.documents.list_chunks(id=doc_id)
-    results = chunks_resp["results"]
+    results = chunks_resp.results
     assert len(results) == 3, "Expected 3 chunks"
     mutable_client.users.logout()
 
@@ -227,7 +221,7 @@ def test_search_documents_extended(client: R2RClient, cleanup_documents):
         client.documents.create(
             raw_text="Aristotle was a Greek philosopher.",
             run_with_orchestration=False,
-        )["results"]["document_id"]
+        ).results.document_id
     )
 
     time.sleep(1)  # If indexing is asynchronous
@@ -277,7 +271,7 @@ def test_access_document_not_owned(client: R2RClient, cleanup_documents):
     doc_id = cleanup_documents(
         client.documents.create(
             raw_text="Owner doc test", run_with_orchestration=False
-        )["results"]["document_id"]
+        ).results.document_id
     )
 
     # Now try to access with a non-superuser
@@ -293,7 +287,9 @@ def test_access_document_not_owned(client: R2RClient, cleanup_documents):
     ), "Wrong error code for unauthorized access"
 
 
-def test_list_documents_with_pagination(mutable_client, cleanup_documents):
+def test_list_documents_with_pagination(
+    mutable_client: R2RClient, cleanup_documents
+):
     temp_user = f"{uuid.uuid4()}@me.com"
     mutable_client.users.create(temp_user, "password")
     mutable_client.users.login(temp_user, "password")
@@ -302,7 +298,7 @@ def test_list_documents_with_pagination(mutable_client, cleanup_documents):
         cleanup_documents(
             mutable_client.documents.create(
                 raw_text=f"Doc {i}", run_with_orchestration=False
-            )["results"]["document_id"]
+            ).results.document_id
         )
 
     listed = mutable_client.documents.list(limit=2, offset=0)
@@ -339,18 +335,18 @@ def test_delete_by_complex_filter(client: R2RClient, cleanup_documents):
             raw_text="Doc with tag A",
             metadata={"tag": "A"},
             run_with_orchestration=False,
-        )["results"]["document_id"]
+        ).results.document_id
     )
     doc2 = cleanup_documents(
         client.documents.create(
             raw_text="Doc with tag B",
             metadata={"tag": "B"},
             run_with_orchestration=False,
-        )["results"]["document_id"]
+        ).results.document_id
     )
 
     filters = {"$or": [{"tag": {"$eq": "A"}}, {"tag": {"$eq": "B"}}]}
-    del_resp = client.documents.delete_by_filter(filters)["results"]
+    del_resp = client.documents.delete_by_filter(filters).results
     assert del_resp["success"], "Complex filter deletion failed"
 
     # Verify both documents are deleted
@@ -368,7 +364,7 @@ def test_search_documents_no_match(client: R2RClient, cleanup_documents):
             raw_text="Just a random document",
             metadata={"category": "unrelated"},
             run_with_orchestration=False,
-        )["results"]["document_id"]
+        ).results.document_id
     )
 
     # Search for non-existent category
@@ -410,7 +406,7 @@ def test_delete_by_workflow_metadata(client: R2RClient, cleanup_documents):
                         }
                     },
                     run_with_orchestration=False,
-                )["results"]["document_id"]
+                ).results.document_id
             )
         )
 
@@ -426,7 +422,7 @@ def test_delete_by_workflow_metadata(client: R2RClient, cleanup_documents):
                         }
                     },
                     run_with_orchestration=False,
-                )["results"]["document_id"]
+                ).results.document_id
             )
         )
 
@@ -442,7 +438,7 @@ def test_delete_by_workflow_metadata(client: R2RClient, cleanup_documents):
                         }
                     },
                     run_with_orchestration=False,
-                )["results"]["document_id"]
+                ).results.document_id
             )
         )
 
@@ -454,7 +450,7 @@ def test_delete_by_workflow_metadata(client: R2RClient, cleanup_documents):
             ]
         }
 
-        response = client.documents.delete_by_filter(filters)["results"]
+        response = client.documents.delete_by_filter(filters).results
         assert response["success"]
 
         # Verify first draft is deleted
@@ -488,7 +484,7 @@ def test_delete_by_classification_metadata(
                         }
                     },
                     run_with_orchestration=False,
-                )["results"]["document_id"]
+                ).results.document_id
             )
         )
 
@@ -504,7 +500,7 @@ def test_delete_by_classification_metadata(
                         }
                     },
                     run_with_orchestration=False,
-                )["results"]["document_id"]
+                ).results.document_id
             )
         )
 
@@ -516,7 +512,7 @@ def test_delete_by_classification_metadata(
             ]
         }
 
-        response = client.documents.delete_by_filter(filters)["results"]
+        response = client.documents.delete_by_filter(filters).results
         assert response["success"]
 
         # Verify confidential HR doc is deleted
@@ -548,7 +544,7 @@ def test_delete_by_version_metadata(client: R2RClient, cleanup_documents):
                         },
                     },
                     run_with_orchestration=False,
-                )["results"]["document_id"]
+                ).results.document_id
             )
         )
 
@@ -564,7 +560,7 @@ def test_delete_by_version_metadata(client: R2RClient, cleanup_documents):
                         },
                     },
                     run_with_orchestration=False,
-                )["results"]["document_id"]
+                ).results.document_id
             )
         )
 
@@ -576,7 +572,7 @@ def test_delete_by_version_metadata(client: R2RClient, cleanup_documents):
             ]
         }
 
-        response = client.documents.delete_by_filter(filters)["results"]
+        response = client.documents.delete_by_filter(filters).results
         assert response["success"]
 
         # Verify deprecated doc is deleted

@@ -2,21 +2,21 @@ import uuid
 
 import pytest
 
-from r2r import Message, R2RException, SearchMode
+from r2r import R2RClient
 
 
 # Semantic Search Tests
-def test_semantic_search_with_near_duplicates(client):
+def test_semantic_search_with_near_duplicates(client: R2RClient):
     """Test semantic search can handle and differentiate near-duplicate content"""
     random_1 = str(uuid.uuid4())
     random_2 = str(uuid.uuid4())
     # Create two similar but distinct documents
     doc1 = client.documents.create(
         raw_text=f"Aristotle was a Greek philosopher who studied logic {random_1}."
-    )["results"]["document_id"]
+    ).results.document_id
     doc2 = client.documents.create(
         raw_text=f"Aristotle, the Greek philosopher, studied formal logic {random_2}."
-    )["results"]["document_id"]
+    ).results.document_id
 
     resp = client.retrieval.search(
         query="Tell me about Aristotle's work in logic",
@@ -33,7 +33,7 @@ def test_semantic_search_with_near_duplicates(client):
     ), "Expected different scores for similar documents"
 
 
-def test_semantic_search_multilingual(client):
+def test_semantic_search_multilingual(client: R2RClient):
     """Test semantic search handles multilingual content"""
     # Create documents in different languages
     random_1 = str(uuid.uuid4())
@@ -49,7 +49,7 @@ def test_semantic_search_multilingual(client):
     for text, lang in docs:
         doc_id = client.documents.create(
             raw_text=text, metadata={"language": lang}
-        )["results"]["document_id"]
+        ).results.document_id
         doc_ids.append(doc_id)
 
     # Query in different languages
@@ -74,17 +74,17 @@ def test_semantic_search_multilingual(client):
 
 # UNCOMMENT LATER
 # # Hybrid Search Tests
-# def test_hybrid_search_weight_balance(client):
+# def test_hybrid_search_weight_balance(client: R2RClient):
 #     """Test hybrid search balances semantic and full-text scores appropriately"""
 #     # Create a document with high semantic relevance but low keyword match
 #     semantic_doc = client.documents.create(
 #         raw_text="The ancient Greek thinker who studied under Plato made significant contributions to logic."
-#     )["results"]["document_id"]
+#     ).results.document_id
 
 #     # Create a document with high keyword match but low semantic relevance
 #     keyword_doc = client.documents.create(
 #         raw_text="Aristotle is a common name in certain regions. This text mentions Aristotle but is not about philosophy."
-#     )["results"]["document_id"]
+#     ).results.document_id
 
 #     resp = client.retrieval.search(
 #         query="What were Aristotle's philosophical contributions?",
@@ -112,16 +112,16 @@ def test_semantic_search_multilingual(client):
 
 
 # RAG Tests
-def test_rag_context_window_limits(client):
+def test_rag_context_window_limits(client: R2RClient):
     """Test RAG handles documents at or near context window limits"""
     # Create a document that approaches the context window limit
     random_1 = str(uuid.uuid4())
     large_text = (
         "Aristotle " * 1000
     )  # Adjust multiplier based on your context window
-    doc_id = client.documents.create(raw_text=large_text + f" {random_1}")[
-        "results"
-    ]["document_id"]
+    doc_id = client.documents.create(
+        raw_text=f"{large_text} {random_1}"
+    ).results.document_id
 
     resp = client.retrieval.rag(
         query="Summarize this text about Aristotle",
@@ -132,7 +132,7 @@ def test_rag_context_window_limits(client):
 
 
 # UNCOMMENT LATER
-# def test_rag_empty_chunk_handling(client):
+# def test_rag_empty_chunk_handling(client: R2RClient):
 #     """Test RAG properly handles empty or whitespace-only chunks"""
 #     doc_id = client.documents.create(chunks=["", " ", "\n", "Valid content"])[
 #         "results"
@@ -146,7 +146,7 @@ def test_rag_context_window_limits(client):
 
 
 # # Agent Tests
-# def test_agent_clarification_requests(client):
+# def test_agent_clarification_requests(client: R2RClient):
 #     """Test agent's ability to request clarification for ambiguous queries"""
 #     msg = Message(role="user", content="Compare them")
 #     resp = client.retrieval.agent(
@@ -166,7 +166,7 @@ def test_rag_context_window_limits(client):
 
 
 ## TODO - uncomment later
-# def test_agent_source_citation_consistency(client):
+# def test_agent_source_citation_consistency(client: R2RClient):
 #     """Test agent consistently cites sources across conversation turns"""
 #     conversation_id = client.conversations.create()["results"]["id"]
 
@@ -199,7 +199,7 @@ def test_rag_context_window_limits(client):
 
 ## TODO - uncomment later
 # # Error Handling Tests
-# def test_malformed_filter_handling(client):
+# def test_malformed_filter_handling(client: R2RClient):
 #     """Test system properly handles malformed filter conditions"""
 #     invalid_filters = [
 #         {"$invalid": {"$eq": "value"}},
@@ -221,7 +221,7 @@ def test_rag_context_window_limits(client):
 
 
 ## TODO - Uncomment later
-# def test_concurrent_search_stability(client):
+# def test_concurrent_search_stability(client: R2RClient):
 #     """Test system handles concurrent search requests properly"""
 #     import asyncio
 
