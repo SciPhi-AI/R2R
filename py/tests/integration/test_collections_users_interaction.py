@@ -104,7 +104,7 @@ def test_collection_owner_can_view_collection(
         user_owned_collection
     ).results
     assert (
-        coll["id"] == user_owned_collection
+        coll.id == user_owned_collection
     ), "Owner cannot view their own collection."
 
 
