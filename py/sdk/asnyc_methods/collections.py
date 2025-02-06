@@ -298,8 +298,7 @@ class CollectionsSDK:
         id: str | UUID,
         settings: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
-    ) -> dict:
-        # FIXME: Needs a proper response model
+    ) -> WrappedGenericMessageResponse:
         """
         Extract entities and relationships from documents in a collection.
 
@@ -310,9 +309,7 @@ class CollectionsSDK:
                 Defaults to True
 
         Returns:
-            dict: Result of the extraction process, containing either:
-                - For estimates: message, task_id, id, and estimate
-                - For runs: message and task_id
+            WrappedGenericMessageResponse
         """
         params = {"run_with_orchestration": run_with_orchestration}
 
@@ -320,10 +317,12 @@ class CollectionsSDK:
         if settings is not None:
             data["settings"] = settings
 
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "POST",
             f"collections/{str(id)}/extract",
             params=params,
             json=data or None,
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)

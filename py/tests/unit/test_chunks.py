@@ -17,7 +17,7 @@ class AsyncR2RTestClient:
 
     async def create_document(
         self, chunks: list[str], run_with_orchestration: bool = False
-    ) -> Tuple[str, list[dict]]:
+    ):
         response = await self.client.documents.create(
             chunks=chunks, run_with_orchestration=run_with_orchestration
         )
@@ -26,10 +26,10 @@ class AsyncR2RTestClient:
     async def delete_document(self, doc_id: str) -> None:
         await self.client.documents.delete(id=doc_id)
 
-    async def list_chunks(self, doc_id: str) -> list[dict]:
+    async def list_chunks(self, doc_id: str):
         return await self.client.documents.list_chunks(id=doc_id).results
 
-    async def retrieve_chunk(self, chunk_id: str) -> dict:
+    async def retrieve_chunk(self, chunk_id: str):
         return await self.client.chunks.retrieve(id=chunk_id).results
 
     async def update_chunk(
@@ -39,21 +39,21 @@ class AsyncR2RTestClient:
             {"id": chunk_id, "text": text, "metadata": metadata or {}}
         )["results"]
 
-    async def delete_chunk(self, chunk_id: str) -> dict:
+    async def delete_chunk(self, chunk_id: str):
         return await self.client.chunks.delete(id=chunk_id).results
 
-    async def search_chunks(self, query: str, limit: int = 5) -> list[dict]:
+    async def search_chunks(self, query: str, limit: int = 5):
         return await self.client.chunks.search(
             query=query, search_settings={"limit": limit}
         ).results
 
-    async def register_user(self, email: str, password: str) -> None:
+    async def register_user(self, email: str, password: str):
         await self.client.users.create(email, password)
 
-    async def login_user(self, email: str, password: str) -> None:
+    async def login_user(self, email: str, password: str):
         await self.client.users.login(email, password)
 
-    async def logout_user(self) -> None:
+    async def logout_user(self):
         await self.client.users.logout()
 
 
@@ -74,7 +74,7 @@ async def test_document(
         [f"Test chunk 1_{uuid_1}", f"Test chunk 2_{uuid_2}"]
     )
     await asyncio.sleep(1)  # Wait for ingestion
-    chunks = await test_client.list_chunks(doc_id)
+    chunks = await test_client.list_chunks(str(doc_id))
     yield doc_id, chunks
     with contextlib.suppress(R2RException):
         await test_client.delete_document(doc_id)
@@ -134,7 +134,7 @@ class TestChunks:
 
         # Delete and verify
         result = await test_client.delete_chunk(chunk_id)
-        assert result["success"], "Chunk deletion failed"
+        assert result.success, "Chunk deletion failed"
 
         # Verify deletion
         with pytest.raises(R2RException) as exc_info:
@@ -197,7 +197,9 @@ class TestChunks:
             await asyncio.sleep(1)  # Wait for ingestion
 
             # Test listing chunks (filters automatically applied on server)
-            results = await test_client.client.chunks.list(offset=0, limit=1)
+            results = await test_client.client.chunks.list(
+                offset=0, limit=1
+            ).results
 
             assert results is not None, "Expected 'results' in response"
             # assert "page_info" in response, "Expected 'page_info' in response"

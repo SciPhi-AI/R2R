@@ -74,10 +74,10 @@ async def test_document(
         [f"Test chunk 1_{uuid_1}", f"Test chunk 2_{uuid_2}"]
     )
     await asyncio.sleep(1)  # Wait for ingestion
-    chunks = await test_client.list_chunks(doc_id)
+    chunks = await test_client.list_chunks(str(doc_id))
     yield doc_id, chunks
     with contextlib.suppress(R2RException):
-        await test_client.delete_document(doc_id)
+        await test_client.delete_document(str(doc_id))
 
 
 class TestChunks:
@@ -89,11 +89,11 @@ class TestChunks:
         doc_id, _ = await test_client.create_document(
             ["Hello chunk", "World chunk"]
         )
-        cleanup_documents(doc_id)
+        cleanup_documents(str(doc_id))
         await asyncio.sleep(1)  # Wait for ingestion
 
         # List and verify chunks
-        chunks = await test_client.list_chunks(doc_id)
+        chunks = await test_client.list_chunks(str(doc_id))
         assert len(chunks) == 2, "Expected 2 chunks in the document"
 
     @pytest.mark.asyncio
@@ -131,12 +131,12 @@ class TestChunks:
         chunk_id = chunks[0].id
 
         # Delete and verify
-        result = await test_client.delete_chunk(chunk_id)
+        result = await test_client.delete_chunk(str(chunk_id))
         assert result.succ, "Chunk deletion failed"
 
         # Verify deletion
         with pytest.raises(R2RException) as exc_info:
-            await test_client.retrieve_chunk(chunk_id)
+            await test_client.retrieve_chunk(str(chunk_id))
         assert exc_info.value.status_code == 404
 
     @pytest.mark.asyncio
@@ -174,7 +174,7 @@ class TestChunks:
 
         # Attempt unauthorized access
         with pytest.raises(R2RException) as exc_info:
-            await non_owner_client.retrieve_chunk(chunk_id)
+            await non_owner_client.retrieve_chunk(str(chunk_id))
         assert exc_info.value.status_code == 403
 
     @pytest.mark.asyncio
