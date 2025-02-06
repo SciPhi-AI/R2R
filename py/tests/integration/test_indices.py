@@ -59,7 +59,7 @@ def test_list_indices(client: R2RClient):
         print(f"Error: {e}")
     assert results.indices is not None, "Indices field is None"
     # Just ensure we get a list without error. Detailed checks depend on data availability.
-    assert isinstance(resp.indices, list), "Indices field is not a list"
+    assert isinstance(results.indices, list), "Indices field is not a list"
 
 
 def test_delete_index(client: R2RClient):

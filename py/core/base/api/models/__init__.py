@@ -27,6 +27,8 @@ from shared.api.models.graph.responses import (  # TODO: Need to review anything
 from shared.api.models.ingestion.responses import (
     IngestionResponse,
     UpdateResponse,
+    VectorIndexResponse,
+    VectorIndicesResponse,
     WrappedIngestionResponse,
     WrappedMetadataUpdateResponse,
     WrappedUpdateResponse,
@@ -93,6 +95,8 @@ __all__ = [
     "WrappedVectorIndexResponse",
     "WrappedVectorIndicesResponse",
     "UpdateResponse",
+    "VectorIndexResponse",
+    "VectorIndicesResponse",
     # Knowledge Graph Responses
     "Entity",
     "Relationship",

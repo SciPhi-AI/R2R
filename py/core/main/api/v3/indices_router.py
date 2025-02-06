@@ -1,7 +1,3 @@
-# TODO - Move indices to 'id' basis
-# TODO - Implement update index
-# TODO - Implement index data model
-
 import logging
 import textwrap
 from typing import Optional
@@ -11,6 +7,8 @@ from fastapi import Body, Depends, Path, Query
 from core.base import IndexConfig, R2RException
 from core.base.abstractions import VectorTableName
 from core.base.api.models import (
+    VectorIndexResponse,
+    VectorIndicesResponse,
     WrappedGenericMessageResponse,
     WrappedVectorIndexResponse,
     WrappedVectorIndicesResponse,
@@ -330,12 +328,23 @@ class IndicesRouter(BaseRouterV3):
             based on table name, index method, or other attributes.
             """
             # TODO: Implement index listing logic
-            indices = (
+            indices_data = (
                 await self.providers.database.chunks_handler.list_indices(
-                    offset=offset, limit=limit  # , filters=filters
+                    offset=offset, limit=limit
                 )
             )
-            return {"indices": indices["indices"]}, indices["page_info"]  # type: ignore
+
+            formatted_indices = VectorIndicesResponse(
+                indices=[
+                    VectorIndexResponse(index=index_data)
+                    for index_data in indices_data["indices"]
+                ]
+            )
+
+            return (  # type: ignore
+                formatted_indices,
+                {"total_entries": indices_data["total_entries"]},
+            )
 
         @self.router.get(
             "/indices/{table_name}/{index_name}",
