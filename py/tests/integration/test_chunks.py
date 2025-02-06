@@ -221,7 +221,6 @@ class TestChunks:
             assert (
                 len(response1.results) == 2
             ), "Expected 2 results on first page"
-            # assert response1["page_info"]["has_next"], "Expected more pages"
 
             # Test second page
             response2 = await test_client.client.chunks.list(offset=2, limit=2)

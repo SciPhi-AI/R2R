@@ -439,4 +439,4 @@ class ChunksRouter(BaseRouterV3):
                 for chunk in results["results"]
             ]
 
-            return (chunks, results["page_info"])  # type: ignore
+            return (chunks, results["total_entries"])  # type: ignore

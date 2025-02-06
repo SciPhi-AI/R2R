@@ -338,7 +338,7 @@ class DocumentsRouter(BaseRouterV3):
                         offset=0,
                         limit=1,
                     )
-                )["page_info"]["total_entries"]
+                )["total_entries"]
                 user_max_chunks = (
                     await self.services.management.get_user_max_chunks(
                         auth_user.id

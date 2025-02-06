@@ -207,7 +207,6 @@ class TestChunks:
             results = response.results
 
             assert results is not None, "Expected 'results' in response"
-            # assert "page_info" in response, "Expected 'page_info' in response"
             assert len(results) <= 1, "Expected at most 1 result due to limit"
 
             if len(results) > 0:
@@ -249,7 +248,6 @@ class TestChunks:
             assert (
                 len(response1.results) == 2
             ), "Expected 2 results on first page"
-            # assert response1["page_info"]["has_next"], "Expected more pages"
 
             # Test second page
             response2 = await test_client.client.chunks.list(offset=2, limit=2)
