@@ -1069,7 +1069,7 @@ class PostgresChunksHandler(Handler):
         vector_select = ", vec" if include_vectors else ""
         select_clause = f"""
             id, document_id, owner_id, collection_ids,
-            text, metadata{vector_select}, COUNT(*) OVER() AS total
+            text, metadata{vector_select}, COUNT(*) OVER() AS total_entries
         """
 
         params: list[str | int | bytes] = []
@@ -1094,8 +1094,9 @@ class PostgresChunksHandler(Handler):
 
         # Process results
         chunks = []
+        total_entries = 0
         if results:
-            total_entries = results[0].get("total", 0)
+            total_entries = results[0].get("total_entries", 0)
             chunks = [
                 {
                     "id": str(result["id"]),
