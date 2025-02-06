@@ -2,7 +2,6 @@ import asyncio
 import contextlib
 import uuid
 from typing import AsyncGenerator, Optional, Tuple
-from uuid import UUID
 
 import pytest
 
@@ -300,9 +299,6 @@ class TestChunks:
             response = await test_client.client.chunks.list(offset=0, limit=10)
 
             assert len(response.results) == 4, "Expected 4 total chunks"
-
-            # Verify all chunks belong to our documents
-            chunk_doc_ids = {chunk.document_id for chunk in response.results}
 
             chunk_doc_ids = {
                 str(chunk.document_id) for chunk in response.results
