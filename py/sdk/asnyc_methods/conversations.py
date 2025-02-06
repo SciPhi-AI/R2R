@@ -5,8 +5,8 @@ from uuid import UUID
 
 import aiofiles
 
-from shared.api.models.base import WrappedBooleanResponse
-from shared.api.models.management.responses import (
+from core.base.api.models import (
+    WrappedBooleanResponse,
     WrappedConversationMessagesResponse,
     WrappedConversationResponse,
     WrappedConversationsResponse,

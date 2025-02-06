@@ -5,20 +5,16 @@ from pathlib import Path
 from typing import Any, Optional
 from uuid import UUID
 
-from shared.api.models.base import (
+from core.base.api.models import (
     WrappedBooleanResponse,
-    WrappedGenericMessageResponse,
-)
-from shared.api.models.graph.responses import (
-    WrappedEntitiesResponse,
-    WrappedRelationshipsResponse,
-)
-from shared.api.models.ingestion.responses import WrappedIngestionResponse
-from shared.api.models.management.responses import (
     WrappedChunksResponse,
     WrappedCollectionsResponse,
     WrappedDocumentResponse,
     WrappedDocumentsResponse,
+    WrappedEntitiesResponse,
+    WrappedGenericMessageResponse,
+    WrappedIngestionResponse,
+    WrappedRelationshipsResponse,
 )
 
 from ..models import IngestionMode, SearchMode, SearchSettings

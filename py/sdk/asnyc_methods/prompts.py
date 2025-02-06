@@ -1,11 +1,9 @@
 import json
 from typing import Any, Optional
 
-from shared.api.models.base import (
+from core.base.api.models import (
     WrappedBooleanResponse,
     WrappedGenericMessageResponse,
-)
-from shared.api.models.management.responses import (
     WrappedPromptResponse,
     WrappedPromptsResponse,
 )

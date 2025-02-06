@@ -125,7 +125,7 @@ def test_update_message(client: R2RClient, test_conversation):
     updated_conv = client.conversations.retrieve(id=test_conversation).results
     assert updated_conv, "No conversation returned after update"
     assert (
-        updated_conv[0]["message"]["content"] == "Updated content"
+        updated_conv[0].message.content == "Updated content"
     ), "Message content not updated"
     # found_updated = any(msg["id"] == new_message_id and msg["message"]["content"] == "Updated content" for msg in updated_conv)
     # assert found_updated, "Updated message not found in the new branch"
@@ -216,7 +216,7 @@ def test_update_message_with_additional_metadata(
     ), "Updated message not found in conversation"
 
     # Check that metadata includes old keys, new keys, and 'edited': True
-    msg_metadata = updated_message["metadata"]
+    msg_metadata = updated_message.metadata
     assert (
         msg_metadata.get("initial_key") == "initial_value"
     ), "Old metadata not preserved"

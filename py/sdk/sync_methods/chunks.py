@@ -2,10 +2,11 @@ import json
 from typing import Any, Optional
 from uuid import UUID
 
-from shared.api.models.base import WrappedBooleanResponse
-from shared.api.models.management.responses import (
+from core.base.api.models import (
+    WrappedBooleanResponse,
     WrappedChunkResponse,
     WrappedChunksResponse,
+    WrappedVectorSearchResponse,
 )
 
 from ..models import SearchSettings
@@ -33,12 +34,14 @@ class ChunksSDK:
         Returns:
             dict: Update results containing processed chunk information
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"chunks/{str(chunk['id'])}",
             json=chunk,
             version="v3",
         )
+
+        return WrappedChunkResponse(**response_dict)
 
     def retrieve(
         self,
@@ -54,11 +57,13 @@ class ChunksSDK:
             dict: List of chunks and pagination information
         """
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"chunks/{id}",
             version="v3",
         )
+
+        return WrappedChunkResponse(**response_dict)
 
     # FIXME: Is this the most appropriate name for this method?
     def list_by_document(
@@ -87,12 +92,14 @@ class ChunksSDK:
         if metadata_filter:
             params["metadata_filter"] = json.dumps(metadata_filter)
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"documents/{str(document_id)}/chunks",
             params=params,
             version="v3",
         )
+
+        return WrappedChunksResponse(**response_dict)
 
     def delete(
         self,
@@ -104,11 +111,13 @@ class ChunksSDK:
         Args:
             id (str | UUID): ID of chunk to delete
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"chunks/{str(id)}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def list(
         self,
@@ -143,18 +152,20 @@ class ChunksSDK:
         if metadata_filter:
             params["metadata_filter"] = json.dumps(metadata_filter)
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             "chunks",
             params=params,
             version="v3",
         )
 
+        return WrappedChunksResponse(**response_dict)
+
     def search(
         self,
         query: str,
         search_settings: Optional[dict | SearchSettings] = None,
-    ):
+    ) -> WrappedVectorSearchResponse:
         """
         Conduct a vector and/or KG search.
 
@@ -170,9 +181,11 @@ class ChunksSDK:
             "query": query,
             "search_settings": search_settings,
         }
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             "chunks/search",
             json=data,
             version="v3",
         )
+
+        return WrappedVectorSearchResponse(**response_dict)

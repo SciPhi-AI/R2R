@@ -242,7 +242,7 @@ def test_agent_conversation_id(client: R2RClient):
         message=msg,
         rag_generation_config={"stream": False, "max_tokens": 50},
         search_settings={"use_semantic_search": True, "limit": 3},
-        conversation_id=conversation_id,
+        conversation_id=str(conversation_id),
     )
     assert (
         len(resp.get("results", [])) > 0
@@ -323,7 +323,6 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
         len(results) == 2
     ), f"Expected 2 modern docs with rating>5, got {len(results)}"
 
-    # full-text search: "unique_philosopher"
     resp = client.retrieval.search(
         query="unique_philosopher",
         search_mode=SearchMode.custom,
@@ -372,23 +371,12 @@ def test_complex_nested_filters(client: R2RClient, test_collection):
 
     resp = client.retrieval.search(
         query="complex",
-        # search_mode="custom",
         search_settings={"filters": filters},
     )["results"]
     results = resp["chunk_search_results"]
 
     print("results -> ", results)
     assert len(results) == 2, f"Expected 2 docs, got {len(results)}"
-
-
-# def test_invalid_operator(client: R2RClient):
-#     filters = {"metadata.category": {"$like": "%ancient%"}}
-#     with pytest.raises(R2RException):
-#         client.retrieval.search(
-#             query="abc",
-#             search_mode="custom",
-#             search_settings={"filters": filters},
-#         )
 
 
 def test_filters_no_match(client: R2RClient):
@@ -403,8 +391,7 @@ def test_filters_no_match(client: R2RClient):
 
 
 def test_pagination_extremes(client: R2RClient):
-    chunk_list = client.chunks.list()
-    total_entries = chunk_list["total_entries"]
+    total_entries = client.chunks.list().total_entries
 
     offset = total_entries + 100
     resp = client.retrieval.search(

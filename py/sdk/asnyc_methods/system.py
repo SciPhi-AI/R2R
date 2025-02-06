@@ -1,7 +1,7 @@
 from typing import Optional
 
-from shared.api.models.base import WrappedGenericMessageResponse
-from shared.api.models.management.responses import (
+from core.base.api.models import (
+    WrappedGenericMessageResponse,
     WrappedLogsResponse,
     WrappedServerStatsResponse,
     WrappedSettingsResponse,

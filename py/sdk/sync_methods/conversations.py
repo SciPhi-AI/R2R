@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Any, Optional
 from uuid import UUID
 
-from shared.api.models.base import WrappedBooleanResponse
-from shared.api.models.management.responses import (
+from core.base.api.models import (
+    WrappedBooleanResponse,
     WrappedConversationMessagesResponse,
     WrappedConversationResponse,
     WrappedConversationsResponse,

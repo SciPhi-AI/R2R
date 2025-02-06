@@ -1,8 +1,9 @@
+from builtins import list as _list
 from typing import Any, Optional
 from uuid import UUID
 
-from shared.api.models.base import WrappedBooleanResponse
-from shared.api.models.graph.responses import (
+from core.base.api.models import (
+    WrappedBooleanResponse,
     WrappedCommunitiesResponse,
     WrappedCommunityResponse,
     WrappedEntitiesResponse,
@@ -12,8 +13,6 @@ from shared.api.models.graph.responses import (
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,
 )
-
-_list = list  # Required for type hinting since we have a list method
 
 
 class GraphsSDK:

@@ -1,13 +1,11 @@
 from typing import Any, Optional
 from uuid import UUID
 
-from shared.api.models.auth.responses import WrappedTokenResponse
-from shared.api.models.base import (
+from core.base.api.models import (
     WrappedBooleanResponse,
-    WrappedGenericMessageResponse,
-)
-from shared.api.models.management.responses import (
     WrappedCollectionsResponse,
+    WrappedGenericMessageResponse,
+    WrappedTokenResponse,
     WrappedUserResponse,
     WrappedUsersResponse,
 )

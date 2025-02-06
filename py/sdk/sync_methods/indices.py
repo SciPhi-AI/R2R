@@ -1,8 +1,8 @@
 import json
 from typing import Any, Optional
 
-from shared.api.models.base import WrappedGenericMessageResponse
-from shared.api.models.ingestion.responses import (
+from core.base.api.models import (
+    WrappedGenericMessageResponse,
     WrappedListVectorIndicesResponse,
 )
 
