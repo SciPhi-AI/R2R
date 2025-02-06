@@ -159,7 +159,7 @@ def test_add_user_to_non_existent_collection(mutable_client: R2RClient):
     user_password = "test_password"
     mutable_client.users.create(user_email, user_password)
     mutable_client.users.login(user_email, user_password)
-    user_id = mutable_client.users.me()["results"]["id"]
+    user_id = mutable_client.users.me().results.id
     mutable_client.users.logout()
 
     # Re-login as superuser to try adding user to a non-existent collection
@@ -190,7 +190,7 @@ def test_add_user_to_non_existent_collection(mutable_client: R2RClient):
 #     other_password = "password456"
 #     client.users.create(other_user_email, other_password)
 #     client.users.login(other_user_email, other_password)
-#     other_user_id = client.users.me()["results"]["id"]
+#     other_user_id = client.users.me().results.id
 #     client.users.logout()
 
 #     # Re-login as collection owner

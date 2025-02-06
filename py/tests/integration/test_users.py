@@ -257,7 +257,7 @@ def test_non_owner_delete_collection(client: R2RClient):
     owner_password = "pwd123"
     client.users.create(owner_email, owner_password)
     client.users.login(owner_email, owner_password)
-    coll = client.collections.create(name="Owner Collection").results
+    coll = client.collections.create(name="Owner Collection")["results"]
     coll_id = coll.id
 
     # Create another user and get their ID
@@ -481,7 +481,7 @@ def test_api_key_authentication(client: R2RClient, user_with_api_key):
     api_client.set_api_key(api_key)
 
     # Test API key authentication
-    me_resp = api_client.users.me()["results"]
+    me_resp = api_client.users.me().results
     assert me_resp["id"] == user_id, "API key authentication failed"
 
 
@@ -561,7 +561,7 @@ def test_update_user_limits_overrides(client: R2RClient):
             "/some-route": {"route_per_min": 5},
         },
     }
-    client.users.update(id=fetched_user["id"], limits_overrides=overrides)
+    client.users.update(id=fetched_user.id, limits_overrides=overrides)
 
     # 4) Fetch user again, check
     client.users.login(user_email, "SomePassword123!")

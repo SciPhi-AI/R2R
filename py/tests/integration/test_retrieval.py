@@ -305,7 +305,7 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
         "$and": [
             {"metadata.rating": {"$gt": 5}},
             {"metadata.category": {"$eq": "modern"}},
-            {"owner_id": {"$eq": user_id}},
+            {"owner_id": {"$eq": str(user_id)}},
             {
                 "collection_ids": {
                     "$overlap": [str(test_collection["collection_id"])]
@@ -361,7 +361,7 @@ def test_complex_nested_filters(client: R2RClient, test_collection):
                 ]
             },
             {"metadata.tags": {"$contains": ["philosophy"]}},
-            {"owner_id": {"$eq": client.users.me().results.id}},
+            {"owner_id": {"$eq": str(client.users.me().results.id)}},
             {
                 "collection_ids": {
                     "$overlap": [str(test_collection["collection_id"])]
