@@ -26,11 +26,11 @@ def client(config):
 @pytest.fixture
 def test_collection(client):
     """Create a test collection (and thus a graph) for testing, then delete it afterwards."""
-    resp = client.collections.create(
+    collection_id = client.collections.create(
         name=f"Test Collection {uuid.uuid4()}",
         description="A sample collection for graph tests",
-    )
-    collection_id = resp["results"]["id"]
+    ).results.id
+
     yield collection_id
     # Cleanup if needed
     # If there's a deletion endpoint for collections, call it here.

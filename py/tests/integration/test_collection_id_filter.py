@@ -12,8 +12,10 @@ def setup_docs_with_collections(client: R2RClient):
     random_suffix = str(uuid.uuid4())[:8]
     coll_ids = []
     for i in range(3):
-        resp = client.collections.create(name=f"TestColl{i}")["results"]
-        coll_ids.append(resp["id"])
+        collection_id = client.collections.create(
+            name=f"TestColl{i}"
+        ).results.id
+        coll_ids.append(collection_id)
 
     # Create documents with different collection arrangements:
     # doc1: [coll1]

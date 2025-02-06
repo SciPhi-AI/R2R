@@ -104,9 +104,7 @@ def test_document(client: R2RClient):
 def test_collection(client: R2RClient, test_document):
     """Create a test collection with sample documents and clean up after tests."""
     collection_name = f"Test Collection {uuid.uuid4()}"
-    collection_id = client.collections.create(name=collection_name)["results"][
-        "id"
-    ]
+    collection_id = client.collections.create(name=collection_name).results.id
 
     docs = [
         {

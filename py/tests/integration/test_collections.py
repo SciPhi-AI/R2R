@@ -22,29 +22,27 @@ def test_document_2(client: R2RClient):
 
 
 def test_create_collection(client: R2RClient):
-    resp = client.collections.create(
+    collection_id = client.collections.create(
         name="Test Collection Creation", description="Desc"
-    )
-    coll_id = resp["results"]["id"]
-    assert coll_id is not None, "No collection_id returned"
+    ).results.id
+    assert collection_id is not None, "No collection_id returned"
 
     # Cleanup
-    client.collections.delete(coll_id)
+    client.collections.delete(collection_id)
 
 
 def test_list_collections(client: R2RClient, test_collection):
-    listed = client.collections.list(limit=10, offset=0)
-    results = listed["results"]
+    results = client.collections.list(limit=10, offset=0).results
     assert len(results) >= 1, "Expected at least one collection, none found"
 
 
 def test_retrieve_collection(client: R2RClient, test_collection):
     # Retrieve the collection just created
-    retrieved = client.collections.retrieve(test_collection["collection_id"])[
-        "results"
-    ]
+    retrieved = client.collections.retrieve(
+        test_collection.collection_id
+    ).results
     assert (
-        retrieved["id"] == test_collection["collection_id"]
+        retrieved.id == test_collection.collection_id
     ), "Retrieved wrong collection ID"
 
 
@@ -52,13 +50,13 @@ def test_update_collection(client: R2RClient, test_collection):
     updated_name = "Updated Test Collection"
     updated_desc = "Updated description"
     updated = client.collections.update(
-        test_collection["collection_id"],
+        test_collection.collection_id,
         name=updated_name,
         description=updated_desc,
-    )["results"]
-    assert updated["name"] == updated_name, "Collection name not updated"
+    ).results
+    assert updated.name == updated_name, "Collection name not updated"
     assert (
-        updated["description"] == updated_desc
+        updated.description == updated_desc
     ), "Collection description not updated"
 
 
@@ -66,13 +64,13 @@ def test_add_document_to_collection(
     client: R2RClient, test_collection, test_document_2
 ):
     client.collections.add_document(
-        test_collection["collection_id"], str(test_document_2)
+        test_collection.collection_id, str(test_document_2)
     )
     docs_in_collection = client.collections.list_documents(
-        test_collection["collection_id"]
-    )["results"]
+        test_collection.collection_id
+    ).results
     found = any(
-        doc["id"] == str(test_document_2) for doc in docs_in_collection
+        str(doc.id) == str(test_document_2) for doc in docs_in_collection
     )
     assert found, "Added document not found in collection"
 
@@ -82,9 +80,11 @@ def test_list_documents_in_collection(
 ):
     # Document should be in the collection already from previous test
     docs_in_collection = client.collections.list_documents(
-        test_collection["collection_id"]
-    )["results"]
-    found = any(doc["id"] == str(test_document) for doc in docs_in_collection)
+        test_collection.collection_id
+    ).results
+    found = any(
+        str(doc.id) == str(test_document) for doc in docs_in_collection
+    )
     assert found, "Expected document not found in collection"
 
 
@@ -93,12 +93,12 @@ def test_remove_document_from_collection(
 ):
     # Remove the document from the collection
     client.collections.remove_document(
-        test_collection["collection_id"], test_document
+        test_collection.collection_id, test_document
     )
     docs_in_collection = client.collections.list_documents(
-        test_collection["collection_id"]
-    )["results"]
-    found = any(doc["id"] == test_document for doc in docs_in_collection)
+        test_collection.collection_id
+    ).results
+    found = any(str(doc.id) == test_document for doc in docs_in_collection)
     assert not found, "Document still present in collection after removal"
 
 
@@ -110,10 +110,9 @@ def test_remove_non_member_user_from_collection(mutable_client: R2RClient):
     mutable_client.users.login(user_email, password)
 
     # Create a collection by the same user
-    collection_resp = mutable_client.collections.create(
+    collection_id = mutable_client.collections.create(
         name="User Owned Collection"
-    )["results"]
-    collection_id = collection_resp["id"]
+    ).results.id
     mutable_client.users.logout()
 
     # Create another user who will not be added to the collection
@@ -141,8 +140,7 @@ def test_remove_non_member_user_from_collection(mutable_client: R2RClient):
 
 def test_delete_collection(client: R2RClient):
     # Create a collection and delete it
-    coll = client.collections.create(name="Delete Me")["results"]
-    coll_id = coll["id"]
+    coll_id = client.collections.create(name="Delete Me").results.id
     client.collections.delete(coll_id)
 
     # Verify retrieval fails
@@ -174,37 +172,6 @@ def test_add_user_to_non_existent_collection(mutable_client: R2RClient):
     ), "Wrong error code for non-existent collection"
 
 
-# def test_remove_non_member_user_from_collection_duplicate(client: R2RClient):
-#     # Similar to the previous non-member removal test but just to ensure coverage.
-#     owner_email = f"owner_{uuid.uuid4()}@test.com"
-#     owner_password = "password123"
-#     client.users.create(owner_email, owner_password)
-#     client.users.login(owner_email, owner_password)
-
-#     # Create a collection by this owner
-#     coll = client.collections.create(name="Another Non-member Test")["results"]
-#     collection_id = coll["id"]
-
-#     # Create another user who will NOT be added
-#     other_user_email = f"other_{uuid.uuid4()}@test.com"
-#     other_password = "password456"
-#     client.users.create(other_user_email, other_password)
-#     client.users.login(other_user_email, other_password)
-#     other_user_id = client.users.me().results.id
-#     client.users.logout()
-
-#     # Re-login as collection owner
-#     client.users.login(owner_email, owner_password)
-
-#     # Attempt to remove non-member
-#     with pytest.raises(R2RException) as exc_info:
-#         client.collections.remove_user(collection_id, other_user_id)
-#     assert exc_info.value.status_code in [400, 404], "Wrong error code for removing non-member user"
-
-#     # Cleanup
-#     client.collections.delete(collection_id)
-
-
 def test_create_collection_without_name(client: R2RClient):
     # Attempt to create a collection without a name
     with pytest.raises(R2RException) as exc_info:
@@ -228,17 +195,18 @@ def test_filter_collections_by_non_existent_id(client: R2RClient):
 
 def test_list_documents_in_empty_collection(client: R2RClient):
     # Create a new collection with no documents
-    resp = client.collections.create(name="Empty Collection")["results"]
-    empty_coll_id = resp["id"]
-    docs = client.collections.list_documents(empty_coll_id)["results"]
+    empty_coll_id = client.collections.create(
+        name="Empty Collection"
+    ).results.id
+
+    docs = client.collections.list_documents(empty_coll_id).results
     assert len(docs) == 0, "Expected no documents in a new empty collection"
     client.collections.delete(empty_coll_id)
 
 
 def test_remove_document_not_in_collection(client: R2RClient, test_document):
     # Create collection without adding the test_document
-    resp = client.collections.create(name="NoDocCollection")["results"]
-    coll_id = resp["id"]
+    coll_id = client.collections.create(name="NoDocCollection").results.id
 
     # Try removing the test_document that was never added
     with pytest.raises(R2RException) as exc_info:
@@ -253,8 +221,7 @@ def test_remove_document_not_in_collection(client: R2RClient, test_document):
 
 def test_add_non_existent_document_to_collection(client: R2RClient):
     # Create a collection
-    resp = client.collections.create(name="AddNonExistentDoc")["results"]
-    coll_id = resp["id"]
+    coll_id = client.collections.create(name="AddNonExistentDoc").results.id
 
     # Try adding a non-existent document
     fake_doc_id = str(uuid.uuid4())

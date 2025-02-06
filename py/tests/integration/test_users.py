@@ -257,8 +257,7 @@ def test_non_owner_delete_collection(client: R2RClient):
     owner_password = "pwd123"
     client.users.create(owner_email, owner_password)
     client.users.login(owner_email, owner_password)
-    coll = client.collections.create(name="Owner Collection")["results"]
-    coll_id = coll["id"]
+    coll_id = client.collections.create(name="Owner Collection").results.id
 
     # Create another user and get their ID
     non_owner_email = f"nonowner_{uuid.uuid4()}@test.com"

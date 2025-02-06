@@ -72,15 +72,14 @@ def user_owned_collection(normal_user_client: R2RClient):
 @pytest.fixture
 def superuser_owned_collection(client: R2RClient):
     """Create a collection owned by the superuser."""
-    resp = client.collections.create(
+    collection_id = client.collections.create(
         name="Superuser Owned Collection",
         description="A collection owned by superuser",
-    )
-    coll_id = resp["results"]["id"]
-    yield coll_id
+    ).results.id
+    yield collection_id
     # Cleanup
     try:
-        client.collections.delete(coll_id)
+        client.collections.delete(collection_id)
     except R2RException:
         pass
 
@@ -248,17 +247,17 @@ def test_superuser_can_access_any_collection(
 ):
     """A superuser should be able to view and edit any collection."""
     # Superuser can view
-    coll = client.collections.retrieve(user_owned_collection)["results"]
+    coll = client.collections.retrieve(user_owned_collection).results
     assert (
-        coll["id"] == user_owned_collection
+        coll.id == user_owned_collection
     ), "Superuser cannot view a user collection."
 
     # Superuser can also update
     updated = client.collections.update(
         user_owned_collection, name="Superuser Edit"
-    )["results"]
+    ).results
     assert (
-        updated["name"] == "Superuser Edit"
+        updated.name == "Superuser Edit"
     ), "Superuser cannot edit collection."
 
 

@@ -8,7 +8,7 @@ from shared.api.models.base import (
 from shared.api.models.management.responses import (
     WrappedCollectionResponse,
     WrappedCollectionsResponse,
-    WrappedDocumentResponse,
+    WrappedDocumentsResponse,
     WrappedUsersResponse,
 )
 
@@ -33,12 +33,14 @@ class CollectionsSDK:
             dict: Created collection information
         """
         data: dict[str, Any] = {"name": name, "description": description}
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "POST",
             "collections",
             json=data,
             version="v3",
         )
+
+        return WrappedCollectionResponse(**response_dict)
 
     async def list(
         self,
@@ -64,9 +66,11 @@ class CollectionsSDK:
         if ids:
             params["ids"] = ids
 
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "GET", "collections", params=params, version="v3"
         )
+
+        return WrappedCollectionsResponse(**response_dict)
 
     async def retrieve(
         self,
@@ -81,9 +85,11 @@ class CollectionsSDK:
         Returns:
             dict: Detailed collection information
         """
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "GET", f"collections/{str(id)}", version="v3"
         )
+
+        return WrappedCollectionResponse(**response_dict)
 
     async def update(
         self,
@@ -112,12 +118,14 @@ class CollectionsSDK:
         if generate_description:
             data["generate_description"] = str(generate_description)
 
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "POST",
             f"collections/{str(id)}",
             json=data,
             version="v3",
         )
+
+        return WrappedCollectionResponse(**response_dict)
 
     async def delete(
         self,
@@ -132,16 +140,18 @@ class CollectionsSDK:
         Returns:
             bool: True if deletion was successful
         """
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "DELETE", f"collections/{str(id)}", version="v3"
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     async def list_documents(
         self,
         id: str | UUID,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> WrappedDocumentResponse:
+    ) -> WrappedDocumentsResponse:
         """
         List all documents in a collection.
 
@@ -158,12 +168,14 @@ class CollectionsSDK:
             "limit": limit,
         }
 
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "GET",
             f"collections/{str(id)}/documents",
             params=params,
             version="v3",
         )
+
+        return WrappedDocumentsResponse(**response_dict)
 
     async def add_document(
         self,
@@ -180,11 +192,13 @@ class CollectionsSDK:
         Returns:
             dict: Result of the operation
         """
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "POST",
             f"collections/{str(id)}/documents/{str(document_id)}",
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)
 
     async def remove_document(
         self,
@@ -201,11 +215,13 @@ class CollectionsSDK:
         Returns:
             bool: True if removal was successful
         """
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "DELETE",
             f"collections/{str(id)}/documents/{str(document_id)}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     async def list_users(
         self,
@@ -229,9 +245,11 @@ class CollectionsSDK:
             "limit": limit,
         }
 
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "GET", f"collections/{str(id)}/users", params=params, version="v3"
         )
+
+        return WrappedUsersResponse(**response_dict)
 
     async def add_user(
         self,
@@ -248,9 +266,11 @@ class CollectionsSDK:
         Returns:
             dict: Result of the operation
         """
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "POST", f"collections/{str(id)}/users/{str(user_id)}", version="v3"
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     async def remove_user(
         self,
@@ -267,11 +287,13 @@ class CollectionsSDK:
         Returns:
             bool: True if removal was successful
         """
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "DELETE",
             f"collections/{str(id)}/users/{str(user_id)}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     async def extract(
         self,
@@ -279,6 +301,7 @@ class CollectionsSDK:
         settings: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
     ) -> dict:
+        # FIXME: Needs a proper response model
         """
         Extract entities and relationships from documents in a collection.
 
