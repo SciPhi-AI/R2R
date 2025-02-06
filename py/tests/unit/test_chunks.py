@@ -27,10 +27,12 @@ class AsyncR2RTestClient:
         await self.client.documents.delete(id=doc_id)
 
     async def list_chunks(self, doc_id: str):
-        return await self.client.documents.list_chunks(id=doc_id).results
+        response = await self.client.documents.list_chunks(id=doc_id)
+        return response.results
 
     async def retrieve_chunk(self, chunk_id: str):
-        return await self.client.chunks.retrieve(id=chunk_id).results
+        response = await self.client.chunks.retrieve(id=chunk_id)
+        return response.results
 
     async def update_chunk(
         self, chunk_id: str, text: str, metadata: Optional[dict] = None
@@ -40,12 +42,15 @@ class AsyncR2RTestClient:
         )["results"]
 
     async def delete_chunk(self, chunk_id: str):
-        return await self.client.chunks.delete(id=chunk_id).results
+        response = await self.client.chunks.delete(id=chunk_id)
+        return response.results
 
     async def search_chunks(self, query: str, limit: int = 5):
-        return await self.client.chunks.search(
+        response = await self.client.chunks.search(
             query=query, search_settings={"limit": limit}
-        ).results
+        )
+
+        return response.results
 
     async def register_user(self, email: str, password: str):
         await self.client.users.create(email, password)
@@ -73,7 +78,7 @@ async def test_document(
     doc_id, _ = await test_client.create_document(
         [f"Test chunk 1_{uuid_1}", f"Test chunk 2_{uuid_2}"]
     )
-    await asyncio.sleep(1)  # Wait for ingestion
+    await asyncio.sleep(5)  # Wait for ingestion
     chunks = await test_client.list_chunks(str(doc_id))
     yield doc_id, chunks
     with contextlib.suppress(R2RException):
@@ -288,7 +293,7 @@ class TestChunks:
                 )
                 doc_ids.append(doc_id)
 
-            await asyncio.sleep(1)  # Wait for ingestion
+            await asyncio.sleep(5)  # Wait for ingestion
 
             # List all chunks
             response = await test_client.client.chunks.list(offset=0, limit=10)
