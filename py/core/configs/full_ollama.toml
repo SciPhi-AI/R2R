@@ -1,5 +1,31 @@
+[app]
+# LLM used for internal operations, like deriving conversation names
+fast_llm = "ollama/llama3.1"
+
+# LLM used for user-facing output, like RAG replies
+quality_llm = "ollama/llama3.1"
+
+# LLM used for ingesting visual inputs
+vlm = "ollama/llama3.2-vision" # TODO - Replace with viable candidate
+
+# LLM used for transcription
+audio_lm = "ollama/llama3.1" # TODO - Replace with viable candidate
+
+[embedding]
+base_model = "mxbai-embed-large"
+base_dimension = 1_024
+batch_size = 128
+add_title_as_prefix = true
+concurrent_request_limit = 2
+
+[completion_embedding]
+base_model = "mxbai-embed-large"
+base_dimension = 1_024
+batch_size = 128
+add_title_as_prefix = true
+concurrent_request_limit = 2
+
 [agent]
-agent_static_prompt = "rag_agent"
 tools = ["local_search"]
 
   [agent.generation_config]
@@ -8,53 +34,12 @@ tools = ["local_search"]
 [completion]
 provider = "litellm"
 concurrent_request_limit = 1
-fast_llm = "ollama/llama3.1" # used inside R2R for `fast` completions, like document summaries
 
   [completion.generation_config]
-  model = "ollama/llama3.1"
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 1_024
   stream = false
-  add_generation_kwargs = { }
-
-[database]
-provider = "postgres"
-
-  [database.graph_creation_settings]
-    clustering_mode = "remote"
-    graph_entity_description_prompt = "graphrag_entity_description"
-    entity_types = [] # if empty, all entities are extracted
-    relation_types = [] # if empty, all relations are extracted
-    max_knowledge_relationships = 100
-    max_description_input_length = 65536
-    generation_config = { model = "ollama/llama3.1" } # and other params, model used for relationshipt extraction
-    automatic_deduplication = false
-
-  [database.graph_enrichment_settings]
-    max_summary_input_length = 65536
-    generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
-    leiden_params = {}
-
-  [database.graph_search_settings]
-    generation_config = { model = "ollama/llama3.1" }
-
-[embedding]
-provider = "ollama"
-base_model = "mxbai-embed-large"
-base_dimension = 1_024
-batch_size = 128
-add_title_as_prefix = true
-concurrent_request_limit = 2
-
-[completion_embedding]
-# Generally this should be the same as the embedding config, but advanced users may want to run with a different provider to reduce latency
-provider = "ollama"
-base_model = "mxbai-embed-large"
-base_dimension = 1_024
-batch_size = 128
-add_title_as_prefix = true
-concurrent_request_limit = 2
 
 [ingestion]
 provider = "unstructured_local"

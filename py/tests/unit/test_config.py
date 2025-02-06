@@ -94,9 +94,12 @@ def test_new_values_in_override(merged_config):
     config = R2RConfig(merged_config)
 
     # Test new orchestration values
-    assert config.orchestration.kg_creation_concurrency_limit == 32
+    assert (
+        config.orchestration.graph_search_results_creation_concurrency_limit
+        == 32
+    )
     assert config.orchestration.ingestion_concurrency_limit == 16
-    assert config.orchestration.kg_concurrency_limit == 8
+    assert config.orchestration.graph_search_results_concurrency_limit == 8
 
 
 def test_config_type_consistency(merged_config):

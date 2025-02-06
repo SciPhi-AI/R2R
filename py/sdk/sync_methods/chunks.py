@@ -156,7 +156,7 @@ class ChunksSDK:
         search_settings: Optional[dict | SearchSettings] = None,
     ):
         """
-        Conduct a vector and/or KG search.
+        Conduct a vector and/or graph search.
 
         Args:
             query (str): The query to search for.

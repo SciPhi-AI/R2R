@@ -1,356 +1,293 @@
-#######################################
-# COMBINED CONFIGURATION FILE         #
-#######################################
+################################################################################
+# Global Application Settings (AppConfig)
+################################################################################
+[app]
+# Global project name (optional)
+project_name = ""
+# Maximum number of documents per user (default from code: 100, sample: 10000)
+default_max_documents_per_user = 100
+# Maximum number of chunks per user (default: 10000)
+default_max_chunks_per_user = 10000
+# Maximum number of collections per user (default: 5)
+default_max_collections_per_user = 5
+# Maximum upload size in bytes (default: 2000000 ~2MB)
+default_max_upload_size = 2000000
+# LLM used for user‐facing output (quality)
+quality_llm = ""
+# LLM used for fast internal operations
+fast_llm = ""
+# LLM used for visual inputs
+vlm = ""
+# LLM used for audio transcription
+audio_lm = ""
+# A mapping from file extension to maximum upload size
+  [app.max_upload_size_by_type]
+    txt  = 2000000
+    md   = 2000000
+    tsv  = 2000000
+    csv  = 5000000
+    xml  = 2000000
+    html = 5000000
+    doc  = 10000000
+    docx = 10000000
+    ppt  = 20000000
+    pptx = 20000000
+    xls  = 10000000
+    xlsx = 10000000
+    odt  = 5000000
+    pdf  = 30000000
+    eml  = 5000000
+    msg  = 5000000
+    p7s  = 5000000
+    bmp  = 5000000
+    heic = 5000000
+    jpeg = 5000000
+    jpg  = 5000000
+    png  = 5000000
+    tiff = 5000000
+    epub = 10000000
+    rtf  = 5000000
+    rst  = 5000000
+    org  = 5000000
 
-# =====================================
-# Authentication Configuration
-# =====================================
+################################################################################
+# Agent Settings (Custom configuration used by your system)
+################################################################################
+[agent]
+agent_static_prompt = "static_rag_agent"
+agent_dynamic_prompt = "dynamic_rag_agent"
+tools = ["local_search", "content"]
 
-# -------------------------------------
-# [auth] section
-# -------------------------------------
+################################################################################
+# Authentication Settings (AuthConfig)
+################################################################################
 [auth]
-provider = "r2r"                       # Supported values: "r2r", "supabase"
-                                      # - "r2r": uses R2RAuthProvider in auth/r2r_auth.py
-                                      # - "supabase": uses SupabaseAuthProvider in auth/supabase.py
-                                      #
-                                      # Default: (none) - must be specified
-access_token_lifetime_in_minutes = 60  # Lifetime of access token in minutes
-                                      # Default from code: 3600 if not set
-                                      # Also can read from env: R2R_ACCESS_LIFE_IN_MINUTES
+provider = "r2r"
+# (Optional secret key for signing tokens)
+secret_key = ""
+# Lifetime for access tokens (in minutes)
+access_token_lifetime_in_minutes = 60000
+# Lifetime for refresh tokens (in days)
+refresh_token_lifetime_in_days = 7
+# Whether authentication is required
+require_authentication = false
+# Whether email verification is required
+require_email_verification = false
+# Default admin credentials
+default_admin_email = "admin@example.com"
+default_admin_password = "change_me_immediately"
 
-refresh_token_lifetime_in_days = 7     # Lifetime of refresh token in days
-                                      # Default from code: 7 if not set
-                                      # Also can read from env: R2R_REFRESH_LIFE_IN_DAYS
-
-require_authentication = true          # If true, all requests must provide valid auth
-require_email_verification = false     # If true, newly created users must verify email
-
-default_admin_email = "admin@example.com"       # Default admin email to auto-create
-default_admin_password = "change_me_immediately" # Default admin password (MUST CHANGE in production!)
-
-  [auth.extra_fields]
-  supabase_url = "https://your-supabase-url.com" # Required if provider="supabase"
-  supabase_key = "your-supabase-key"             # Required if provider="supabase"
-
-# =====================================
-# Crypto Configuration
-# =====================================
-#
-# This section configures how passwords and tokens are hashed/signed.
-# Supports "bcrypt" or "nacl" as the crypto provider.
-
-# -------------------------------------
-# [crypto] section
-# -------------------------------------
-[crypto]
-provider = "bcrypt"             # or "nacl"
-                               # "bcrypt": uses BcryptCryptoProvider (crypto/bcrypt.py)
-                               # "nacl":   uses NaClCryptoProvider   (crypto/nacl.py)
-
-secret_key = "YOUR_SECRET_KEY"  # Master key for JWT token signing
-                               # Default fallback from env: R2R_SECRET_KEY
-                               # If not set, code may use a built-in default (NOT RECOMMENDED for production)
-
-api_key_bytes = 32             # Length (in bytes) of raw API keys when generated
-                               # Default in code: 32
-
-  # Bcrypt-specific options (only relevant if provider="bcrypt")
-  [crypto.bcrypt]
-  bcrypt_rounds = 12           # Bcrypt cost factor (valid range: 4–31)
-                               # Default in code: 12
-
-  # NaCl-specific options (only relevant if provider="nacl")
-  [crypto.nacl]
-  ops_limit = 4                # Argon2i ops limit for password hashing
-  mem_limit = 67108864         # Argon2i memory limit (in bytes)
-  api_ops_limit = 4            # Argon2i ops limit for API keys
-  api_mem_limit = 67108864     # Argon2i memory limit for API keys (in bytes)
-
-# -------------------------------------
-# Crypto Configuration (Alternative Example)
-# Uncomment if using "nacl" as provider
-# -------------------------------------
-# [crypto]
-# provider = "nacl"
-# secret_key = "your_nacl_secret_key"
-# api_key_bytes = 32
-#
-#   [crypto.nacl]
-#   ops_limit = 4
-#   mem_limit = 65536
-#   api_ops_limit = 4
-#   api_mem_limit = 65536
-
-# =====================================
-# Email Configuration
-# =====================================
-#
-# This section configures how emails are sent (e.g., verification, password resets).
-# Supports "smtp", "sendgrid", or "console_mock".
-
-# -------------------------------------
-# [email] section
-# -------------------------------------
-[email]
-provider = "smtp"  # "smtp", "sendgrid", or "console_mock"
-                   #
-                   # - "smtp": uses AsyncSMTPEmailProvider (email/smtp.py)
-                   # - "sendgrid": uses SendGridEmailProvider (email/sendgrid.py)
-                   # - "console_mock": uses ConsoleMockEmailProvider (email/console_mock.py)
-
-from_email = "no-reply@example.com"    # Sender address
-                                      # If not set, code may fallback to env R2R_FROM_EMAIL
-
-frontend_url = "https://your-frontend.example.com"  # Used to generate links in emails
-                                                   # e.g., password reset or verification links
-
-  # SMTP-specific settings (provider="smtp")
-  [email.smtp]
-  smtp_server = "smtp.example.com"        # or env R2R_SMTP_SERVER
-  smtp_port = 587                         # or env R2R_SMTP_PORT
-  smtp_username = "smtp_user@example.com" # or env R2R_SMTP_USERNAME
-  smtp_password = "secure_smtp_password"  # or env R2R_SMTP_PASSWORD
-
-  # SendGrid-specific settings (provider="sendgrid")
-  [email.sendgrid]
-  sendgrid_api_key = "your-sendgrid-api-key"
-  verify_email_template_id = "your-verify-template-id"      # optional
-  reset_password_template_id = "your-reset-template-id"      # optional
-  sender_name = "Your App Name"                              # optional display name
-
-  # Console Mock settings (provider="console_mock")
-  [email.console_mock]
-  logs = true  # If true, logs emails to console for testing
-
-# =====================================
-# Completion Configuration
-# =====================================
-#
-# This relates to how text completions or chat completions are generated.
-
-# -------------------------------------
-# [completion] section
-# -------------------------------------
+################################################################################
+# Completion / LLM Generation Settings (CompletionConfig and nested GenerationConfig)
+################################################################################
 [completion]
-provider = "litellm"           # Options: "litellm", "openai", "azure" (which is also litellm under the hood), etc.
-concurrent_request_limit = 128 # Global concurrency limit for completion requests
+provider = "r2r"
+# Maximum number of concurrent requests allowed
+concurrent_request_limit = 256
 
   [completion.generation_config]
-  model = "azure/gpt-4o"       # Example model. Could be "openai/gpt-3.5-turbo", "ollama/llama3.1", etc.
-  temperature = 0.7            # 0.0 -> deterministic; 1.0+ -> more random
-  top_p = 0.9                  # Nucleus sampling; 1.0 means no nucleus sampling
-  max_tokens_to_sample = 1024
-  stream = false               # If true, partial responses may stream
-  functions = []               # If provider supports function calling
-  tools = []                   # If provider supports tool usage
-  api_base = ""                # Custom base URL if needed
-  add_generation_kwargs = {}   # Catch-all for extra generation params (e.g., "stop" tokens, etc.)
-
-# =====================================
-# Agent Configuration
-# =====================================
-#
-# For advanced use-cases where you have an “agent” orchestrating tasks.
-
-# -------------------------------------
-# [agent] section
-# -------------------------------------
-[agent]
-agent_static_prompt = "rag_agent"         # The "system" message or prompt name
-tools = ["local_search", "retrieval"]    # Tools accessible to the agent
-
-  [agent.generation_config]
-  model = "azure/gpt-4o"            # e.g. "openai/gpt-3.5-turbo", "ollama/llama3.1"
-  temperature = 0.7
-  top_p = 0.9
-  max_tokens_to_sample = 1024
+  # Generation parameters
+  temperature = 0.1
+  top_p = 1.0
+  max_tokens_to_sample = 4096
   stream = false
-  functions = []
-  tools = []
-  api_base = ""
+  # Additional generation kwargs (empty table by default)
   add_generation_kwargs = {}
 
-# =====================================
-# Database Configuration
-# =====================================
-#
-# Typically references a DB provider and knowledge graph settings.
+################################################################################
+# Cryptography Settings (CryptoConfig)
+################################################################################
+[crypto]
+provider = "bcrypt"
 
-# -------------------------------------
-# [database] section
-# -------------------------------------
+################################################################################
+# Database Settings (DatabaseConfig and related nested settings)
+################################################################################
 [database]
-provider = "postgres"           # "postgres", "mysql", "sqlite", or custom
-batch_size = 256                # Some ingestion/DB ops batch size (especially for large data)
+provider = "postgres"
+user = ""
+password = ""
+host = "localhost"
+port = 5432
+db_name = ""
+project_name = ""
+default_collection_name = "Default"
+default_collection_description = "Your default collection."
+collection_summary_system_prompt = "system"
+collection_summary_prompt = "collection_summary"
+enable_fts = false
+batch_size = 1
+kg_store_path = ""
 
+  # PostgreSQL tuning settings
+  [database.postgres_configuration_settings]
+    checkpoint_completion_target = 0.9
+    default_statistics_target = 100
+    effective_io_concurrency = 1
+    effective_cache_size = 524288
+    huge_pages = "try"
+    maintenance_work_mem = 65536
+    max_connections = 256
+    max_parallel_workers_per_gather = 2
+    max_parallel_workers = 8
+    max_parallel_maintenance_workers = 2
+    max_wal_size = 1024
+    max_worker_processes = 8
+    min_wal_size = 80
+    shared_buffers = 16384
+    statement_cache_size = 100
+    random_page_cost = 4.0
+    wal_buffers = 512
+    work_mem = 4096
+
+  # Graph creation settings
   [database.graph_creation_settings]
-  clustering_mode = "remote"     # "remote" or "local"
-  entity_types = []              # If empty, all entity types
-  relation_types = []            # If empty, all relation types
-  max_description_input_length = 65536
-  generation_config = { model = "azure/gpt-4o-mini" }
+    graph_entity_description_prompt = "graph_entity_description"
+    graph_extraction_prompt = "graph_extraction"
+    entity_types = []
+    relation_types = []
+    automatic_deduplication = true
 
-  [database.graph_entity_deduplication_settings]
-  graph_entity_deduplication_type = "by_name"  # "by_name", "by_id"
-  generation_config = { model = "azure/gpt-4o-mini" }
-
+  # Graph enrichment settings
   [database.graph_enrichment_settings]
-  generation_config = { model = "azure/gpt-4o-mini" }
+    graph_communities_prompt = "graph_communities"
 
+  # (Optional) Graph search settings – add fields as needed
   [database.graph_search_settings]
-  generation_config = { model = "azure/gpt-4o-mini" }
+    # e.g., search_mode = "default"
 
-  # Optional rate-limiting config
+  # Rate limiting settings
   [database.limits]
-  global_per_min = 100    # e.g. 100 requests/minute globally
-  monthly_limit = 5000    # e.g. 5000 requests/month overall
+    global_per_min = 60
+    route_per_min = 20
+    monthly_limit = 10000
 
+  # Route-specific limits (empty by default)
   [database.route_limits]
-  "/v3/retrieval/search" = { route_per_min = 50, monthly_limit = 1000 }
+    # e.g., "/api/search" = { global_per_min = 30, route_per_min = 10, monthly_limit = 5000 }
 
-  [database.user_limits."47e53676-b478-5b3f-a409-234ca2164de5"]
-  global_per_min = 2
-  route_per_min = 1
+  # User-specific limits (empty by default)
+  [database.user_limits]
+    # e.g., "user_uuid_here" = { global_per_min = 20, route_per_min = 5, monthly_limit = 2000 }
 
-# =====================================
-# Embedding Configuration
-# =====================================
-#
-# Controls how text embeddings are generated for similarity search, chunking, etc.
-
-# -------------------------------------
-# [embedding] section
-# -------------------------------------
+################################################################################
+# Embedding Settings (EmbeddingConfig)
+################################################################################
 [embedding]
-provider = "openai"                        # Possible: "openai", "ollama", "litellm"
-base_model = "text-embedding-ada-002"      # Example: "azure/text-embedding-3-small", "mxbai-embed-large"
-base_dimension = 1536                      # e.g., 512, 1024, 1536 depending on the model
-batch_size = 64                            # Number of texts processed per request
-add_title_as_prefix = false                # If true, prepend the doc title to text
-rerank_model = ""                          # Optional re-rank model
-rerank_url = ""                            # Optional URL for re-rank
-concurrent_request_limit = 2               # Embedding concurrency limit
+provider = "litellm"
+base_model = "openai/text-embedding-3-small"
+base_dimension = 512
+# Optional reranking settings (leave empty if not used)
+rerank_model = ""
+rerank_url = ""
+batch_size = 1
+prefixes = {}   # Provide prefix overrides here if needed
+add_title_as_prefix = true
+concurrent_request_limit = 256
+max_retries = 3
+initial_backoff = 1.0
+max_backoff = 64.0
+# Deprecated fields (if still used)
+rerank_dimension = 0
+rerank_transformer_type = ""
 
-  [embedding.chunk_enrichment_settings]
-  generation_config = { model = "azure/gpt-4o-mini" }
+  # Vector quantization settings for embeddings
+  [embedding.quantization_settings]
+    quantization_type = "FP32"
+    # (Additional quantization parameters can be added here)
 
-# =====================================
-# File Storage Configuration
-# =====================================
-#
-# If storing files in a DB or local filesystem or S3, configure here.
+################################################################################
+# Completion Embedding Settings
+# (Usually mirrors the embedding settings; override if needed.)
+################################################################################
+[completion_embedding]
+provider = "litellm"
+base_model = "openai/text-embedding-3-small"
+base_dimension = 512
+batch_size = 1
+add_title_as_prefix = true
+concurrent_request_limit = 256
 
-# -------------------------------------
-# [file] section
-# -------------------------------------
+################################################################################
+# File Storage Settings
+################################################################################
 [file]
-provider = "postgres"          # "postgres", "local", "s3", etc. if implemented
-                               # If "postgres", uses file storage in DB
+provider = "postgres"
 
-# =====================================
-# Ingestion Configuration
-# =====================================
-#
-# How documents are ingested/parsed before chunking.
-
-# -------------------------------------
-# [ingestion] section
-# -------------------------------------
+################################################################################
+# Ingestion Settings (IngestionConfig and nested settings)
+################################################################################
 [ingestion]
-provider = "r2r"                        # "r2r", "unstructured_local", "unstructured_api"
-strategy = "auto"                       # Could be "auto", "by_title", "recursive", etc.
-chunking_strategy = "recursive"         # "recursive", "by_title", "character", etc.
-
+provider = "r2r"
+excluded_parsers = ["mp4"]
+chunking_strategy = "recursive"
 chunk_size = 1024
+# Extra field handled by extra_fields – not defined explicitly in IngestionConfig:
 chunk_overlap = 512
-new_after_n_chars = 2048
-max_characters = 4096
-combine_under_n_chars = 1024
+automatic_extraction = true
+# Audio transcription and vision model settings
+audio_transcription_model = ""
+vision_img_prompt_name = "vision_img"
+vision_img_model = ""
+vision_pdf_prompt_name = "vision_pdf"
+vision_pdf_model = ""
+skip_document_summary = false
+document_summary_system_prompt = "system"
+document_summary_task_prompt = "summary"
+document_summary_max_length = 100000
+chunks_for_document_summary = 128
+document_summary_model = ""
+parser_overrides = {}
 
-excluded_parsers = ["mp4"]              # Example of skipping certain file types
-audio_transcription_model = "azure/whisper-1"  # If ingesting audio
-document_summary_model = "azure/gpt-4o-mini"    # Summaries for each doc chunk
-vision_img_model = "azure/gpt-4o"              # If vision-based models supported
-vision_pdf_model = "azure/gpt-4o"
-
-  [ingestion.extra_parsers]
-  pdf = "zerox"  # "zerox" parser override for PDFs (extended functionality)
-
+  # Chunk enrichment settings
   [ingestion.chunk_enrichment_settings]
-  generation_config = { model = "azure/gpt-4o-mini" }
+    chunk_enrichment_prompt = "chunk_enrichment"
+    enable_chunk_enrichment = false
+    n_chunks = 2
 
-# =====================================
-# Orchestration Configuration
-# =====================================
-#
-# Configures concurrency and scheduling/worker management.
+  # Extra parsers (mapping from file type to parser name)
+  [ingestion.extra_parsers]
+    pdf = "zerox"
 
-# -------------------------------------
-# [orchestration] section
-# -------------------------------------
+################################################################################
+# Logging Settings
+################################################################################
+[logging]
+provider = "r2r"
+log_table = "logs"
+log_info_table = "log_info"
+
+################################################################################
+# Orchestration Settings (OrchestrationConfig)
+################################################################################
 [orchestration]
-provider = "hatchet"              # "hatchet" or "simple"
-kg_creation_concurrency_limit = 32 # used if "hatchet" orchestrator
-ingestion_concurrency_limit = 16   # used if "hatchet" orchestrator
-kg_concurrency_limit = 8           # used if "hatchet" orchestrator
+provider = "simple"
+max_runs = 2048
+kg_creation_concurrency_limit = 32
+ingestion_concurrency_limit = 16
+kg_concurrency_limit = 4
 
-# =====================================
-# Additional Settings (Optional)
-# =====================================
-#
-# You can add other sections as needed, e.g. logging, metrics, security, etc.
+################################################################################
+# Prompt Settings
+################################################################################
+[prompt]
+provider = "r2r"
 
-# -------------------------------------
-# [logging] section
-# -------------------------------------
-# [logging]
-# level = "INFO"   # One of: "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
-# file = "app.log" # Log output file path
-
-# -------------------------------------
-# [metrics] section
-# -------------------------------------
-# [metrics]
-# enabled = true
-# endpoint = "http://metrics-endpoint.com"
-
-# -------------------------------------
-# [security] section
-# -------------------------------------
-# [security]
-# enable_https = true
-# ssl_certificate_path = "/path/to/cert.pem"
-# ssl_key_path = "/path/to/key.pem"
-
-# =====================================
-# Environment Variables Overrides
-# =====================================
-#
-# For security and convenience, environment variables can override any config above.
-# Example usage in production or CI/CD pipelines:
-#
-# R2R_ACCESS_LIFE_IN_MINUTES=60
-# R2R_REFRESH_LIFE_IN_DAYS=7
-# R2R_SECRET_KEY=your_secret_key
-# OPENAI_API_KEY=your_openai_api_key
-# SUPABASE_URL=https://your-supabase-url.com
-# SUPABASE_KEY=your_supabase_key
-# SENDGRID_API_KEY=your_sendgrid_api_key
-# R2R_SMTP_SERVER=smtp.example.com
-# R2R_SMTP_PORT=587
-# R2R_SMTP_USERNAME=smtp_user
-# R2R_SMTP_PASSWORD=smtp_password
-# R2R_FROM_EMAIL=no-reply@example.com
-# R2R_FRONTEND_URL=https://your-frontend-url.com
-# UNSTRUCTURED_API_KEY=your_unstructured_api_key
-# UNSTRUCTURED_API_URL=https://unstructured-api-url.com
-# UNSTRUCTURED_SERVICE_URL=http://localhost:8000
-# HUGGINGFACE_API_BASE=https://huggingface.co/api
-# OLLAMA_API_BASE=http://localhost:11434
-# SENDGRID_EMAIL_TEMPLATE_ID=your_sendgrid_email_template_id
-# SENDGRID_RESET_TEMPLATE_ID=your_sendgrid_reset_template_id
-
-# =====================================
-# End of Combined Configuration File
-# =====================================
+################################################################################
+# Email Settings (EmailConfig)
+################################################################################
+[email]
+# Supported providers: "smtp", "console", "sendgrid", etc.
+provider = "console"
+smtp_server = ""
+smtp_port = 587
+smtp_username = ""
+smtp_password = ""
+from_email = ""
+use_tls = true
+sendgrid_api_key = ""
+verify_email_template_id = ""
+reset_password_template_id = ""
+password_changed_template_id = ""
+frontend_url = ""
+sender_name = ""

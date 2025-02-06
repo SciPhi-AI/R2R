@@ -8,7 +8,7 @@ from litellm import AuthenticationError
 
 from core.base import (
     DocumentChunk,
-    KGEnrichmentStatus,
+    GraphConstructionStatus,
     R2RException,
     increment_version,
 )
@@ -123,12 +123,12 @@ def simple_ingestion_factory(service: IngestionService):
                     await service.providers.database.documents_handler.set_workflow_status(
                         id=collection_id,
                         status_type="graph_sync_status",
-                        status=KGEnrichmentStatus.OUTDATED,
+                        status=GraphConstructionStatus.OUTDATED,
                     )
                     await service.providers.database.documents_handler.set_workflow_status(
                         id=collection_id,
                         status_type="graph_cluster_status",
-                        status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                        status=GraphConstructionStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                     )
                 else:
                     for collection_id in collection_ids:
@@ -166,12 +166,12 @@ def simple_ingestion_factory(service: IngestionService):
                         await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,
                             status_type="graph_sync_status",
-                            status=KGEnrichmentStatus.OUTDATED,
+                            status=GraphConstructionStatus.OUTDATED,
                         )
                         await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,
                             status_type="graph_cluster_status",
-                            status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                            status=GraphConstructionStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                         )
             except Exception as e:
                 logger.error(
@@ -407,12 +407,12 @@ def simple_ingestion_factory(service: IngestionService):
                     await service.providers.database.documents_handler.set_workflow_status(
                         id=collection_id,
                         status_type="graph_sync_status",
-                        status=KGEnrichmentStatus.OUTDATED,
+                        status=GraphConstructionStatus.OUTDATED,
                     )
                     await service.providers.database.documents_handler.set_workflow_status(
                         id=collection_id,
                         status_type="graph_cluster_status",
-                        status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                        status=GraphConstructionStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                     )
 
                 else:
@@ -447,12 +447,12 @@ def simple_ingestion_factory(service: IngestionService):
                         await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,
                             status_type="graph_sync_status",
-                            status=KGEnrichmentStatus.OUTDATED,
+                            status=GraphConstructionStatus.OUTDATED,
                         )
                         await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,
                             status_type="graph_cluster_status",
-                            status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                            status=GraphConstructionStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                         )
 
                     if service.providers.ingestion.config.automatic_extraction:

@@ -7,15 +7,15 @@ from .base import Provider, ProviderConfig
 
 class Workflow(Enum):
     INGESTION = "ingestion"
-    KG = "kg"
+    GRAPH = "graph"
 
 
 class OrchestrationConfig(ProviderConfig):
     provider: str
     max_runs: int = 2_048
-    kg_creation_concurrency_limit: int = 32
+    graph_search_results_creation_concurrency_limit: int = 32
     ingestion_concurrency_limit: int = 16
-    kg_concurrency_limit: int = 4
+    graph_search_results_concurrency_limit: int = 4
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:

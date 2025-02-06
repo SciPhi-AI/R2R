@@ -47,7 +47,7 @@ concurrent_request_limit = 64
   add_generation_kwargs = { }
 
 [crypto]
-provider = "bcrypt"
+provider = "nacl"
 
 [database]
 default_collection_name = "Default"
@@ -55,18 +55,17 @@ default_collection_description = "Your default collection."
 collection_summary_prompt = "collection_summary"
 
   [database.graph_creation_settings]
-    graph_entity_description_prompt = "graphrag_entity_description"
-    graphrag_extraction = "graphrag_extraction"
+    graph_entity_description_prompt = "graph_entity_description"
+    graph_extraction_prompt = "graph_extraction"
     entity_types = [] # if empty, all entities are extracted
     relation_types = [] # if empty, all relations are extracted
     automatic_deduplication = true # enable automatic deduplication of entities
 
   [database.graph_enrichment_settings]
-    graphrag_communities_prompt = "graphrag_communities"
+    graph_communities_prompt = "graph_communities"
 
 [embedding]
 provider = "litellm"
-
 # For basic applications, use `openai/text-embedding-3-small` with `base_dimension = 512`
 # For advanced applications, use `openai/text-embedding-3-large` with `base_dimension = 3072` and binary quantization
 base_model = "openai/text-embedding-3-small"
@@ -85,9 +84,6 @@ base_dimension = 512
 batch_size = 128
 add_title_as_prefix = false
 concurrent_request_limit = 256
-
-[file]
-provider = "postgres"
 
 [ingestion]
 provider = "r2r"
@@ -113,8 +109,5 @@ log_info_table = "log_info"
 [orchestration]
 provider = "simple"
 
-[prompt]
-provider = "r2r"
-
 [email]
-provider = "console_mock"
+provider = "console_mock" # `smtp` | `sendgrid` supported

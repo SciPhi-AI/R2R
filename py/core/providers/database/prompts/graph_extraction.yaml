@@ -1,4 +1,4 @@
-graphrag_extraction:
+graph_extraction:
   template: >
     # Context
     {document_summary}

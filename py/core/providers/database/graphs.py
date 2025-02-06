@@ -19,7 +19,7 @@ from core.base.abstractions import (
     Community,
     Entity,
     Graph,
-    KGExtractionStatus,
+    GraphExtractionStatus,
     R2RException,
     Relationship,
     StoreType,
@@ -2302,7 +2302,7 @@ class PostgresGraphsHandler(Handler):
             UPDATE {self._get_table_name("collections")} SET graph_cluster_status = $1 WHERE id = $2
         """
         await self.connection_manager.execute_query(
-            QUERY, [KGExtractionStatus.PENDING, collection_id]
+            QUERY, [GraphExtractionStatus.PENDING, collection_id]
         )
         # Delete the graph
         QUERY = f"""

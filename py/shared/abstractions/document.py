@@ -131,8 +131,8 @@ class IngestionStatus(str, Enum):
         return "document_id"
 
 
-class KGExtractionStatus(str, Enum):
-    """Status of KG Creation per document."""
+class GraphExtractionStatus(str, Enum):
+    """Status of graph creation per document."""
 
     PENDING = "pending"
     PROCESSING = "processing"
@@ -152,8 +152,8 @@ class KGExtractionStatus(str, Enum):
         return "id"
 
 
-class KGEnrichmentStatus(str, Enum):
-    """Status of KG Enrichment per collection."""
+class GraphConstructionStatus(str, Enum):
+    """Status of graph enrichment per collection."""
 
     PENDING = "pending"
     PROCESSING = "processing"
@@ -185,7 +185,7 @@ class DocumentResponse(R2RSerializable):
     version: str
     size_in_bytes: Optional[int]
     ingestion_status: IngestionStatus = IngestionStatus.PENDING
-    extraction_status: KGExtractionStatus = KGExtractionStatus.PENDING
+    extraction_status: GraphExtractionStatus = GraphExtractionStatus.PENDING
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     ingestion_attempt_number: Optional[int] = None

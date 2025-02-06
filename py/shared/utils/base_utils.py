@@ -30,46 +30,52 @@ def format_search_results_for_llm(results: AggregateSearchResult) -> str:
             source_counter += 1
 
     if results.graph_search_results:
-        formatted_results.append("KG Search Results:")
-        for kg_result in results.graph_search_results:
+        formatted_results.append("Graph Search Results:")
+        for graph_search_results_result in results.graph_search_results:
             try:
                 formatted_results.extend((f"Source [{source_counter}]:",))
             except AttributeError:
-                raise ValueError(f"Invalid KG search result: {kg_result}")
+                raise ValueError(
+                    f"Invalid graph search result: {graph_search_results_result}"
+                )
 
-            if isinstance(kg_result.content, GraphCommunityResult):
+            if isinstance(
+                graph_search_results_result.content, GraphCommunityResult
+            ):
                 formatted_results.extend(
                     (
-                        f"Community Name: {kg_result.content.name}",
-                        f"ID: {kg_result.content.id}",
-                        f"Summary: {kg_result.content.summary}",
-                        # f"Findings: {kg_result.content.findings}",
+                        f"Community Name: {graph_search_results_result.content.name}",
+                        f"ID: {graph_search_results_result.content.id}",
+                        f"Summary: {graph_search_results_result.content.summary}",
+                        # f"Findings: {graph_search_results_result.content.findings}",
                     )
                 )
             elif isinstance(
-                kg_result.content,
+                graph_search_results_result.content,
                 GraphEntityResult,
             ):
                 formatted_results.extend(
                     [
-                        f"Entity Name: {kg_result.content.name}",
-                        f"ID: {kg_result.content.id}",
-                        f"Description: {kg_result.content.description}",
+                        f"Entity Name: {graph_search_results_result.content.name}",
+                        f"ID: {graph_search_results_result.content.id}",
+                        f"Description: {graph_search_results_result.content.description}",
                     ]
                 )
-            elif isinstance(kg_result.content, GraphRelationshipResult):
+            elif isinstance(
+                graph_search_results_result.content, GraphRelationshipResult
+            ):
                 formatted_results.extend(
                     (
-                        f"Relationship: {kg_result.content.subject} - {kg_result.content.predicate} - {kg_result.content.object}",
-                        f"ID: {kg_result.content.id}",
-                        f"Description: {kg_result.content.description}",
-                        f"Subject ID: {kg_result.content.subject_id}",
-                        f"Object ID: {kg_result.content.object_id}",
+                        f"Relationship: {graph_search_results_result.content.subject} - {graph_search_results_result.content.predicate} - {graph_search_results_result.content.object}",
+                        f"ID: {graph_search_results_result.content.id}",
+                        f"Description: {graph_search_results_result.content.description}",
+                        f"Subject ID: {graph_search_results_result.content.subject_id}",
+                        f"Object ID: {graph_search_results_result.content.object_id}",
                     )
                 )
 
-            if kg_result.metadata:
-                metadata_copy = kg_result.metadata.copy()
+            if graph_search_results_result.metadata:
+                metadata_copy = graph_search_results_result.metadata.copy()
                 metadata_copy.pop("associated_query", None)
                 if metadata_copy:
                     formatted_results.append("Metadata:")
@@ -138,8 +144,10 @@ def format_search_results_for_stream(results: AggregateSearchResult) -> str:
 
     if results.graph_search_results:
         context += f"<{GRAPH_SEARCH_STREAM_MARKER}>"
-        kg_results_list = [r.dict() for r in results.graph_search_results]
-        context += json.dumps(kg_results_list, default=str)
+        graph_search_results_results_list = [
+            r.dict() for r in results.graph_search_results
+        ]
+        context += json.dumps(graph_search_results_results_list, default=str)
         context += f"</{GRAPH_SEARCH_STREAM_MARKER}>"
 
     if results.web_search_results:

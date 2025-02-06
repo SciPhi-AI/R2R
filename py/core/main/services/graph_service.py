@@ -10,15 +10,15 @@ from uuid import UUID
 
 from core.base import (
     DocumentChunk,
-    KGExtraction,
-    KGExtractionStatus,
+    GraphExtraction,
+    GraphExtractionStatus,
     R2RDocumentProcessingError,
 )
 from core.base.abstractions import (
     Community,
     Entity,
     GenerationConfig,
-    KGEnrichmentStatus,
+    GraphConstructionStatus,
     R2RException,
     Relationship,
     StoreType,
@@ -32,7 +32,7 @@ from .base import Service
 
 logger = logging.getLogger()
 
-MIN_VALID_KG_EXTRACTION_RESPONSE_LENGTH = 128
+MIN_VALID_GRAPH_EXTRACTION_RESPONSE_LENGTH = 128
 
 
 async def _collect_async_results(result_gen: AsyncGenerator) -> list[Any]:
@@ -353,7 +353,7 @@ class GraphService(Service):
         await self.providers.database.documents_handler.set_workflow_status(
             id=id,
             status_type="graph_cluster_status",
-            status=KGEnrichmentStatus.PENDING,
+            status=GraphConstructionStatus.PENDING,
         )
         return True
 
@@ -364,8 +364,8 @@ class GraphService(Service):
         **kwargs,
     ):
         document_status_filter = [
-            KGExtractionStatus.PENDING,
-            KGExtractionStatus.FAILED,
+            GraphExtractionStatus.PENDING,
+            GraphExtractionStatus.FAILED,
         ]
 
         return await self.providers.database.documents_handler.get_document_ids_by_status(
@@ -374,8 +374,8 @@ class GraphService(Service):
             collection_id=collection_id,
         )
 
-    @telemetry_event("kg_entity_description")
-    async def kg_entity_description(
+    @telemetry_event("graph_search_results_entity_description")
+    async def graph_search_results_entity_description(
         self,
         document_id: UUID,
         max_description_input_length: int,
@@ -392,7 +392,7 @@ class GraphService(Service):
         """
         start_time = time.time()
         logger.info(
-            f"KGService: Running kg_entity_description for doc={document_id}"
+            f"GraphService: Running graph_search_results_entity_description for doc={document_id}"
         )
 
         # Count how many doc-entities exist
@@ -404,7 +404,7 @@ class GraphService(Service):
             )
         )
         logger.info(
-            f"KGService: Found {entity_count} doc-entities to describe."
+            f"GraphService: Found {entity_count} doc-entities to describe."
         )
 
         all_results = []
@@ -415,7 +415,7 @@ class GraphService(Service):
             limit = batch_size
 
             logger.info(
-                f"KGService: describing batch {i+1}/{num_batches}, offset={offset}, limit={limit}"
+                f"GraphService: describing batch {i+1}/{num_batches}, offset={offset}, limit={limit}"
             )
 
             # Actually handle describing the entities in the batch
@@ -433,10 +433,10 @@ class GraphService(Service):
         await self.providers.database.documents_handler.set_workflow_status(
             id=document_id,
             status_type="extraction_status",
-            status=KGExtractionStatus.SUCCESS,
+            status=GraphExtractionStatus.SUCCESS,
         )
         logger.info(
-            f"KGService: Completed kg_entity_description for doc {document_id} in {time.time() - start_time:.2f}s."
+            f"GraphService: Completed graph_search_results_entity_description for doc {document_id} in {time.time() - start_time:.2f}s."
         )
         return all_results
 
@@ -596,8 +596,8 @@ class GraphService(Service):
 
         return main_entity.name
 
-    @telemetry_event("kg_clustering")
-    async def kg_clustering(
+    @telemetry_event("graph_search_results_clustering")
+    async def graph_search_results_clustering(
         self,
         collection_id: UUID,
         generation_config: GenerationConfig,
@@ -625,7 +625,7 @@ class GraphService(Service):
         leiden_params: dict,
     ) -> dict:
         """
-        The actual clustering logic (previously in GraphClusteringPipe.cluster_kg).
+        The actual clustering logic (previously in GraphClusteringPipe.cluster_graph_search_results).
         """
         clustering_mode = (
             self.config.database.graph_creation_settings.clustering_mode
@@ -637,8 +637,8 @@ class GraphService(Service):
         )
         return {"num_communities": num_communities}
 
-    @telemetry_event("kg_community_summary")
-    async def kg_community_summary(
+    @telemetry_event("graph_search_results_community_summary")
+    async def graph_search_results_community_summary(
         self,
         offset: int,
         limit: int,
@@ -817,7 +817,7 @@ class GraphService(Service):
             try:
                 # Build the prompt
                 messages = await self.providers.database.prompts_handler.get_message_payload(
-                    task_prompt_name=self.providers.database.config.graph_enrichment_settings.graphrag_communities_prompt,
+                    task_prompt_name=self.providers.database.config.graph_enrichment_settings.graph_communities_prompt,
                     task_inputs={
                         "collection_description": collection_description,
                         "input_text": input_text,
@@ -977,7 +977,7 @@ class GraphService(Service):
             collection_id=collection_id,
         )
 
-    async def kg_extraction(
+    async def graph_search_results_extraction(
         self,
         document_id: UUID,
         generation_config: GenerationConfig,
@@ -988,14 +988,14 @@ class GraphService(Service):
         total_tasks: Optional[int] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[KGExtraction | R2RDocumentProcessingError, None]:
+    ) -> AsyncGenerator[GraphExtraction | R2RDocumentProcessingError, None]:
         """
-        The original “extract KG from doc” logic, but inlined instead of referencing a pipe.
+        The original “extract Graph from doc” logic, but inlined instead of referencing a pipe.
         """
         start_time = time.time()
 
         logger.info(
-            f"Graph Extraction: Processing document {document_id} for KG extraction"
+            f"Graph Extraction: Processing document {document_id} for graph extraction"
         )
 
         # Retrieve chunks from DB
@@ -1061,7 +1061,7 @@ class GraphService(Service):
         )
         tasks = [
             asyncio.create_task(
-                self._extract_kg_from_chunk_group(
+                self._extract_graph_search_results_from_chunk_group(
                     chunk_group,
                     generation_config,
                     entity_types,
@@ -1093,7 +1093,7 @@ class GraphService(Service):
             f"Graph Extraction: done with {document_id}, time={time.time()-start_time:.2f}s"
         )
 
-    async def _extract_kg_from_chunk_group(
+    async def _extract_graph_search_results_from_chunk_group(
         self,
         chunks: list[DocumentChunk],
         generation_config: GenerationConfig,
@@ -1103,10 +1103,10 @@ class GraphService(Service):
         delay: int = 2,
         task_id: Optional[int] = None,
         total_tasks: Optional[int] = None,
-    ) -> KGExtraction:
+    ) -> GraphExtraction:
         """
-        (Equivalent to _extract_kg in old code.)
-        Merges chunk data, calls LLM, parses XML, returns KGExtraction object.
+        (Equivalent to _extract_graph_search_results in old code.)
+        Merges chunk data, calls LLM, parses XML, returns GraphExtraction object.
         """
         combined_extraction: str = " ".join([c.data for c in chunks if c.data])
 
@@ -1123,7 +1123,7 @@ class GraphService(Service):
 
         # Build messages/prompt
         prompt_name = (
-            self.providers.database.config.graph_creation_settings.graphrag_extraction
+            self.providers.database.config.graph_creation_settings.graph_extraction_prompt
         )
         messages = (
             await self.providers.database.prompts_handler.get_message_payload(
@@ -1142,19 +1142,21 @@ class GraphService(Service):
                 resp = await self.providers.llm.aget_completion(
                     messages, generation_config=generation_config
                 )
-                kg_str = resp.choices[0].message.content
+                graph_search_results_str = resp.choices[0].message.content
 
-                if not kg_str:
+                if not graph_search_results_str:
                     raise R2RException(
                         "No extraction found in LLM response.",
                         400,
                     )
 
                 # parse the XML
-                entities, relationships = await self._parse_kg_extraction_xml(
-                    kg_str, chunks
+                entities, relationships = (
+                    await self._parse_graph_search_results_extraction_xml(
+                        graph_search_results_str, chunks
+                    )
                 )
-                return KGExtraction(
+                return GraphExtraction(
                     entities=entities, relationships=relationships
                 )
 
@@ -1166,9 +1168,9 @@ class GraphService(Service):
                         f"All extraction attempts for doc={doc_id} and chunks{[chunk.id for chunk in chunks]} failed with error:\n{e}"
                     )
 
-                return KGExtraction(entities=[], relationships=[])
+                return GraphExtraction(entities=[], relationships=[])
 
-    async def _parse_kg_extraction_xml(
+    async def _parse_graph_search_results_extraction_xml(
         self, response_str: str, chunks: list[DocumentChunk]
     ) -> tuple[list[Entity], list[Relationship]]:
         """
@@ -1198,7 +1200,7 @@ class GraphService(Service):
 
         entities_elems = root.findall(".//entity")
         if (
-            len(response_str) > MIN_VALID_KG_EXTRACTION_RESPONSE_LENGTH
+            len(response_str) > MIN_VALID_GRAPH_EXTRACTION_RESPONSE_LENGTH
             and len(entities_elems) == 0
         ):
             raise R2RException(
@@ -1265,14 +1267,14 @@ class GraphService(Service):
                 continue
         return entities_list, relationships_list
 
-    async def store_kg_extractions(
+    async def store_graph_search_results_extractions(
         self,
-        kg_extractions: list[KGExtraction],
+        graph_search_results_extractions: list[GraphExtraction],
     ):
         """
         Stores a batch of knowledge graph extractions in the DB.
         """
-        for extraction in kg_extractions:
+        for extraction in graph_search_results_extractions:
             # Map name->id after creation
             entities_id_map = {}
             for e in extraction.entities:

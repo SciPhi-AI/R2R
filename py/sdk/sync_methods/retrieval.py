@@ -26,7 +26,7 @@ class RetrievalSDK:
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> AggregateSearchResult:
         """
-        Conduct a vector and/or KG search.
+        Conduct a vector and/or graph search.
 
         Args:
             query (str): The query to search for.

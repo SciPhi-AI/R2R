@@ -17,8 +17,8 @@ __all__ = [
     "DocumentChunk",
     "DocumentResponse",
     "IngestionStatus",
-    "KGExtractionStatus",
-    "KGEnrichmentStatus",
+    "GraphExtractionStatus",
+    "GraphConstructionStatus",
     "DocumentType",
     # Embedding abstractions
     "EmbeddingPurpose",
@@ -26,13 +26,13 @@ __all__ = [
     # Exception abstractions
     "R2RDocumentProcessingError",
     "R2RException",
-    # KG abstractions
+    # Graph abstractions
     "Entity",
-    "KGExtraction",
+    "GraphExtraction",
     "Relationship",
     "Community",
-    "KGCreationSettings",
-    "KGEnrichmentSettings",
+    "GraphCreationSettings",
+    "GraphEnrichmentSettings",
     # LLM abstractions
     "GenerationConfig",
     "LLMChatCompletion",

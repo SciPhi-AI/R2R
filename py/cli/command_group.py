@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import types
 from functools import wraps
@@ -15,6 +16,7 @@ from typing_extensions import Never
 
 from sdk import R2RAsyncClient
 
+logger = logging.getLogger(__name__)
 console = Console()
 
 CONFIG_DIR = Path.home() / ".r2r"
@@ -152,6 +154,10 @@ def initialize_client() -> R2RAsyncClient:
         config_api_base = config.get("api_base")
         if env_api_base:
             api_base = env_api_base
+            if config_api_base:
+                logger.warning(
+                    "Both R2R_API_BASE and config API base are set, defaulting to R2R_API_BASE"
+                )
         elif config_api_base:
             api_base = config_api_base
         else:

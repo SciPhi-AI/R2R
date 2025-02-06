@@ -319,7 +319,7 @@ class GraphSearchSettings(R2RSerializable):
 
 
 class SearchSettings(R2RSerializable):
-    """Main search settings class that combines shared settings with specialized settings for chunks and KG."""
+    """Main search settings class that combines shared settings with specialized settings for chunks and graph."""
 
     # Search type flags
     use_hybrid_search: bool = Field(

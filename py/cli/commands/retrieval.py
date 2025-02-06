@@ -113,7 +113,7 @@ async def search(ctx: click.Context, query, **kwargs):
                 "graph_search_results" in results
                 and results["graph_search_results"]
             ):
-                click.echo("KG search results:")
+                click.echo("Graph Search results:")
                 for result in results["graph_search_results"]:
                     click.echo(json.dumps(result, indent=2))
     except R2RException as e:

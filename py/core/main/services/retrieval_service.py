@@ -153,14 +153,14 @@ class RetrievalService(Service):
             self._graph_search_logic(query, search_settings)
         )
 
-        chunk_search_results, kg_results = await asyncio.gather(
-            vector_task, graph_task
+        chunk_search_results, graph_search_results_results = (
+            await asyncio.gather(vector_task, graph_task)
         )
 
         # 3) Wrap up in an `AggregateSearchResult`, or your CombinedSearchResponse
         aggregated_result = AggregateSearchResult(
             chunk_search_results=chunk_search_results,
-            graph_search_results=kg_results,
+            graph_search_results=graph_search_results_results,
         )
 
         # If your higher-level code returns as_dict(), do that here:
@@ -466,7 +466,7 @@ class RetrievalService(Service):
     ) -> RAGResponse:
         """
         A simple RAG method that does:
-          • vector + KG search
+          • vector + graph search
           • build a big 'context' string
           • feed to your system + task prompts
           • call LLM for final answer
@@ -806,7 +806,7 @@ class RetrievalService(Service):
                             yield chunk
                     except Exception as e:
                         logger.error(f"Error streaming agent output: {e}")
-                        raise
+                        raise e
                     finally:
                         msgs = [
                             msg.to_dict()

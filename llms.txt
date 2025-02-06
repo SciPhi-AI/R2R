@@ -3829,7 +3829,7 @@ rag:
 |----------------------------------------------|-----------------------------------------------------------------------------------------------|
 | `rag.yaml`                           | Default prompt for Retrieval-Augmented Generation (RAG) tasks.                              |
 | `graphrag_community_reports.yaml`             | Used in GraphRAG to generate reports about communities or clusters in the knowledge graph.   |
-| `graphrag_entity_description.yaml`            | System prompt for the “map” phase in GraphRAG, used to process individual nodes or edges.     |
+| `graph_entity_description.yaml`            | System prompt for the “map” phase in GraphRAG, used to process individual nodes or edges.     |
 | `graphrag_map_system.yaml`                    | System prompt for the “map” phase in GraphRAG.                                              |
 | `graphrag_reduce_system.yaml`                 | System prompt for the “reduce” phase in GraphRAG.                                           |
 | `graphrag_triples_extraction_few_shot.yaml`   | Few-shot prompt for extracting subject-predicate-object triplets in GraphRAG.               |
@@ -4587,8 +4587,8 @@ An optional JSON object containing various extraction settings.
 
 | Parameter                          | Type     | Required | Description                                                   |
 | :---------------------------------- | :------- | :------ | :------------------------------------------------------------ |
-| `graphrag_extraction` | `string` | No | The prompt to use for knowledge graph extraction. Defaults to `graphrag_extraction`. |
-| `graphrag_entity_description_prompt` | `string` | No | The prompt to use for entity description generation. Defaults to `graphrag_entity_description`. |
+| `graph_extraction` | `string` | No | The prompt to use for knowledge graph extraction. Defaults to `graph_extraction`. |
+| `graph_entity_description_prompt` | `string` | No | The prompt to use for entity description generation. Defaults to `graph_entity_description`. |
 | `entity_types`                     | `array`  | No       | The types of entities to extract.                            |
 | `relation_types`                   | `array`  | No       | The types of relations to extract.                           |
 | `chunk_merge_count`                | `integer`| No       | Number of extractions to merge into a single KG extraction. Defaults to `4`. |
@@ -11043,7 +11043,7 @@ batch_size = 256
 
   [database.graph_creation_settings]
     clustering_mode = "local"
-    graph_entity_description_prompt = "graphrag_entity_description"
+    graph_entity_description_prompt = "graph_entity_description"
     entity_types = []
     relation_types = []
     fragment_merge_count = 1

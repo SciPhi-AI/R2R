@@ -8,9 +8,9 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from core.base.abstractions import (
+    GraphCreationSettings,
+    GraphEnrichmentSettings,
     GraphSearchSettings,
-    KGCreationSettings,
-    KGEnrichmentSettings,
 )
 
 from .base import Provider, ProviderConfig
@@ -134,9 +134,11 @@ class DatabaseConfig(ProviderConfig):
 
     # Graph settings
     batch_size: Optional[int] = 1
-    kg_store_path: Optional[str] = None
-    graph_enrichment_settings: KGEnrichmentSettings = KGEnrichmentSettings()
-    graph_creation_settings: KGCreationSettings = KGCreationSettings()
+    graph_search_results_store_path: Optional[str] = None
+    graph_enrichment_settings: GraphEnrichmentSettings = (
+        GraphEnrichmentSettings()
+    )
+    graph_creation_settings: GraphCreationSettings = GraphCreationSettings()
     graph_search_settings: GraphSearchSettings = GraphSearchSettings()
 
     # Rate limits

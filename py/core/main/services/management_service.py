@@ -12,7 +12,7 @@ from core.base import (
     ConversationResponse,
     DocumentResponse,
     GenerationConfig,
-    KGEnrichmentStatus,
+    GraphConstructionStatus,
     Message,
     Prompt,
     R2RException,
@@ -81,7 +81,7 @@ class ManagementService(Service):
             filters (dict[str, Any]): Filters specifying which chunks to delete.
             chunks_handler (PostgresChunksHandler): The handler for chunk operations.
             documents_handler (PostgresDocumentsHandler): The handler for document operations.
-            graphs_handler: Handler for entity and relationship operations in the KG.
+            graphs_handler: Handler for entity and relationship operations in the Graph.
 
         Returns:
             dict: A summary of what was deleted.
@@ -438,12 +438,12 @@ class ManagementService(Service):
         await self.providers.database.documents_handler.set_workflow_status(
             id=collection_id,
             status_type="graph_sync_status",
-            status=KGEnrichmentStatus.OUTDATED,
+            status=GraphConstructionStatus.OUTDATED,
         )
         await self.providers.database.documents_handler.set_workflow_status(
             id=collection_id,
             status_type="graph_cluster_status",
-            status=KGEnrichmentStatus.OUTDATED,
+            status=GraphConstructionStatus.OUTDATED,
         )
 
         return {"message": "Document assigned to collection successfully"}

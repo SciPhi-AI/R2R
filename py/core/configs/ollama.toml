@@ -1,22 +1,15 @@
-[agent]
-agent_static_prompt = "rag_agent"
-tools = ["local_search"]
+[app]
+# LLM used for internal operations, like deriving conversation names
+fast_llm = "ollama/llama3.1"
 
-  [agent.generation_config]
-  model = "ollama/llama3.1"
+# LLM used for user-facing output, like RAG replies
+quality_llm = "ollama/llama3.1"
 
-[completion]
-provider = "litellm"
-concurrent_request_limit = 1
-fast_llm = "ollama/llama3.1" # used inside R2R for `fast` completions, like document summaries
+# LLM used for ingesting visual inputs
+vlm = "ollama/llama3.2-vision" # TODO - Replace with viable candidate
 
-  [completion.generation_config]
-  model = "ollama/llama3.1"
-  temperature = 0.1
-  top_p = 1
-  max_tokens_to_sample = 1_024
-  stream = false
-  add_generation_kwargs = { }
+# LLM used for transcription
+audio_lm = "ollama/llama3.1" # TODO - Replace with viable candidate
 
 [embedding]
 provider = "ollama"
@@ -27,7 +20,6 @@ add_title_as_prefix = true
 concurrent_request_limit = 2
 
 [completion_embedding]
-# Generally this should be the same as the embedding config, but advanced users may want to run with a different provider to reduce latency
 provider = "ollama"
 base_model = "mxbai-embed-large"
 base_dimension = 1_024
@@ -35,36 +27,18 @@ batch_size = 128
 add_title_as_prefix = true
 concurrent_request_limit = 2
 
-[database]
-provider = "postgres"
+[agent]
+tools = ["local_search"]
 
-  [database.graph_creation_settings]
-    graph_entity_description_prompt = "graphrag_entity_description"
-    entity_types = [] # if empty, all entities are extracted
-    relation_types = [] # if empty, all relations are extracted
-    max_description_input_length = 65536
-    generation_config = { model = "ollama/llama3.1" } # and other params, model used for relationshipt extraction
-    automatic_deduplication = false
+  [agent.generation_config]
+  model = "ollama/llama3.1"
 
-  [database.graph_enrichment_settings]
-    max_summary_input_length = 65536
-    generation_config = { model = "ollama/llama3.1" } # and other params, model used for node description and graph clustering
-    leiden_params = {}
+[completion]
+provider = "litellm"
+concurrent_request_limit = 1
 
-  [database.graph_search_settings]
-    generation_config = { model = "ollama/llama3.1" }
-
-
-[orchestration]
-provider = "simple"
-
-
-[ingestion]
-vision_img_model = "ollama/llama3.2-vision"
-vision_pdf_model = "ollama/llama3.2-vision"
-chunks_for_document_summary = 16
-document_summary_model = "ollama/llama3.1"
-automatic_extraction = false
-
-  [ingestion.extra_parsers]
-    pdf = "zerox"
+  [completion.generation_config]
+  temperature = 0.1
+  top_p = 1
+  max_tokens_to_sample = 1_024
+  stream = false

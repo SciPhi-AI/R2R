@@ -92,7 +92,7 @@ class R2RConfig:
         for section, keys in R2RConfig.REQUIRED_KEYS.items():
             # Check the keys when provider is set
             # TODO - remove after deprecation
-            if section in ["kg", "file"] and section not in default_config:
+            if section in ["graph", "file"] and section not in default_config:
                 continue
             if "provider" in default_config[section] and (
                 default_config[section]["provider"] is not None
@@ -102,15 +102,6 @@ class R2RConfig:
                 self._validate_config_section(default_config, section, keys)
             setattr(self, section, default_config[section])
 
-        # TODO - deprecated, remove
-        try:
-            if self.kg.keys() != []:  # type: ignore
-                logger.warning(
-                    "The 'kg' section is deprecated. Please move your arguments to the 'database' section instead."
-                )
-                self.database.update(self.kg)  # type: ignore
-        except:
-            pass
         self.app = AppConfig.create(**self.app)  # type: ignore
         self.auth = AuthConfig.create(**self.auth, app=self.app)  # type: ignore
         self.completion = CompletionConfig.create(**self.completion, app=self.app)  # type: ignore

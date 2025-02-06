@@ -25,7 +25,7 @@ from core.base import (
     generate_id,
     select_search_filters,
 )
-from core.base.abstractions import KGCreationSettings, StoreType
+from core.base.abstractions import GraphCreationSettings, StoreType
 from core.base.api.models import (
     GenericBooleanResponse,
     WrappedBooleanResponse,
@@ -1552,7 +1552,7 @@ class DocumentsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document to extract entities and relationships from.",
             ),
-            settings: Optional[KGCreationSettings] = Body(
+            settings: Optional[GraphCreationSettings] = Body(
                 default=None,
                 description="Settings for the entities and relationships extraction process.",
             ),
@@ -1624,7 +1624,7 @@ class DocumentsRouter(BaseRouterV3):
                     }
 
                     return await self.providers.orchestration.run_workflow(  # type: ignore
-                        "extract-triples", {"request": workflow_input}, {}
+                        "graph-extraction", {"request": workflow_input}, {}
                     )
                 except (
                     Exception
@@ -1633,11 +1633,17 @@ class DocumentsRouter(BaseRouterV3):
                         f"Error running orchestrated extraction: {e} \n\nAttempting to run without orchestration."
                     )
 
-            from core.main.orchestration import simple_kg_factory
+            from core.main.orchestration import (
+                simple_graph_search_results_factory,
+            )
 
             logger.info("Running extract-triples without orchestration.")
-            simple_kg = simple_kg_factory(self.services.graph)
-            await simple_kg["extract-triples"](workflow_input)
+            simple_graph_search_results = simple_graph_search_results_factory(
+                self.services.graph
+            )
+            await simple_graph_search_results["graph-extraction"](
+                workflow_input
+            )
             return {  # type: ignore
                 "message": "Graph created successfully.",
                 "task_id": None,
@@ -1695,7 +1701,7 @@ class DocumentsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document to extract entities and relationships from.",
             ),
-            settings: Optional[KGCreationSettings] = Body(
+            settings: Optional[GraphCreationSettings] = Body(
                 default=None,
                 description="Settings for the entities and relationships extraction process.",
             ),
@@ -1755,7 +1761,7 @@ class DocumentsRouter(BaseRouterV3):
                     }
 
                     return await self.providers.orchestration.run_workflow(  # type: ignore
-                        "deduplicate-document-entities",
+                        "graph-deduplication",
                         {"request": workflow_input},
                         {},
                     )
@@ -1766,13 +1772,17 @@ class DocumentsRouter(BaseRouterV3):
                         f"Error running orchestrated deduplication: {e} \n\nAttempting to run without orchestration."
                     )
             else:
-                from core.main.orchestration import simple_kg_factory
+                from core.main.orchestration import (
+                    simple_graph_search_results_factory,
+                )
 
                 logger.info(
                     "Running deduplicate-document-entities without orchestration."
                 )
-                simple_kg = simple_kg_factory(self.services.graph)
-                await simple_kg["deduplicate-document-entities"](
+                simple_graph_search_results = (
+                    simple_graph_search_results_factory(self.services.graph)
+                )
+                await simple_graph_search_results["graph-deduplication"](
                     workflow_input
                 )
                 return {  # type: ignore
