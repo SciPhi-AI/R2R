@@ -21,10 +21,6 @@ from core.base.api.models import (
     WrappedChunksResponse,
     WrappedVectorSearchResponse,
 )
-from core.providers import (
-    HatchetOrchestrationProvider,
-    SimpleOrchestrationProvider,
-)
 
 from ...abstractions import R2RProviders, R2RServices
 from .base_router import BaseRouterV3
@@ -154,8 +150,6 @@ class ChunksRouter(BaseRouterV3):
             if not chunk:
                 raise R2RException("Chunk not found", 404)
 
-            # # Check access rights
-            # document = await self.services.management.get_document(chunk.document_id)
             # TODO - Add collection ID check
             if not auth_user.is_superuser and str(auth_user.id) != str(
                 chunk["owner_id"]

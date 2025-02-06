@@ -1,5 +1,5 @@
-# tests/integration/test_chunks.py
 import asyncio
+import contextlib
 import uuid
 from typing import AsyncGenerator, Optional, Tuple
 from uuid import UUID
@@ -27,30 +27,25 @@ class AsyncR2RTestClient:
         await self.client.documents.delete(id=doc_id)
 
     async def list_chunks(self, doc_id: str) -> list[dict]:
-        response = await self.client.documents.list_chunks(id=doc_id)
-        return response.results
+        return await self.client.documents.list_chunks(id=doc_id).results
 
     async def retrieve_chunk(self, chunk_id: str) -> dict:
-        response = await self.client.chunks.retrieve(id=chunk_id)
-        return response["results"]
+        return await self.client.chunks.retrieve(id=chunk_id).results
 
     async def update_chunk(
         self, chunk_id: str, text: str, metadata: Optional[dict] = None
     ) -> dict:
-        response = await self.client.chunks.update(
+        return await self.client.chunks.update(
             {"id": chunk_id, "text": text, "metadata": metadata or {}}
-        )
-        return response["results"]
+        )["results"]
 
     async def delete_chunk(self, chunk_id: str) -> dict:
-        response = await self.client.chunks.delete(id=chunk_id)
-        return response["results"]
+        return await self.client.chunks.delete(id=chunk_id).results
 
     async def search_chunks(self, query: str, limit: int = 5) -> list[dict]:
-        response = await self.client.chunks.search(
+        return await self.client.chunks.search(
             query=query, search_settings={"limit": limit}
-        )
-        return response["results"]
+        ).results
 
     async def register_user(self, email: str, password: str) -> None:
         await self.client.users.create(email, password)
@@ -65,8 +60,7 @@ class AsyncR2RTestClient:
 @pytest.fixture
 async def test_client() -> AsyncGenerator[AsyncR2RTestClient, None]:
     """Create a test client."""
-    client = AsyncR2RTestClient()
-    yield client
+    yield AsyncR2RTestClient()
 
 
 @pytest.fixture
@@ -82,10 +76,8 @@ async def test_document(
     await asyncio.sleep(1)  # Wait for ingestion
     chunks = await test_client.list_chunks(doc_id)
     yield doc_id, chunks
-    try:
+    with contextlib.suppress(R2RException):
         await test_client.delete_document(doc_id)
-    except R2RException:
-        pass
 
 
 class TestChunks:
@@ -205,19 +197,17 @@ class TestChunks:
             await asyncio.sleep(1)  # Wait for ingestion
 
             # Test listing chunks (filters automatically applied on server)
-            response = await test_client.client.chunks.list(offset=0, limit=1)
+            results = await test_client.client.chunks.list(offset=0, limit=1)
 
-            assert "results" in response, "Expected 'results' in response"
+            assert results is not None, "Expected 'results' in response"
             # assert "page_info" in response, "Expected 'page_info' in response"
-            assert (
-                len(response["results"]) <= 1
-            ), "Expected at most 1 result due to limit"
+            assert len(results) <= 1, "Expected at most 1 result due to limit"
 
-            if len(response["results"]) > 0:
+            if len(results) > 0:
                 # Verify we only get chunks owned by our temp user
-                chunk = response["results"][0]
+                chunk = results[0]
                 chunks = await test_client.list_chunks(doc_id)
-                assert chunk["owner_id"] in [
+                assert chunk.owner_id in [
                     str(c.owner_id) for c in chunks
                 ], "Got chunk from wrong owner"
 
@@ -250,7 +240,7 @@ class TestChunks:
             response1 = await test_client.client.chunks.list(offset=0, limit=2)
 
             assert (
-                len(response1["results"]) == 2
+                len(response1.results) == 2
             ), "Expected 2 results on first page"
             # assert response1["page_info"]["has_next"], "Expected more pages"
 
@@ -258,12 +248,12 @@ class TestChunks:
             response2 = await test_client.client.chunks.list(offset=2, limit=2)
 
             assert (
-                len(response2["results"]) == 2
+                len(response2.results) == 2
             ), "Expected 2 results on second page"
 
             # Verify no duplicate results
-            ids_page1 = {chunk["id"] for chunk in response1["results"]}
-            ids_page2 = {chunk["id"] for chunk in response2["results"]}
+            ids_page1 = {str(chunk.id) for chunk in response1.results}
+            ids_page2 = {str(chunk.id) for chunk in response2.results}
             assert not ids_page1.intersection(
                 ids_page2
             ), "Found duplicate chunks across pages"
@@ -301,12 +291,10 @@ class TestChunks:
             # List all chunks
             response = await test_client.client.chunks.list(offset=0, limit=10)
 
-            assert len(response["results"]) == 4, "Expected 4 total chunks"
+            assert len(response.results) == 4, "Expected 4 total chunks"
 
             # Verify all chunks belong to our documents
-            chunk_doc_ids = {
-                chunk["document_id"] for chunk in response["results"]
-            }
+            chunk_doc_ids = {chunk.document_id for chunk in response.results}
             assert all(
                 str(doc_id) in chunk_doc_ids for doc_id in doc_ids
             ), "Got chunks from wrong documents"

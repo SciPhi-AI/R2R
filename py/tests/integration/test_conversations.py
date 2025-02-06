@@ -1,3 +1,4 @@
+import contextlib
 import uuid
 
 import pytest
@@ -11,11 +12,8 @@ def test_conversation(client: R2RClient):
     conv_resp = client.conversations.create()
     conversation_id = conv_resp.results.id
     yield conversation_id
-    # Cleanup: Try deleting the conversation if it still exists
-    try:
+    with contextlib.suppress(R2RException):
         client.conversations.delete(id=conversation_id)
-    except R2RException:
-        pass
 
 
 def test_create_conversation(client: R2RClient):
@@ -146,7 +144,7 @@ def test_add_message_with_empty_content(client: R2RClient, test_conversation):
     with pytest.raises(R2RException) as exc_info:
         client.conversations.add_message(
             id=test_conversation,
-            content="",  # empty content
+            content="",
             role="user",
         )
     # Check for 400 or a relevant error code depending on server validation

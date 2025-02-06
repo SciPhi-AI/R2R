@@ -1,5 +1,5 @@
-# tests/integration/test_chunks.py
 import asyncio
+import contextlib
 import uuid
 from typing import AsyncGenerator, Optional, Tuple
 from uuid import UUID
@@ -17,56 +17,50 @@ class AsyncR2RTestClient:
 
     async def create_document(
         self, chunks: list[str], run_with_orchestration: bool = False
-    ) -> Tuple[str, list[dict]]:
+    ):
         response = await self.client.documents.create(
             chunks=chunks, run_with_orchestration=run_with_orchestration
         )
         return response.results.document_id, []
 
-    async def delete_document(self, doc_id: str) -> None:
+    async def delete_document(self, doc_id: str):
         await self.client.documents.delete(id=doc_id)
 
-    async def list_chunks(self, doc_id: str) -> list[dict]:
-        response = await self.client.documents.list_chunks(id=doc_id)
-        return response.results
+    async def list_chunks(self, doc_id: str):
+        return await self.client.documents.list_chunks(id=doc_id).results
 
-    async def retrieve_chunk(self, chunk_id: str) -> dict:
-        response = await self.client.chunks.retrieve(id=chunk_id)
-        return response["results"]
+    async def retrieve_chunk(self, chunk_id: str):
+        return await self.client.chunks.retrieve(id=chunk_id).results
 
     async def update_chunk(
         self, chunk_id: str, text: str, metadata: Optional[dict] = None
     ) -> dict:
-        response = await self.client.chunks.update(
+        return await self.client.chunks.update(
             {"id": chunk_id, "text": text, "metadata": metadata or {}}
-        )
-        return response["results"]
+        ).results
 
-    async def delete_chunk(self, chunk_id: str) -> dict:
-        response = await self.client.chunks.delete(id=chunk_id)
-        return response["results"]
+    async def delete_chunk(self, chunk_id: str):
+        return await self.client.chunks.delete(id=chunk_id).results
 
-    async def search_chunks(self, query: str, limit: int = 5) -> list[dict]:
-        response = await self.client.chunks.search(
+    async def search_chunks(self, query: str, limit: int = 5):
+        return await self.client.chunks.search(
             query=query, search_settings={"limit": limit}
-        )
-        return response["results"]
+        ).results
 
-    async def register_user(self, email: str, password: str) -> None:
+    async def register_user(self, email: str, password: str):
         await self.client.users.create(email, password)
 
-    async def login_user(self, email: str, password: str) -> None:
+    async def login_user(self, email: str, password: str):
         await self.client.users.login(email, password)
 
-    async def logout_user(self) -> None:
+    async def logout_user(self):
         await self.client.users.logout()
 
 
 @pytest.fixture
 async def test_client() -> AsyncGenerator[AsyncR2RTestClient, None]:
     """Create a test client."""
-    client = AsyncR2RTestClient()
-    yield client
+    yield AsyncR2RTestClient()
 
 
 @pytest.fixture
@@ -82,10 +76,8 @@ async def test_document(
     await asyncio.sleep(1)  # Wait for ingestion
     chunks = await test_client.list_chunks(doc_id)
     yield doc_id, chunks
-    try:
+    with contextlib.suppress(R2RException):
         await test_client.delete_document(doc_id)
-    except R2RException:
-        pass
 
 
 class TestChunks:
@@ -140,7 +132,7 @@ class TestChunks:
 
         # Delete and verify
         result = await test_client.delete_chunk(chunk_id)
-        assert result["success"], "Chunk deletion failed"
+        assert result.succ, "Chunk deletion failed"
 
         # Verify deletion
         with pytest.raises(R2RException) as exc_info:
@@ -306,10 +298,8 @@ async def cleanup_documents(test_client: AsyncR2RTestClient):
 
     # Cleanup all documents
     for doc_id in doc_ids:
-        try:
+        with contextlib.suppress(R2RException):
             await test_client.delete_document(doc_id)
-        except R2RException:
-            pass
 
 
 if __name__ == "__main__":

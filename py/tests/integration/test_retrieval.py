@@ -504,6 +504,4 @@ def test_filter_by_document_type(client: R2RClient):
         query="a", search_settings={"filters": filters}
     )["results"]
     results = resp["chunk_search_results"]
-    # Depending on your environment, if no txt documents exist this might fail.
-    # Adjust accordingly to ensure there's a txt doc available or mock if needed.
     assert len(results) > 0, "No results found for filter by document type"
