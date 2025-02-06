@@ -27,25 +27,30 @@ class AsyncR2RTestClient:
         await self.client.documents.delete(id=doc_id)
 
     async def list_chunks(self, doc_id: str):
-        return await self.client.documents.list_chunks(id=doc_id).results
+        response = await self.client.documents.list_chunks(id=doc_id)
+        return response.results
 
     async def retrieve_chunk(self, chunk_id: str):
-        return await self.client.chunks.retrieve(id=chunk_id).results
+        response = await self.client.chunks.retrieve(id=chunk_id)
+        return response.results
 
     async def update_chunk(
         self, chunk_id: str, text: str, metadata: Optional[dict] = None
     ) -> dict:
-        return await self.client.chunks.update(
+        response = await self.client.chunks.update(
             {"id": chunk_id, "text": text, "metadata": metadata or {}}
-        ).results
+        )
+        return response.results
 
     async def delete_chunk(self, chunk_id: str):
-        return await self.client.chunks.delete(id=chunk_id).results
+        response = await self.client.chunks.delete(id=chunk_id)
+        return response.results
 
     async def search_chunks(self, query: str, limit: int = 5):
-        return await self.client.chunks.search(
+        response = await self.client.chunks.search(
             query=query, search_settings={"limit": limit}
-        ).results
+        )
+        return response.results
 
     async def register_user(self, email: str, password: str):
         await self.client.users.create(email, password)
@@ -104,7 +109,7 @@ class TestChunks:
         chunk_id = chunks[0].id
 
         retrieved = await test_client.retrieve_chunk(chunk_id)
-        assert UUID(retrieved["id"]) == chunk_id, "Retrieved wrong chunk ID"
+        assert UUID(retrieved.id) == chunk_id, "Retrieved wrong chunk ID"
         assert (
             retrieved["text"].split("_")[0] == "Test chunk 1"
         ), "Chunk text mismatch"

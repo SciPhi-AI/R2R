@@ -202,9 +202,9 @@ class TestChunks:
             await asyncio.sleep(1)  # Wait for ingestion
 
             # Test listing chunks (filters automatically applied on server)
-            results = await test_client.client.chunks.list(
-                offset=0, limit=1
-            ).results
+            response = await test_client.client.chunks.list(offset=0, limit=1)
+
+            results = response.results
 
             assert results is not None, "Expected 'results' in response"
             # assert "page_info" in response, "Expected 'page_info' in response"
