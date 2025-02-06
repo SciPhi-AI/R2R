@@ -217,7 +217,7 @@ class RetrievalSDK:
                 version="v3",
             )
 
-    async def rawr(
+    async def reasoning_agent(
         self,
         message: Optional[dict | Message] = None,
         rag_generation_config: Optional[dict | GenerationConfig] = None,
@@ -259,14 +259,14 @@ class RetrievalSDK:
         ):
             return self.client._make_streaming_request(
                 "POST",
-                "retrieval/rawr",
+                "retrieval/reasoning_agent",
                 json=data,
                 version="v3",
             )
         else:
             return await self.client._make_request(
                 "POST",
-                "retrieval/rawr",
+                "retrieval/reasoning_agent",
                 json=data,
                 version="v3",
             )

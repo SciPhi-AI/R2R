@@ -18,6 +18,7 @@ from core.base.api.models import (
 )
 
 from ...abstractions import R2RProviders, R2RServices
+from ...config import R2RConfig
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -25,12 +26,10 @@ logger = logging.getLogger()
 
 class ConversationsRouter(BaseRouterV3):
     def __init__(
-        self,
-        providers: R2RProviders,
-        services: R2RServices,
+        self, providers: R2RProviders, services: R2RServices, config: R2RConfig
     ):
         logging.info("Initializing ConversationsRouter")
-        super().__init__(providers, services)
+        super().__init__(providers, services, config)
 
     def _setup_routes(self):
         @self.router.post(

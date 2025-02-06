@@ -9,6 +9,7 @@ from fastapi.requests import Request
 from fastapi.templating import Jinja2Templates
 
 from ...abstractions import R2RProviders, R2RServices
+from ...config import R2RConfig
 from .base_router import BaseRouterV3
 
 
@@ -17,9 +18,10 @@ class LogsRouter(BaseRouterV3):
         self,
         providers: R2RProviders,
         services: R2RServices,
+        config: R2RConfig,
     ):
         logging.info("Initializing LogsRouter")
-        super().__init__(providers, services)
+        super().__init__(providers, services, config)
         CURRENT_DIR = Path(__file__).resolve().parent
         TEMPLATES_DIR = CURRENT_DIR.parent / "templates"
         self.templates = Jinja2Templates(directory=str(TEMPLATES_DIR))

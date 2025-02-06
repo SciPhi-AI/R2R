@@ -53,46 +53,57 @@ class R2RBuilder:
             "chunks_router": ChunksRouter(
                 providers=providers,
                 services=services,
+                config=self.config,
             ).get_router(),
             "collections_router": CollectionsRouter(
                 providers=providers,
                 services=services,
+                config=self.config,
             ).get_router(),
             "conversations_router": ConversationsRouter(
                 providers=providers,
                 services=services,
+                config=self.config,
             ).get_router(),
             "documents_router": DocumentsRouter(
                 providers=providers,
                 services=services,
+                config=self.config,
             ).get_router(),
             "graph_router": GraphRouter(
                 providers=providers,
                 services=services,
+                config=self.config,
             ).get_router(),
             "indices_router": IndicesRouter(
                 providers=providers,
                 services=services,
+                config=self.config,
             ).get_router(),
             "logs_router": LogsRouter(
                 providers=providers,
                 services=services,
+                config=self.config,
             ).get_router(),
             "prompts_router": PromptsRouter(
                 providers=providers,
                 services=services,
+                config=self.config,
             ).get_router(),
             "retrieval_router_v3": RetrievalRouterV3(
                 providers=providers,
                 services=services,
+                config=self.config,
             ).get_router(),
             "system_router": SystemRouter(
                 providers=providers,
                 services=services,
+                config=self.config,
             ).get_router(),
             "users_router": UsersRouter(
                 providers=providers,
                 services=services,
+                config=self.config,
             ).get_router(),
         }
 

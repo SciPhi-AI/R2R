@@ -23,6 +23,7 @@ from core.utils import (
 )
 
 from ...abstractions import R2RProviders, R2RServices
+from ...config import R2RConfig
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -89,9 +90,11 @@ async def authorize_collection_action(
 
 
 class CollectionsRouter(BaseRouterV3):
-    def __init__(self, providers: R2RProviders, services: R2RServices):
+    def __init__(
+        self, providers: R2RProviders, services: R2RServices, config: R2RConfig
+    ):
         logging.info("Initializing CollectionsRouter")
-        super().__init__(providers, services)
+        super().__init__(providers, services, config)
 
     def _setup_routes(self):
         @self.router.post(

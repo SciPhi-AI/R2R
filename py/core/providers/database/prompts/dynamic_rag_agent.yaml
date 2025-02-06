@@ -1,4 +1,4 @@
-aware_reasoning_rag_agent:
+dynamic_rag_agent:
   template: >
     ### You are a helpful agent that can search for information, the date is {date}.
 

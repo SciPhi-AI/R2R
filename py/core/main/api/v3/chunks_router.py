@@ -27,6 +27,7 @@ from core.providers import (
 )
 
 from ...abstractions import R2RProviders, R2RServices
+from ...config import R2RConfig
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -36,12 +37,10 @@ MAX_CHUNKS_PER_REQUEST = 1024 * 100
 
 class ChunksRouter(BaseRouterV3):
     def __init__(
-        self,
-        providers: R2RProviders,
-        services: R2RServices,
+        self, providers: R2RProviders, services: R2RServices, config: R2RConfig
     ):
         logging.info("Initializing ChunksRouter")
-        super().__init__(providers, services)
+        super().__init__(providers, services, config)
 
     def _setup_routes(self):
         @self.router.post(

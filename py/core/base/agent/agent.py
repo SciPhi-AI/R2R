@@ -42,7 +42,7 @@ class Conversation:
 # TODO - Move agents to provider pattern
 class AgentConfig(BaseModel):
     agent_static_prompt: str = "static_rag_agent"
-    agent_dynamic_prompt: str = "aware_reasoning_rag_agent_prompted"
+    agent_dynamic_prompt: str = "dynamic_reasoning_rag_agent_prompted"
     tools: list[str] = ["search"]
     tool_names: Optional[list[str]] = None
     stream: bool = False

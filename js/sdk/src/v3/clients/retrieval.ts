@@ -299,7 +299,7 @@ export class RetrievalClient {
  * @param options.tools List of tool configurations
  * @returns
  */
-async rawr(options: {
+async reasoning_agent(options: {
   message?: Message;
   ragGenerationConfig?: GenerationConfig | Record<string, any>;
   conversationId?: string;
@@ -327,7 +327,7 @@ async rawr(options: {
   if (options.ragGenerationConfig && options.ragGenerationConfig.stream) {
       return this.streamReasoningAgent(data);
   } else {
-      return await this.client.makeRequest("POST", "retrieval/rawr", {
+      return await this.client.makeRequest("POST", "retrieval/reasoning_agent", {
           data: data,
       });
   }
@@ -339,7 +339,7 @@ private async streamReasoningAgent(
 ): Promise<ReadableStream<Uint8Array>> {
   return this.client.makeRequest<ReadableStream<Uint8Array>>(
       "POST",
-      "retrieval/rawr",
+      "retrieval/reasoning_agent",
       {
           data: agentData,
           headers: {

@@ -27,6 +27,7 @@ from core.utils import (
 )
 
 from ...abstractions import R2RProviders, R2RServices
+from ...config import R2RConfig
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -37,9 +38,10 @@ class GraphRouter(BaseRouterV3):
         self,
         providers: R2RProviders,
         services: R2RServices,
+        config: R2RConfig,
     ):
         logging.info("Initializing GraphRouter")
-        super().__init__(providers, services)
+        super().__init__(providers, services, config)
         self._register_workflows()
 
     def _register_workflows(self):

@@ -407,15 +407,19 @@ async def agent(
 @retrieval.command()
 @click.option(
     "--message",
-    prompt="Enter your message for RAWR",
-    help='The message to send for the RAWR endpoint. Provide a JSON string (e.g. \'{"role": "user", "content": "Hello"}\') '
+    prompt="Enter your message for reasoning_agent",
+    help='The message to send for the reasoning_agent endpoint. Provide a JSON string (e.g. \'{"role": "user", "content": "Hello"}\') '
     "or plain text (which will be wrapped with a default role 'user').",
 )
 @click.option(
-    "--stream", is_flag=True, help="Stream the RAWR response in real-time."
+    "--stream",
+    is_flag=True,
+    help="Stream the reasoning_agent response in real-time.",
 )
 @click.option(
-    "--rag-model", default=None, help="Specify the model to use for RAWR."
+    "--rag-model",
+    default=None,
+    help="Specify the model to use for reasoning_agent.",
 )
 @click.option(
     "--conversation-id",
@@ -435,7 +439,7 @@ async def agent(
     help="Maximum context length for any tool.",
 )
 @pass_context
-async def rawr(
+async def reasoning_agent(
     ctx: click.Context,
     message,
     stream,
@@ -445,8 +449,8 @@ async def rawr(
     max_tool_context_length,
 ):
     """
-    Perform a RAWR turn with the RAG agent.
-    This command sends a message (without additional search settings) and prints the RAWR response.
+    Perform a reasoning_agent turn with the RAG agent.
+    This command sends a message (without additional search settings) and prints the reasoning_agent response.
     """
     # Build the rag generation configuration
     rag_generation_config = {"stream": stream}
@@ -463,7 +467,7 @@ async def rawr(
 
     try:
         with timer():
-            response = await client.retrieval.rawr(
+            response = await client.retrieval.reasoning_agent(
                 message=message_data,
                 rag_generation_config=rag_generation_config,
                 conversation_id=conversation_id,

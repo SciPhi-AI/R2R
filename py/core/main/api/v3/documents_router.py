@@ -41,6 +41,7 @@ from core.base.api.models import (
 from core.utils import update_settings_from_dict
 
 from ...abstractions import R2RProviders, R2RServices
+from ...config import R2RConfig
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -80,9 +81,10 @@ class DocumentsRouter(BaseRouterV3):
         self,
         providers: R2RProviders,
         services: R2RServices,
+        config: R2RConfig,
     ):
         logging.info("Initializing DocumentsRouter")
-        super().__init__(providers, services)
+        super().__init__(providers, services, config)
         self._register_workflows()
 
     def _prepare_search_settings(
