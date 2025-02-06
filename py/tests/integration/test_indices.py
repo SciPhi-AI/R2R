@@ -52,9 +52,7 @@ def test_create_and_get_index(client: R2RClient):
 def test_list_indices(client: R2RClient):
     try:
         resp = client.indices.list(limit=5)
-        print(f"Response: {resp}")
         results = resp.results
-        print(f"Results: {results}")
     except Exception as e:
         print(f"Error: {e}")
     assert results.indices is not None, "Indices field is None"

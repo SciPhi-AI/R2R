@@ -10,6 +10,7 @@ from core.base.api.models import (
     WrappedChunksResponse,
     WrappedCollectionsResponse,
     WrappedDocumentResponse,
+    WrappedDocumentSearchResponse,
     WrappedDocumentsResponse,
     WrappedEntitiesResponse,
     WrappedGenericMessageResponse,
@@ -610,8 +611,7 @@ class DocumentsSDK:
         query: str,
         search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
-    ):
-        # FIXME: Get return type
+    ) -> WrappedDocumentSearchResponse:
         """
         Conduct a vector and/or KG search.
 
@@ -619,10 +619,9 @@ class DocumentsSDK:
             query (str): The query to search for.
             search_settings (Optional[dict, SearchSettings]]): Vector search settings.
 
+        Returns:
+            WrappedDocumentSearchResponse
         """
-        # if search_mode and not isinstance(search_mode, str):
-        #     search_mode = search_mode.value
-
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
         data: dict[str, Any] = {
@@ -632,12 +631,14 @@ class DocumentsSDK:
         if search_mode:
             data["search_mode"] = search_mode
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             "documents/search",
             json=data,
             version="v3",
         )
+
+        return WrappedDocumentSearchResponse(**response_dict)
 
     def deduplicate(
         self,

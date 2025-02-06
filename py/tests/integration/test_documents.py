@@ -194,10 +194,10 @@ def test_search_documents(client: R2RClient, test_document):
     search_results = client.documents.search(
         query=query, search_mode="custom", search_settings={"limit": 5}
     )
-    assert "results" in search_results, "Search results key not found"
+    assert search_results.results is not None, "Search results key not found"
     # We cannot guarantee a match, but at least we got a well-formed response
     assert isinstance(
-        search_results["results"], list
+        search_results.results, list
     ), "Search results not a list"
 
 
@@ -230,8 +230,10 @@ def test_search_documents_extended(client: R2RClient, cleanup_documents):
         search_mode="basic",
         search_settings={"limit": 1},
     )
-    assert "results" in search_results, "No results key in search response"
-    assert len(search_results["results"]) > 0, "No documents found"
+    assert (
+        search_results.results is not None
+    ), "No results key in search response"
+    assert len(search_results.results) > 0, "No documents found"
 
 
 def test_retrieve_document_not_found(client):
@@ -376,8 +378,8 @@ def test_search_documents_no_match(client: R2RClient, cleanup_documents):
             "limit": 10,
         },
     )
-    assert "results" in search_results, "Search missing results key"
-    assert len(search_results["results"]) == 0, "Expected zero results"
+    assert search_results.results is not None, "Search missing results key"
+    assert len(search_results.results) == 0, "Expected zero results"
 
 
 from datetime import datetime
