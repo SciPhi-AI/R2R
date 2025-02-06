@@ -36,7 +36,7 @@ class AsyncR2RTestClient:
 
     async def update_chunk(
         self, chunk_id: str, text: str, metadata: Optional[dict] = None
-    ) -> dict:
+    ):
         response = await self.client.chunks.update(
             {"id": chunk_id, "text": text, "metadata": metadata or {}}
         )
@@ -125,8 +125,8 @@ class TestChunks:
         updated = await test_client.update_chunk(
             str(chunk_id), "Updated text", {"version": 2}
         )
-        assert updated["text"] == "Updated text", "Chunk text not updated"
-        assert updated["metadata"]["version"] == 2, "Metadata not updated"
+        assert updated.text == "Updated text", "Chunk text not updated"
+        assert updated.metadata["version"] == 2, "Metadata not updated"
 
     @pytest.mark.asyncio
     async def test_delete_chunk(

@@ -24,7 +24,7 @@ class ConversationsSDK:
         Create a new conversation.
 
         Returns:
-            dict: Created conversation information
+            WrappedConversationResponse
         """
         data: dict[str, Any] = {}
         if name:
@@ -54,7 +54,7 @@ class ConversationsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of conversations and pagination information
+            WrappedConversationsResponse
         """
         params: dict = {
             "offset": offset,
@@ -83,7 +83,7 @@ class ConversationsSDK:
             id (str | UUID): The ID of the conversation to retrieve
 
         Returns:
-            dict: Detailed conversation information
+            WrappedConversationMessagesResponse
         """
         response_dict = self.client._make_request(
             "GET",
@@ -106,7 +106,7 @@ class ConversationsSDK:
             name (str): The new name of the conversation
 
         Returns:
-            dict: The updated conversation
+            WrappedConversationResponse
         """
         data: dict[str, Any] = {
             "name": name,
@@ -132,7 +132,7 @@ class ConversationsSDK:
             id (str | UUID): The ID of the conversation to delete
 
         Returns:
-            bool: True if deletion was successful
+            WrappedBooleanResponse
         """
         response_dict = self.client._make_request(
             "DELETE",
@@ -161,7 +161,7 @@ class ConversationsSDK:
             metadata (Optional[dict]): Additional metadata to attach to the message
 
         Returns:
-            dict: Result of the operation, including the new message ID
+            WrappedMessageResponse
         """
         data: dict[str, Any] = {
             "content": content,
@@ -187,8 +187,7 @@ class ConversationsSDK:
         message_id: str,
         content: Optional[str] = None,
         metadata: Optional[dict] = None,
-    ) -> dict:
-        # FIXME: Needs a proper response model
+    ) -> WrappedMessageResponse:
         """
         Update an existing message in a conversation.
 
@@ -199,17 +198,19 @@ class ConversationsSDK:
             metadata (dict): Additional metadata to attach to the message
 
         Returns:
-            dict: Result of the operation, including the new message ID and branch ID
+            WrappedMessageResponse
         """
         data: dict[str, Any] = {"content": content}
         if metadata:
             data["metadata"] = metadata
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"conversations/{str(id)}/messages/{message_id}",
             json=data,
             version="v3",
         )
+
+        return WrappedMessageResponse(**response_dict)
 
     def export(
         self,

@@ -36,11 +36,11 @@ class AsyncR2RTestClient:
 
     async def update_chunk(
         self, chunk_id: str, text: str, metadata: Optional[dict] = None
-    ) -> dict:
+    ):
         response = await self.client.chunks.update(
             {"id": chunk_id, "text": text, "metadata": metadata or {}}
         )
-        return response.results    
+        return response.results
 
     async def delete_chunk(self, chunk_id: str):
         response = await self.client.chunks.delete(id=chunk_id)
@@ -112,9 +112,9 @@ class TestChunks:
         chunk_id = chunks[0].id
 
         retrieved = await test_client.retrieve_chunk(chunk_id)
-        assert UUID(retrieved["id"]) == chunk_id, "Retrieved wrong chunk ID"
+        assert UUID(retrieved.id) == chunk_id, "Retrieved wrong chunk ID"
         assert (
-            retrieved["text"].split("_")[0] == "Test chunk 1"
+            retrieved.text.split("_")[0] == "Test chunk 1"
         ), "Chunk text mismatch"
 
     @pytest.mark.asyncio
@@ -128,8 +128,8 @@ class TestChunks:
         updated = await test_client.update_chunk(
             str(chunk_id), "Updated text", {"version": 2}
         )
-        assert updated["text"] == "Updated text", "Chunk text not updated"
-        assert updated["metadata"]["version"] == 2, "Metadata not updated"
+        assert updated.text == "Updated text", "Chunk text not updated"
+        assert updated.metadata["version"] == 2, "Metadata not updated"
 
     @pytest.mark.asyncio
     async def test_delete_chunk(
@@ -304,8 +304,9 @@ class TestChunks:
             # Verify all chunks belong to our documents
             chunk_doc_ids = {chunk.document_id for chunk in response.results}
 
-            print(f"Doc IDs: {doc_ids}")
-            print(f"Chunk doc IDs: {chunk_doc_ids}")
+            chunk_doc_ids = {
+                str(chunk.document_id) for chunk in response.results
+            }
             assert all(
                 str(doc_id) in chunk_doc_ids for doc_id in doc_ids
             ), "Got chunks from wrong documents"
