@@ -30,12 +30,14 @@ class IndicesSDK:
             "config": config,
             "run_with_orchestration": run_with_orchestration,
         }
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             "indices",
             json=data,
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)
 
     def list(
         self,
@@ -60,18 +62,21 @@ class IndicesSDK:
         }
         if filters:
             params["filters"] = json.dumps(filters)
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             "indices",
             params=params,
             version="v3",
         )
 
+        return WrappedListVectorIndicesResponse(**response_dict)
+
     def retrieve(
         self,
         index_name: str,
         table_name: str = "vectors",
     ) -> dict:
+        # FIXME: Need a proper response model
         """
         Get detailed information about a specific vector index.
 
@@ -103,8 +108,10 @@ class IndicesSDK:
         Returns:
             WrappedGetIndexResponse: The response containing the index details.
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"indices/{table_name}/{index_name}",
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)

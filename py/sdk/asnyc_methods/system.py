@@ -16,7 +16,11 @@ class SystemSDK:
         """
         Check the health of the R2R server.
         """
-        return await self.client._make_request("GET", "health", version="v3")
+        response_dict = await self.client._make_request(
+            "GET", "health", version="v3"
+        )
+
+        return WrappedGenericMessageResponse(**response_dict)
 
     async def logs(
         self,
@@ -44,9 +48,11 @@ class SystemSDK:
             }.items()
             if value is not None
         }
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "GET", "system/logs", params=params, version="v3"
         )
+
+        return WrappedLogsResponse(**response_dict)
 
     async def settings(self) -> WrappedSettingsResponse:
         """
@@ -55,9 +61,11 @@ class SystemSDK:
         Returns:
             dict: The server settings.
         """
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "GET", "system/settings", version="v3"
         )
+
+        return WrappedSettingsResponse(**response_dict)
 
     async def status(self) -> WrappedServerStatsResponse:
         """
@@ -66,6 +74,8 @@ class SystemSDK:
         Returns:
             dict: The server statistics.
         """
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "GET", "system/status", version="v3"
         )
+
+        return WrappedServerStatsResponse(**response_dict)

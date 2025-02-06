@@ -32,12 +32,14 @@ class PromptsSDK:
             "template": template,
             "input_types": input_types,
         }
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             "prompts",
             json=data,
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)
 
     def list(self) -> WrappedPromptsResponse:
         """
@@ -45,11 +47,13 @@ class PromptsSDK:
         Returns:
             dict: List of all available prompts
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             "prompts",
             version="v3",
         )
+
+        return WrappedPromptsResponse(**response_dict)
 
     def retrieve(
         self,
@@ -71,12 +75,14 @@ class PromptsSDK:
             params["inputs"] = json.dumps(inputs)
         if prompt_override:
             params["prompt_override"] = prompt_override
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"prompts/{name}",
             params=params,
             version="v3",
         )
+
+        return WrappedPromptResponse(**response_dict)
 
     def update(
         self,
@@ -98,12 +104,14 @@ class PromptsSDK:
             data["template"] = template
         if input_types:
             data["input_types"] = json.dumps(input_types)
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "PUT",
             f"prompts/{name}",
             json=data,
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)
 
     def delete(self, name: str) -> WrappedBooleanResponse:
         """
@@ -113,8 +121,10 @@ class PromptsSDK:
         Returns:
             bool: True if deletion was successful
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"prompts/{name}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
