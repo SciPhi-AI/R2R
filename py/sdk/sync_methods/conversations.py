@@ -227,6 +227,9 @@ class ConversationsSDK:
             columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
             filters (Optional[dict]): Optional filters to apply when selecting conversations
             include_header (bool): Whether to include column headers in the CSV (default: True)
+
+        Returns:
+            None
         """
         # Convert path to string if it's a Path object
         output_path = (
@@ -275,6 +278,9 @@ class ConversationsSDK:
             columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
             filters (Optional[dict]): Optional filters to apply when selecting messages
             include_header (bool): Whether to include column headers in the CSV (default: True)
+
+        Returns:
+            None
         """
         # Convert path to string if it's a Path object
         output_path = (

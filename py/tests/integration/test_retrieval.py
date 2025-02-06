@@ -253,7 +253,7 @@ def test_agent_conversation_id(client: R2RClient):
         message=msg2,
         rag_generation_config={"stream": False, "max_tokens": 50},
         search_settings={"use_semantic_search": True, "limit": 3},
-        conversation_id=conversation_id,
+        conversation_id=str(conversation_id),
     )
     assert (
         len(resp2.get("results", [])) > 0
@@ -465,7 +465,7 @@ def test_agent_long_conversation(client: R2RClient):
         message=msg1,
         rag_generation_config={"stream": False, "max_tokens": 100},
         search_settings={"use_semantic_search": True, "limit": 5},
-        conversation_id=conversation_id,
+        conversation_id=str(conversation_id),
     )
     assert "results" in resp1, "No results in first turn of conversation"
 
@@ -476,7 +476,7 @@ def test_agent_long_conversation(client: R2RClient):
         message=msg2,
         rag_generation_config={"stream": False, "max_tokens": 100},
         search_settings={"use_semantic_search": True, "limit": 5},
-        conversation_id=conversation_id,
+        conversation_id=str(conversation_id),
     )
     assert "results" in resp2, "No results in second turn of conversation"
 
@@ -485,7 +485,7 @@ def test_agent_long_conversation(client: R2RClient):
         message=msg3,
         rag_generation_config={"stream": False, "max_tokens": 100},
         search_settings={"use_semantic_search": True, "limit": 5},
-        conversation_id=conversation_id,
+        conversation_id=str(conversation_id),
     )
     assert "results" in resp3, "No results in third turn of conversation"
 

@@ -137,7 +137,7 @@ class TestChunks:
 
         # Delete and verify
         result = await test_client.delete_chunk(str(chunk_id))
-        assert result.succ, "Chunk deletion failed"
+        assert result.success, "Chunk deletion failed"
 
         # Verify deletion
         with pytest.raises(R2RException) as exc_info:
@@ -220,7 +220,7 @@ class TestChunks:
             response1 = await test_client.client.chunks.list(offset=0, limit=2)
 
             assert (
-                len(response1["results"]) == 2
+                len(response1.results) == 2
             ), "Expected 2 results on first page"
             # assert response1["page_info"]["has_next"], "Expected more pages"
 
@@ -228,12 +228,12 @@ class TestChunks:
             response2 = await test_client.client.chunks.list(offset=2, limit=2)
 
             assert (
-                len(response2["results"]) == 2
+                len(response2.results) == 2
             ), "Expected 2 results on second page"
 
             # Verify no duplicate results
-            ids_page1 = {chunk["id"] for chunk in response1["results"]}
-            ids_page2 = {chunk["id"] for chunk in response2["results"]}
+            ids_page1 = {str(chunk.id) for chunk in response1.results}
+            ids_page2 = {str(chunk.id) for chunk in response2.results}
             assert not ids_page1.intersection(
                 ids_page2
             ), "Found duplicate chunks across pages"
@@ -271,7 +271,7 @@ class TestChunks:
             # List all chunks
             response = await test_client.client.chunks.list(offset=0, limit=10)
 
-            assert len(response["results"]) == 4, "Expected 4 total chunks"
+            assert len(response.results) == 4, "Expected 4 total chunks"
 
             # Verify all chunks belong to our documents
             chunk_doc_ids = {

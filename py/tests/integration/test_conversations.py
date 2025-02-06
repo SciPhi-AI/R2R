@@ -113,11 +113,13 @@ def test_update_message(client: R2RClient, test_conversation):
         message_id=original_msg_id,
         content="Updated content",
         metadata={"new_key": "new_value"},
-    )["results"]
+    ).results
 
-    assert update_resp["message"], "No message returned after update"
-    assert update_resp["metadata"], "No metadata returned after update"
-    assert update_resp["id"], "No metadata returned after update"
+    assert update_resp.message is not None, "No message returned after update"
+    assert (
+        update_resp.metadata is not None
+    ), "No metadata returned after update"
+    assert update_resp.id is not None, "No metadata returned after update"
 
     # Retrieve the conversation with the new branch
     updated_conv = client.conversations.retrieve(id=test_conversation).results
@@ -199,7 +201,7 @@ def test_update_message_with_additional_metadata(
         message_id=original_msg_id,
         content="Updated content",
         metadata={"new_key": "new_value"},
-    )["results"]
+    ).results
 
     # Retrieve the conversation from the new branch
     updated_conv = client.conversations.retrieve(id=test_conversation).results
@@ -223,5 +225,5 @@ def test_update_message_with_additional_metadata(
         msg_metadata.get("edited") is True
     ), "'edited' flag not set in metadata"
     assert (
-        updated_message["message"]["content"] == "Updated content"
+        updated_message.message.content == "Updated content"
     ), "Message content not updated"

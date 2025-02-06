@@ -50,7 +50,10 @@ def test_create_and_get_index(client: R2RClient):
 
 
 def test_list_indices(client: R2RClient):
-    resp = client.indices.list(limit=5).results
+    try:
+        resp = client.indices.list(limit=5).results
+    except Exception as e:
+        print(f"Error: {e}")
     assert resp.indices is not None, "Indices field is None"
     # Just ensure we get a list without error. Detailed checks depend on data availability.
     assert isinstance(resp.indices, list), "Indices field is not a list"

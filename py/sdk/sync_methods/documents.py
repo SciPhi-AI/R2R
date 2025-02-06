@@ -51,6 +51,9 @@ class DocumentsSDK:
             metadata (Optional[dict]): Optional metadata to assign to the document
             ingestion_config (Optional[dict]): Optional ingestion configuration to use
             run_with_orchestration (Optional[bool]): Whether to run with orchestration
+
+        Returns:
+            WrappedIngestionResponse
         """
         if not file_path and not raw_text and not chunks:
             raise ValueError(
@@ -140,7 +143,7 @@ class DocumentsSDK:
             id (str | UUID): ID of document to retrieve
 
         Returns:
-            dict: Document information
+            WrappedDocumentResponse
         """
         response_dict = self.client._make_request(
             "GET",
@@ -218,6 +221,9 @@ class DocumentsSDK:
             columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
             filters (Optional[dict]): Optional filters to apply when selecting documents
             include_header (bool): Whether to include column headers in the CSV (default: True)
+
+        Returns:
+            None
         """
         # Convert path to string if it's a Path object
         output_path = (
@@ -266,6 +272,9 @@ class DocumentsSDK:
             columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
             filters (Optional[dict]): Optional filters to apply when selecting documents
             include_header (bool): Whether to include column headers in the CSV (default: True)
+
+        Returns:
+            None
         """
         # Convert path to string if it's a Path object
         output_path = (
@@ -315,6 +324,9 @@ class DocumentsSDK:
             columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
             filters (Optional[dict]): Optional filters to apply when selecting documents
             include_header (bool): Whether to include column headers in the CSV (default: True)
+
+        Returns:
+            None
         """
         # Convert path to string if it's a Path object
         output_path = (
@@ -386,7 +398,7 @@ class DocumentsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            WrappedChunksResponse: List of document chunks and pagination information
+            WrappedChunksResponse
         """
         params = {
             "offset": offset,
@@ -418,7 +430,7 @@ class DocumentsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            WrappedCollectionsResponse: List of document collections and pagination information
+            WrappedCollectionsResponse
         """
         params = {
             "offset": offset,
@@ -443,14 +455,15 @@ class DocumentsSDK:
 
         Args:
             filters (dict): Filters to apply when selecting documents to delete
+
+        Returns:
+            WrappedBooleanResponse
         """
         filters_json = json.dumps(filters)
         response_dict = self.client._make_request(
             "DELETE",
             "documents/by-filter",
             data=filters_json,
-            # params={"filters": filters_json},
-            # data=filters,
             version="v3",
         )
 
@@ -471,7 +484,7 @@ class DocumentsSDK:
             run_with_orchestration (Optional[bool]): Whether to run with orchestration
 
         Returns:
-            dict: Extraction results or cost estimate
+            WrappedGenericMessageResponse
         """
         data: dict[str, Any] = {}
         if settings:
@@ -504,7 +517,7 @@ class DocumentsSDK:
             include_embeddings (Optional[bool]): Whether to include embeddings
 
         Returns:
-            dict: List of entities and pagination info
+            WrappedEntitiesResponse
         """
         params = {
             "offset": offset,
@@ -539,7 +552,7 @@ class DocumentsSDK:
             relationship_types (Optional[list[str]]): Filter by relationship types
 
         Returns:
-            dict: List of relationships and pagination info
+            WrappedRelationshipsResponse
         """
         params: dict[str, Any] = {
             "offset": offset,
@@ -574,7 +587,7 @@ class DocumentsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of documents and pagination information
+            WrappedDocumentsResponse
         """
         params = {
             "offset": offset,
@@ -631,8 +644,7 @@ class DocumentsSDK:
         id: str | UUID,
         settings: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
-    ):
-        # FIXME: Get return type
+    ) -> WrappedGenericMessageResponse:
         """
         Deduplicate entities and relationships from a document.
 
@@ -650,9 +662,11 @@ class DocumentsSDK:
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"documents/{str(id)}/deduplicate",
             params=data,
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)

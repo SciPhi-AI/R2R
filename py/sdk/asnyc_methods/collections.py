@@ -28,7 +28,7 @@ class CollectionsSDK:
             description (Optional[str]): Description of the collection
 
         Returns:
-            dict: Created collection information
+            WrappedCollectionResponse
         """
         data: dict[str, Any] = {"name": name, "description": description}
         response_dict = await self.client._make_request(
@@ -55,7 +55,7 @@ class CollectionsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of collections and pagination information
+            WrappedCollectionsResponse
         """
         params: dict = {
             "offset": offset,
@@ -81,7 +81,7 @@ class CollectionsSDK:
             id (str | UUID): Collection ID to retrieve
 
         Returns:
-            dict: Detailed collection information
+            WrappedCollectionResponse
         """
         response_dict = await self.client._make_request(
             "GET", f"collections/{str(id)}", version="v3"
@@ -106,7 +106,7 @@ class CollectionsSDK:
             generate_description (Optional[bool]): Whether to generate a new synthetic description for the collection.
 
         Returns:
-            dict: Updated collection information
+            WrappedCollectionResponse
         """
         data: dict[str, Any] = {}
         if name is not None:
@@ -136,7 +136,7 @@ class CollectionsSDK:
             id (str | UUID): Collection ID to delete
 
         Returns:
-            bool: True if deletion was successful
+            WrappedBooleanResponse
         """
         response_dict = await self.client._make_request(
             "DELETE", f"collections/{str(id)}", version="v3"
@@ -159,7 +159,7 @@ class CollectionsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of documents and pagination information
+            WrappedDocumentsResponse
         """
         params: dict = {
             "offset": offset,
@@ -188,7 +188,7 @@ class CollectionsSDK:
             document_id (str | UUID): Document ID to add
 
         Returns:
-            dict: Result of the operation
+            WrappedGenericMessageResponse
         """
         response_dict = await self.client._make_request(
             "POST",
@@ -211,7 +211,7 @@ class CollectionsSDK:
             document_id (str | UUID): Document ID to remove
 
         Returns:
-            bool: True if removal was successful
+            WrappedBooleanResponse
         """
         response_dict = await self.client._make_request(
             "DELETE",
@@ -236,7 +236,7 @@ class CollectionsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of users and pagination information
+            WrappedUsersResponse
         """
         params: dict = {
             "offset": offset,
@@ -262,7 +262,7 @@ class CollectionsSDK:
             user_id (str | UUID): User ID to add
 
         Returns:
-            dict: Result of the operation
+            WrappedBooleanResponse
         """
         response_dict = await self.client._make_request(
             "POST", f"collections/{str(id)}/users/{str(user_id)}", version="v3"
@@ -283,7 +283,7 @@ class CollectionsSDK:
             user_id (str | UUID): User ID to remove
 
         Returns:
-            bool: True if removal was successful
+            WrappedBooleanResponse
         """
         response_dict = await self.client._make_request(
             "DELETE",

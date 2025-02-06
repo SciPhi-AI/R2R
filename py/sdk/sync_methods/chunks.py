@@ -32,7 +32,7 @@ class ChunksSDK:
                 - id: UUID of the chunk
                 - metadata: Dictionary of metadata
         Returns:
-            dict: Update results containing processed chunk information
+            WrappedChunkResponse
         """
         response_dict = self.client._make_request(
             "POST",
@@ -54,7 +54,7 @@ class ChunksSDK:
             id (str | UUID): Chunk ID to retrieve
 
         Returns:
-            dict: List of chunks and pagination information
+            WrappedChunkResponse
         """
 
         response_dict = self.client._make_request(
@@ -83,7 +83,7 @@ class ChunksSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of chunks and pagination information
+            WrappedChunksResponse
         """
         params: dict = {
             "offset": offset,
@@ -110,6 +110,9 @@ class ChunksSDK:
 
         Args:
             id (str | UUID): ID of chunk to delete
+
+        Returns:
+            WrappedBooleanResponse
         """
         response_dict = self.client._make_request(
             "DELETE",
@@ -137,9 +140,7 @@ class ChunksSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: Dictionary containing:
-                - results: List of chunks
-                - page_info: Pagination information
+            WrappedChunksResponse
         """
         params: dict = {
             "offset": offset,
@@ -173,6 +174,8 @@ class ChunksSDK:
             query (str): The query to search for.
             search_settings (Optional[dict, SearchSettings]]): Vector search settings.
 
+        Returns:
+            WrappedVectorSearchResponse
         """
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
