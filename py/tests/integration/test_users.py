@@ -419,9 +419,9 @@ def user_with_api_key(client: R2RClient):
 
     # Login to create an API key
     client.users.login(random_email, password)
-    api_key_resp = client.users.create_api_key(user_id)["results"]
-    api_key = api_key_resp["api_key"]
-    key_id = api_key_resp["key_id"]
+    api_key_resp = client.users.create_api_key(user_id).results
+    api_key = api_key_resp.api_key
+    key_id = api_key_resp.key_id
 
     yield user_id, api_key, key_id
 
@@ -442,30 +442,30 @@ def test_api_key_lifecycle(client: R2RClient):
     client.users.login(email, password)
 
     # Create API key
-    api_key_resp = client.users.create_api_key(user_id)["results"]
-    assert "api_key" in api_key_resp, "API key not returned"
-    assert "key_id" in api_key_resp, "Key ID not returned"
-    assert "public_key" in api_key_resp, "Public key not returned"
+    api_key_resp = client.users.create_api_key(user_id).results
+    assert api_key_resp.api_key is not None, "API key not returned"
+    assert api_key_resp.key_id is not None, "Key ID not returned"
+    assert api_key_resp.public_key is not None, "Public key not returned"
 
-    key_id = api_key_resp["key_id"]
+    key_id = api_key_resp.key_id
 
     # List API keys
-    list_resp = client.users.list_api_keys(user_id)["results"]
+    list_resp = client.users.list_api_keys(user_id).results
     assert len(list_resp) > 0, "No API keys found after creation"
     assert (
-        list_resp[0]["key_id"] == key_id
+        list_resp[0].key_id == key_id
     ), "Listed key ID doesn't match created key"
-    assert "updated_at" in list_resp[0], "Updated timestamp missing"
-    assert "public_key" in list_resp[0], "Public key missing in list"
+    assert list_resp[0].updated_at is not None, "Updated timestamp missing"
+    assert list_resp[0].public_key is not None, "Public key missing in list"
 
     # Delete API key using key_id
     delete_resp = client.users.delete_api_key(user_id, key_id).results
     assert delete_resp.success, "Failed to delete API key"
 
     # Verify deletion
-    list_resp_after = client.users.list_api_keys(user_id)["results"]
+    list_resp_after = client.users.list_api_keys(user_id).results
     assert not any(
-        k["key_id"] == key_id for k in list_resp_after
+        k.key_id == key_id for k in list_resp_after
     ), "API key still exists after deletion"
 
     client.users.logout()
@@ -522,19 +522,19 @@ def test_multiple_api_keys(client: R2RClient):
     # Create multiple API keys
     key_ids = []
     for i in range(3):
-        key_resp = client.users.create_api_key(user_id)["results"]
-        key_ids.append(key_resp["key_id"])
+        key_resp = client.users.create_api_key(user_id).results
+        key_ids.append(key_resp.key_id)
 
     # List and verify all keys exist
-    list_resp = client.users.list_api_keys(user_id)["results"]
+    list_resp = client.users.list_api_keys(user_id).results
     assert len(list_resp) >= 3, "Not all API keys were created"
 
     # Delete keys one by one and verify counts
     for key_id in key_ids:
         client.users.delete_api_key(user_id, key_id)
-        current_keys = client.users.list_api_keys(user_id)["results"]
+        current_keys = client.users.list_api_keys(user_id).results
         assert not any(
-            k["key_id"] == key_id for k in current_keys
+            k.key_id == key_id for k in current_keys
         ), f"Key {key_id} still exists after deletion"
 
     client.users.logout()

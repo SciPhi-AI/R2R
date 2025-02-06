@@ -42,6 +42,7 @@ from shared.api.models.management.responses import (
     WrappedConversationsResponse,
     WrappedDocumentResponse,
     WrappedDocumentsResponse,
+    WrappedLimitsResponse,
     WrappedLoginResponse,
     WrappedLogsResponse,
     WrappedPromptResponse,
@@ -109,6 +110,7 @@ __all__ = [
     # User Responses
     "WrappedUserResponse",
     "WrappedAPIKeyResponse",
+    "WrappedLimitsResponse",
     "WrappedAPIKeysResponse",
     "WrappedLoginResponse",
     "WrappedUsersResponse",

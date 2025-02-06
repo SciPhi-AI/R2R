@@ -23,6 +23,7 @@ from core.base.api.models import (
     WrappedBooleanResponse,
     WrappedCollectionsResponse,
     WrappedGenericMessageResponse,
+    WrappedLimitsResponse,
     WrappedLoginResponse,
     WrappedTokenResponse,
     WrappedUserResponse,
@@ -1747,7 +1748,7 @@ class UsersRouter(BaseRouterV3):
                 ..., description="ID of the user to fetch limits for"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ) -> dict[str, dict]:
+        ) -> WrappedLimitsResponse:
             """
             Return the system default limits, user-level overrides, and final "effective" limit settings
             for the specified user.
@@ -1764,10 +1765,10 @@ class UsersRouter(BaseRouterV3):
             limits_info = await self.services.management.get_all_user_limits(
                 id
             )
-            return limits_info
+            return limits_info  # type: ignore
 
         @self.router.get("/users/oauth/google/authorize")
-        async def google_authorize():
+        async def google_authorize() -> WrappedGenericMessageResponse:
             """
             Redirect user to Google's OAuth 2.0 consent screen.
             """
@@ -1785,13 +1786,12 @@ class UsersRouter(BaseRouterV3):
                 "prompt": "consent",  # Force consent each time if you want
             }
             google_auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
-            return {"redirect_url": google_auth_url}
-            # In a real app, you might return a RedirectResponse(google_auth_url)
+            return GenericMessageResponse(message=google_auth_url)  # type: ignore
 
         @self.router.get("/users/oauth/google/callback")
         async def google_callback(
             code: str = Query(...), state: str = Query(...)
-        ):
+        ) -> WrappedLoginResponse:
             """
             Google's callback that will receive the `code` and `state`.
             We then exchange code for tokens, verify, and log the user in.
@@ -1834,19 +1834,15 @@ class UsersRouter(BaseRouterV3):
             email = email or f"{google_id}@google_oauth.fake"
 
             # 3. Now call our R2RAuthProvider method that handles "oauth-based" user creation or login
-            token_response = await self.providers.auth.oauth_callback_handler(
+            return await self.providers.auth.oauth_callback_handler(  # type: ignore
                 provider="google",
                 oauth_id=google_id,
                 email=email,
             )
 
-            # 4. Return tokens or redirect to your front-end
-            #   Some people store tokens in a cookie or redirect to a front-end route passing them as a query param.
-            return token_response
-
         # =============== GITHUB OAUTH ===============
         @self.router.get("/users/oauth/github/authorize")
-        async def github_authorize():
+        async def github_authorize() -> WrappedGenericMessageResponse:
             """
             Redirect user to GitHub's OAuth consent screen.
             """
@@ -1860,12 +1856,12 @@ class UsersRouter(BaseRouterV3):
                 "state": state,
             }
             github_auth_url = f"https://github.com/login/oauth/authorize?{urllib.parse.urlencode(params)}"
-            return {"redirect_url": github_auth_url}
+            return GenericMessageResponse(message=github_auth_url)  # type: ignore
 
         @self.router.get("/users/oauth/github/callback")
         async def github_callback(
             code: str = Query(...), state: str = Query(...)
-        ):
+        ) -> WrappedLoginResponse:
             """
             GitHub callback route to exchange code for an access_token,
             then fetch user info from GitHub's API,
@@ -1904,9 +1900,8 @@ class UsersRouter(BaseRouterV3):
             email = user_info_resp.get("email")
             email = email or f"{github_id}@github_oauth.fake"
             # 3. Pass to your auth provider
-            token_response = await self.providers.auth.oauth_callback_handler(
+            return await self.providers.auth.oauth_callback_handler(  # type: ignore
                 provider="github",
                 oauth_id=github_id,
                 email=email,
             )
-            return token_response

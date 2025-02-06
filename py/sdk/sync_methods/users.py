@@ -2,9 +2,12 @@ from typing import Any, Optional
 from uuid import UUID
 
 from core.base.api.models import (
+    WrappedAPIKeyResponse,
+    WrappedAPIKeysResponse,
     WrappedBooleanResponse,
     WrappedCollectionsResponse,
     WrappedGenericMessageResponse,
+    WrappedLimitsResponse,
     WrappedLoginResponse,
     WrappedTokenResponse,
     WrappedUserResponse,
@@ -160,34 +163,6 @@ class UsersSDK:
         self.client._user_id = user_response.results.id
 
         return login_response
-
-    # FIXME: What is going on here...
-    def login_with_token(self, access_token: str) -> dict[str, Token]:
-        """
-        Log in using an existing access token.
-
-        Args:
-            access_token (str): Existing access token
-
-        Returns:
-            dict[str, Token]: Token information
-        """
-        self.client.access_token = access_token
-        try:
-            self.client._make_request(
-                "GET",
-                "users/me",
-                version="v3",
-            )
-            return {
-                "access_token": Token(
-                    token=access_token, token_type="access_token"
-                ),
-            }
-        except Exception:
-            self.client.access_token = None
-            self.client._refresh_token = None
-            raise ValueError("Invalid token provided")
 
     def logout(self) -> WrappedGenericMessageResponse | None:
         """Log out the current user."""
@@ -497,8 +472,7 @@ class UsersSDK:
         id: str | UUID,
         name: Optional[str] = None,
         description: Optional[str] = None,
-    ) -> dict:
-        # FIXME: Need a proper response model
+    ) -> WrappedAPIKeyResponse:
         """
         Create a new API key for the specified user.
 
@@ -516,18 +490,19 @@ class UsersSDK:
         if description:
             data["description"] = description
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"users/{str(id)}/api-keys",
             json=data,
             version="v3",
         )
 
+        return WrappedAPIKeyResponse(**response_dict)
+
     def list_api_keys(
         self,
         id: str | UUID,
-    ) -> dict:
-        # FIXME: Need a proper response model
+    ) -> WrappedAPIKeysResponse:
         """
         List all API keys for the specified user.
 
@@ -535,13 +510,15 @@ class UsersSDK:
             id (str | UUID): User ID to list API keys for
 
         Returns:
-            dict: { "results": [ { "id": ..., "public_key": ..., "name": ..., "created_at": ..., "updated_at": ... } ], "total_entries": ... }
+            WrappedAPIKeysResponse
         """
-        return self.client._make_request(
+        resp_dict = self.client._make_request(
             "GET",
             f"users/{str(id)}/api-keys",
             version="v3",
         )
+
+        return WrappedAPIKeysResponse(**resp_dict)
 
     def delete_api_key(
         self,
@@ -566,58 +543,68 @@ class UsersSDK:
 
         return WrappedBooleanResponse(**response_dict)
 
-    def get_limits(self) -> dict[str, Any]:
-        # FIXME: Need a proper response model
-        return self.client._make_request(
+    def get_limits(self) -> WrappedLimitsResponse:
+        response_dict = self.client._make_request(
             "GET",
             f"users/{str(self.client._user_id)}/limits",
             version="v3",
         )
 
-    def oauth_google_authorize(self) -> dict[str, str]:
-        # FIXME: Need a proper response model
+        return WrappedLimitsResponse(**response_dict)
+
+    def oauth_google_authorize(self) -> WrappedGenericMessageResponse:
         """
         Get Google OAuth 2.0 authorization URL from the server.
-        Returns: {"redirect_url": "..."}
+        Returns:
+            WrappedGenericMessageResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             "users/oauth/google/authorize",
             version="v3",
         )
 
-    def oauth_github_authorize(self) -> dict[str, str]:
-        # FIXME: Need a proper response model
+        return WrappedGenericMessageResponse(**response_dict)
+
+    def oauth_github_authorize(self) -> WrappedGenericMessageResponse:
         """
         Get GitHub OAuth 2.0 authorization URL from the server.
         Returns: {"redirect_url": "..."}
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             "users/oauth/github/authorize",
             version="v3",
         )
 
-    def oauth_google_callback(self, code: str, state: str) -> dict[str, Any]:
-        # FIXME: Need a proper response model
+        return WrappedGenericMessageResponse(**response_dict)
+
+    def oauth_google_callback(
+        self, code: str, state: str
+    ) -> WrappedLoginResponse:
         """
         Exchange `code` and `state` with the Google OAuth 2.0 callback route.
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             "users/oauth/google/callback",
             params={"code": code, "state": state},
             version="v3",
         )
 
-    def oauth_github_callback(self, code: str, state: str) -> dict[str, Any]:
-        # FIXME: Need a proper response model
+        return WrappedLoginResponse(**response_dict)
+
+    def oauth_github_callback(
+        self, code: str, state: str
+    ) -> WrappedLoginResponse:
         """
         Exchange `code` and `state` with the GitHub OAuth 2.0 callback route.
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             "users/oauth/github/callback",
             params={"code": code, "state": state},
             version="v3",
         )
+
+        return WrappedLoginResponse(**response_dict)

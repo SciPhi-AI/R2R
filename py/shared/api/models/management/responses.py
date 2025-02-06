@@ -119,6 +119,49 @@ class LoginResponse(BaseModel):
     refresh_token: Token
 
 
+class UsageLimit(BaseModel):
+    used: int
+    limit: int
+    remaining: int
+
+
+class StorageTypeLimit(BaseModel):
+    limit: int
+    used: int
+    remaining: int
+
+
+class StorageLimits(BaseModel):
+    chunks: StorageTypeLimit
+    documents: StorageTypeLimit
+    collections: StorageTypeLimit
+
+
+class RouteUsage(BaseModel):
+    route_per_min: UsageLimit
+    monthly_limit: UsageLimit
+
+
+class Usage(BaseModel):
+    global_per_min: UsageLimit
+    monthly_limit: UsageLimit
+    routes: dict[str, RouteUsage]
+
+
+class SystemDefaults(BaseModel):
+    global_per_min: int
+    route_per_min: Optional[int]
+    monthly_limit: int
+
+
+class LimitsResponse(BaseModel):
+    storage_limits: StorageLimits
+    system_defaults: SystemDefaults
+    user_overrides: dict
+    effective_limits: SystemDefaults
+    usage: Usage
+
+
 # Chunk Responses
 WrappedChunkResponse = R2RResults[ChunkResponse]
 WrappedChunksResponse = PaginatedR2RResult[list[ChunkResponse]]
@@ -158,3 +201,4 @@ WrappedLogsResponse = R2RResults[list[LogResponse]]
 WrappedAnalyticsResponse = R2RResults[AnalyticsResponse]
 WrappedVerificationResult = R2RResults[VerificationResult]
 WrappedResetDataResult = R2RResults[ResetDataResult]
+WrappedLimitsResponse = R2RResults[LimitsResponse]
