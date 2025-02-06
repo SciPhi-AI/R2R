@@ -236,7 +236,7 @@ def test_rag_task_prompt_override(client: R2RClient):
 
 
 def test_agent_conversation_id(client: R2RClient):
-    conversation_id = client.conversations.create()["results"]["id"]
+    conversation_id = client.conversations.create().results.id
     msg = Message(role="user", content="What is Aristotle known for?")
     resp = client.retrieval.agent(
         message=msg,
@@ -471,8 +471,7 @@ def test_rag_with_large_context(client: R2RClient):
 
 
 def test_agent_long_conversation(client: R2RClient):
-    conversation = client.conversations.create()["results"]
-    conversation_id = conversation["id"]
+    conversation_id = client.conversations.create().results.id
 
     msg1 = Message(role="user", content="What were Aristotle's main ideas?")
     resp1 = client.retrieval.agent(

@@ -30,12 +30,14 @@ class ConversationsSDK:
         if name:
             data["name"] = name
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             "conversations",
             data=data,
             version="v3",
         )
+
+        return WrappedConversationResponse(**response_dict)
 
     def list(
         self,
@@ -61,12 +63,14 @@ class ConversationsSDK:
         if ids:
             params["ids"] = ids
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             "conversations",
             params=params,
             version="v3",
         )
+
+        return WrappedConversationsResponse(**response_dict)
 
     def retrieve(
         self,
@@ -81,11 +85,13 @@ class ConversationsSDK:
         Returns:
             dict: Detailed conversation information
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"conversations/{str(id)}",
             version="v3",
         )
+
+        return WrappedConversationMessagesResponse(**response_dict)
 
     def update(
         self,
@@ -106,12 +112,14 @@ class ConversationsSDK:
             "name": name,
         }
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"conversations/{str(id)}",
             json=data,
             version="v3",
         )
+
+        return WrappedConversationResponse(**response_dict)
 
     def delete(
         self,
@@ -126,11 +134,13 @@ class ConversationsSDK:
         Returns:
             bool: True if deletion was successful
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"conversations/{str(id)}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def add_message(
         self,
@@ -162,12 +172,14 @@ class ConversationsSDK:
         if metadata:
             data["metadata"] = metadata
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"conversations/{str(id)}/messages",
             json=data,
             version="v3",
         )
+
+        return WrappedMessageResponse(**response_dict)
 
     def update_message(
         self,
@@ -176,6 +188,7 @@ class ConversationsSDK:
         content: Optional[str] = None,
         metadata: Optional[dict] = None,
     ) -> dict:
+        # FIXME: Needs a proper response model
         """
         Update an existing message in a conversation.
 
