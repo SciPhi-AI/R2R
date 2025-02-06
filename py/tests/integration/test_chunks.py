@@ -109,7 +109,7 @@ class TestChunks:
         chunk_id = chunks[0].id
 
         retrieved = await test_client.retrieve_chunk(chunk_id)
-        assert UUID(retrieved.id) == chunk_id, "Retrieved wrong chunk ID"
+        assert str(retrieved.id) == str(chunk_id), "Retrieved wrong chunk ID"
         assert (
             retrieved.text.split("_")[0] == "Test chunk 1"
         ), "Chunk text mismatch"

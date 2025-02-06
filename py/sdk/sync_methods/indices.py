@@ -3,7 +3,8 @@ from typing import Any, Optional
 
 from core.base.api.models import (
     WrappedGenericMessageResponse,
-    WrappedListVectorIndicesResponse,
+    WrappedVectorIndexResponse,
+    WrappedVectorIndicesResponse,
 )
 
 
@@ -22,6 +23,9 @@ class IndicesSDK:
         Args:
             config (dict | IndexConfig): Configuration for the vector index.
             run_with_orchestration (Optional[bool]): Whether to run index creation as an orchestrated task.
+
+        Returns:
+            WrappedGenericMessageResponse
         """
         if not isinstance(config, dict):
             config = config.model_dump()
@@ -44,7 +48,7 @@ class IndicesSDK:
         filters: Optional[dict] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 10,
-    ) -> WrappedListVectorIndicesResponse:
+    ) -> WrappedVectorIndicesResponse:
         """
         List existing vector similarity search indices with pagination support.
 
@@ -54,7 +58,7 @@ class IndicesSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            WrappedListVectorIndicesResponse: The response containing the list of indices.
+            WrappedVectorIndicesResponse
         """
         params: dict = {
             "offset": offset,
@@ -69,14 +73,13 @@ class IndicesSDK:
             version="v3",
         )
 
-        return WrappedListVectorIndicesResponse(**response_dict)
+        return WrappedVectorIndicesResponse(**response_dict)
 
     def retrieve(
         self,
         index_name: str,
         table_name: str = "vectors",
-    ) -> dict:
-        # FIXME: Need a proper response model
+    ) -> WrappedVectorIndexResponse:
         """
         Get detailed information about a specific vector index.
 
@@ -85,7 +88,7 @@ class IndicesSDK:
             table_name (str): The name of the table where the index is stored.
 
         Returns:
-            WrappedGetIndexResponse: The response containing the index details.
+            WrappedGetIndexResponse
         """
         return self.client._make_request(
             "GET",
@@ -106,7 +109,7 @@ class IndicesSDK:
             table_name (str): The name of the table where the index is stored.
 
         Returns:
-            WrappedGetIndexResponse: The response containing the index details.
+            WrappedGetIndexResponse
         """
         response_dict = self.client._make_request(
             "DELETE",

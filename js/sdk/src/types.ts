@@ -355,7 +355,7 @@ export type WrappedGraphsResponse = PaginatedResultsWrapper<GraphResponse[]>;
 export type WrappedIngestionResponse = ResultsWrapper<IngestionResponse>;
 export type WrappedMetadataUpdateResponse = ResultsWrapper<IngestionResponse>;
 export type WrappedUpdateResponse = ResultsWrapper<UpdateResponse>;
-export type WrappedListVectorIndicesResponse = ResultsWrapper<IndexConfig[]>;
+export type WrappedVectorIndicesResponse = ResultsWrapper<IndexConfig[]>;
 
 // Prompt Responses
 export type WrappedPromptResponse = ResultsWrapper<PromptResponse>;

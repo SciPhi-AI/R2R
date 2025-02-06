@@ -12,7 +12,8 @@ from core.base import IndexConfig, R2RException
 from core.base.abstractions import VectorTableName
 from core.base.api.models import (
     WrappedGenericMessageResponse,
-    WrappedListVectorIndicesResponse,
+    WrappedVectorIndexResponse,
+    WrappedVectorIndicesResponse,
 )
 
 from ...abstractions import R2RProviders, R2RServices
@@ -314,7 +315,7 @@ class IndicesRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ) -> WrappedListVectorIndicesResponse:
+        ) -> WrappedVectorIndicesResponse:
             """
             List existing vector similarity search indices with pagination support.
 
@@ -406,7 +407,7 @@ class IndicesRouter(BaseRouterV3):
                 ..., description="The name of the index to delete"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ) -> dict:  #  -> WrappedGetIndexResponse:
+        ) -> WrappedVectorIndexResponse:
             """
             Get detailed information about a specific vector index.
 

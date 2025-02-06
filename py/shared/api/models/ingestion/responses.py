@@ -56,15 +56,17 @@ class UpdateResponse(BaseModel):
         }
 
 
-# TODO: This can probably be cleaner
-class ListVectorIndicesResponse(BaseModel):
-    indices: list[dict[str, Any]]
+class VectorIndexResponse(BaseModel):
+    index: dict[str, Any]
+
+
+class VectorIndicesResponse(BaseModel):
+    indices: list[VectorIndexResponse]
 
 
 WrappedIngestionResponse = R2RResults[IngestionResponse]
 WrappedMetadataUpdateResponse = R2RResults[IngestionResponse]
 WrappedUpdateResponse = R2RResults[UpdateResponse]
 
-WrappedListVectorIndicesResponse = PaginatedR2RResult[
-    ListVectorIndicesResponse
-]
+WrappedVectorIndexResponse = R2RResults[VectorIndexResponse]
+WrappedVectorIndicesResponse = PaginatedR2RResult[VectorIndicesResponse]

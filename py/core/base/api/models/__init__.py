@@ -28,9 +28,10 @@ from shared.api.models.ingestion.responses import (
     IngestionResponse,
     UpdateResponse,
     WrappedIngestionResponse,
-    WrappedListVectorIndicesResponse,
     WrappedMetadataUpdateResponse,
     WrappedUpdateResponse,
+    WrappedVectorIndexResponse,
+    WrappedVectorIndicesResponse,
 )
 from shared.api.models.management.responses import (  # Document Responses; Prompt Responses; Chunk Responses; Conversation Responses; User Responses; TODO: anything below this hasn't been reviewed
     AnalyticsResponse,
@@ -89,7 +90,8 @@ __all__ = [
     "WrappedIngestionResponse",
     "WrappedUpdateResponse",
     "WrappedMetadataUpdateResponse",
-    "WrappedListVectorIndicesResponse",
+    "WrappedVectorIndexResponse",
+    "WrappedVectorIndicesResponse",
     "UpdateResponse",
     # Knowledge Graph Responses
     "Entity",
