@@ -258,7 +258,7 @@ def test_non_owner_delete_collection(client: R2RClient):
     client.users.create(owner_email, owner_password)
     client.users.login(owner_email, owner_password)
     coll = client.collections.create(name="Owner Collection")["results"]
-    coll_id = coll.id
+    coll_id = coll["id"]
 
     # Create another user and get their ID
     non_owner_email = f"nonowner_{uuid.uuid4()}@test.com"
@@ -481,8 +481,8 @@ def test_api_key_authentication(client: R2RClient, user_with_api_key):
     api_client.set_api_key(api_key)
 
     # Test API key authentication
-    me_resp = api_client.users.me().results
-    assert me_resp["id"] == user_id, "API key authentication failed"
+    me_id = api_client.users.me().results.id
+    assert me_id == user_id, "API key authentication failed"
 
 
 def test_api_key_permissions(client: R2RClient, user_with_api_key):
