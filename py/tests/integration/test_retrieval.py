@@ -268,7 +268,7 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
     # include  owner id and collection ids to make robust against other database interactions from other users
     filters = {
         "rating": {"$gt": 5},
-        "owner_id": {"$eq": user_id},
+        "owner_id": {"$eq": str(user_id)},
         "collection_ids": {
             "$overlap": [str(test_collection["collection_id"])]
         },
@@ -286,7 +286,7 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
     # category in [ancient, modern]
     filters = {
         "metadata.category": {"$in": ["ancient", "modern"]},
-        "owner_id": {"$eq": user_id},
+        "owner_id": {"$eq": str(user_id)},
         "collection_ids": {
             "$overlap": [str(test_collection["collection_id"])]
         },
@@ -331,7 +331,7 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
             "use_fulltext_search": True,
             "use_semantic_search": False,
             "filters": {
-                "owner_id": {"$eq": user_id},
+                "owner_id": {"$eq": str(user_id)},
                 "collection_ids": {
                     "$overlap": [str(test_collection["collection_id"])]
                 },

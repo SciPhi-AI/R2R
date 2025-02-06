@@ -232,7 +232,7 @@ def test_owner_can_remove_member_from_collection(
     # Remove them
     remove_resp = normal_user_client.collections.remove_user(
         user_owned_collection, another_user_id
-    ).results
+    )["results"]
     assert remove_resp.success, "Owner could not remove member."
 
     # The removed user should no longer have access

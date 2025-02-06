@@ -416,8 +416,7 @@ def user_with_api_key(client: R2RClient):
     """Fixture that creates a user and returns their ID and API key details"""
     random_email = f"{uuid.uuid4()}@example.com"
     password = "api_key_test_password"
-    user_resp = client.users.create(random_email, password).results
-    user_id = user_resp["id"]
+    user_id = client.users.create(random_email, password).results.id
 
     # Login to create an API key
     client.users.login(random_email, password)
@@ -461,9 +460,8 @@ def test_api_key_lifecycle(client: R2RClient):
     assert "public_key" in list_resp[0], "Public key missing in list"
 
     # Delete API key using key_id
-    # FIXME: This should be a boolean response
     delete_resp = client.users.delete_api_key(user_id, key_id).results
-    assert delete_resp.message is not None, "Failed to delete API key"
+    assert delete_resp.success, "Failed to delete API key"
 
     # Verify deletion
     list_resp_after = client.users.list_api_keys(user_id)["results"]

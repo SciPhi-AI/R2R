@@ -546,7 +546,7 @@ class UsersSDK:
         self,
         id: str | UUID,
         key_id: str | UUID,
-    ) -> WrappedGenericMessageResponse:
+    ) -> WrappedBooleanResponse:
         """
         Delete a specific API key for the specified user.
 
@@ -563,7 +563,7 @@ class UsersSDK:
             version="v3",
         )
 
-        return WrappedGenericMessageResponse(**response_dict)
+        return WrappedBooleanResponse(**response_dict)
 
     def get_limits(self) -> dict[str, Any]:
         # FIXME: Need a proper response model

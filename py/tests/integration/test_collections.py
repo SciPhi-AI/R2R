@@ -120,7 +120,7 @@ def test_remove_non_member_user_from_collection(mutable_client: R2RClient):
     another_user_email = f"user2_{uuid.uuid4()}@test.com"
     mutable_client.users.create(another_user_email, password)
     mutable_client.users.login(another_user_email, password)
-    another_user_id = mutable_client.users.me()["results"]["id"]
+    another_user_id = mutable_client.users.me().results.id
     mutable_client.users.logout()
 
     # Re-login as collection owner
