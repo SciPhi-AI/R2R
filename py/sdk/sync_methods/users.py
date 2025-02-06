@@ -5,6 +5,7 @@ from core.base.api.models import (
     WrappedBooleanResponse,
     WrappedCollectionsResponse,
     WrappedGenericMessageResponse,
+    WrappedLoginResponse,
     WrappedTokenResponse,
     WrappedUserResponse,
     WrappedUsersResponse,
@@ -122,8 +123,7 @@ class UsersSDK:
 
         return WrappedGenericMessageResponse(**response_dict)
 
-    def login(self, email: str, password: str) -> dict[str, Token]:
-        # FIXME: Need a proper response model
+    def login(self, email: str, password: str) -> WrappedLoginResponse:
         """
         Log in a user.
 
@@ -132,31 +132,34 @@ class UsersSDK:
             password (str): User's password
 
         Returns:
-            dict[str, Token]: Access and refresh tokens
+            WrappedLoginResponse
         """
         if self.client.api_key:
             raise ValueError(
                 "Cannot log in after setting an API key, please unset your R2R_API_KEY variable or call client.set_api_key(None)"
             )
         data: dict[str, Any] = {"username": email, "password": password}
-        response = self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             "users/login",
             data=data,
             version="v3",
         )
-        self.client.access_token = response["results"]["access_token"]["token"]
-        self.client._refresh_token = response["results"]["refresh_token"][
-            "token"
-        ]
+
+        login_response = WrappedLoginResponse(**response_dict)
+        self.client.access_token = login_response.results.access_token.token
+        self.client._refresh_token = login_response.results.refresh_token.token
+
         user = self.client._make_request(
             "GET",
             "users/me",
             version="v3",
         )
 
-        self.client._user_id = user["results"]["id"]
-        return response
+        user_response = WrappedUserResponse(**user)
+        self.client._user_id = user_response.results.id
+
+        return login_response
 
     # FIXME: What is going on here...
     def login_with_token(self, access_token: str) -> dict[str, Token]:

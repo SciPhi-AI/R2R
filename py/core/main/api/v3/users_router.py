@@ -11,8 +11,6 @@ from fastapi.background import BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from google.auth.transport import requests as google_requests
-
-# missing these lines
 from google.oauth2 import id_token
 from pydantic import EmailStr
 
@@ -25,6 +23,7 @@ from core.base.api.models import (
     WrappedBooleanResponse,
     WrappedCollectionsResponse,
     WrappedGenericMessageResponse,
+    WrappedLoginResponse,
     WrappedTokenResponse,
     WrappedUserResponse,
     WrappedUsersResponse,
@@ -462,7 +461,9 @@ class UsersRouter(BaseRouterV3):
             },
         )
         @self.base_endpoint
-        async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+        async def login(
+            form_data: OAuth2PasswordRequestForm = Depends(),
+        ) -> WrappedLoginResponse:
             """Authenticate a user and provide access tokens."""
             return await self.services.auth.login(
                 form_data.username, form_data.password
