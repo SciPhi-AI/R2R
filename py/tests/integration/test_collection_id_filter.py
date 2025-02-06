@@ -67,7 +67,7 @@ def test_collection_id_eq_filter(
     doc1, doc2, doc3, doc4 = doc_ids
 
     # collection_id = coll_ids[0] should match doc1 and doc2 only
-    filters = {"collection_id": {"$eq": coll_ids[0]}}
+    filters = {"collection_id": {"$eq": str(coll_ids[0])}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]
@@ -110,7 +110,7 @@ def test_collection_id_in_filter(
     # collection_id in [coll_ids[0], coll_ids[2]] means docs in either coll0 or coll2
     # doc1 in coll0, doc2 in coll0, doc4 in coll2
     # doc3 is in none
-    filters = {"collection_id": {"$in": [coll_ids[0], coll_ids[2]]}}
+    filters = {"collection_id": {"$in": [str(coll_ids[0]), str(coll_ids[2])]}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]
@@ -132,7 +132,7 @@ def test_collection_id_nin_filter(
     # collection_id nin [coll_ids[1]] means docs that do NOT belong to coll1
     # doc2 belongs to coll1, so exclude doc2
     # doc1, doc3, doc4 remain
-    filters = {"collection_id": {"$nin": [coll_ids[1]]}}
+    filters = {"collection_id": {"$nin": [str(coll_ids[1])]}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]
@@ -191,7 +191,7 @@ def test_delete_by_collection_id_eq(
     doc1, doc2, doc3, doc4 = setup_docs_with_collections["doc_ids"]
 
     # Delete documents in coll0
-    filters = {"collection_id": {"$eq": coll_ids[0]}}
+    filters = {"collection_id": {"$eq": str(coll_ids[0])}}
     del_resp = client.documents.delete_by_filter(filters).results
     assert del_resp.success, "Failed to delete by collection_id $eq filter"
 

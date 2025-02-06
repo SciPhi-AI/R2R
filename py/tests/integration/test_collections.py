@@ -39,10 +39,10 @@ def test_list_collections(client: R2RClient, test_collection):
 def test_retrieve_collection(client: R2RClient, test_collection):
     # Retrieve the collection just created
     retrieved = client.collections.retrieve(
-        test_collection.collection_id
+        test_collection["collection_id"]
     ).results
     assert (
-        retrieved.id == test_collection.collection_id
+        retrieved.id == test_collection["collection_id"]
     ), "Retrieved wrong collection ID"
 
 

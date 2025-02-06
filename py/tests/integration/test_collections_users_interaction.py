@@ -56,11 +56,11 @@ def another_normal_user_client(config):
 @pytest.fixture
 def user_owned_collection(normal_user_client: R2RClient):
     """Create a collection owned by the normal user."""
-    resp = normal_user_client.collections.create(
+    coll_id = normal_user_client.collections.create(
         name="User Owned Collection",
         description="A collection owned by a normal user",
-    )
-    coll_id = resp["results"]["id"]
+    ).results.id
+
     yield coll_id
     # Cleanup
     try:
@@ -282,10 +282,9 @@ def test_user_cannot_add_document_to_collection_they_cannot_edit(
 ):
     """A normal user who is just a member (not owner) of a collection should not be able to add documents."""
     # Create a collection as normal user (owner)
-    resp = normal_user_client.collections.create(
+    coll_id = normal_user_client.collections.create(
         name="Owned by user", description="desc"
-    )
-    coll_id = resp["results"]["id"]
+    ).results.id
 
     # Create a second user and add them as member
     second_email = f"second_{uuid.uuid4()}@test.com"
@@ -337,10 +336,9 @@ def test_user_cannot_remove_document_from_collection_they_cannot_edit(
 ):
     """A user who is just a member should not remove documents."""
     # Create a collection
-    resp = normal_user_client.collections.create(
+    coll_id = normal_user_client.collections.create(
         name="Removable", description="desc"
-    )
-    coll_id = resp["results"]["id"]
+    ).results.id
 
     # Create a document in it
     doc_id = normal_user_client.documents.create(

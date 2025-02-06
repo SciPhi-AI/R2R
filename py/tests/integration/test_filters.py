@@ -65,7 +65,7 @@ def test_collection_id_eq_filter(
     doc1, doc2, doc3, doc4 = doc_ids
 
     # collection_id = coll_ids[0] should match doc1 and doc2 only
-    filters = {"collection_id": {"$eq": coll_ids[0]}}
+    filters = {"collection_id": {"$eq": str(coll_ids[0])}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]
@@ -83,12 +83,14 @@ def test_collection_id_ne_filter(
     doc_ids = setup_docs_with_collections["doc_ids"]
     doc1, doc2, doc3, doc4 = doc_ids
 
-    filters = {"collection_id": {"$ne": coll_ids[0]}}
+    filters = {"collection_id": {"$ne": str(coll_ids[0])}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]
     found_ids = {str(d["document_id"]) for d in listed}
-    assert coll_ids[0] not in found_ids, f"Expected no coll0, got {found_ids}"
+    assert (
+        str(coll_ids[0]) not in found_ids
+    ), f"Expected no coll0, got {found_ids}"
 
     # expected_ids = {doc3, doc4}
 
@@ -107,7 +109,7 @@ def test_collection_id_in_filter(
     # collection_id in [coll_ids[0], coll_ids[2]] means docs in either coll0 or coll2
     # doc1 in coll0, doc2 in coll0, doc4 in coll2
     # doc3 is in none
-    filters = {"collection_id": {"$in": [coll_ids[0], coll_ids[2]]}}
+    filters = {"collection_id": {"$in": [str(coll_ids[0]), str(coll_ids[2])]}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]
@@ -126,14 +128,16 @@ def test_collection_id_nin_filter(
     doc_ids = setup_docs_with_collections["doc_ids"]
     doc1, doc2, doc3, doc4 = doc_ids
 
-    filters = {"collection_id": {"$nin": [coll_ids[1]]}}
+    filters = {"collection_id": {"$nin": [str(coll_ids[1])]}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]
     found_ids = {str(d["document_id"]) for d in listed}
     # expected_ids = {doc1, doc3, doc4}
     found_ids = {str(d["document_id"]) for d in listed}
-    assert coll_ids[1] not in found_ids, f"Expected no coll1, got {found_ids}"
+    assert (
+        str(coll_ids[1]) not in found_ids
+    ), f"Expected no coll1, got {found_ids}"
 
     # assert expected_ids.issubset(
     #     found_ids
@@ -186,7 +190,7 @@ def test_delete_by_collection_id_eq(
     doc1, doc2, doc3, doc4 = setup_docs_with_collections["doc_ids"]
 
     # Delete documents in coll0
-    filters = {"collection_id": {"$eq": coll_ids[0]}}
+    filters = {"collection_id": {"$eq": str(coll_ids[0])}}
     del_resp = client.documents.delete_by_filter(filters).results
     assert del_resp.success, "Failed to delete by collection_id $eq filter"
 
