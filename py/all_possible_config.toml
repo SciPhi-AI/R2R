@@ -157,7 +157,7 @@ concurrent_request_limit = 128 # Global concurrency limit for completion request
 # [agent] section
 # -------------------------------------
 [agent]
-system_instruction_name = "rag_agent"         # The "system" message or prompt name
+agent_static_prompt = "rag_agent"         # The "system" message or prompt name
 tools = ["local_search", "retrieval"]    # Tools accessible to the agent
 
   [agent.generation_config]

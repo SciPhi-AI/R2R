@@ -281,6 +281,10 @@ class ChunkEnrichmentSettings(R2RSerializable):
         default=None,
         description="The generation config to use for chunk enrichment",
     )
+    chunk_enrichment_prompt: Optional[str] = Field(
+        default="chunk_enrichment",
+        description="The prompt to use for chunk enrichment",
+    )
 
 
 class IngestionConfig(R2RSerializable):
@@ -301,8 +305,8 @@ class IngestionConfig(R2RSerializable):
     vision_pdf_model: str = None
 
     skip_document_summary: bool = False
-    document_summary_system_prompt: str = "default_system"
-    document_summary_task_prompt: str = "default_summary"
+    document_summary_system_prompt: str = "system"
+    document_summary_task_prompt: str = "summary"
     chunks_for_document_summary: int = 128
     document_summary_model: str = None
 
@@ -330,8 +334,8 @@ class IngestionConfig(R2RSerializable):
                 vision_pdf_prompt_name="vision_pdf",
                 vision_pdf_model=None,
                 skip_document_summary=False,
-                document_summary_system_prompt="default_system",
-                document_summary_task_prompt="default_summary",
+                document_summary_system_prompt="system",
+                document_summary_task_prompt="summary",
                 chunks_for_document_summary=256,  # larger for hi-res
                 document_summary_model=None,
             )
@@ -349,8 +353,8 @@ class IngestionConfig(R2RSerializable):
                 vision_pdf_prompt_name="vision_pdf",
                 vision_pdf_model=None,
                 skip_document_summary=True,  # skip summaries
-                document_summary_system_prompt="default_system",
-                document_summary_task_prompt="default_summary",
+                document_summary_system_prompt="system",
+                document_summary_task_prompt="summary",
                 chunks_for_document_summary=64,
                 document_summary_model=None,
             )

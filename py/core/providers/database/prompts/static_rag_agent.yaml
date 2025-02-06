@@ -1,4 +1,4 @@
-rag_agent:
+static_rag_agent:
   template: >
     ### You are a helpful agent that can search for information, the date is {date}.
 

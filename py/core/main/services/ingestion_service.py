@@ -722,7 +722,7 @@ class IngestionService:
                 (
                     await self.providers.llm.aget_completion(
                         messages=await self.providers.database.prompts_handler.get_message_payload(
-                            task_prompt_name="chunk_enrichment",
+                            task_prompt_name=chunk_enrichment_settings.chunk_enrichment_prompt,
                             task_inputs={
                                 "document_summary": document_summary or "None",
                                 "chunk": chunk["text"],

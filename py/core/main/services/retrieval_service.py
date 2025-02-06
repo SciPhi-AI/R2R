@@ -486,8 +486,8 @@ class RetrievalService(Service):
             context_str = format_search_results_for_llm(aggregated)
 
             # Prepare your message payload
-            system_prompt_name = system_prompt_name or "default_system"
-            task_prompt_name = task_prompt_name or "default_rag"
+            system_prompt_name = system_prompt_name or "system"
+            task_prompt_name = task_prompt_name or "rag"
             task_prompt_override = kwargs.get("task_prompt_override", None)
 
             messages = await self.providers.database.prompts_handler.get_message_payload(
@@ -743,6 +743,7 @@ class RetrievalService(Service):
 
             agent_config = deepcopy(self.config.agent)
             agent_config.tools = override_tools or agent_config.tools
+
             if rag_generation_config.stream:
 
                 async def stream_response():
@@ -1131,7 +1132,7 @@ class RetrievalService(Service):
         High-level method that:
           1) builds the documents context
           2) builds the collections context
-          3) loads the new `aware_rag_agent` prompt
+          3) loads the new `aware_reasoning_rag_agent` prompt
         """
         date_str = str(datetime.now().isoformat()).split("T")[0]
 
@@ -1143,21 +1144,23 @@ class RetrievalService(Service):
             filter_collection_ids=filter_collection_ids,
         )
 
+        prompt_name = self.config.agent.agent_dynamic_prompt
+
         if not rawr:
-            prompt_name = "aware_rag_agent"
+            prompt_name = "aware_reasoning_rag_agent"
         else:
             if (
                 "gemini-2.0-flash-thinking-exp-01-21" in model
                 or "reasoner" in model  # DeepSeek naming for R1
                 or "deepseek-r1" in model.lower()  # Open source naming for R1
             ):
-                prompt_name = "aware_rag_agent_reasoning_xml_tooling"
+                prompt_name = "aware_reasoning_rag_agent_xml_tooling"
             elif (
                 "o3-mini" in model
                 or "claude-3-5-sonnet-20241022" in model
                 or "gpt-4o" in model
             ):
-                prompt_name = "aware_rag_agent_reasoning_prompted"
+                prompt_name = "aware_reasoning_rag_agent_prompted"
             else:
                 raise R2RException(
                     status_code=400,

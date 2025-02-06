@@ -711,13 +711,13 @@ class PostgresPromptsHandler(CacheablePromptHandler):
             system_prompt = system_prompt_override
         else:
             system_prompt = await self.get_cached_prompt(
-                system_prompt_name or "default_system",
+                system_prompt_name or "system",
                 system_inputs,
                 prompt_override=system_prompt_override,
             )
 
         task_prompt = await self.get_cached_prompt(
-            task_prompt_name or "default_rag",
+            task_prompt_name or "rag",
             task_inputs,
             prompt_override=task_prompt_override,
         )

@@ -817,7 +817,7 @@ class GraphService(Service):
             try:
                 # Build the prompt
                 messages = await self.providers.database.prompts_handler.get_message_payload(
-                    task_prompt_name=self.providers.database.config.graph_enrichment_settings.graphrag_communities,
+                    task_prompt_name=self.providers.database.config.graph_enrichment_settings.graphrag_communities_prompt,
                     task_inputs={
                         "collection_description": collection_description,
                         "input_text": input_text,
@@ -1123,7 +1123,7 @@ class GraphService(Service):
 
         # Build messages/prompt
         prompt_name = (
-            self.providers.database.config.graph_creation_settings.graphrag_relationships_extraction_few_shot
+            self.providers.database.config.graph_creation_settings.graphrag_extraction
         )
         messages = (
             await self.providers.database.prompts_handler.get_message_payload(

@@ -1,4 +1,4 @@
-graphrag_relationships_extraction_few_shot:
+graphrag_extraction:
   template: >
     # Context
     {document_summary}

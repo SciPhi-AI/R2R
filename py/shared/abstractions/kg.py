@@ -14,10 +14,10 @@ class KGCreationSettings(R2RSerializable):
         description="Whether to use remote clustering for graph creation.",
     )
 
-    graphrag_relationships_extraction_few_shot: str = Field(
-        default="graphrag_relationships_extraction_few_shot",
+    graphrag_extraction: str = Field(
+        default="graphrag_extraction",
         description="The prompt to use for knowledge graph extraction.",
-        alias="graphrag_relationships_extraction_few_shot",  # TODO - mark deprecated & remove
+        alias="graphrag_extraction",  # TODO - mark deprecated & remove
     )
 
     graph_entity_description_prompt: str = Field(
@@ -70,7 +70,7 @@ class KGEnrichmentSettings(R2RSerializable):
         description="Force run the enrichment step even if graph creation is still in progress for some documents.",
     )
 
-    graphrag_communities: str = Field(
+    graphrag_communities_prompt: str = Field(
         default="graphrag_communities",
         description="The prompt to use for knowledge graph enrichment.",
         alias="graphrag_communities",  # TODO - mark deprecated & remove

@@ -303,14 +303,6 @@ class GraphSearchSettings(R2RSerializable):
         default=None,
         description="Configuration for text generation during graph search.",
     )
-    graphrag_map_system: str = Field(
-        default="graphrag_map_system",
-        description="The system prompt for the graphrag map prompt.",
-    )
-    graphrag_reduce_system: str = Field(
-        default="graphrag_reduce_system",
-        description="The system prompt for the graphrag reduce prompt.",
-    )
     max_community_description_length: int = Field(
         default=65536,
     )

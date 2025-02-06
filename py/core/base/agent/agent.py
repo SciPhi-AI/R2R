@@ -41,7 +41,8 @@ class Conversation:
 
 # TODO - Move agents to provider pattern
 class AgentConfig(BaseModel):
-    system_instruction_name: str = "rag_agent"
+    agent_static_prompt: str = "static_rag_agent"
+    agent_dynamic_prompt: str = "aware_reasoning_rag_agent_prompted"
     tools: list[str] = ["search"]
     tool_names: Optional[list[str]] = None
     stream: bool = False
@@ -91,7 +92,7 @@ class Agent(ABC):
                 content=system_instruction
                 or (
                     await self.database_provider.prompts_handler.get_cached_prompt(
-                        self.config.system_instruction_name,
+                        self.config.agent_static_prompt,
                         inputs={"date": str(datetime.now().isoformat())},
                     )
                 ),

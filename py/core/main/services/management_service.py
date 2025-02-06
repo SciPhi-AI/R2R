@@ -679,7 +679,7 @@ class ManagementService(Service):
 
         messages = await self.providers.database.prompts_handler.get_message_payload(
             system_prompt_name=self.config.database.collection_summary_system_prompt,
-            task_prompt_name=self.config.database.collection_summary_task_prompt,
+            task_prompt_name=self.config.database.collection_summary_prompt,
             task_inputs={"document_summaries": formatted_summaries},
         )
 

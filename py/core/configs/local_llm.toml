@@ -21,7 +21,7 @@ vlm = "ollama/deepseek-r1"
 audio_lm = "ollama/whisper-1"
 
 [agent]
-system_instruction_name = "rag_agent"
+agent_static_prompt = "rag_agent"
 # tools = ["local_search", "content", "web_search"]
 tools = ["local_search"]
 
@@ -61,7 +61,6 @@ default_collection_description = "Your default collection."
     automatic_deduplication = true # enable automatic deduplication of entities
 
   [database.graph_enrichment_settings]
-    community_reports_prompt = "graphrag_community_reports"
     max_summary_input_length = 65536
     leiden_params = {}
 

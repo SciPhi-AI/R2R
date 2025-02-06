@@ -128,8 +128,8 @@ class DatabaseConfig(ProviderConfig):
     ] = None
     default_collection_name: str = "Default"
     default_collection_description: str = "Your default collection."
-    collection_summary_system_prompt: str = "default_system"
-    collection_summary_task_prompt: str = "default_collection_summary"
+    collection_summary_system_prompt: str = "system"
+    collection_summary_prompt: str = "collection_summary"
     enable_fts: bool = False
 
     # Graph settings

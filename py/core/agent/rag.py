@@ -533,6 +533,8 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
             for msg in messages:
                 await self.conversation.add_message(msg)
 
+        all_tokens = ""
+
         for step_i in range(self.max_steps):
             iteration_text = ""
 
@@ -541,6 +543,7 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                 messages_list[-1], stream=True
             )
 
+            print("messages_list = ", messages_list)
             stream = self.llm_provider.aget_completion_stream(
                 messages_list,
                 generation_config,
@@ -548,7 +551,6 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
             thought_text, action_text, in_thought = "", "", True
 
             closing_detected = False
-
             async for stream_delta in self.process_llm_response(
                 stream, *args, **kwargs
             ):
@@ -556,6 +558,10 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                 stream_delta = stream_delta.replace(
                     "<think>", "<Thought>"
                 ).replace("</think>", "</Thought>")
+                all_tokens += stream_delta
+                print("-" * 250)
+                print(all_tokens)
+                print("-" * 250)
                 if "</" not in stream_delta and not closing_detected:
                     thought_text += stream_delta
                     yield stream_delta
@@ -642,8 +648,8 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                 # Optionally yield the XML block so that the user sees it
                 # yield f"\n\n<Action>{xml_toolcalls}</Action>"
             else:
-                iteration_text += f"<Thought>No tool calls found in this step, trying again.</Thought>"
-                yield f"<Thought>No tool calls found in this step, trying again.</Thought>"
+                iteration_text += f"<Thought>No tool calls found in this step, trying again. If I have completed my response I should use the `result` tool.</Thought>"
+                yield f"<Thought>No tool calls found in this step, trying again. If I have completed my response I should use the `result` tool.</Thought>"
 
             await self.conversation.add_message(
                 Message(role="assistant", content=iteration_text)
@@ -719,7 +725,7 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                     text.split("<Parameters>")[-1]
                     .split("</Parameters>")[0]
                     .strip()
-                )
+                )[12:-2]
                 answer = (
                     json.loads(raw_params)
                     if raw_params.startswith("{")
