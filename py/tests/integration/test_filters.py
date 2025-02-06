@@ -154,7 +154,7 @@ def test_collection_id_contains_filter(
     # $contains: For a single collection_id, we interpret as arrays that must contain the given UUID.
     # If collection_id {"$contains": "coll_ids[0]"}, docs must have coll0 in their array
     # That would be doc1 and doc2 only
-    filters = {"collection_id": {"$contains": coll_ids[0]}}
+    filters = {"collection_id": {"$contains": str(coll_ids[0])}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]
@@ -175,7 +175,9 @@ def test_collection_id_contains_multiple(
     # If we allow $contains with a list, e.g., {"$contains": [coll_ids[0], coll_ids[1]]},
     # this should mean the doc's collection_ids contain ALL of these.
     # Only doc2 has coll0 AND coll1. doc1 only has coll0, doc3 no collections, doc4 only coll3.
-    filters = {"collection_id": {"$contains": [coll_ids[0], coll_ids[1]]}}
+    filters = {
+        "collection_id": {"$contains": [str(coll_ids[0]), str(coll_ids[1])]}
+    }
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
     )["results"]["chunk_search_results"]

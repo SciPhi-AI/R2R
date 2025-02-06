@@ -100,9 +100,9 @@ def test_collection_owner_can_view_collection(
     normal_user_client: R2RClient, user_owned_collection
 ):
     """The owner should be able to view their own collection."""
-    coll = normal_user_client.collections.retrieve(user_owned_collection)[
-        "results"
-    ]
+    coll = normal_user_client.collections.retrieve(
+        user_owned_collection
+    ).results
     assert (
         coll["id"] == user_owned_collection
     ), "Owner cannot view their own collection."
@@ -132,8 +132,8 @@ def test_collection_member_can_view_collection(
     normal_user_client.collections.add_user(user_owned_collection, member_id)
 
     # The member now can view the collection
-    coll = member_client.collections.retrieve(user_owned_collection)["results"]
-    assert coll["id"] == user_owned_collection
+    coll = member_client.collections.retrieve(user_owned_collection).results
+    assert coll.id == user_owned_collection
 
 
 def test_non_owner_member_cannot_edit_collection(
@@ -231,8 +231,8 @@ def test_owner_can_remove_member_from_collection(
     # Remove them
     remove_resp = normal_user_client.collections.remove_user(
         user_owned_collection, another_user_id
-    )["results"]
-    assert remove_resp["success"], "Owner could not remove member."
+    ).results
+    assert remove_resp.success, "Owner could not remove member."
 
     # The removed user should no longer have access
     with pytest.raises(R2RException) as exc_info:

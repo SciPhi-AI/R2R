@@ -46,7 +46,9 @@ def test_create_and_get_graph(client, test_collection):
     # `test_collection` fixture creates a collection and returns ID
     collection_id = test_collection
     resp = client.graphs.retrieve(collection_id=collection_id)["results"]
-    assert resp["collection_id"] == collection_id, "Graph ID mismatch"
+    assert str(resp["collection_id"]) == str(
+        collection_id
+    ), "Graph ID mismatch"
 
 
 def test_update_graph(client, test_collection):

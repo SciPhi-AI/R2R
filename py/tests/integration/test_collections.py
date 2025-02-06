@@ -50,7 +50,7 @@ def test_update_collection(client: R2RClient, test_collection):
     updated_name = "Updated Test Collection"
     updated_desc = "Updated description"
     updated = client.collections.update(
-        test_collection.collection_id,
+        test_collection["collection_id"],
         name=updated_name,
         description=updated_desc,
     ).results
@@ -64,10 +64,10 @@ def test_add_document_to_collection(
     client: R2RClient, test_collection, test_document_2
 ):
     client.collections.add_document(
-        test_collection.collection_id, str(test_document_2)
+        test_collection["collection_id"], str(test_document_2)
     )
     docs_in_collection = client.collections.list_documents(
-        test_collection.collection_id
+        test_collection["collection_id"]
     ).results
     found = any(
         str(doc.id) == str(test_document_2) for doc in docs_in_collection
@@ -80,7 +80,7 @@ def test_list_documents_in_collection(
 ):
     # Document should be in the collection already from previous test
     docs_in_collection = client.collections.list_documents(
-        test_collection.collection_id
+        test_collection["collection_id"]
     ).results
     found = any(
         str(doc.id) == str(test_document) for doc in docs_in_collection
@@ -93,10 +93,10 @@ def test_remove_document_from_collection(
 ):
     # Remove the document from the collection
     client.collections.remove_document(
-        test_collection.collection_id, test_document
+        test_collection["collection_id"], test_document
     )
     docs_in_collection = client.collections.list_documents(
-        test_collection.collection_id
+        test_collection["collection_id"]
     ).results
     found = any(str(doc.id) == test_document for doc in docs_in_collection)
     assert not found, "Document still present in collection after removal"
@@ -189,7 +189,7 @@ def test_filter_collections_by_non_existent_id(client: R2RClient):
     random_id = str(uuid.uuid4())
     resp = client.collections.list(ids=[random_id])
     assert (
-        len(resp["results"]) == 0
+        len(resp.results) == 0
     ), "Expected no collections for a non-existent ID"
 
 
