@@ -68,8 +68,8 @@ def test_collection_id_eq_filter(
     filters = {"collection_id": {"$eq": str(coll_ids[0])}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
-    )["results"]["chunk_search_results"]
-    found_ids = {str(d["document_id"]) for d in listed}
+    ).results.chunk_search_results
+    found_ids = {str(d.document_id) for d in listed}
     assert {
         str(doc1),
         str(doc2),
@@ -86,8 +86,8 @@ def test_collection_id_ne_filter(
     filters = {"collection_id": {"$ne": str(coll_ids[0])}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
-    )["results"]["chunk_search_results"]
-    found_ids = {str(d["document_id"]) for d in listed}
+    ).results.chunk_search_results
+    found_ids = {str(d.document_id) for d in listed}
     assert (
         str(coll_ids[0]) not in found_ids
     ), f"Expected no coll0, got {found_ids}"
@@ -112,8 +112,8 @@ def test_collection_id_in_filter(
     filters = {"collection_id": {"$in": [str(coll_ids[0]), str(coll_ids[2])]}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
-    )["results"]["chunk_search_results"]
-    found_ids = {str(d["document_id"]) for d in listed}
+    ).results.chunk_search_results
+    found_ids = {str(d.document_id) for d in listed}
     assert {
         str(doc1),
         str(doc2),
@@ -131,10 +131,10 @@ def test_collection_id_nin_filter(
     filters = {"collection_id": {"$nin": [str(coll_ids[1])]}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
-    )["results"]["chunk_search_results"]
-    found_ids = {str(d["document_id"]) for d in listed}
+    ).results.chunk_search_results
+    found_ids = {str(d.document_id) for d in listed}
     # expected_ids = {doc1, doc3, doc4}
-    found_ids = {str(d["document_id"]) for d in listed}
+    found_ids = {str(d.document_id) for d in listed}
     assert (
         str(coll_ids[1]) not in found_ids
     ), f"Expected no coll1, got {found_ids}"
@@ -157,8 +157,8 @@ def test_collection_id_contains_filter(
     filters = {"collection_id": {"$contains": str(coll_ids[0])}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
-    )["results"]["chunk_search_results"]
-    found_ids = {str(d["document_id"]) for d in listed}
+    ).results.chunk_search_results
+    found_ids = {str(d.document_id) for d in listed}
     assert {
         str(doc1),
         str(doc2),
@@ -180,8 +180,8 @@ def test_collection_id_contains_multiple(
     }
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
-    )["results"]["chunk_search_results"]
-    found_ids = {str(d["document_id"]) for d in listed}
+    ).results.chunk_search_results
+    found_ids = {str(d.document_id) for d in listed}
     assert {str(doc2)} == found_ids, f"Expected doc2 only, got {found_ids}"
 
 

@@ -18,6 +18,7 @@ from core.base.api.models import (
     WrappedEntityResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
+    WrappedIngestionResponse,
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,
 )
@@ -253,7 +254,7 @@ class GraphRouter(BaseRouterV3):
             ),
             run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ):
+        ) -> WrappedIngestionResponse:
             """
             Creates communities in the graph by analyzing entity relationships and similarities.
 

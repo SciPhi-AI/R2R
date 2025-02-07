@@ -42,11 +42,11 @@ def test_create_and_get_index(client: R2RClient):
     assert create_resp.message is not None, "No message in create response"
 
     # Get the index details
-    get_resp = client.indices.retrieve(
+    results = client.indices.retrieve(
         index_name=index_name, table_name="chunks"
-    )["results"]
-    assert "index" in get_resp, "No index in get response"
-    assert get_resp["index"]["name"] == index_name, "Index name mismatch"
+    ).results
+    assert results.index is not None, "No index in get response"
+    assert results.index["name"] == index_name, "Index name mismatch"
 
 
 def test_list_indices(client: R2RClient):
