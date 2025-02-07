@@ -89,14 +89,6 @@ class UsersRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r users create jane.doe@example.com secure_password123
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -198,13 +190,6 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
                             """
                         ),
                     },
@@ -816,14 +801,6 @@ class UsersRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r users list
-                            """
-                        ),
-                    },
-                    {
                         "lang": "Shell",
                         "source": textwrap.dedent(
                             """
@@ -920,14 +897,6 @@ class UsersRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r users me
-                            """
-                        ),
-                    },
-                    {
                         "lang": "Shell",
                         "source": textwrap.dedent(
                             """
@@ -985,14 +954,6 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r users retrieve b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -1154,14 +1115,6 @@ class UsersRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r users list-collections 550e8400-e29b-41d4-a716-446655440000
-                            """
-                        ),
-                    },
-                    {
                         "lang": "Shell",
                         "source": textwrap.dedent(
                             """
@@ -1255,14 +1208,6 @@ class UsersRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r users add-to-collection 550e8400-e29b-41d4-a716-446655440000 750e8400-e29b-41d4-a716-446655440000
-                            """
-                        ),
-                    },
-                    {
                         "lang": "Shell",
                         "source": textwrap.dedent(
                             """
@@ -1335,14 +1280,6 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r users remove-from-collection 550e8400-e29b-41d4-a716-446655440000 750e8400-e29b-41d4-a716-446655440000
                             """
                         ),
                     },
