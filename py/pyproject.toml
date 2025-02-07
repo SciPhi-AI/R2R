@@ -206,6 +206,9 @@ exclude = 'core/parsers/media/pyzerox/.*|playground/.*|deprecated/.*|dump/.*|doc
 module = "yaml"
 ignore_missing_imports = true
 
+[tool.poetry.scripts]
+r2r-serve = "r2r.serve:run_server"
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 addopts = "--cov=r2r --cov-report=term-missing --cov-report=xml --cache-clear"

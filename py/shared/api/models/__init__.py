@@ -12,14 +12,22 @@ from shared.api.models.base import (
 )
 from shared.api.models.graph.responses import (
     GraphResponse,
+    WrappedCommunitiesResponse,
+    WrappedCommunityResponse,
+    WrappedEntitiesResponse,
+    WrappedEntityResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
+    WrappedRelationshipResponse,
+    WrappedRelationshipsResponse,
 )
 from shared.api.models.ingestion.responses import (
     IngestionResponse,
     WrappedIngestionResponse,
     WrappedMetadataUpdateResponse,
     WrappedUpdateResponse,
+    WrappedVectorIndexResponse,
+    WrappedVectorIndicesResponse,
 )
 from shared.api.models.management.responses import (
     AnalyticsResponse,
@@ -42,7 +50,10 @@ from shared.api.models.management.responses import (
     WrappedConversationsResponse,
     WrappedDocumentResponse,
     WrappedDocumentsResponse,
+    WrappedLimitsResponse,
+    WrappedLoginResponse,
     WrappedLogsResponse,
+    WrappedMessageResponse,
     WrappedPromptResponse,
     WrappedPromptsResponse,
     WrappedServerStatsResponse,
@@ -71,11 +82,18 @@ __all__ = [
     "IngestionResponse",
     "WrappedIngestionResponse",
     "WrappedUpdateResponse",
+    "WrappedVectorIndexResponse",
+    "WrappedVectorIndicesResponse",
     "WrappedMetadataUpdateResponse",
-    # TODO: Need to review anything above this
     "GraphResponse",
     "WrappedGraphResponse",
     "WrappedGraphsResponse",
+    "WrappedEntityResponse",
+    "WrappedEntitiesResponse",
+    "WrappedRelationshipResponse",
+    "WrappedRelationshipsResponse",
+    "WrappedCommunityResponse",
+    "WrappedCommunitiesResponse",
     # Management Responses
     "PromptResponse",
     "ServerStats",
@@ -108,8 +126,11 @@ __all__ = [
     # User Responses
     "WrappedUserResponse",
     "WrappedAPIKeyResponse",
+    "WrappedLimitsResponse",
     "WrappedAPIKeysResponse",
+    "WrappedLoginResponse",
     "WrappedUsersResponse",
+    "WrappedMessageResponse",
     # Base Responses
     "PaginatedR2RResult",
     "R2RResults",

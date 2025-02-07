@@ -2,31 +2,33 @@ import uuid
 
 import pytest
 
-from r2r import R2RException
+from r2r import R2RClient, R2RException
 
 
 @pytest.fixture
-def setup_docs_with_collections(client):
+def setup_docs_with_collections(client: R2RClient):
     # Create some test collections
 
     random_suffix = str(uuid.uuid4())[:8]
     coll_ids = []
     for i in range(3):
-        resp = client.collections.create(name=f"TestColl{i}")["results"]
-        coll_ids.append(resp["id"])
+        collection_id = client.collections.create(
+            name=f"TestColl{i}"
+        ).results.id
+        coll_ids.append(collection_id)
 
     # Create documents with different collection arrangements:
     # doc1: [coll1]
     doc1 = client.documents.create(
-        raw_text="Doc in coll1" + random_suffix, run_with_orchestration=False
-    )["results"]["document_id"]
+        raw_text=f"Doc in coll1{random_suffix}", run_with_orchestration=False
+    ).results.document_id
     client.collections.add_document(coll_ids[0], doc1)
 
     # doc2: [coll1, coll2]
     doc2 = client.documents.create(
-        raw_text="Doc in coll1 and coll2" + random_suffix,
+        raw_text=f"Doc in coll1 and coll2{random_suffix}",
         run_with_orchestration=False,
-    )["results"]["document_id"]
+    ).results.document_id
     client.collections.add_document(coll_ids[0], doc2)
     client.collections.add_document(coll_ids[1], doc2)
 
@@ -34,12 +36,12 @@ def setup_docs_with_collections(client):
     doc3 = client.documents.create(
         raw_text="Doc in no collections" + random_suffix,
         run_with_orchestration=False,
-    )["results"]["document_id"]
+    ).results.document_id
 
     # doc4: [coll3]
     doc4 = client.documents.create(
         raw_text="Doc in coll3" + random_suffix, run_with_orchestration=False
-    )["results"]["document_id"]
+    ).results.document_id
     client.collections.add_document(coll_ids[2], doc4)
 
     yield {"coll_ids": coll_ids, "doc_ids": [doc1, doc2, doc3, doc4]}
@@ -57,36 +59,40 @@ def setup_docs_with_collections(client):
             pass
 
 
-def test_collection_id_eq_filter(client, setup_docs_with_collections):
+def test_collection_id_eq_filter(
+    client: R2RClient, setup_docs_with_collections
+):
     coll_ids = setup_docs_with_collections["coll_ids"]
     doc_ids = setup_docs_with_collections["doc_ids"]
     doc1, doc2, doc3, doc4 = doc_ids
 
     # collection_id = coll_ids[0] should match doc1 and doc2 only
-    filters = {"collection_id": {"$eq": coll_ids[0]}}
+    filters = {"collection_id": {"$eq": str(coll_ids[0])}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
-    )["results"]["chunk_search_results"]
-    found_ids = {d["document_id"] for d in listed}
+    ).results.chunk_search_results
+    found_ids = {str(d.document_id) for d in listed}
     assert {
-        doc1,
-        doc2,
+        str(doc1),
+        str(doc2),
     } == found_ids, f"Expected doc1 and doc2, got {found_ids}"
 
 
-def test_collection_id_ne_filter(client, setup_docs_with_collections):
+def test_collection_id_ne_filter(
+    client: R2RClient, setup_docs_with_collections
+):
     coll_ids = setup_docs_with_collections["coll_ids"]
     doc_ids = setup_docs_with_collections["doc_ids"]
     doc1, doc2, doc3, doc4 = doc_ids
 
     # collection_id != coll_ids[0] means docs that are NOT in coll0
     # Those are doc3 (no collections) and doc4 (in coll3 only)
-    filters = {"collection_id": {"$ne": coll_ids[0]}}
+    filters = {"collection_id": {"$ne": str(coll_ids[0])}}
     # listed = client.documents.list(limit=10, offset=0, filters=filters)["results"]
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
-    )["results"]["chunk_search_results"]
-    found_ids = {d["document_id"] for d in listed}
+    ).results.chunk_search_results
+    found_ids = {str(d.document_id) for d in listed}
     assert coll_ids[0] not in found_ids, f"Expected no coll0, got {found_ids}"
     # assert {
     #     doc3,
@@ -94,7 +100,9 @@ def test_collection_id_ne_filter(client, setup_docs_with_collections):
     # } == found_ids, f"Expected doc3 and doc4, got {found_ids}"
 
 
-def test_collection_id_in_filter(client, setup_docs_with_collections):
+def test_collection_id_in_filter(
+    client: R2RClient, setup_docs_with_collections
+):
     coll_ids = setup_docs_with_collections["coll_ids"]
     doc_ids = setup_docs_with_collections["doc_ids"]
     doc1, doc2, doc3, doc4 = doc_ids
@@ -102,19 +110,21 @@ def test_collection_id_in_filter(client, setup_docs_with_collections):
     # collection_id in [coll_ids[0], coll_ids[2]] means docs in either coll0 or coll2
     # doc1 in coll0, doc2 in coll0, doc4 in coll2
     # doc3 is in none
-    filters = {"collection_id": {"$in": [coll_ids[0], coll_ids[2]]}}
+    filters = {"collection_id": {"$in": [str(coll_ids[0]), str(coll_ids[2])]}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
-    )["results"]["chunk_search_results"]
-    found_ids = {d["document_id"] for d in listed}
+    ).results.chunk_search_results
+    found_ids = {str(d.document_id) for d in listed}
     assert {
-        doc1,
-        doc2,
-        doc4,
+        str(doc1),
+        str(doc2),
+        str(doc4),
     } == found_ids, f"Expected doc1, doc2, doc4, got {found_ids}"
 
 
-def test_collection_id_nin_filter(client, setup_docs_with_collections):
+def test_collection_id_nin_filter(
+    client: R2RClient, setup_docs_with_collections
+):
     coll_ids = setup_docs_with_collections["coll_ids"]
     doc_ids = setup_docs_with_collections["doc_ids"]
     doc1, doc2, doc3, doc4 = doc_ids
@@ -122,20 +132,17 @@ def test_collection_id_nin_filter(client, setup_docs_with_collections):
     # collection_id nin [coll_ids[1]] means docs that do NOT belong to coll1
     # doc2 belongs to coll1, so exclude doc2
     # doc1, doc3, doc4 remain
-    filters = {"collection_id": {"$nin": [coll_ids[1]]}}
+    filters = {"collection_id": {"$nin": [str(coll_ids[1])]}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
-    )["results"]["chunk_search_results"]
-    found_ids = {d["document_id"] for d in listed}
+    ).results.chunk_search_results
+    found_ids = {str(d.document_id) for d in listed}
     assert coll_ids[1] not in found_ids, f"Expected no coll1, got {found_ids}"
-    # assert {
-    #     doc1,
-    #     doc3,
-    #     doc4,
-    # } == found_ids, f"Expected doc1, doc3, doc4, got {found_ids}"
 
 
-def test_collection_id_contains_filter(client, setup_docs_with_collections):
+def test_collection_id_contains_filter(
+    client: R2RClient, setup_docs_with_collections
+):
     coll_ids = setup_docs_with_collections["coll_ids"]
     doc_ids = setup_docs_with_collections["doc_ids"]
     doc1, doc2, doc3, doc4 = doc_ids
@@ -143,18 +150,20 @@ def test_collection_id_contains_filter(client, setup_docs_with_collections):
     # $contains: For a single collection_id, we interpret as arrays that must contain the given UUID.
     # If collection_id {"$contains": "coll_ids[0]"}, docs must have coll0 in their array
     # That would be doc1 and doc2 only
-    filters = {"collection_id": {"$contains": coll_ids[0]}}
+    filters = {"collection_id": {"$contains": str(coll_ids[0])}}
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
-    )["results"]["chunk_search_results"]
-    found_ids = {d["document_id"] for d in listed}
+    ).results.chunk_search_results
+    found_ids = {str(d.document_id) for d in listed}
     assert {
-        doc1,
-        doc2,
+        str(doc1),
+        str(doc2),
     } == found_ids, f"Expected doc1 and doc2, got {found_ids}"
 
 
-def test_collection_id_contains_multiple(client, setup_docs_with_collections):
+def test_collection_id_contains_multiple(
+    client: R2RClient, setup_docs_with_collections
+):
     coll_ids = setup_docs_with_collections["coll_ids"]
     doc_ids = setup_docs_with_collections["doc_ids"]
     doc1, doc2, doc3, doc4 = doc_ids
@@ -162,22 +171,26 @@ def test_collection_id_contains_multiple(client, setup_docs_with_collections):
     # If we allow $contains with a list, e.g., {"$contains": [coll_ids[0], coll_ids[1]]},
     # this should mean the doc's collection_ids contain ALL of these.
     # Only doc2 has coll0 AND coll1. doc1 only has coll0, doc3 no collections, doc4 only coll3.
-    filters = {"collection_id": {"$contains": [coll_ids[0], coll_ids[1]]}}
+    filters = {
+        "collection_id": {"$contains": [str(coll_ids[0]), str(coll_ids[1])]}
+    }
     listed = client.retrieval.search(
         query="whoami", search_settings={"filters": filters}
-    )["results"]["chunk_search_results"]
-    found_ids = {d["document_id"] for d in listed}
-    assert {doc2} == found_ids, f"Expected doc2 only, got {found_ids}"
+    ).results.chunk_search_results
+    found_ids = {str(d.document_id) for d in listed}
+    assert {str(doc2)} == found_ids, f"Expected doc2 only, got {found_ids}"
 
 
-def test_delete_by_collection_id_eq(client, setup_docs_with_collections):
+def test_delete_by_collection_id_eq(
+    client: R2RClient, setup_docs_with_collections
+):
     coll_ids = setup_docs_with_collections["coll_ids"]
     doc1, doc2, doc3, doc4 = setup_docs_with_collections["doc_ids"]
 
     # Delete documents in coll0
-    filters = {"collection_id": {"$eq": coll_ids[0]}}
-    del_resp = client.documents.delete_by_filter(filters)["results"]
-    assert del_resp["success"], "Failed to delete by collection_id $eq filter"
+    filters = {"collection_id": {"$eq": str(coll_ids[0])}}
+    del_resp = client.documents.delete_by_filter(filters).results
+    assert del_resp.success, "Failed to delete by collection_id $eq filter"
 
     # doc1 and doc2 should be deleted, doc3 and doc4 remain
     for d_id in [doc1, doc2]:

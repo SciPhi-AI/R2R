@@ -11,6 +11,7 @@ from shared.abstractions import (
 )
 from shared.abstractions.llm import LLMChatCompletion
 from shared.api.models.base import R2RResults
+from shared.api.models.management.responses import DocumentResponse
 
 
 class RAGResponse(BaseModel):
@@ -114,6 +115,7 @@ WrappedCompletionResponse = R2RResults[LLMChatCompletion]
 # Create wrapped versions of the responses
 WrappedVectorSearchResponse = R2RResults[list[ChunkSearchResult]]
 WrappedSearchResponse = R2RResults[AggregateSearchResult]
-WrappedDocumentSearchResponse = R2RResults[list[DocumentSearchResult]]
+# FIXME: This is returning DocumentResponse, but should be DocumentSearchResult
+WrappedDocumentSearchResponse = R2RResults[list[DocumentResponse]]
 WrappedRAGResponse = R2RResults[RAGResponse]
 WrappedAgentResponse = R2RResults[AgentResponse]

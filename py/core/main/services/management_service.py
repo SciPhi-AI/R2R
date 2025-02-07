@@ -122,7 +122,7 @@ class ManagementService(Service):
         )
 
         results = interim_results["results"]
-        while interim_results["page_info"]["total_entries"] == 1_000:
+        while interim_results["total_entries"] == 1_000:
             # If we hit the limit, we need to paginate to get all results
 
             interim_results = (
@@ -1058,7 +1058,7 @@ class ManagementService(Service):
             await self.providers.database.chunks_handler.list_chunks(
                 limit=1, offset=0, filters={"owner_id": user_id}
             )
-        )["page_info"]["total_entries"]
+        )["total_entries"]
 
         max_collections = await self.get_user_max_collections(user_id)
         used_collections = (

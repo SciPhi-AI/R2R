@@ -11,11 +11,13 @@ from core.base import KGEnrichmentStatus, R2RException, Workflow
 from core.base.abstractions import StoreType
 from core.base.api.models import (
     GenericBooleanResponse,
+    GenericMessageResponse,
     WrappedBooleanResponse,
     WrappedCommunitiesResponse,
     WrappedCommunityResponse,
     WrappedEntitiesResponse,
     WrappedEntityResponse,
+    WrappedGenericMessageResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
     WrappedRelationshipResponse,
@@ -253,7 +255,7 @@ class GraphRouter(BaseRouterV3):
             ),
             run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ):
+        ) -> WrappedGenericMessageResponse:
             """
             Creates communities in the graph by analyzing entity relationships and similarities.
 
@@ -314,9 +316,11 @@ class GraphRouter(BaseRouterV3):
 
             if run_with_orchestration:
                 try:
-                    return await self.providers.orchestration.run_workflow(  # type: ignore
+                    await self.providers.orchestration.run_workflow(  # type: ignore
                         "build-communities", {"request": workflow_input}, {}
                     )
+                    return GenericMessageResponse(message="Graph communities created successfully.")  # type: ignore
+
                 except (
                     Exception
                 ) as e:  # TODO: Need to find specific error (gRPC most likely?)
@@ -328,10 +332,7 @@ class GraphRouter(BaseRouterV3):
             logger.info("Running build-communities without orchestration.")
             simple_kg = simple_kg_factory(self.services.graph)
             await simple_kg["build-communities"](workflow_input)
-            return {
-                "message": "Graph communities created successfully.",
-                "task_id": None,
-            }
+            return GenericMessageResponse(message="Graph communities created successfully.")  # type: ignore
 
         @self.router.post(
             "/graphs/{collection_id}/reset",

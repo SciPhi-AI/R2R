@@ -1228,7 +1228,7 @@ class CollectionsRouter(BaseRouterV3):
                 description="Whether to run the entities and relationships extraction process with orchestration.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ):
+        ) -> WrappedGenericMessageResponse:
             """
             Extracts entities and relationships from a document.
                 The entities and relationships extraction process involves:

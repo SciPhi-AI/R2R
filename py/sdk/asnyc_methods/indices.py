@@ -1,9 +1,10 @@
 import json
 from typing import Any, Optional
 
-from shared.api.models.base import WrappedGenericMessageResponse
-from shared.api.models.ingestion.responses import (
-    WrappedListVectorIndicesResponse,
+from shared.api.models import (
+    WrappedGenericMessageResponse,
+    WrappedVectorIndexResponse,
+    WrappedVectorIndicesResponse,
 )
 
 
@@ -30,19 +31,21 @@ class IndicesSDK:
             "config": config,
             "run_with_orchestration": run_with_orchestration,
         }
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "POST",
             "indices",
             json=data,
             version="v3",
         )
 
+        return WrappedGenericMessageResponse(**response_dict)
+
     async def list(
         self,
         filters: Optional[dict] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 10,
-    ) -> WrappedListVectorIndicesResponse:
+    ) -> WrappedVectorIndicesResponse:
         """
         List existing vector similarity search indices with pagination support.
 
@@ -52,7 +55,7 @@ class IndicesSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            WrappedListVectorIndicesResponse: The response containing the list of indices.
+            WrappedVectorIndicesResponse
         """
         params: dict = {
             "offset": offset,
@@ -60,18 +63,20 @@ class IndicesSDK:
         }
         if filters:
             params["filters"] = json.dumps(filters)
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "GET",
             "indices",
             params=params,
             version="v3",
         )
 
+        return WrappedVectorIndicesResponse(**response_dict)
+
     async def retrieve(
         self,
         index_name: str,
         table_name: str = "vectors",
-    ) -> dict:
+    ) -> WrappedVectorIndexResponse:
         """
         Get detailed information about a specific vector index.
 
@@ -82,11 +87,13 @@ class IndicesSDK:
         Returns:
             WrappedGetIndexResponse: The response containing the index details.
         """
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "GET",
             f"indices/{table_name}/{index_name}",
             version="v3",
         )
+
+        return WrappedVectorIndexResponse(**response_dict)
 
     async def delete(
         self,
@@ -103,8 +110,10 @@ class IndicesSDK:
         Returns:
             WrappedGetIndexResponse: The response containing the index details.
         """
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "DELETE",
             f"indices/{table_name}/{index_name}",
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)

@@ -2,7 +2,7 @@ import { r2rClient } from "../../r2rClient";
 import {
   IndexConfig,
   WrappedGenericMessageResponse,
-  WrappedListVectorIndicesResponse,
+  WrappedVectorIndicesResponse,
 } from "../../types";
 
 export class IndiciesClient {
@@ -41,7 +41,7 @@ export class IndiciesClient {
     filters?: Record<string, any>;
     offset?: number;
     limit?: number;
-  }): Promise<WrappedListVectorIndicesResponse> {
+  }): Promise<WrappedVectorIndicesResponse> {
     const params: Record<string, any> = {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? 100,
