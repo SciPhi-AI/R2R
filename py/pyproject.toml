@@ -213,6 +213,7 @@ module = "yaml"
 ignore_missing_imports = true
 
 [tool.poetry.scripts]
+r2r-serve = "r2r.serve:run_server"
 r2r = "cli.main:main"
 
 [tool.pytest.ini_options]

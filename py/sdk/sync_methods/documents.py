@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Optional
 from uuid import UUID
 
-from core.base.api.models import (
+from shared.api.models import (
     WrappedBooleanResponse,
     WrappedChunksResponse,
     WrappedCollectionsResponse,

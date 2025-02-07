@@ -1,7 +1,5 @@
-# tests/conftest.py
-import asyncio
 import uuid
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator
 
 import pytest
 
@@ -61,7 +59,7 @@ import uuid
 
 import pytest
 
-from r2r import Message, R2RClient, R2RException, SearchMode
+from r2r import R2RClient, R2RException
 
 
 @pytest.fixture(scope="session")

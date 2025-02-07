@@ -2,7 +2,7 @@ import json
 from typing import Any, Optional
 from uuid import UUID
 
-from core.base.api.models import (
+from shared.api.models import (
     WrappedBooleanResponse,
     WrappedChunkResponse,
     WrappedChunksResponse,
