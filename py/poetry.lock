@@ -7206,10 +7206,9 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 type = ["pytest-mypy"]
 
 [extras]
-core = ["aiohttp", "aiosqlite", "anthropic", "apscheduler", "asyncpg", "azure-ai-inference", "azure-ai-ml", "bcrypt", "boto3", "colorlog", "fsspec", "future", "google-auth", "google-auth-oauthlib", "google-genai", "graspologic", "gunicorn", "hatchet-sdk", "litellm", "networkx", "ollama", "psutil", "pydantic", "pyjwt", "pynacl", "python-multipart", "pyyaml", "sendgrid", "sentry-sdk", "sqlalchemy", "supabase", "tiktoken", "tokenizers", "unstructured-client", "uvicorn", "vecs"]
-ingestion-bundle = ["aioshutil", "beautifulsoup4", "docutils", "epub", "extract-msg", "markdown", "numpy", "olefile", "openpyxl", "orgparse", "pdf2image", "pillow-heif", "pypdf", "pypdf2", "python-docx", "python-pptx", "striprtf", "xlrd"]
+core = ["aiohttp", "aioshutil", "aiosqlite", "anthropic", "apscheduler", "asyncpg", "azure-ai-inference", "azure-ai-ml", "bcrypt", "beautifulsoup4", "boto3", "colorlog", "docutils", "epub", "extract-msg", "fsspec", "future", "google-auth", "google-auth-oauthlib", "google-genai", "graspologic", "gunicorn", "hatchet-sdk", "litellm", "markdown", "networkx", "numpy", "olefile", "ollama", "openpyxl", "orgparse", "pdf2image", "pillow-heif", "psutil", "pydantic", "pyjwt", "pynacl", "pypdf", "pypdf2", "python-docx", "python-multipart", "python-pptx", "pyyaml", "sendgrid", "sentry-sdk", "sqlalchemy", "striprtf", "supabase", "tiktoken", "tokenizers", "unstructured-client", "uvicorn", "vecs", "xlrd"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "5b988a81c123e61e2e61a935917633cfe9275c41fb05c979158e054d6f142d99"
+content-hash = "0938facfcd0d32380ccb7f08613293ea3531f63dd4c67f4f6a0529f321864fe7"
