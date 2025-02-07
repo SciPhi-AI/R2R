@@ -255,7 +255,7 @@ def test_agent_conversation_id(client: R2RClient):
         conversation_id=str(conversation_id),
     ).results
     assert (
-        len(results2) > 0
+        len(results2.messages) > 0
     ), "No results from agent in second turn of conversation"
 
 
