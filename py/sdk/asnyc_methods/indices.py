@@ -1,7 +1,7 @@
 import json
 from typing import Any, Optional
 
-from core.base.api.models import (
+from shared.api.models import (
     WrappedGenericMessageResponse,
     WrappedVectorIndexResponse,
     WrappedVectorIndicesResponse,

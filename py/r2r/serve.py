@@ -1,9 +1,21 @@
 import asyncio
+import logging
 import os
+import sys
 from typing import Optional
 
-from core import R2RApp, R2RBuilder, R2RConfig
-from core.utils.logging_config import configure_logging
+logger = logging.getLogger(__name__)
+
+try:
+    from core import R2RApp, R2RBuilder, R2RConfig
+    from core.utils.logging_config import configure_logging
+except ImportError as e:
+    logger.error(
+        f"Failed to start server: core dependencies not installed: {e}"
+    )
+    logger.error("To run the server, install the required dependencies:")
+    logger.error("pip install 'r2r[core]'")
+    sys.exit(1)
 
 
 async def create_app(
@@ -19,12 +31,19 @@ async def create_app(
     if not config_path and not config_name:
         config_name = "full" if full else "default"
 
-    r2r_instance = await R2RBuilder(
-        config=R2RConfig.load(config_name, config_path)
-    ).build()
+    try:
+        r2r_instance = await R2RBuilder(
+            config=R2RConfig.load(config_name, config_path)
+        ).build()
 
-    await r2r_instance.orchestration_provider.start_worker()
-    return r2r_instance
+        await r2r_instance.orchestration_provider.start_worker()
+        return r2r_instance
+    except ImportError as e:
+        logger.error(f"Failed to initialize R2R: {e}")
+        logger.error(
+            "Please check your configuration and installed dependencies"
+        )
+        sys.exit(1)
 
 
 def run_server(
@@ -34,16 +53,23 @@ def run_server(
     config_path: Optional[str] = None,
     full: bool = False,
 ):
-    configure_logging()
+    try:
+        configure_logging()
+    except Exception as e:
+        logger.error(f"Failed to configure logging: {e}")
 
-    port = int(os.getenv("R2R_PORT", port))
-    host = os.getenv("R2R_HOST", host)
+    try:
+        port = int(os.getenv("R2R_PORT", port))
+        host = os.getenv("R2R_HOST", host)
 
-    async def start():
-        app = await create_app(config_name, config_path, full)
-        await app.serve(host, port)
+        async def start():
+            app = await create_app(config_name, config_path, full)
+            await app.serve(host, port)
 
-    asyncio.run(start())
+        asyncio.run(start())
+    except Exception as e:
+        logger.error(f"Failed to start R2R server: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

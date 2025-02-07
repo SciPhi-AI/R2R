@@ -7,7 +7,7 @@ from uuid import UUID
 
 import aiofiles
 
-from core.base.api.models import (
+from shared.api.models import (
     WrappedBooleanResponse,
     WrappedChunksResponse,
     WrappedCollectionsResponse,
