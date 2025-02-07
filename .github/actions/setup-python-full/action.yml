@@ -71,7 +71,7 @@ runs:
           echo "No poetry.lock found, creating one..."
           poetry lock
         fi
-        poetry install -E core -E ingestion-bundle --no-interaction
+        poetry install -E core --no-interaction
 
     - name: Verify installation
       shell: bash
