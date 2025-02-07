@@ -87,11 +87,13 @@ class IndicesSDK:
         Returns:
             WrappedGetIndexResponse: The response containing the index details.
         """
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "GET",
             f"indices/{table_name}/{index_name}",
             version="v3",
         )
+
+        return WrappedVectorIndexResponse(**response_dict)
 
     async def delete(
         self,

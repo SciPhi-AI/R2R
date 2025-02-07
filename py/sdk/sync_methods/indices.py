@@ -90,11 +90,13 @@ class IndicesSDK:
         Returns:
             WrappedGetIndexResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"indices/{table_name}/{index_name}",
             version="v3",
         )
+
+        return WrappedVectorIndexResponse(**response_dict)
 
     def delete(
         self,

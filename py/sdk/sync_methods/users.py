@@ -14,8 +14,6 @@ from core.base.api.models import (
     WrappedUsersResponse,
 )
 
-from ..models import Token
-
 
 class UsersSDK:
     def __init__(self, client):

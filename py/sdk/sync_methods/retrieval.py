@@ -3,7 +3,6 @@ from typing import Any, AsyncGenerator, Optional
 from ..models import (
     AggregateSearchResult,
     GenerationConfig,
-    GraphSearchSettings,
     Message,
     RAGResponse,
     SearchMode,
