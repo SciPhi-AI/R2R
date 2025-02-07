@@ -30,7 +30,7 @@ jobs:
       AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
       AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
       TELEMETRY_ENABLED: 'false'
-      R2R_POSTGRES_HOST: host.docker.internal
+      R2R_POSTGRES_HOST: localhost
       R2R_POSTGRES_DBNAME: postgres
       R2R_POSTGRES_PORT: '5432'
       R2R_POSTGRES_PASSWORD: postgres

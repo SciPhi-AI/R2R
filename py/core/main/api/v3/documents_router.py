@@ -228,14 +228,6 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r documents create /path/to/file.txt
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -622,13 +614,6 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -826,14 +811,6 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r documents create /path/to/file.txt
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -946,14 +923,6 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r documents retrieve b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -1038,14 +1007,6 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r documents list-chunks b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -1375,14 +1336,6 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r documents delete b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -1452,14 +1405,6 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r documents list-collections b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -1924,13 +1869,6 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -2031,14 +1969,6 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r documents list-relationships b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -2176,13 +2106,6 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
                             """
                         ),
                     },

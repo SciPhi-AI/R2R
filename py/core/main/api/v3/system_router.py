@@ -63,14 +63,6 @@ class SystemRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r health
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -118,14 +110,6 @@ class SystemRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r system settings
                             """
                         ),
                     },
@@ -184,14 +168,6 @@ class SystemRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r system status
                             """
                         ),
                     },

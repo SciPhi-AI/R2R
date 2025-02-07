@@ -626,13 +626,6 @@ class GraphRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -844,13 +837,6 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
                             """
                         ),
                     },
@@ -1818,13 +1804,6 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
                             """
                         ),
                     },

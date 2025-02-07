@@ -158,14 +158,6 @@ class RetrievalRouterV3(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r retrieval search --query "Who is Aristotle?"
-                            """
-                        ),
-                    },
-                    {
                         "lang": "Shell",
                         "source": textwrap.dedent(
                             """
@@ -333,14 +325,6 @@ class RetrievalRouterV3(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r retrieval search --query "Who is Aristotle?" --stream
                             """
                         ),
                     },

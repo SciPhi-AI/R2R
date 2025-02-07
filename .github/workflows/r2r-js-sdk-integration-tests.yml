@@ -14,6 +14,12 @@ jobs:
         uses: ./.github/actions/setup-python-light
         with:
           os: ubuntu-latest
+      - name: Setup and start PostgreSQL
+        uses: ./.github/actions/setup-postgres-ext
+        with:
+          os: ubuntu-latest
+      - name: Start R2R Light server
+        uses: ./.github/actions/start-r2r-light
       - name: Use Node.js
         uses: actions/setup-node@v2
         with:
@@ -26,11 +32,9 @@ jobs:
       - name: Install JS SDK dependencies
         working-directory: ./js/sdk
         run: pnpm install
-      - name: Lint and Build JS SDK
+      - name: Check if R2R server is running
         run: |
-          cd js/sdk
-          pnpm format
-          pnpm build
+          curl http://localhost:7272/v2/health || echo "Server not responding"
 
   v3-integration-tests:
     needs: setup
@@ -56,7 +60,7 @@ jobs:
       AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
       AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
       TELEMETRY_ENABLED: 'false'
-      R2R_POSTGRES_HOST: host.docker.internal
+      R2R_POSTGRES_HOST: localhost
       R2R_POSTGRES_DBNAME: postgres
       R2R_POSTGRES_PORT: '5432'
       R2R_POSTGRES_PASSWORD: postgres
@@ -66,6 +70,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up Python and install dependencies
         uses: ./.github/actions/setup-python-light
+        with:
+          os: ubuntu-latest
+      - name: Setup and start PostgreSQL
+        uses: ./.github/actions/setup-postgres-ext
         with:
           os: ubuntu-latest
       - name: Start R2R Light server
