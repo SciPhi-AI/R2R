@@ -960,25 +960,7 @@ class PostgresChunksHandler(Handler):
                 }
                 indices.append(index_info)
 
-        # Calculate pagination info
-        total_pages = (total_entries + limit - 1) // limit if limit > 0 else 1
-        current_page = (offset // limit) + 1 if limit > 0 else 1
-
-        page_info = {
-            "total_entries": total_entries,
-            "total_pages": total_pages,
-            "current_page": current_page,
-            "limit": limit,
-            "offset": offset,
-            "has_previous": offset > 0,
-            "has_next": offset + limit < total_entries,
-            "previous_offset": max(0, offset - limit) if offset > 0 else None,
-            "next_offset": (
-                offset + limit if offset + limit < total_entries else None
-            ),
-        }
-
-        return {"indices": indices, "page_info": page_info}
+        return {"indices": indices, "total_entries": total_entries}
 
     async def delete_index(
         self,
@@ -1083,12 +1065,11 @@ class PostgresChunksHandler(Handler):
             dict: Dictionary containing:
                 - results: List of chunk records
                 - total_entries: Total number of chunks matching the filters
-                - page_info: Pagination information
         """
         vector_select = ", vec" if include_vectors else ""
         select_clause = f"""
             id, document_id, owner_id, collection_ids,
-            text, metadata{vector_select}, COUNT(*) OVER() AS total
+            text, metadata{vector_select}, COUNT(*) OVER() AS total_entries
         """
 
         params: list[str | int | bytes] = []
@@ -1113,9 +1094,9 @@ class PostgresChunksHandler(Handler):
 
         # Process results
         chunks = []
-        total = 0
+        total_entries = 0
         if results:
-            total = results[0].get("total", 0)
+            total_entries = results[0].get("total_entries", 0)
             chunks = [
                 {
                     "id": str(result["id"]),
@@ -1131,23 +1112,7 @@ class PostgresChunksHandler(Handler):
                 for result in results
             ]
 
-        # Calculate pagination info
-        total_pages = (total + limit - 1) // limit if limit > 0 else 1
-        current_page = (offset // limit) + 1 if limit > 0 else 1
-
-        page_info = {
-            "total_entries": total,
-            "total_pages": total_pages,
-            "current_page": current_page,
-            "limit": limit,
-            "offset": offset,
-            "has_previous": offset > 0,
-            "has_next": offset + limit < total,
-            "previous_offset": max(0, offset - limit) if offset > 0 else None,
-            "next_offset": offset + limit if offset + limit < total else None,
-        }
-
-        return {"results": chunks, "page_info": page_info}
+        return {"results": chunks, "total_entries": total_entries}
 
     async def search_documents(
         self,

@@ -32,6 +32,7 @@ from core.base.api.models import (
     WrappedChunksResponse,
     WrappedCollectionsResponse,
     WrappedDocumentResponse,
+    WrappedDocumentSearchResponse,
     WrappedDocumentsResponse,
     WrappedEntitiesResponse,
     WrappedGenericMessageResponse,
@@ -338,7 +339,7 @@ class DocumentsRouter(BaseRouterV3):
                         offset=0,
                         limit=1,
                     )
-                )["page_info"]["total_entries"]
+                )["total_entries"]
                 user_max_chunks = (
                     await self.services.management.get_user_max_chunks(
                         auth_user.id
@@ -2274,7 +2275,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Settings for document search",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ):  # -> WrappedDocumentSearchResponse:  # type: ignore
+        ) -> WrappedDocumentSearchResponse:
             """
             Perform a search query on the automatically generated document summaries in the system.
 
@@ -2296,7 +2297,7 @@ class DocumentsRouter(BaseRouterV3):
                 query_embedding=query_embedding,
                 settings=effective_settings,
             )
-            return results
+            return results  # type: ignore
 
     @staticmethod
     async def _process_file(file):

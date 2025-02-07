@@ -1,7 +1,7 @@
 from typing import Optional
 
-from shared.api.models.base import WrappedGenericMessageResponse
-from shared.api.models.management.responses import (
+from core.base.api.models import (
+    WrappedGenericMessageResponse,
     WrappedLogsResponse,
     WrappedServerStatsResponse,
     WrappedSettingsResponse,
@@ -16,7 +16,11 @@ class SystemSDK:
         """
         Check the health of the R2R server.
         """
-        return self.client._make_request("GET", "health", version="v3")
+        response_dict = self.client._make_request(
+            "GET", "health", version="v3"
+        )
+
+        return WrappedGenericMessageResponse(**response_dict)
 
     def logs(
         self,
@@ -44,9 +48,11 @@ class SystemSDK:
             }.items()
             if value is not None
         }
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET", "system/logs", params=params, version="v3"
         )
+
+        return WrappedLogsResponse(**response_dict)
 
     def settings(self) -> WrappedSettingsResponse:
         """
@@ -55,9 +61,11 @@ class SystemSDK:
         Returns:
             dict: The server settings.
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET", "system/settings", version="v3"
         )
+
+        return WrappedSettingsResponse(**response_dict)
 
     def status(self) -> WrappedServerStatsResponse:
         """
@@ -66,4 +74,8 @@ class SystemSDK:
         Returns:
             dict: The server statistics.
         """
-        return self.client._make_request("GET", "system/status", version="v3")
+        response_dict = self.client._make_request(
+            "GET", "system/status", version="v3"
+        )
+
+        return WrappedServerStatsResponse(**response_dict)

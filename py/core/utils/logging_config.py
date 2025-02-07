@@ -71,7 +71,7 @@ class HTTPStatusFilter(logging.Filter):
 
 def configure_logging():
     # Read the desired log level from the environment (default to DEBUG)
-    log_level = os.environ.get("R2R_LOG_LEVEL", "DEBUG").upper()
+    log_level = os.environ.get("R2R_LOG_LEVEL", "INFO").upper()
 
     # Create a logs directory if it does not already exist
     log_dir = Path.cwd() / "logs"

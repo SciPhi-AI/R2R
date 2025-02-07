@@ -459,7 +459,7 @@ class IngestionService:
                         filters={"owner_id": msg.owner_id},
                     )
                 )
-                current_usage = usage_data["page_info"]["total_entries"]
+                current_usage = usage_data["total_entries"]
 
             # Figure out the user's limit
             user = await self.providers.database.users_handler.get_user_by_id(

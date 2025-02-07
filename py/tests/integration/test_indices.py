@@ -23,7 +23,7 @@ def client(config):
     return client
 
 
-def test_create_and_get_index(client):
+def test_create_and_get_index(client: R2RClient):
     index_name = f"test_index_{uuid.uuid4().hex[:8]}"
     config = {
         "table_name": "chunks",
@@ -38,25 +38,29 @@ def test_create_and_get_index(client):
     # Create the index
     create_resp = client.indices.create(
         config=config, run_with_orchestration=True
-    )["results"]
-    assert "message" in create_resp, "No message in create response"
+    ).results
+    assert create_resp.message is not None, "No message in create response"
 
     # Get the index details
-    get_resp = client.indices.retrieve(
+    results = client.indices.retrieve(
         index_name=index_name, table_name="chunks"
-    )["results"]
-    assert "index" in get_resp, "No index in get response"
-    assert get_resp["index"]["name"] == index_name, "Index name mismatch"
+    ).results
+    assert results.index is not None, "No index in get response"
+    assert results.index["name"] == index_name, "Index name mismatch"
 
 
-def test_list_indices(client):
-    resp = client.indices.list(limit=5)["results"]
-    assert "indices" in resp, "No indices field in response"
+def test_list_indices(client: R2RClient):
+    try:
+        resp = client.indices.list(limit=5)
+        results = resp.results
+    except Exception as e:
+        print(f"Error: {e}")
+    assert results.indices is not None, "Indices field is None"
     # Just ensure we get a list without error. Detailed checks depend on data availability.
-    assert isinstance(resp["indices"], list), "Indices field is not a list"
+    assert isinstance(results.indices, list), "Indices field is not a list"
 
 
-def test_delete_index(client):
+def test_delete_index(client: R2RClient):
     # Create an index to delete
     index_name = f"test_delete_index_{uuid.uuid4().hex[:8]}"
     config = {
@@ -69,15 +73,13 @@ def test_delete_index(client):
         "concurrently": True,
     }
 
-    client.indices.create(config=config, run_with_orchestration=True)[
-        "results"
-    ]
+    client.indices.create(config=config, run_with_orchestration=True).results
 
     # Delete the index
     delete_resp = client.indices.delete(
         index_name=index_name, table_name="chunks"
-    )["results"]
-    assert "message" in delete_resp, "No message in delete response"
+    ).results
+    assert delete_resp.message is not None, "No message in delete response"
 
     # Verify deletion by attempting to retrieve the index
     with pytest.raises(R2RException) as exc_info:
@@ -87,7 +89,7 @@ def test_delete_index(client):
     ), "Unexpected error message for deleted index"
 
 
-def test_error_handling(client):
+def test_error_handling(client: R2RClient):
     # Try to get a non-existent index
     with pytest.raises(R2RException) as exc_info:
         client.indices.retrieve(

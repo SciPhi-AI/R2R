@@ -1,7 +1,3 @@
-# TODO - Move indices to 'id' basis
-# TODO - Implement update index
-# TODO - Implement index data model
-
 import logging
 import textwrap
 from typing import Optional
@@ -11,8 +7,11 @@ from fastapi import Body, Depends, Path, Query
 from core.base import IndexConfig, R2RException
 from core.base.abstractions import VectorTableName
 from core.base.api.models import (
+    VectorIndexResponse,
+    VectorIndicesResponse,
     WrappedGenericMessageResponse,
-    WrappedListVectorIndicesResponse,
+    WrappedVectorIndexResponse,
+    WrappedVectorIndicesResponse,
 )
 
 from ...abstractions import R2RProviders, R2RServices
@@ -314,7 +313,7 @@ class IndicesRouter(BaseRouterV3):
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ) -> WrappedListVectorIndicesResponse:
+        ) -> WrappedVectorIndicesResponse:
             """
             List existing vector similarity search indices with pagination support.
 
@@ -329,12 +328,23 @@ class IndicesRouter(BaseRouterV3):
             based on table name, index method, or other attributes.
             """
             # TODO: Implement index listing logic
-            indices = (
+            indices_data = (
                 await self.providers.database.chunks_handler.list_indices(
-                    offset=offset, limit=limit  # , filters=filters
+                    offset=offset, limit=limit
                 )
             )
-            return {"indices": indices["indices"]}, indices["page_info"]  # type: ignore
+
+            formatted_indices = VectorIndicesResponse(
+                indices=[
+                    VectorIndexResponse(index=index_data)
+                    for index_data in indices_data["indices"]
+                ]
+            )
+
+            return (  # type: ignore
+                formatted_indices,
+                {"total_entries": indices_data["total_entries"]},
+            )
 
         @self.router.get(
             "/indices/{table_name}/{index_name}",
@@ -406,7 +416,7 @@ class IndicesRouter(BaseRouterV3):
                 ..., description="The name of the index to delete"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ) -> dict:  #  -> WrappedGetIndexResponse:
+        ) -> WrappedVectorIndexResponse:
             """
             Get detailed information about a specific vector index.
 

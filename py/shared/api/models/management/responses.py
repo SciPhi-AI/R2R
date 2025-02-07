@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from shared.abstractions.document import DocumentResponse
 from shared.abstractions.llm import Message
-from shared.abstractions.user import User
+from shared.abstractions.user import Token, User
 from shared.api.models.base import PaginatedR2RResult, R2RResults
 
 
@@ -114,6 +114,54 @@ class ApiKeyNoPriv(BaseModel):
     description: Optional[str] = None
 
 
+class LoginResponse(BaseModel):
+    access_token: Token
+    refresh_token: Token
+
+
+class UsageLimit(BaseModel):
+    used: int
+    limit: int
+    remaining: int
+
+
+class StorageTypeLimit(BaseModel):
+    limit: int
+    used: int
+    remaining: int
+
+
+class StorageLimits(BaseModel):
+    chunks: StorageTypeLimit
+    documents: StorageTypeLimit
+    collections: StorageTypeLimit
+
+
+class RouteUsage(BaseModel):
+    route_per_min: UsageLimit
+    monthly_limit: UsageLimit
+
+
+class Usage(BaseModel):
+    global_per_min: UsageLimit
+    monthly_limit: UsageLimit
+    routes: dict[str, RouteUsage]
+
+
+class SystemDefaults(BaseModel):
+    global_per_min: int
+    route_per_min: Optional[int]
+    monthly_limit: int
+
+
+class LimitsResponse(BaseModel):
+    storage_limits: StorageLimits
+    system_defaults: SystemDefaults
+    user_overrides: dict
+    effective_limits: SystemDefaults
+    usage: Usage
+
+
 # Chunk Responses
 WrappedChunkResponse = R2RResults[ChunkResponse]
 WrappedChunksResponse = PaginatedR2RResult[list[ChunkResponse]]
@@ -147,9 +195,10 @@ WrappedUserResponse = R2RResults[User]
 WrappedUsersResponse = PaginatedR2RResult[list[User]]
 WrappedAPIKeyResponse = R2RResults[ApiKey]
 WrappedAPIKeysResponse = PaginatedR2RResult[list[ApiKeyNoPriv]]
+WrappedLoginResponse = R2RResults[LoginResponse]
 
-# TODO: anything below this hasn't been reviewed
 WrappedLogsResponse = R2RResults[list[LogResponse]]
 WrappedAnalyticsResponse = R2RResults[AnalyticsResponse]
 WrappedVerificationResult = R2RResults[VerificationResult]
 WrappedResetDataResult = R2RResults[ResetDataResult]
+WrappedLimitsResponse = R2RResults[LimitsResponse]

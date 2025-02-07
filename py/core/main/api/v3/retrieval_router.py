@@ -999,6 +999,7 @@ class RetrievalRouterV3(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper()),
             response_model=WrappedCompletionResponse,
         ):
+            # FIXME: Needs a proper return type
             """
             Generate completions for a list of messages.
 
@@ -1077,6 +1078,7 @@ class RetrievalRouterV3(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
+            # FIXME: Needs a proper return type
             """
             Generate embeddings for the provided text using the specified model.
 

@@ -1,19 +1,19 @@
+from builtins import list as _list
 from typing import Any, Optional
 from uuid import UUID
 
-from shared.api.models.base import WrappedBooleanResponse
-from shared.api.models.graph.responses import (
+from core.base.api.models import (
+    WrappedBooleanResponse,
     WrappedCommunitiesResponse,
     WrappedCommunityResponse,
     WrappedEntitiesResponse,
     WrappedEntityResponse,
+    WrappedGenericMessageResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,
 )
-
-_list = list  # Required for type hinting since we have a list method
 
 
 class GraphsSDK:
@@ -39,7 +39,7 @@ class GraphsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of graphs and pagination information
+            WrappedGraphsResponse
         """
         params: dict = {
             "offset": offset,
@@ -48,9 +48,11 @@ class GraphsSDK:
         if collection_ids:
             params["collection_ids"] = collection_ids
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET", "graphs", params=params, version="v3"
         )
+
+        return WrappedGraphsResponse(**response_dict)
 
     def retrieve(
         self,
@@ -63,11 +65,13 @@ class GraphsSDK:
             collection_id (str | UUID): Graph ID to retrieve
 
         Returns:
-            dict: Detailed graph information
+            WrappedGraphResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET", f"graphs/{str(collection_id)}", version="v3"
         )
+
+        return WrappedGraphResponse(**response_dict)
 
     def reset(
         self,
@@ -85,11 +89,13 @@ class GraphsSDK:
             collection_id (str | UUID): Graph ID to reset
 
         Returns:
-            dict: Success message
+            WrappedBooleanResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST", f"graphs/{str(collection_id)}/reset", version="v3"
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def update(
         self,
@@ -106,7 +112,7 @@ class GraphsSDK:
             description (Optional[str]): Optional new description for the graph
 
         Returns:
-            dict: Updated graph information
+            WrappedGraphResponse
         """
         data: dict[str, Any] = {}
         if name is not None:
@@ -114,14 +120,14 @@ class GraphsSDK:
         if description is not None:
             data["description"] = description
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"graphs/{str(collection_id)}",
             json=data,
             version="v3",
         )
 
-    # TODO: create entity
+        return WrappedGraphResponse(**response_dict)
 
     def list_entities(
         self,
@@ -138,19 +144,21 @@ class GraphsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of entities and pagination information
+            WrappedEntitiesResponse
         """
         params: dict = {
             "offset": offset,
             "limit": limit,
         }
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"graphs/{str(collection_id)}/entities",
             params=params,
             version="v3",
         )
+
+        return WrappedEntitiesResponse(**response_dict)
 
     def get_entity(
         self,
@@ -165,15 +173,15 @@ class GraphsSDK:
             entity_id (str | UUID): Entity ID to get from the graph
 
         Returns:
-            dict: Entity information
+            WrappedEntityResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"graphs/{str(collection_id)}/entities/{str(entity_id)}",
             version="v3",
         )
 
-    # TODO: update entity
+        return WrappedEntityResponse(**response_dict)
 
     def remove_entity(
         self,
@@ -188,15 +196,15 @@ class GraphsSDK:
             entity_id (str | UUID): Entity ID to remove from the graph
 
         Returns:
-            dict: Success message
+            WrappedBooleanResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"graphs/{str(collection_id)}/entities/{str(entity_id)}",
             version="v3",
         )
 
-    # TODO: create relationship
+        return WrappedBooleanResponse(**response_dict)
 
     def list_relationships(
         self,
@@ -213,19 +221,21 @@ class GraphsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of relationships and pagination information
+            WrappedRelationshipsResponse
         """
         params: dict = {
             "offset": offset,
             "limit": limit,
         }
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"graphs/{str(collection_id)}/relationships",
             params=params,
             version="v3",
         )
+
+        return WrappedRelationshipsResponse(**response_dict)
 
     def get_relationship(
         self,
@@ -240,15 +250,15 @@ class GraphsSDK:
             relationship_id (str | UUID): Relationship ID to get from the graph
 
         Returns:
-            dict: Relationship information
+            WrappedRelationshipResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"graphs/{str(collection_id)}/relationships/{str(relationship_id)}",
             version="v3",
         )
 
-    # TODO: update relationship
+        return WrappedRelationshipResponse(**response_dict)
 
     def remove_relationship(
         self,
@@ -263,20 +273,22 @@ class GraphsSDK:
             relationship_id (str | UUID): Relationship ID to remove from the graph
 
         Returns:
-            dict: Success message
+            WrappedBooleanResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"graphs/{str(collection_id)}/relationships/{str(relationship_id)}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def build(
         self,
         collection_id: str | UUID,
         settings: Optional[dict] = None,
         run_with_orchestration: bool = True,
-    ) -> WrappedBooleanResponse:
+    ) -> WrappedGenericMessageResponse:
         """
         Build a graph.
 
@@ -286,19 +298,21 @@ class GraphsSDK:
             run_with_orchestration (bool, optional): Whether to run with orchestration. Defaults to True.
 
         Returns:
-            dict: Success message
+            WrappedGenericMessageResponse
         """
         data: dict[str, Any] = {
             "run_with_orchestration": run_with_orchestration,
         }
         if settings:
             data["settings"] = settings
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"graphs/{str(collection_id)}/communities/build",
             json=data,
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)
 
     def list_communities(
         self,
@@ -315,19 +329,21 @@ class GraphsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of communities and pagination information
+            WrappedCommunitiesResponse
         """
         params: dict = {
             "offset": offset,
             "limit": limit,
         }
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"graphs/{str(collection_id)}/communities",
             params=params,
             version="v3",
         )
+
+        return WrappedCommunitiesResponse(**response_dict)
 
     def get_community(
         self,
@@ -342,13 +358,15 @@ class GraphsSDK:
             community_id (str | UUID): Community ID to get from the graph
 
         Returns:
-            dict: Community information
+            WrappedCommunityResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"graphs/{str(collection_id)}/communities/{str(community_id)}",
             version="v3",
         )
+
+        return WrappedCommunityResponse(**response_dict)
 
     def update_community(
         self,
@@ -377,7 +395,7 @@ class GraphsSDK:
             attributes (Optional[dict]): Optional new attributes for the community
 
         Returns:
-            dict: Updated community information
+            WrappedCommunityResponse
         """
         data: dict[str, Any] = {}
         if name is not None:
@@ -395,12 +413,14 @@ class GraphsSDK:
         if attributes is not None:
             data["attributes"] = attributes
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"graphs/{str(collection_id)}/communities/{str(community_id)}",
             json=data,
             version="v3",
         )
+
+        return WrappedCommunityResponse(**response_dict)
 
     def delete_community(
         self,
@@ -415,13 +435,15 @@ class GraphsSDK:
             community_id (str | UUID): Community ID to remove from the graph
 
         Returns:
-            dict: Success message
+            WrappedBooleanResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"graphs/{str(collection_id)}/communities/{str(community_id)}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def pull(
         self,
@@ -444,12 +466,17 @@ class GraphsSDK:
             - Graph analysis and querying
             - Community detection
             - Knowledge graph enrichment
+
+        Returns:
+            WrappedBooleanResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"graphs/{str(collection_id)}/pull",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def remove_document(
         self,
@@ -464,12 +491,17 @@ class GraphsSDK:
             2. Optionally deletes the document's copied entities and relationships
 
         The user must have access to both the graph and the document being removed.
+
+        Returns:
+            WrappedBooleanResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"graphs/{str(collection_id)}/documents/{str(document_id)}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def create_entity(
         self,
@@ -490,7 +522,7 @@ class GraphsSDK:
             metadata (Optional[dict]): Additional metadata for the entity
 
         Returns:
-            dict: Created entity information
+            WrappedEntityResponse
         """
         data: dict[str, Any] = {
             "name": name,
@@ -501,12 +533,14 @@ class GraphsSDK:
         if metadata is not None:
             data["metadata"] = metadata
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"graphs/{str(collection_id)}/entities",
             json=data,
             version="v3",
         )
+
+        return WrappedEntityResponse(**response_dict)
 
     def create_relationship(
         self,
@@ -535,7 +569,7 @@ class GraphsSDK:
             metadata (Optional[dict]): Additional metadata for the relationship
 
         Returns:
-            dict: Created relationship information
+            WrappedRelationshipResponse
         """
         data: dict[str, Any] = {
             "subject": subject,
@@ -550,12 +584,14 @@ class GraphsSDK:
         if metadata is not None:
             data["metadata"] = metadata
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"graphs/{str(collection_id)}/relationships",
             json=data,
             version="v3",
         )
+
+        return WrappedRelationshipResponse(**response_dict)
 
     def create_community(
         self,
@@ -578,7 +614,7 @@ class GraphsSDK:
             rating_explanation (Optional[str]): Explanation for the rating
 
         Returns:
-            dict: Created community information
+            WrappedCommunityResponse
         """
         data: dict[str, Any] = {
             "name": name,
@@ -591,9 +627,11 @@ class GraphsSDK:
         if rating_explanation is not None:
             data["rating_explanation"] = rating_explanation
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"graphs/{str(collection_id)}/communities",
             json=data,
             version="v3",
         )
+
+        return WrappedCommunityResponse(**response_dict)

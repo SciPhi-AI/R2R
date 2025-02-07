@@ -2,10 +2,11 @@ import json
 from typing import Any, Optional
 from uuid import UUID
 
-from shared.api.models.base import WrappedBooleanResponse
-from shared.api.models.management.responses import (
+from core.base.api.models import (
+    WrappedBooleanResponse,
     WrappedChunkResponse,
     WrappedChunksResponse,
+    WrappedVectorSearchResponse,
 )
 
 from ..models import SearchSettings
@@ -31,14 +32,16 @@ class ChunksSDK:
                 - id: UUID of the chunk
                 - metadata: Dictionary of metadata
         Returns:
-            dict: Update results containing processed chunk information
+            WrappedChunkResponse
         """
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "POST",
             f"chunks/{str(chunk['id'])}",
             json=chunk,
             version="v3",
         )
+
+        return WrappedChunkResponse(**response_dict)
 
     async def retrieve(
         self,
@@ -51,14 +54,16 @@ class ChunksSDK:
             id (str | UUID): Chunk ID to retrieve
 
         Returns:
-            dict: List of chunks and pagination information
+            WrappedChunkResponse
         """
 
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "GET",
             f"chunks/{id}",
             version="v3",
         )
+
+        return WrappedChunkResponse(**response_dict)
 
     # FIXME: Is this the most appropriate name for this method?
     async def list_by_document(
@@ -78,7 +83,7 @@ class ChunksSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of chunks and pagination information
+            WrappedChunksResponse
         """
         params: dict = {
             "offset": offset,
@@ -87,12 +92,14 @@ class ChunksSDK:
         if metadata_filter:
             params["metadata_filter"] = json.dumps(metadata_filter)
 
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "GET",
             f"documents/{str(document_id)}/chunks",
             params=params,
             version="v3",
         )
+
+        return WrappedChunksResponse(**response_dict)
 
     async def delete(
         self,
@@ -103,12 +110,17 @@ class ChunksSDK:
 
         Args:
             id (str | UUID): ID of chunk to delete
+
+        Returns:
+            WrappedBooleanResponse
         """
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "DELETE",
             f"chunks/{str(id)}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     async def list(
         self,
@@ -128,9 +140,7 @@ class ChunksSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: Dictionary containing:
-                - results: List of chunks
-                - page_info: Pagination information
+            WrappedChunksResponse
         """
         params: dict = {
             "offset": offset,
@@ -143,18 +153,20 @@ class ChunksSDK:
         if metadata_filter:
             params["metadata_filter"] = json.dumps(metadata_filter)
 
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "GET",
             "chunks",
             params=params,
             version="v3",
         )
 
+        return WrappedChunksResponse(**response_dict)
+
     async def search(
         self,
         query: str,
         search_settings: Optional[dict | SearchSettings] = None,
-    ):
+    ) -> WrappedVectorSearchResponse:
         """
         Conduct a vector and/or KG search.
 
@@ -162,6 +174,8 @@ class ChunksSDK:
             query (str): The query to search for.
             search_settings (Optional[dict, SearchSettings]]): Vector search settings.
 
+        Returns:
+            WrappedVectorSearchResponse
         """
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
@@ -170,9 +184,11 @@ class ChunksSDK:
             "query": query,
             "search_settings": search_settings,
         }
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "POST",
             "chunks/search",
             json=data,
             version="v3",
         )
+
+        return WrappedVectorSearchResponse(**response_dict)
