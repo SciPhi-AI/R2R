@@ -30,7 +30,6 @@ class SystemRouter(BaseRouterV3):
     def _setup_routes(self):
         @self.router.get(
             "/health",
-            # dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
