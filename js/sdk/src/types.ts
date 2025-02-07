@@ -278,7 +278,7 @@ export interface SettingsResponse {
 
 // User types
 
-export interface TokenResponse {
+export interface Token {
   accessToken: string;
   refreshToken: string;
 }
@@ -300,6 +300,54 @@ export interface User {
   metadata?: Record<string, any>;
   limitOverrides?: Record<string, any>;
   documentIds?: string[];
+}
+
+interface LoginResponse {
+  accessToken: Token;
+  refreshToken: Token;
+}
+
+interface StorageTypeLimit {
+  limit: number;
+  used: number;
+  remaining: number;
+}
+
+interface StorageLimits {
+  chunks: StorageTypeLimit;
+  documents: StorageTypeLimit;
+  collections: StorageTypeLimit;
+}
+
+interface UsageLimit {
+  used: number;
+  limit: number;
+  remaining: number;
+}
+
+interface RouteUsage {
+  routePerMin: UsageLimit;
+  monthlyLimit: UsageLimit;
+}
+
+interface Usage {
+  globalPerMin: UsageLimit;
+  monthlyLimit: UsageLimit;
+  routes: Record<string, RouteUsage>;
+}
+
+interface SystemDefaults {
+  globalPerMin: number;
+  routePerMin?: number;
+  monthlyLimit: number;
+}
+
+interface LimitsResponse {
+  storageLimits: StorageLimits;
+  systemDefaults: SystemDefaults;
+  userOverrides: Record<string, any>;
+  effectiveLimits: SystemDefaults;
+  usage: Usage;
 }
 
 // Generic Responses
@@ -376,9 +424,11 @@ export type WrappedSettingsResponse = ResultsWrapper<SettingsResponse>;
 export type WrappedServerStatsResponse = ResultsWrapper<ServerStats>;
 
 // User Responses
-export type WrappedTokenResponse = ResultsWrapper<TokenResponse>;
+export type WrappedTokenResponse = ResultsWrapper<Token>;
 export type WrappedUserResponse = ResultsWrapper<User>;
 export type WrappedUsersResponse = PaginatedResultsWrapper<User[]>;
+export type WrappedLimitsResponse = ResultsWrapper<LimitsResponse>;
+export type WrappedLoginResponse = ResultsWrapper<LoginResponse>;
 
 /**
  * The "base" shape for an R2R results wrapper.

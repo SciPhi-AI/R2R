@@ -109,7 +109,7 @@ def test_agent_query(client: R2RClient):
         search_settings={"use_semantic_search": True, "limit": 3},
     ).results
     assert results is not None, "Agent response missing 'results'"
-    assert len(results) > 0, "No messages returned by agent"
+    assert len(results.messages) > 0, "No messages returned by agent"
 
 
 def test_agent_query_stream(client: R2RClient):
@@ -243,7 +243,9 @@ def test_agent_conversation_id(client: R2RClient):
         search_settings={"use_semantic_search": True, "limit": 3},
         conversation_id=str(conversation_id),
     ).results
-    assert len(results) > 0, "No results from agent with conversation_id"
+    assert (
+        len(results.messages) > 0
+    ), "No results from agent with conversation_id"
 
     msg2 = Message(role="user", content="Can you elaborate more?")
     results2 = client.retrieval.agent(

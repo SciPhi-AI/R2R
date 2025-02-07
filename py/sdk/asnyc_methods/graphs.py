@@ -8,9 +8,9 @@ from core.base.api.models import (
     WrappedCommunityResponse,
     WrappedEntitiesResponse,
     WrappedEntityResponse,
+    WrappedGenericMessageResponse,
     WrappedGraphResponse,
     WrappedGraphsResponse,
-    WrappedIngestionResponse,
     WrappedRelationshipResponse,
     WrappedRelationshipsResponse,
 )
@@ -286,7 +286,7 @@ class GraphsSDK:
         collection_id: str | UUID,
         settings: Optional[dict] = None,
         run_with_orchestration: bool = True,
-    ) -> WrappedIngestionResponse:
+    ) -> WrappedGenericMessageResponse:
         """
         Build a graph.
 
@@ -296,7 +296,7 @@ class GraphsSDK:
             run_with_orchestration (bool, optional): Whether to run with orchestration. Defaults to True.
 
         Returns:
-            WrappedIngestionResponse
+            WrappedGenericMessageResponse
         """
         data: dict[str, Any] = {
             "run_with_orchestration": run_with_orchestration,
@@ -310,7 +310,7 @@ class GraphsSDK:
             version="v3",
         )
 
-        return WrappedIngestionResponse(**response_dict)
+        return WrappedGenericMessageResponse(**response_dict)
 
     async def list_communities(
         self,
