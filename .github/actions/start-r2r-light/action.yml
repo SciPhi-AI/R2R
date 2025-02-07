@@ -7,6 +7,7 @@ runs:
       shell: bash
       run: |
         cd py
-        poetry run r2r serve --config-name=r2r_azure_with_test_limits &
+        export R2R_CONFIG_NAME=r2r_azure_with_test_limits
+        poetry run python -m r2r.serve &
         echo "Waiting for services to start..."
         sleep 30
