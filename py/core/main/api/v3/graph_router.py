@@ -337,6 +337,11 @@ class GraphRouter(BaseRouterV3):
             simple_graph_search_results = simple_graph_search_results_factory(
                 self.services.graph
             )
+            print(
+                "server_graph_enrichment_settings = ",
+                server_graph_enrichment_settings,
+            )
+            print("workflow_input = ", workflow_input)
             await simple_graph_search_results["graph-clustering"](
                 workflow_input
             )

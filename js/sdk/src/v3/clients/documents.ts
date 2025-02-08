@@ -18,6 +18,11 @@ if (typeof window === "undefined") {
   fs = require("fs");
 }
 
+import axios from "axios";
+import * as os from "os";
+import * as path from "path";
+import { v5 as uuidv5 } from "uuid";
+
 type FileInput = string | File | { path: string; name: string };
 
 export class DocumentsClient {
@@ -679,4 +684,52 @@ export class DocumentsClient {
       },
     );
   }
+
+
+  /**
+   * Ingest a sample document into R2R.
+   *
+   * This method downloads a sample file from a predefined URL, saves it to a
+   * temporary file, then ingests it using the `create()` method. Finally, it
+   * cleans up the temporary file.
+   *
+   * @returns {Promise<WrappedIngestionResponse>} The ingestion response.
+   */
+  async createSample(): Promise<WrappedIngestionResponse> {
+
+    // Define the sample file URL.
+    const sampleFileUrl =
+      "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle.txt";
+    const parsedUrl = new URL(sampleFileUrl);
+    const filename = parsedUrl.pathname.split("/").pop() || "sample.txt";
+
+    // Create a temporary file path.
+    const tmpDir = os.tmpdir();
+    const tmpFilePath = path.join(tmpDir, `sample_${Date.now()}_${filename}`);
+
+    // Download the file using axios.
+    const response = await axios.get(sampleFileUrl, {
+      responseType: "arraybuffer",
+    });
+    // Write the downloaded file to the temporary location.
+    await fs.promises.writeFile(tmpFilePath, response.data);
+
+    // Generate a stable document ID using uuid v5.
+    const docId = uuidv5(sampleFileUrl, uuidv5.DNS);
+    const metadata = { title: filename };
+
+    try {
+      // Ingest the file by calling the create method.
+      const ingestionResponse = await this.create({
+        file: tmpFilePath,
+        metadata,
+        id: docId,
+      });
+      return ingestionResponse;
+    } finally {
+      // Clean up: remove the temporary file.
+      await fs.promises.unlink(tmpFilePath);
+    }
+  }
+
 }

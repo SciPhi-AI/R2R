@@ -341,7 +341,6 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
             inside_thoughts = False
             async for chunk in stream:
                 delta = chunk.choices[0].delta
-                all_tokens += delta.content
 
                 if delta.content and delta.content.count(
                     "<Thought>"
@@ -498,14 +497,8 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
             function_arguments = ""
 
             inside_thoughts = False
-            all_tokens = ""
             async for chunk in stream:
                 delta = chunk.choices[0].delta
-                if delta.content:
-                    all_tokens += delta.content
-                print("-" * 250)
-                print(all_tokens)
-                print("-" * 250)
 
                 finish_reason = chunk.choices[0].finish_reason
 

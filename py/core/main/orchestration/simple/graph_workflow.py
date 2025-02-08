@@ -17,7 +17,7 @@ logger = logging.getLogger()
 def simple_graph_search_results_factory(service: GraphService):
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
-            if type(value) == uuid.UUID:
+            if isinstance(value, uuid.UUID):
                 continue
 
             if key == "document_id":
@@ -25,24 +25,54 @@ def simple_graph_search_results_factory(service: GraphService):
 
             if key == "collection_id":
                 input_data[key] = uuid.UUID(value)
+
             if key == "graph_creation_settings":
+                # Ensure we have a dict (if not already)
                 input_data[key] = (
                     json.loads(value) if not isinstance(value, dict) else value
                 )
-                input_data[key]["generation_config"] = (
-                    GenerationConfig(**input_data[key]["generation_config"])
-                    if input_data[key]["generation_config"]
-                    else GenerationConfig()
-                )
+
+                # Process generation_config only if it is not already a GenerationConfig instance.
+                if "generation_config" in input_data[key]:
+                    if not isinstance(
+                        input_data[key]["generation_config"], GenerationConfig
+                    ):
+                        input_data[key]["generation_config"] = (
+                            GenerationConfig(
+                                **input_data[key]["generation_config"]
+                            )
+                            if input_data[key]["generation_config"]
+                            else GenerationConfig()
+                        )
+                    # Set the model using the existing or fallback fast_llm
+                    input_data[key]["generation_config"].model = (
+                        input_data[key]["generation_config"].model
+                        or service.config.app.fast_llm
+                    )
+
             if key == "graph_enrichment_settings":
+                # Ensure we have a dict (if not already)
                 input_data[key] = (
                     json.loads(value) if not isinstance(value, dict) else value
                 )
-                input_data[key]["generation_config"] = (
-                    GenerationConfig(**input_data[key]["generation_config"])
-                    if input_data[key]["generation_config"]
-                    else GenerationConfig()
-                )
+
+                # Process generation_config only if it is not already a GenerationConfig instance.
+                if "generation_config" in input_data[key]:
+                    if not isinstance(
+                        input_data[key]["generation_config"], GenerationConfig
+                    ):
+                        input_data[key]["generation_config"] = (
+                            GenerationConfig(
+                                **input_data[key]["generation_config"]
+                            )
+                            if input_data[key]["generation_config"]
+                            else GenerationConfig()
+                        )
+                    # Set the model using the existing or fallback fast_llm
+                    input_data[key]["generation_config"].model = (
+                        input_data[key]["generation_config"].model
+                        or service.config.app.fast_llm
+                    )
         return input_data
 
     async def graph_extraction(input_data):
@@ -165,8 +195,13 @@ def simple_graph_search_results_factory(service: GraphService):
                 logger.info(
                     f"Running graph_search_results community summary for workflow {i+1} of {total_workflows}"
                 )
-                await graph_community_summarization(
-                    input_data=input_data_copy,
+
+                await service.graph_search_results_community_summary(
+                    offset=input_data_copy["offset"],
+                    limit=input_data_copy["limit"],
+                    collection_id=input_data_copy.get("collection_id", None),
+                    # graph_id=input_data_copy.get("graph_id", None),
+                    **input_data_copy["graph_enrichment_settings"],
                 )
 
             await service.providers.database.documents_handler.set_workflow_status(
@@ -184,19 +219,6 @@ def simple_graph_search_results_factory(service: GraphService):
 
             raise e
 
-    async def graph_community_summarization(input_data):
-        logger.info(
-            f"Running graph_search_results community summary for offset: {input_data['offset']}, limit: {input_data['limit']}"
-        )
-
-        await service.graph_community_summarization(
-            offset=input_data["offset"],
-            limit=input_data["limit"],
-            collection_id=input_data.get("collection_id", None),
-            # graph_id=input_data.get("graph_id", None),
-            **input_data["graph_enrichment_settings"],
-        )
-
     async def graph_deduplication(input_data):
         input_data = get_input_data_dict(input_data)
         await service.graph_deduplication(
@@ -206,6 +228,5 @@ def simple_graph_search_results_factory(service: GraphService):
     return {
         "graph-extraction": graph_extraction,
         "graph-clustering": graph_clustering,
-        "graph-community-summarization": graph_community_summarization,
         "graph-deduplication": graph_deduplication,
     }

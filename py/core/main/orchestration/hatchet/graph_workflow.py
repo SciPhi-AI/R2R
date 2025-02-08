@@ -94,6 +94,11 @@ def hatchet_graph_search_results_factory(
                 input_data[key]["generation_config"] = GenerationConfig(
                     **input_data[key]["generation_config"]
                 )
+                input_data[key]["generation_config"].model = (
+                    input_data[key]["generation_config"].model
+                    or service.config.app.fast_llm
+                )
+
             if key == "graph_enrichment_settings":
                 with contextlib.suppress(Exception):
                     input_data[key] = json.loads(value)

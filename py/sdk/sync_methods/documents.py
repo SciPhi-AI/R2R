@@ -1,9 +1,15 @@
 import json
+import os
+import tempfile
+import uuid
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Optional
+from urllib.parse import urlparse
 from uuid import UUID
+
+import requests
 
 from shared.api.models import (
     WrappedBooleanResponse,
@@ -671,3 +677,55 @@ class DocumentsSDK:
         )
 
         return WrappedGenericMessageResponse(**response_dict)
+
+    def create_sample(self) -> WrappedIngestionResponse:
+        """
+        Ingest a sample document into R2R.
+
+        This method downloads a sample file from a predefined URL, saves it
+        as a temporary file, and ingests it using the `create` method. The
+        temporary file is removed after ingestion.
+
+        Returns:
+            WrappedIngestionResponse: The response from the ingestion request.
+        """
+        # Define the sample file URL
+        sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/DeepSeek_R1.pdf"
+        # Parse the URL to extract the filename
+        parsed_url = urlparse(sample_file_url)
+        filename = os.path.basename(parsed_url.path)
+        # Determine whether the file is a PDF (this can affect how we write the file)
+        is_pdf = filename.lower().endswith(".pdf")
+
+        # Create a temporary file.
+        # We use binary mode ("wb") for both PDFs and text files because the `create`
+        # method will open the file in binary mode.
+        temp_file = tempfile.NamedTemporaryFile(
+            mode="wb", delete=False, suffix=f"_{filename}"
+        )
+        try:
+            response = requests.get(sample_file_url)
+            response.raise_for_status()
+            # Write the downloaded content to the temporary file.
+            # (For text files, using response.content avoids any potential encoding issues
+            # when the file is later opened in binary mode.)
+            temp_file.write(response.content)
+            temp_file.close()
+
+            # Prepare metadata and generate a stable document ID based on the URL
+            metadata = {"title": filename}
+            doc_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, sample_file_url))
+
+            # Call the SDK's create method to ingest the file.
+            ingestion_response = self.create(
+                file_path=temp_file.name,
+                metadata=metadata,
+                id=doc_id,
+            )
+            return ingestion_response
+        finally:
+            # Remove the temporary file regardless of whether ingestion succeeded.
+            try:
+                os.unlink(temp_file.name)
+            except Exception:
+                pass

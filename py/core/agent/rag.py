@@ -533,8 +533,6 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
             for msg in messages:
                 await self.conversation.add_message(msg)
 
-        all_tokens = ""
-
         for step_i in range(self.max_steps):
             iteration_text = ""
 
@@ -558,10 +556,6 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                 stream_delta = stream_delta.replace(
                     "<think>", "<Thought>"
                 ).replace("</think>", "</Thought>")
-                all_tokens += stream_delta
-                print("-" * 250)
-                print(all_tokens)
-                print("-" * 250)
                 if "</" not in stream_delta and not closing_detected:
                     thought_text += stream_delta
                     yield stream_delta
