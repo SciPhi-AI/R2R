@@ -685,7 +685,6 @@ export class DocumentsClient {
     );
   }
 
-
   /**
    * Ingest a sample document into R2R.
    *
@@ -693,13 +692,13 @@ export class DocumentsClient {
    * temporary file, then ingests it using the `create()` method. Finally, it
    * cleans up the temporary file.
    *
+   * @param options Optional ingestion options.
+   *                - ingestionMode: If provided, passes the ingestion mode (e.g. "hi-res") to the create() method.
    * @returns {Promise<WrappedIngestionResponse>} The ingestion response.
    */
-  async createSample(): Promise<WrappedIngestionResponse> {
-
+  async createSample(options?: { ingestionMode?: "hi-res" | "fast" | "custom" }): Promise<WrappedIngestionResponse> {
     // Define the sample file URL.
-    const sampleFileUrl =
-      "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/aristotle.txt";
+    const sampleFileUrl = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/DeepSeek_R1.pdf";
     const parsedUrl = new URL(sampleFileUrl);
     const filename = parsedUrl.pathname.split("/").pop() || "sample.txt";
 
@@ -719,11 +718,12 @@ export class DocumentsClient {
     const metadata = { title: filename };
 
     try {
-      // Ingest the file by calling the create method.
+      // Ingest the file by calling the create() method and pass the optional ingestionMode flag.
       const ingestionResponse = await this.create({
         file: tmpFilePath,
         metadata,
         id: docId,
+        ingestionMode: options?.ingestionMode, // Passes "hi-res" (or another mode) if provided
       });
       return ingestionResponse;
     } finally {
@@ -731,5 +731,4 @@ export class DocumentsClient {
       await fs.promises.unlink(tmpFilePath);
     }
   }
-
 }

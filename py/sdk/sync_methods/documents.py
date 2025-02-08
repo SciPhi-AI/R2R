@@ -678,7 +678,7 @@ class DocumentsSDK:
 
         return WrappedGenericMessageResponse(**response_dict)
 
-    def create_sample(self) -> WrappedIngestionResponse:
+    def create_sample(self, hi_res: bool = False) -> WrappedIngestionResponse:
         """
         Ingest a sample document into R2R.
 
@@ -695,7 +695,6 @@ class DocumentsSDK:
         parsed_url = urlparse(sample_file_url)
         filename = os.path.basename(parsed_url.path)
         # Determine whether the file is a PDF (this can affect how we write the file)
-        is_pdf = filename.lower().endswith(".pdf")
 
         # Create a temporary file.
         # We use binary mode ("wb") for both PDFs and text files because the `create`
@@ -721,6 +720,7 @@ class DocumentsSDK:
                 file_path=temp_file.name,
                 metadata=metadata,
                 id=doc_id,
+                ingestion_mode="hi-res" if hi_res else None,
             )
             return ingestion_response
         finally:

@@ -110,6 +110,9 @@ class R2RAsyncClient(BaseClient):
                     message = str(error_content)
             except json.JSONDecodeError:
                 message = response.text
+            except Exception as e:
+                message = str(e)
+                print(e)
 
             raise R2RException(
                 status_code=response.status_code, message=message
