@@ -11,7 +11,7 @@ class BaseClient:
         prefix: str = "/v3",
         timeout: float = 300.0,
     ):
-        self.base_url = os.getenv(
+        self.base_url = base_url or os.getenv(
             "R2R_API_BASE", "https://api.cloud.sciphi.ai"
         )
         self.prefix = prefix
