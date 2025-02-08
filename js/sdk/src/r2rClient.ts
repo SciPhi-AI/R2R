@@ -19,8 +19,8 @@ if (typeof window === "undefined") {
 
 type RefreshTokenResponse = {
   results: {
-    accessToken: {token: string};
-    refreshToken: {token: string};
+    accessToken: { token: string };
+    refreshToken: { token: string };
   };
 };
 

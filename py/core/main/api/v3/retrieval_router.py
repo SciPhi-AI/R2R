@@ -157,14 +157,6 @@ class RetrievalRouterV3(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r retrieval search --query "Who is Aristotle?"
-                            """
-                        ),
-                    },
-                    {
                         "lang": "Shell",
                         "source": textwrap.dedent(
                             """
@@ -332,14 +324,6 @@ class RetrievalRouterV3(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r retrieval search --query "Who is Aristotle?" --stream
                             """
                         ),
                     },
@@ -1007,6 +991,7 @@ class RetrievalRouterV3(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper()),
             response_model=WrappedCompletionResponse,
         ):
+            # FIXME: Needs a proper return type
             """
             Generate completions for a list of messages.
 
@@ -1085,6 +1070,7 @@ class RetrievalRouterV3(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
+            # FIXME: Needs a proper return type
             """
             Generate embeddings for the provided text using the specified model.
 

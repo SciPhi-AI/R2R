@@ -68,14 +68,6 @@ class ConversationsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r conversations create
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -141,14 +133,6 @@ class ConversationsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r conversations list
                             """
                         ),
                     },
@@ -252,13 +236,6 @@ class ConversationsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -358,13 +335,6 @@ class ConversationsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -460,14 +430,6 @@ class ConversationsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r conversations retrieve 123e4567-e89b-12d3-a456-426614174000
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -536,14 +498,6 @@ class ConversationsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r conversations delete 123e4567-e89b-12d3-a456-426614174000
                             """
                         ),
                     },
@@ -618,14 +572,6 @@ class ConversationsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r conversations delete 123e4567-e89b-12d3-a456-426614174000
                             """
                         ),
                     },

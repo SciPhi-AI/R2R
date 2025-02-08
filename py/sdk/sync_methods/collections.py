@@ -1,14 +1,12 @@
 from typing import Any, Optional
 from uuid import UUID
 
-from shared.api.models.base import (
+from shared.api.models import (
     WrappedBooleanResponse,
-    WrappedGenericMessageResponse,
-)
-from shared.api.models.management.responses import (
     WrappedCollectionResponse,
     WrappedCollectionsResponse,
-    WrappedDocumentResponse,
+    WrappedDocumentsResponse,
+    WrappedGenericMessageResponse,
     WrappedUsersResponse,
 )
 
@@ -30,15 +28,17 @@ class CollectionsSDK:
             description (Optional[str]): Description of the collection
 
         Returns:
-            dict: Created collection information
+            WrappedCollectionResponse
         """
         data: dict[str, Any] = {"name": name, "description": description}
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             "collections",
             json=data,
             version="v3",
         )
+
+        return WrappedCollectionResponse(**response_dict)
 
     def list(
         self,
@@ -55,7 +55,7 @@ class CollectionsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of collections and pagination information
+            WrappedCollectionsResponse
         """
         params: dict = {
             "offset": offset,
@@ -64,9 +64,11 @@ class CollectionsSDK:
         if ids:
             params["ids"] = ids
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET", "collections", params=params, version="v3"
         )
+
+        return WrappedCollectionsResponse(**response_dict)
 
     def retrieve(
         self,
@@ -79,11 +81,13 @@ class CollectionsSDK:
             id (str | UUID): Collection ID to retrieve
 
         Returns:
-            dict: Detailed collection information
+            WrappedCollectionResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET", f"collections/{str(id)}", version="v3"
         )
+
+        return WrappedCollectionResponse(**response_dict)
 
     def update(
         self,
@@ -102,7 +106,7 @@ class CollectionsSDK:
             generate_description (Optional[bool]): Whether to generate a new synthetic description for the collection.
 
         Returns:
-            dict: Updated collection information
+            WrappedCollectionResponse
         """
         data: dict[str, Any] = {}
         if name is not None:
@@ -112,12 +116,14 @@ class CollectionsSDK:
         if generate_description:
             data["generate_description"] = str(generate_description)
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"collections/{str(id)}",
             json=data,
             version="v3",
         )
+
+        return WrappedCollectionResponse(**response_dict)
 
     def delete(
         self,
@@ -130,18 +136,20 @@ class CollectionsSDK:
             id (str | UUID): Collection ID to delete
 
         Returns:
-            bool: True if deletion was successful
+            WrappedBooleanResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE", f"collections/{str(id)}", version="v3"
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def list_documents(
         self,
         id: str | UUID,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-    ) -> WrappedDocumentResponse:
+    ) -> WrappedDocumentsResponse:
         """
         List all documents in a collection.
 
@@ -151,19 +159,21 @@ class CollectionsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of documents and pagination information
+            WrappedDocumentsResponse
         """
         params: dict = {
             "offset": offset,
             "limit": limit,
         }
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"collections/{str(id)}/documents",
             params=params,
             version="v3",
         )
+
+        return WrappedDocumentsResponse(**response_dict)
 
     def add_document(
         self,
@@ -178,13 +188,15 @@ class CollectionsSDK:
             document_id (str | UUID): Document ID to add
 
         Returns:
-            dict: Result of the operation
+            WrappedGenericMessageResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"collections/{str(id)}/documents/{str(document_id)}",
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)
 
     def remove_document(
         self,
@@ -199,13 +211,15 @@ class CollectionsSDK:
             document_id (str | UUID): Document ID to remove
 
         Returns:
-            bool: True if removal was successful
+            WrappedBooleanResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"collections/{str(id)}/documents/{str(document_id)}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def list_users(
         self,
@@ -222,16 +236,18 @@ class CollectionsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of users and pagination information
+            WrappedUsersResponse
         """
         params: dict = {
             "offset": offset,
             "limit": limit,
         }
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET", f"collections/{str(id)}/users", params=params, version="v3"
         )
+
+        return WrappedUsersResponse(**response_dict)
 
     def add_user(
         self,
@@ -246,11 +262,13 @@ class CollectionsSDK:
             user_id (str | UUID): User ID to add
 
         Returns:
-            dict: Result of the operation
+            WrappedBooleanResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST", f"collections/{str(id)}/users/{str(user_id)}", version="v3"
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def remove_user(
         self,
@@ -265,20 +283,22 @@ class CollectionsSDK:
             user_id (str | UUID): User ID to remove
 
         Returns:
-            bool: True if removal was successful
+            WrappedBooleanResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"collections/{str(id)}/users/{str(user_id)}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def extract(
         self,
         id: str | UUID,
         settings: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
-    ) -> dict:
+    ) -> WrappedGenericMessageResponse:
         """
         Extract entities and relationships from documents in a collection.
 
@@ -289,9 +309,7 @@ class CollectionsSDK:
                 Defaults to True
 
         Returns:
-            dict: Result of the extraction process, containing either:
-                - For estimates: message, task_id, id, and estimate
-                - For runs: message and task_id
+            WrappedGenericMessageResponse
         """
         params = {"run_with_orchestration": run_with_orchestration}
 
@@ -299,10 +317,12 @@ class CollectionsSDK:
         if settings is not None:
             data["settings"] = settings
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"collections/{str(id)}/extract",
             params=params,
             json=data or None,
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)

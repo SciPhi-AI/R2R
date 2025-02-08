@@ -5,13 +5,17 @@ from pathlib import Path
 from typing import Any, Optional
 from uuid import UUID
 
-from shared.api.models.base import WrappedBooleanResponse
-from shared.api.models.ingestion.responses import WrappedIngestionResponse
-from shared.api.models.management.responses import (
+from shared.api.models import (
+    WrappedBooleanResponse,
     WrappedChunksResponse,
     WrappedCollectionsResponse,
     WrappedDocumentResponse,
+    WrappedDocumentSearchResponse,
     WrappedDocumentsResponse,
+    WrappedEntitiesResponse,
+    WrappedGenericMessageResponse,
+    WrappedIngestionResponse,
+    WrappedRelationshipsResponse,
 )
 
 from ..models import IngestionMode, SearchMode, SearchSettings
@@ -48,6 +52,9 @@ class DocumentsSDK:
             metadata (Optional[dict]): Optional metadata to assign to the document
             ingestion_config (Optional[dict]): Optional ingestion configuration to use
             run_with_orchestration (Optional[bool]): Whether to run with orchestration
+
+        Returns:
+            WrappedIngestionResponse
         """
         if not file_path and not raw_text and not chunks:
             raise ValueError(
@@ -97,7 +104,7 @@ class DocumentsSDK:
                 )
             ]
             try:
-                result = self.client._make_request(
+                response_dict = self.client._make_request(
                     "POST",
                     "documents",
                     data=data,
@@ -107,10 +114,9 @@ class DocumentsSDK:
             finally:
                 # Ensure we close the file after the request is complete
                 file_instance.close()
-            return result
         elif raw_text:
             data["raw_text"] = raw_text  # type: ignore
-            return self.client._make_request(
+            response_dict = self.client._make_request(
                 "POST",
                 "documents",
                 data=data,
@@ -118,12 +124,14 @@ class DocumentsSDK:
             )
         else:
             data["chunks"] = json.dumps(chunks)
-            return self.client._make_request(
+            response_dict = self.client._make_request(
                 "POST",
                 "documents",
                 data=data,
                 version="v3",
             )
+
+        return WrappedIngestionResponse(**response_dict)
 
     def retrieve(
         self,
@@ -136,13 +144,15 @@ class DocumentsSDK:
             id (str | UUID): ID of document to retrieve
 
         Returns:
-            dict: Document information
+            WrappedDocumentResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"documents/{str(id)}",
             version="v3",
         )
+
+        return WrappedDocumentResponse(**response_dict)
 
     def download(
         self,
@@ -212,6 +222,9 @@ class DocumentsSDK:
             columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
             filters (Optional[dict]): Optional filters to apply when selecting documents
             include_header (bool): Whether to include column headers in the CSV (default: True)
+
+        Returns:
+            None
         """
         # Convert path to string if it's a Path object
         output_path = (
@@ -260,6 +273,9 @@ class DocumentsSDK:
             columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
             filters (Optional[dict]): Optional filters to apply when selecting documents
             include_header (bool): Whether to include column headers in the CSV (default: True)
+
+        Returns:
+            None
         """
         # Convert path to string if it's a Path object
         output_path = (
@@ -309,6 +325,9 @@ class DocumentsSDK:
             columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
             filters (Optional[dict]): Optional filters to apply when selecting documents
             include_header (bool): Whether to include column headers in the CSV (default: True)
+
+        Returns:
+            None
         """
         # Convert path to string if it's a Path object
         output_path = (
@@ -351,12 +370,17 @@ class DocumentsSDK:
 
         Args:
             id (str | UUID): ID of document to delete
+
+        Returns:
+            WrappedBooleanResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"documents/{str(id)}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def list_chunks(
         self,
@@ -375,19 +399,21 @@ class DocumentsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of document chunks and pagination information
+            WrappedChunksResponse
         """
         params = {
             "offset": offset,
             "limit": limit,
             "include_vectors": include_vectors,
         }
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"documents/{str(id)}/chunks",
             params=params,
             version="v3",
         )
+
+        return WrappedChunksResponse(**response_dict)
 
     def list_collections(
         self,
@@ -405,19 +431,21 @@ class DocumentsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of document chunks and pagination information
+            WrappedCollectionsResponse
         """
         params = {
             "offset": offset,
             "limit": limit,
         }
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"documents/{str(id)}/collections",
             params=params,
             version="v3",
         )
+
+        return WrappedCollectionsResponse(**response_dict)
 
     def delete_by_filter(
         self,
@@ -428,23 +456,26 @@ class DocumentsSDK:
 
         Args:
             filters (dict): Filters to apply when selecting documents to delete
+
+        Returns:
+            WrappedBooleanResponse
         """
         filters_json = json.dumps(filters)
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             "documents/by-filter",
             data=filters_json,
-            # params={"filters": filters_json},
-            # data=filters,
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def extract(
         self,
         id: str | UUID,
         settings: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
-    ) -> dict:
+    ) -> WrappedGenericMessageResponse:
         """
         Extract entities and relationships from a document.
 
@@ -454,7 +485,7 @@ class DocumentsSDK:
             run_with_orchestration (Optional[bool]): Whether to run with orchestration
 
         Returns:
-            dict: Extraction results or cost estimate
+            WrappedGenericMessageResponse
         """
         data: dict[str, Any] = {}
         if settings:
@@ -462,12 +493,13 @@ class DocumentsSDK:
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"documents/{str(id)}/extract",
             params=data,
             version="v3",
         )
+        return WrappedGenericMessageResponse(**response_dict)
 
     def list_entities(
         self,
@@ -475,7 +507,7 @@ class DocumentsSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
         include_embeddings: Optional[bool] = False,
-    ) -> dict:
+    ) -> WrappedEntitiesResponse:
         """
         List entities extracted from a document.
 
@@ -486,19 +518,21 @@ class DocumentsSDK:
             include_embeddings (Optional[bool]): Whether to include embeddings
 
         Returns:
-            dict: List of entities and pagination info
+            WrappedEntitiesResponse
         """
         params = {
             "offset": offset,
             "limit": limit,
             "include_embeddings": include_embeddings,
         }
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"documents/{str(id)}/entities",
             params=params,
             version="v3",
         )
+
+        return WrappedEntitiesResponse(**response_dict)
 
     def list_relationships(
         self,
@@ -507,7 +541,7 @@ class DocumentsSDK:
         limit: Optional[int] = 100,
         entity_names: Optional[list[str]] = None,
         relationship_types: Optional[list[str]] = None,
-    ) -> dict:
+    ) -> WrappedRelationshipsResponse:
         """
         List relationships extracted from a document.
 
@@ -519,7 +553,7 @@ class DocumentsSDK:
             relationship_types (Optional[list[str]]): Filter by relationship types
 
         Returns:
-            dict: List of relationships and pagination info
+            WrappedRelationshipsResponse
         """
         params: dict[str, Any] = {
             "offset": offset,
@@ -530,12 +564,14 @@ class DocumentsSDK:
         if relationship_types:
             params["relationship_types"] = relationship_types
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"documents/{str(id)}/relationships",
             params=params,
             version="v3",
         )
+
+        return WrappedRelationshipsResponse(**response_dict)
 
     def list(
         self,
@@ -552,7 +588,7 @@ class DocumentsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of documents and pagination information
+            WrappedDocumentsResponse
         """
         params = {
             "offset": offset,
@@ -561,19 +597,21 @@ class DocumentsSDK:
         if ids:
             params["ids"] = [str(doc_id) for doc_id in ids]  # type: ignore
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             "documents",
             params=params,
             version="v3",
         )
 
+        return WrappedDocumentsResponse(**response_dict)
+
     def search(
         self,
         query: str,
         search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
-    ):
+    ) -> WrappedDocumentSearchResponse:
         """
         Conduct a vector and/or graph search.
 
@@ -581,10 +619,9 @@ class DocumentsSDK:
             query (str): The query to search for.
             search_settings (Optional[dict, SearchSettings]]): Vector search settings.
 
+        Returns:
+            WrappedDocumentSearchResponse
         """
-        # if search_mode and not isinstance(search_mode, str):
-        #     search_mode = search_mode.value
-
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
         data: dict[str, Any] = {
@@ -594,19 +631,21 @@ class DocumentsSDK:
         if search_mode:
             data["search_mode"] = search_mode
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             "documents/search",
             json=data,
             version="v3",
         )
 
+        return WrappedDocumentSearchResponse(**response_dict)
+
     def deduplicate(
         self,
         id: str | UUID,
         settings: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
-    ):
+    ) -> WrappedGenericMessageResponse:
         """
         Deduplicate entities and relationships from a document.
 
@@ -624,9 +663,11 @@ class DocumentsSDK:
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"documents/{str(id)}/deduplicate",
             params=data,
             version="v3",
         )
+
+        return WrappedGenericMessageResponse(**response_dict)

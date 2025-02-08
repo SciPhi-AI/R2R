@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Any, Optional
 from uuid import UUID
 
-from shared.api.models.base import WrappedBooleanResponse
-from shared.api.models.management.responses import (
+from shared.api.models import (
+    WrappedBooleanResponse,
     WrappedConversationMessagesResponse,
     WrappedConversationResponse,
     WrappedConversationsResponse,
@@ -24,18 +24,20 @@ class ConversationsSDK:
         Create a new conversation.
 
         Returns:
-            dict: Created conversation information
+            WrappedConversationResponse
         """
         data: dict[str, Any] = {}
         if name:
             data["name"] = name
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             "conversations",
             data=data,
             version="v3",
         )
+
+        return WrappedConversationResponse(**response_dict)
 
     def list(
         self,
@@ -52,7 +54,7 @@ class ConversationsSDK:
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
 
         Returns:
-            dict: List of conversations and pagination information
+            WrappedConversationsResponse
         """
         params: dict = {
             "offset": offset,
@@ -61,12 +63,14 @@ class ConversationsSDK:
         if ids:
             params["ids"] = ids
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             "conversations",
             params=params,
             version="v3",
         )
+
+        return WrappedConversationsResponse(**response_dict)
 
     def retrieve(
         self,
@@ -79,13 +83,15 @@ class ConversationsSDK:
             id (str | UUID): The ID of the conversation to retrieve
 
         Returns:
-            dict: Detailed conversation information
+            WrappedConversationMessagesResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "GET",
             f"conversations/{str(id)}",
             version="v3",
         )
+
+        return WrappedConversationMessagesResponse(**response_dict)
 
     def update(
         self,
@@ -100,18 +106,20 @@ class ConversationsSDK:
             name (str): The new name of the conversation
 
         Returns:
-            dict: The updated conversation
+            WrappedConversationResponse
         """
         data: dict[str, Any] = {
             "name": name,
         }
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"conversations/{str(id)}",
             json=data,
             version="v3",
         )
+
+        return WrappedConversationResponse(**response_dict)
 
     def delete(
         self,
@@ -124,13 +132,15 @@ class ConversationsSDK:
             id (str | UUID): The ID of the conversation to delete
 
         Returns:
-            bool: True if deletion was successful
+            WrappedBooleanResponse
         """
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "DELETE",
             f"conversations/{str(id)}",
             version="v3",
         )
+
+        return WrappedBooleanResponse(**response_dict)
 
     def add_message(
         self,
@@ -151,7 +161,7 @@ class ConversationsSDK:
             metadata (Optional[dict]): Additional metadata to attach to the message
 
         Returns:
-            dict: Result of the operation, including the new message ID
+            WrappedMessageResponse
         """
         data: dict[str, Any] = {
             "content": content,
@@ -162,12 +172,14 @@ class ConversationsSDK:
         if metadata:
             data["metadata"] = metadata
 
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"conversations/{str(id)}/messages",
             json=data,
             version="v3",
         )
+
+        return WrappedMessageResponse(**response_dict)
 
     def update_message(
         self,
@@ -175,7 +187,7 @@ class ConversationsSDK:
         message_id: str,
         content: Optional[str] = None,
         metadata: Optional[dict] = None,
-    ) -> dict:
+    ) -> WrappedMessageResponse:
         """
         Update an existing message in a conversation.
 
@@ -186,17 +198,19 @@ class ConversationsSDK:
             metadata (dict): Additional metadata to attach to the message
 
         Returns:
-            dict: Result of the operation, including the new message ID and branch ID
+            WrappedMessageResponse
         """
         data: dict[str, Any] = {"content": content}
         if metadata:
             data["metadata"] = metadata
-        return self.client._make_request(
+        response_dict = self.client._make_request(
             "POST",
             f"conversations/{str(id)}/messages/{message_id}",
             json=data,
             version="v3",
         )
+
+        return WrappedMessageResponse(**response_dict)
 
     def export(
         self,
@@ -213,6 +227,9 @@ class ConversationsSDK:
             columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
             filters (Optional[dict]): Optional filters to apply when selecting conversations
             include_header (bool): Whether to include column headers in the CSV (default: True)
+
+        Returns:
+            None
         """
         # Convert path to string if it's a Path object
         output_path = (
@@ -261,6 +278,9 @@ class ConversationsSDK:
             columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
             filters (Optional[dict]): Optional filters to apply when selecting messages
             include_header (bool): Whether to include column headers in the CSV (default: True)
+
+        Returns:
+            None
         """
         # Convert path to string if it's a Path object
         output_path = (

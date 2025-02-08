@@ -8,6 +8,8 @@ import {
   WrappedTokenResponse,
   WrappedUserResponse,
   WrappedUsersResponse,
+  WrappedLimitsResponse,
+  WrappedLoginResponse,
 } from "../../types";
 import { downloadBlob } from "../../utils";
 
@@ -103,7 +105,10 @@ export class UsersClient {
    * @param password User's password
    * @returns
    */
-  async login(options: { email: string; password: string }): Promise<any> {
+  async login(options: {
+    email: string;
+    password: string;
+  }): Promise<WrappedLoginResponse> {
     const response = await this.client.makeRequest("POST", "users/login", {
       data: {
         username: options.email,
@@ -485,7 +490,7 @@ export class UsersClient {
     );
   }
 
-  async getLimits(options: { id: string }): Promise<any> {
+  async getLimits(options: { id: string }): Promise<WrappedLimitsResponse> {
     return this.client.makeRequest("GET", `users/${options.id}/limits`);
   }
 

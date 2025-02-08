@@ -1,9 +1,13 @@
 from typing import Any, AsyncGenerator, Optional
 
+from shared.api.models import (
+    WrappedAgentResponse,
+    WrappedRAGResponse,
+    WrappedSearchResponse,
+)
+
 from ..models import (
-    AggregateSearchResult,
     GenerationConfig,
-    GraphSearchSettings,
     Message,
     RAGResponse,
     SearchMode,
@@ -24,7 +28,7 @@ class RetrievalSDK:
         query: str,
         search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
-    ) -> AggregateSearchResult:
+    ) -> WrappedSearchResponse:
         """
         Conduct a vector and/or graph search.
 
@@ -33,7 +37,7 @@ class RetrievalSDK:
             search_settings (Optional[dict, SearchSettings]]): Vector search settings.
 
         Returns:
-            AggregateSearchResult: The search response.
+            WrappedSearchResponse
         """
         if search_mode and not isinstance(search_mode, str):
             search_mode = search_mode.value
@@ -48,18 +52,21 @@ class RetrievalSDK:
         if search_mode:
             data["search_mode"] = search_mode
 
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "POST",
             "retrieval/search",
             json=data,
             version="v3",
         )
 
+        return WrappedSearchResponse(**response_dict)
+
     async def completion(
         self,
         messages: list[dict | Message],
         generation_config: Optional[dict | GenerationConfig] = None,
     ):
+        # FIXME: Needs a proper return type
         cast_messages: list[Message] = [
             Message(**msg) if isinstance(msg, dict) else msg
             for msg in messages
@@ -83,6 +90,7 @@ class RetrievalSDK:
         self,
         text: str,
     ):
+        # FIXME: Needs a proper return type
         data: dict[str, Any] = {
             "text": text,
         }
@@ -102,7 +110,7 @@ class RetrievalSDK:
         search_settings: Optional[dict | SearchSettings] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
-    ) -> RAGResponse | AsyncGenerator[RAGResponse, None]:
+    ) -> WrappedRAGResponse | AsyncGenerator[RAGResponse, None]:
         """
         Conducts a Retrieval Augmented Generation (RAG) search with the given query.
 
@@ -114,7 +122,7 @@ class RetrievalSDK:
             include_title_if_available (Optional[bool]): Include the title if available.
 
         Returns:
-            RAGResponse | AsyncGenerator[RAGResponse, None]: The RAG response
+            WrappedRAGResponse | AsyncGenerator[RAGResponse, None]: The RAG response
         """
         if rag_generation_config and not isinstance(
             rag_generation_config, dict
@@ -142,13 +150,15 @@ class RetrievalSDK:
                 json=data,
                 version="v3",
             )
-        else:
-            return await self.client._make_request(
-                "POST",
-                "retrieval/rag",
-                json=data,
-                version="v3",
-            )
+
+        response_dict = await self.client._make_request(
+            "POST",
+            "retrieval/rag",
+            json=data,
+            version="v3",
+        )
+
+        return WrappedRAGResponse(**response_dict)
 
     async def agent(
         self,
@@ -162,7 +172,7 @@ class RetrievalSDK:
         tools: Optional[list[dict]] = None,
         max_tool_context_length: Optional[int] = None,
         use_system_context: Optional[bool] = True,
-    ) -> list[Message] | AsyncGenerator[Message, None]:
+    ) -> WrappedAgentResponse | AsyncGenerator[Message, None]:
         """
         Performs a single turn in a conversation with a RAG agent.
 
@@ -173,7 +183,7 @@ class RetrievalSDK:
             include_title_if_available (Optional[bool]): Include the title if available.
 
         Returns:
-            List[Message], AsyncGenerator[Message, None]]: The agent response.
+            WrappedAgentResponse, AsyncGenerator[Message, None]]: The agent response.
         """
         if rag_generation_config and not isinstance(
             rag_generation_config, dict
@@ -209,13 +219,15 @@ class RetrievalSDK:
                 json=data,
                 version="v3",
             )
-        else:
-            return await self.client._make_request(
-                "POST",
-                "retrieval/agent",
-                json=data,
-                version="v3",
-            )
+
+        response_dict = await self.client._make_request(
+            "POST",
+            "retrieval/agent",
+            json=data,
+            version="v3",
+        )
+
+        return WrappedAgentResponse(**response_dict)
 
     async def reasoning_agent(
         self,
@@ -224,7 +236,7 @@ class RetrievalSDK:
         conversation_id: Optional[str] = None,
         tools: Optional[list[dict]] = None,
         max_tool_context_length: Optional[int] = None,
-    ) -> list[Message] | AsyncGenerator[Message, None]:
+    ) -> WrappedAgentResponse | AsyncGenerator[Message, None]:
         """
         Performs a single turn in a conversation with a RAG agent.
 
@@ -235,7 +247,7 @@ class RetrievalSDK:
             include_title_if_available (Optional[bool]): Include the title if available.
 
         Returns:
-            List[Message], AsyncGenerator[Message, None]]: The agent response.
+            WrappedAgentResponse, AsyncGenerator[Message, None]]: The agent response.
         """
         if rag_generation_config and not isinstance(
             rag_generation_config, dict

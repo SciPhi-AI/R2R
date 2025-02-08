@@ -12,4 +12,8 @@ runs:
     shell: bash
     run: |
       cd py
+      docker build -t r2r/local .
+      export R2R_CONFIG_NAME=full_azure
+      export R2R_IMAGE=r2r/local
+      docker compose -f r2r/compose.full.yaml --project-name r2r-full up -d
       poetry run r2r serve --docker --full --config-name=full_azure --build --image=r2r-local

@@ -32,7 +32,6 @@ class SystemRouter(BaseRouterV3):
     def _setup_routes(self):
         @self.router.get(
             "/health",
-            # dependencies=[Depends(self.rate_limit_dependency)],
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -61,14 +60,6 @@ class SystemRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r health
                             """
                         ),
                     },
@@ -120,14 +111,6 @@ class SystemRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r system settings
                             """
                         ),
                     },
@@ -186,14 +169,6 @@ class SystemRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r system status
                             """
                         ),
                     },

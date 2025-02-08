@@ -32,6 +32,7 @@ from core.base.api.models import (
     WrappedChunksResponse,
     WrappedCollectionsResponse,
     WrappedDocumentResponse,
+    WrappedDocumentSearchResponse,
     WrappedDocumentsResponse,
     WrappedEntitiesResponse,
     WrappedGenericMessageResponse,
@@ -229,14 +230,6 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r documents create /path/to/file.txt
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -340,7 +333,7 @@ class DocumentsRouter(BaseRouterV3):
                         offset=0,
                         limit=1,
                     )
-                )["page_info"]["total_entries"]
+                )["total_entries"]
                 user_max_chunks = (
                     await self.services.management.get_user_max_chunks(
                         auth_user.id
@@ -623,13 +616,6 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -827,14 +813,6 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r documents create /path/to/file.txt
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -947,14 +925,6 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r documents retrieve b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -1039,14 +1009,6 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r documents list-chunks b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -1376,14 +1338,6 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r documents delete b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -1453,14 +1407,6 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r documents list-collections b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -1935,13 +1881,6 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -2042,14 +1981,6 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
-                    },
-                    {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            r2r documents list-relationships b4ac4dd6-5f27-596e-a55b-7cf242ca30aa
                             """
                         ),
                     },
@@ -2191,13 +2122,6 @@ class DocumentsRouter(BaseRouterV3):
                         ),
                     },
                     {
-                        "lang": "CLI",
-                        "source": textwrap.dedent(
-                            """
-                            """
-                        ),
-                    },
-                    {
                         "lang": "cURL",
                         "source": textwrap.dedent(
                             """
@@ -2286,7 +2210,7 @@ class DocumentsRouter(BaseRouterV3):
                 description="Settings for document search",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ):  # -> WrappedDocumentSearchResponse:  # type: ignore
+        ) -> WrappedDocumentSearchResponse:
             """
             Perform a search query on the automatically generated document summaries in the system.
 
@@ -2308,7 +2232,7 @@ class DocumentsRouter(BaseRouterV3):
                 query_embedding=query_embedding,
                 settings=effective_settings,
             )
-            return results
+            return results  # type: ignore
 
     @staticmethod
     async def _process_file(file):

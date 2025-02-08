@@ -81,10 +81,10 @@ def file_ingestion(
     ingestion_response = client.documents.create(**ingest_args)
 
     assert ingestion_response is not None
-    assert "results" in ingestion_response
-    assert "document_id" in ingestion_response["results"]
+    assert ingestion_response.results is not None
+    assert ingestion_response.results.document_id is not None
 
-    doc_id = ingestion_response["results"]["document_id"]
+    doc_id = ingestion_response.results.document_id
 
     if wait_for_completion:
         time.sleep(2)
@@ -93,11 +93,8 @@ def file_ingestion(
         while True:
             try:
                 retrieval_response = client.documents.retrieve(id=doc_id)
-                print("retrieval_response = ", retrieval_response)
 
-                ingestion_status = retrieval_response["results"][
-                    "ingestion_status"
-                ]
+                ingestion_status = retrieval_response.results.ingestion_status
 
                 if ingestion_status == expected_status:
                     break
@@ -274,16 +271,16 @@ def test_raw_text_ingestion(client: R2RClient):
     )
 
     assert response is not None
-    assert "results" in response
-    assert "document_id" in response["results"]
+    assert response.results is not None
+    assert response.results.document_id is not None
 
-    doc_id = response["results"]["document_id"]
+    doc_id = response.results.document_id
 
     start_time = time.time()
     while True:
         try:
             retrieval_response = client.documents.retrieve(id=doc_id)
-            if retrieval_response["results"]["ingestion_status"] == "success":
+            if retrieval_response.results.ingestion_status == "success":
                 break
         except R2RException as e:
             if time.time() - start_time > 600:
@@ -300,10 +297,10 @@ def test_chunks_ingestion(client: R2RClient):
     response = client.documents.create(chunks=chunks, ingestion_mode="fast")
 
     assert response is not None
-    assert "results" in response
-    assert "document_id" in response["results"]
+    assert response.results is not None
+    assert response.results.document_id is not None
 
-    client.documents.delete(id=response["results"]["document_id"])
+    client.documents.delete(id=response.results.document_id)
 
 
 def test_metadata_handling(client: R2RClient):
@@ -330,7 +327,7 @@ def test_metadata_handling(client: R2RClient):
 
         # Verify metadata
         doc = client.documents.retrieve(id=doc_id)
-        assert doc["results"]["metadata"] == metadata
+        assert doc.results.metadata == metadata
 
         # Cleanup
         client.documents.delete(id=doc_id)
