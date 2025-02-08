@@ -1126,22 +1126,14 @@ class RetrievalService(Service):
 
         prompt_name = (
             self.config.agent.agent_dynamic_prompt
-            if use_system_context
+            if use_system_context or reasoning_agent
             else self.config.agent.agent_static_prompt
         )
-        if reasoning_agent and (
-            "gemini-2.0-flash-thinking-exp-01-21" in model
-            or "reasoner" in model  # DeepSeek naming for R1
-            or "deepseek-r1" in model.lower()  # Open source naming for R1
-        ):
-            if not use_system_context:
-                raise R2RException(
-                    status_code=400,
-                    message="Reasoning agent not supported without system context for this model",
-                )
+
+        if ("gemini" in model or "claude" in model) and reasoning_agent:
             prompt_name = prompt_name + "_prompted_reasoning"
 
-        if use_system_context:
+        if use_system_context or reasoning_agent:
             doc_context_str = await self._build_documents_context(
                 filter_user_id=filter_user_id,
             )
@@ -1149,6 +1141,7 @@ class RetrievalService(Service):
             coll_context_str = await self._build_collections_context(
                 filter_collection_ids=filter_collection_ids,
             )
+            logger.debug(f"Loading prompt {prompt_name}")
             # Now fetch the prompt from the database prompts handler
             # This relies on your "rag_agent_extended" existing with
             # placeholders: date, document_context, collection_context

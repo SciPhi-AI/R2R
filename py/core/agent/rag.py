@@ -541,7 +541,6 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                 messages_list[-1], stream=True
             )
 
-            print("messages_list = ", messages_list)
             stream = self.llm_provider.aget_completion_stream(
                 messages_list,
                 generation_config,

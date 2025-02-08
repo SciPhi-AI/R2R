@@ -706,7 +706,7 @@ class RetrievalRouterV3(BaseRouterV3):
                         client = R2RClient()
                         # when using auth, do client.login(...)
 
-                        response =client.retrieval.reasoning_agent(
+                        response = client.retrieval.reasoning_agent(
                             message={
                                 "role": "user",
                                 "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
