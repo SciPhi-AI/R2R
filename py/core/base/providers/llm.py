@@ -177,6 +177,11 @@ class CompletionProvider(Provider):
                 if chunk.choices[0].finish_reason != ""
                 else None
             )  # handle error output conventions
+            chunk.choices[0].finish_reason = (
+                chunk.choices[0].finish_reason
+                if chunk.choices[0].finish_reason != "eos"
+                else "stop"
+            )  # hardcode `eos` to `stop` for consistency
             try:
                 yield LLMChatCompletionChunk(**(chunk.dict()))
             except Exception as e:
