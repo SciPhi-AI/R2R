@@ -11,6 +11,7 @@ from core.main.config import R2RConfig
 # Fixtures
 ###############################################################################
 
+
 @pytest.fixture
 def base_config():
     """Load the base r2r.toml config (new structure)"""
@@ -66,6 +67,7 @@ def merged_config(base_config, full_config):
 # Tests
 ###############################################################################
 
+
 def test_base_config_loading(base_config):
     """
     Test that the base config loads correctly with the new expected values.
@@ -75,9 +77,17 @@ def test_base_config_loading(base_config):
     config = R2RConfig(base_config)
 
     # Verify that the database graph creation settings are present and set
-    assert config.database.graph_creation_settings.graph_entity_description_prompt == "graph_entity_description"
-    assert config.database.graph_creation_settings.graph_extraction_prompt == "graph_extraction"
-    assert config.database.graph_creation_settings.automatic_deduplication is True
+    assert (
+        config.database.graph_creation_settings.graph_entity_description_prompt
+        == "graph_entity_description"
+    )
+    assert (
+        config.database.graph_creation_settings.graph_extraction_prompt
+        == "graph_extraction"
+    )
+    assert (
+        config.database.graph_creation_settings.automatic_deduplication is True
+    )
 
     # Verify other key sections
     assert config.ingestion.provider == "r2r"
@@ -98,7 +108,10 @@ def test_full_config_override(full_config):
     assert config.ingestion.provider == "unstructured_local"
     assert config.orchestration.provider == "hatchet"
     # Check that a new nested key has been added
-    assert config.database.graph_creation_settings.max_knowledge_relationships == 100
+    assert (
+        config.database.graph_creation_settings.max_knowledge_relationships
+        == 100
+    )
 
 
 def test_nested_config_preservation(merged_config):
@@ -106,7 +119,10 @@ def test_nested_config_preservation(merged_config):
     Test that nested configuration values are preserved after merging.
     """
     config = R2RConfig(merged_config)
-    assert config.database.graph_creation_settings.max_knowledge_relationships == 100
+    assert (
+        config.database.graph_creation_settings.max_knowledge_relationships
+        == 100
+    )
 
 
 def test_new_values_in_override(merged_config):
@@ -124,8 +140,13 @@ def test_new_values_in_override(merged_config):
         assert config.orchestration.ingestion_concurrency_limit == 16
 
     # Optionally, if new keys like graph_search_results_creation_concurrency_limit are defined, check them:
-    if hasattr(config.orchestration, "graph_search_results_creation_concurrency_limit"):
-        assert config.orchestration.graph_search_results_creation_concurrency_limit == 32
+    if hasattr(
+        config.orchestration, "graph_search_results_creation_concurrency_limit"
+    ):
+        assert (
+            config.orchestration.graph_search_results_creation_concurrency_limit
+            == 32
+        )
     if hasattr(config.orchestration, "graph_search_results_concurrency_limit"):
         assert config.orchestration.graph_search_results_concurrency_limit == 8
 
@@ -135,11 +156,21 @@ def test_config_type_consistency(merged_config):
     Test that configuration values maintain their expected types.
     """
     config = R2RConfig(merged_config)
-    assert isinstance(config.database.graph_creation_settings.graph_entity_description_prompt, str)
-    assert isinstance(config.database.graph_creation_settings.automatic_deduplication, bool)
+    assert isinstance(
+        config.database.graph_creation_settings.graph_entity_description_prompt,
+        str,
+    )
+    assert isinstance(
+        config.database.graph_creation_settings.automatic_deduplication, bool
+    )
     assert isinstance(config.ingestion.chunking_strategy, str)
-    if hasattr(config.database.graph_creation_settings, "max_knowledge_relationships"):
-        assert isinstance(config.database.graph_creation_settings.max_knowledge_relationships, int)
+    if hasattr(
+        config.database.graph_creation_settings, "max_knowledge_relationships"
+    ):
+        assert isinstance(
+            config.database.graph_creation_settings.max_knowledge_relationships,
+            int,
+        )
 
 
 def get_config_files():
@@ -159,7 +190,12 @@ def test_config_required_keys(config_file):
     if config_file == "r2r.toml":
         file_path = Path(__file__).parent.parent.parent / "r2r/r2r.toml"
     else:
-        file_path = Path(__file__).parent.parent.parent / "core" / "configs" / config_file
+        file_path = (
+            Path(__file__).parent.parent.parent
+            / "core"
+            / "configs"
+            / config_file
+        )
 
     with open(file_path) as f:
         config_data = toml.load(f)
@@ -175,14 +211,20 @@ def test_config_required_keys(config_file):
     for section, required_keys in R2RConfig.REQUIRED_KEYS.items():
         keys_to_check = required_keys
         if section == "agent":
-            keys_to_check = [key for key in required_keys if key != "generation_config"]
+            keys_to_check = [
+                key for key in required_keys if key != "generation_config"
+            ]
         if keys_to_check:
             section_config = getattr(config, section)
             for key in keys_to_check:
                 if isinstance(section_config, dict):
-                    assert key in section_config, f"Missing required key {key} in section {section}"
+                    assert (
+                        key in section_config
+                    ), f"Missing required key {key} in section {section}"
                 else:
-                    assert hasattr(section_config, key), f"Missing required key {key} in section {section}"
+                    assert hasattr(
+                        section_config, key
+                    ), f"Missing required key {key} in section {section}"
 
 
 def test_serialization_roundtrip(merged_config):
@@ -200,7 +242,10 @@ def test_serialization_roundtrip(merged_config):
         roundtrip_config.database.graph_creation_settings.graph_entity_description_prompt
         == config.database.graph_creation_settings.graph_entity_description_prompt
     )
-    assert roundtrip_config.orchestration.provider == config.orchestration.provider
+    assert (
+        roundtrip_config.orchestration.provider
+        == config.orchestration.provider
+    )
 
 
 def test_all_merged_configs(base_config, all_merged_configs):
