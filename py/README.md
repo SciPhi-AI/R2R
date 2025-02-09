@@ -64,7 +64,11 @@ python -m r2r.serve
 
 # Alternatively, run R2R in `full` mode
 # git clone git@github.com:SciPhi-AI/R2R.git . && cd R2R
-# COMPOSE_PROFILES=postgres docker compose -f compose.full.yaml down
+# export OPENAI_API_KEY=sk-...
+# export R2R_CONFIG_NAME=full
+
+# docker compose -f compose.full.yaml --profile postgres up -d
+# `--profile postgres` can be omitted when using external Postgres
 
 # Refer to docs for local LLM setup - https://r2r-docs.sciphi.ai/self-hosting/local-rag
 ```
