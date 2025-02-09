@@ -94,7 +94,7 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
                     self.worker.register_workflow(workflow)
 
         elif workflow == Workflow.GRAPH:
-            from py.core.main.orchestration.hatchet.graph_workflow import (
+            from core.main.orchestration.hatchet.graph_workflow import (
                 hatchet_graph_search_results_factory,
             )
 

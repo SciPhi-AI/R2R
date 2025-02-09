@@ -80,31 +80,50 @@ def hatchet_graph_search_results_factory(
                 continue
 
             if key == "document_id":
-                input_data[key] = uuid.UUID(value)
+                input_data[key] = (
+                    uuid.UUID(value)
+                    if not isinstance(value, uuid.UUID)
+                    else value
+                )
 
             if key == "collection_id":
-                input_data[key] = uuid.UUID(value)
+                input_data[key] = (
+                    uuid.UUID(value)
+                    if not isinstance(value, uuid.UUID)
+                    else value
+                )
 
             if key == "graph_id":
-                input_data[key] = uuid.UUID(value)
-
-            if key == "graph_creation_settings":
-                with contextlib.suppress(Exception):
-                    input_data[key] = json.loads(value)
-                input_data[key]["generation_config"] = GenerationConfig(
-                    **input_data[key]["generation_config"]
-                )
-                input_data[key]["generation_config"].model = (
-                    input_data[key]["generation_config"].model
-                    or service.config.app.fast_llm
+                input_data[key] = (
+                    uuid.UUID(value)
+                    if not isinstance(value, uuid.UUID)
+                    else value
                 )
 
-            if key == "graph_enrichment_settings":
-                with contextlib.suppress(Exception):
-                    input_data[key] = json.loads(value)
+            if key in ["graph_creation_settings", "graph_enrichment_settings"]:
+                # Ensure we have a dict (if not already)
+                input_data[key] = (
+                    json.loads(value) if not isinstance(value, dict) else value
+                )
 
-            if key == "generation_config":
-                input_data[key] = GenerationConfig(**input_data[key])
+                if "generation_config" in input_data[key]:
+                    gen_cfg = input_data[key]["generation_config"]
+                    # If it's a dict, convert it
+                    if isinstance(gen_cfg, dict):
+                        input_data[key]["generation_config"] = (
+                            GenerationConfig(**gen_cfg)
+                        )
+                    # If it's not already a GenerationConfig, default it
+                    elif not isinstance(gen_cfg, GenerationConfig):
+                        input_data[key][
+                            "generation_config"
+                        ] = GenerationConfig()
+
+                    input_data[key]["generation_config"].model = (
+                        input_data[key]["generation_config"].model
+                        or service.config.app.fast_llm
+                    )
+
         return input_data
 
     @orchestration_provider.workflow(name="graph-extraction", timeout="360m")
@@ -206,6 +225,7 @@ def hatchet_graph_search_results_factory(
         async def graph_search_results_entity_description(
             self, context: Context
         ) -> dict:
+
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
@@ -276,6 +296,7 @@ def hatchet_graph_search_results_factory(
             self, context: Context
         ) -> dict:
             logger.info("Running Graph Clustering")
+
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
@@ -370,7 +391,9 @@ def hatchet_graph_search_results_factory(
                                         if collection_id
                                         else None
                                     ),
-                                    **input_data["graph_enrichment_settings"],
+                                    "graph_enrichment_settings": convert_to_dict(
+                                        input_data["graph_enrichment_settings"]
+                                    ),
                                 }
                             },
                             key=f"{i}/{total_workflows}_community_summary",
@@ -444,14 +467,25 @@ def hatchet_graph_search_results_factory(
         ) -> dict:
             start_time = time.time()
 
-            logger.info
-
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
 
+            base_args = {
+                k: v
+                for k, v in input_data.items()
+                if k != "graph_enrichment_settings"
+            }
+            enrichment_args = input_data.get("graph_enrichment_settings", {})
+
+            # Merge them together.
+            # Note: if there is any key overlap, values from enrichment_args will override those from base_args.
+            merged_args = {**base_args, **enrichment_args}
+
+            # Now call the service method with all arguments at the top level.
+            # This ensures that keys like "max_summary_input_length" and "generation_config" are present.
             community_summary = await self.graph_search_results_service.graph_search_results_community_summary(
-                **input_data,
+                **merged_args
             )
             logger.info(
                 f"Successfully ran graph_search_results community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)} in {time.time() - start_time:.2f} seconds "

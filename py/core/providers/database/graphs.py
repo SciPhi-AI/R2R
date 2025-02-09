@@ -1707,7 +1707,15 @@ class PostgresGraphsHandler(Handler):
             parent_id=parent_id, store_type=StoreType.GRAPHS
         )
         await self.communities.delete_all_communities(parent_id=parent_id)
-        return
+
+        # Now, update the graph record to remove any attached document IDs.
+        # This sets document_ids to an empty UUID array.
+        query = f"""
+            UPDATE {self._get_table_name(PostgresGraphsHandler.TABLE_NAME)}
+            SET document_ids = ARRAY[]::uuid[]
+            WHERE id = $1;
+        """
+        await self.connection_manager.execute_query(query, [parent_id])
 
     async def list_graphs(
         self,

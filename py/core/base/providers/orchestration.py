@@ -15,7 +15,7 @@ class OrchestrationConfig(ProviderConfig):
     max_runs: int = 2_048
     graph_search_results_creation_concurrency_limit: int = 32
     ingestion_concurrency_limit: int = 16
-    graph_search_results_concurrency_limit: int = 4
+    graph_search_results_concurrency_limit: int = 8
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:

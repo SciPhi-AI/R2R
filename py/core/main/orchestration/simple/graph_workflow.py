@@ -17,62 +17,55 @@ logger = logging.getLogger()
 def simple_graph_search_results_factory(service: GraphService):
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
-            if isinstance(value, uuid.UUID):
+            if value is None:
                 continue
 
             if key == "document_id":
-                input_data[key] = uuid.UUID(value)
+                input_data[key] = (
+                    uuid.UUID(value)
+                    if not isinstance(value, uuid.UUID)
+                    else value
+                )
 
             if key == "collection_id":
-                input_data[key] = uuid.UUID(value)
+                input_data[key] = (
+                    uuid.UUID(value)
+                    if not isinstance(value, uuid.UUID)
+                    else value
+                )
 
-            if key == "graph_creation_settings":
+            if key == "graph_id":
+                input_data[key] = (
+                    uuid.UUID(value)
+                    if not isinstance(value, uuid.UUID)
+                    else value
+                )
+
+            if key in ["graph_creation_settings", "graph_enrichment_settings"]:
                 # Ensure we have a dict (if not already)
                 input_data[key] = (
                     json.loads(value) if not isinstance(value, dict) else value
                 )
 
-                # Process generation_config only if it is not already a GenerationConfig instance.
                 if "generation_config" in input_data[key]:
-                    if not isinstance(
-                        input_data[key]["generation_config"], GenerationConfig
-                    ):
+                    if isinstance(input_data[key]["generation_config"], dict):
                         input_data[key]["generation_config"] = (
                             GenerationConfig(
                                 **input_data[key]["generation_config"]
                             )
-                            if input_data[key]["generation_config"]
-                            else GenerationConfig()
                         )
-                    # Set the model using the existing or fallback fast_llm
+                    elif not isinstance(
+                        input_data[key]["generation_config"], GenerationConfig
+                    ):
+                        input_data[key][
+                            "generation_config"
+                        ] = GenerationConfig()
+
                     input_data[key]["generation_config"].model = (
                         input_data[key]["generation_config"].model
                         or service.config.app.fast_llm
                     )
 
-            if key == "graph_enrichment_settings":
-                # Ensure we have a dict (if not already)
-                input_data[key] = (
-                    json.loads(value) if not isinstance(value, dict) else value
-                )
-
-                # Process generation_config only if it is not already a GenerationConfig instance.
-                if "generation_config" in input_data[key]:
-                    if not isinstance(
-                        input_data[key]["generation_config"], GenerationConfig
-                    ):
-                        input_data[key]["generation_config"] = (
-                            GenerationConfig(
-                                **input_data[key]["generation_config"]
-                            )
-                            if input_data[key]["generation_config"]
-                            else GenerationConfig()
-                        )
-                    # Set the model using the existing or fallback fast_llm
-                    input_data[key]["generation_config"].model = (
-                        input_data[key]["generation_config"].model
-                        or service.config.app.fast_llm
-                    )
         return input_data
 
     async def graph_extraction(input_data):

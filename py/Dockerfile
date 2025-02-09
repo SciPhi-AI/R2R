@@ -15,7 +15,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN mkdir -p /app/py
 WORKDIR /app/py
-COPY pyproject.toml /app/py/pyproject.toml
+COPY pyproject.toml poetry.lock /app/py/
 
 # Install dependencies
 RUN poetry config virtualenvs.create false \
