@@ -35,12 +35,14 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
 
             self.ingestion_workflows = simple_ingestion_factory(service)
 
-        elif workflow == Workflow.KG:
-            from core.main.orchestration.simple.kg_workflow import (
-                simple_kg_factory,
+        elif workflow == Workflow.GRAPH:
+            from core.main.orchestration.simple.graph_workflow import (
+                simple_graph_search_results_factory,
             )
 
-            self.kg_workflows = simple_kg_factory(service)
+            self.graph_search_results_workflows = (
+                simple_graph_search_results_factory(service)
+            )
 
     async def run_workflow(
         self, workflow_name: str, parameters: dict, options: dict
@@ -50,8 +52,10 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
                 parameters.get("request")
             )
             return {"message": self.messages[workflow_name]}
-        elif workflow_name in self.kg_workflows:
-            await self.kg_workflows[workflow_name](parameters.get("request"))
+        elif workflow_name in self.graph_search_results_workflows:
+            await self.graph_search_results_workflows[workflow_name](
+                parameters.get("request")
+            )
             return {"message": self.messages[workflow_name]}
         else:
             raise ValueError(f"Workflow '{workflow_name}' not found.")

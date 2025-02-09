@@ -11,9 +11,9 @@ from hatchet_sdk import ConcurrencyLimitStrategy, Context
 from core import GenerationConfig
 from core.base import OrchestrationProvider, R2RException
 from core.base.abstractions import (
-    KGEnrichmentStatus,
-    KGExtraction,
-    KGExtractionStatus,
+    GraphConstructionStatus,
+    GraphExtraction,
+    GraphExtractionStatus,
 )
 
 from ...services import GraphService
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from hatchet_sdk import Hatchet
 
 
-def hatchet_kg_factory(
+def hatchet_graph_search_results_factory(
     orchestration_provider: OrchestrationProvider, service: GraphService
 ) -> dict[str, "Hatchet.Workflow"]:
     def convert_to_dict(input_data):
@@ -80,32 +80,56 @@ def hatchet_kg_factory(
                 continue
 
             if key == "document_id":
-                input_data[key] = uuid.UUID(value)
+                input_data[key] = (
+                    uuid.UUID(value)
+                    if not isinstance(value, uuid.UUID)
+                    else value
+                )
 
             if key == "collection_id":
-                input_data[key] = uuid.UUID(value)
+                input_data[key] = (
+                    uuid.UUID(value)
+                    if not isinstance(value, uuid.UUID)
+                    else value
+                )
 
             if key == "graph_id":
-                input_data[key] = uuid.UUID(value)
-
-            if key == "graph_creation_settings":
-                with contextlib.suppress(Exception):
-                    input_data[key] = json.loads(value)
-                input_data[key]["generation_config"] = GenerationConfig(
-                    **input_data[key]["generation_config"]
+                input_data[key] = (
+                    uuid.UUID(value)
+                    if not isinstance(value, uuid.UUID)
+                    else value
                 )
-            if key == "graph_enrichment_settings":
-                with contextlib.suppress(Exception):
-                    input_data[key] = json.loads(value)
 
-            if key == "generation_config":
-                input_data[key] = GenerationConfig(**input_data[key])
+            if key in ["graph_creation_settings", "graph_enrichment_settings"]:
+                # Ensure we have a dict (if not already)
+                input_data[key] = (
+                    json.loads(value) if not isinstance(value, dict) else value
+                )
+
+                if "generation_config" in input_data[key]:
+                    gen_cfg = input_data[key]["generation_config"]
+                    # If it's a dict, convert it
+                    if isinstance(gen_cfg, dict):
+                        input_data[key]["generation_config"] = (
+                            GenerationConfig(**gen_cfg)
+                        )
+                    # If it's not already a GenerationConfig, default it
+                    elif not isinstance(gen_cfg, GenerationConfig):
+                        input_data[key][
+                            "generation_config"
+                        ] = GenerationConfig()
+
+                    input_data[key]["generation_config"].model = (
+                        input_data[key]["generation_config"].model
+                        or service.config.app.fast_llm
+                    )
+
         return input_data
 
-    @orchestration_provider.workflow(name="extract-triples", timeout="360m")
-    class CreateGraphWorkflow:
+    @orchestration_provider.workflow(name="graph-extraction", timeout="360m")
+    class GraphExtractionWorkflow:
         @orchestration_provider.concurrency(  # type: ignore
-            max_runs=orchestration_provider.config.kg_concurrency_limit,  # type: ignore
+            max_runs=orchestration_provider.config.graph_search_results_concurrency_limit,  # type: ignore
             limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
         )
         def concurrency(self, context: Context) -> str:
@@ -115,29 +139,29 @@ def hatchet_kg_factory(
                     context.workflow_input()["request"]["collection_id"]
                 )
 
-        def __init__(self, kg_service: GraphService):
-            self.kg_service = kg_service
+        def __init__(self, graph_search_results_service: GraphService):
+            self.graph_search_results_service = graph_search_results_service
 
         @orchestration_provider.step(retries=1, timeout="360m")
-        async def kg_extraction(self, context: Context) -> dict:
+        async def graph_search_results_extraction(
+            self, context: Context
+        ) -> dict:
             request = context.workflow_input()["request"]
 
             input_data = get_input_data_dict(request)
             document_id = input_data.get("document_id", None)
             collection_id = input_data.get("collection_id", None)
 
-            await self.kg_service.providers.database.documents_handler.set_workflow_status(
+            await self.graph_search_results_service.providers.database.documents_handler.set_workflow_status(
                 id=document_id,
                 status_type="extraction_status",
-                status=KGExtractionStatus.PROCESSING,
+                status=GraphExtractionStatus.PROCESSING,
             )
 
             if collection_id and not document_id:
-                document_ids = (
-                    await self.kg_service.get_document_ids_for_create_graph(
-                        collection_id=collection_id,
-                        **input_data["graph_creation_settings"],
-                    )
+                document_ids = await self.graph_search_results_service.get_document_ids_for_create_graph(
+                    collection_id=collection_id,
+                    **input_data["graph_creation_settings"],
                 )
                 workflows = []
 
@@ -150,7 +174,7 @@ def hatchet_kg_factory(
 
                     workflows.append(
                         context.aio.spawn_workflow(
-                            "extract-triples",
+                            "graph-extraction",
                             {
                                 "request": {
                                     **convert_to_dict(input_data_copy),
@@ -162,14 +186,16 @@ def hatchet_kg_factory(
                 # Wait for all workflows to complete
                 results = await asyncio.gather(*workflows)
                 return {
-                    "result": f"successfully submitted kg relationships extraction for document {document_id}",
+                    "result": f"successfully submitted graph_search_results relationships extraction for document {document_id}",
                     "document_id": str(collection_id),
                 }
 
             else:
                 # Extract relationships and store them
                 extractions = []
-                async for extraction in self.kg_service.kg_extraction(
+                async for (
+                    extraction
+                ) in self.graph_search_results_service.graph_search_results_extraction(
                     document_id=document_id,
                     **input_data["graph_creation_settings"],
                 ):
@@ -178,34 +204,41 @@ def hatchet_kg_factory(
                     )
                     extractions.append(extraction)
 
-                await self.kg_service.store_kg_extractions(extractions)
+                await self.graph_search_results_service.store_graph_search_results_extractions(
+                    extractions
+                )
 
                 logger.info(
-                    f"Successfully ran kg relationships extraction for document {document_id}"
+                    f"Successfully ran graph_search_results relationships extraction for document {document_id}"
                 )
 
                 return {
-                    "result": f"successfully ran kg relationships extraction for document {document_id}",
+                    "result": f"successfully ran graph_search_results relationships extraction for document {document_id}",
                     "document_id": str(document_id),
                 }
 
         @orchestration_provider.step(
-            retries=1, timeout="360m", parents=["kg_extraction"]
+            retries=1,
+            timeout="360m",
+            parents=["graph_search_results_extraction"],
         )
-        async def kg_entity_description(self, context: Context) -> dict:
+        async def graph_search_results_entity_description(
+            self, context: Context
+        ) -> dict:
+
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
             document_id = input_data.get("document_id", None)
 
             # Describe the entities in the graph
-            await self.kg_service.kg_entity_description(
+            await self.graph_search_results_service.graph_search_results_entity_description(
                 document_id=document_id,
                 **input_data["graph_creation_settings"],
             )
 
             logger.info(
-                f"Successfully ran kg entity description for document {document_id}"
+                f"Successfully ran graph_search_results entity description for document {document_id}"
             )
 
             if (
@@ -217,7 +250,7 @@ def hatchet_kg_factory(
 
                 extract_result = (
                     await context.aio.spawn_workflow(
-                        "deduplicate-document-entities",
+                        "graph-deduplication",
                         {"request": extract_input},
                     )
                 ).result()
@@ -225,7 +258,7 @@ def hatchet_kg_factory(
                 await asyncio.gather(extract_result)
 
             return {
-                "result": f"successfully ran kg entity description for document {document_id}"
+                "result": f"successfully ran graph_search_results entity description for document {document_id}"
             }
 
         @orchestration_provider.failure()
@@ -240,27 +273,30 @@ def hatchet_kg_factory(
                 return
 
             try:
-                await self.kg_service.providers.database.documents_handler.set_workflow_status(
+                await self.graph_search_results_service.providers.database.documents_handler.set_workflow_status(
                     id=uuid.UUID(document_id),
                     status_type="extraction_status",
-                    status=KGExtractionStatus.FAILED,
+                    status=GraphExtractionStatus.FAILED,
                 )
                 logger.info(
-                    f"Updated KG extraction status for {document_id} to FAILED"
+                    f"Updated Graph extraction status for {document_id} to FAILED"
                 )
             except Exception as e:
                 logger.error(
                     f"Failed to update document status for {document_id}: {e}"
                 )
 
-    @orchestration_provider.workflow(name="build-communities", timeout="360m")
-    class EnrichGraphWorkflow:
-        def __init__(self, kg_service: GraphService):
-            self.kg_service = kg_service
+    @orchestration_provider.workflow(name="graph-clustering", timeout="360m")
+    class GraphClusteringWorkflow:
+        def __init__(self, graph_search_results_service: GraphService):
+            self.graph_search_results_service = graph_search_results_service
 
         @orchestration_provider.step(retries=1, timeout="360m", parents=[])
-        async def kg_clustering(self, context: Context) -> dict:
-            logger.info("Running KG Clustering")
+        async def graph_search_results_clustering(
+            self, context: Context
+        ) -> dict:
+            logger.info("Running Graph Clustering")
+
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
@@ -270,12 +306,12 @@ def hatchet_kg_factory(
             graph_id = input_data.get("graph_id", None)
 
             # Check current workflow status
-            workflow_status = await self.kg_service.providers.database.documents_handler.get_workflow_status(
+            workflow_status = await self.graph_search_results_service.providers.database.documents_handler.get_workflow_status(
                 id=collection_id,
                 status_type="graph_cluster_status",
             )
 
-            if workflow_status == KGEnrichmentStatus.SUCCESS:
+            if workflow_status == GraphConstructionStatus.SUCCESS:
                 raise R2RException(
                     "Communities have already been built for this collection. To build communities again, first reset the graph.",
                     400,
@@ -283,41 +319,47 @@ def hatchet_kg_factory(
 
             # Run clustering
             try:
-                kg_clustering_results = await self.kg_service.kg_clustering(
+                graph_search_results_clustering_results = await self.graph_search_results_service.graph_search_results_clustering(
                     collection_id=collection_id,
                     graph_id=graph_id,
                     **input_data["graph_enrichment_settings"],
                 )
 
-                num_communities = kg_clustering_results["num_communities"][0]
+                num_communities = graph_search_results_clustering_results[
+                    "num_communities"
+                ][0]
 
                 if num_communities == 0:
                     raise R2RException("No communities found", 400)
 
                 return {
-                    "result": kg_clustering_results,
+                    "result": graph_search_results_clustering_results,
                 }
             except Exception as e:
-                await self.kg_service.providers.database.documents_handler.set_workflow_status(
+                await self.graph_search_results_service.providers.database.documents_handler.set_workflow_status(
                     id=collection_id,
                     status_type="graph_cluster_status",
-                    status=KGEnrichmentStatus.FAILED,
+                    status=GraphConstructionStatus.FAILED,
                 )
                 raise e
 
         @orchestration_provider.step(
-            retries=1, timeout="360m", parents=["kg_clustering"]
+            retries=1,
+            timeout="360m",
+            parents=["graph_search_results_clustering"],
         )
-        async def kg_community_summary(self, context: Context) -> dict:
+        async def graph_search_results_community_summary(
+            self, context: Context
+        ) -> dict:
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
             collection_id = input_data.get("collection_id", None)
             graph_id = input_data.get("graph_id", None)
             # Get number of communities from previous step
-            num_communities = context.step_output("kg_clustering")["result"][
-                "num_communities"
-            ][0]
+            num_communities = context.step_output(
+                "graph_search_results_clustering"
+            )["result"]["num_communities"][0]
 
             # Calculate batching
             parallel_communities = min(100, num_communities)
@@ -325,7 +367,7 @@ def hatchet_kg_factory(
             workflows = []
 
             logger.info(
-                f"Running KG Community Summary for {num_communities} communities, spawning {total_workflows} workflows"
+                f"Running Graph Community Summary for {num_communities} communities, spawning {total_workflows} workflows"
             )
 
             # Spawn summary workflows
@@ -336,7 +378,7 @@ def hatchet_kg_factory(
                 workflows.append(
                     (
                         await context.aio.spawn_workflow(
-                            "kg-community-summary",
+                            "graph-community-summarization",
                             {
                                 "request": {
                                     "offset": offset,
@@ -349,7 +391,9 @@ def hatchet_kg_factory(
                                         if collection_id
                                         else None
                                     ),
-                                    **input_data["graph_enrichment_settings"],
+                                    "graph_enrichment_settings": convert_to_dict(
+                                        input_data["graph_enrichment_settings"]
+                                    ),
                                 }
                             },
                             key=f"{i}/{total_workflows}_community_summary",
@@ -363,22 +407,22 @@ def hatchet_kg_factory(
             )
 
             # Update statuses
-            document_ids = await self.kg_service.providers.database.documents_handler.get_document_ids_by_status(
+            document_ids = await self.graph_search_results_service.providers.database.documents_handler.get_document_ids_by_status(
                 status_type="extraction_status",
-                status=KGExtractionStatus.SUCCESS,
+                status=GraphExtractionStatus.SUCCESS,
                 collection_id=collection_id,
             )
 
-            await self.kg_service.providers.database.documents_handler.set_workflow_status(
+            await self.graph_search_results_service.providers.database.documents_handler.set_workflow_status(
                 id=document_ids,
                 status_type="extraction_status",
-                status=KGExtractionStatus.ENRICHED,
+                status=GraphExtractionStatus.ENRICHED,
             )
 
-            await self.kg_service.providers.database.documents_handler.set_workflow_status(
+            await self.graph_search_results_service.providers.database.documents_handler.set_workflow_status(
                 id=collection_id,
                 status_type="graph_cluster_status",
-                status=KGEnrichmentStatus.SUCCESS,
+                status=GraphConstructionStatus.SUCCESS,
             )
 
             return {
@@ -391,21 +435,21 @@ def hatchet_kg_factory(
                 "collection_id", None
             )
             if collection_id:
-                await self.kg_service.providers.database.documents_handler.set_workflow_status(
+                await self.graph_search_results_service.providers.database.documents_handler.set_workflow_status(
                     id=uuid.UUID(collection_id),
                     status_type="graph_cluster_status",
-                    status=KGEnrichmentStatus.FAILED,
+                    status=GraphConstructionStatus.FAILED,
                 )
 
     @orchestration_provider.workflow(
-        name="kg-community-summary", timeout="360m"
+        name="graph-community-summarization", timeout="360m"
     )
-    class KGCommunitySummaryWorkflow:
-        def __init__(self, kg_service: GraphService):
-            self.kg_service = kg_service
+    class GraphCommunitySummarizerWorkflow:
+        def __init__(self, graph_search_results_service: GraphService):
+            self.graph_search_results_service = graph_search_results_service
 
         @orchestration_provider.concurrency(  # type: ignore
-            max_runs=orchestration_provider.config.kg_concurrency_limit,  # type: ignore
+            max_runs=orchestration_provider.config.graph_search_results_concurrency_limit,  # type: ignore
             limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
         )
         def concurrency(self, context: Context) -> str:
@@ -418,34 +462,47 @@ def hatchet_kg_factory(
                 return str(uuid.uuid4())
 
         @orchestration_provider.step(retries=1, timeout="360m")
-        async def kg_community_summary(self, context: Context) -> dict:
+        async def graph_search_results_community_summary(
+            self, context: Context
+        ) -> dict:
             start_time = time.time()
-
-            logger.info
 
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
 
-            community_summary = await self.kg_service.kg_community_summary(
-                **input_data,
+            base_args = {
+                k: v
+                for k, v in input_data.items()
+                if k != "graph_enrichment_settings"
+            }
+            enrichment_args = input_data.get("graph_enrichment_settings", {})
+
+            # Merge them together.
+            # Note: if there is any key overlap, values from enrichment_args will override those from base_args.
+            merged_args = {**base_args, **enrichment_args}
+
+            # Now call the service method with all arguments at the top level.
+            # This ensures that keys like "max_summary_input_length" and "generation_config" are present.
+            community_summary = await self.graph_search_results_service.graph_search_results_community_summary(
+                **merged_args
             )
             logger.info(
-                f"Successfully ran kg community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)} in {time.time() - start_time:.2f} seconds "
+                f"Successfully ran graph_search_results community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)} in {time.time() - start_time:.2f} seconds "
             )
             return {
-                "result": f"successfully ran kg community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)}"
+                "result": f"successfully ran graph_search_results community summary for communities {input_data['offset']} to {input_data['offset'] + len(community_summary)}"
             }
 
     @orchestration_provider.workflow(
-        name="deduplicate-document-entities", timeout="360m"
+        name="graph-deduplication", timeout="360m"
     )
-    class DeduplicateDocumentEntitiesWorkflow:
-        def __init__(self, kg_service: GraphService):
-            self.kg_service = kg_service
+    class GraphDeduplicationWorkflow:
+        def __init__(self, graph_search_results_service: GraphService):
+            self.graph_search_results_service = graph_search_results_service
 
         @orchestration_provider.concurrency(  # type: ignore
-            max_runs=orchestration_provider.config.kg_concurrency_limit,  # type: ignore
+            max_runs=orchestration_provider.config.graph_search_results_concurrency_limit,  # type: ignore
             limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
         )
         def concurrency(self, context: Context) -> str:
@@ -478,10 +535,10 @@ def hatchet_kg_factory(
             }
 
     return {
-        "extract-triples": CreateGraphWorkflow(service),
-        "build-communities": EnrichGraphWorkflow(service),
-        "kg-community-summary": KGCommunitySummaryWorkflow(service),
-        "deduplicate-document-entities": DeduplicateDocumentEntitiesWorkflow(
+        "graph-extraction": GraphExtractionWorkflow(service),
+        "graph-clustering": GraphClusteringWorkflow(service),
+        "graph-community-summarization": GraphCommunitySummarizerWorkflow(
             service
         ),
+        "graph-deduplication": GraphDeduplicationWorkflow(service),
     }

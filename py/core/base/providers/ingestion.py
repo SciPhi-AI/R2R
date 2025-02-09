@@ -1,7 +1,7 @@
 import logging
 from abc import ABC
 from enum import Enum
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
 from pydantic import Field
 
@@ -38,17 +38,17 @@ class IngestionConfig(ProviderConfig):
         "chunk_size": 1024,
         "chunk_enrichment_settings": ChunkEnrichmentSettings(),
         "extra_parsers": {},
-        "audio_transcription_model": "openai/whisper-1",
+        "audio_transcription_model": None,
         "vision_img_prompt_name": "vision_img",
-        "vision_img_model": "openai/gpt-4o",
+        "vision_img_model": None,
         "vision_pdf_prompt_name": "vision_pdf",
-        "vision_pdf_model": "openai/gpt-4o",
+        "vision_pdf_model": None,
         "skip_document_summary": False,
-        "document_summary_system_prompt": "default_system",
-        "document_summary_task_prompt": "default_summary",
+        "document_summary_system_prompt": "system",
+        "document_summary_task_prompt": "summary",
         "document_summary_max_length": 100_000,
         "chunks_for_document_summary": 128,
-        "document_summary_model": "openai/gpt-4o-mini",
+        "document_summary_model": None,
         "parser_overrides": {},
         "extra_fields": {},
         "automatic_extraction": False,
@@ -74,7 +74,7 @@ class IngestionConfig(ProviderConfig):
     extra_parsers: dict[str, Any] = Field(
         default_factory=lambda: IngestionConfig._defaults["extra_parsers"]
     )
-    audio_transcription_model: str = Field(
+    audio_transcription_model: Optional[str] = Field(
         default_factory=lambda: IngestionConfig._defaults[
             "audio_transcription_model"
         ]
@@ -84,7 +84,7 @@ class IngestionConfig(ProviderConfig):
             "vision_img_prompt_name"
         ]
     )
-    vision_img_model: str = Field(
+    vision_img_model: Optional[str] = Field(
         default_factory=lambda: IngestionConfig._defaults["vision_img_model"]
     )
     vision_pdf_prompt_name: str = Field(
@@ -92,7 +92,7 @@ class IngestionConfig(ProviderConfig):
             "vision_pdf_prompt_name"
         ]
     )
-    vision_pdf_model: str = Field(
+    vision_pdf_model: Optional[str] = Field(
         default_factory=lambda: IngestionConfig._defaults["vision_pdf_model"]
     )
     skip_document_summary: bool = Field(
@@ -115,7 +115,7 @@ class IngestionConfig(ProviderConfig):
             "chunks_for_document_summary"
         ]
     )
-    document_summary_model: str = Field(
+    document_summary_model: Optional[str] = Field(
         default_factory=lambda: IngestionConfig._defaults[
             "document_summary_model"
         ]

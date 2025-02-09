@@ -1,4 +1,4 @@
-graphrag_entity_description:
+graph_entity_description:
   template: |
     Given the following information about an entity:
 

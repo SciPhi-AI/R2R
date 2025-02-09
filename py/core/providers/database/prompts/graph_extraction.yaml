@@ -1,11 +1,10 @@
-graphrag_relationships_extraction_few_shot:
+graph_extraction:
   template: >
     # Context
     {document_summary}
 
     # Goal
     Given both a document summary and full text, identify all entities and their entity types, along with all relationships among the identified entities.
-    Extract up to {max_knowledge_relationships} entity-relation relationships using both the summary context and full text.
 
     # Steps
     1. Identify all entities given the full text, grounding and contextualizing them based on the summary. For each identified entity, extract:

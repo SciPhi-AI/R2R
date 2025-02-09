@@ -5,9 +5,9 @@ from shared.abstractions.document import (
     DocumentChunk,
     DocumentResponse,
     DocumentType,
+    GraphConstructionStatus,
+    GraphExtractionStatus,
     IngestionStatus,
-    KGEnrichmentStatus,
-    KGExtractionStatus,
     RawChunk,
     UnprocessedChunk,
     UpdateChunk,
@@ -24,14 +24,12 @@ from shared.abstractions.graph import (
     Community,
     Entity,
     Graph,
-    KGExtraction,
+    GraphCommunitySettings,
+    GraphCreationSettings,
+    GraphEnrichmentSettings,
+    GraphExtraction,
     Relationship,
     StoreType,
-)
-from shared.abstractions.kg import (
-    GraphCommunitySettings,
-    KGCreationSettings,
-    KGEnrichmentSettings,
 )
 from shared.abstractions.llm import (
     GenerationConfig,
@@ -88,8 +86,8 @@ __all__ = [
     "DocumentResponse",
     "DocumentType",
     "IngestionStatus",
-    "KGExtractionStatus",
-    "KGEnrichmentStatus",
+    "GraphExtractionStatus",
+    "GraphConstructionStatus",
     "RawChunk",
     "UnprocessedChunk",
     "UpdateChunk",
@@ -103,7 +101,7 @@ __all__ = [
     "Entity",
     "Community",
     "StoreType",
-    "KGExtraction",
+    "GraphExtraction",
     "Relationship",
     # Index abstractions
     "IndexConfig",
@@ -131,9 +129,9 @@ __all__ = [
     "select_search_filters",
     "SearchMode",
     "HybridSearchSettings",
-    # KG abstractions
-    "KGCreationSettings",
-    "KGEnrichmentSettings",
+    # Graph abstractions
+    "GraphCreationSettings",
+    "GraphEnrichmentSettings",
     "GraphCommunitySettings",
     # User abstractions
     "Token",

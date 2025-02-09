@@ -14,10 +14,10 @@ from fastapi import HTTPException
 from core.base import (
     DocumentResponse,
     DocumentType,
+    GraphConstructionStatus,
+    GraphExtractionStatus,
     Handler,
     IngestionStatus,
-    KGEnrichmentStatus,
-    KGExtractionStatus,
     R2RException,
     SearchSettings,
 )
@@ -431,9 +431,9 @@ class PostgresDocumentsHandler(Handler):
         if status_type == "ingestion":
             return IngestionStatus
         elif status_type == "extraction_status":
-            return KGExtractionStatus
+            return GraphExtractionStatus
         elif status_type in {"graph_cluster_status", "graph_sync_status"}:
-            return KGEnrichmentStatus
+            return GraphConstructionStatus
         else:
             raise R2RException(
                 status_code=400, message=f"Invalid status type: {status_type}"
@@ -681,7 +681,7 @@ class PostgresDocumentsHandler(Handler):
                         ingestion_status=IngestionStatus(
                             row["ingestion_status"]
                         ),
-                        extraction_status=KGExtractionStatus(
+                        extraction_status=GraphExtractionStatus(
                             row["extraction_status"]
                         ),
                         created_at=row["created_at"],
@@ -775,7 +775,9 @@ class PostgresDocumentsHandler(Handler):
                 version=row["version"],
                 size_in_bytes=row["size_in_bytes"],
                 ingestion_status=IngestionStatus(row["ingestion_status"]),
-                extraction_status=KGExtractionStatus(row["extraction_status"]),
+                extraction_status=GraphExtractionStatus(
+                    row["extraction_status"]
+                ),
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
                 summary=row["summary"],
@@ -858,7 +860,9 @@ class PostgresDocumentsHandler(Handler):
                 version=row["version"],
                 size_in_bytes=row["size_in_bytes"],
                 ingestion_status=IngestionStatus(row["ingestion_status"]),
-                extraction_status=KGExtractionStatus(row["extraction_status"]),
+                extraction_status=GraphExtractionStatus(
+                    row["extraction_status"]
+                ),
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
                 summary=row["summary"],

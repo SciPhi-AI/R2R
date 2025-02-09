@@ -10,8 +10,6 @@ from shared.abstractions import (
     GraphSearchSettings,
     HybridSearchSettings,
     IngestionMode,
-    KGCreationSettings,
-    KGEnrichmentSettings,
     Message,
     MessageType,
     R2RException,
@@ -22,6 +20,10 @@ from shared.abstractions import (
     User,
     select_search_filters,
 )
+from shared.abstractions.graph import (
+    GraphCreationSettings,
+    GraphEnrichmentSettings,
+)
 from shared.api.models import RAGResponse
 
 __all__ = [
@@ -29,8 +31,8 @@ __all__ = [
     "GenerationConfig",
     "HybridSearchSettings",
     "GraphCommunityResult",
-    "KGCreationSettings",
-    "KGEnrichmentSettings",
+    "GraphCreationSettings",
+    "GraphEnrichmentSettings",
     "GraphEntityResult",
     "GraphRelationshipResult",
     "GraphSearchResult",

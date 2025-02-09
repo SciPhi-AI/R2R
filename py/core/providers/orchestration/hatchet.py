@@ -93,12 +93,12 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
                 for workflow in workflows.values():
                     self.worker.register_workflow(workflow)
 
-        elif workflow == Workflow.KG:
-            from core.main.orchestration.hatchet.kg_workflow import (
-                hatchet_kg_factory,
+        elif workflow == Workflow.GRAPH:
+            from core.main.orchestration.hatchet.graph_workflow import (
+                hatchet_graph_search_results_factory,
             )
 
-            workflows = hatchet_kg_factory(self, service)
+            workflows = hatchet_graph_search_results_factory(self, service)
             if self.worker:
                 for workflow in workflows.values():
                     self.worker.register_workflow(workflow)

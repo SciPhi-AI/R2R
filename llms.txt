@@ -392,7 +392,7 @@
 19. [Prompts](#prompts)
     - [Prompt Management in R2R](#prompt-management-in-r2r)
     - [Default Prompts](#default-prompts)
-       - [Example: `default_rag.yaml`](#example-default_ragyaml)
+       - [Example: `rag.yaml`](#example-default_ragyaml)
        - [Prompt Files](#prompt-files)
     - [Prompt Provider](#prompt-provider)
     - [Prompt Structure](#prompt-structure)
@@ -762,7 +762,7 @@ semantic_similarity_threshold = 0.7
 generation_config = { model = "openai/gpt-4o-mini" }
 
 [agent]
-system_instruction_name = "rag_agent"
+agent_static_prompt = "rag_agent"
 tools = ["local_search", "web_search"]
 
 [database.graph_creation_settings]
@@ -2265,7 +2265,7 @@ The RAG agent is configured through the `r2r.toml` file. By default, it uses loc
 
 ```toml
 [agent]
-system_instruction_name = "rag_agent"
+agent_static_prompt = "rag_agent"
 tools = ["local_search"]
 ```
 
@@ -2273,7 +2273,7 @@ tools = ["local_search"]
 
 ```toml
 [agent]
-system_instruction_name = "rag_agent"
+agent_static_prompt = "rag_agent"
 tools = ["local_search", "web_search"]
 ```
 
@@ -3803,10 +3803,10 @@ R2R provides a flexible system for managing prompts, allowing you to create, upd
 
 R2R comes with a set of default prompts loaded from YAML files located in the [`py/core/providers/database/prompts`](https://github.com/SciPhi-AI/R2R/tree/main/py/core/providers/database/prompts) directory. These prompts serve as starting points for various tasks.
 
-**Example: `default_rag.yaml`**
+**Example: `rag.yaml`**
 
 ```yaml
-default_rag:
+rag:
   template: >
     ## Task:
 
@@ -3827,9 +3827,9 @@ default_rag:
 
 | Prompt File                                  | Purpose                                                                                       |
 |----------------------------------------------|-----------------------------------------------------------------------------------------------|
-| `default_rag.yaml`                           | Default prompt for Retrieval-Augmented Generation (RAG) tasks.                              |
+| `rag.yaml`                           | Default prompt for Retrieval-Augmented Generation (RAG) tasks.                              |
 | `graphrag_community_reports.yaml`             | Used in GraphRAG to generate reports about communities or clusters in the knowledge graph.   |
-| `graphrag_entity_description.yaml`            | System prompt for the “map” phase in GraphRAG, used to process individual nodes or edges.     |
+| `graph_entity_description.yaml`            | System prompt for the “map” phase in GraphRAG, used to process individual nodes or edges.     |
 | `graphrag_map_system.yaml`                    | System prompt for the “map” phase in GraphRAG.                                              |
 | `graphrag_reduce_system.yaml`                 | System prompt for the “reduce” phase in GraphRAG.                                           |
 | `graphrag_triples_extraction_few_shot.yaml`   | Few-shot prompt for extracting subject-predicate-object triplets in GraphRAG.               |
@@ -4587,8 +4587,8 @@ An optional JSON object containing various extraction settings.
 
 | Parameter                          | Type     | Required | Description                                                   |
 | :---------------------------------- | :------- | :------ | :------------------------------------------------------------ |
-| `graphrag_relationships_extraction_few_shot` | `string` | No | The prompt to use for knowledge graph extraction. Defaults to `graphrag_relationships_extraction_few_shot`. |
-| `graphrag_entity_description_prompt` | `string` | No | The prompt to use for entity description generation. Defaults to `graphrag_entity_description`. |
+| `graph_extraction` | `string` | No | The prompt to use for knowledge graph extraction. Defaults to `graph_extraction`. |
+| `graph_entity_description_prompt` | `string` | No | The prompt to use for entity description generation. Defaults to `graph_entity_description`. |
 | `entity_types`                     | `array`  | No       | The types of entities to extract.                            |
 | `relation_types`                   | `array`  | No       | The types of relations to extract.                           |
 | `chunk_merge_count`                | `integer`| No       | Number of extractions to merge into a single KG extraction. Defaults to `4`. |
@@ -11005,7 +11005,7 @@ default_max_chunks_per_user = 10000
 default_max_collections_per_user = 10
 
 [agent]
-system_instruction_name = "rag_agent"
+agent_static_prompt = "rag_agent"
 tools = ["local_search"]
 
   [agent.generation_config]
@@ -11043,7 +11043,7 @@ batch_size = 256
 
   [database.graph_creation_settings]
     clustering_mode = "local"
-    graph_entity_description_prompt = "graphrag_entity_description"
+    graph_entity_description_prompt = "graph_entity_description"
     entity_types = []
     relation_types = []
     fragment_merge_count = 1
@@ -11052,7 +11052,6 @@ batch_size = 256
     generation_config = { model = "openai/gpt-4o-mini" }
 
   [database.graph_enrichment_settings]
-    community_reports_prompt = "graphrag_community_reports"
     max_summary_input_length = 65536
     generation_config = { model = "openai/gpt-4o-mini" }
     leiden_params = {}

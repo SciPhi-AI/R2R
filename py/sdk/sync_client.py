@@ -24,7 +24,7 @@ from .sync_methods import (
 class R2RClient(BaseClient):
     def __init__(
         self,
-        base_url: str = "https://api.cloud.sciphi.ai",
+        base_url: str = None,
         prefix: str = "/v3",
         custom_client=None,
         timeout: float = 300.0,
@@ -107,6 +107,9 @@ class R2RClient(BaseClient):
                     message = str(error_content)
             except json.JSONDecodeError:
                 message = response.text
+            except Exception as e:
+                message = str(e)
+                print(e)
 
             raise R2RException(
                 status_code=response.status_code, message=message

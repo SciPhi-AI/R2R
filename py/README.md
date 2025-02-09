@@ -75,7 +75,7 @@ r2r serve --docker --full
   Combine semantic and keyword search with reciprocal rank fusion for enhanced relevancy.
 - **🔗 [Knowledge Graphs](https://r2r-docs.sciphi.ai/cookbooks/graphs)**
   Automatically extract entities and relationships to build knowledge graphs.
-- **🤖 [Agentic RAG](https://r2r-docs.sciphi.ai/documentation/retrieval/rawr)**
+- **🤖 [Agentic RAG](https://r2r-docs.sciphi.ai/documentation/retrieval/reasoning_agent)**
   R2R's powerful reasoning agent integrated with RAG.
 
 

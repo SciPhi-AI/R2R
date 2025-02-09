@@ -10,8 +10,8 @@ from fastapi import HTTPException
 
 from core.base import (
     DatabaseConfig,
+    GraphExtractionStatus,
     Handler,
-    KGExtractionStatus,
     R2RException,
     generate_default_user_collection_id,
 )
@@ -279,7 +279,9 @@ class PostgresCollectionsHandler(Handler):
                 version=row["version"],
                 size_in_bytes=row["size_in_bytes"],
                 ingestion_status=IngestionStatus(row["ingestion_status"]),
-                extraction_status=KGExtractionStatus(row["extraction_status"]),
+                extraction_status=GraphExtractionStatus(
+                    row["extraction_status"]
+                ),
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
                 summary=row["summary"],

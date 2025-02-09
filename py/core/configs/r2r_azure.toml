@@ -1,56 +1,18 @@
-# A config which overrides all instances of `openai` with `azure` in the `r2r.toml` config
-[agent]
-  [agent.generation_config]
-  model = "azure/gpt-4o"
-
-[completion]
+[app]
+# LLM used for internal operations, like deriving conversation names
 fast_llm = "azure/gpt-4o-mini"
-  [completion.generation_config]
-  model = "azure/gpt-4o"
 
-# KG settings
-batch_size = 256
+# LLM used for user-facing output, like RAG replies
+quality_llm = "azure/gpt-4o"
 
-  [database.graph_creation_settings]
-    generation_config = { model = "azure/gpt-4o-mini" }
+# LLM used for ingesting visual inputs
+vlm = "azure/gpt-4o"
 
-  [database.graph_enrichment_settings]
-    generation_config = { model = "azure/gpt-4o-mini" }
-
-  [database.graph_search_settings]
-    generation_config = { model = "azure/gpt-4o-mini" }
+# LLM used for transcription
+audio_lm = "azure/whisper-1"
 
 [embedding]
-provider = "litellm"
-base_model = "openai/text-embedding-3-small"
-base_dimension = 512
+base_model = "azure/text-embedding-3-small"
 
 [completion_embedding]
-# Generally this should be the same as the embedding config, but advanced users may want to run with a different provider to reduce latency
-provider = "litellm"
-base_model = "openai/text-embedding-3-small"
-base_dimension = 512
-
-[file]
-provider = "postgres"
-
-[ingestion]
-provider = "r2r"
-chunking_strategy = "recursive"
-chunk_size = 1_024
-chunk_overlap = 512
-excluded_parsers = ["mp4"]
-
-audio_transcription_model="azure/whisper-1"
-document_summary_model = "azure/gpt-4o-mini"
-vision_img_model = "azure/gpt-4o"
-vision_pdf_model = "azure/gpt-4o"
-automatic_extraction = true # enable automatic extraction of entities and relations
-
-  [ingestion.chunk_enrichment_settings]
-    generation_config = { model = "azure/gpt-4o-mini" }
-
-
-[auth]
-provider = "r2r"
-require_authentication = false
+base_model = "azure/text-embedding-3-small"

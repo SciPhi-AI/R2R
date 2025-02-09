@@ -317,6 +317,7 @@ class IngestionService:
                 messages=messages,
                 generation_config=GenerationConfig(
                     model=self.config.ingestion.document_summary_model
+                    or self.config.app.fast_llm
                 ),
             )
 
@@ -721,7 +722,7 @@ class IngestionService:
                 (
                     await self.providers.llm.aget_completion(
                         messages=await self.providers.database.prompts_handler.get_message_payload(
-                            task_prompt_name="chunk_enrichment",
+                            task_prompt_name=chunk_enrichment_settings.chunk_enrichment_prompt,
                             task_inputs={
                                 "document_summary": document_summary or "None",
                                 "chunk": chunk["text"],
@@ -739,7 +740,8 @@ class IngestionService:
                                 or 1024,
                             },
                         ),
-                        generation_config=chunk_enrichment_settings.generation_config,
+                        generation_config=chunk_enrichment_settings.generation_config
+                        or GenerationConfig(model=self.config.app.fast_llm),
                     )
                 )
                 .choices[0]

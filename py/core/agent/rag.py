@@ -548,7 +548,6 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
             thought_text, action_text, in_thought = "", "", True
 
             closing_detected = False
-
             async for stream_delta in self.process_llm_response(
                 stream, *args, **kwargs
             ):
@@ -642,8 +641,8 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                 # Optionally yield the XML block so that the user sees it
                 # yield f"\n\n<Action>{xml_toolcalls}</Action>"
             else:
-                iteration_text += f"<Thought>No tool calls found in this step, trying again.</Thought>"
-                yield f"<Thought>No tool calls found in this step, trying again.</Thought>"
+                iteration_text += f"<Thought>No tool calls found in this step, trying again. If I have completed my response I should use the `result` tool.</Thought>"
+                yield f"<Thought>No tool calls found in this step, trying again. If I have completed my response I should use the `result` tool.</Thought>"
 
             await self.conversation.add_message(
                 Message(role="assistant", content=iteration_text)
@@ -719,7 +718,7 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                     text.split("<Parameters>")[-1]
                     .split("</Parameters>")[0]
                     .strip()
-                )
+                )[12:-2]
                 answer = (
                     json.loads(raw_params)
                     if raw_params.startswith("{")

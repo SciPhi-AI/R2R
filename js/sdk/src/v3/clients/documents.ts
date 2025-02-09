@@ -18,6 +18,11 @@ if (typeof window === "undefined") {
   fs = require("fs");
 }
 
+import axios from "axios";
+import * as os from "os";
+import * as path from "path";
+import { v5 as uuidv5 } from "uuid";
+
 type FileInput = string | File | { path: string; name: string };
 
 export class DocumentsClient {
@@ -678,5 +683,52 @@ export class DocumentsClient {
         data,
       },
     );
+  }
+
+  /**
+   * Ingest a sample document into R2R.
+   *
+   * This method downloads a sample file from a predefined URL, saves it to a
+   * temporary file, then ingests it using the `create()` method. Finally, it
+   * cleans up the temporary file.
+   *
+   * @param options Optional ingestion options.
+   *                - ingestionMode: If provided, passes the ingestion mode (e.g. "hi-res") to the create() method.
+   * @returns {Promise<WrappedIngestionResponse>} The ingestion response.
+   */
+  async createSample(options?: { ingestionMode?: "hi-res" | "fast" | "custom" }): Promise<WrappedIngestionResponse> {
+    // Define the sample file URL.
+    const sampleFileUrl = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/DeepSeek_R1.pdf";
+    const parsedUrl = new URL(sampleFileUrl);
+    const filename = parsedUrl.pathname.split("/").pop() || "sample.txt";
+
+    // Create a temporary file path.
+    const tmpDir = os.tmpdir();
+    const tmpFilePath = path.join(tmpDir, `sample_${Date.now()}_${filename}`);
+
+    // Download the file using axios.
+    const response = await axios.get(sampleFileUrl, {
+      responseType: "arraybuffer",
+    });
+    // Write the downloaded file to the temporary location.
+    await fs.promises.writeFile(tmpFilePath, response.data);
+
+    // Generate a stable document ID using uuid v5.
+    const docId = uuidv5(sampleFileUrl, uuidv5.DNS);
+    const metadata = { title: filename };
+
+    try {
+      // Ingest the file by calling the create() method and pass the optional ingestionMode flag.
+      const ingestionResponse = await this.create({
+        file: tmpFilePath,
+        metadata,
+        id: docId,
+        ingestionMode: options?.ingestionMode, // Passes "hi-res" (or another mode) if provided
+      });
+      return ingestionResponse;
+    } finally {
+      // Clean up: remove the temporary file.
+      await fs.promises.unlink(tmpFilePath);
+    }
   }
 }

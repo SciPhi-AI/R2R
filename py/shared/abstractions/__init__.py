@@ -4,10 +4,10 @@ from .document import (
     DocumentChunk,
     DocumentResponse,
     DocumentType,
+    GraphConstructionStatus,
+    GraphExtractionStatus,
     IngestionMode,
     IngestionStatus,
-    KGEnrichmentStatus,
-    KGExtractionStatus,
     RawChunk,
     UnprocessedChunk,
 )
@@ -18,11 +18,15 @@ from .exception import (
     R2RDocumentProcessingError,
     R2RException,
 )
-from .graph import Community, Entity, KGExtraction, Relationship, StoreType
-from .kg import (
+from .graph import (
+    Community,
+    Entity,
     GraphCommunitySettings,
-    KGCreationSettings,
-    KGEnrichmentSettings,
+    GraphCreationSettings,
+    GraphEnrichmentSettings,
+    GraphExtraction,
+    Relationship,
+    StoreType,
 )
 from .llm import (
     GenerationConfig,
@@ -76,8 +80,8 @@ __all__ = [
     "DocumentChunk",
     "DocumentResponse",
     "IngestionStatus",
-    "KGExtractionStatus",
-    "KGEnrichmentStatus",
+    "GraphExtractionStatus",
+    "GraphConstructionStatus",
     "DocumentType",
     "RawChunk",
     "UnprocessedChunk",
@@ -93,7 +97,7 @@ __all__ = [
     "Entity",
     "Community",
     "Community",
-    "KGExtraction",
+    "GraphExtraction",
     "Relationship",
     "StoreType",
     # LLM abstractions
@@ -119,10 +123,10 @@ __all__ = [
     "select_search_filters",
     "HybridSearchSettings",
     "SearchMode",
-    # KG abstractions
-    "KGCreationSettings",
-    "KGEnrichmentSettings",
-    "KGExtraction",
+    # graph abstractions
+    "GraphCreationSettings",
+    "GraphEnrichmentSettings",
+    "GraphExtraction",
     "GraphCommunitySettings",
     # User abstractions
     "Token",

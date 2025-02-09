@@ -4,41 +4,71 @@ import math
 import uuid
 
 from core import GenerationConfig, R2RException
-from core.base.abstractions import KGEnrichmentStatus, KGExtractionStatus
+from core.base.abstractions import (
+    GraphConstructionStatus,
+    GraphExtractionStatus,
+)
 
 from ...services import GraphService
 
 logger = logging.getLogger()
 
 
-def simple_kg_factory(service: GraphService):
+def simple_graph_search_results_factory(service: GraphService):
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
-            if type(value) == uuid.UUID:
+            if value is None:
                 continue
 
             if key == "document_id":
-                input_data[key] = uuid.UUID(value)
+                input_data[key] = (
+                    uuid.UUID(value)
+                    if not isinstance(value, uuid.UUID)
+                    else value
+                )
 
             if key == "collection_id":
-                input_data[key] = uuid.UUID(value)
-
-            # if key == "graph_id":
-            #     input_data[key] = uuid.UUID(value)
-
-            if key == "graph_creation_settings":
-                input_data[key] = json.loads(value)
-                input_data[key]["generation_config"] = GenerationConfig(
-                    **input_data[key]["generation_config"]
+                input_data[key] = (
+                    uuid.UUID(value)
+                    if not isinstance(value, uuid.UUID)
+                    else value
                 )
-            if key == "graph_enrichment_settings":
-                input_data[key] = json.loads(value)
-                input_data[key]["generation_config"] = GenerationConfig(
-                    **input_data[key]["generation_config"]
+
+            if key == "graph_id":
+                input_data[key] = (
+                    uuid.UUID(value)
+                    if not isinstance(value, uuid.UUID)
+                    else value
                 )
+
+            if key in ["graph_creation_settings", "graph_enrichment_settings"]:
+                # Ensure we have a dict (if not already)
+                input_data[key] = (
+                    json.loads(value) if not isinstance(value, dict) else value
+                )
+
+                if "generation_config" in input_data[key]:
+                    if isinstance(input_data[key]["generation_config"], dict):
+                        input_data[key]["generation_config"] = (
+                            GenerationConfig(
+                                **input_data[key]["generation_config"]
+                            )
+                        )
+                    elif not isinstance(
+                        input_data[key]["generation_config"], GenerationConfig
+                    ):
+                        input_data[key][
+                            "generation_config"
+                        ] = GenerationConfig()
+
+                    input_data[key]["generation_config"].model = (
+                        input_data[key]["generation_config"].model
+                        or service.config.app.fast_llm
+                    )
+
         return input_data
 
-    async def extract_triples(input_data):
+    async def graph_extraction(input_data):
         input_data = get_input_data_dict(input_data)
 
         if input_data.get("document_id"):
@@ -83,21 +113,25 @@ def simple_kg_factory(service: GraphService):
             await service.providers.database.documents_handler.set_workflow_status(
                 id=document_id,
                 status_type="extraction_status",
-                status=KGExtractionStatus.PROCESSING,
+                status=GraphExtractionStatus.PROCESSING,
             )
 
             # Extract relationships from the document
             try:
                 extractions = []
-                async for extraction in service.kg_extraction(
+                async for (
+                    extraction
+                ) in service.graph_search_results_extraction(
                     document_id=document_id,
                     **input_data["graph_creation_settings"],
                 ):
                     extractions.append(extraction)
-                await service.store_kg_extractions(extractions)
+                await service.store_graph_search_results_extractions(
+                    extractions
+                )
 
                 # Describe the entities in the graph
-                await service.kg_entity_description(
+                await service.graph_search_results_entity_description(
                     document_id=document_id,
                     **input_data["graph_creation_settings"],
                 )
@@ -115,20 +149,20 @@ def simple_kg_factory(service: GraphService):
                 )
                 raise e
 
-    async def enrich_graph(input_data):
+    async def graph_clustering(input_data):
         input_data = get_input_data_dict(input_data)
         workflow_status = await service.providers.database.documents_handler.get_workflow_status(
             id=input_data.get("collection_id", None),
             status_type="graph_cluster_status",
         )
-        if workflow_status == KGEnrichmentStatus.SUCCESS:
+        if workflow_status == GraphConstructionStatus.SUCCESS:
             raise R2RException(
                 "Communities have already been built for this collection. To build communities again, first submit a POST request to `graphs/{collection_id}/reset` to erase the previously built communities.",
                 400,
             )
 
         try:
-            num_communities = await service.kg_clustering(
+            num_communities = await service.graph_search_results_clustering(
                 collection_id=input_data.get("collection_id", None),
                 # graph_id=input_data.get("graph_id", None),
                 **input_data["graph_enrichment_settings"],
@@ -152,49 +186,40 @@ def simple_kg_factory(service: GraphService):
                 )
 
                 logger.info(
-                    f"Running kg community summary for workflow {i+1} of {total_workflows}"
+                    f"Running graph_search_results community summary for workflow {i+1} of {total_workflows}"
                 )
-                await kg_community_summary(
-                    input_data=input_data_copy,
+
+                await service.graph_search_results_community_summary(
+                    offset=input_data_copy["offset"],
+                    limit=input_data_copy["limit"],
+                    collection_id=input_data_copy.get("collection_id", None),
+                    # graph_id=input_data_copy.get("graph_id", None),
+                    **input_data_copy["graph_enrichment_settings"],
                 )
 
             await service.providers.database.documents_handler.set_workflow_status(
                 id=input_data.get("collection_id", None),
                 status_type="graph_cluster_status",
-                status=KGEnrichmentStatus.SUCCESS,
+                status=GraphConstructionStatus.SUCCESS,
             )
 
         except Exception as e:
             await service.providers.database.documents_handler.set_workflow_status(
                 id=input_data.get("collection_id", None),
                 status_type="graph_cluster_status",
-                status=KGEnrichmentStatus.FAILED,
+                status=GraphConstructionStatus.FAILED,
             )
 
             raise e
 
-    async def kg_community_summary(input_data):
-        logger.info(
-            f"Running kg community summary for offset: {input_data['offset']}, limit: {input_data['limit']}"
-        )
-
-        await service.kg_community_summary(
-            offset=input_data["offset"],
-            limit=input_data["limit"],
-            collection_id=input_data.get("collection_id", None),
-            # graph_id=input_data.get("graph_id", None),
-            **input_data["graph_enrichment_settings"],
-        )
-
-    async def deduplicate_document_entities(input_data):
+    async def graph_deduplication(input_data):
         input_data = get_input_data_dict(input_data)
         await service.deduplicate_document_entities(
             document_id=input_data.get("document_id", None),
         )
 
     return {
-        "extract-triples": extract_triples,
-        "build-communities": enrich_graph,
-        "kg-community-summary": kg_community_summary,
-        "deduplicate-document-entities": deduplicate_document_entities,
+        "graph-extraction": graph_extraction,
+        "graph-clustering": graph_clustering,
+        "graph-deduplication": graph_deduplication,
     }

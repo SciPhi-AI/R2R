@@ -1,40 +1,21 @@
-# A config which overrides all instances of `openai` with `azure` in the `r2r.toml` config
-[completion]
-provider = "litellm"
-concurrent_request_limit = 128
-fast_llm = "azure/gpt-4o-mini" # used inside R2R for `fast` completions, like document summaries
+[app]
+# LLM used for internal operations, like deriving conversation names
+fast_llm = "azure/gpt-4o-mini"
 
-  [completion.generation_config]
-  model = "azure/gpt-4o"
+# LLM used for user-facing output, like RAG replies
+quality_llm = "azure/gpt-4o"
 
-[agent]
-  [agent.generation_config]
-  model = "azure/gpt-4o"
+# LLM used for ingesting visual inputs
+vlm = "azure/gpt-4o"
 
-[database]
-  [database.graph_creation_settings]
-    clustering_mode = "remote"
-    generation_config = { model = "azure/gpt-4o-mini" }
-
-  [database.graph_enrichment_settings]
-    generation_config = { model = "azure/gpt-4o-mini" }
-
-  [database.graph_search_settings]
-    generation_config = { model = "azure/gpt-4o-mini" }
+# LLM used for transcription
+audio_lm = "azure/whisper-1"
 
 [embedding]
-provider = "litellm"
 base_model = "azure/text-embedding-3-small"
-base_dimension = 512
 
 [completion_embedding]
-# Generally this should be the same as the embedding config, but advanced users may want to run with a different provider to reduce latency
-provider = "litellm"
 base_model = "azure/text-embedding-3-small"
-base_dimension = 512
-
-[file]
-provider = "postgres"
 
 [ingestion]
 provider = "unstructured_local"

@@ -32,15 +32,18 @@ from core.base.api.models import (
 from core.base.providers.database import LimitSettings
 
 from ...abstractions import R2RProviders, R2RServices
+from ...config import R2RConfig
 from .base_router import BaseRouterV3
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 class UsersRouter(BaseRouterV3):
-    def __init__(self, providers: R2RProviders, services: R2RServices):
+    def __init__(
+        self, providers: R2RProviders, services: R2RServices, config: R2RConfig
+    ):
         logging.info("Initializing UsersRouter")
-        super().__init__(providers, services)
+        super().__init__(providers, services, config)
         self.google_client_id = os.environ.get("GOOGLE_CLIENT_ID")
         self.google_client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
         self.google_redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI")

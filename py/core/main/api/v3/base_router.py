@@ -9,18 +9,22 @@ from fastapi.responses import FileResponse, StreamingResponse
 from core.base import R2RException
 
 from ...abstractions import R2RProviders, R2RServices
+from ...config import R2RConfig
 
 logger = logging.getLogger()
 
 
 class BaseRouterV3:
-    def __init__(self, providers: R2RProviders, services: R2RServices):
+    def __init__(
+        self, providers: R2RProviders, services: R2RServices, config: R2RConfig
+    ):
         """
         :param providers: Typically includes auth, database, etc.
         :param services: Additional service references (ingestion, etc).
         """
         self.providers = providers
         self.services = services
+        self.config = config
         self.router = APIRouter()
         self.openapi_extras = self._load_openapi_extras()
 

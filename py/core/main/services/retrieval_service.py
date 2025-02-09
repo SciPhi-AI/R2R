@@ -153,14 +153,14 @@ class RetrievalService(Service):
             self._graph_search_logic(query, search_settings)
         )
 
-        chunk_search_results, kg_results = await asyncio.gather(
-            vector_task, graph_task
+        chunk_search_results, graph_search_results_results = (
+            await asyncio.gather(vector_task, graph_task)
         )
 
         # 3) Wrap up in an `AggregateSearchResult`, or your CombinedSearchResponse
         aggregated_result = AggregateSearchResult(
             chunk_search_results=chunk_search_results,
-            graph_search_results=kg_results,
+            graph_search_results=graph_search_results_results,
         )
 
         # If your higher-level code returns as_dict(), do that here:
@@ -466,7 +466,7 @@ class RetrievalService(Service):
     ) -> RAGResponse:
         """
         A simple RAG method that does:
-          • vector + KG search
+          • vector + graph search
           • build a big 'context' string
           • feed to your system + task prompts
           • call LLM for final answer
@@ -486,8 +486,8 @@ class RetrievalService(Service):
             context_str = format_search_results_for_llm(aggregated)
 
             # Prepare your message payload
-            system_prompt_name = system_prompt_name or "default_system"
-            task_prompt_name = task_prompt_name or "default_rag"
+            system_prompt_name = system_prompt_name or "system"
+            task_prompt_name = task_prompt_name or "rag"
             task_prompt_override = kwargs.get("task_prompt_override", None)
 
             messages = await self.providers.database.prompts_handler.get_message_payload(
@@ -571,9 +571,9 @@ class RetrievalService(Service):
         use_system_context: bool = False,
         max_tool_context_length: int = 32_768,
         override_tools: Optional[list[dict[str, Any]]] = None,
-        rawr: bool = False,
+        reasoning_agent: bool = False,
     ):
-        if rawr and not rag_generation_config.stream:
+        if reasoning_agent and not rag_generation_config.stream:
             raise R2RException(
                 status_code=400,
                 message="Currently, the reasoning agent can only be used with `stream=True`.",
@@ -706,48 +706,34 @@ class RetrievalService(Service):
                 )
 
             # STEP 1: Determine the final system prompt content
-            if use_system_context:
-                if rawr:
-                    raise R2RException(
-                        status_code=400,
-                        message="Reasoning agent not supported with extended prompt",
-                    )
-                # Build the brand-new extended system prompt that includes doc/coll context
-                system_instruction = (
-                    await self._build_aware_system_instruction(
-                        max_tool_context_length=max_tool_context_length,
-                        filter_user_id=filter_user_id,
-                        filter_collection_ids=filter_collection_ids,
-                        model=rag_generation_config.model,
-                        rawr=rawr,
-                    )
-                )
-            elif task_prompt_override:
-                if rawr:
+            if task_prompt_override:
+                if reasoning_agent:
                     raise R2RException(
                         status_code=400,
                         message="Reasoning agent not supported with task prompt override",
                     )
 
                 system_instruction = task_prompt_override
-            elif rawr:
+            else:
                 system_instruction = (
                     await self._build_aware_system_instruction(
                         max_tool_context_length=max_tool_context_length,
                         filter_user_id=filter_user_id,
                         filter_collection_ids=filter_collection_ids,
                         model=rag_generation_config.model,
-                        rawr=rawr,
+                        use_system_context=use_system_context,
+                        reasoning_agent=reasoning_agent,
                     )
                 )
 
             agent_config = deepcopy(self.config.agent)
             agent_config.tools = override_tools or agent_config.tools
+
             if rag_generation_config.stream:
 
                 async def stream_response():
                     try:
-                        if not rawr:
+                        if not reasoning_agent:
                             agent = R2RStreamingRAGAgent(
                                 database_provider=self.providers.database,
                                 llm_provider=self.providers.llm,
@@ -820,7 +806,7 @@ class RetrievalService(Service):
                             yield chunk
                     except Exception as e:
                         logger.error(f"Error streaming agent output: {e}")
-                        raise
+                        raise e
                     finally:
                         msgs = [
                             msg.to_dict()
@@ -851,7 +837,7 @@ class RetrievalService(Service):
                                                 }
                                             ],
                                             GenerationConfig(
-                                                model=self.providers.llm.config.fast_llm
+                                                model=self.config.app.fast_llm
                                             ),
                                         )
                                     )
@@ -917,7 +903,7 @@ class RetrievalService(Service):
                             await self.providers.llm.aget_completion(
                                 [{"role": "system", "content": prompt}],
                                 GenerationConfig(
-                                    model=self.providers.llm.config.fast_llm
+                                    model=self.config.app.fast_llm
                                 ),
                             )
                         )
@@ -1125,57 +1111,57 @@ class RetrievalService(Service):
         filter_user_id: Optional[UUID] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
         model: Optional[str] = None,
-        rawr: bool = False,
+        use_system_context: bool = False,
+        reasoning_agent: bool = False,
     ) -> str:
         """
         High-level method that:
           1) builds the documents context
           2) builds the collections context
-          3) loads the new `aware_rag_agent` prompt
+          3) loads the new `dynamic_reasoning_rag_agent` prompt
         """
         date_str = str(datetime.now().isoformat()).split("T")[0]
 
-        doc_context_str = await self._build_documents_context(
-            filter_user_id=filter_user_id,
+        # "dynamic_rag_agent" // "static_rag_agent"
+
+        prompt_name = (
+            self.config.agent.agent_dynamic_prompt
+            if use_system_context or reasoning_agent
+            else self.config.agent.agent_static_prompt
         )
 
-        coll_context_str = await self._build_collections_context(
-            filter_collection_ids=filter_collection_ids,
-        )
+        if ("gemini" in model or "claude" in model) and reasoning_agent:
+            prompt_name = prompt_name + "_prompted_reasoning"
 
-        if not rawr:
-            prompt_name = "aware_rag_agent"
+        if use_system_context or reasoning_agent:
+            doc_context_str = await self._build_documents_context(
+                filter_user_id=filter_user_id,
+            )
+
+            coll_context_str = await self._build_collections_context(
+                filter_collection_ids=filter_collection_ids,
+            )
+            logger.debug(f"Loading prompt {prompt_name}")
+            # Now fetch the prompt from the database prompts handler
+            # This relies on your "rag_agent_extended" existing with
+            # placeholders: date, document_context, collection_context
+            system_prompt = await self.providers.database.prompts_handler.get_cached_prompt(
+                # We use custom tooling and a custom agent to handle gemini models
+                prompt_name,
+                inputs={
+                    "date": date_str,
+                    "max_tool_context_length": max_tool_context_length,
+                    "document_context": doc_context_str,
+                    "collection_context": coll_context_str,
+                },
+            )
         else:
-            if (
-                "gemini-2.0-flash-thinking-exp-01-21" in model
-                or "reasoner" in model  # DeepSeek naming for R1
-                or "deepseek-r1" in model.lower()  # Open source naming for R1
-            ):
-                prompt_name = "aware_rag_agent_reasoning_xml_tooling"
-            elif (
-                "o3-mini" in model
-                or "claude-3-5-sonnet-20241022" in model
-                or "gpt-4o" in model
-            ):
-                prompt_name = "aware_rag_agent_reasoning_prompted"
-            else:
-                raise R2RException(
-                    status_code=400,
-                    message="Reasoning agent not supported for this model",
-                )
-        # Now fetch the prompt from the database prompts handler
-        # This relies on your "rag_agent_extended" existing with
-        # placeholders: date, document_context, collection_context
-        system_prompt = await self.providers.database.prompts_handler.get_cached_prompt(
-            # We use custom tooling and a custom agent to handle gemini models
-            prompt_name,
-            inputs={
-                "date": date_str,
-                "max_tool_context_length": max_tool_context_length,
-                "document_context": doc_context_str,
-                "collection_context": coll_context_str,
-            },
-        )
+            system_prompt = await self.providers.database.prompts_handler.get_cached_prompt(
+                prompt_name,
+                inputs={
+                    "date": date_str,
+                },
+            )
         logger.info(f"Running agent with system prompt = {system_prompt}")
         return system_prompt
 

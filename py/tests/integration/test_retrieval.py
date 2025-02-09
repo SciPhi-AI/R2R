@@ -143,7 +143,8 @@ def test_completion(client: R2RClient):
         {"role": "user", "content": "What about Italy?"},
     ]
     resp = client.retrieval.completion(
-        messages, generation_config={"max_tokens": 50}
+        messages,
+        generation_config={"max_tokens": 50, "model": "openai/gpt-4o"},
     )
     assert "results" in resp, "Completion response missing 'results'"
     assert "choices" in resp["results"], "No choices in completion result"

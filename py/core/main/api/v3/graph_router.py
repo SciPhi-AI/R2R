@@ -7,7 +7,7 @@ from fastapi import Body, Depends, Path, Query
 from fastapi.background import BackgroundTasks
 from fastapi.responses import FileResponse
 
-from core.base import KGEnrichmentStatus, R2RException, Workflow
+from core.base import GraphConstructionStatus, R2RException, Workflow
 from core.base.abstractions import StoreType
 from core.base.api.models import (
     GenericBooleanResponse,
@@ -29,6 +29,7 @@ from core.utils import (
 )
 
 from ...abstractions import R2RProviders, R2RServices
+from ...config import R2RConfig
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -39,36 +40,37 @@ class GraphRouter(BaseRouterV3):
         self,
         providers: R2RProviders,
         services: R2RServices,
+        config: R2RConfig,
     ):
         logging.info("Initializing GraphRouter")
-        super().__init__(providers, services)
+        super().__init__(providers, services, config)
         self._register_workflows()
 
     def _register_workflows(self):
         workflow_messages = {}
         if self.providers.orchestration.config.provider == "hatchet":
-            workflow_messages["extract-triples"] = (
+            workflow_messages["graph-extraction"] = (
                 "Document extraction task queued successfully."
             )
-            workflow_messages["build-communities"] = (
+            workflow_messages["graph-clustering"] = (
                 "Graph enrichment task queued successfully."
             )
-            workflow_messages["deduplicate-document-entities"] = (
+            workflow_messages["graph-deduplication"] = (
                 "Entity deduplication task queued successfully."
             )
         else:
-            workflow_messages["extract-triples"] = (
+            workflow_messages["graph-extraction"] = (
                 "Document entities and relationships extracted successfully."
             )
-            workflow_messages["build-communities"] = (
+            workflow_messages["graph-clustering"] = (
                 "Graph communities created successfully."
             )
-            workflow_messages["deduplicate-document-entities"] = (
+            workflow_messages["graph-deduplication"] = (
                 "Entity deduplication completed successfully."
             )
 
         self.providers.orchestration.register_workflows(
-            Workflow.KG,
+            Workflow.GRAPH,
             self.services.graph,
             workflow_messages,
         )
@@ -316,8 +318,8 @@ class GraphRouter(BaseRouterV3):
 
             if run_with_orchestration:
                 try:
-                    await self.providers.orchestration.run_workflow(  # type: ignore
-                        "build-communities", {"request": workflow_input}, {}
+                    return await self.providers.orchestration.run_workflow(  # type: ignore
+                        "graph-clustering", {"request": workflow_input}, {}
                     )
                     return GenericMessageResponse(message="Graph communities created successfully.")  # type: ignore
 
@@ -327,12 +329,21 @@ class GraphRouter(BaseRouterV3):
                     logger.error(
                         f"Error running orchestrated community building: {e} \n\nAttempting to run without orchestration."
                     )
-            from core.main.orchestration import simple_kg_factory
+            from core.main.orchestration import (
+                simple_graph_search_results_factory,
+            )
 
             logger.info("Running build-communities without orchestration.")
-            simple_kg = simple_kg_factory(self.services.graph)
-            await simple_kg["build-communities"](workflow_input)
-            return GenericMessageResponse(message="Graph communities created successfully.")  # type: ignore
+            simple_graph_search_results = simple_graph_search_results_factory(
+                self.services.graph
+            )
+            await simple_graph_search_results["graph-clustering"](
+                workflow_input
+            )
+            return {
+                "message": "Graph communities created successfully.",
+                "task_id": None,
+            }
 
         @self.router.post(
             "/graphs/{collection_id}/reset",
@@ -2138,7 +2149,7 @@ class GraphRouter(BaseRouterV3):
                 await self.providers.database.documents_handler.set_workflow_status(
                     id=collection_id,
                     status_type="graph_sync_status",
-                    status=KGEnrichmentStatus.SUCCESS,
+                    status=GraphConstructionStatus.SUCCESS,
                 )
 
             return GenericBooleanResponse(success=success)  # type: ignore

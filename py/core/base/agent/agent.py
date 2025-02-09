@@ -41,10 +41,10 @@ class Conversation:
 
 # TODO - Move agents to provider pattern
 class AgentConfig(BaseModel):
-    system_instruction_name: str = "rag_agent"
+    agent_static_prompt: str = "static_rag_agent"
+    agent_dynamic_prompt: str = "dynamic_reasoning_rag_agent_prompted"
     tools: list[str] = ["search"]
     tool_names: Optional[list[str]] = None
-    generation_config: GenerationConfig = GenerationConfig()
     stream: bool = False
     include_tools: bool = True
 
@@ -92,7 +92,7 @@ class Agent(ABC):
                 content=system_instruction
                 or (
                     await self.database_provider.prompts_handler.get_cached_prompt(
-                        self.config.system_instruction_name,
+                        self.config.agent_static_prompt,
                         inputs={"date": str(datetime.now().isoformat())},
                     )
                 ),
@@ -138,7 +138,7 @@ class Agent(ABC):
         if (
             last_message["role"] in ["tool", "function"]
             and last_message["content"] != ""
-            and "ollama" in self.config.generation_config.model
+            and "ollama" in self.rag_generation_config.model
             or self.config.include_tools == False
         ):
             return GenerationConfig(

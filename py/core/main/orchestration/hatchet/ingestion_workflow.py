@@ -11,8 +11,8 @@ from litellm import AuthenticationError
 
 from core.base import (
     DocumentChunk,
+    GraphConstructionStatus,
     IngestionStatus,
-    KGEnrichmentStatus,
     OrchestrationProvider,
     generate_extraction_id,
     increment_version,
@@ -178,12 +178,12 @@ def hatchet_ingestion_factory(
                     await service.providers.database.documents_handler.set_workflow_status(
                         id=collection_id,
                         status_type="graph_sync_status",
-                        status=KGEnrichmentStatus.OUTDATED,
+                        status=GraphConstructionStatus.OUTDATED,
                     )
                     await service.providers.database.documents_handler.set_workflow_status(
                         id=collection_id,
                         status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
-                        status=KGEnrichmentStatus.OUTDATED,
+                        status=GraphConstructionStatus.OUTDATED,
                     )
                 else:
                     for collection_id_str in collection_ids:
@@ -220,12 +220,12 @@ def hatchet_ingestion_factory(
                         await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,
                             status_type="graph_sync_status",
-                            status=KGEnrichmentStatus.OUTDATED,
+                            status=GraphConstructionStatus.OUTDATED,
                         )
                         await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,
                             status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
-                            status=KGEnrichmentStatus.OUTDATED,
+                            status=GraphConstructionStatus.OUTDATED,
                         )
 
                 # get server chunk enrichment settings and override parts of it if provided in the ingestion config
@@ -278,7 +278,7 @@ def hatchet_ingestion_factory(
 
                     extract_result = (
                         await context.aio.spawn_workflow(
-                            "extract-triples",
+                            "graph-extraction",
                             {"request": extract_input},
                         )
                     ).result()
@@ -455,12 +455,12 @@ def hatchet_ingestion_factory(
                     await service.providers.database.documents_handler.set_workflow_status(
                         id=collection_id,
                         status_type="graph_sync_status",
-                        status=KGEnrichmentStatus.OUTDATED,
+                        status=GraphConstructionStatus.OUTDATED,
                     )
                     await service.providers.database.documents_handler.set_workflow_status(
                         id=collection_id,
                         status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
-                        status=KGEnrichmentStatus.OUTDATED,
+                        status=GraphConstructionStatus.OUTDATED,
                     )
                 else:
                     for collection_id_str in collection_ids:
@@ -499,13 +499,13 @@ def hatchet_ingestion_factory(
                         await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,
                             status_type="graph_sync_status",
-                            status=KGEnrichmentStatus.OUTDATED,
+                            status=GraphConstructionStatus.OUTDATED,
                         )
 
                         await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,
                             status_type="graph_cluster_status",
-                            status=KGEnrichmentStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                            status=GraphConstructionStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                         )
             except Exception as e:
                 logger.error(

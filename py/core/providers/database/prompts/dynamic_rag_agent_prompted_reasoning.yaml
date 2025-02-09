@@ -1,4 +1,4 @@
-aware_rag_agent_reasoning_prompted:
+dynamic_rag_agent_prompted_reasoning:
   template: >
     You are a helpful agent that can search for information. The current date is {date}.
 

@@ -615,7 +615,7 @@ class DocumentsSDK:
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> WrappedDocumentSearchResponse:
         """
-        Conduct a vector and/or KG search.
+        Conduct a vector and/or graph search.
 
         Args:
             query (str): The query to search for.

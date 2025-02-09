@@ -1,4 +1,4 @@
-default_rag:
+rag:
   template: >
     ## Task:
 

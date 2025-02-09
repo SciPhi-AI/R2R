@@ -7,7 +7,8 @@ from fastapi import Body, Depends, Path, Query
 from fastapi.background import BackgroundTasks
 from fastapi.responses import FileResponse
 
-from core.base import KGCreationSettings, R2RException
+from core.base import R2RException
+from core.base.abstractions import GraphCreationSettings
 from core.base.api.models import (
     GenericBooleanResponse,
     WrappedBooleanResponse,
@@ -23,6 +24,7 @@ from core.utils import (
 )
 
 from ...abstractions import R2RProviders, R2RServices
+from ...config import R2RConfig
 from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
@@ -89,9 +91,11 @@ async def authorize_collection_action(
 
 
 class CollectionsRouter(BaseRouterV3):
-    def __init__(self, providers: R2RProviders, services: R2RServices):
+    def __init__(
+        self, providers: R2RProviders, services: R2RServices, config: R2RConfig
+    ):
         logging.info("Initializing CollectionsRouter")
-        super().__init__(providers, services)
+        super().__init__(providers, services, config)
 
     def _setup_routes(self):
         @self.router.post(
@@ -1164,7 +1168,7 @@ class CollectionsRouter(BaseRouterV3):
                 ...,
                 description="The ID of the document to extract entities and relationships from.",
             ),
-            settings: Optional[KGCreationSettings] = Body(
+            settings: Optional[GraphCreationSettings] = Body(
                 default=None,
                 description="Settings for the entities and relationships extraction process.",
             ),
@@ -1207,7 +1211,7 @@ class CollectionsRouter(BaseRouterV3):
                     }
 
                     return await self.providers.orchestration.run_workflow(  # type: ignore
-                        "extract-triples", {"request": workflow_input}, {}
+                        "graph-extraction", {"request": workflow_input}, {}
                     )
                 except (
                     Exception
@@ -1216,11 +1220,15 @@ class CollectionsRouter(BaseRouterV3):
                         f"Error running orchestrated extraction: {e} \n\nAttempting to run without orchestration."
                     )
 
-            from core.main.orchestration import simple_kg_factory
+            from core.main.orchestration import (
+                simple_graph_search_results_factory,
+            )
 
             logger.info("Running extract-triples without orchestration.")
-            simple_kg = simple_kg_factory(self.services.graph)
-            await simple_kg["extract-triples"](workflow_input)  # type: ignore
+            simple_graph_search_results = simple_graph_search_results_factory(
+                self.services.graph
+            )
+            await simple_graph_search_results["graph-extraction"](workflow_input)  # type: ignore
             return {  # type: ignore
                 "message": "Graph created successfully.",
                 "task_id": None,

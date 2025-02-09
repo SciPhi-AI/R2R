@@ -22,6 +22,7 @@ from core.base.api.models import (
 )
 
 from ...abstractions import R2RProviders, R2RServices
+from ...config import R2RConfig
 from .base_router import BaseRouterV3
 
 
@@ -43,12 +44,10 @@ def merge_search_settings(
 
 class RetrievalRouterV3(BaseRouterV3):
     def __init__(
-        self,
-        providers: R2RProviders,
-        services: R2RServices,
+        self, providers: R2RProviders, services: R2RServices, config: R2RConfig
     ):
         logging.info("Initializing RetrievalRouterV3")
-        super().__init__(providers, services)
+        super().__init__(providers, services, config)
 
     def _register_workflows(self):
         pass
@@ -407,6 +406,9 @@ class RetrievalRouterV3(BaseRouterV3):
             The generation process can be customized using the `rag_generation_config` parameter.
             """
 
+            if "model" not in rag_generation_config.__fields_set__:
+                rag_generation_config.model = self.config.app.quality_llm
+
             effective_settings = self._prepare_search_settings(
                 auth_user, search_mode, search_settings
             )
@@ -644,6 +646,9 @@ class RetrievalRouterV3(BaseRouterV3):
             The agent uses both vector search and knowledge graph capabilities to find and synthesize
             information, providing detailed, factual responses with proper attribution to source documents.
             """
+            if "model" not in rag_generation_config.__fields_set__:
+                rag_generation_config.model = self.config.app.quality_llm
+
             effective_settings = self._prepare_search_settings(
                 auth_user, search_mode, search_settings
             )
@@ -687,7 +692,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 raise R2RException(str(e), 500)
 
         @self.router.post(
-            "/retrieval/rawr",
+            "/retrieval/reasoning_agent",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Reasoning Agent with RAG(Thoughts + Tools)",
             openapi_extra={
@@ -701,7 +706,7 @@ class RetrievalRouterV3(BaseRouterV3):
                         client = R2RClient()
                         # when using auth, do client.login(...)
 
-                        response =client.retrieval.rawr(
+                        response = client.retrieval.reasoning_agent(
                             message={
                                 "role": "user",
                                 "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
@@ -822,6 +827,9 @@ class RetrievalRouterV3(BaseRouterV3):
                 auth_user, SearchMode.basic, {}
             )
 
+            if "model" not in rag_generation_config.__fields_set__:
+                rag_generation_config.model = self.config.app.quality_llm
+
             try:
                 response = await self.services.retrieval.agent(
                     message=message,
@@ -836,7 +844,7 @@ class RetrievalRouterV3(BaseRouterV3):
                     ),
                     use_system_context=False,
                     override_tools=tools,
-                    rawr=True,
+                    reasoning_agent=True,
                 )
 
                 if rag_generation_config.stream:

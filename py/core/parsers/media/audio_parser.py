@@ -58,7 +58,8 @@ class AudioParser(AsyncParser[bytes]):
 
             # Call Whisper transcription
             response = await self.atranscription(
-                model=self.config.audio_transcription_model,
+                model=self.config.audio_transcription_model
+                or self.config.app.audio_lm,
                 file=open(temp_file_path, "rb"),
                 **kwargs,
             )

@@ -68,7 +68,7 @@ def upgrade() -> None:
 
     op.drop_column(
         "collections",
-        "kg_enrichment_status",
+        "graph_search_results_enrichment_status",
         schema=project_name,
     )
 
@@ -123,7 +123,7 @@ def upgrade() -> None:
 
     op.drop_column(
         "documents",
-        "kg_extraction_status",
+        "graph_search_results_extraction_status",
         schema=project_name,
     )
 
@@ -229,7 +229,7 @@ def downgrade() -> None:
     op.add_column(
         "collections",
         sa.Column(
-            "kg_enrichment_status",
+            "graph_search_results_enrichment_status",
             sa.Text,
             server_default=sa.text("'pending'"),
         ),
@@ -278,7 +278,7 @@ def downgrade() -> None:
     op.add_column(
         "document_info",
         sa.Column(
-            "kg_extraction_status",
+            "graph_search_results_extraction_status",
             sa.Text,
             server_default=sa.text("'pending'"),
         ),

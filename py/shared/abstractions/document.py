@@ -131,8 +131,8 @@ class IngestionStatus(str, Enum):
         return "document_id"
 
 
-class KGExtractionStatus(str, Enum):
-    """Status of KG Creation per document."""
+class GraphExtractionStatus(str, Enum):
+    """Status of graph creation per document."""
 
     PENDING = "pending"
     PROCESSING = "processing"
@@ -152,8 +152,8 @@ class KGExtractionStatus(str, Enum):
         return "id"
 
 
-class KGEnrichmentStatus(str, Enum):
-    """Status of KG Enrichment per collection."""
+class GraphConstructionStatus(str, Enum):
+    """Status of graph enrichment per collection."""
 
     PENDING = "pending"
     PROCESSING = "processing"
@@ -185,7 +185,7 @@ class DocumentResponse(R2RSerializable):
     version: str
     size_in_bytes: Optional[int]
     ingestion_status: IngestionStatus = IngestionStatus.PENDING
-    extraction_status: KGExtractionStatus = KGExtractionStatus.PENDING
+    extraction_status: GraphExtractionStatus = GraphExtractionStatus.PENDING
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     ingestion_attempt_number: Optional[int] = None
@@ -277,13 +277,14 @@ class ChunkEnrichmentSettings(R2RSerializable):
         default=2,
         description="The number of preceding and succeeding chunks to include. Defaults to 2.",
     )
-    generation_config: GenerationConfig = Field(
-        default=GenerationConfig(),
+    generation_config: Optional[GenerationConfig] = Field(
+        default=None,
         description="The generation config to use for chunk enrichment",
     )
-
-
-## TODO - Move ingestion config
+    chunk_enrichment_prompt: Optional[str] = Field(
+        default="chunk_enrichment",
+        description="The prompt to use for chunk enrichment",
+    )
 
 
 class IngestionConfig(R2RSerializable):
@@ -295,19 +296,19 @@ class IngestionConfig(R2RSerializable):
     )
     extra_parsers: dict[str, Any] = {}
 
-    audio_transcription_model: str = "openai/whisper-1"
+    audio_transcription_model: str = None
 
     vision_img_prompt_name: str = "vision_img"
-    vision_img_model: str = "openai/gpt-4o"
+    vision_img_model: str = None
 
     vision_pdf_prompt_name: str = "vision_pdf"
-    vision_pdf_model: str = "openai/gpt-4o"
+    vision_pdf_model: str = None
 
     skip_document_summary: bool = False
-    document_summary_system_prompt: str = "default_system"
-    document_summary_task_prompt: str = "default_summary"
+    document_summary_system_prompt: str = "system"
+    document_summary_task_prompt: str = "summary"
     chunks_for_document_summary: int = 128
-    document_summary_model: str = "openai/gpt-4o-mini"
+    document_summary_model: str = None
 
     @property
     def supported_providers(self) -> list[str]:
@@ -327,17 +328,18 @@ class IngestionConfig(R2RSerializable):
                 excluded_parsers=["mp4"],
                 chunk_enrichment_settings=ChunkEnrichmentSettings(),  # default
                 extra_parsers={},
-                audio_transcription_model="openai/whisper-1",
+                audio_transcription_model=None,
                 vision_img_prompt_name="vision_img",
-                vision_img_model="openai/gpt-4o",
+                vision_img_model=None,
                 vision_pdf_prompt_name="vision_pdf",
-                vision_pdf_model="openai/gpt-4o",
+                vision_pdf_model=None,
                 skip_document_summary=False,
-                document_summary_system_prompt="default_system",
-                document_summary_task_prompt="default_summary",
+                document_summary_system_prompt="system",
+                document_summary_task_prompt="summary",
                 chunks_for_document_summary=256,  # larger for hi-res
-                document_summary_model="openai/gpt-4o-mini",
+                document_summary_model=None,
             )
+
         elif mode == "fast":
             # Skip summaries and other enrichment steps for speed.
             return cls(
@@ -345,16 +347,16 @@ class IngestionConfig(R2RSerializable):
                 excluded_parsers=["mp4"],
                 chunk_enrichment_settings=ChunkEnrichmentSettings(),  # default
                 extra_parsers={},
-                audio_transcription_model="openai/whisper-1",
+                audio_transcription_model=None,
                 vision_img_prompt_name="vision_img",
-                vision_img_model="openai/gpt-4o",
+                vision_img_model=None,
                 vision_pdf_prompt_name="vision_pdf",
-                vision_pdf_model="openai/gpt-4o",
+                vision_pdf_model=None,
                 skip_document_summary=True,  # skip summaries
-                document_summary_system_prompt="default_system",
-                document_summary_task_prompt="default_summary",
+                document_summary_system_prompt="system",
+                document_summary_task_prompt="summary",
                 chunks_for_document_summary=64,
-                document_summary_model="openai/gpt-4o-mini",
+                document_summary_model=None,
             )
         else:
             # For `custom` or any unrecognized mode, return a base config

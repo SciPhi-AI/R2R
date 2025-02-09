@@ -341,6 +341,7 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
             inside_thoughts = False
             async for chunk in stream:
                 delta = chunk.choices[0].delta
+
                 if delta.content and delta.content.count(
                     "<Thought>"
                 ) > delta.content.count("</Thought>"):
@@ -496,9 +497,9 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
             function_arguments = ""
 
             inside_thoughts = False
-
             async for chunk in stream:
                 delta = chunk.choices[0].delta
+
                 finish_reason = chunk.choices[0].finish_reason
 
                 # --- Update our chain-of-thought status based on <Thought> tags ---

@@ -30,7 +30,7 @@ class RetrievalSDK:
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> WrappedSearchResponse:
         """
-        Conduct a vector and/or KG search.
+        Conduct a vector and/or graph search.
 
         Args:
             query (str): The query to search for.
@@ -229,7 +229,7 @@ class RetrievalSDK:
 
         return WrappedAgentResponse(**response_dict)
 
-    async def rawr(
+    async def reasoning_agent(
         self,
         message: Optional[dict | Message] = None,
         rag_generation_config: Optional[dict | GenerationConfig] = None,
@@ -271,16 +271,14 @@ class RetrievalSDK:
         ):
             return self.client._make_streaming_request(
                 "POST",
-                "retrieval/rawr",
+                "retrieval/reasoning_agent",
                 json=data,
                 version="v3",
             )
-
-        response_dict = await self.client._make_request(
-            "POST",
-            "retrieval/rawr",
-            json=data,
-            version="v3",
-        )
-
-        return WrappedAgentResponse(**response_dict)
+        else:
+            return await self.client._make_request(
+                "POST",
+                "retrieval/reasoning_agent",
+                json=data,
+                version="v3",
+            )
