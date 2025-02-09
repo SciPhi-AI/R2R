@@ -59,8 +59,12 @@ pip install r2r
 # Set necessary environment variables
 export OPENAI_API_KEY=sk-...
 
-# Run the server and database
-r2r serve --docker --full
+# Run R2R in `light` mode
+python -m r2r.serve
+
+# Alternatively, run R2R in `full` mode
+# git clone git@github.com:SciPhi-AI/R2R.git . && cd R2R
+# COMPOSE_PROFILES=postgres docker compose -f compose.full.yaml down
 
 # Refer to docs for local LLM setup - https://r2r-docs.sciphi.ai/self-hosting/local-rag
 ```
