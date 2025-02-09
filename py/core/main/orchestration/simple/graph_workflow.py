@@ -214,7 +214,7 @@ def simple_graph_search_results_factory(service: GraphService):
 
     async def graph_deduplication(input_data):
         input_data = get_input_data_dict(input_data)
-        await service.graph_deduplication(
+        await service.deduplicate_document_entities(
             document_id=input_data.get("document_id", None),
         )
 
