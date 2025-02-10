@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -12,6 +12,99 @@ from shared.api.models.base import R2RResults
 from shared.api.models.management.responses import DocumentResponse
 
 
+class Citation(BaseModel):
+    """
+    Represents a single citation reference in the RAG response.
+    Combines both bracket metadata (start/end offsets, snippet range)
+    and the mapped source fields (id, doc ID, chunk text, etc.).
+    """
+
+    # Bracket references
+    index: int = Field(
+        ..., description="Citation bracket index after re-labeling"
+    )
+    oldIndex: Optional[int] = Field(
+        None, description="Original citation bracket index before re-labeling"
+    )
+    startIndex: Optional[int] = Field(
+        None,
+        description="Character offset (start) for the bracket [n] in the final text",
+    )
+    endIndex: Optional[int] = Field(
+        None,
+        description="Character offset (end) for the bracket [n] in the final text",
+    )
+
+    # Expanded snippet offsets around the bracket
+    snippetStartIndex: Optional[int] = Field(
+        None,
+        description="Start offset for the snippet region around the bracket",
+    )
+    snippetEndIndex: Optional[int] = Field(
+        None,
+        description="End offset for the snippet region around the bracket",
+    )
+    snippet: Optional[str] = Field(
+        None,
+        description="Sentence-based snippet or text chunk containing this bracket reference",
+    )
+
+    # Mapped source fields
+    sourceType: Optional[str] = Field(
+        None,
+        description="Type of the cited source (chunk, graph, web, contextDoc)",
+    )
+    id: Optional[str] = Field(
+        None, description="Search result ID (if chunk, e.g. chunk.id)"
+    )
+    document_id: Optional[str] = Field(
+        None, description="Document ID if chunk references a particular doc"
+    )
+    owner_id: Optional[str] = Field(
+        None,
+        description="Owner ID if chunk or doc references a particular user",
+    )
+    collection_ids: Optional[List[str]] = Field(
+        None, description="Collections this chunk or doc belongs to"
+    )
+    score: Optional[float] = Field(
+        None, description="Search score or similarity value"
+    )
+    text: Optional[str] = Field(
+        None, description="Full chunk text or short snippet from the source"
+    )
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional key-value fields from the source (title, license, etc.)",
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "index": 1,
+                "oldIndex": 9,
+                "startIndex": 393,
+                "endIndex": 396,
+                "snippetStartIndex": 320,
+                "snippetEndIndex": 418,
+                "snippet": "some line referencing the bracket [1]",
+                "sourceType": "chunk",
+                "id": "e760bb76-1c6e-52eb-910d-0ce5b567011b",
+                "document_id": "e43864f5-a36f-548e-aacd-6f8d48b30c7f",
+                "owner_id": "2acb499e-8428-543b-bd85-0d9098718220",
+                "collection_ids": ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
+                "score": 0.64,
+                "text": "Document Title: DeepSeek_R1.pdf\n\nText: could achieve an accuracy of ...",
+                "metadata": {
+                    "title": "DeepSeek_R1.pdf",
+                    "license": "CC-BY-4.0",
+                    "chunk_order": 68,
+                    "document_type": "pdf",
+                },
+            }
+        }
+
+
 class RAGResponse(BaseModel):
     generated_answer: str = Field(
         ..., description="The generated completion from the RAG process"
@@ -19,7 +112,7 @@ class RAGResponse(BaseModel):
     search_results: AggregateSearchResult = Field(
         ..., description="The search results used for the RAG process"
     )
-    citations: Optional[list[dict]] = Field(
+    citations: Optional[list[Citation]] = Field(
         None,
         description="Structured citation metadata, if you do citation extraction.",
     )

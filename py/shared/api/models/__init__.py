@@ -64,6 +64,7 @@ from shared.api.models.management.responses import (
 from shared.api.models.retrieval.responses import (
     AgentResponse,
     AggregateSearchResult,
+    Citation,
     RAGResponse,
     WrappedAgentResponse,
     WrappedDocumentSearchResponse,
@@ -141,6 +142,7 @@ __all__ = [
     # TODO: Clean up the following responses
     # Retrieval Responses
     "RAGResponse",
+    "Citation",
     "WrappedRAGResponse",
     "AgentResponse",
     "AggregateSearchResult",
