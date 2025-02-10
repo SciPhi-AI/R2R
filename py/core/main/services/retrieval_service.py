@@ -35,6 +35,9 @@ from core.base import (
     SearchSettings,
     format_search_results_for_llm,
     format_search_results_for_stream,
+    my_extract_citations,
+    my_map_citations_to_sources,
+    reassign_citations_in_order,
     to_async_generator,
 )
 from core.base.api.models import RAGResponse, User
@@ -459,18 +462,17 @@ class RetrievalService(Service):
         query: str,
         rag_generation_config: GenerationConfig,
         search_settings: SearchSettings = SearchSettings(),
-        system_prompt_name: Optional[str] = None,
-        task_prompt_name: Optional[str] = None,
+        system_prompt_name: str = None,
+        task_prompt_name: str = None,
         *args,
         **kwargs,
     ) -> RAGResponse:
         """
-        A simple RAG method that does:
-          • vector + graph search
-          • build a big 'context' string
-          • feed to your system + task prompts
-          • call LLM for final answer
-        No pipeline classes necessary.
+        A simplified RAG method that does:
+          1) vector + graph search
+          2) build a big 'context' string
+          3) feed context + query + optional non-text data to LLM
+          4) parse LLM output & return a RAGResponse with text + metadata
         """
         # Convert any UUID filters to string
         for f, val in list(search_settings.filters.items()):
@@ -478,18 +480,22 @@ class RetrievalService(Service):
                 search_settings.filters[f] = str(val)
 
         try:
-            # Do the search
+            # 1) Do the search
             search_results_dict = await self.search(query, search_settings)
-            aggregated = AggregateSearchResult.from_dict(search_results_dict)
+            aggregated_results = AggregateSearchResult.from_dict(
+                search_results_dict
+            )
 
-            # Build context from search results
-            context_str = format_search_results_for_llm(aggregated)
+            # 2) Build context from search results
+            context_str = format_search_results_for_llm(aggregated_results)
 
-            # Prepare your message payload
+            # 3) Prepare your message payload
             system_prompt_name = system_prompt_name or "system"
             task_prompt_name = task_prompt_name or "rag"
             task_prompt_override = kwargs.get("task_prompt_override", None)
 
+            # In your code, get_message_payload fetches or formats the prompt
+            # possibly substituting {query} and {context} into a template
             messages = await self.providers.database.prompts_handler.get_message_payload(
                 system_prompt_name=system_prompt_name,
                 task_prompt_name=task_prompt_name,
@@ -497,24 +503,63 @@ class RetrievalService(Service):
                 task_prompt_override=task_prompt_override,
             )
 
+            # 4) If streaming, handle that
             if rag_generation_config.stream:
                 return await self.stream_rag_response(
                     messages=messages,
                     rag_generation_config=rag_generation_config,
-                    aggregated_results=aggregated,
+                    aggregated_results=aggregated_results,
                     **kwargs,
                 )
 
-            # LLM completion
+            # 5) Non-streaming: call the LLM with your modalities
+            #    `aget_completion` below will forward the "modalities" key
+            #    to your underlying _execute_task call
             response = await self.providers.llm.aget_completion(
-                messages=messages, generation_config=rag_generation_config
+                messages=messages,
+                generation_config=rag_generation_config,
             )
 
-            # Build final RAGResponse
-            return RAGResponse(
-                completion=response.choices[0].message.content,
-                search_results=aggregated,
+            # 1) original LLM text
+            llm_text_response = response.choices[0].message.content
+
+            # 2) detect citations as the LLM wrote them
+            raw_citations = my_extract_citations(llm_text_response)
+
+            # 3) re-map them in ascending order => new_text has sequential references [1], [2], ...
+            re_labeled_text, new_citations = reassign_citations_in_order(
+                llm_text_response, raw_citations
             )
+
+            # 4) map to sources
+            mapped_citations = my_map_citations_to_sources(
+                new_citations, aggregated_results
+            )
+
+            # 5) Build final RAG response
+            #    If you want to return the newly-labeled text to the user, do so:
+            rag_response = RAGResponse(
+                generated_answer=re_labeled_text,  # or "generated_answer" if you prefer
+                search_results=aggregated_results,
+                citations=mapped_citations,
+                metadata={},
+            )
+            return rag_response
+
+            # llm_text_response = response.choices[0].message.content # Add in completion metadata here
+
+            # # # 6) Optionally do citation extraction here if you want
+            # citations = my_extract_citations(llm_text_response)
+            # mapped_citations = my_map_citations_to_sources(citations, aggregated_results)
+
+            # # 7) Build final RAGResponse
+            # rag_response = RAGResponse(
+            #     generated_answer=llm_text_response,
+            #     search_results=aggregated_results,
+            #     citations=mapped_citations,
+            #     metadata={} # response.remainder
+            # )
+            # return rag_response
 
         except Exception as e:
             logger.error(f"Error in RAG: {e}")

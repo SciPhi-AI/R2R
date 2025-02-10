@@ -15,6 +15,9 @@ from shared.utils import (
     generate_id,
     generate_user_id,
     increment_version,
+    my_extract_citations,
+    my_map_citations_to_sources,
+    reassign_citations_in_order,
     to_async_generator,
     validate_uuid,
 )
@@ -36,6 +39,9 @@ __all__ = [
     "TextSplitter",
     "validate_uuid",
     "deep_update",
+    "my_map_citations_to_sources",
+    "my_extract_citations",
+    "reassign_citations_in_order",
     "_decorate_vector_type",
     "_get_vector_column_str",
 ]

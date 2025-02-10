@@ -1,13 +1,11 @@
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
 from shared.abstractions import (
     AggregateSearchResult,
     ChunkSearchResult,
-    GraphSearchResult,
     Message,
-    WebSearchResult,
 )
 from shared.abstractions.llm import LLMChatCompletion
 from shared.api.models.base import R2RResults
@@ -15,13 +13,19 @@ from shared.api.models.management.responses import DocumentResponse
 
 
 class RAGResponse(BaseModel):
-    completion: Any = Field(
-        ...,
-        description="The generated completion from the RAG process",
+    generated_answer: str = Field(
+        ..., description="The generated completion from the RAG process"
     )
     search_results: AggregateSearchResult = Field(
-        ...,
-        description="The search results used for the RAG process",
+        ..., description="The search results used for the RAG process"
+    )
+    citations: Optional[list[dict]] = Field(
+        None,
+        description="Structured citation metadata, if you do citation extraction.",
+    )
+    metadata: dict = Field(
+        default_factory=dict,
+        description="Additional data returned by the LLM provider",
     )
 
     class Config:
@@ -33,7 +37,6 @@ class RAGResponse(BaseModel):
                         {
                             "finish_reason": "stop",
                             "index": 0,
-                            "logprobs": None,
                             "message": {
                                 "content": "Paris is the capital of France.",
                                 "role": "assistant",
@@ -42,16 +45,23 @@ class RAGResponse(BaseModel):
                     ],
                 },
                 "search_results": {
-                    "chunk_search_results": [
-                        ChunkSearchResult.Config.json_schema_extra,
-                    ],
-                    "graph_search_results": [
-                        GraphSearchResult.Config.json_schema_extra,
-                    ],
-                    "web_search_results": [
-                        WebSearchResult.Config.json_schema_extra,
-                    ],
+                    "chunk_search_results": [],
+                    "graph_search_results": [],
+                    "web_search_results": [],
                 },
+                "citations": {
+                    "citations": [
+                        {
+                            "index": 1,
+                            "startIndex": 25,
+                            "endIndex": 28,
+                            "uri": "https://example.com/doc1",
+                            "title": "example_document_1.pdf",
+                            "license": "CC-BY-4.0",
+                        }
+                    ]
+                },
+                "metadata": {},
             }
         }
 
