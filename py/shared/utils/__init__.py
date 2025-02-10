@@ -13,6 +13,9 @@ from .base_utils import (
     generate_id,
     generate_user_id,
     increment_version,
+    my_extract_citations,
+    my_map_citations_to_sources,
+    reassign_citations_in_order,
     to_async_generator,
     validate_uuid,
 )
@@ -29,6 +32,9 @@ __all__ = [
     "generate_user_id",
     "generate_default_prompt_id",
     "generate_entity_document_id",
+    "my_map_citations_to_sources",
+    "my_extract_citations",
+    "reassign_citations_in_order",
     # Other
     "increment_version",
     "decrement_version",
