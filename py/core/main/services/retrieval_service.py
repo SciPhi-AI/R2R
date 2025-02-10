@@ -546,21 +546,6 @@ class RetrievalService(Service):
             )
             return rag_response
 
-            # llm_text_response = response.choices[0].message.content # Add in completion metadata here
-
-            # # # 6) Optionally do citation extraction here if you want
-            # citations = my_extract_citations(llm_text_response)
-            # mapped_citations = my_map_citations_to_sources(citations, aggregated_results)
-
-            # # 7) Build final RAGResponse
-            # rag_response = RAGResponse(
-            #     generated_answer=llm_text_response,
-            #     search_results=aggregated_results,
-            #     citations=mapped_citations,
-            #     metadata={} # response.remainder
-            # )
-            # return rag_response
-
         except Exception as e:
             logger.error(f"Error in RAG: {e}")
             if "NoneType" in str(e):
