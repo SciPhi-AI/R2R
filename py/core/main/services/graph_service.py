@@ -1212,14 +1212,14 @@ class GraphService(Service):
         doc_id = chunks[0].document_id
         chunk_ids = [c.id for c in chunks]
         entities_list: list[Entity] = []
-        for e in entities_elems:
-            name_attr = e.get("name")
-            type_elem = e.find("type")
-            desc_elem = e.find("description")
+        for element in entities_elems:
+            name_attr = element.get("name")
+            type_elem = element.find("type")
+            desc_elem = element.find("description")
             category = type_elem.text if type_elem is not None else None
-            desc = desc_elem.text if desc_elem is not None else ""
+            desc = desc_elem.text
             desc_embed = await self.providers.embedding.async_get_embedding(
-                desc
+                desc or ""
             )
             ent = Entity(
                 category=category,
@@ -1248,7 +1248,7 @@ class GraphService(Service):
                 desc = desc_elem.text
                 weight = float(weight_elem.text)
                 embed = await self.providers.embedding.async_get_embedding(
-                    desc
+                    desc or ""
                 )
 
                 rel = Relationship(
@@ -1353,7 +1353,7 @@ class GraphService(Service):
             new_description = resp.choices[0].message.content
 
             new_embedding = await self.providers.embedding.async_get_embedding(
-                new_description
+                new_description or ""
             )
 
             await self.providers.database.graphs_handler.entities.update(

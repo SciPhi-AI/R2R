@@ -223,7 +223,10 @@ class AuthProvider(Provider, ABC):
                     await websocket.close(
                         code=4001, reason="Missing or invalid authorization"
                     )
-                    return None
+                    raise R2RException(
+                        status_code=401,
+                        message="Missing or invalid authorization",
+                    )
 
                 token = auth_header.split(" ")[1]
 
@@ -237,13 +240,18 @@ class AuthProvider(Provider, ABC):
                         await websocket.close(
                             code=4002, reason="User not found"
                         )
-                        return None
+                        raise R2RException(
+                            status_code=404, message="User not found"
+                        )
 
                     if superuser_only and not user.is_superuser:
                         await websocket.close(
                             code=4003, reason="Superuser access required"
                         )
-                        return None
+                        raise R2RException(
+                            status_code=403,
+                            message="Superuser access required",
+                        )
 
                     return user
 
@@ -252,14 +260,18 @@ class AuthProvider(Provider, ABC):
                     await websocket.close(
                         code=4002, reason="Authentication failed"
                     )
-                    return None
+                    raise R2RException(
+                        status_code=401, message="Authentication failed"
+                    )
 
             except Exception as e:
                 logger.error(f"WebSocket error during auth: {e}")
                 await websocket.close(
                     code=4002, reason="Authentication failed"
                 )
-                return None
+                raise R2RException(
+                    status_code=401, message="Authentication failed"
+                )
 
         return _websocket_auth_wrapper
 

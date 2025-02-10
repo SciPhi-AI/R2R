@@ -296,19 +296,19 @@ class IngestionConfig(R2RSerializable):
     )
     extra_parsers: dict[str, Any] = {}
 
-    audio_transcription_model: str = None
+    audio_transcription_model: str = ""
 
     vision_img_prompt_name: str = "vision_img"
-    vision_img_model: str = None
+    vision_img_model: str = ""
 
     vision_pdf_prompt_name: str = "vision_pdf"
-    vision_pdf_model: str = None
+    vision_pdf_model: str = ""
 
     skip_document_summary: bool = False
     document_summary_system_prompt: str = "system"
     document_summary_task_prompt: str = "summary"
     chunks_for_document_summary: int = 128
-    document_summary_model: str = None
+    document_summary_model: str = ""
 
     @property
     def supported_providers(self) -> list[str]:
@@ -328,16 +328,16 @@ class IngestionConfig(R2RSerializable):
                 excluded_parsers=["mp4"],
                 chunk_enrichment_settings=ChunkEnrichmentSettings(),  # default
                 extra_parsers={},
-                audio_transcription_model=None,
+                audio_transcription_model="",
                 vision_img_prompt_name="vision_img",
-                vision_img_model=None,
+                vision_img_model="",
                 vision_pdf_prompt_name="vision_pdf",
-                vision_pdf_model=None,
+                vision_pdf_model="",
                 skip_document_summary=False,
                 document_summary_system_prompt="system",
                 document_summary_task_prompt="summary",
                 chunks_for_document_summary=256,  # larger for hi-res
-                document_summary_model=None,
+                document_summary_model="",
             )
 
         elif mode == "fast":
@@ -347,16 +347,16 @@ class IngestionConfig(R2RSerializable):
                 excluded_parsers=["mp4"],
                 chunk_enrichment_settings=ChunkEnrichmentSettings(),  # default
                 extra_parsers={},
-                audio_transcription_model=None,
+                audio_transcription_model="",
                 vision_img_prompt_name="vision_img",
-                vision_img_model=None,
+                vision_img_model="",
                 vision_pdf_prompt_name="vision_pdf",
-                vision_pdf_model=None,
+                vision_pdf_model="",
                 skip_document_summary=True,  # skip summaries
                 document_summary_system_prompt="system",
                 document_summary_task_prompt="summary",
                 chunks_for_document_summary=64,
-                document_summary_model=None,
+                document_summary_model="",
             )
         else:
             # For `custom` or any unrecognized mode, return a base config

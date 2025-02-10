@@ -139,7 +139,7 @@ class AuthService(Service):
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
         limits_overrides: Optional[dict] = None,
-        merge_limits: Optional[dict] = None,
+        merge_limits: bool = False,
         new_metadata: Optional[dict] = None,
     ) -> User:
         user: User = (
@@ -319,7 +319,7 @@ class AuthService(Service):
             user_id=user_id, key_id=key_id
         )
 
-    async def list_user_api_keys(self, user_id: UUID) -> dict:
+    async def list_user_api_keys(self, user_id: UUID) -> list[dict]:
         """
         List all API keys for the user.
 

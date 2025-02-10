@@ -241,7 +241,7 @@ class SupabaseAuthProvider(AuthProvider):
             "API key management is not supported with Supabase authentication"
         )
 
-    async def delete_user_api_key(self, user_id: UUID, key_id: UUID) -> dict:
+    async def delete_user_api_key(self, user_id: UUID, key_id: UUID) -> bool:
         raise NotImplementedError(
             "API key management is not supported with Supabase authentication"
         )

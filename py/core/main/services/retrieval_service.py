@@ -462,8 +462,8 @@ class RetrievalService(Service):
         query: str,
         rag_generation_config: GenerationConfig,
         search_settings: SearchSettings = SearchSettings(),
-        system_prompt_name: str = None,
-        task_prompt_name: str = None,
+        system_prompt_name: str | None = None,
+        task_prompt_name: str | None = None,
         *args,
         **kwargs,
     ) -> RAGResponse:

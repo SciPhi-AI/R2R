@@ -447,7 +447,7 @@ class DocumentsSDK:
             version="v3",
         )
 
-        response_dict = WrappedCollectionsResponse(**response_dict)
+        return WrappedCollectionsResponse(**response_dict)
 
     async def delete_by_filter(
         self,

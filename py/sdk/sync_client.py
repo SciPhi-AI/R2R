@@ -24,12 +24,11 @@ from .sync_methods import (
 class R2RClient(BaseClient):
     def __init__(
         self,
-        base_url: str = None,
-        prefix: str = "/v3",
-        custom_client=None,
+        base_url: str | None = None,
         timeout: float = 300.0,
+        custom_client=None,
     ):
-        super().__init__(base_url, prefix, timeout)
+        super().__init__(base_url, timeout)
         self.client = custom_client or Client(timeout=timeout)
         self.chunks = ChunksSDK(self)
         self.collections = CollectionsSDK(self)
