@@ -4,7 +4,16 @@ import math
 import re
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, AsyncGenerator, Dict, Iterable, List, Optional, TypeVar
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+)
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.search import (
@@ -22,70 +31,102 @@ from ..abstractions.vector import VectorQuantizationType
 logger = logging.getLogger()
 
 
-def my_extract_citations(text: str) -> List[Dict[str, int]]:
+def _expand_citation_span_to_sentence(
+    full_text: str, start: int, end: int
+) -> Tuple[int, int]:
     """
-    Finds references to the pattern [#] in the LLM-generated text and returns
-    a list of dictionaries containing:
-       - the citation index (as integer)
-       - startIndex (character offset)
-       - endIndex (character offset)
+    Return (sentence_start, sentence_end) for the sentence containing the bracket [n].
+    We define a sentence boundary as a '.', '?', or '!', optionally followed by
+    spaces or a newline. This is a simple heuristic; you can refine it as needed.
+    """
 
-    Example:
-      "Paris is the capital of France [1]."
-      => { index: 1, startIndex: 31, endIndex: 34 }
-    """
+    # Define characters that end a sentence (you could add semicolons, etc. if you like)
+    sentence_enders = {".", "?", "!"}
+
+    # 1) Move backward from 'start' until we find a sentence ender or reach index 0
+    s = start
+    while s > 0:
+        # If we see a possible ender, check if the next char is whitespace or the end of text
+        if full_text[s] in sentence_enders:
+            s += 1
+            # Skip spaces after the punctuation
+            while s < len(full_text) and full_text[s].isspace():
+                s += 1
+            break
+        s -= 1
+
+    sentence_start = s
+
+    # 2) Move forward from 'end' until we find a sentence ender or end of text
+    e = end
+    while e < len(full_text):
+        if full_text[e] in sentence_enders:
+            e += 1
+            # Skip spaces after the punctuation
+            while e < len(full_text) and full_text[e].isspace():
+                e += 1
+            break
+        e += 1
+
+    sentence_end = e
+
+    return (sentence_start, sentence_end)
+
+
+def my_extract_citations(text: str) -> List[Dict[str, Any]]:
     pattern = r"\[(\d+)\]"
     citations = []
+
     for match in re.finditer(pattern, text):
+        bracket_index = int(match.group(1))
+        bracket_start = match.start()
+        bracket_end = match.end()
+
+        # ******* SWAP HERE: *******
+        snippet_start, snippet_end = _expand_citation_span_to_sentence(
+            text, bracket_start, bracket_end
+        )
+        snippet_text = text[snippet_start:snippet_end]
+
         citations.append(
             {
-                "index": int(match.group(1)),  # e.g. the '1' in "[1]"
-                "startIndex": match.start(),  # character offset in text
-                "endIndex": match.end(),
+                "index": bracket_index,
+                "startIndex": bracket_start,
+                "endIndex": bracket_end,
+                "snippetStartIndex": snippet_start,
+                "snippetEndIndex": snippet_end,
+                # "snippet": snippet_text,
             }
         )
+
     return citations
 
 
 def reassign_citations_in_order(
-    text: str, citations: List[Dict[str, int]]
-) -> (str, List[Dict[str, int]]):
+    text: str, citations: List[Dict[str, Any]]
+) -> Tuple[str, List[Dict[str, Any]]]:
     """
     Sorts the citations by their startIndex, then renumbers them [1], [2], [3], ...
-    in the order they appear in the text. Also does an *in-place* replacement
+    in the order they appear in the text. Also does an in-place replacement
     of the bracket references within 'text' so the final text has consecutively
     numbered citations.
 
     Returns:
       new_text: The text with bracket references replaced by the new indices
-      new_citations: A list of citations with updated 'index', 'startIndex', 'endIndex'.
-
-    Example:
-      Original text: "DeepSeek-R1 is ... [9]. Also see [2]."
-      Extracted citations:
-        [ {index:9, startIndex:30, endIndex:33},
-          {index:2, startIndex:45, endIndex:48} ]
-      We reorder them by startIndex -> [9] first, [2] second
-      We rename [9] -> [1], [2] -> [2].
+      new_citations: A list of citations with updated 'index', 'startIndex', 'endIndex',
+                     and snippet data (snippetStartIndex, snippetEndIndex, snippet).
     """
 
-    # 1) Sort citations by the order they appear
+    # 1) Sort the original citations by startIndex
     sorted_citations = sorted(citations, key=lambda c: c["startIndex"])
 
-    # We will reconstruct text as a list of characters for easier in-place editing
+    # Build a list of characters for easier in-place editing
     result_text_chars = list(text)
-    offset = 0  # how many chars we've added/removed so far from modifications
-    new_citations = []
 
-    # 2) Because we're changing lengths, we replace from the *end* to the start
-    #    so we don't disrupt the start/end indexes of upcoming replacements.
-    #    But we still want the new indices assigned in ascending order, so we must do a 2-step approach:
-    #      a) assign newIndex in ascending order
-    #      b) do textual replacements in descending order
-    #    We'll store these in a separate list for the actual replacement pass.
+    # 2) Assign new index in ascending order
     labeled_citations = []
     for i, cit in enumerate(sorted_citations):
-        new_idx = i + 1  # re-labeled index
+        new_idx = i + 1
         labeled_citations.append(
             {
                 "oldIndex": cit["index"],
@@ -94,112 +135,85 @@ def reassign_citations_in_order(
                 "endIndex": cit["endIndex"],
             }
         )
-
-    # Sort labeled citations in descending order of startIndex for safe replacement
+    # Sort in descending order for safe in-place replacement
     labeled_citations_desc = sorted(
-        labeled_citations, key=lambda c: c["startIndex"], reverse=True
+        labeled_citations, key=lambda x: x["startIndex"], reverse=True
     )
 
+    # 3) Replace the old bracket references with [1], [2], ...
     for citation_info in labeled_citations_desc:
         start = citation_info["startIndex"]
         end = citation_info["endIndex"]
         new_idx = citation_info["newIndex"]
-        # old substring might be e.g. "[9]"
-        old_length = end - start
         new_text_segment = f"[{new_idx}]"
-        new_length = len(new_text_segment)
-        # Replace in result_text_chars
         result_text_chars[start:end] = list(new_text_segment)
-        # This effectively changes the length if new_length != old_length
 
     new_text = "".join(result_text_chars)
 
-    # 3) Re-calculate final positions (startIndex/endIndex) for each citation
-    #    We can just re-run the regex on new_text to get their final positions
-    #    Or do a second pass of logic. Let's do the simpler approach: re-run the extraction
+    # 4) Re-extract citations from new_text, which will now yield updated snippet data
     re_extracted = my_extract_citations(new_text)
+    # Build a dict by the new index so we can merge them in ascending order
+    reassign_map = {ce["index"]: ce for ce in re_extracted}
 
-    # Now we have N re-extracted citations. They have the *same order* as the new labeled citations
-    # because the new text has them in ascending order. We'll map them by newIndex -> that citation info
-    reassign_map = {}
-    for c in re_extracted:
-        # c['index'] is the new index
-        reassign_map[c["index"]] = c
-
-    # 4) Build new_citations in ascending newIndex order
+    # 5) Final pass: build new_citations in ascending newIndex order
     labeled_citations_asc = sorted(
-        labeled_citations, key=lambda c: c["newIndex"]
+        labeled_citations, key=lambda x: x["newIndex"]
     )
-    for citation_info in labeled_citations_asc:
-        new_idx = citation_info["newIndex"]
-        old_idx = citation_info["oldIndex"]
-        # find the newly extracted position
-        final_positions = reassign_map.get(new_idx, {})
-        new_citations.append(
+    updated_citations = []
+    for item in labeled_citations_asc:
+        new_idx = item["newIndex"]
+        old_idx = item["oldIndex"]
+        found = reassign_map.get(new_idx, {})
+        # Merge the newly extracted snippet fields with the oldIndex
+        updated_citations.append(
             {
                 "oldIndex": old_idx,
                 "index": new_idx,
-                "startIndex": final_positions.get("startIndex"),
-                "endIndex": final_positions.get("endIndex"),
+                "startIndex": found.get("startIndex"),
+                "endIndex": found.get("endIndex"),
+                "snippetStartIndex": found.get("snippetStartIndex"),
+                "snippetEndIndex": found.get("snippetEndIndex"),
+                # "snippet": found.get("snippet"),
             }
         )
 
-    return new_text, new_citations
+    return new_text, updated_citations
 
 
 def my_map_citations_to_sources(
-    citations: List[Dict[str, int]], aggregated: "AggregateSearchResult"
+    citations: List[Dict[str, Any]],  # allow snippet fields, etc.
+    aggregated: AggregateSearchResult,
 ) -> List[Dict[str, Any]]:
-    """
-    Given the list of extracted citations (with indexes like 1,2,3...) and an
-    AggregateSearchResult, return a list of 'citation objects' that
-    include:
-       - index, startIndex, endIndex (from citation detection)
-       - sourceType: chunk, graph, web, or contextDoc
-       - all relevant fields (id, document_id, owner_id, collection_ids, score, etc.)
-       - any metadata, including text or titles
-
-    We flatten out the search results in the order they were enumerated in the final prompt:
-      1..N => chunk_search_results
-      N+1..M => graph_search_results
-      etc.
-    """
-
     flat_source_list = []
-
-    # 1) chunk_search_results
+    # Flatten your chunk, graph, web, contextDoc in order
     if aggregated.chunk_search_results:
         for chunk in aggregated.chunk_search_results:
             flat_source_list.append((chunk, "chunk"))
-
-    # 2) graph_search_results
     if aggregated.graph_search_results:
         for g in aggregated.graph_search_results:
             flat_source_list.append((g, "graph"))
-
-    # 3) web_search_results
     if aggregated.web_search_results:
         for w in aggregated.web_search_results:
             flat_source_list.append((w, "web"))
-
-    # 4) context_document_results
     if aggregated.context_document_results:
         for cdoc in aggregated.context_document_results:
             flat_source_list.append((cdoc, "contextDoc"))
 
     mapped_citations = []
-
     for c in citations:
         index_1_based = c["index"]
         idx_0_based = index_1_based - 1
 
-        # If the LLM references a source index that doesn't exist, store placeholders
+        # If out of range, placeholders
         if idx_0_based < 0 or idx_0_based >= len(flat_source_list):
             mapped_citations.append(
                 {
                     "index": index_1_based,
-                    "startIndex": c["startIndex"],
-                    "endIndex": c["endIndex"],
+                    "startIndex": c.get("startIndex"),
+                    "endIndex": c.get("endIndex"),
+                    "snippetStartIndex": c.get("snippetStartIndex"),
+                    "snippetEndIndex": c.get("snippetEndIndex"),
+                    # "snippet": c.get("snippet"),
                     "sourceType": None,
                     "id": None,
                     "document_id": None,
@@ -214,10 +228,14 @@ def my_map_citations_to_sources(
 
         source_obj, source_type = flat_source_list[idx_0_based]
 
+        # Build up base citation
         citation_obj = {
             "index": index_1_based,
-            "startIndex": c["startIndex"],
-            "endIndex": c["endIndex"],
+            "startIndex": c.get("startIndex"),
+            "endIndex": c.get("endIndex"),
+            "snippetStartIndex": c.get("snippetStartIndex"),
+            "snippetEndIndex": c.get("snippetEndIndex"),
+            # "snippet": c.get("snippet"),
             "sourceType": source_type,
             "id": None,
             "document_id": None,
@@ -225,13 +243,10 @@ def my_map_citations_to_sources(
             "collection_ids": None,
             "score": None,
             "text": None,
-            # We'll store all leftover fields in "metadata" to keep them structured
             "metadata": {},
         }
 
-        # Now handle each source type and gather relevant fields:
         if source_type == "chunk":
-            # source_obj is a ChunkSearchResult
             citation_obj.update(
                 {
                     "id": str(source_obj.id),
@@ -246,68 +261,38 @@ def my_map_citations_to_sources(
                     ],
                     "score": source_obj.score,
                     "text": source_obj.text,
-                    # For chunk metadata, let's unify them under "metadata"
                     "metadata": dict(source_obj.metadata),
                 }
             )
-
         elif source_type == "graph":
-            # source_obj is a GraphSearchResult
-            # e.g. source_obj.content might be GraphEntityResult or GraphRelationshipResult
             citation_obj.update(
                 {
-                    "id": None,  # GraphSearchResult doesn't have an "id" at top-level
-                    "document_id": None,
-                    "owner_id": None,
-                    "collection_ids": None,
                     "score": source_obj.score,
-                    "text": None,  # Not typical to have a 'text' in a graph result
-                    # entire "metadata" can go under citation_obj["metadata"]
                     "metadata": dict(source_obj.metadata),
                 }
             )
-            # You can add subfields from the content if you wish, e.g.:
             if source_obj.content:
                 citation_obj["metadata"][
                     "graphContent"
                 ] = source_obj.content.model_dump()
-
         elif source_type == "web":
-            # source_obj is a WebSearchResult
             citation_obj.update(
                 {
-                    "id": None,
-                    "document_id": None,
-                    "owner_id": None,
-                    "collection_ids": None,
-                    "score": None,
-                    "text": None,
                     "metadata": {
-                        # Here we can store link, title, snippet, etc.
                         "link": source_obj.link,
                         "title": source_obj.title,
-                        "snippet": source_obj.snippet,
+                        # "snippet": source_obj.snippet,
                         "position": source_obj.position,
-                    },
+                    }
                 }
             )
-
         elif source_type == "contextDoc":
-            # source_obj is a ContextDocumentResult
-            # That means source_obj.document is a dict with some fields:
             citation_obj.update(
                 {
-                    "id": None,
-                    "document_id": None,
-                    "owner_id": None,
-                    "collection_ids": None,
-                    "score": None,
-                    "text": None,
-                    # store the doc data (title, etc.) in metadata
                     "metadata": {
                         "document": source_obj.document,
                         "chunks": source_obj.chunks,
-                    },
+                    }
                 }
             )
 
