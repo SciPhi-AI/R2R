@@ -1,5 +1,4 @@
-import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from deprecated import deprecated
 from pydantic import BaseModel, Field
@@ -66,7 +65,7 @@ class Citation(BaseModel):
         None,
         description="Owner ID if chunk or doc references a particular user",
     )
-    collection_ids: Optional[List[str]] = Field(
+    collection_ids: Optional[list[str]] = Field(
         None, description="Collections this chunk or doc belongs to"
     )
     score: Optional[float] = Field(
@@ -75,7 +74,7 @@ class Citation(BaseModel):
     text: Optional[str] = Field(
         None, description="Full chunk text or short snippet from the source"
     )
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional key-value fields from the source (title, license, etc.)",
     )

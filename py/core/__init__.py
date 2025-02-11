@@ -103,7 +103,6 @@ __all__ = [
     "CompletionProvider",
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
-    "to_async_generator",
     "generate_id",
     "increment_version",
     "validate_uuid",

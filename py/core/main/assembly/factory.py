@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 from typing import Any, Optional
 
@@ -311,7 +312,12 @@ class R2RProviderFactory:
         **kwargs,
     ) -> R2RProviders:
         if (
-            self.config.embedding.base_dimension
+            math.isnan(self.config.embedding.base_dimension)
+            != math.isnan(self.config.completion_embedding.base_dimension)
+        ) or (
+            not math.isnan(self.config.embedding.base_dimension)
+            and not math.isnan(self.config.completion_embedding.base_dimension)
+            and self.config.embedding.base_dimension
             != self.config.completion_embedding.base_dimension
         ):
             raise ValueError(

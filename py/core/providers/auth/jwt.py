@@ -157,7 +157,7 @@ class JwtAuthProvider(AuthProvider):
     async def list_user_api_keys(self, user_id: UUID) -> list[dict]:
         raise NotImplementedError("Not implemented")
 
-    async def delete_user_api_key(self, user_id: UUID, key_id: UUID) -> dict:
+    async def delete_user_api_key(self, user_id: UUID, key_id: UUID) -> bool:
         raise NotImplementedError("Not implemented")
 
     async def oauth_callback_handler(

@@ -1,6 +1,9 @@
 import logging
 from typing import Any
 
+import litellm
+from litellm import acompletion, completion
+
 from core.base.abstractions import GenerationConfig
 from core.base.providers.llm import CompletionConfig, CompletionProvider
 
@@ -10,19 +13,9 @@ logger = logging.getLogger()
 class LiteLLMCompletionProvider(CompletionProvider):
     def __init__(self, config: CompletionConfig, *args, **kwargs) -> None:
         super().__init__(config)
-        try:
-            import litellm
-            from litellm import acompletion, completion
-
-            litellm.modify_params = True
-            self.acompletion = acompletion
-            self.completion = completion
-            logger.debug("LiteLLM imported successfully")
-        except ImportError:
-            logger.error("Failed to import LiteLLM")
-            raise ImportError(
-                "Please install the `litellm` package to use the LiteLLMCompletionProvider."
-            )
+        litellm.modify_params = True
+        self.acompletion = acompletion
+        self.completion = completion
 
         # if config.provider != "litellm":
         #     logger.error(f"Invalid provider: {config.provider}")

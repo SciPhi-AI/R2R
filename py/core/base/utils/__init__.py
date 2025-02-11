@@ -18,7 +18,6 @@ from shared.utils import (
     increment_version,
     map_citations_to_collector,
     reassign_citations_in_order,
-    to_async_generator,
     validate_uuid,
 )
 
@@ -29,7 +28,6 @@ __all__ = [
     "generate_default_user_collection_id",
     "increment_version",
     "decrement_version",
-    "to_async_generator",
     "generate_document_id",
     "generate_extraction_id",
     "generate_user_id",

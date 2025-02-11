@@ -8,9 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncGenerator,
-    Dict,
     Iterable,
-    List,
     Optional,
     Tuple,
     TypeVar,
@@ -19,13 +17,9 @@ from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.search import (
     AggregateSearchResult,
-    ChunkSearchResult,
-    ContextDocumentResult,
     GraphCommunityResult,
     GraphEntityResult,
     GraphRelationshipResult,
-    GraphSearchResult,
-    WebSearchResult,
 )
 from ..abstractions.vector import VectorQuantizationType
 
@@ -66,9 +60,9 @@ def reorder_collector_to_match_final_brackets(
 
 
 def map_citations_to_collector(
-    citations: List["Citation"],
+    citations: list["Citation"],
     collector: Any,  # "SearchResultsCollector"
-) -> List["Citation"]:
+) -> list["Citation"]:
     """
     For each citation, use its 'rawIndex' to look up the aggregator item from the
     collector. We then fill out the Citation’s sourceType, doc_id, text, metadata, etc.
@@ -80,7 +74,7 @@ def map_citations_to_collector(
     for stype, obj, agg_idx in collector.get_all_results():
         aggregator_map[agg_idx] = (stype, obj)
 
-    mapped_citations: List[Citation] = []
+    mapped_citations: list[Citation] = []
     for cit in citations:
         old_ref = cit.rawIndex  # aggregator index we want
         if old_ref in aggregator_map:
@@ -174,7 +168,7 @@ def _expand_citation_span_to_sentence(
     return (sentence_start, sentence_end)
 
 
-def extract_citations(text: str) -> List["Citation"]:
+def extract_citations(text: str) -> list["Citation"]:
     """
     Find bracket references like [3], [10], etc. Return a list of Citation objects
     whose 'index' field is the number found in brackets, but we will later rename
@@ -209,8 +203,8 @@ def extract_citations(text: str) -> List["Citation"]:
 
 
 def reassign_citations_in_order(
-    text: str, citations: List["Citation"]
-) -> Tuple[str, List["Citation"]]:
+    text: str, citations: list["Citation"]
+) -> Tuple[str, list["Citation"]]:
     """
     Sort citations by their start index, unify repeated bracket numbers, and relabel them
     in ascending order of first appearance. Return (new_text, new_citations).
@@ -280,163 +274,6 @@ def reassign_citations_in_order(
         updated_citations.append(c)
 
     return new_text, updated_citations
-
-
-# def reassign_citations_in_order(
-#     text: str, citations: List["Citation"]
-# ) -> Tuple[str, List["Citation"]]:
-#     """
-#     Sort citations by startIndex, assign them new indices [1..N], then
-#     replace the original bracket references in the text in-place. Re-extract
-#     citations from the modified text to capture new snippet data, and merge
-#     it back into typed Citation objects.
-#     """
-#     from ..api.models.retrieval.responses import Citation
-#     sorted_citations = sorted(citations, key=lambda c: c.startIndex)
-#     result_text_chars = list(text)
-
-#     # Build a map rawIndex -> newIndex, assigned in the order we encounter new oldRefs
-#     old_to_new = {}
-#     next_new_index = 1
-#     labeled_citations = []
-
-#     for cit in sorted_citations:
-#         old_index = cit.index
-#         if old_index not in old_to_new:
-#             old_to_new[old_index] = next_new_index
-#             next_new_index += 1
-#         new_idx = old_to_new[old_index]
-
-#         labeled_citations.append({
-#             "rawIndex": old_index,
-#             "newIndex": new_idx,
-#             "startIndex": cit.startIndex,
-#             "endIndex": cit.endIndex,
-#         })
-
-#     # 2) Now replace them from end to start with newIndex
-#     labeled_desc = sorted(labeled_citations, key=lambda x: x["startIndex"], reverse=True)
-#     for item in labeled_desc:
-#         start = item["startIndex"]
-#         end = item["endIndex"]
-#         new_idx = item["newIndex"]
-#         replacement = f"[{new_idx}]"
-#         result_text_chars[start:end] = list(replacement)
-
-#     new_text = "".join(result_text_chars)
-
-#     # Re-extract to get updated bracket positions & snippet data
-#     re_extracted = extract_citations(new_text)
-#     re_map = {cit.index: cit for cit in re_extracted}
-
-#     # Merge snippet data & build final typed list in ascending order
-#     labeled_asc = sorted(labeled_citations, key=lambda x: x["newIndex"])
-#     updated_citations: List[Citation] = []
-#     for item in labeled_asc:
-#         new_idx = item["newIndex"]
-#         old_idx = item["rawIndex"]
-#         found = re_map.get(new_idx)
-
-#         if not found:
-#             # no match => fallback
-#             updated_citations.append(Citation(index=new_idx, rawIndex=old_idx))
-#             continue
-
-#         # copy snippet offsets & bracket offsets from found
-#         updated_citations.append(
-#             Citation(
-#                 rawIndex=old_idx,
-#                 index=new_idx,
-#                 startIndex=found.startIndex,
-#                 endIndex=found.endIndex,
-#                 snippetStartIndex=found.snippetStartIndex,
-#                 snippetEndIndex=found.snippetEndIndex,
-#                 # snippet=found.snippet,
-#             )
-#         )
-#     return new_text, updated_citations
-
-
-def map_citations_to_sources(
-    citations: List["Citation"], aggregated: AggregateSearchResult
-) -> List["Citation"]:
-    """
-    Given typed citations (with snippet info) and an aggregated search result,
-    map each bracket index to the corresponding source object (chunk, graph, web, context).
-    Returns a new list of typed Citation objects, each storing source metadata.
-    """
-    flat_source_list = []
-
-    # Flatten chunk -> graph -> web -> contextDoc in the same order your prompt enumerates them
-    if aggregated.chunk_search_results:
-        for chunk in aggregated.chunk_search_results:
-            flat_source_list.append((chunk, "chunk"))
-    if aggregated.graph_search_results:
-        for g in aggregated.graph_search_results:
-            flat_source_list.append((g, "graph"))
-    if aggregated.web_search_results:
-        for w in aggregated.web_search_results:
-            flat_source_list.append((w, "web"))
-    if aggregated.context_document_results:
-        for cdoc in aggregated.context_document_results:
-            flat_source_list.append((cdoc, "contextDoc"))
-
-    mapped_citations: List[Citation] = []
-
-    for cit in citations:
-        idx = cit.index
-        idx_0_based = idx - 1
-
-        # If bracket index is out of range => placeholders
-        if idx_0_based < 0 or idx_0_based >= len(flat_source_list):
-            mapped_citations.append(cit)  # no updates to source fields
-            continue
-
-        source_obj, source_type = flat_source_list[idx_0_based]
-
-        # Create a copy so we don't mutate the original
-        updated_cit = cit.copy()
-        updated_cit.sourceType = source_type
-
-        # Fill out chunk-based metadata
-        if source_type == "chunk":
-            updated_cit.id = str(source_obj.id)
-            updated_cit.document_id = str(source_obj.document_id)
-            updated_cit.owner_id = (
-                str(source_obj.owner_id) if source_obj.owner_id else None
-            )
-            updated_cit.collection_ids = [
-                str(cid) for cid in source_obj.collection_ids
-            ]
-            updated_cit.score = source_obj.score
-            updated_cit.text = source_obj.text
-            updated_cit.metadata = dict(source_obj.metadata)
-
-        elif source_type == "graph":
-            updated_cit.score = source_obj.score
-            updated_cit.metadata = dict(source_obj.metadata)
-            if source_obj.content:
-                updated_cit.metadata["graphContent"] = (
-                    source_obj.content.model_dump()
-                )
-
-        elif source_type == "web":
-            updated_cit.metadata = {
-                "link": source_obj.link,
-                "title": source_obj.title,
-                # "snippet": source_obj.snippet,
-                "position": source_obj.position,
-            }
-
-        elif source_type == "contextDoc":
-            updated_cit.metadata = {
-                "document": source_obj.document,
-                "chunks": source_obj.chunks,
-            }
-
-        mapped_citations.append(updated_cit)
-
-    return mapped_citations
 
 
 def format_search_results_for_llm(
@@ -628,13 +465,6 @@ def generate_entity_document_id() -> UUID:
     """
     generation_time = datetime.now().isoformat()
     return _generate_id_from_label(f"entity-{generation_time}")
-
-
-async def to_async_generator(
-    iterable: Iterable[Any],
-) -> AsyncGenerator[Any, None]:
-    for item in iterable:
-        yield item
 
 
 def increment_version(version: str) -> str:

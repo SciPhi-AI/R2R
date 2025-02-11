@@ -45,7 +45,7 @@ class R2RProviders(BaseModel):
         LiteLLMEmbeddingProvider
         | OpenAIEmbeddingProvider
         | OllamaEmbeddingProvider
-    ) | None = None
+    )
     llm: (
         AnthropicCompletionProvider
         | LiteLLMCompletionProvider

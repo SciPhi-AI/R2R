@@ -1,6 +1,9 @@
 # type: ignore
 from typing import AsyncGenerator
 
+from docutils.core import publish_string
+from docutils.writers import html5_polyglot
+
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -21,18 +24,8 @@ class RSTParser(AsyncParser[str | bytes]):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.config = config
-
-        try:
-            from docutils.core import publish_string
-            from docutils.writers import html5_polyglot
-
-            self.publish_string = publish_string
-            self.html5_polyglot = html5_polyglot
-        except ImportError:
-            raise ImportError(
-                "Error: 'docutils' is required to run RSTParser. "
-                "Please install it using pip: pip install docutils"
-            )
+        self.publish_string = publish_string
+        self.html5_polyglot = html5_polyglot
 
     async def ingest(
         self, data: str | bytes, **kwargs

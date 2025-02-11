@@ -1,6 +1,8 @@
 from io import BytesIO
 from typing import AsyncGenerator
 
+from docx import Document
+
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -21,15 +23,7 @@ class DOCXParser(AsyncParser[str | bytes]):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.config = config
-
-        try:
-            from docx import Document
-
-            self.Document = Document
-        except ImportError:
-            raise ValueError(
-                "Error, `python-docx` is required to run `DOCXParser`. Please install it using `pip install python-docx`."
-            )
+        self.Document = Document
 
     async def ingest(self, data: str | bytes, *args, **kwargs) -> AsyncGenerator[str, None]:  # type: ignore
         """Ingest DOCX data and yield text from each paragraph."""

@@ -145,14 +145,14 @@ class R2RAuthProvider(AuthProvider):
             exp=exp_datetime,
         )
 
-    async def authenticate_api_key(self, api_key: str) -> Optional[User]:
+    async def authenticate_api_key(self, api_key: str) -> User:
         """
         Authenticate using an API key of the form "public_key.raw_key".
         Returns a User if successful, or raises R2RException if not.
         """
         try:
             key_id, raw_key = api_key.split(".", 1)
-        except ValueError:
+        except ValueError as e:
             raise R2RException(
                 status_code=401, message="Invalid API key format"
             )
@@ -458,7 +458,11 @@ class R2RAuthProvider(AuthProvider):
             await self.email_provider.send_password_changed_email(
                 to_email=normalize_email(user.email),
                 dynamic_template_data={
-                    "first_name": user.name.split(" ")[0] or "User"
+                    "first_name": (
+                        user.name.split(" ")[0] or "User"
+                        if user.name
+                        else "User"
+                    )
                 },
             )
         except Exception as e:
@@ -535,7 +539,11 @@ class R2RAuthProvider(AuthProvider):
             await self.email_provider.send_password_changed_email(
                 to_email=normalize_email(user.email),
                 dynamic_template_data={
-                    "first_name": user.name.split(" ")[0] or "User"
+                    "first_name": (
+                        user.name.split(" ")[0] or "User"
+                        if user.name
+                        else "User"
+                    )
                 },
             )
         except Exception as e:
@@ -594,7 +602,7 @@ class R2RAuthProvider(AuthProvider):
             user_id=user_id
         )
 
-    async def delete_user_api_key(self, user_id: UUID, key_id: UUID) -> dict:
+    async def delete_user_api_key(self, user_id: UUID, key_id: UUID) -> bool:
         return await self.database_provider.users_handler.delete_api_key(
             user_id=user_id,
             key_id=key_id,

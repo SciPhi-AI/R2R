@@ -34,10 +34,10 @@ def transform_filter_fields(filters: dict[str, Any]) -> dict[str, Any]:
     Handles nested logical operators like $and, $or, etc.
 
     Args:
-        filters (Dict[str, Any]): The original filters dictionary
+        filters (dict[str, Any]): The original filters dictionary
 
     Returns:
-        Dict[str, Any]: A new dictionary with transformed field names
+        dict[str, Any]: A new dictionary with transformed field names
     """
     if not filters:
         return {}

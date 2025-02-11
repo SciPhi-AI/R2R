@@ -7,14 +7,12 @@ from shared.abstractions import R2RException
 class BaseClient:
     def __init__(
         self,
-        base_url: str = None,
-        prefix: str = "/v3",
+        base_url: str | None = None,
         timeout: float = 300.0,
     ):
         self.base_url = base_url or os.getenv(
             "R2R_API_BASE", "https://api.cloud.sciphi.ai"
         )
-        self.prefix = prefix
         self.timeout = timeout
         self.access_token: Optional[str] = None
         self._refresh_token: Optional[str] = None

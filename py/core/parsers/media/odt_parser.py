@@ -1,4 +1,6 @@
 # type: ignore
+import xml.etree.ElementTree as ET
+import zipfile
 from typing import AsyncGenerator
 
 from core.base.parsers.base_parser import AsyncParser
@@ -19,15 +21,8 @@ class ODTParser(AsyncParser[str | bytes]):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.config = config
-
-        try:
-            import xml.etree.ElementTree as ET
-            import zipfile
-
-            self.zipfile = zipfile
-            self.ET = ET
-        except ImportError:
-            raise ImportError("XML parsing libraries not available")
+        self.zipfile = zipfile
+        self.ET = ET
 
     async def ingest(
         self, data: str | bytes, **kwargs

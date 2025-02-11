@@ -4,20 +4,17 @@
 import asyncio
 import base64
 import logging
-import os
 import string
-import tempfile
 import time
 import unicodedata
-import uuid
 from io import BytesIO
 from typing import AsyncGenerator
 
 # Third-party imports
-import aiofiles
 from pdf2image import convert_from_bytes, convert_from_path
 from pdf2image.exceptions import PDFInfoNotInstalledError
 from PIL import Image
+from pypdf import PdfReader
 
 # Local application imports
 from core.base.abstractions import GenerationConfig
@@ -45,16 +42,6 @@ class VLMPDFParser(AsyncParser[str | bytes]):
         self.llm_provider = llm_provider
         self.config = config
         self.vision_prompt_text = None
-
-        try:
-            from litellm import supports_vision
-
-            self.supports_vision = supports_vision
-        except ImportError:
-            logger.error("Failed to import LiteLLM vision support")
-            raise ImportError(
-                "Please install the litellm package to use the VLMPDFParser."
-            )
 
     async def convert_pdf_to_images(
         self, data: str | bytes
@@ -229,14 +216,7 @@ class BasicPDFParser(AsyncParser[str | bytes]):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.config = config
-        try:
-            from pypdf import PdfReader
-
-            self.PdfReader = PdfReader
-        except ImportError:
-            raise ValueError(
-                "Error, `pypdf` is required to run `PyPDFParser`. Please install it using `pip install pypdf`."
-            )
+        self.PdfReader = PdfReader
 
     async def ingest(
         self, data: str | bytes, **kwargs
@@ -293,12 +273,6 @@ class PDFParserUnstructured(AsyncParser[str | bytes]):
 
         except ImportError as e:
             logger.error("PDFParserUnstructured ImportError :  ", e)
-            logger.error(
-                """Please install missing modules using :
-            pip install unstructured  unstructured_pytesseract  unstructured_inference
-            pip install pdfplumber   matplotlib   pillow_heif  toml
-            """
-            )
 
     async def ingest(
         self,

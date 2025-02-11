@@ -224,7 +224,8 @@ def test_out_of_range_brackets(small_aggregate):
         ids = [m.id for m in mapped]
         assert str(generate_id("chunk-1")) in ids
         assert str(generate_id("chunk-2")) in ids
-        assert str(generate_id("chunk-3")) in ids
+        assert None in ids
+        assert str(generate_id("chunk-3")) not in ids
     else:
         # fallback if your logic assigns placeholders
         # Not typically the case here, but you can handle if needed

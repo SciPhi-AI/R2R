@@ -1,6 +1,8 @@
 # type: ignore
 from typing import AsyncGenerator
 
+import orgparse
+
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -21,16 +23,7 @@ class ORGParser(AsyncParser[str | bytes]):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.config = config
-
-        try:
-            import orgparse
-
-            self.orgparse = orgparse
-        except ImportError:
-            raise ImportError(
-                "Error: 'orgparse' is required to run ORGParser. "
-                "Please install it using pip: pip install orgparse"
-            )
+        self.orgparse = orgparse
 
     def _process_node(self, node) -> list[str]:
         """Process an org-mode node and return its content."""

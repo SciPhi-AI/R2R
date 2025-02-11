@@ -357,7 +357,7 @@ class PostgresUserHandler(Handler):
             name=result["name"],
             bio=result["bio"],
             profile_picture=result["profile_picture"],
-            account_type=account_type,
+            account_type=account_type or "password",
             hashed_password=hashed_password,
             google_id=google_id,
             github_id=github_id,
@@ -1065,7 +1065,7 @@ class PostgresUserHandler(Handler):
             for row in results
         ]
 
-    async def delete_api_key(self, user_id: UUID, key_id: UUID) -> dict:
+    async def delete_api_key(self, user_id: UUID, key_id: UUID) -> bool:
         """Delete a specific API key."""
         query = f"""
             DELETE FROM {self._get_table_name(PostgresUserHandler.API_KEYS_TABLE_NAME)}
@@ -1078,12 +1078,7 @@ class PostgresUserHandler(Handler):
         if result is None:
             raise R2RException(status_code=404, message="API key not found")
 
-        return {
-            "key_id": str(result["id"]),
-            "public_key": str(result["public_key"]),
-            "name": result["name"] or "",
-            "description": result["description"] or "",
-        }
+        return True
 
     async def update_api_key_name(
         self, user_id: UUID, key_id: UUID, name: str

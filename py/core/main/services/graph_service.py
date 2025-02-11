@@ -4,9 +4,11 @@ import math
 import random
 import re
 import time
+import uuid
 import xml.etree.ElementTree as ET
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Coroutine, Optional
 from uuid import UUID
+from xml.etree.ElementTree import Element
 
 from core.base import (
     DocumentChunk,
@@ -468,7 +470,7 @@ class GraphService(Service):
         )
 
         # 2) For each entity name in the map, we gather sub-entities and relationships
-        tasks = []
+        tasks: list[Coroutine[Any, Any, str]] = []
         tasks.extend(
             self._process_entity_for_description(
                 entities=entity_info["entities"],
@@ -731,8 +733,7 @@ class GraphService(Service):
             clusters.setdefault(cluster_id, []).append(node_name)
 
         # create an async job for each cluster
-        tasks = []
-        import uuid
+        tasks: list[Coroutine[Any, Any, dict]] = []
 
         tasks.extend(
             self._process_community_summary(
@@ -827,7 +828,7 @@ class GraphService(Service):
                     messages=messages,
                     generation_config=generation_config,
                 )
-                llm_text = llm_resp.choices[0].message.content
+                llm_text = llm_resp.choices[0].message.content or ""
 
                 # find <community>...</community> XML
                 match = re.search(
@@ -852,8 +853,8 @@ class GraphService(Service):
                 summary = summary_elem.text if summary_elem is not None else ""
                 rating = (
                     float(rating_elem.text)
-                    if rating_elem is not None
-                    else None
+                    if isinstance(rating_elem, Element) and rating_elem.text
+                    else ""
                 )
                 rating_explanation = (
                     rating_expl_elem.text
@@ -917,11 +918,10 @@ class GraphService(Service):
         max_summary_input_length: int,
     ) -> str:
         """
-        (Equivalent to community_summary_prompt in old code.)
         Gathers the entity/relationship text, tries not to exceed `max_summary_input_length`.
         """
         # Group them by entity.name
-        entity_map = {}
+        entity_map: dict[str, dict] = {}
         for e in entities:
             entity_map.setdefault(
                 e.name, {"entities": [], "relationships": []}
@@ -1163,12 +1163,14 @@ class GraphService(Service):
             except Exception as e:
                 if attempt < retries - 1:
                     await asyncio.sleep(delay)
+                    continue
                 else:
                     logger.error(
                         f"All extraction attempts for doc={doc_id} and chunks{[chunk.id for chunk in chunks]} failed with error:\n{e}"
                     )
+                    return GraphExtraction(entities=[], relationships=[])
 
-                return GraphExtraction(entities=[], relationships=[])
+        return GraphExtraction(entities=[], relationships=[])
 
     async def _parse_graph_search_results_extraction_xml(
         self, response_str: str, chunks: list[DocumentChunk]
@@ -1212,14 +1214,14 @@ class GraphService(Service):
         doc_id = chunks[0].document_id
         chunk_ids = [c.id for c in chunks]
         entities_list: list[Entity] = []
-        for e in entities_elems:
-            name_attr = e.get("name")
-            type_elem = e.find("type")
-            desc_elem = e.find("description")
+        for element in entities_elems:
+            name_attr = element.get("name")
+            type_elem = element.find("type")
+            desc_elem = element.find("description")
             category = type_elem.text if type_elem is not None else None
-            desc = desc_elem.text if desc_elem is not None else ""
+            desc = desc_elem.text if desc_elem is not None else None
             desc_embed = await self.providers.embedding.async_get_embedding(
-                desc
+                desc or ""
             )
             ent = Entity(
                 category=category,
@@ -1242,13 +1244,17 @@ class GraphService(Service):
             desc_elem = r_elem.find("description")
             weight_elem = r_elem.find("weight")
             try:
-                subject = source_elem.text
-                object_ = target_elem.text
-                predicate = type_elem.text
-                desc = desc_elem.text
-                weight = float(weight_elem.text)
+                subject = source_elem.text if source_elem is not None else ""
+                object_ = target_elem.text if target_elem is not None else ""
+                predicate = type_elem.text if type_elem is not None else ""
+                desc = desc_elem.text if desc_elem is not None else ""
+                weight = (
+                    float(weight_elem.text)
+                    if isinstance(weight_elem, Element) and weight_elem.text
+                    else ""
+                )
                 embed = await self.providers.embedding.async_get_embedding(
-                    desc
+                    desc or ""
                 )
 
                 rel = Relationship(
@@ -1263,7 +1269,7 @@ class GraphService(Service):
                     description_embedding=embed,
                 )
                 relationships_list.append(rel)
-            except:
+            except Exception:
                 continue
         return entities_list, relationships_list
 
@@ -1292,13 +1298,27 @@ class GraphService(Service):
 
             # Insert relationships
             for rel in extraction.relationships:
+                subject_id = entities_id_map.get(rel.subject)
+                object_id = entities_id_map.get(rel.object)
+                parent_id = rel.parent_id
+
+                if any(
+                    id is None for id in (subject_id, object_id, parent_id)
+                ):
+                    logger.warning(f"Missing ID for relationship: {rel}")
+                    continue
+
+                assert isinstance(subject_id, UUID)
+                assert isinstance(object_id, UUID)
+                assert isinstance(parent_id, UUID)
+
                 await self.providers.database.graphs_handler.relationships.create(
                     subject=rel.subject,
-                    subject_id=entities_id_map.get(rel.subject),
+                    subject_id=subject_id,
                     predicate=rel.predicate,
                     object=rel.object,
-                    object_id=entities_id_map.get(rel.object),
-                    parent_id=rel.parent_id,
+                    object_id=object_id,
+                    parent_id=parent_id,
                     description=rel.description,
                     description_embedding=rel.description_embedding,
                     weight=rel.weight,
@@ -1353,7 +1373,7 @@ class GraphService(Service):
             new_description = resp.choices[0].message.content
 
             new_embedding = await self.providers.embedding.async_get_embedding(
-                new_description
+                new_description or ""
             )
 
             await self.providers.database.graphs_handler.entities.update(
