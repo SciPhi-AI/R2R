@@ -221,7 +221,7 @@ class ContextDocumentResult(R2RSerializable):
 class AggregateSearchResult(R2RSerializable):
     """Result of an aggregate search operation."""
 
-    chunk_search_results: Optional[list[ChunkSearchResult]]
+    chunk_search_results: Optional[list[ChunkSearchResult]] = None
     graph_search_results: Optional[list[GraphSearchResult]] = None
     web_search_results: Optional[list[WebSearchResult]] = None
     context_document_results: Optional[list[ContextDocumentResult]] = None

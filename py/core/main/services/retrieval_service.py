@@ -13,6 +13,7 @@ from core import (
     R2RRAGAgent,
     R2RStreamingRAGAgent,
     R2RStreamingReasoningRAGAgent,
+    SearchResultsCollector,
 )
 from core.agent.rag import (
     GeminiXMLToolsStreamingReasoningRAGAgent,
@@ -33,10 +34,12 @@ from core.base import (
     Message,
     R2RException,
     SearchSettings,
+    extract_citations,
+    finalize_citations_in_message,
+    finalize_citations_with_collector,
     format_search_results_for_llm,
     format_search_results_for_stream,
-    my_extract_citations,
-    my_map_citations_to_sources,
+    map_citations_to_sources,
     reassign_citations_in_order,
     to_async_generator,
 )
@@ -52,6 +55,27 @@ logger = logging.getLogger()
 
 
 import tiktoken
+
+
+def dump_collector(collector: SearchResultsCollector) -> list[dict[str, Any]]:
+    dumped = []
+    for source_type, result_obj in collector.get_all_results():
+        # Try to convert the result_obj to a dict.
+        if hasattr(result_obj, "model_dump"):
+            result_dict = result_obj.model_dump()
+        elif hasattr(result_obj, "dict"):
+            result_dict = result_obj.dict()
+        else:
+            result_dict = (
+                result_obj  # Fallback if no conversion method is available
+            )
+        dumped.append(
+            {
+                "source_type": source_type,
+                "result": result_dict,
+            }
+        )
+    return dumped
 
 
 def tokens_count_for_message(message, encoding):
@@ -482,6 +506,7 @@ class RetrievalService(Service):
         try:
             # 1) Do the search
             search_results_dict = await self.search(query, search_settings)
+            print("search_results_dict = ", search_results_dict)
             aggregated_results = AggregateSearchResult.from_dict(
                 search_results_dict
             )
@@ -524,7 +549,7 @@ class RetrievalService(Service):
             llm_text_response = response.choices[0].message.content
 
             # 2) detect citations as the LLM wrote them
-            raw_citations = my_extract_citations(llm_text_response)
+            raw_citations = extract_citations(llm_text_response)
 
             # 3) re-map them in ascending order => new_text has sequential references [1], [2], ...
             re_labeled_text, new_citations = reassign_citations_in_order(
@@ -532,9 +557,14 @@ class RetrievalService(Service):
             )
 
             # 4) map to sources
-            mapped_citations = my_map_citations_to_sources(
+            mapped_citations = map_citations_to_sources(
                 new_citations, aggregated_results
             )
+
+            metadata = response.dict()
+            metadata["choices"][0]["message"].pop(
+                "content", None
+            )  # remove content from metadata
 
             # 5) Build final RAG response
             #    If you want to return the newly-labeled text to the user, do so:
@@ -542,7 +572,7 @@ class RetrievalService(Service):
                 generated_answer=re_labeled_text,  # or "generated_answer" if you prefer
                 search_results=aggregated_results,
                 citations=mapped_citations,
-                metadata={},
+                metadata=metadata,
             )
             return rag_response
 
@@ -912,16 +942,34 @@ class RetrievalService(Service):
                     role="assistant", content=str(results[-1])
                 )
 
-            input_tokens = num_tokens_from_messages(results[:-1])
-            output_tokens = num_tokens_from_messages([results[-1]])
+            if hasattr(agent, "search_results_collector"):
+                collector = agent.search_results_collector
+            else:
+                collector = SearchResultsCollector()  # or fallback if needed
 
+            # 1) finalize citations
+            raw_text = assistant_message.content or ""
+            relabeled_text, citations = (
+                await finalize_citations_with_collector(raw_text, collector)
+            )
+
+            # 2) Overwrite the assistant message content with the bracket references re-labeled
+            assistant_message.content = relabeled_text
+
+            # 3) Convert the Citation objects to JSON-friendly dicts
+            citations_data = [c.model_dump() for c in citations]
+
+            # 4) Persist everything in the conversation DB
             await self.providers.database.conversations_handler.add_message(
                 conversation_id=conversation_id,
                 content=assistant_message,
                 parent_id=message_id,
                 metadata={
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
+                    "citations": citations_data,
+                    # You can also store the entire collector or just dump the underlying results
+                    "aggregated_search_result": json.dumps(
+                        dump_collector(collector)
+                    ),
                 },
             )
             if needs_conversation_name:
@@ -949,7 +997,19 @@ class RetrievalService(Service):
                     )
 
             return {
-                "messages": results,
+                "messages": [
+                    Message(
+                        role="assistant",
+                        content=assistant_message.content,
+                        metadata={
+                            "citations": citations_data,
+                            # You can also store the entire collector or just dump the underlying results
+                            "aggregated_search_result": json.dumps(
+                                dump_collector(collector)
+                            ),
+                        },
+                    )
+                ],
                 "conversation_id": str(
                     conversation_id
                 ),  # Ensure it's a string

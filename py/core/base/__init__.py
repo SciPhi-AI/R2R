@@ -120,7 +120,9 @@ __all__ = [
     "generate_default_user_collection_id",
     "generate_user_id",
     "increment_version",
-    "my_map_citations_to_sources",
-    "my_extract_citations",
+    "map_citations_to_sources",
+    "extract_citations",
+    "finalize_citations_with_collector",
+    "finalize_citations_in_message",
     "reassign_citations_in_order",
 ]

@@ -35,6 +35,98 @@ if TYPE_CHECKING:
 logger = logging.getLogger()
 
 
+async def finalize_citations_with_collector(
+    text: str,
+    collector: Any,  # "SearchResultsCollector"
+) -> Tuple[str, List["Citation"]]:
+    """
+    1) Extract bracket references [n] from the raw text,
+    2) Re-label them in ascending order [1]..[N],
+    3) Map each bracket to the correct item from collector.get_all_results(),
+    4) Return (relabeled_text, typed_citations).
+    """
+    # Step A: parse bracket references
+    raw_citations = extract_citations(text)
+
+    # Step B: reassign them in ascending order
+    relabeled_text, new_citations = reassign_citations_in_order(
+        text, raw_citations
+    )
+
+    # Step C: map each bracket [i] to collector's i-th item
+    mapped_citations = map_citations_to_collector(new_citations, collector)
+
+    return relabeled_text, mapped_citations
+
+
+def map_citations_to_collector(
+    citations: List["Citation"], collector: Any  # "SearchResultsCollector"
+) -> List["Citation"]:
+    """
+    For each Citation [i], find the i-th `(source_type, result_obj)` from
+    collector.get_all_results(), then attach the relevant metadata into
+    Citation. For example, if source_type == 'chunk', store the chunk’s text, score, etc.
+    """
+    results_in_order = (
+        collector.get_all_results()
+    )  # list of (source_type, result_obj)
+    updated_citations = []
+
+    for cit in citations:
+        # bracket index is 1-based, so i-th bracket => index-1 in the list
+        idx_0 = cit.index - 1
+        if idx_0 < 0 or idx_0 >= len(results_in_order):
+            # out of range => skip
+            updated_citations.append(cit)
+            continue
+
+        source_type, source_obj = results_in_order[idx_0]
+
+        # Create a copy so as not to mutate the original
+        updated = cit.copy(update={"sourceType": source_type})
+
+        # Fill out chunk-based metadata
+        if source_type == "chunk":
+            updated.id = str(source_obj.id)
+            updated.document_id = str(source_obj.document_id)
+            updated.owner_id = (
+                str(source_obj.owner_id) if source_obj.owner_id else None
+            )
+            updated.collection_ids = [
+                str(cid) for cid in source_obj.collection_ids
+            ]
+            updated.score = source_obj.score
+            updated.text = source_obj.text
+            updated.metadata = dict(source_obj.metadata)
+
+        elif source_type == "graph":
+            updated.score = source_obj.score
+            updated.metadata = dict(source_obj.metadata)
+            if source_obj.content:
+                updated.metadata["graphContent"] = (
+                    source_obj.content.model_dump()
+                )
+
+        elif source_type == "web":
+            updated.metadata = {
+                "link": source_obj.link,
+                "title": source_obj.title,
+                # "snippet": source_obj.snippet,
+                "position": source_obj.position,
+            }
+
+        elif source_type == "contextDoc":
+            updated.metadata = {
+                "document": source_obj.document,
+                "chunks": source_obj.chunks,
+            }
+
+        # Add or modify more fields as needed...
+        updated_citations.append(updated)
+
+    return updated_citations
+
+
 def _expand_citation_span_to_sentence(
     full_text: str, start: int, end: int
 ) -> Tuple[int, int]:
@@ -70,7 +162,7 @@ def _expand_citation_span_to_sentence(
     return (sentence_start, sentence_end)
 
 
-def my_extract_citations(text: str) -> List["Citation"]:
+def extract_citations(text: str) -> List["Citation"]:
     """
     Parse the LLM-generated text and extract bracket references [n].
     For each bracket, also expand around the bracket to capture
@@ -99,7 +191,7 @@ def my_extract_citations(text: str) -> List["Citation"]:
             endIndex=bracket_end,
             snippetStartIndex=snippet_start,
             snippetEndIndex=snippet_end,
-            snippet=snippet_text,
+            # snippet=snippet_text,
         )
         citations.append(citation)
 
@@ -151,7 +243,7 @@ def reassign_citations_in_order(
     new_text = "".join(result_text_chars)
 
     # Re-extract to get updated bracket positions & snippet data
-    re_extracted = my_extract_citations(new_text)
+    re_extracted = extract_citations(new_text)
     re_map = {cit.index: cit for cit in re_extracted}
 
     # Merge snippet data & build final typed list in ascending order
@@ -176,13 +268,13 @@ def reassign_citations_in_order(
                 endIndex=found.endIndex,
                 snippetStartIndex=found.snippetStartIndex,
                 snippetEndIndex=found.snippetEndIndex,
-                snippet=found.snippet,
+                # snippet=found.snippet,
             )
         )
     return new_text, updated_citations
 
 
-def my_map_citations_to_sources(
+def map_citations_to_sources(
     citations: List["Citation"], aggregated: AggregateSearchResult
 ) -> List["Citation"]:
     """
@@ -249,7 +341,7 @@ def my_map_citations_to_sources(
             updated_cit.metadata = {
                 "link": source_obj.link,
                 "title": source_obj.title,
-                "snippet": source_obj.snippet,
+                # "snippet": source_obj.snippet,
                 "position": source_obj.position,
             }
 
@@ -262,6 +354,30 @@ def my_map_citations_to_sources(
         mapped_citations.append(updated_cit)
 
     return mapped_citations
+
+
+async def finalize_citations_in_message(
+    raw_text: str,
+    search_results: AggregateSearchResult,
+) -> tuple[str, list["Citation"]]:
+    """
+    1) Extract bracket references from the raw LLM text,
+    2) Re-label them in ascending order,
+    3) Build structured Citation objects mapped to the underlying chunk/graph data,
+    4) Return (relabeled_text, citations).
+    """
+    # 1) detect citations [1], [2], ...
+    raw_citations = extract_citations(raw_text)
+
+    # 2) re-map them in ascending order => new_text has sequential references [1], [2], ...
+    relabeled_text, new_citations = reassign_citations_in_order(
+        raw_text, raw_citations
+    )
+
+    # 3) map to sources in the `AggregateSearchResult`
+    mapped_citations = map_citations_to_sources(new_citations, search_results)
+
+    return relabeled_text, mapped_citations
 
 
 def format_search_results_for_llm(results: AggregateSearchResult) -> str:
