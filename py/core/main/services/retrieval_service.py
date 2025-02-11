@@ -600,6 +600,7 @@ class RetrievalService(Service):
                 search_results=aggregated_results,
                 citations=mapped_citations,
                 metadata=metadata,
+                completion=re_labeled_text,
             )
             return rag_response
 
