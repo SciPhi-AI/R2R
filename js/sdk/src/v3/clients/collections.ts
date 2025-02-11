@@ -322,4 +322,17 @@ export class CollectionsClient {
       downloadBlob(blob, options.filename);
     }
   }
+
+  /**
+   * Retrieve a collection by its name.
+   * @param name The name of the collection to retrieve.
+   * @returns A promise that resolves with the collection details.
+   */
+  async retrieveByName(options: { name: string; ownerId?: string }): Promise<WrappedCollectionResponse> {
+    const queryParams: Record<string, any> = {};
+    if (options.ownerId) {
+      queryParams.owner_id = options.ownerId;
+    }
+    return this.client.makeRequest("GET", `collections/name/${options.name}`, { params: queryParams });
+  }
 }

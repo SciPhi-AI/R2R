@@ -61,6 +61,8 @@ class R2RClient(BaseClient):
 
         try:
             response = self.client.request(method, url, **request_args)
+            print("response =", response)
+
             self._handle_response(response)
 
             if "application/json" in response.headers.get("Content-Type", ""):

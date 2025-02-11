@@ -41,7 +41,8 @@ class PostgresCollectionsHandler(Handler):
         super().__init__(project_name, connection_manager)
 
     async def create_tables(self) -> None:
-        query = f"""
+        # 1. Create the table if it does not exist.
+        create_table_query = f"""
         CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresCollectionsHandler.TABLE_NAME)} (
             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
             owner_id UUID,
@@ -55,7 +56,57 @@ class PostgresCollectionsHandler(Handler):
             document_count INT DEFAULT 0
         );
         """
-        await self.connection_manager.execute_query(query)
+        await self.connection_manager.execute_query(create_table_query)
+
+        # 2. Check for duplicate rows that would violate the uniqueness constraint.
+        check_duplicates_query = f"""
+        SELECT owner_id, name, COUNT(*) AS cnt
+        FROM {self._get_table_name(PostgresCollectionsHandler.TABLE_NAME)}
+        GROUP BY owner_id, name
+        HAVING COUNT(*) > 1
+        """
+        duplicates = await self.connection_manager.fetch_query(
+            check_duplicates_query
+        )
+        if duplicates:
+            logger.warning(
+                "Cannot add unique constraint (owner_id, name) because duplicates exist. "
+                "Please resolve duplicates first. Found duplicates: %s",
+                duplicates,
+            )
+            return  # or raise an exception, depending on your use case
+
+        # 3. Parse the qualified table name into schema and table.
+        qualified_table = self._get_table_name(
+            PostgresCollectionsHandler.TABLE_NAME
+        )
+        if "." in qualified_table:
+            schema, table = qualified_table.split(".", 1)
+        else:
+            schema = "public"
+            table = qualified_table
+
+        # 4. Add the unique constraint if it does not already exist.
+        alter_table_constraint = f"""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_constraint c
+                JOIN pg_class t ON c.conrelid = t.oid
+                JOIN pg_namespace n ON n.oid = t.relnamespace
+                WHERE t.relname = '{table}'
+                AND n.nspname = '{schema}'
+                AND c.conname = 'unique_owner_collection_name'
+            ) THEN
+                ALTER TABLE {qualified_table}
+                ADD CONSTRAINT unique_owner_collection_name
+                UNIQUE (owner_id, name);
+            END IF;
+        END;
+        $$;
+        """
+        await self.connection_manager.execute_query(alter_table_constraint)
 
     async def collection_exists(self, collection_id: UUID) -> bool:
         """Check if a collection exists."""
@@ -621,3 +672,39 @@ class PostgresCollectionsHandler(Handler):
                 status_code=500,
                 detail=f"Failed to export data: {str(e)}",
             ) from e
+
+    async def get_collection_by_name(
+        self, owner_id: UUID, name: str
+    ) -> Optional[CollectionResponse]:
+        """
+        Fetch a collection by owner_id + name combination.
+        Return None if not found.
+        """
+        query = f"""
+            SELECT
+                id, owner_id, name, description, graph_sync_status,
+                graph_cluster_status, created_at, updated_at, user_count, document_count
+            FROM {self._get_table_name(PostgresCollectionsHandler.TABLE_NAME)}
+            WHERE owner_id = $1 AND name = $2
+            LIMIT 1
+        """
+        result = await self.connection_manager.fetchrow_query(
+            query, [owner_id, name]
+        )
+        if not result:
+            raise R2RException(
+                status_code=404,
+                message="No collection found with the specified name",
+            )
+        return CollectionResponse(
+            id=result["id"],
+            owner_id=result["owner_id"],
+            name=result["name"],
+            description=result["description"],
+            graph_sync_status=result["graph_sync_status"],
+            graph_cluster_status=result["graph_cluster_status"],
+            created_at=result["created_at"],
+            updated_at=result["updated_at"],
+            user_count=result["user_count"],
+            document_count=result["document_count"],
+        )

@@ -242,3 +242,27 @@ def test_delete_non_existent_collection(client: R2RClient):
     assert (
         exc_info.value.status_code == 404
     ), "Expected 404 when deleting non-existent collection"
+
+
+def test_retrieve_collection_by_name(client: R2RClient):
+    # Generate a unique collection name
+    unique_name = f"TestRetrieveByName-{uuid.uuid4()}"
+
+    # Create a collection with the unique name
+    created_resp = client.collections.create(
+        name=unique_name, description="Collection for retrieval by name test"
+    )
+    created = created_resp.results
+    assert (
+        created.id is not None
+    ), "Creation did not return a valid collection ID"
+
+    # Retrieve the collection by its name
+    retrieved_resp = client.collections.retrieve_by_name(unique_name)
+    retrieved = retrieved_resp.results
+    assert (
+        retrieved.id == created.id
+    ), "Retrieved collection does not match the created collection"
+
+    # Cleanup: Delete the created collection
+    client.collections.delete(created.id)
